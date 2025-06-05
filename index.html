@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>  
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Silenos Versión 1.1.6</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✒️</text></svg>">
+
+</head>
+<body>
+<div id="opciones" >
+<h2 id="titulo-proyecto" contenteditable="true" placeholder="Escribe el título del proyecto">Silenos Versión 1.1.6</h2>
+<div id="menu" >
+        <button  onclick="cerrartodo(), abrir('escenah');">Escenas</button>
+        <button  onclick="cerrartodo(), abrirGuion();">Guion</button> <button  onclick="cerrartodo(), gridear('personajes'),agregarBotonEliminarAPersonajes();">Datos</button>
+        <button  onclick="cerrartodo(), abrir('ia');">IA</button>
+
+    <button class="pro" onclick="reiniciar()"> 🆕 </button>
+        <button class="pro" onclick="generarHTML()">💽 Export</button>
+        <button id="game" class="pro" onclick="generarGAME()">🎮 Game</button>
+        <button class="pro" onclick="guardarJSON()">💾 Save</button>
+        <input type="file" id="file-load" accept="application/json"  onchange="cargarJSON(event)">
+        <button class="pro" onclick="document.getElementById('file-load').click()">🗂️ Load</button>
+        <button class="pro" onclick="cerrartodo(), abrir('lugares');"> ⚙️ </button>
+        <button class="pro" id="theme-toggle-button" onclick="toggleTheme()">🌙</button>
+</div></div>
+
+<div id="guion-literario">
+
+    <button class="pro" id="sumar-capitulo-guion" onclick="agregarCapituloYMostrar()">Agregar Capítulo</button>
+    <div id="guion-layout">
+        <div id="indice-capitulos-guion">
+            </div>
+        <div id="contenido-capitulo-activo">
+            </div>
+    </div>
+</div>
+
+<div id="ia" >
+<div id="creasion" >
+    <button class="pro" onclick="cerrartodo(), abrir('escenah'), actualizarnombreescena(),actualizarcifras(), crearEscenasAutomaticamente(nombredelahistoria, cantidaddeescenas, cantidadframes);">Insertar Escenas vacías en la Historia</button>
+    <input type="text" id="nombrehistoria" placeholder="Nombre de las Escenas" value="Nombre de la Historia">
+    <input type="number" id="cantidadescenas" placeholder= "Cantidad de Escenas" value="2">
+    <input type="number" id="cantidadeframes" placeholder= "Cantidad de Frames" value="3">
+
+</div>
+<div id="chateo" >
+
+    <button id="enviargemini"  class="pro" onclick="actualizarcifras(), enviarTextoConInstrucciones()">Generar Historia</button>
+
+<button id="enviargemini-desarrollar"  class="pro" onclick="actualizarnombreescena(); actualizarcifras(); desarrollarFramesDesdeGeminimente(nombredelahistoria); cerrartodo(); abrir('escenah');">Insertar Frames en la Historia</button>
+</div>
+    <textarea id="gemini1"  placeholder="Escribe tu Historia..."></textarea>
+<div id="geminimente"></div> <!-- MODIFICADO: quitado contenteditable -->
+
+</div>
+<script src="geminialfa.js"></script>
+
+
+<div id="editor">
+      <p></p>
+      <p></p>
+      <p></p>
+<div id="chat"></div>
+<button onclick="herramientacopiar()"> 📥 </button><div id="herramienta" ></div>
+<textarea id="user-input" placeholder="Escribe tu mensaje..."></textarea>
+<button id="enviar" onclick="enviartexto()">Enviar</button>
+<div id="modos" ></div></div>
+<div id="escenah"  >
+<button class="pro" id="sumarpersonaje" onclick="nuevaEscena()">Agregar Escena</button>
+<div id="escenass" >
+<div id="lista-escenas"></div></div></div>
+<div id="personajes"   >
+    <button class="pro" id="sumarpersonaje" onclick="agregarPersonaje()">Agregar Dato</button>
+<div id="listapersonajes" ></div></div>
+<div id="lugares" >
+<p>Para utilizar la inteligencia artificial de Silenos necesita:</p>
+<p>Una API KEY de GOOGLE, puede obtenerla aquí:</p>
+<a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer"  style="padding: 10px 20px; background-color: rgb(0, 0, 0); color: white; text-decoration: none; border-radius: 5px;"> <!-- Estilo en línea para el enlace -->
+ AI Studio de Google.com
+</a><p></p>
+<input type="text" id="apiInput" placeholder="Ingresa tu API Key">
+<button onclick="updateApiKey()">Actualizar</button>
+<p>API Key actual: <span id="apiKeyDisplay">[No definida]</span></p> </div>
+<div id="escena-vista">
+    <textarea id="escena-texto" placeholder="Texto de la escena"></textarea>
+    <div id="drop-zone"   >
+        <img id="imagen-preview" alt="Vista previa de la imagen">
+    <input type="file" id="file-input" accept="image/*, video/mp4, video/webm, image/gif"  ></div>
+<div id="botonesss"   >
+    <button class="botoness" onclick="agregarBoton('transicion')">+ Botón de Transición</button>
+    <button class="botoness" onclick="agregarBoton('accion')">+ Botón de Acción</button></div>
+<div class="lista" > <div id="botones-lista"></div></div>
+</div>
+<video id="hiddenVideoPlayer" style="display:none;"></video>
+<canvas id="hiddenCanvas" style="display:none;"></canvas>
+ 
+<script src="main.js"></script>
+<script src="gemini.js"></script>
+<script src="exportar.js"></script>
+<script src="exportarjuego.js"></script>
+
+</body>
+</html>

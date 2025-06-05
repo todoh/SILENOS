@@ -1,0 +1,836 @@
+/* --- ESTILOS EXISTENTES --- */
+html {
+    scroll-behavior: smooth;
+}
+/* --- Dark Theme --- */
+.dark-theme {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+}
+.dark-theme h2 {
+    background-color: #333333;
+    color: #f0f0f0;
+    border-bottom: 1px solid #444;
+}
+.dark-theme #escena-vista, .dark-theme #lugares, .dark-theme #editor, .dark-theme .personaje, .dark-theme .escena, .dark-theme .frameh {
+    background-color: #2c2c2c;
+    color: #e0e0e0;
+    border-color: #444;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+.dark-theme #chat {
+    background: #252525;
+    border: 1px solid #444;
+}
+.dark-theme #chat p:nth-child(odd) { /* Gemini */
+    background-color: #333;
+    color: #e0e0e0;
+}
+.dark-theme #chat p:nth-child(even) { /* Usuario */
+    background-color: #3a3a3a;
+    color: #e0e0e0;
+}
+.dark-theme #user-input, .dark-theme .personaje textarea, .dark-theme .frameh textarea, .dark-theme #gemini1 {
+    background-color: #333;
+    color: #e0e0e0;
+    border: 1px solid #555;
+}
+.dark-theme button {
+    background-color: #444;
+    color: #e0e0e0;
+    border: 1px solid #666;
+}
+.dark-theme button:hover {
+    background-color: #555;
+}
+.dark-theme .pro {
+    background-color: #00529B; /* Un azul oscuro para botones pro */
+    color: white;
+}
+.dark-theme .imput { /* Input de nombre de escena */
+    background-color: #333;
+    color: #e0e0e0;
+    border: 0px solid #555;
+}
+.dark-theme #guion-literario {
+    background-color: #2c2c2c; /* Fondo principal del guion */
+}
+.dark-theme #indice-capitulos-guion {
+    background-color: #252525; /* Fondo del índice */
+    border-color: #444;
+}
+.dark-theme .titulo-capitulo-indice {
+    background-color: #333;
+    color: #e0e0e0;
+    border-bottom-color: #444;
+}
+.dark-theme .titulo-capitulo-indice:hover {
+    background-color: #3a3a3a;
+}
+.dark-theme .titulo-capitulo-indice.activo {
+    background-color: #00529B; /* Azul para activo */
+}
+.dark-theme #contenido-capitulo-activo input[type="text"], .dark-theme #contenido-capitulo-activo textarea, .dark-theme .capitulo-guion input[type="text"], .dark-theme .capitulo-guion textarea {
+    background-color: #333;
+    color: #e0e0e0;
+    border-color: #555;
+}
+.dark-theme .capitulo-guion {
+    background-color: #3a3a3a; /* Fondo de cada capítulo */
+    border-color: #444;
+}
+.dark-theme .titulo-capitulo-indice-container {
+    border-bottom-color: #444;
+    background-color: #333;
+}
+.dark-theme .titulo-capitulo-indice-container:hover {
+    background-color: #3a3a3a;
+}
+.dark-theme .titulo-capitulo-indice-container.activo-container {
+    background-color: #00529B; /* Azul para activo */
+}
+/* .dark-theme .titulo-capitulo-indice-texto.activo-texto will inherit font-weight: bold */
+.dark-theme .eliminar-capitulo-btn-indice {
+    color: #ff8a80; /* Light red for dark theme */
+    background-color: transparent; /* Ensure it's transparent initially */
+}
+.dark-theme .eliminar-capitulo-btn-indice:hover {
+    background-color: #5a3e3e; /* Darker red background on hover */
+    color: #ff5252;
+}
+.dark-theme #contenido-capitulo-activo .mensaje-placeholder {
+    color: #aaa; /* Lighter placeholder text for dark theme */
+}
+.dark-theme ::-webkit-scrollbar-track { background-color: #2c2c2c; }
+.dark-theme ::-webkit-scrollbar-thumb { background-color: #555; }
+.dark-theme ::-webkit-scrollbar-thumb:hover { background-color: #666; }
+.dark-theme ::-webkit-scrollbar-thumb:active { background-color: #777; }
+
+
+
+::-webkit-scrollbar {
+    width:20px;
+    height: 20px; }
+::-webkit-scrollbar-track {
+    background-color: #f1f1f1;
+    border-radius: 10px;}
+::-webkit-scrollbar-thumb {
+    background-color: #cccccc;
+    border-radius: 10px;
+    transition: background-color 0.3s ease;
+}
+::-webkit-scrollbar-thumb:hover {
+    background-color: #aaaaaa;
+    /* transform: scale(1.1); */ /* Eliminado para un look más simple */
+}
+::-webkit-scrollbar-thumb:active {
+    background-color: #888888;
+}
+
+
+::-webkit-scrollbar-horizontal {
+    height: 8px; }
+::-webkit-scrollbar-vertical {
+
+    width: 8px; /* Ancho de la barra vertical */}
+body input, body textarea {
+    -webkit-autofill: none;  /* Desactiva el autocompletado en algunos navegadores */}
+body {background-color: #f8f9fa; /* Un gris muy claro */
+    color: #333; /* Un gris oscuro para el texto principal */
+    margin: 0;
+    padding: 0;
+    text-align: center;}
+h2 {background-color: black; /* Sin fondo */
+    color:#ffffff; /* Mismo color que el texto principal */
+     padding: 1%;
+    line-height: 1;
+  margin-left: 1%;
+  margin-top: 0.2%;
+    border-radius: 5px;
+    width: 45%;
+    height: 50%;
+    max-height: auto; /* Ajustado para contenido */
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+
+    text-align: left;
+    word-wrap: break-word;
+    border-bottom: 1px solid #eee;} /* Línea sutil para separación */
+#escena-vista {background-color: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Sombra más suave */
+    right: 0%;
+    top: 7.7%;
+    left: 26%;
+    bottom: 0%;
+    padding: 2%;
+    margin: 20px auto;
+    position: absolute;
+    flex: 1;   visibility: hidden; }
+p {background-color: #2e2e5e00;
+    border-radius: 5px; width: 90%;}
+#chat {margin-top: 35%;
+    margin-left: -2%;
+    width: 102%;
+     font-size:small;
+     line-height: 1.4;
+    height: 50%;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    background: #fff;
+    display: flex;
+    flex-direction: column; }
+#chat p { margin: 0;
+    padding: 8px;
+    border-radius: 5px;
+    white-space: pre-line; /* Permite saltos de línea en respuestas */}
+#chat p strong {
+    display: block;
+    margin-bottom: 4px;
+}
+
+#chat p:nth-child(odd) {
+    background-color: #f1f3f5; /* Gris claro para Gemini */
+   color: #333;}
+#chat p:nth-child(even) {
+    background-color: #e9ecef; /* Gris un poco más oscuro para usuario */
+    color: #333;}
+#user-input {
+    margin-left: -2%;
+    width: 93%;
+     height: 20%;
+    padding: 10px;
+    margin-top: 2%;
+    border: 1px solid #ccc;
+    border-radius: 5px;  resize: none; }
+img {max-width: 80%;
+    height: auto;
+    border-radius: 3%;
+    display: block;
+    margin: 20px auto;
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);}
+ul {list-style-type: none;padding: 0;}
+li { margin-bottom: 10px;}
+button {
+    background-color: #e9ecef; /* Gris claro */
+    color: #333; /* Texto oscuro */
+    padding: 12px 20px;
+    border: 1px solid #ced4da; /* Borde sutil */
+    border-radius: 5px;
+    cursor: pointer;
+    font-size:small;
+    transition: background-color 0.2s ease, transform 0.1s ease-in-out;
+    display: inline-block;
+    width: auto;}
+button:hover {background-color:#dee2e6; /* Gris un poco más oscuro al pasar el ratón */ transform: scale(1.02);}
+button:active {transform: scale(0.95);}
+.guardado {margin: 1%;}
+.pro {background-color: #5a6268; color:white; border:none;} /* Botones "pro" un poco más oscuros */
+body { font-family: Arial, sans-serif; display: flex; position: absolute; width: 98%; height: 98%;
+    font-size: 16px; /* Tamaño de fuente base más estándar */
+    overflow: hidden; }
+#opciones {
+position: absolute;
+left: 0%;
+right: 0%;
+top: 0%;
+height: 8%;
+background-color: #ffffff00;
+width: 100%; flex-direction: row;}
+#escenah {   background-color: #77777700;
+    width: 102%;
+right: -4%;
+   margin: 1%;
+   margin-right: -0.7%;
+    position: absolute; top: 8%; bottom: -3%;
+    display: none;
+}
+#ia {   background-color: #77777700;
+    width: 99%;
+right: 0%;
+   margin: 1%;
+   margin-right: -0.7%;
+    position: absolute; top: 9%; bottom: -1%;
+    display: none;
+}
+
+
+#lugares {
+    width: 88%;
+  left: 2%;
+  margin: 0%;
+    position: absolute; top: 10%; bottom: 1%;
+    display: none;    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Sombra muy sutil o ninguna */
+    background-color: #fff; /* Fondo blanco */
+    padding: 5%;
+    flex-direction: column;}
+#lugares a {
+position: relative;
+left: 15%;
+width: 50%;}
+#editor {         position: absolute; top: 10%; left: 0%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); bottom: 0%; /* Sombra más suave */
+    width: 13%;     border-right: 1px solid #ccc;
+    background-color: #fff;     line-height: 2; display: none;}
+#escena-texto { flex: 1; padding: 10px; width: 98%; height: 7%; }
+#escena-texto {width: 96%;     resize: none;height: 55%;   font-size: xx-large;}
+#sumarpersonaje {
+position: fixed; display: flex;
+right: 2dvw;
+transform: translateY(-2dvh);
+top:10dvh;
+width: 10dvw;
+height: auto;
+margin: 0%; z-index:   1000 ;}
+.nombreh {
+    left: 0%;
+    top: 45%;
+    width:98% !important;
+position: absolute;}
+
+#personajes {
+    background-color: transparent;
+    width: 98%;
+    margin: 0%;
+    position: absolute;
+    top: 9%;
+    height: calc(100% - 9%);
+    display: none;
+   /* Las filas se ajustan automáticamente al tamaño de los elementos */
+  /* Espacio entre los elementos */
+    align-items: flex-start;
+}
+
+#listapersonajes {position: absolute;
+left: 2%;
+top: 0%;
+display: grid;
+ line-height: normal;
+overflow-y: scroll;
+height: 99%; padding: 1%; padding-left: 0%;
+width:100%;      gap:1%;
+grid-template-columns: repeat(6, 1fr);
+grid-auto-rows: 40dvh; }
+
+
+.personaje {  width: 100%;  border-radius: 2%;
+    margin-top: 0.5%;
+    margin-bottom: 0.5%;
+    border:1px solid #e0e0e0; /* Borde sutil */
+    height: 39dvh;
+    position: relative; background-color: #fff;      box-sizing: border-box;  box-shadow: 0 1px 3px rgba(0,0,0,0.05); bottom: 0%; padding: 0%; }
+
+.personaje button {
+position: absolute;
+left: 1%;
+top: 1%;
+width: auto;
+height: auto;}
+.personaje textarea {
+    width: 98%; /* Hace que el textarea ocupe todo el ancho disponible */
+    height: 45%; /* Establece una altura específica para el textarea */
+    margin-bottom: 10px; /* Espacio entre el textarea y el siguiente elemento */
+    border: 2px solid #ccc; /* Borde suave */
+    border-radius: 5px; /* Bordes redondeados */
+    font-size:  large ;
+   resize: none;
+   right: 0%;
+position: absolute;
+bottom: -5%;}
+.personaje img {
+    margin: 0%;
+    position: absolute; /* Posiciona la imagen dentro de su contenedor */
+    left: 0%;  /* Ajusta la distancia desde el borde izquierdo */
+    top: 0%;  /* Ajusta la distancia desde la parte superior */
+    height: 45% !important ;  /* Asegura que la imagen no sobresalga */
+    width: 100% !important;  /* Asegura que la imagen no sobresalga */
+    max-width: 100% !important;   /* Asegura que la imagen mantenga su proporción sin recortarse */}
+.escena { cursor: pointer; padding: 5px; border: 0px solid #8a8a8a; margin: 5px 0; margin-bottom: 1%;
+ margin-right: 0%;  margin-left: 0%;   box-shadow: 0 2px 5px rgba(0,0,0,0.1);  /* Sombra más suave */
+    border-radius: 2%;    background-color: #fff;
+    height: 42dvh;
+     /* height: 42dvh;  */
+
+padding-left: 1%;}
+#drop-zone { position: absolute;
+border: 2px dashed #ccc; padding: 20px; /* Borde discontinuo más claro */
+display: flex; bottom: 3%;
+top: 58%;
+text-align: center; margin-top: 10px;
+left: 2%;
+right: 50%;}
+#imagen-preview {
+  transform: translateX(25%);
+max-width: 65%;
+    height:95%; margin-top: 10px; display: none; }
+.botoness {  margin-top: 1%;  height: auto;  margin: 1%; }
+.boton {box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra más suave */
+    border-radius: 6%; border: 1px solid #eee; /* Borde sutil */
+    width: 100%; height: 18%; margin: 1%;  margin-top: 3%; cursor: pointer; background-color: rgb(255, 255, 255);
+    justify-content: center;
+    align-items: center;
+    text-align: center;}
+#botonesss {position: absolute;
+display: flex;
+left: 52%;
+right: 5%;
+height: auto;
+
+top: 55%;}
+#escenass {position: absolute;
+ bottom: 0%;
+width: 96%; left: -0.7%;
+ background-color: #ff606000;
+  height: 100%;
+ overflow-y:scroll; padding-left: 0%; padding-right: 1%;}
+#file-input {
+position: absolute;
+left: 2%;
+top: 5%;
+z-index: 100;
+font-size: large;}
+
+
+
+
+#menu {position: absolute;
+top: 15%;
+margin: 0%;
+left: 49%;
+flex-direction: row;
+line-height: 1.5;}
+.lista {   position: absolute;
+    display: flex;
+    top: 65%;
+    left:55%;
+    width: 90%;
+    height: 30%;
+    margin: 2%;}
+.imput {width: 99%;
+    height: 99%;
+    border: 0px solid #b3b3b3;
+    border-radius: 5px; color: white;
+    outline: none; background-color: black;
+    font-size: x-large; margin: 0%;
+  margin-bottom: 1%;}
+.ide {
+    top: 1%; left: 104%;
+    position: absolute;
+    padding: 1%;
+    width: auto;
+    margin: 0;
+    margin-right: 4%;}
+.ideframe { padding: 1%;
+    top: 1%; left: 110%;
+    position: absolute;
+    width: auto;
+    margin: 0%;
+    margin-right: 1%;width: 8dvw; }
+
+    .ideframeh { padding: 1%; position: absolute;
+    width: auto;z-index: 100;
+    margin: 0;
+    margin-right: 1%;}
+.frameh textarea {
+    width: 95%; position: absolute;
+    bottom: 0%; top: 51%; left: 0%;
+    padding: 2%;
+
+    border-radius: 5px;
+    border: 2px solid #ccc;
+    resize: none;
+    font-family: Arial, sans-serif;}
+
+    .frameh input[type="file"] {
+   opacity: 0;
+}
+.custom-label {
+    z-index: 100;
+    background-color: transparent; /* Sin fondo */
+    color: #555; /* Color de icono */
+    padding: 5px;
+    cursor: pointer;
+    display: flex;
+    border-radius: 5px;
+    height: 8%;
+    top: 13%;
+width: 13%;
+left: 0%;
+position: absolute;
+}
+.custom-label:hover {
+    color: #000; /* Color al pasar el ratón */
+}
+
+.frameh img {max-width: 100%; position: absolute;
+    max-height: 53%;
+    top: -4.5%;
+   aspect-ratio: 1 / 1; padding: 0%;
+    border-radius: 5px; margin: 0%;
+    display: flex; /* Ocultar la imagen por defecto */}
+.frameh {top: 0%;
+    height: 97%;
+    aspect-ratio: 1.2 / 1;
+    position: relative;
+    display: inline-flex;
+ margin-left: 0.5%; margin-right: 0.5%;
+ background-color: #fff;  /* Fondo blanco */
+    width: auto;    box-shadow: 0 1px 3px rgba(0,0,0,0.05); /* Sombra muy sutil */
+    text-align: center;      flex-shrink: 0;}
+
+    .framehtxt {padding-left: 10%; }
+
+.contenedor-frames {
+    display: flex;           /* Usa flexbox para alinear los frames horizontalmente */
+    flex-direction: row;     /* Alinea los elementos horizontalmente */
+    overflow-x: scroll !important ;      /* Habilita la barra de desplazamiento horizontal */
+    overflow-y: hidden;      /* No permite el desplazamiento vertical */
+    position: relative;      /* Asegura que el contenedor tenga un contexto para el posicionamiento */
+    top: 0%;
+    bottom: 10%;
+    width:100%;
+    height: 90%;
+    flex-wrap: nowrap !important;        /* Evita que los elementos se envuelvan */
+    /* Altura del contenedor */
+    background-color: #ff606000; /* Color de fondo del contenedor */
+    padding: 0; white-space: nowrap !important;         /* Espaciado arriba y abajo del contenedor */}
+#enviar {
+    top: -2%;
+    position: relative;}
+ .detalle {
+position: relative;
+top: 0%;
+height: 9%;
+left: 0%;
+width: 60%;
+background-color: #ffffff00;
+justify-content: center;
+align-items: center;
+text-align: center;}
+ #apiInput {margin: 2%;height: 10%;}
+ #file-load {display: none;}
+ #game {display: none;}
+#creasion {position: absolute;
+top: 1%;left: 2%;}
+#chateo {position: absolute;
+    top: 10%;left: 2%;}
+#geminimente {
+    /* align-items: column; */ /* No es una propiedad válida, flex-direction lo maneja */
+    flex-direction: column;
+    overflow: auto; padding: 3%; width: 70%; top: 10%; bottom: 0%; right: 0%; position: absolute; display: flex; white-space: pre-wrap;}
+ #gemini1 {position: absolute;
+    top: 18%;left: 0%; width: 20%;
+    bottom:  0%;
+    resize: none;
+}
+
+#guion-layout {
+    display: flex;
+    gap: 20px; /* Space between index and content */
+    height: 100%; /* Adjust height for title and button */
+    margin-top: 15px;
+}
+
+#indice-capitulos-guion {
+    width: 30%; /* Width for the chapter list */
+    overflow-y: auto;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+#contenido-capitulo-activo {
+    width: 70%; /* Width for the chapter content */
+    display: flex; /* To center initial message or display chapter */
+    flex-direction: column;
+
+    gap: 10px;
+}
+
+.titulo-capitulo-indice-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 8px;
+    border-bottom: 1px solid #eee;
+    background-color: #fff;
+    margin-bottom: 5px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+.titulo-capitulo-indice-container:hover {
+    background-color: #e9efff;
+}
+.titulo-capitulo-indice-container.activo-container {
+    background-color: #cce0ff; /* A light blue for active */
+}
+
+.titulo-capitulo-indice-texto {
+    flex-grow: 1;
+    cursor: pointer;
+}
+.titulo-capitulo-indice-texto.activo-texto {
+    font-weight: bold;
+}
+
+.eliminar-capitulo-btn-indice {
+    background-color: transparent;
+    color: #000000;
+    border: none;
+    border-radius: 50%;
+    padding: 4px 8px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    margin-left: 8px;
+    line-height: 1;
+}
+.eliminar-capitulo-btn-indice:hover {
+    background-color: #ffdddd;
+    color: #000000;
+}
+
+#guion-literario {
+    display: none; /* Initially hidden */
+    position: absolute;
+    top: 9%;
+    left: 1%;
+    right: 1%;
+    bottom: 1%;
+    background-color: #e9e9e900; /* Light gray background */
+    padding: 20px;
+    overflow-y: auto;
+    border: 0px solid #ccc;
+    border-radius: 8px;
+    flex-direction: column; /* To stack title, button, and list */
+    gap: 15px; /* Space between elements */
+}
+
+#guion-literario h2 {
+    width: auto; /* Override default h2 width */
+    background-color: #333;
+    color: white;
+    padding: 12px;
+    margin-bottom: 10px; /* Remove default h2 margin-top/left */
+    margin-left: 0;
+    margin-top: 0;
+    border-radius: 5px;
+    text-align: center; /* Center the title */
+    border-bottom: none; /* Remove the h2 border-bottom if not needed here */
+}
+
+#lista-capitulos-guion {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Space between chapters */
+}
+
+.capitulo-guion {
+    background-color: #ffffff;
+    border: 1px solid #d1d1d1;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.capitulo-guion input[type="text"] {
+    width: calc(100% - 16px); /* Adjust for padding */
+    margin-bottom: 10px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+#contenido-capitulo-activo input[type="text"] {
+    width: calc(100% - 16px); /* Adjust for padding */
+    margin-bottom: 10px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.capitulo-guion textarea {
+    width: calc(100% - 16px); /* Adjust for padding */
+    height: 200px; /* Default height, can be resized */
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    resize: vertical;
+    font-family: Arial, sans-serif;
+    font-size: 1em;
+    line-height: 1.5;
+}
+
+#contenido-capitulo-activo textarea {
+    width: calc(100% - 16px); /* Adjust for padding */
+    flex-grow: 1; /* Allow textarea to take available space */
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    resize: vertical;
+    font-family: Arial, sans-serif;
+    font-size: 1em;
+    line-height: 1.5;
+}
+
+.capitulo-guion button { /* Keep style for other potential buttons in .capitulo-guion */
+    background-color: #d9534f;
+    color: white;
+    /* margin-top: 10px; */ /* Removed as the main delete button is gone */
+    padding: 8px 15px;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+}
+.capitulo-guion button:hover, #contenido-capitulo-activo button:hover {
+    background-color: #c9302c;
+} /* This :hover might not be needed if no buttons remain in #contenido-capitulo-activo */
+#contenido-capitulo-activo .mensaje-placeholder {
+    text-align: center;
+    color: #777;
+    margin-top: 50px;
+    font-style: italic;
+}
+.capitulo-guion button:hover {
+    background-color: #c9302c;
+}
+
+#sumar-capitulo-guion {
+    position: fixed;
+    display: flex;
+    right: 2dvw;
+    transform: translateY(-2dvh);
+    top: 10dvh;
+    width: 10dvw; /* Ancho similar al de #sumarpersonaje */
+    height: auto;
+    margin: 0%;
+    z-index: 1000; /* Mismo z-index que #sumarpersonaje */
+    justify-content: center; /* Centrar texto si envuelve */
+    align-items: center;    /* Centrar texto verticalmente */
+}
+
+/* styles.css - Adiciones para la visualización en geminimente */
+
+#geminimente {
+    /* Estilos existentes de #geminimente se mantienen si son adecuados, 
+       como overflow, width, position, etc. */
+    white-space: normal; /* Permite el ajuste de línea normal para el contenido estructurado */
+    text-align: left;    /* Alinea el texto a la izquierda para mejor legibilidad */
+    border: 1px solid #ccc; /* Añade un borde para distinguirlo */
+    background-color: #f9f9f9; /* Fondo claro */
+    padding: 15px; /* Ajusta el padding existente si es necesario */
+    height: calc(100% - 18% - 20px); /* Ajusta la altura para que quepa debajo de los botones y textarea */
+    overflow-y: auto; /* Asegura el scroll vertical si el contenido es largo */
+}
+
+#geminimente h3 { /* Título de la historia */
+    text-align: center;
+    margin-top: 0; /* Quita margen superior si ya hay padding en #geminimente */
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 1.5em; /* Tamaño adecuado para el título principal */
+}
+
+.gemini-escena {
+    border: 1px solid #ddd;
+    background-color: #fff;
+    padding: 15px;
+    margin-bottom: 20px; /* Aumenta el espacio entre escenas */
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.gemini-escena h4 { /* Título de la escena */
+    margin-top: 0;
+    margin-bottom: 15px; /* Aumenta espacio después del título de escena */
+    color: #444; /* Un poco más oscuro para el título de escena */
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px; /* Más espacio para la línea divisoria */
+    font-size: 1.2em;
+}
+
+.gemini-frame {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-left: 4px solid #007bff; /* Borde izquierdo distintivo */
+    background-color: #fdfdfd; /* Fondo muy sutil para el frame */
+    border-radius: 3px;
+}
+
+.gemini-frame p {
+    margin-top: 0; /* Quita margen superior del primer párrafo */
+    margin-bottom: 8px; /* Espacio entre párrafos dentro del frame */
+    line-height: 1.6;
+    color: #333;
+}
+.gemini-frame p:last-child {
+    margin-bottom: 0; /* Quita margen inferior del último párrafo del frame */
+}
+
+.gemini-frame p strong { /* Indicador "Frame X:" */
+    color: #0056b3; /* Azul más oscuro para el strong */
+    display: block; /* Hace que el "Frame X:" esté en su propia línea */
+    margin-bottom: 5px;
+}
+
+/* Ajustes para el tema oscuro */
+.dark-theme #geminimente {
+    border-color: #444;
+    background-color: #22272e; /* Fondo oscuro para geminimente */
+    color: #c9d1d9;
+}
+
+.dark-theme #geminimente h3 {
+    color: #adbac7; /* Texto más claro para el título en tema oscuro */
+}
+
+.dark-theme .gemini-escena {
+    border-color: #484f58; /* Borde más oscuro */
+    background-color: #2d333b; /* Fondo de escena más oscuro */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.dark-theme .gemini-escena h4 {
+    color: #909dab; /* Color de título de escena */
+    border-bottom-color: #484f58;
+}
+
+.dark-theme .gemini-frame {
+    border-left-color: #58a6ff; /* Azul más brillante para el borde en tema oscuro */
+    background-color: #323842; /* Fondo de frame más oscuro */
+}
+.dark-theme .gemini-frame p {
+    color: #b1bac4; /* Color de texto de frame */
+}
+.dark-theme .gemini-frame p strong {
+    color: #58a6ff; /* Color del strong del frame */
+}
+
+/* Asegurarse que el textarea y botones en #ia no se solapen con #geminimente */
+#ia #gemini1 { /* Textarea para la idea de la historia */
+    height: 15%; /* Ajustar altura si es necesario */
+    margin-bottom: 10px;
+}
+#ia #creasion, #ia #chateo {
+    margin-bottom: 10px; /* Espacio debajo de los contenedores de botones */
+}
+#ia #geminimente {
+    /* La altura se calcula para llenar el espacio restante, 
+       puede necesitar ajustes basados en la altura de #gemini1 y los botones */
+    height: calc(100% - (altura_de_gemini1 + altura_de_botones_creasion_chateo + márgenes_totales));
+    /* Ejemplo: si gemini1 es 15%, creasion+chateo son 10% (5% cada uno aprox con margen), márgenes 20px:
+       height: calc(100% - 15% - 10% - 40px); 
+       Reemplaza esto con el cálculo correcto para tu layout específico.
+       El cálculo anterior en CSS para #geminimente (height: calc(100% - 18% - 20px);)
+       es una aproximación, ajusta los porcentajes/píxeles según sea necesario.
+    */
+}
+
+
