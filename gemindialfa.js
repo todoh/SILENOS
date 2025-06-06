@@ -69,46 +69,22 @@ async function llamarIAConFeedback(prompt, etapaDescriptiva, esJsonEsperado = tr
         const replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text || (esJsonEsperado ? "{}" : "");
 
         if (esJsonEsperado) {
-            // === INICIO DE LA CORRECCIÓN ===
-            // Estrategia de limpieza mejorada para la respuesta de la IA.
-            
-            let textoJsonLimpio = replyText;
-
-            // 1. Busca un bloque de código JSON envuelto en markdown ```json ... ```
-            const match = textoJsonLimpio.match(/```json\s*([\s\S]*?)\s*```/);
-            if (match && match[1]) {
-                textoJsonLimpio = match[1];
-            } else {
-                // 2. Si no hay markdown, busca el primer '{' y el último '}' como antes, pero como fallback.
-                const inicioJson = textoJsonLimpio.indexOf('{');
-                const finJson = textoJsonLimpio.lastIndexOf('}');
-                if (inicioJson !== -1 && finJson !== -1 && finJson > inicioJson) {
-                    textoJsonLimpio = textoJsonLimpio.substring(inicioJson, finJson + 1);
-                } else {
-                    // Si ni siquiera encuentra llaves, es un error claro.
-                    throw new Error(`La respuesta de la IA para ${etapaDescriptiva} no parece contener un objeto JSON.`);
-                }
-            }
-
-            // 3. Intenta analizar el JSON, y si falla, muestra un error detallado.
-            try {
+            const inicioJson = replyText.indexOf('{');
+            const finJson = replyText.lastIndexOf('}');
+            if (inicioJson !== -1 && finJson !== -1 && finJson > inicioJson) {
+                const textoJsonLimpio = replyText.substring(inicioJson, finJson + 1);
                 return JSON.parse(textoJsonLimpio);
-            } catch (parseError) {
-                // Este error es crucial para depurar. Lo lanzamos con más contexto.
-                console.error("Texto que falló el parseo JSON:", textoJsonLimpio);
-                throw new Error(`Error al analizar el JSON de la IA para ${etapaDescriptiva}. Detalles: ${parseError.message}`);
             }
-            // === FIN DE LA CORRECCIÓN ===
-
+            throw new Error(`La respuesta de la IA para ${etapaDescriptiva} no fue un JSON válido.`);
         }
-        return replyText; // Para respuestas que no son JSON
+        return replyText;
 
     } catch (error) {
         if (chatDiv) {
             chatDiv.innerHTML += `<p><strong>Error en ${etapaDescriptiva}:</strong> ${error.message}</p>`;
             chatDiv.scrollTop = chatDiv.scrollHeight;
         }
-        throw error; // Propaga el error para que la función principal lo capture
+        throw error;
     }
 }
 
@@ -163,13 +139,13 @@ ${contextoDeDatos}
 
 **Tarea:**
 1.  Genera un título creativo y general para esta historia.
-2.  Basado en la idea del usuario y OBLIGATORIAMENTE en el contexto de los "Datos Fundamentales" proporcionados arriba (si los hay), escribe un planteamiento general extenso y detallado. Tu misión es tejer TODOS los datos en la trama principal. Si la idea inicial ya los menciona, expándelos. Si no, introdúcelos tú.
+2.  Basado en la idea del usuario y OBLIGATORIAMENTE en el contexto de los "Datos Fundamentales" proporcionados arriba (si los hay), escribe un planteamiento general **muy extenso y muy detallado**. Este planteamiento debe ser rico en descripciones, presentar a los personajes principales, establecer el conflicto y el tono de la historia. Debe tener una longitud de varios párrafos, como mínimo 400 palabras.
 
 **Formato de Respuesta:**
 Responde ÚNICAMENTE con un objeto JSON válido con la siguiente estructura. No incluyas ningún texto explicativo antes o después del JSON.
 {
   "titulo_historia_sugerido": "El título que generaste",
-  "planteamiento_general_historia": "El texto extenso del planteamiento general."
+  "planteamiento_general_historia": "El texto muy extenso y detallado del planteamiento general."
 }`;
 
         const respuestaPaso1 = await llamarIAConFeedback(promptPaso1, "Paso 1: Planteamiento General y Título");
@@ -196,12 +172,12 @@ Planteamiento General de la Historia:
 ${planteamientoGeneralGlobal}
 
 Tarea:
-Divide el "Planteamiento General de la Historia" en exactamente ${window.cantidaddeescenas} resúmenes de escena. Cada resumen debe describir brevemente qué sucede en esa escena, manteniendo la coherencia con el planteamiento general.
+Divide el "Planteamiento General de la Historia" en exactamente ${window.cantidaddeescenas} resúmenes de escena. Cada resumen debe ser un **párrafo completo y detallado** que describa en profundidad los eventos, personajes clave y el ambiente de esa escena. No debe ser una simple frase, sino una base sólida para su posterior desarrollo.
 
 Responde ÚNICAMENTE con un objeto JSON válido con la siguiente estructura:
 {
   "resumen_por_escenas": [
-    { "resumen_escena": "Resumen de la Escena 1." } 
+    { "resumen_escena": "Resumen detallado y completo de la Escena 1." } 
   ]
 }
 Asegúrate de que haya exactamente ${window.cantidaddeescenas} objetos en el array "resumen_por_escenas".`;

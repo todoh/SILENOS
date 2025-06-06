@@ -1,7 +1,6 @@
 let apiKey = ""; // Reemplaza con tu clave real o asegúrate que se carga desde otro sitio.
 // Es importante que 'apiKey' y 'ultimaHistoriaGeneradaJson' sean accesibles por este script.
 // Si 'ultimaHistoriaGeneradaJson' se define en 'geminialfa.js', asegúrate que 'geminialfa.js' se carga antes o que la variable es global.
-// Por simplicidad, asumiré que 'ultimaHistoriaGeneradaJson' es accesible globalmente.
 
 // Helper function for delay
 function sleep(ms) {
@@ -51,13 +50,12 @@ function updateApiKey() {
     }
 }
 
-
 async function desarrollarFramesDesdeGeminimente(nombreBaseHTML) {
     const numEscenasParaCrear = parseInt(document.getElementById("cantidadescenas").value) || 0;
-    const numFramesPorEscenaParaCrear = parseInt(document.getElementById("cantidadeframes").value) || 0;
+    // La cantidad de frames del input ya no se usa para la creación inicial, la IA los definirá.
 
     if (typeof chatDiv !== 'undefined') {
-        chatDiv.innerHTML += `<p><strong>Info Ejecución:</strong> Creando ${numEscenasParaCrear} escenas, con ${numFramesPorEscenaParaCrear} frames cada una.</p>`;
+        chatDiv.innerHTML += `<p><strong>Info Ejecución:</strong> Iniciando desarrollo de historia. Se crearán hasta ${numEscenasParaCrear} escenas basadas en la historia de la IA.</p>`;
     }
 
     if (!ultimaHistoriaGeneradaJson || !ultimaHistoriaGeneradaJson.historia || ultimaHistoriaGeneradaJson.historia.length === 0) {
@@ -68,13 +66,11 @@ async function desarrollarFramesDesdeGeminimente(nombreBaseHTML) {
         return;
     }
 
-    const instrucciones = "Desarrolla el contenido del frame de manera coherente y detallada, basándote en la siguiente información de la historia. Responde solo con el texto del frame, sin títulos o introducciones.";
-
     let nombreBaseReal = nombreBaseHTML;
     if (ultimaHistoriaGeneradaJson && ultimaHistoriaGeneradaJson.titulo_historia) {
         nombreBaseReal = ultimaHistoriaGeneradaJson.titulo_historia;
         if (typeof chatDiv !== 'undefined') {
-            chatDiv.innerHTML += `<p><strong>Info:</strong> Usando el título de la historia de la IA como nombre base: "${nombreBaseReal}".</p>`;
+             chatDiv.innerHTML += `<p><strong>Info:</strong> Usando el título de la historia de la IA como nombre base: "${nombreBaseReal}".</p>`;
         }
     } else {
         if (typeof chatDiv !== 'undefined') {
@@ -82,144 +78,164 @@ async function desarrollarFramesDesdeGeminimente(nombreBaseHTML) {
         }
     }
 
+    // PASO 1: Crear solo las escenas, sin frames (pasando 0 como cantidad de frames).
     if (typeof crearEscenasAutomaticamente === 'function') {
-        crearEscenasAutomaticamente(nombreBaseReal, numEscenasParaCrear, numFramesPorEscenaParaCrear);
+        // Se asegura que la cantidad de escenas a crear no exceda las disponibles en el JSON
+        const escenasDisponiblesEnJson = ultimaHistoriaGeneradaJson.historia.length;
+        const escenasACrearReal = Math.min(numEscenasParaCrear, escenasDisponiblesEnJson);
+
+        if (numEscenasParaCrear > escenasDisponiblesEnJson && typeof chatDiv !== 'undefined') {
+            chatDiv.innerHTML += `<p><strong>Advertencia:</strong> Se solicitaron ${numEscenasParaCrear} escenas, pero la historia de la IA solo tiene ${escenasDisponiblesEnJson}. Se crearán ${escenasACrearReal} escenas.</p>`;
+        }
+        crearEscenasAutomaticamente(nombreBaseReal, escenasACrearReal, 0); 
     } else {
         alert("Error: La función crearEscenasAutomaticamente no está disponible.");
+        if (typeof chatDiv !== 'undefined') chatDiv.innerHTML += "<p><strong>Error Crítico:</strong> La función `crearEscenasAutomaticamente` no se encontró.</p>";
         return;
     }
     
+    // Obtener los IDs de las escenas recién creadas para poder referenciarlas
     const idsEscenasCreadasEnPrincipal = Object.keys(escenas)
                                           .filter(id => id.startsWith(nombreBaseReal)) 
                                           .sort(); 
 
-    for (let i = 0; i < numEscenasParaCrear && i < ultimaHistoriaGeneradaJson.historia.length && i < idsEscenasCreadasEnPrincipal.length; i++) {
-        const idEscenaPrincipal = idsEscenasCreadasEnPrincipal[i]; 
+    // Bucle principal: Itera sobre cada ESCENA del plan original de la IA (limitado por idsEscenasCreadasEnPrincipal)
+    for (let i = 0; i < idsEscenasCreadasEnPrincipal.length; i++) {
+        const idEscenaPrincipal = idsEscenasCreadasEnPrincipal[i];
+        // Encontrar la data original correspondiente al idEscenaPrincipal puede ser un poco más complejo
+        // si los números no coinciden exactamente. Asumimos por ahora que el orden se mantiene.
         const escenaOriginalData = ultimaHistoriaGeneradaJson.historia[i];
 
-        if (escenas[idEscenaPrincipal] && escenaOriginalData && escenaOriginalData.titulo_escena) {
-            const numeroEscenaFormateado = String(i + 1).padStart(3, '0');
-            escenas[idEscenaPrincipal].texto = `${nombreBaseReal} ${numeroEscenaFormateado} - ${escenaOriginalData.titulo_escena}`;
-            
-            if (typeof chatDiv !== 'undefined') {
-                chatDiv.innerHTML += `<p><strong>Info:</strong> Título para la escena principal '${idEscenaPrincipal}' actualizado a: "${escenas[idEscenaPrincipal].texto}".</p>`;
-            }
-        } else {
-            if (escenas[idEscenaPrincipal]){ 
-                 escenas[idEscenaPrincipal].texto = idEscenaPrincipal; 
-            }
-            if (typeof chatDiv !== 'undefined') {
-                chatDiv.innerHTML += `<p><strong>Advertencia:</strong> No se encontró título en el JSON para la escena original en el índice ${i} (para '${idEscenaPrincipal}'). Se usará el ID como nombre si no hay otro texto.</p>`;
-            }
-        }
-    }
-    
-    let escenasProcesadasCount = 0;
-
-    for (let i = 0; i < numEscenasParaCrear; i++) {
-        if (i >= ultimaHistoriaGeneradaJson.historia.length || i >= idsEscenasCreadasEnPrincipal.length) {
-            if (typeof chatDiv !== 'undefined') {
-                 chatDiv.innerHTML += `<p><strong>Info:</strong> No hay más datos en la historia original JSON para procesar (escena ${i+1}), o no se creó la escena correspondiente en la estructura principal.</p>`;
-            }
-            break; 
-        }
-
-        const idEscenaPrincipal = idsEscenasCreadasEnPrincipal[i];
-        const escenaOriginalData = ultimaHistoriaGeneradaJson.historia[i]; 
-
-        const nombreEscenaParaLog = escenas[idEscenaPrincipal].texto || idEscenaPrincipal;
-
-        if (!escenaOriginalData || !escenaOriginalData.frames) {
-            console.warn(`Faltan datos originales (o frames) para la escena ${i+1} del JSON (esperado para ${idEscenaPrincipal}).`);
-             if (typeof chatDiv !== 'undefined') {
-                chatDiv.innerHTML += `<p><strong>Advertencia:</strong> Faltan datos en el JSON para la escena original en el índice ${i} (correspondiente a '${nombreEscenaParaLog}').</p>`;
-            }
-            if(escenas[idEscenaPrincipal] && escenas[idEscenaPrincipal].frames) {
-                for (let k=0; k < numFramesPorEscenaParaCrear; k++){
-                    if(escenas[idEscenaPrincipal].frames[k]){
-                         escenas[idEscenaPrincipal].frames[k].texto = `(Contenido no definido en la historia original para este frame ${k+1})`;
-                    }
-                }
-            }
-            continue;
+        if (!escenaOriginalData) { // Si no hay más datos en el JSON de la IA, aunque se hayan creado escenas
+            if (typeof chatDiv !== 'undefined') chatDiv.innerHTML += `<p><strong>Info:</strong> No hay más datos en el JSON de la IA para la escena ${i+1} ('${idEscenaPrincipal}').</p>`;
+            continue; 
         }
         
+        // Actualizar el título de la escena en la UI de Silenos
+        if (escenas[idEscenaPrincipal]) {
+            escenas[idEscenaPrincipal].texto = `${nombreBaseReal} ${String(i + 1).padStart(3, '0')} - ${escenaOriginalData.titulo_escena}`;
+        } else {
+            if (typeof chatDiv !== 'undefined') chatDiv.innerHTML += `<p><strong>Error Interno:</strong> La escena con ID '${idEscenaPrincipal}' no se encontró en la estructura 'escenas' de Silenos.</p>`;
+            continue;
+        }
+
+
         if (typeof chatDiv !== 'undefined') {
-            chatDiv.innerHTML += `<p><strong>Procesando Escena:</strong> "${nombreEscenaParaLog}" para la estructura principal...</p>`;
+            chatDiv.innerHTML += `<p><strong>Procesando Escena:</strong> "${escenas[idEscenaPrincipal].texto}"</p>`;
             chatDiv.scrollTop = chatDiv.scrollHeight;
         }
 
-        for (let j = 0; j < numFramesPorEscenaParaCrear; j++) {
-            if (!escenas[idEscenaPrincipal] || !escenas[idEscenaPrincipal].frames || !escenas[idEscenaPrincipal].frames[j]) {
-                console.warn(`El frame ${j+1} no existe en la estructura principal para la escena ${idEscenaPrincipal}. Esto no debería ocurrir si crearEscenasAutomaticamente funcionó bien.`);
-                 if (typeof chatDiv !== 'undefined') {
-                    chatDiv.innerHTML += `<p><strong>Advertencia interna:</strong> El frame ${j+1} no existe en la estructura principal para "${nombreEscenaParaLog}". Se omite.</p>`;
-                }
-                continue;
+        if (!escenaOriginalData.frames || escenaOriginalData.frames.length === 0) {
+            if (typeof chatDiv !== 'undefined') chatDiv.innerHTML += `<p><strong>Info:</strong> La escena "${escenaOriginalData.titulo_escena}" no tenía frames en el plan original de la IA. Se deja vacía.</p>`;
+            // Aunque la escena original no tenga frames, la escena en Silenos (escenas[idEscenaPrincipal]) ya existe vacía.
+            // Aseguramos que el array de frames exista para evitar errores posteriores.
+            if (escenas[idEscenaPrincipal] && !escenas[idEscenaPrincipal].frames) {
+                escenas[idEscenaPrincipal].frames = [];
             }
+            continue;
+        }
 
-            if (j >= escenaOriginalData.frames.length) {
-                escenas[idEscenaPrincipal].frames[j].texto = `(Frame ${j+1} creado según solicitud, pero sin datos en la historia original de la IA)`;
-                if (typeof chatDiv !== 'undefined') {
-                    chatDiv.innerHTML += `<p><strong>Info:</strong> Frame ${j+1} para "${nombreEscenaParaLog}" no tenía datos en el JSON original de IA. Se dejó un marcador.</p>`;
-                }
-                // Actualizar UI y pausar incluso para frames sin datos de IA
-                if (typeof actualizarLista === 'function') {
-                    actualizarLista();
-                }
-                await sleep(1350);
-                continue;
-            }
-
+        // Bucle secundario: Itera sobre cada FRAME del plan original de la IA para una escena dada
+        for (let j = 0; j < escenaOriginalData.frames.length; j++) {
             const frameOriginalData = escenaOriginalData.frames[j];
-            const contenidoFrameOriginal = frameOriginalData.contenido;
+            
+            if (typeof chatDiv !== 'undefined') {
+                chatDiv.innerHTML += `<p><strong>Enviando a IA:</strong> Desarrollar punto clave ${j+1} de la escena ("${escenaOriginalData.titulo_escena}")...</p>`;
+                chatDiv.scrollTop = chatDiv.scrollHeight;
+            }
 
-            const contextoHistoria = `
+            const promptDesarrollo = `
 Contexto General de la Historia: ${ultimaHistoriaGeneradaJson.titulo_historia || 'N/A'}
 Escena Actual (del plan original): "${escenaOriginalData.titulo_escena || `Escena ${i+1}`}"
-Frame Actual (del plan original - número ${j+1}): "${contenidoFrameOriginal || 'Sin contenido inicial'}"
-Tarea: Desarrolla detalladamente el contenido para este frame.`;
+Contenido del Frame Original a Desarrollar: "${frameOriginalData.contenido || 'Sin contenido inicial'}"
 
-            const textoEnviar = `${instrucciones}\n\n${contextoHistoria}`;
+Tarea:
+1. Desarrolla y expande el "Contenido del Frame Original a Desarrollar" de manera coherente y detallada, manteniendo el estilo y tono de la historia.
+2. Una vez desarrollado, divide el contenido que has generado en una secuencia lógica de puntos clave o sub-frames. Tú decides el número de sub-frames necesarios para presentar la información de forma clara y secuencial.
+3. Responde ÚNICAMENTE con un objeto JSON válido. No incluyas ningún texto explicativo, introductorio, ni marcadores de código como \`\`\`json antes o después del JSON.
+La estructura exacta del JSON debe ser:
+{
+  "nuevos_frames_desarrollados": [
+    { "texto_sub_frame": "Texto completo del primer sub-frame desarrollado." },
+    { "texto_sub_frame": "Texto completo del segundo sub-frame desarrollado." }
+  ]
+}`;
 
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: textoEnviar }] }] })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: promptDesarrollo }] }] })
                 });
-                const data = await response.json();
-                const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || `Texto no generado para Escena "${nombreEscenaParaLog}", Frame ${j + 1}.`;
 
-                escenas[idEscenaPrincipal].frames[j].texto = reply; 
+                if (!response.ok) {
+                    const errorBody = await response.text(); // Intenta obtener más detalles del error
+                    throw new Error(`Error de la API: ${response.status} ${response.statusText}. Cuerpo: ${errorBody}`);
+                }
                 
-                if (typeof chatDiv !== 'undefined') {
-                    chatDiv.innerHTML += `<p><strong>Frame ${j + 1} ("${nombreEscenaParaLog}") desarrollado:</strong><br>${reply.substring(0,100)}...</p>`;
-                    chatDiv.scrollTop = chatDiv.scrollHeight;
+                const data = await response.json();
+                const replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (!replyText) throw new Error("La respuesta de la IA estaba vacía o no tenía la estructura esperada.");
+
+                try {
+                    const respuestaJson = JSON.parse(replyText);
+                    const nuevosFrames = respuestaJson.nuevos_frames_desarrollados;
+
+                    if (!nuevosFrames || !Array.isArray(nuevosFrames)) {
+                        throw new Error("El JSON de la IA no tiene la estructura esperada (falta 'nuevos_frames_desarrollados' o no es un array).");
+                    }
+                    
+                    if (typeof chatDiv !== 'undefined') {
+                        chatDiv.innerHTML += `<p><strong>IA Respondió:</strong> Se generaron ${nuevosFrames.length} nuevos frames detallados para el punto clave ${j+1}.</p>`;
+                    }
+
+                    // Asegurarse de que el array de frames exista en la escena de Silenos
+                    if (!escenas[idEscenaPrincipal].frames) {
+                        escenas[idEscenaPrincipal].frames = [];
+                    }
+
+                    nuevosFrames.forEach(subFrame => {
+                        if (subFrame && typeof subFrame.texto_sub_frame === 'string') {
+                            const nuevoFrameSilenos = { texto: subFrame.texto_sub_frame, imagen: "" };
+                            escenas[idEscenaPrincipal].frames.push(nuevoFrameSilenos);
+                        } else {
+                             if (typeof chatDiv !== 'undefined') chatDiv.innerHTML += `<p><strong>Advertencia:</strong> Un sub-frame recibido de la IA no tenía el formato esperado y fue omitido.</p>`;
+                        }
+                    });
+
+                } catch (parseError) {
+                    if (typeof chatDiv !== 'undefined') {
+                        chatDiv.innerHTML += `<p><strong>Error de IA (Parseo):</strong> La respuesta para el punto clave ${j+1} no fue un JSON válido o estructura incorrecta. Se insertará un marcador de error. (${parseError.message})</p><p><pre>${replyText.substring(0,200)}...</pre></p>`;
+                        chatDiv.scrollTop = chatDiv.scrollHeight;
+                    }
+                     if (!escenas[idEscenaPrincipal].frames) escenas[idEscenaPrincipal].frames = [];
+                    const frameDeError = { texto: `(Error: No se pudo generar el contenido detallado para este punto. Respuesta de la IA no era JSON válido o estructura incorrecta: ${replyText.substring(0, 100)}...)`, imagen: "" };
+                    escenas[idEscenaPrincipal].frames.push(frameDeError);
                 }
 
-            } catch (error) {
+            } catch (fetchError) {
                 if (typeof chatDiv !== 'undefined') {
-                    chatDiv.innerHTML += `<p><strong>Error al desarrollar Frame ${j + 1} ("${nombreEscenaParaLog}"):</strong> ${error.message}</p>`;
+                    chatDiv.innerHTML += `<p><strong>Error de Conexión con IA:</strong> No se pudo desarrollar el punto clave ${j+1}. ${fetchError.message}</p>`;
                 }
-                escenas[idEscenaPrincipal].frames[j].texto = `Error al generar contenido para frame ${j+1}: ${error.message}`;
+                if (!escenas[idEscenaPrincipal].frames) escenas[idEscenaPrincipal].frames = [];
+                const frameDeError = { texto: `(Error: Falla de conexión con la API al intentar desarrollar este frame.)`, imagen: "" };
+                escenas[idEscenaPrincipal].frames.push(frameDeError);
             }
-
-            // Actualizar la lista para mostrar el frame recién generado
+            
             if (typeof actualizarLista === 'function') {
                 actualizarLista();
             }
-            // Pausar antes de generar el siguiente frame
-            await sleep(2050);
-
+            await sleep(1000); // Pausa entre llamadas a la API (reducida a 1000ms)
         } 
-        escenasProcesadasCount++;
     } 
 
     if (typeof guardarCambios === 'function') guardarCambios();
-    // La actualización final de la lista podría ser redundante si se actualiza después de cada frame, pero no hace daño.
     if (typeof actualizarLista === 'function') actualizarLista(); 
 
-    alert(`Proceso de desarrollo de frames completado. Se intentaron procesar ${escenasProcesadasCount} escenas para la estructura principal, con ${numFramesPorEscenaParaCrear} frames cada una (según los valores actuales de los inputs).`);
-    
+    alert(`Proceso de desarrollo de frames completado.`);
+    if (typeof chatDiv !== 'undefined') {
+        chatDiv.innerHTML += `<p><strong>Proceso Completado:</strong> El desarrollo de la historia ha finalizado.</p>`;
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+    }
 }

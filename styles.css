@@ -101,11 +101,18 @@ html {
 .dark-theme #contenido-capitulo-activo .mensaje-placeholder {
     color: #aaa; /* Lighter placeholder text for dark theme */
 }
+
+/* NUEVO ESTILO PARA EL CONTENEDOR RAW DE GEMINI EN DARK THEME */
+.dark-theme #gemini-raw-output {
+    background-color: #22272e; /* Fondo oscuro similar a geminimente */
+    color: #c9d1d9; /* Texto claro */
+    border-color: #484f58; /* Borde oscuro */
+}
+
 .dark-theme ::-webkit-scrollbar-track { background-color: #2c2c2c; }
 .dark-theme ::-webkit-scrollbar-thumb { background-color: #555; }
 .dark-theme ::-webkit-scrollbar-thumb:hover { background-color: #666; }
 .dark-theme ::-webkit-scrollbar-thumb:active { background-color: #777; }
-
 
 
 ::-webkit-scrollbar {
@@ -121,7 +128,6 @@ html {
 }
 ::-webkit-scrollbar-thumb:hover {
     background-color: #aaaaaa;
-    /* transform: scale(1.1); */ /* Eliminado para un look más simple */
 }
 ::-webkit-scrollbar-thumb:active {
     background-color: #888888;
@@ -298,8 +304,6 @@ position: absolute;}
     top: 9%;
     height: calc(100% - 9%);
     display: none;
-   /* Las filas se ajustan automáticamente al tamaño de los elementos */
-  /* Espacio entre los elementos */
     align-items: flex-start;
 }
 
@@ -329,11 +333,11 @@ top: 1%;
 width: auto;
 height: auto;}
 .personaje textarea {
-    width: 98%; /* Hace que el textarea ocupe todo el ancho disponible */
-    height: 45%; /* Establece una altura específica para el textarea */
-    margin-bottom: 10px; /* Espacio entre el textarea y el siguiente elemento */
-    border: 2px solid #ccc; /* Borde suave */
-    border-radius: 5px; /* Bordes redondeados */
+    width: 98%; 
+    height: 45%; 
+    margin-bottom: 10px; 
+    border: 2px solid #ccc; 
+    border-radius: 5px; 
     font-size:  large ;
    resize: none;
    right: 0%;
@@ -341,21 +345,19 @@ position: absolute;
 bottom: -5%;}
 .personaje img {
     margin: 0%;
-    position: absolute; /* Posiciona la imagen dentro de su contenedor */
-    left: 0%;  /* Ajusta la distancia desde el borde izquierdo */
-    top: 0%;  /* Ajusta la distancia desde la parte superior */
-    height: 45% !important ;  /* Asegura que la imagen no sobresalga */
-    width: 100% !important;  /* Asegura que la imagen no sobresalga */
-    max-width: 100% !important;   /* Asegura que la imagen mantenga su proporción sin recortarse */}
+    position: absolute; 
+    left: 0%;  
+    top: 0%;  
+    height: 45% !important ;  
+    width: 100% !important;  
+    max-width: 100% !important;   }
 .escena { cursor: pointer; padding: 5px; border: 0px solid #8a8a8a; margin: 5px 0; margin-bottom: 1%;
- margin-right: 0%;  margin-left: 0%;   box-shadow: 0 2px 5px rgba(0,0,0,0.1);  /* Sombra más suave */
+ margin-right: 0%;  margin-left: 0%;   box-shadow: 0 2px 5px rgba(0,0,0,0.1);  
     border-radius: 2%;    background-color: #fff;
     height: 42dvh;
-     /* height: 42dvh;  */
-
 padding-left: 1%;}
 #drop-zone { position: absolute;
-border: 2px dashed #ccc; padding: 20px; /* Borde discontinuo más claro */
+border: 2px dashed #ccc; padding: 20px; 
 display: flex; bottom: 3%;
 top: 58%;
 text-align: center; margin-top: 10px;
@@ -366,8 +368,8 @@ right: 50%;}
 max-width: 65%;
     height:95%; margin-top: 10px; display: none; }
 .botoness {  margin-top: 1%;  height: auto;  margin: 1%; }
-.boton {box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra más suave */
-    border-radius: 6%; border: 1px solid #eee; /* Borde sutil */
+.boton {box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); 
+    border-radius: 6%; border: 1px solid #eee; 
     width: 100%; height: 18%; margin: 1%;  margin-top: 3%; cursor: pointer; background-color: rgb(255, 255, 255);
     justify-content: center;
     align-items: center;
@@ -448,8 +450,8 @@ line-height: 1.5;}
 }
 .custom-label {
     z-index: 100;
-    background-color: transparent; /* Sin fondo */
-    color: #555; /* Color de icono */
+    background-color: transparent; 
+    color: #555; 
     padding: 5px;
     cursor: pointer;
     display: flex;
@@ -461,7 +463,7 @@ left: 0%;
 position: absolute;
 }
 .custom-label:hover {
-    color: #000; /* Color al pasar el ratón */
+    color: #000; 
 }
 
 .frameh img {max-width: 100%; position: absolute;
@@ -469,33 +471,34 @@ position: absolute;
     top: -4.5%;
    aspect-ratio: 1 / 1; padding: 0%;
     border-radius: 5px; margin: 0%;
-    display: flex; /* Ocultar la imagen por defecto */}
+    display: flex; 
+}
 .frameh {top: 0%;
     height: 97%;
     aspect-ratio: 1.2 / 1;
     position: relative;
     display: inline-flex;
  margin-left: 0.5%; margin-right: 0.5%;
- background-color: #fff;  /* Fondo blanco */
-    width: auto;    box-shadow: 0 1px 3px rgba(0,0,0,0.05); /* Sombra muy sutil */
+ background-color: #fff;  
+    width: auto;    box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
     text-align: center;      flex-shrink: 0;}
 
     .framehtxt {padding-left: 10%; }
 
 .contenedor-frames {
-    display: flex;           /* Usa flexbox para alinear los frames horizontalmente */
-    flex-direction: row;     /* Alinea los elementos horizontalmente */
-    overflow-x: scroll !important ;      /* Habilita la barra de desplazamiento horizontal */
-    overflow-y: hidden;      /* No permite el desplazamiento vertical */
-    position: relative;      /* Asegura que el contenedor tenga un contexto para el posicionamiento */
+    display: flex;           
+    flex-direction: row;     
+    overflow-x: scroll !important ;      
+    overflow-y: hidden;      
+    position: relative;      
     top: 0%;
     bottom: 10%;
     width:100%;
     height: 90%;
-    flex-wrap: nowrap !important;        /* Evita que los elementos se envuelvan */
-    /* Altura del contenedor */
-    background-color: #ff606000; /* Color de fondo del contenedor */
-    padding: 0; white-space: nowrap !important;         /* Espaciado arriba y abajo del contenedor */}
+    flex-wrap: nowrap !important;        
+    background-color: #ff606000; 
+    padding: 0; white-space: nowrap !important;         
+}
 #enviar {
     top: -2%;
     position: relative;}
@@ -517,24 +520,49 @@ top: 1%;left: 2%;}
 #chateo {position: absolute;
     top: 10%;left: 2%;}
 #geminimente {
-    /* align-items: column; */ /* No es una propiedad válida, flex-direction lo maneja */
     flex-direction: column;
     overflow: auto; padding: 3%; width: 70%; top: 10%; bottom: 0%; right: 0%; position: absolute; display: flex; white-space: pre-wrap;}
- #gemini1 {position: absolute;
-    top: 18%;left: 0%; width: 20%;
-    bottom:  0%;
+
+ #gemini1 { /* Textarea para la idea de la historia */
+    position: absolute;
+    top: 25%; /* Alineado con los botones de abajo */
+    left: 0%; 
+    width: 24%; /* Ancho del textarea */
+    height: 30%; /* Altura ajustada para el textarea */
     resize: none;
+    margin-left: 1%;
+  
+    margin-bottom: 1%; /* Pequeño margen inferior */
 }
+
+/* NUEVO DIV PARA LA RESPUESTA CRUDA DE LA IA */
+#gemini-raw-output {
+    position: absolute;
+    top: 50%; /* Debajo de #gemini1, ajusta el 50% si #gemini1 cambia mucho de altura */
+    left: 0%;
+    width: 20%; /* Mismo ancho que #gemini1 */
+    bottom: 0%; /* Ocupa el espacio restante hasta abajo */
+    background-color: #f8f9fa; /* Fondo claro */
+    border: 1px solid #dee2e6; /* Borde sutil */
+    border-radius: 4px;
+    padding: 10px;
+    overflow-y: auto; /* Scroll si el contenido es largo */
+    font-family: monospace; /* Para ver bien el JSON */
+    white-space: pre-wrap; /* Para respetar saltos de línea y espacios del JSON */
+    font-size: 0.9em;
+    color: #212529; /* Color de texto oscuro */
+}
+
 
 #guion-layout {
     display: flex;
-    gap: 20px; /* Space between index and content */
-    height: 100%; /* Adjust height for title and button */
+    gap: 20px; 
+    height: 100%; 
     margin-top: 15px;
 }
 
 #indice-capitulos-guion {
-    width: 30%; /* Width for the chapter list */
+    width: 30%; 
     overflow-y: auto;
     background-color: #f9f9f9;
     border: 1px solid #ddd;
@@ -543,10 +571,9 @@ top: 1%;left: 2%;}
 }
 
 #contenido-capitulo-activo {
-    width: 70%; /* Width for the chapter content */
-    display: flex; /* To center initial message or display chapter */
+    width: 70%; 
+    display: flex; 
     flex-direction: column;
-
     gap: 10px;
 }
 
@@ -565,7 +592,7 @@ top: 1%;left: 2%;}
     background-color: #e9efff;
 }
 .titulo-capitulo-indice-container.activo-container {
-    background-color: #cce0ff; /* A light blue for active */
+    background-color: #cce0ff; 
 }
 
 .titulo-capitulo-indice-texto {
@@ -594,38 +621,38 @@ top: 1%;left: 2%;}
 }
 
 #guion-literario {
-    display: none; /* Initially hidden */
+    display: none; 
     position: absolute;
     top: 9%;
     left: 1%;
     right: 1%;
     bottom: 1%;
-    background-color: #e9e9e900; /* Light gray background */
+    background-color: #e9e9e900; 
     padding: 20px;
     overflow-y: auto;
     border: 0px solid #ccc;
     border-radius: 8px;
-    flex-direction: column; /* To stack title, button, and list */
-    gap: 15px; /* Space between elements */
+    flex-direction: column; 
+    gap: 15px; 
 }
 
 #guion-literario h2 {
-    width: auto; /* Override default h2 width */
+    width: auto; 
     background-color: #333;
     color: white;
     padding: 12px;
-    margin-bottom: 10px; /* Remove default h2 margin-top/left */
+    margin-bottom: 10px; 
     margin-left: 0;
     margin-top: 0;
     border-radius: 5px;
-    text-align: center; /* Center the title */
-    border-bottom: none; /* Remove the h2 border-bottom if not needed here */
+    text-align: center; 
+    border-bottom: none; 
 }
 
 #lista-capitulos-guion {
     display: flex;
     flex-direction: column;
-    gap: 10px; /* Space between chapters */
+    gap: 10px; 
 }
 
 .capitulo-guion {
@@ -637,7 +664,7 @@ top: 1%;left: 2%;}
 }
 
 .capitulo-guion input[type="text"] {
-    width: calc(100% - 16px); /* Adjust for padding */
+    width: calc(100% - 16px); 
     margin-bottom: 10px;
     padding: 8px;
     border: 1px solid #ccc;
@@ -647,7 +674,7 @@ top: 1%;left: 2%;}
 }
 
 #contenido-capitulo-activo input[type="text"] {
-    width: calc(100% - 16px); /* Adjust for padding */
+    width: calc(100% - 16px); 
     margin-bottom: 10px;
     padding: 8px;
     border: 1px solid #ccc;
@@ -657,8 +684,8 @@ top: 1%;left: 2%;}
 }
 
 .capitulo-guion textarea {
-    width: calc(100% - 16px); /* Adjust for padding */
-    height: 200px; /* Default height, can be resized */
+    width: calc(100% - 16px); 
+    height: 200px; 
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 3px;
@@ -669,8 +696,8 @@ top: 1%;left: 2%;}
 }
 
 #contenido-capitulo-activo textarea {
-    width: calc(100% - 16px); /* Adjust for padding */
-    flex-grow: 1; /* Allow textarea to take available space */
+    width: calc(100% - 16px); 
+    flex-grow: 1; 
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 3px;
@@ -680,10 +707,9 @@ top: 1%;left: 2%;}
     line-height: 1.5;
 }
 
-.capitulo-guion button { /* Keep style for other potential buttons in .capitulo-guion */
+.capitulo-guion button { 
     background-color: #d9534f;
     color: white;
-    /* margin-top: 10px; */ /* Removed as the main delete button is gone */
     padding: 8px 15px;
     border: none;
     cursor: pointer;
@@ -691,7 +717,7 @@ top: 1%;left: 2%;}
 }
 .capitulo-guion button:hover, #contenido-capitulo-activo button:hover {
     background-color: #c9302c;
-} /* This :hover might not be needed if no buttons remain in #contenido-capitulo-activo */
+} 
 #contenido-capitulo-activo .mensaje-placeholder {
     text-align: center;
     color: #777;
@@ -708,129 +734,115 @@ top: 1%;left: 2%;}
     right: 2dvw;
     transform: translateY(-2dvh);
     top: 10dvh;
-    width: 10dvw; /* Ancho similar al de #sumarpersonaje */
+    width: 10dvw; 
     height: auto;
     margin: 0%;
-    z-index: 1000; /* Mismo z-index que #sumarpersonaje */
-    justify-content: center; /* Centrar texto si envuelve */
-    align-items: center;    /* Centrar texto verticalmente */
+    z-index: 1000; 
+    justify-content: center; 
+    align-items: center;    
 }
-
-/* styles.css - Adiciones para la visualización en geminimente */
 
 #geminimente {
-    /* Estilos existentes de #geminimente se mantienen si son adecuados, 
-       como overflow, width, position, etc. */
-    white-space: normal; /* Permite el ajuste de línea normal para el contenido estructurado */
-    text-align: left;    /* Alinea el texto a la izquierda para mejor legibilidad */
-    border: 1px solid #ccc; /* Añade un borde para distinguirlo */
-    background-color: #f9f9f9; /* Fondo claro */
-    padding: 15px; /* Ajusta el padding existente si es necesario */
-    height: calc(100% - 18% - 20px); /* Ajusta la altura para que quepa debajo de los botones y textarea */
-    overflow-y: auto; /* Asegura el scroll vertical si el contenido es largo */
+    white-space: normal; 
+    text-align: left;    
+    border: 1px solid #ccc; 
+    background-color: #f9f9f9; 
+    padding: 15px; 
+    height: calc(100% - 18% - 20px); 
+    overflow-y: auto; 
 }
 
-#geminimente h3 { /* Título de la historia */
+#geminimente h3 { 
     text-align: center;
-    margin-top: 0; /* Quita margen superior si ya hay padding en #geminimente */
+    margin-top: 0; 
     margin-bottom: 20px;
     color: #333;
-    font-size: 1.5em; /* Tamaño adecuado para el título principal */
+    font-size: 1.5em; 
 }
 
 .gemini-escena {
     border: 1px solid #ddd;
     background-color: #fff;
     padding: 15px;
-    margin-bottom: 20px; /* Aumenta el espacio entre escenas */
+    margin-bottom: 20px; 
     border-radius: 5px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-.gemini-escena h4 { /* Título de la escena */
+.gemini-escena h4 { 
     margin-top: 0;
-    margin-bottom: 15px; /* Aumenta espacio después del título de escena */
-    color: #444; /* Un poco más oscuro para el título de escena */
+    margin-bottom: 15px; 
+    color: #444; 
     border-bottom: 1px solid #eee;
-    padding-bottom: 10px; /* Más espacio para la línea divisoria */
+    padding-bottom: 10px; 
     font-size: 1.2em;
 }
 
 .gemini-frame {
     padding: 10px;
     margin-bottom: 10px;
-    border-left: 4px solid #007bff; /* Borde izquierdo distintivo */
-    background-color: #fdfdfd; /* Fondo muy sutil para el frame */
+    border-left: 4px solid #007bff; 
+    background-color: #fdfdfd; 
     border-radius: 3px;
 }
 
 .gemini-frame p {
-    margin-top: 0; /* Quita margen superior del primer párrafo */
-    margin-bottom: 8px; /* Espacio entre párrafos dentro del frame */
+    margin-top: 0; 
+    margin-bottom: 8px; 
     line-height: 1.6;
     color: #333;
 }
 .gemini-frame p:last-child {
-    margin-bottom: 0; /* Quita margen inferior del último párrafo del frame */
+    margin-bottom: 0; 
 }
 
-.gemini-frame p strong { /* Indicador "Frame X:" */
-    color: #0056b3; /* Azul más oscuro para el strong */
-    display: block; /* Hace que el "Frame X:" esté en su propia línea */
+.gemini-frame p strong { 
+    color: #0056b3; 
+    display: block; 
     margin-bottom: 5px;
 }
 
-/* Ajustes para el tema oscuro */
 .dark-theme #geminimente {
     border-color: #444;
-    background-color: #22272e; /* Fondo oscuro para geminimente */
+    background-color: #22272e; 
     color: #c9d1d9;
 }
 
 .dark-theme #geminimente h3 {
-    color: #adbac7; /* Texto más claro para el título en tema oscuro */
+    color: #adbac7; 
 }
 
 .dark-theme .gemini-escena {
-    border-color: #484f58; /* Borde más oscuro */
-    background-color: #2d333b; /* Fondo de escena más oscuro */
+    border-color: #484f58; 
+    background-color: #2d333b; 
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
 .dark-theme .gemini-escena h4 {
-    color: #909dab; /* Color de título de escena */
+    color: #909dab; 
     border-bottom-color: #484f58;
 }
 
 .dark-theme .gemini-frame {
-    border-left-color: #58a6ff; /* Azul más brillante para el borde en tema oscuro */
-    background-color: #323842; /* Fondo de frame más oscuro */
+    border-left-color: #58a6ff; 
+    background-color: #323842; 
 }
 .dark-theme .gemini-frame p {
-    color: #b1bac4; /* Color de texto de frame */
+    color: #b1bac4; 
 }
 .dark-theme .gemini-frame p strong {
-    color: #58a6ff; /* Color del strong del frame */
+    color: #58a6ff; 
 }
 
-/* Asegurarse que el textarea y botones en #ia no se solapen con #geminimente */
-#ia #gemini1 { /* Textarea para la idea de la historia */
-    height: 15%; /* Ajustar altura si es necesario */
-    margin-bottom: 10px;
+#ia #gemini1 { 
+    /* height: 15%;  Ya se definió arriba con una altura fija */
+    margin-bottom: 10px; /* Mantenido de arriba */
 }
 #ia #creasion, #ia #chateo {
-    margin-bottom: 10px; /* Espacio debajo de los contenedores de botones */
+    margin-bottom: 10px; 
 }
 #ia #geminimente {
-    /* La altura se calcula para llenar el espacio restante, 
-       puede necesitar ajustes basados en la altura de #gemini1 y los botones */
-    height: calc(100% - (altura_de_gemini1 + altura_de_botones_creasion_chateo + márgenes_totales));
-    /* Ejemplo: si gemini1 es 15%, creasion+chateo son 10% (5% cada uno aprox con margen), márgenes 20px:
-       height: calc(100% - 15% - 10% - 40px); 
-       Reemplaza esto con el cálculo correcto para tu layout específico.
-       El cálculo anterior en CSS para #geminimente (height: calc(100% - 18% - 20px);)
-       es una aproximación, ajusta los porcentajes/píxeles según sea necesario.
-    */
+   /* La altura de geminimente es dinámica por el posicionamiento absoluto (top, bottom), 
+      así que el calc() aquí podría ser redundante o conflictivo si no se ajusta bien.
+      Se mantiene el posicionamiento absoluto definido previamente para #geminimente. */
 }
-
-

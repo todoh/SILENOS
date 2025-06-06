@@ -7,20 +7,61 @@
 <link rel="stylesheet" href="styles.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✒️</text></svg>">
 
+<style>
+    /* Estilos específicos para el panel de IA */
+    #ia {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    #chateo {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background-color: var(--background-color-light);
+    }
+
+    #ia-options {
+        position: fixed ; 
+        bottom:10%;
+        
+      
+    }
+
+    #ia-options label {
+        cursor: pointer;
+        font-size: 0.9em;
+    }
+    
+    #ia-buttons {
+        display: flex;
+        gap: 10px;
+    }
+
+    #ia-buttons .pro {
+        flex-grow: 1; /* Para que los botones ocupen el espacio */
+    }
+</style>
+
 </head>
 <body>
 <div id="opciones" >
 <h2 id="titulo-proyecto" contenteditable="true" placeholder="Escribe el título del proyecto">Silenos Versión 1.1.6</h2>
 <div id="menu" >
         <button  onclick="cerrartodo(), abrir('escenah');">Escenas</button>
-        <button  onclick="cerrartodo(), abrirGuion();">Guion</button> <button  onclick="cerrartodo(), gridear('personajes'),agregarBotonEliminarAPersonajes();">Datos</button>
+        <button  onclick="cerrartodo(), abrirGuion();">Guion</button> 
+        <button  onclick="cerrartodo(), gridear('personajes'),agregarBotonEliminarAPersonajes();">Datos</button>
         <button  onclick="cerrartodo(), abrir('ia');">IA</button>
 
     <button class="pro" onclick="reiniciar()"> 🆕 </button>
         <button class="pro" onclick="generarHTML()">💽 Export</button>
         <button id="game" class="pro" onclick="generarGAME()">🎮 Game</button>
         <button class="pro" onclick="guardarJSON()">💾 Save</button>
-        <input type="file" id="file-load" accept="application/json"  onchange="cargarJSON(event)">
+        <input type="file" id="file-load" accept="application/json"  onchange="cargarJSON(event)" style="display: none;">
         <button class="pro" onclick="document.getElementById('file-load').click()">🗂️ Load</button>
         <button class="pro" onclick="cerrartodo(), abrir('lugares');"> ⚙️ </button>
         <button class="pro" id="theme-toggle-button" onclick="toggleTheme()">🌙</button>
@@ -38,24 +79,28 @@
 </div>
 
 <div id="ia" >
-<div id="creasion" >
-    <button class="pro" onclick="cerrartodo(), abrir('escenah'), actualizarnombreescena(),actualizarcifras(), crearEscenasAutomaticamente(nombredelahistoria, cantidaddeescenas, cantidadframes);">Insertar Escenas vacías en la Historia</button>
-    <input type="text" id="nombrehistoria" placeholder="Nombre de las Escenas" value="Nombre de la Historia">
-    <input type="number" id="cantidadescenas" placeholder= "Cantidad de Escenas" value="2">
-    <input type="number" id="cantidadeframes" placeholder= "Cantidad de Frames" value="3">
+    <div id="creasion" >
+        <button class="pro" onclick="cerrartodo(), abrir('escenah'), actualizarParametrosIA(), crearEscenasAutomaticamente(nombredelahistoria, cantidaddeescenas, cantidadframes);">Insertar Escenas vacías en la Historia</button>
+        <input type="text" id="nombrehistoria" placeholder="Nombre de las Escenas" value="Nombre de la Historia">
+        <input type="number" id="cantidadescenas" placeholder= "Cantidad de Escenas" value="2">
+        <input type="number" id="cantidadeframes" placeholder= "Cantidad de Frames" value="3">
+    </div>
 
-</div>
-<div id="chateo" >
-
-    <button id="enviargemini"  class="pro" onclick="actualizarcifras(), enviarTextoConInstrucciones()">Generar Historia</button>
-
-<button id="enviargemini-desarrollar"  class="pro" onclick="actualizarnombreescena(); actualizarcifras(); desarrollarFramesDesdeGeminimente(nombredelahistoria); cerrartodo(); abrir('escenah');">Insertar Frames en la Historia</button>
-</div>
     <textarea id="gemini1"  placeholder="Escribe tu Historia..."></textarea>
-<div id="geminimente"></div> <!-- MODIFICADO: quitado contenteditable -->
+    
+    <div id="chateo" >
+        <div id="ia-options">
+            <input type="checkbox" id="incluir-datos-ia" checked>
+            <label for="incluir-datos-ia">Usar Datos ya Guardados en la generación de la Historia</label>
+        </div>
+        <div id="ia-buttons">
+            <button id="enviargemini"  class="pro" onclick="actualizarParametrosIA(), enviarTextoConInstrucciones()">Generar Historia</button>
+            <button id="enviargemini-desarrollar"  class="pro" onclick="actualizarParametrosIA(), desarrollarFramesDesdeGeminimente(nombredelahistoria); cerrartodo(); abrir('escenah');">Insertar Frames en la Historia</button>
+        </div>
+    </div>
 
+    <div id="geminimente"></div> 
 </div>
-<script src="geminialfa.js"></script>
 
 
 <div id="editor">
@@ -87,7 +132,7 @@
     <textarea id="escena-texto" placeholder="Texto de la escena"></textarea>
     <div id="drop-zone"   >
         <img id="imagen-preview" alt="Vista previa de la imagen">
-    <input type="file" id="file-input" accept="image/*, video/mp4, video/webm, image/gif"  ></div>
+    <input type="file" id="file-input" accept="image/*, video/mp4, video/webm, image/gif"  style="display: none;" ></div>
 <div id="botonesss"   >
     <button class="botoness" onclick="agregarBoton('transicion')">+ Botón de Transición</button>
     <button class="botoness" onclick="agregarBoton('accion')">+ Botón de Acción</button></div>
@@ -96,8 +141,14 @@
 <video id="hiddenVideoPlayer" style="display:none;"></video>
 <canvas id="hiddenCanvas" style="display:none;"></canvas>
  
+<!-- Scripts en orden de dependencia -->
 <script src="main.js"></script>
+<script src="guion.js"></script>
+<script src="escenas.js"></script>
+<script src="datos.js"></script>
+<script src="io.js"></script>
 <script src="gemini.js"></script>
+<script src="geminialfa.js"></script>
 <script src="exportar.js"></script>
 <script src="exportarjuego.js"></script>
 
