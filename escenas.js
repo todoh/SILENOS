@@ -64,7 +64,7 @@ function editarEscena(escenaId) {
 }
 
 function actualizarLista() {
-    let lista = document.getElementById("lista-escenas");
+    let lista = document.getElementById("lista-capitulos");
     lista.innerHTML = "";
     let escenasOrdenadas = Object.keys(escenas).sort();
     escenasOrdenadas.forEach(id => {
@@ -294,4 +294,44 @@ function crearEscenasAutomaticamente(nombreBase, numEscenas, numFrames) {
     actualizarLista();
     guardarCambios();
     console.log(`${numEscenas} escenas creadas con el nombre base "${nombreBase}".`);
+}
+
+
+
+
+// ===================================
+// FUNCIONES DE UTILIDAD COMPARTIDAS
+// ===================================
+
+/**
+ * Guarda el estado actual del objeto 'escenas' en el localStorage.
+ * Esta función se puede llamar desde cualquier parte del código que modifique 'escenas'.
+ */
+function guardarCambios() {
+    if (typeof(Storage) !== "undefined") {
+        try {
+            // Se asegura de que escenas no contenga referencias circulares antes de guardar
+            const cleanEscenas = JSON.parse(JSON.stringify(escenas)); // Corrección aquí
+            localStorage.setItem("escenas", JSON.stringify(cleanEscenas));
+            console.log("Cambios guardados en localStorage.");
+        } catch (error) {
+            console.error("Error al guardar cambios en localStorage:", error);
+        }
+    } else {
+        console.error("localStorage no está disponible en este navegador.");
+    }
+}
+
+/**
+ * Convierte un objeto File a una cadena de texto en formato Base64.
+ * @param {File} file El archivo a convertir.
+ * @returns {Promise<string>} Una promesa que se resuelve con la cadena en Base64.
+ */
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+    });
 }

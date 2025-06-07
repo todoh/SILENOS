@@ -3,8 +3,9 @@
 <head>  
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Silenos Versión 1.1.6</title>
+<title>Silenos Versión 1.1.8</title>
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="momentos.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✒️</text></svg>">
 
 <style>
@@ -49,13 +50,17 @@
 
 </head>
 <body>
+
 <div id="opciones" >
-<h2 id="titulo-proyecto" contenteditable="true" placeholder="Escribe el título del proyecto">Silenos Versión 1.1.6</h2>
-<div id="menu" >
-        <button  onclick="cerrartodo(), abrir('escenah');">Escenas</button>
-        <button  onclick="cerrartodo(), abrirGuion();">Guion</button> 
-        <button  onclick="cerrartodo(), gridear('personajes'),agregarBotonEliminarAPersonajes();">Datos</button>
-        <button  onclick="cerrartodo(), abrir('ia');">IA</button>
+<h2 id="titulo-proyecto" contenteditable="true" placeholder="Escribe el título del proyecto">Silenos Versión 1.1.8</h2>
+<div id="menu" >        
+   
+    <button  onclick="cerrartodo(), gridear('personajes'),agregarBotonEliminarAPersonajes();">Datos</button>
+    <button  onclick="cerrartodo(), abrir('momentos');">Momentos</button>
+    <button  onclick="cerrartodo(), abrir('capitulosh');">Capitulos</button>
+    <button  onclick="cerrartodo(), abrir('escenah');">Escenas</button>
+    <button  onclick="cerrartodo(), abrirGuion();">Guion</button> 
+    <button  onclick="cerrartodo(), abrir('ia');">IA</button>
 
     <button class="pro" onclick="reiniciar()"> 🆕 </button>
         <button class="pro" onclick="generarHTML()">💽 Export</button>
@@ -63,9 +68,18 @@
         <button class="pro" onclick="guardarJSON()">💾 Save</button>
         <input type="file" id="file-load" accept="application/json"  onchange="cargarJSON(event)" style="display: none;">
         <button class="pro" onclick="document.getElementById('file-load').click()">🗂️ Load</button>
-        <button class="pro" onclick="cerrartodo(), abrir('lugares');"> ⚙️ </button>
+        <button class="pro" onclick="abrirModalConfig()"> ⚙️ </button>
+        <button class="pro" id="import-data-button" onclick="abrirModalImportar()">📥</button>
         <button class="pro" id="theme-toggle-button" onclick="toggleTheme()">🌙</button>
 </div></div>
+
+<div id="momentos">
+    <button class="pro" id="agregar-momento-btn">Añadir Momento</button>
+    <div id="momentos-lienzo">
+        <!-- Los nodos de momento se agregarán aquí dinámicamente -->
+    </div>
+</div>
+
 
 <div id="guion-literario">
 
@@ -80,7 +94,7 @@
 
 <div id="ia" >
     <div id="creasion" >
-        <button class="pro" onclick="cerrartodo(), abrir('escenah'), actualizarParametrosIA(), crearEscenasAutomaticamente(nombredelahistoria, cantidaddeescenas, cantidadframes);">Insertar Escenas vacías en la Historia</button>
+        <button class="pro" onclick="cerrartodo(), abrir('capitulosh'), actualizarParametrosIA(), crearEscenasAutomaticamente(nombredelahistoria, cantidaddeescenas, cantidadframes);">Insertar Capítulos vacíos en la Historia</button>
         <input type="text" id="nombrehistoria" placeholder="Nombre de las Escenas" value="Nombre de la Historia">
         <input type="number" id="cantidadescenas" placeholder= "Cantidad de Escenas" value="2">
         <input type="number" id="cantidadeframes" placeholder= "Cantidad de Frames" value="3">
@@ -95,7 +109,7 @@
         </div>
         <div id="ia-buttons">
             <button id="enviargemini"  class="pro" onclick="actualizarParametrosIA(), enviarTextoConInstrucciones()">Generar Historia</button>
-            <button id="enviargemini-desarrollar"  class="pro" onclick="actualizarParametrosIA(), desarrollarFramesDesdeGeminimente(nombredelahistoria); cerrartodo(); abrir('escenah');">Insertar Frames en la Historia</button>
+            <button id="enviargemini-desarrollar"  class="pro" onclick="actualizarParametrosIA(), desarrollarFramesDesdeGeminimente(nombredelahistoria); cerrartodo(); abrir('capitulosh');">Insertar Frames en la Historia</button>
         </div>
     </div>
 
@@ -112,22 +126,27 @@
 <textarea id="user-input" placeholder="Escribe tu mensaje..."></textarea>
 <button id="enviar" onclick="enviartexto()">Enviar</button>
 <div id="modos" ></div></div>
-<div id="escenah"  >
-<button class="pro" id="sumarpersonaje" onclick="nuevaEscena()">Agregar Escena</button>
-<div id="escenass" >
-<div id="lista-escenas"></div></div></div>
+
+<div id="escenah">
+    <div class="escena-toolbar">
+        <button id="crear-escena-btn">Nueva Escena</button>
+        <select id="escenas-dropdown"></select>
+        <input type="text" id="escena-nombre-input" placeholder="Nombre de la Escena...">
+        <button id="agregar-toma-btn">Añadir Toma (8s)</button>
+    </div>
+    <div id="tomas-timeline">
+        </div>
+</div>
+
+
+<div id="capitulosh"  >
+<button class="pro" id="sumarpersonaje" onclick="nuevaEscena()">Agregar Capítulo</button>
+<div id="capitulos" >
+<div id="lista-capitulos"></div></div></div>
+
 <div id="personajes"   >
     <button class="pro" id="sumarpersonaje" onclick="agregarPersonaje()">Agregar Dato</button>
 <div id="listapersonajes" ></div></div>
-<div id="lugares" >
-<p>Para utilizar la inteligencia artificial de Silenos necesita:</p>
-<p>Una API KEY de GOOGLE, puede obtenerla aquí:</p>
-<a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer"  style="padding: 10px 20px; background-color: rgb(0, 0, 0); color: white; text-decoration: none; border-radius: 5px;"> <!-- Estilo en línea para el enlace -->
- AI Studio de Google.com
-</a><p></p>
-<input type="text" id="apiInput" placeholder="Ingresa tu API Key">
-<button onclick="updateApiKey()">Actualizar</button>
-<p>API Key actual: <span id="apiKeyDisplay">[No definida]</span></p> </div>
 <div id="escena-vista">
     <textarea id="escena-texto" placeholder="Texto de la escena"></textarea>
     <div id="drop-zone"   >
@@ -141,8 +160,45 @@
 <video id="hiddenVideoPlayer" style="display:none;"></video>
 <canvas id="hiddenCanvas" style="display:none;"></canvas>
  
-<!-- Scripts en orden de dependencia -->
+<div id="modal-overlay"></div>
+
+<div id="lugares" class="modal-content">
+    <button class="modal-close-button" onclick="cerrarModalConfig()">&times;</button>
+    <p>Para utilizar la inteligencia artificial de Silenos necesita:</p>
+    <p>Una API KEY de GOOGLE, puede obtenerla aquí:</p>
+    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer"  style="padding: 10px 20px; background-color: rgb(0, 0, 0); color: white; text-decoration: none; border-radius: 5px;">
+     AI Studio de Google.com
+    </a><p></p>
+    <input type="text" id="apiInput" placeholder="Ingresa tu API Key">
+    <button onclick="updateApiKey()">Actualizar</button>
+    <p>API Key actual: <span id="apiKeyDisplay">[No definida]</span></p> 
+</div>
+
+<div id="modal-importar-json" class="modal-content">
+    <button class="modal-close-button" onclick="cerrarModalImportar()">&times;</button>
+    <h3>Importar Datos desde JSON</h3>
+    <p>Pega el contenido de un único objeto JSON (un dato, capítulo, etc.) en el siguiente campo.</p>
+    <textarea id="json-import-area" placeholder='Ejemplo para un "Dato":\n{\n  "nombre": "Espada Legendaria",\n  "descripcion": "Forjada por los dioses.",\n  "etiqueta": "objeto",\n  "imagen": ""\n}'></textarea>
+    <button class="modal-button" onclick="importarDatosDesdeJSON()">Añadir Datos</button>
+</div>
+
+<!-- Modal para Editar Momentos -->
+<div id="modal-editar-momento" class="modal-content">
+    <button class="modal-close-button" onclick="cerrarModalEditarMomento()">&times;</button>
+    <h3>Editar Momento</h3>
+    <input type="text" id="momento-editor-titulo" placeholder="Título del Momento">
+    <textarea id="momento-editor-descripcion" placeholder="Descripción..."></textarea>
+    <div id="momento-editor-drop-zone" class="drop-zone-estilo">
+        Arrastra una imagen aquí o haz clic para seleccionarla
+        <img id="momento-editor-imagen-preview" alt="Vista previa">
+        <input type="file" id="momento-editor-file-input" accept="image/*" style="display: none;">
+    </div>
+    <button class="modal-button" onclick="guardarCambiosMomento()">Guardar Cambios</button>
+</div>
+
+
 <script src="main.js"></script>
+<script src="gestionEscenas.js"></script>
 <script src="guion.js"></script>
 <script src="escenas.js"></script>
 <script src="datos.js"></script>
@@ -151,6 +207,7 @@
 <script src="geminialfa.js"></script>
 <script src="exportar.js"></script>
 <script src="exportarjuego.js"></script>
+<script src="momentos.js"></script>
 
 </body>
 </html>

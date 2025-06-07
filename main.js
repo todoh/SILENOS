@@ -4,8 +4,10 @@
 
 // --- VARIABLES GLOBALES ---
 let guionLiterarioData = [];
-let escenas = JSON.parse(localStorage.getItem("escenas")) || {};
-let escenaActual = 'a';
+let escenas = {}; // Para la sección "Capítulos"
+let storyScenes = []; 
+let activeSceneId = null;
+
 let ultimoId = 0;
 let titulo2 = document.getElementById("titulo-proyecto").innerText;
 
@@ -24,16 +26,9 @@ let cantidadframes = 3;
 
 // --- INICIALIZACIÓN DE LA APLICACIÓN ---
 window.onload = function() {
-    let escenasGuardadas = localStorage.getItem("escenas");
-    if (escenasGuardadas) {
-        escenas = JSON.parse(escenasGuardadas);
-        // Calcular el último ID para evitar colisiones al crear nuevas escenas
-        const ids = Object.keys(escenas).map(id => parseInt(id.match(/\d+/g) ? id.match(/\d+/g).pop() : 0));
-        ultimoId = Math.max(0, ...ids);
-        actualizarLista();
-    }
+    // No cargamos desde localStorage aquí para empezar siempre limpios.
+    // La carga se maneja explícitamente con el botón.
     
-    // Aplicar el tema guardado al cargar
     const themeToggleButton = document.getElementById('theme-toggle-button');
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark') {
@@ -42,8 +37,9 @@ window.onload = function() {
     } else {
         if (themeToggleButton) themeToggleButton.textContent = '🌙';
     }
-    // Cargar valores iniciales de los inputs de IA
     actualizarParametrosIA();
+    initEscenas();
+    initMomentos();  
 };
 
 document.getElementById("titulo-proyecto").addEventListener("input", function() {
@@ -53,30 +49,196 @@ document.getElementById("titulo-proyecto").addEventListener("input", function() 
 // --- FUNCIONES GENERALES DE UI ---
 function cerrartodo() {
     document.getElementById('personajes').style.display = 'none';
-    document.getElementById('lugares').style.display = 'none';
     document.getElementById('ia').style.display = 'none';
     document.getElementById('escena-vista').style.display = 'none';
+    document.getElementById('capitulosh').style.display = 'none';
     document.getElementById('escenah').style.display = 'none';
     document.getElementById('guion-literario').style.display = 'none';
+    document.getElementById('momentos').style.display = 'none';
 }
 
 function abrir(escena) {
     document.getElementById(escena).style.display = 'flex';
+
+    // Lógica especial para centrar el lienzo de momentos al abrirlo
+    if (escena === 'momentos') {
+        const momentosContainer = document.getElementById('momentos');
+        const lienzo = document.getElementById('momentos-lienzo');
+
+        // Usamos requestAnimationFrame para asegurar que el DOM está actualizado
+        requestAnimationFrame(() => {
+            if (momentosContainer && lienzo) {
+                const containerWidth = momentosContainer.clientWidth;
+                const lienzoWidth = lienzo.scrollWidth;
+                const containerHeight = momentosContainer.clientHeight;
+                const lienzoHeight = lienzo.scrollHeight;
+
+                // Calcula la posición de scroll para centrar el contenido del lienzo
+                const scrollLeft = (lienzoWidth - containerWidth) / 2;
+                const scrollTop = (lienzoHeight - containerHeight) / 2;
+                
+                momentosContainer.scrollLeft = scrollLeft;
+                momentosContainer.scrollTop = scrollTop;
+            }
+        });
+    }
 }
+
 
 function gridear(escena) {
     document.getElementById(escena).style.display = 'grid';
 }
 
-function reiniciar() {
-    if (confirm("¿Reiniciar el proyecto?, perderás todos los cambios sin guardar.")) {
-        localStorage.removeItem("escenas"); // <-- CORRECCIÓN AÑADIDA AQUÍ
-        window.location.reload(true);
+function reiniciarEstadoApp() {
+    // Resetear variables de datos
+    guionLiterarioData = [];
+    escenas = {};
+    storyScenes = [];
+    activeSceneId = null;
+    ultimoId = 0;
+    indiceCapituloActivo = -1;
+
+    // Resetear UI
+    document.getElementById("titulo-proyecto").innerText = "Silenos Versión 1.1.8";
+    document.getElementById("listapersonajes").innerHTML = "";
+    document.getElementById("lista-capitulos").innerHTML = "";
+    
+    // Limpiar y re-renderizar secciones complejas
+    renderizarGuion();
+    renderEscenasUI();
+    actualizarLista();
+
+    console.log("Estado de la aplicación reseteado.");
+}
+
+
+// --- LÓGICA DEL MODAL DE CONFIGURACIÓN ---
+function abrirModalConfig() {
+    const overlay = document.getElementById('modal-overlay');
+    const modal = document.getElementById('lugares');
+    if (overlay) overlay.style.display = 'block';
+    if (modal) modal.style.display = 'flex';
+    if (overlay) {
+        overlay.onclick = function() {
+            cerrarModalConfig();
+        }
     }
 }
 
-function guardarCambios() {
-    localStorage.setItem("escenas", JSON.stringify(escenas));
+function cerrarModalConfig() {
+    const overlay = document.getElementById('modal-overlay');
+    const modal = document.getElementById('lugares');
+    if (overlay) overlay.style.display = 'none';
+    if (modal) modal.style.display = 'none';
+    if (overlay) {
+        overlay.onclick = null;
+    }
+}
+
+// --- LÓGICA DEL MODAL DE IMPORTACIÓN ---
+function abrirModalImportar() {
+    const overlay = document.getElementById('modal-overlay');
+    const modal = document.getElementById('modal-importar-json');
+    if (overlay) overlay.style.display = 'block';
+    if (modal) modal.style.display = 'flex';
+    if (overlay) {
+        overlay.onclick = cerrarModalImportar;
+    }
+}
+
+function cerrarModalImportar() {
+    const overlay = document.getElementById('modal-overlay');
+    const modal = document.getElementById('modal-importar-json');
+    if (overlay) overlay.style.display = 'none';
+    if (modal) modal.style.display = 'none';
+    if (overlay) {
+        overlay.onclick = null;
+    }
+}
+
+/**
+ * Función corregida para importar datos JSON.
+ * Ahora solo admite 'Datos' (personajes, objetos, etc.).
+ * Puede procesar un único objeto JSON o un array de objetos.
+ */
+function importarDatosDesdeJSON() {
+    const jsonText = document.getElementById('json-import-area').value;
+    if (!jsonText.trim()) {
+        alert("El campo de texto está vacío.");
+        return;
+    }
+
+    let jsonData;
+    try {
+        jsonData = JSON.parse(jsonText);
+    } catch (error) {
+        alert("Error de sintaxis en el JSON. Por favor, verifica el texto introducido.\n\n" + error.message);
+        return;
+    }
+
+    // Función interna para procesar un único objeto de dato
+    const procesarDato = (dato) => {
+        // Valida que el objeto 'dato' tenga la estructura correcta
+        if (dato && typeof dato.nombre !== 'undefined' && typeof dato.descripcion !== 'undefined' && typeof dato.etiqueta !== 'undefined') {
+            try {
+                agregarPersonajeDesdeDatos(dato);
+                return true; // Éxito
+            } catch (e) {
+                console.error("Error al intentar añadir el 'Dato': ", dato.nombre, e);
+                return false; // Fracaso
+            }
+        }
+        return false; // Estructura incorrecta
+    };
+
+    let datosImportados = 0;
+    let errores = 0;
+
+    if (Array.isArray(jsonData)) {
+        // El usuario pegó un array de datos
+        jsonData.forEach(dato => {
+            if (procesarDato(dato)) {
+                datosImportados++;
+            } else {
+                errores++;
+            }
+        });
+    } else if (typeof jsonData === 'object' && jsonData !== null) {
+        // El usuario pegó un único objeto
+        if (procesarDato(jsonData)) {
+            datosImportados++;
+        } else {
+            errores++;
+        }
+    } else {
+        // El formato no es ni un objeto ni un array de objetos
+        alert("El JSON proporcionado no es válido. Debe ser un único objeto de 'Dato' o un array de 'Datos'.");
+        return;
+    }
+
+    // Informar al usuario sobre el resultado
+    if (datosImportados > 0) {
+        alert(`¡Se importaron ${datosImportados} dato(s) con éxito en la sección "Datos"!`);
+        cerrarModalImportar();
+        document.getElementById('json-import-area').value = ''; 
+    }
+    
+    if (errores > 0) {
+        // Este mensaje solo aparece si hubo tanto éxitos como errores, o solo errores.
+        const mensajeError = `Se encontraron ${errores} objeto(s) con formato incorrecto o que no son 'Datos'. Solo se importan los que tienen las claves 'nombre', 'descripcion' y 'etiqueta'.`;
+        if (datosImportados === 0) {
+             alert(mensajeError);
+        } else {
+            console.warn(mensajeError); // Si algo se importó, no molestamos con otra alerta, pero lo dejamos en consola.
+        }
+    }
+}
+
+
+function reiniciar() {
+    if (confirm("¿Reiniciar el proyecto? Se perderán todos los cambios no guardados.")) {
+        reiniciarEstadoApp();
+    }
 }
 
 function toggleTheme() {
@@ -104,7 +266,6 @@ function actualizarParametrosIA() {
     cantidaddeescenas = parseInt(document.getElementById("cantidadescenas").value) || 0;
     cantidadframes = parseInt(document.getElementById("cantidadeframes").value) || 0;
     
-    // Para compatibilidad con geminialfa.js que usa window
     window.cantidaddeescenas = cantidaddeescenas;
     window.cantidadframes = cantidadframes;
 }

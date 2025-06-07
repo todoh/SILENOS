@@ -1,0 +1,218 @@
+/* =================================== */
+/* ESTILOS PARA LA SECCIÓN DE MOMENTOS */
+/* =================================== */
+
+#momentos {
+    display: none; /* Oculto por defecto, se muestra con JS */
+    flex-direction: column;
+    position: absolute;
+    top: 9%;
+    left: 1%;
+    right: 1%;
+    bottom: 1%;
+    overflow: auto; /* Hace que este contenedor sea el que tenga scroll */
+    background-color: var(--background-color, #f8f9fa);
+}
+
+#momentos .pro {
+    position: fixed; /* Mantiene el botón fijo en la ventana del navegador */
+    right: 2dvw;
+    transform: translateY(-2dvh);
+    top:10dvh;
+    width: 10dvw;
+    height: auto;
+    margin: 0%;
+    z-index: 1000;
+}
+
+#momentos-lienzo {
+    position: relative; /* Para que los nodos absolutos se posicionen dentro de él */
+    width: 5000px;
+    height: 5000px;
+    flex-shrink: 0; /* Evita que el lienzo se encoja para que mantenga su tamaño */
+    margin: 0;
+    overflow: visible; /* Asegura que no se corte contenido */
+    background-color: var(--background-color-medium, #eee);
+    /* Fondo de cuadrícula para dar sensación de lienzo infinito */
+    background-image:
+        linear-gradient(rgba(0, 0, 0, 0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.07) 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+.dark-theme #momentos-lienzo {
+    background-color: #22272e;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+}
+
+.momento-nodo {
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    background-color: var(--background-color-light, #fff);
+    border: 2px solid var(--accent-color, #007bff);
+    border-radius: 8px;
+    color: var(--text-color, #333);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between; /* Alinear contenido */
+    padding: 5px;
+    box-sizing: border-box;
+    font-size: 1em;
+    cursor: grab;
+    transition: all 0.1s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.momento-nodo .momento-titulo {
+    font-weight: bold;
+    width: 100%;
+    text-align: center;
+    padding: 5px;
+    box-sizing: border-box;
+    flex-shrink: 0; 
+    height: 30%; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: text;
+}
+
+.momento-nodo .momento-contenido {
+    width: 100%;
+    flex-grow: 1; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+}
+
+.momento-nodo .momento-contenido .momento-imagen {
+    max-width: 100%;
+    max-height: 100%;
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+    cursor: grab;
+}
+
+
+.momento-nodo .momento-botones {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    padding: 5px 0;
+    flex-shrink: 0;
+}
+
+.momento-nodo .momento-btn {
+    padding: 3px 8px;
+    font-size: 0.8em;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Estilos para el nodo cuando tiene una imagen */
+.momento-nodo.con-imagen {
+    justify-content: flex-start; 
+    padding: 0;
+    overflow: hidden;
+}
+
+.momento-nodo.con-imagen .momento-titulo {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border-radius: 4px;
+    z-index: 2;
+    height: auto;
+}
+
+.momento-nodo.con-imagen .momento-contenido {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.momento-nodo.con-imagen .momento-botones {
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    width: auto;
+}
+
+/* --- Estilos para el Modal de Edición --- */
+#modal-editar-momento {
+    gap: 15px;
+}
+
+#modal-editar-momento input[type="text"],
+#modal-editar-momento textarea {
+    width: 95%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+#modal-editar-momento textarea {
+    height: 120px;
+    resize: vertical;
+}
+
+.drop-zone-estilo {
+    border: 2px dashed #ccc;
+    text-align: center;
+    border-radius: 8px;
+    cursor: pointer;
+    position: relative;
+    width: 95%;
+    height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #777;
+    overflow: hidden;
+     
+    box-sizing: border-box;
+}
+
+.drop-zone-estilo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Cambiado para que la imagen llene el espacio */
+    border-radius: 6px;
+    display: none;
+    transform: translateX(-50%) ;
+}
+
+/* Ocultar el texto de ayuda si la imagen está visible */
+.drop-zone-estilo:has(img[style*="display: block"]) {
+    color: transparent;
+}
+
+
+.dark-theme #modal-editar-momento input,
+.dark-theme #modal-editar-momento textarea {
+    background-color: #333;
+    color: #e0e0e0;
+    border-color: #555;
+}
+
+.dark-theme .drop-zone-estilo {
+    border-color: #555;
+    color: #aaa;
+}

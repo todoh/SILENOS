@@ -139,6 +139,99 @@ function mostrarMenuEtiquetas(etiquetaElement) {
     }, 100);
 }
 
+/**
+ * Crea y añade un nuevo elemento de "Dato" al DOM a partir de un objeto de datos.
+ * @param {object} personajeData El objeto con los datos del personaje/dato.
+ */
+function agregarPersonajeDesdeDatos(personajeData) {
+    if (!personajeData || typeof personajeData.nombre === 'undefined' || typeof personajeData.descripcion === 'undefined' || typeof personajeData.etiqueta === 'undefined') {
+        throw new Error("Los datos proporcionados son incompletos. Se requiere nombre, descripción y etiqueta.");
+    }
+
+    let contenedor = document.createElement('div');
+    contenedor.classList.add('personaje');
+    contenedor.style.position = 'relative';
+
+    let etiqueta = document.createElement('span');
+    etiqueta.className = 'etiqueta-personaje';
+    
+    const etiquetaValor = personajeData.etiqueta || 'indeterminado';
+    const opcionGuardada = opcionesEtiqueta.find(op => op.valor === etiquetaValor);
+
+    if (opcionGuardada && opcionGuardada.valor !== 'personalizar') {
+        etiqueta.textContent = opcionGuardada.emoji;
+        etiqueta.dataset.etiqueta = opcionGuardada.valor;
+        etiqueta.title = `Etiqueta: ${opcionGuardada.titulo}`;
+        setEtiquetaStyles(etiqueta, 'default');
+    } else { 
+        const nombreEtiqueta = etiquetaValor.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        etiqueta.textContent = nombreEtiqueta;
+        etiqueta.dataset.etiqueta = etiquetaValor;
+        etiqueta.title = `Etiqueta: ${nombreEtiqueta}`;
+        setEtiquetaStyles(etiqueta, 'custom');
+    }
+    
+    etiqueta.style.position = 'absolute';
+    etiqueta.style.top = '10px';
+    etiqueta.style.right = '10px';
+    etiqueta.style.cursor = 'pointer';
+    etiqueta.style.zIndex = '888888888';
+    etiqueta.onclick = () => mostrarMenuEtiquetas(etiqueta);
+    contenedor.appendChild(etiqueta);
+
+    let cajaNombre = document.createElement('input');
+    cajaNombre.type = 'text';
+    cajaNombre.placeholder = 'Nombre';
+    cajaNombre.value = personajeData.nombre;
+    cajaNombre.classList.add('nombreh');
+    contenedor.appendChild(cajaNombre);
+
+    let cajaTexto = document.createElement('textarea');
+    cajaTexto.placeholder = 'Descripción';
+    cajaTexto.rows = 4;
+    cajaTexto.cols = 30;
+    cajaTexto.value = personajeData.descripcion;
+    contenedor.appendChild(cajaTexto);
+    
+    let contenedorImagen = document.createElement('div');
+    let imagen = document.createElement('img');
+    imagen.src = personajeData.imagen || ''; 
+    imagen.style.maxWidth = '340px';
+    imagen.style.maxHeight = '95%';
+    contenedorImagen.appendChild(imagen);
+    
+    let botonCargar = document.createElement('button');
+    botonCargar.innerText = '📷';
+    botonCargar.onclick = function() {
+        let inputFile = document.createElement('input');
+        inputFile.type = 'file';
+        inputFile.accept = 'image/*, video/mp4, video/webm, image/gif';
+        inputFile.onchange = async function(event) {
+            let archivo = event.target.files[0];
+            if (archivo) {
+                let base64Data = await fileToBase64(archivo);
+                if (base64Data) {
+                    imagen.src = base64Data;
+                }
+            }
+        };
+        inputFile.click();
+    };
+    contenedorImagen.appendChild(botonCargar);
+
+    let botonEliminar = document.createElement('button');
+    botonEliminar.innerText = 'X';
+    botonEliminar.className = 'ideframeh';
+    botonEliminar.onclick = function() {
+        if (confirm("¿Estás seguro de que quieres eliminar este dato?")) {
+            contenedor.remove();
+        }
+    };
+    contenedorImagen.appendChild(botonEliminar);
+    contenedor.appendChild(contenedorImagen);
+    document.getElementById('listapersonajes').appendChild(contenedor);
+}
+
 function agregarPersonaje() {
     let contenedor = document.createElement('div');
     contenedor.classList.add('personaje');

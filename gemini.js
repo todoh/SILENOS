@@ -15,7 +15,7 @@ async function enviartexto() {
         document.getElementById("user-input").value = "";
     }
     try {
-        const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey, {
+        const response = await fetch("[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=)" + apiKey, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ contents: [{ parts: [{ text: userInput }] }] })
@@ -52,8 +52,7 @@ function updateApiKey() {
 
 async function desarrollarFramesDesdeGeminimente(nombreBaseHTML) {
     const numEscenasParaCrear = parseInt(document.getElementById("cantidadescenas").value) || 0;
-    // La cantidad de frames del input ya no se usa para la creación inicial, la IA los definirá.
-
+    
     if (typeof chatDiv !== 'undefined') {
         chatDiv.innerHTML += `<p><strong>Info Ejecución:</strong> Iniciando desarrollo de historia. Se crearán hasta ${numEscenasParaCrear} escenas basadas en la historia de la IA.</p>`;
     }
@@ -78,9 +77,7 @@ async function desarrollarFramesDesdeGeminimente(nombreBaseHTML) {
         }
     }
 
-    // PASO 1: Crear solo las escenas, sin frames (pasando 0 como cantidad de frames).
     if (typeof crearEscenasAutomaticamente === 'function') {
-        // Se asegura que la cantidad de escenas a crear no exceda las disponibles en el JSON
         const escenasDisponiblesEnJson = ultimaHistoriaGeneradaJson.historia.length;
         const escenasACrearReal = Math.min(numEscenasParaCrear, escenasDisponiblesEnJson);
 
@@ -94,24 +91,19 @@ async function desarrollarFramesDesdeGeminimente(nombreBaseHTML) {
         return;
     }
     
-    // Obtener los IDs de las escenas recién creadas para poder referenciarlas
     const idsEscenasCreadasEnPrincipal = Object.keys(escenas)
                                           .filter(id => id.startsWith(nombreBaseReal)) 
                                           .sort(); 
 
-    // Bucle principal: Itera sobre cada ESCENA del plan original de la IA (limitado por idsEscenasCreadasEnPrincipal)
     for (let i = 0; i < idsEscenasCreadasEnPrincipal.length; i++) {
         const idEscenaPrincipal = idsEscenasCreadasEnPrincipal[i];
-        // Encontrar la data original correspondiente al idEscenaPrincipal puede ser un poco más complejo
-        // si los números no coinciden exactamente. Asumimos por ahora que el orden se mantiene.
         const escenaOriginalData = ultimaHistoriaGeneradaJson.historia[i];
 
-        if (!escenaOriginalData) { // Si no hay más datos en el JSON de la IA, aunque se hayan creado escenas
+        if (!escenaOriginalData) {
             if (typeof chatDiv !== 'undefined') chatDiv.innerHTML += `<p><strong>Info:</strong> No hay más datos en el JSON de la IA para la escena ${i+1} ('${idEscenaPrincipal}').</p>`;
             continue; 
         }
         
-        // Actualizar el título de la escena en la UI de Silenos
         if (escenas[idEscenaPrincipal]) {
             escenas[idEscenaPrincipal].texto = `${nombreBaseReal} ${String(i + 1).padStart(3, '0')} - ${escenaOriginalData.titulo_escena}`;
         } else {
@@ -127,15 +119,12 @@ async function desarrollarFramesDesdeGeminimente(nombreBaseHTML) {
 
         if (!escenaOriginalData.frames || escenaOriginalData.frames.length === 0) {
             if (typeof chatDiv !== 'undefined') chatDiv.innerHTML += `<p><strong>Info:</strong> La escena "${escenaOriginalData.titulo_escena}" no tenía frames en el plan original de la IA. Se deja vacía.</p>`;
-            // Aunque la escena original no tenga frames, la escena en Silenos (escenas[idEscenaPrincipal]) ya existe vacía.
-            // Aseguramos que el array de frames exista para evitar errores posteriores.
             if (escenas[idEscenaPrincipal] && !escenas[idEscenaPrincipal].frames) {
                 escenas[idEscenaPrincipal].frames = [];
             }
             continue;
         }
 
-        // Bucle secundario: Itera sobre cada FRAME del plan original de la IA para una escena dada
         for (let j = 0; j < escenaOriginalData.frames.length; j++) {
             const frameOriginalData = escenaOriginalData.frames[j];
             
@@ -161,6 +150,7 @@ La estructura exacta del JSON debe ser:
   ]
 }`;
 
+            let replyText = "";
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                     method: "POST",
@@ -169,64 +159,71 @@ La estructura exacta del JSON debe ser:
                 });
 
                 if (!response.ok) {
-                    const errorBody = await response.text(); // Intenta obtener más detalles del error
+                    const errorBody = await response.text();
                     throw new Error(`Error de la API: ${response.status} ${response.statusText}. Cuerpo: ${errorBody}`);
                 }
                 
                 const data = await response.json();
-                const replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
                 if (!replyText) throw new Error("La respuesta de la IA estaba vacía o no tenía la estructura esperada.");
 
-                try {
-                    const respuestaJson = JSON.parse(replyText);
-                    const nuevosFrames = respuestaJson.nuevos_frames_desarrollados;
-
-                    if (!nuevosFrames || !Array.isArray(nuevosFrames)) {
-                        throw new Error("El JSON de la IA no tiene la estructura esperada (falta 'nuevos_frames_desarrollados' o no es un array).");
+                // --- INICIO: Lógica de limpieza de JSON robusta ---
+                let textoJsonLimpio = replyText;
+                
+                // 1. Busca y extrae el contenido de un bloque de código JSON markdown.
+                const match = textoJsonLimpio.match(/```json\s*([\s\S]*?)\s*```/);
+                if (match && match[1]) {
+                    textoJsonLimpio = match[1];
+                } else {
+                    // 2. Si no, busca el primer '{' y el último '}' para aislar el objeto JSON.
+                    const inicioJson = textoJsonLimpio.indexOf('{');
+                    const finJson = textoJsonLimpio.lastIndexOf('}');
+                    if (inicioJson !== -1 && finJson !== -1 && finJson > inicioJson) {
+                        textoJsonLimpio = textoJsonLimpio.substring(inicioJson, finJson + 1);
                     }
-                    
-                    if (typeof chatDiv !== 'undefined') {
-                        chatDiv.innerHTML += `<p><strong>IA Respondió:</strong> Se generaron ${nuevosFrames.length} nuevos frames detallados para el punto clave ${j+1}.</p>`;
-                    }
+                }
+                // --- FIN: Lógica de limpieza ---
 
-                    // Asegurarse de que el array de frames exista en la escena de Silenos
-                    if (!escenas[idEscenaPrincipal].frames) {
-                        escenas[idEscenaPrincipal].frames = [];
-                    }
+                const respuestaJson = JSON.parse(textoJsonLimpio);
+                const nuevosFrames = respuestaJson.nuevos_frames_desarrollados;
 
-                    nuevosFrames.forEach(subFrame => {
-                        if (subFrame && typeof subFrame.texto_sub_frame === 'string') {
-                            const nuevoFrameSilenos = { texto: subFrame.texto_sub_frame, imagen: "" };
-                            escenas[idEscenaPrincipal].frames.push(nuevoFrameSilenos);
-                        } else {
-                             if (typeof chatDiv !== 'undefined') chatDiv.innerHTML += `<p><strong>Advertencia:</strong> Un sub-frame recibido de la IA no tenía el formato esperado y fue omitido.</p>`;
-                        }
-                    });
-
-                } catch (parseError) {
-                    if (typeof chatDiv !== 'undefined') {
-                        chatDiv.innerHTML += `<p><strong>Error de IA (Parseo):</strong> La respuesta para el punto clave ${j+1} no fue un JSON válido o estructura incorrecta. Se insertará un marcador de error. (${parseError.message})</p><p><pre>${replyText.substring(0,200)}...</pre></p>`;
-                        chatDiv.scrollTop = chatDiv.scrollHeight;
-                    }
-                     if (!escenas[idEscenaPrincipal].frames) escenas[idEscenaPrincipal].frames = [];
-                    const frameDeError = { texto: `(Error: No se pudo generar el contenido detallado para este punto. Respuesta de la IA no era JSON válido o estructura incorrecta: ${replyText.substring(0, 100)}...)`, imagen: "" };
-                    escenas[idEscenaPrincipal].frames.push(frameDeError);
+                if (!nuevosFrames || !Array.isArray(nuevosFrames)) {
+                    throw new Error("El JSON de la IA no tiene la estructura esperada (falta 'nuevos_frames_desarrollados' o no es un array).");
+                }
+                
+                if (typeof chatDiv !== 'undefined') {
+                    chatDiv.innerHTML += `<p><strong>IA Respondió:</strong> Se generaron ${nuevosFrames.length} nuevos frames detallados para el punto clave ${j+1}.</p>`;
                 }
 
-            } catch (fetchError) {
+                if (!escenas[idEscenaPrincipal].frames) {
+                    escenas[idEscenaPrincipal].frames = [];
+                }
+
+                nuevosFrames.forEach(subFrame => {
+                    if (subFrame && typeof subFrame.texto_sub_frame === 'string') {
+                        const nuevoFrameSilenos = { texto: subFrame.texto_sub_frame, imagen: "" };
+                        escenas[idEscenaPrincipal].frames.push(nuevoFrameSilenos);
+                    } else {
+                         if (typeof chatDiv !== 'undefined') chatDiv.innerHTML += `<p><strong>Advertencia:</strong> Un sub-frame recibido de la IA no tenía el formato esperado y fue omitido.</p>`;
+                    }
+                });
+
+            } catch (error) {
+                // El 'error' puede ser de fetch o de JSON.parse
                 if (typeof chatDiv !== 'undefined') {
-                    chatDiv.innerHTML += `<p><strong>Error de Conexión con IA:</strong> No se pudo desarrollar el punto clave ${j+1}. ${fetchError.message}</p>`;
+                    chatDiv.innerHTML += `<p><strong>Error de IA (Punto Clave ${j+1}):</strong> ${error.message}</p><p><strong>Respuesta recibida:</strong><pre>${replyText.substring(0, 200)}...</pre></p>`;
+                    chatDiv.scrollTop = chatDiv.scrollHeight;
                 }
                 if (!escenas[idEscenaPrincipal].frames) escenas[idEscenaPrincipal].frames = [];
-                const frameDeError = { texto: `(Error: Falla de conexión con la API al intentar desarrollar este frame.)`, imagen: "" };
+                const frameDeError = { texto: `(Error al generar este frame. Mensaje: ${error.message})`, imagen: "" };
                 escenas[idEscenaPrincipal].frames.push(frameDeError);
             }
             
             if (typeof actualizarLista === 'function') {
                 actualizarLista();
             }
-            await sleep(1000); // Pausa entre llamadas a la API (reducida a 1000ms)
+            await sleep(1000); 
         } 
     } 
 

@@ -12,11 +12,17 @@ html {
     color: #f0f0f0;
     border-bottom: 1px solid #444;
 }
-.dark-theme #escena-vista, .dark-theme #lugares, .dark-theme #editor, .dark-theme .personaje, .dark-theme .escena, .dark-theme .frameh {
+.dark-theme #escena-vista, .dark-theme #editor, .dark-theme .personaje, .dark-theme .escena, .dark-theme .frameh {
     background-color: #2c2c2c;
     color: #e0e0e0;
     border-color: #444;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+/* Estilo del modal de configuración en tema oscuro */
+.dark-theme #lugares {
+    background-color: #2c2c2c;
+    color: #e0e0e0;
+    border: 1px solid #555;
 }
 .dark-theme #chat {
     background: #252525;
@@ -30,7 +36,7 @@ html {
     background-color: #3a3a3a;
     color: #e0e0e0;
 }
-.dark-theme #user-input, .dark-theme .personaje textarea, .dark-theme .frameh textarea, .dark-theme #gemini1 {
+.dark-theme #user-input, .dark-theme .personaje textarea, .dark-theme .frameh textarea, .dark-theme #gemini1, .dark-theme #apiInput {
     background-color: #333;
     color: #e0e0e0;
     border: 1px solid #555;
@@ -98,7 +104,7 @@ html {
     background-color: #5a3e3e; /* Darker red background on hover */
     color: #ff5252;
 }
-.dark-theme #contenido-capitulo-activo .mensaje-placeholder {
+.dark-theme #contenido-capitulo-activo .mensaje-placeholder, .dark-theme .mensaje-placeholder {
     color: #aaa; /* Lighter placeholder text for dark theme */
 }
 
@@ -153,7 +159,7 @@ h2 {background-color: black; /* Sin fondo */
   margin-left: 1%;
   margin-top: 0.2%;
     border-radius: 5px;
-    width: 45%;
+    width: 37%;
     height: 50%;
     max-height: auto; /* Ajustado para contenido */
     justify-content: center;
@@ -245,14 +251,17 @@ top: 0%;
 height: 8%;
 background-color: #ffffff00;
 width: 100%; flex-direction: row;}
-#escenah {   background-color: #77777700;
-    width: 102%;
-right: -4%;
-   margin: 1%;
-   margin-right: -0.7%;
-    position: absolute; top: 8%; bottom: -3%;
+
+#capitulosh, #escenah {
+    background-color: transparent;
+    position: absolute;
+    top: 9%;
+    left: 1%;
+    right: 1%;
+    bottom: 1%;
     display: none;
 }
+
 #ia {   background-color: #77777700;
     width: 99%;
 right: 0%;
@@ -262,20 +271,134 @@ right: 0%;
     display: none;
 }
 
+/* --- ESTILOS DEL MODAL DE CONFIGURACIÓN (MODIFICADOS) --- */
+#modal-overlay {
+    display: none; /* Oculto por defecto */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgb(156, 156, 156);
+    z-index: 10000; /* Asegura que esté por encima de todo */
+}
 
-#lugares {
-    width: 88%;
-  left: 2%;
-  margin: 0%;
-    position: absolute; top: 10%; bottom: 1%;
-    display: none;    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Sombra muy sutil o ninguna */
-    background-color: #fff; /* Fondo blanco */
-    padding: 5%;
-    flex-direction: column;}
+.modal-content {
+    display: none;
+    position: fixed;
+    z-index: 10001;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 500px;
+    background-color: #ffffff;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;    border: 1px solid #ffffff;
+background-color: white;
+} 
+
+.modal-close-button {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: #888;
+    line-height: 1;
+}
+.modal-close-button:hover {
+    color: #000;
+}
+
+.modal-content h3 {
+    margin: 0;
+    text-align: center;
+}
+
+.modal-content p {
+    text-align: center;
+    width: 100%;
+    margin: 0;
+    font-size: 0.9em;
+    color: #000000;
+}
+
+#json-import-area {
+    width: 95%;
+    height: 200px;
+    font-family: monospace;
+    font-size: 0.9em;
+    padding: 10px;
+  
+    border-radius: 5px;
+    resize: vertical;
+    box-sizing: border-box;     border: 1px solid #ffffff;
+
+}
+
+.modal-button {
+    background-color: #5a6268;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: medium;
+}
+.modal-button:hover {
+    opacity: 0.9;
+}
+
+/* Dark Theme para Modales */
+.dark-theme .modal-content {
+    background-color: #2c2c2c;
+    color: #000000;
+    border: 1px solid #ffffff;
+}
+.dark-theme .modal-close-button {
+    color: #aaa;
+}
+.dark-theme .modal-close-button:hover {
+    color: #fff;
+}
+.dark-theme .modal-content p {
+    color: #bbb;
+}
+.dark-theme #json-import-area {
+    background-color: #333;
+    color: #000000;
+    border: 1px solid #ffffff;
+}
+.dark-theme .modal-button {
+    background-color: #00529B;
+}
+
+#lugares {color: black;
+    display: none; /* Oculto por defecto, controlado por JS */
+}
+#lugares p {color: rgb(255, 255, 255);
+    text-align: center;
+    width: 100%;
+    margin: 0;
+}
 #lugares a {
-position: relative;
-left: 15%;
-width: 50%;}
+    display: inline-block;
+    text-align: center;
+}
+#lugares input[type="text"] {
+    width: 80%;
+    text-align: center;
+}
+/* --- FIN DE LOS ESTILOS DEL MODAL --- */
+
+
 #editor {         position: absolute; top: 10%; left: 0%;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); bottom: 0%; /* Sombra más suave */
     width: 13%;     border-right: 1px solid #ccc;
@@ -381,7 +504,7 @@ right: 5%;
 height: auto;
 
 top: 55%;}
-#escenass {position: absolute;
+#capitulos, #escenass {position: absolute;
  bottom: 0%;
 width: 96%; left: -0.7%;
  background-color: #ff606000;
@@ -400,7 +523,7 @@ font-size: large;}
 #menu {position: absolute;
 top: 15%;
 margin: 0%;
-left: 49%;
+left:41%;
 flex-direction: row;
 line-height: 1.5;}
 .lista {   position: absolute;
@@ -845,4 +968,180 @@ top: 1%;left: 2%;}
    /* La altura de geminimente es dinámica por el posicionamiento absoluto (top, bottom), 
       así que el calc() aquí podría ser redundante o conflictivo si no se ajusta bien.
       Se mantiene el posicionamiento absoluto definido previamente para #geminimente. */
+}
+
+/* --- ESTILOS PARA LA NUEVA SECCIÓN DE ESCENAS --- */
+#escenah {
+    flex-direction: column;
+    padding: 20px;
+    gap: 15px;
+    box-sizing: border-box;
+}
+
+.escena-toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap; /* Para que se ajuste en pantallas pequeñas */
+    flex-shrink: 0;
+}
+
+.escena-toolbar button,
+.escena-toolbar select,
+.escena-toolbar input {
+    padding: 8px 12px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 1em;
+}
+
+.escena-toolbar input {
+    flex-grow: 1; /* El input de nombre ocupa el espacio restante */
+}
+
+#tomas-timeline {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    flex-grow: 1; /* Ocupa el espacio vertical restante */
+    display: flex;
+    align-items: stretch; /* Estira los items para que ocupen toda la altura */
+    overflow-x: auto; /* Scroll horizontal */
+    overflow-y: hidden;
+    padding: 10px;
+    gap: 5px;
+    background-color: #f0f0f0;
+}
+
+.toma-div {
+    background-color: #add8e6;
+    border: 1px solid #8ab8c8;
+    border-radius: 4px;
+    height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #333;
+    font-weight: bold;
+    flex-shrink: 0; /* Evita que las tomas se encojan */
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    padding: 5px;
+}
+
+
+.mensaje-placeholder {
+    text-align: center;
+    color: #777;
+    margin: auto;
+    font-style: italic;
+}
+
+
+/* --- Dark Theme para la nueva sección --- */
+.dark-theme #escenah {
+    background-color: transparent;
+}
+.dark-theme .escena-toolbar button,
+.dark-theme .escena-toolbar select,
+.dark-theme .escena-toolbar input {
+    background-color: #333;
+    color: #e0e0e0;
+    border: 1px solid #555;
+}
+.dark-theme #tomas-timeline {
+    border-color: #444;
+    background-color: #22272e;
+}
+.dark-theme .toma-div {
+    background-color: #3a5a6a;
+    border-color: #5a7a8a;
+    color: #e0e0e0; }
+
+
+/* =================================== */
+/* ESTILOS PARA MODAL DE IMPORTACIÓN   */
+/* =================================== */
+
+/* El nuevo modal usará la clase .modal-content que ya debes tener. */
+/* Si no, aquí están los estilos básicos para asegurar que funcione. */
+
+#modal-overlay {
+    /* ... tus estilos existentes ... */
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 999;
+}
+
+.modal-content {
+    /* ... tus estilos existentes ... */
+    display: none; /* Oculto por defecto */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--background-color);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    z-index: 1000;
+    width: 90%;
+    max-width: 550px;
+    color: white;
+}
+
+.modal-close-button {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: white;
+}
+
+.modal-button {
+    padding: 10px 20px;
+    background-color: var(--primary-color);
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+/* Estilos específicos para el área de texto del nuevo modal */
+#json-import-area {
+    width: 100%;
+    min-height: 200px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    border: 1px solid white;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 0.9em;
+    background-color: var(--background-color-light);
+    color: white;
+    resize: vertical;
+    box-sizing: border-box; /* Asegura que el padding no afecte el ancho total */
+}
+
+/* Aseguramos que el nuevo botón se vea bien */
+#import-data-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.5rem; /* Ajusta el tamaño del emoji */
+    padding: 5px;
+    line-height: 1;
+    color: var(--text-color);
 }
