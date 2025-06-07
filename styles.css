@@ -1008,27 +1008,9 @@ top: 1%;left: 2%;}
     overflow-x: auto; /* Scroll horizontal */
     overflow-y: hidden;
     padding: 10px;
-    gap: 5px;
+    gap: 10px; /* Aumentado para más separación */
     background-color: #f0f0f0;
 }
-
-.toma-div {
-    background-color: #add8e6;
-    border: 1px solid #8ab8c8;
-    border-radius: 4px;
-    height: 100%;
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #333;
-    font-weight: bold;
-    flex-shrink: 0; /* Evita que las tomas se encojan */
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    padding: 5px;
-}
-
 
 .mensaje-placeholder {
     text-align: center;
@@ -1053,18 +1035,141 @@ top: 1%;left: 2%;}
     border-color: #444;
     background-color: #22272e;
 }
-.dark-theme .toma-div {
-    background-color: #3a5a6a;
-    border-color: #5a7a8a;
-    color: #e0e0e0; }
+
+/* ======================================================= */
+/* === MODIFICACIONES PARA LAYOUT DE TARJETA DE TOMA === */
+/* ======================================================= */
+
+.toma-card {
+    min-width: 250px;
+    width: 250px;
+    height: 100%; /* Ocupa toda la altura del timeline */
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-sizing: border-box; /* Importante para que el padding no sume al tamaño */
+    transition: opacity 0.2s ease, transform 0.2s ease; /* Transición suave */
+    cursor: grab;
+}
+.toma-card:active {
+    cursor: grabbing;
+}
 
 
-/* =================================== */
-/* ESTILOS PARA MODAL DE IMPORTACIÓN   */
-/* =================================== */
+.dark-theme .toma-card {
+    background-color: #2c2c2c;
+    border-color: #444;
+}
 
-/* El nuevo modal usará la clase .modal-content que ya debes tener. */
-/* Si no, aquí están los estilos básicos para asegurar que funcione. */
+.toma-controles {
+    flex-shrink: 0; /* No se encoge */
+    display: flex;
+    justify-content: flex-end; /* Alinea botones a la derecha */
+    gap: 5px;
+}
+
+.toma-imagen-area {
+    height: 140px; /* Altura fija y predecible */
+    flex-shrink: 0; /* No se encoge */
+    position: relative;
+    background-color: #f0f0f0;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.dark-theme .toma-imagen-area {
+    background-color: #3a3a3a;
+}
+
+
+.toma-imagen-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.toma-textos-area {
+    flex-grow: 1; /* Ocupa todo el espacio vertical restante */
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-height: 0; /* Clave para que flex-grow funcione correctamente */
+}
+
+/* Aplicamos flex-grow al textarea y al contenedor del prompt */
+.toma-textos-area > textarea,
+.toma-textos-area > .toma-prompt-container {
+    flex-grow: 1; /* Ambos crecen para repartirse el espacio */
+    min-height: 0; /* Permitir que se encojan si es necesario */
+}
+
+/* Estilo general para los textareas dentro de la tarjeta */
+.toma-textos-area textarea {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    resize: none;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 14px;
+}
+.dark-theme .toma-textos-area textarea {
+    background-color: #333;
+    color: #e0e0e0;
+    border: 1px solid #555;
+}
+
+
+.toma-prompt-container {
+    position: relative; /* Para el botón de copiar */
+    display: flex; /* Para que el textarea hijo ocupe todo el espacio */
+}
+
+/* Espacio en el textarea del prompt para el botón de copiar */
+.toma-prompt-container > textarea {
+    padding-right: 35px; 
+}
+
+
+.toma-copy-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    padding: 4px 8px;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 2;
+}
+
+/* === ESTILOS PARA DRAG AND DROP === */
+
+.toma-card.toma-dragging {
+    opacity: 0.4;
+    transform: scale(0.98);
+}
+
+.toma-drop-indicator {
+    width: 5px;
+    min-height: 100%;
+    background-color: #007bff; /* Azul brillante */
+    border-radius: 2.5px;
+    flex-shrink: 0;
+    margin: 0 2px; /* Pequeño margen para que no se pegue a las tarjetas */
+}
+
+
+/* ======================================================= */
+/* === FIN DE MODIFICACIONES === */
+/* ======================================================= */
 
 #modal-overlay {
     /* ... tus estilos existentes ... */
