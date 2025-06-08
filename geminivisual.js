@@ -4,12 +4,16 @@
 
 /**
  * Inicia el proceso de generación de tomas para un guion literario generado por IA.
+ * Este proceso ahora incluye una fase de creación de un "Universo Visual"
+ * para dar un contexto detallado a la IA antes de generar las tomas.
  * @param {number} indiceCapitulo El índice del capítulo en guionLiterarioData.
  */
 async function iniciarGeneracionDeTomas(indiceCapitulo) {
     const chatDiv = window.chatDiv || document.getElementById('chat');
+
+    // --- FASE 1: VALIDACIÓN ---
+    if (chatDiv) chatDiv.innerHTML += `<p><strong>Proceso Visual Iniciado:</strong> Validando datos...</p>`;
     
-    // 1. Validar que el capítulo existe y tiene escenas correspondientes
     if (indiceCapitulo < 0 || indiceCapitulo >= guionLiterarioData.length) {
         alert("Error: No se ha seleccionado un capítulo válido.");
         return;
@@ -27,55 +31,121 @@ async function iniciarGeneracionDeTomas(indiceCapitulo) {
         return;
     }
 
-    if (chatDiv) {
-        chatDiv.innerHTML += `<p><strong>Proceso Visual Iniciado:</strong> Preparando la generación de tomas para el guion "${tituloGuion}".</p>`;
-        chatDiv.scrollTop = chatDiv.scrollHeight;
-    }
+    try {
+        // --- FASE 2: CREACIÓN DEL UNIVERSO VISUAL ---
+        if (chatDiv) {
+            chatDiv.innerHTML += `<hr><p><strong>Fase 1/3: Creando el Universo Visual...</strong></p>`;
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
 
-    // 2. Preparar el contexto y la nueva escena de storyboard
-    const { planteamientoGeneral, planteamientoPorEscenas } = extraerPlanteamientos(capituloGuion.contenido);
-    const contextovisual = `Contexto General de la Historia: ${planteamientoGeneral}\n\nPlan de Escenas: ${planteamientoPorEscenas}`;
+        const { planteamientoGeneral, planteamientoPorEscenas } = extraerPlanteamientos(capituloGuion.contenido);
+        const resumenTrama = `Planteamiento General: ${planteamientoGeneral}\n\nPlan de Escenas: ${planteamientoPorEscenas}`;
 
-    // Crear una nueva escena en la sección "Escenas" (storyboard)
-    const nuevaEscenaStoryId = crearNuevaEscenaStory(tituloGuion);
+        const datosAgrupados = recolectarYAgruparDatos(); // Función de geminialfa.js
+        
+        // 2.1. Síntesis visual de la trama
+        const promptSintesisTrama = `Basado en el siguiente resumen de la trama, genera una "Síntesis Visual General". Describe el estilo artístico, la paleta de colores principal, la atmósfera general y el tono cinematográfico de la historia.\n\nTrama:\n${resumenTrama}`;
+        const sintesisVisualTrama = await llamarIAConFeedback(promptSintesisTrama, "sintetizando visualmente la trama", false);
 
-    // 3. Iterar y procesar cada frame de cada escena
-    for (const idEscena of escenasCapitulo) {
-        const escena = escenas[idEscena];
-        if (!escena || !escena.frames || escena.frames.length === 0) continue;
+        // 2.2. Enriquecimiento visual de los "Datos" en un directorio estructurado.
+        const directorioVisual = new Map();
+        if (Object.keys(datosAgrupados).length > 0) {
+            for (const categoria in datosAgrupados) {
+                const datosCategoria = datosAgrupados[categoria].map(d => `- ${d.nombre}: ${d.descripcion}`).join('\n');
+                
+                const promptEnriquecer = `Dada la siguiente categoría de elementos y sus descripciones, 
+                genera una descripción VISUAL detallada para CADA uno.
+Categoría: ${categoria}
+Elementos:
+${datosCategoria}
 
-        if (chatDiv) chatDiv.innerHTML += `<p><strong>Procesando:</strong> Escena "${escena.texto}".</p>`;
-
-        for (const [index, frame] of escena.frames.entries()) {
-            if (chatDiv) {
-                chatDiv.innerHTML += `<p><strong>Enviando a IA:</strong> Frame ${index + 1} de ${escena.frames.length} ("${escena.texto}")...</p>`;
-                chatDiv.scrollTop = chatDiv.scrollHeight;
+Responde ÚNICAMENTE con un objeto JSON válido con la estructura de un array:
+[
+  {
+    "nombre_elemento": "Nombre exacto del primer elemento",
+    "descripcion_visual": "Descripción visual detallada y evocadora del primer elemento."
+  }
+]`;
+                const descripcionesEnriquecidasJson = await llamarIAConFeedback(promptEnriquecer, `enriqueciendo datos para ${categoria}`, true);
+                
+                if (Array.isArray(descripcionesEnriquecidasJson)) {
+                    descripcionesEnriquecidasJson.forEach(item => {
+                        directorioVisual.set(item.nombre_elemento.toLowerCase(), item.descripcion_visual);
+                    });
+                }
             }
-            
-            const prompt = `
-${contextovisual}
+        }
+        
+        if (chatDiv) {
+            let resumenDirectorioHTML = '<ul>';
+            directorioVisual.forEach((desc, nombre) => {
+                resumenDirectorioHTML += `<li><strong>${nombre.charAt(0).toUpperCase() + nombre.slice(1)}:</strong> ${desc}</li>`;
+            });
+            resumenDirectorioHTML += '</ul>';
+            chatDiv.innerHTML += `<p><strong>Directorio Visual Creado:</strong></p><div class="visual-universe-summary"><h4>Síntesis General</h4><p>${sintesisVisualTrama}</p><h4>Elementos Clave</h4>${resumenDirectorioHTML}</div>`;
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
 
+        // --- FASE 3: GENERACIÓN DE TOMAS ---
+        if (chatDiv) {
+            chatDiv.innerHTML += `<hr><p><strong>Fase 2/3: Preparando el storyboard...</strong></p>`;
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+        const nuevaEscenaStoryId = crearNuevaEscenaStory(tituloGuion);
+        
+        if (chatDiv) {
+            chatDiv.innerHTML += `<p><strong>Fase 3/3: Generando tomas cinematográficas...</strong></p>`;
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+
+        for (const idEscena of escenasCapitulo) {
+            const escena = escenas[idEscena];
+            if (!escena || !escena.frames || escena.frames.length === 0) continue;
+
+            if (chatDiv) chatDiv.innerHTML += `<p><strong>Procesando:</strong> Escena "${escena.texto}".</p>`;
+
+            for (const [index, frame] of escena.frames.entries()) {
+                if (chatDiv) {
+                    chatDiv.innerHTML += `<p><strong>Enviando a IA:</strong> Frame ${index + 1} de ${escena.frames.length} ("${escena.texto}")...</p>`;
+                    chatDiv.scrollTop = chatDiv.scrollHeight;
+                }
+
+                // Identificar elementos relevantes para ESTE frame específico.
+                let contextoTomaEspecifico = '';
+                directorioVisual.forEach((descripcion, nombre) => {
+                    if (frame.texto.toLowerCase().includes(nombre)) {
+                        contextoTomaEspecifico += `Descripción de ${nombre.charAt(0).toUpperCase() + nombre.slice(1)}: ${descripcion}\n`;
+                    }
+                });
+                
+                const promptFinal = `
+--- INICIO CONTEXTO VISUAL GLOBAL (Estilo General) ---
+${sintesisVisualTrama}
+--- FIN CONTEXTO VISUAL GLOBAL ---
+
+${contextoTomaEspecifico ? `--- INICIO DESCRIPCIONES DE ELEMENTOS RELEVANTES PARA ESTA TOMA ---\n${contextoTomaEspecifico}--- FIN DESCRIPCIONES DE ELEMENTOS RELEVANTES ---\n` : ''}
+--- INICIO TAREA ESPECÍFICA ---
 Contenido del Frame a procesar:
 "${frame.texto}"
 
 Tarea:
-1.  Analiza el "Contenido del Frame a procesar" y determina en cuántas tomas cinematográficas se debe dividir para una correcta visualización.
-2.  Para cada toma, elabora dos textos:
-    - Un "guion_conceptual": Debe contener el diálogo, la voz en off, o la descripción del suceso de esa toma específica.
-    - Un "prompt_visual": Debe ser un texto detallado y evocador, en inglés, optimizado para una IA de generación de imágenes (como Midjourney o Stable Diffusion), que describa visualmente la escena, personajes, iluminación, ángulo de cámara y ambiente para esa toma.
+1.  Analiza el "Contenido del Frame a procesar" basándote en el Estilo General y las descripciones de elementos relevantes.
+2.  Divide el frame en las tomas cinematográficas necesarias.
+3.  Para CADA toma, genera:
+    -   Un "guion_conceptual": El diálogo, acción o descripción de esa toma.
+    -   Un "prompt_visual": Párrafo en inglés, AUTOCONTENIDO y DETALLADO. Describe la composición, personajes, vestuario, entorno, iluminación, ángulo de cámara, etc. INCLUYE EN EL PROMT TODOS LOS DETALLES DE DISEÑO VISUAL DE LOS PERSONAJES QUE SALGAN EN LA TOMA ASI COMO DE LOS LUGARES, OBJETOS, ETC..**
 
-Responde ÚNICAMENTE con un objeto JSON válido. No incluyas texto explicativo ni marcadores de código. La estructura debe ser:
+Responde ÚNICAMENTE con un objeto JSON válido. Estructura:
 {
   "tomas_generadas": [
     {
-      "guion_conceptual": "Diálogo o descripción de la primera toma.",
-      "prompt_visual": "Detailed image prompt for the first shot."
+      "guion_conceptual": "Diálogo/descripción de la toma.",
+      "prompt_visual": "Detailed, self-contained image prompt..."
     }
   ]
 }`;
-            
-            try {
-                const respuestaJson = await llamarIAConFeedback(prompt, `Frame ${index + 1}/${escena.frames.length} de la escena ${idEscena}`);
+                
+                const respuestaJson = await llamarIAConFeedback(promptFinal, `Frame ${index + 1}/${escena.frames.length} de la escena ${idEscena}`);
 
                 if (respuestaJson && respuestaJson.tomas_generadas && Array.isArray(respuestaJson.tomas_generadas)) {
                     if (chatDiv) chatDiv.innerHTML += `<p><strong>IA Respondió:</strong> Se generaron ${respuestaJson.tomas_generadas.length} tomas para el frame.</p>`;
@@ -83,38 +153,36 @@ Responde ÚNICAMENTE con un objeto JSON válido. No incluyas texto explicativo n
                     respuestaJson.tomas_generadas.forEach(tomaData => {
                         agregarTomaAEscenaStory(nuevaEscenaStoryId, {
                             guionConceptual: tomaData.guion_conceptual || "",
-                            guionTecnico: tomaData.prompt_visual || "" // Usamos guionTecnico para el prompt visual
+                            guionTecnico: tomaData.prompt_visual || ""
                         });
                     });
                     
-                    // Actualizar la UI para ver las tomas agregadas en tiempo real
-                    if (typeof renderEscenasUI === 'function') {
-                        renderEscenasUI();
-                    }
+                    if (typeof renderEscenasUI === 'function') renderEscenasUI();
 
                 } else {
                     throw new Error("La respuesta de la IA no contiene 'tomas_generadas' en el formato esperado.");
                 }
 
-            } catch (error) {
-                if (chatDiv) {
-                    chatDiv.innerHTML += `<p><strong>Error de IA (Frame ${index + 1}):</strong> ${error.message}</p>`;
-                    chatDiv.scrollTop = chatDiv.scrollHeight;
-                }
+                await sleep(1000); 
             }
-
-            // Esperar antes de procesar el siguiente frame
-            await sleep(1000); 
         }
-    }
 
-    if (chatDiv) {
-        chatDiv.innerHTML += `<p><strong>PROCESO COMPLETADO:</strong> La generación de tomas para "${tituloGuion}" ha finalizado. Puedes ver el resultado en la sección 'Escenas'.</p>`;
-        chatDiv.scrollTop = chatDiv.scrollHeight;
+        if (chatDiv) {
+            chatDiv.innerHTML += `<hr><p><strong>PROCESO COMPLETADO:</strong> La generación de tomas para "${tituloGuion}" ha finalizado. Puedes ver el resultado en la sección 'Escenas'.</p>`;
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+        alert(`Proceso de generación de tomas completado para "${tituloGuion}".`);
+        cerrartodo();
+        abrir('escenah');
+
+    } catch (error) {
+        if (chatDiv) {
+            chatDiv.innerHTML += `<p><strong>Error Fatal en Generación Visual:</strong> ${error.message}</p>`;
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+        alert("Ocurrió un error durante la generación de tomas. Revisa la consola para más detalles.");
+        console.error("Error en iniciarGeneracionDeTomas:", error);
     }
-    alert(`Proceso de generación de tomas completado para "${tituloGuion}".`);
-    cerrartodo();
-    abrir('escenah');
 }
 
 
@@ -173,7 +241,7 @@ function agregarTomaAEscenaStory(escenaId, tomaData) {
         duracion: 8,
         imagen: "",
         guionConceptual: tomaData.guionConceptual || "",
-        guionTecnico: tomaData.guionTecnico || "",
+        guionTecnico: tomaData.guionTecnico || "", // Usamos guionTecnico para el prompt visual
         guionArtistico: ""
     };
     escena.tomas.push(nuevaToma);

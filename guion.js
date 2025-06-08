@@ -5,6 +5,20 @@
 function abrirGuion() {
     cerrartodo();
     document.getElementById('guion-literario').style.display = 'flex';
+    
+    // =======================================================================
+    //  INICIO DE LA CORRECCIÓN
+    // =======================================================================
+    // Si había un capítulo activo, lo volvemos a renderizar.
+    // Esto asegura que la vista se actualice con cualquier cambio que
+    // haya ocurrido en segundo plano (como la generación de frames),
+    // mostrando el botón correcto ("Generar Tomas") cuando el usuario regrese.
+    if (indiceCapituloActivo !== -1) {
+        mostrarCapituloSeleccionado(indiceCapituloActivo);
+    }
+    // =======================================================================
+    //  FIN DE LA CORRECCIÓN
+    // =======================================================================
 }
 
 function agregarCapituloYMostrar() {
@@ -19,6 +33,25 @@ function agregarCapituloYMostrar() {
     renderizarGuion();
     mostrarCapituloSeleccionado(indiceCapituloActivo); 
 }
+
+/**
+ * Verifica si ya se han generado frames en la sección "Capítulos" para un guion específico.
+ * @param {string} tituloGuion El título del guion a verificar.
+ * @returns {boolean} True si existen escenas para ese guion y al menos una tiene frames.
+ */
+function hanSidoFramesGenerados(tituloGuion) {
+    const escenasDelGuion = Object.keys(escenas)
+        .filter(id => id.startsWith(tituloGuion));
+
+    if (escenasDelGuion.length === 0) {
+        return false;
+    }
+
+    const hayFrames = escenasDelGuion.some(id => escenas[id] && escenas[id].frames && escenas[id].frames.length > 0);
+
+    return hayFrames;
+}
+
 
 function mostrarCapituloSeleccionado(index) {
     indiceCapituloActivo = index;
@@ -56,21 +89,44 @@ function mostrarCapituloSeleccionado(index) {
     
     contenidoDiv.appendChild(inputTitulo);
 
-    // ========= INICIO: Lógica del botón "Generar Tomas" =========
     if (capitulo.generadoPorIA) {
-        const botonGenerarTomas = document.createElement('button');
-        botonGenerarTomas.textContent = 'Generar Tomas';
-        botonGenerarTomas.className = 'pro generar-tomas-btn'; // Clases para estilo
-        botonGenerarTomas.onclick = () => {
-            if (typeof iniciarGeneracionDeTomas === 'function') {
-                iniciarGeneracionDeTomas(indiceCapituloActivo);
-            } else {
-                alert("Error: La función para generar tomas no está disponible. Asegúrate de que 'geminivisual.js' esté cargado.");
-            }
-        };
-        contenidoDiv.appendChild(botonGenerarTomas);
+        if (hanSidoFramesGenerados(capitulo.titulo)) {
+            const botonGenerarTomas = document.createElement('button');
+            botonGenerarTomas.textContent = 'Generar Tomas Visuales';
+            botonGenerarTomas.className = 'pro generar-tomas-btn';
+            botonGenerarTomas.title = 'Genera el storyboard visual a partir de los frames ya creados.';
+            botonGenerarTomas.onclick = () => {
+                if (typeof iniciarGeneracionDeTomas === 'function') {
+                    iniciarGeneracionDeTomas(indiceCapituloActivo);
+                } else {
+                    alert("Error: La función para generar tomas no está disponible.");
+                }
+            };
+            contenidoDiv.appendChild(botonGenerarTomas);
+        } else {
+            const botonGenerarFrames = document.createElement('button');
+            botonGenerarFrames.textContent = 'Generar Frames de la Historia';
+            botonGenerarFrames.className = 'pro generar-frames-btn';
+            botonGenerarFrames.title = 'Rellena los capítulos con los frames detallados por la IA.';
+            botonGenerarFrames.onclick = () => {
+                if (typeof desarrollarFramesDesdeGeminimente === 'function') {
+                    if (!ultimaHistoriaGeneradaJson || !ultimaHistoriaGeneradaJson.historia || ultimaHistoriaGeneradaJson.historia.length === 0) {
+                        alert("No se pueden generar los frames. El plan de la historia de la IA no está cargado. Por favor, vuelve a la pestaña 'IA' y genera la historia primero.");
+                        return;
+                    }
+                    alert(`Se iniciará la generación de frames para "${capitulo.titulo}". Serás redirigido a la sección 'Capítulos' para ver el progreso.`);
+                    
+                    desarrollarFramesDesdeGeminimente(capitulo.titulo);
+
+                    cerrartodo();
+                    abrir('capitulosh');
+                } else {
+                    alert("Error: La función para desarrollar frames ('desarrollarFramesDesdeGeminimente') no está disponible.");
+                }
+            };
+            contenidoDiv.appendChild(botonGenerarFrames);
+        }
     }
-    // ========= FIN: Lógica del botón =========
 
     const editorContenido = document.createElement('div');
     editorContenido.className = 'contenido-guion-editor';

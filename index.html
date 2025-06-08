@@ -28,7 +28,7 @@
     <input type="file" id="file-load" accept="application/json"  onchange="cargarJSON(event)" style="display: none;">
     <button class="pro" onclick="document.getElementById('file-load').click()">🗂️ Load</button>
     <button class="pro" onclick="abrirModalConfig()"> ⚙️ </button>
-    <button class="pro" id="import-data-button" onclick="abrirModalImportar()">📥</button>
+    <button class="pro" style="display: none;" id="import-data-button" onclick="abrirModalImportar()">📥</button>
     <button class="pro" id="theme-toggle-button" onclick="toggleTheme()">🌙</button>
 </div></div>
 
@@ -103,9 +103,14 @@
 <div id="capitulos" >
 <div id="lista-capitulos"></div></div></div>
 
-<div id="personajes"   >
-    <button class="pro" id="sumarpersonaje" onclick="agregarPersonaje()">Agregar Dato</button>
-<div id="listapersonajes" ></div></div>
+<div id="personajes">
+    <div id="datos-botones-superiores">
+        <button class="pro" id="sumarpersonaje" onclick="agregarPersonaje()">Agregar Dato</button>
+        <button class="pro" id="sumarpersonaje-ia" onclick="abrirModalAIDatos()">Añadir Datos con IA ✨</button>
+    </div>
+    <div id="listapersonajes"></div>
+</div>
+
 <div id="escena-vista">
     <textarea id="escena-texto" placeholder="Texto de la escena"></textarea>
     <div id="drop-zone"   >
@@ -141,6 +146,20 @@
     <button class="modal-button" onclick="importarDatosDesdeJSON()">Añadir Datos</button>
 </div>
 
+<!-- Modal para Añadir Datos con IA -->
+<div id="modal-ia-datos" class="modal-content">
+    <button class="modal-close-button" onclick="cerrarModalAIDatos()">&times;</button>
+    <h3>Añadir Datos con Inteligencia Artificial</h3>
+    <p>Pega aquí el nombre de una obra (ej: "Star Wars"), una lista de ideas, o un JSON para que la IA los procese y añada como datos estructurados.</p>
+    <textarea id="ia-datos-area" placeholder='Ejemplo 1: El Señor de los Anillos
+
+Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el reino de Camelot.
+
+Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
+    <button class="modal-button" onclick="procesarEntradaConIA()">✨ Analizar y Agregar Datos</button>
+</div>
+
+
 <!-- Modal para Editar Momentos -->
 <div id="modal-editar-momento" class="modal-content">
     <button class="modal-close-button" onclick="cerrarModalEditarMomento()">&times;</button>
@@ -173,6 +192,16 @@
         <p>Exporta los capítulos y sus frames a un archivo HTML simple.</p>
         <button class="modal-button" onclick="generarHTML()">Exportar Guion HTML</button>
     </div>
+   <!-- INICIO: Nueva Opción de Exportación -->
+    <div class="export-option">
+        <h4>Exportar Storyboard de Tomas</h4>
+        <p>Exporta las escenas de storyboard (imágenes y texto) a un archivo HTML.</p>
+
+         <div class="export-controls">
+             <select id="tomas-export-select" class="modal-select"></select>
+             <button class="modal-button" onclick="generarHTMLTomas()">Exportar Tomas HTML</button>
+        </div>    </div>
+    <!-- FIN: Nueva Opción de Exportación -->
 
     <div class="export-option">
         <h4>Exportar Videojuego</h4>
@@ -191,9 +220,10 @@
 <script src="io.js"></script>
 <script src="gemini.js"></script>
 <script src="geminialfa.js"></script>
-<script src="geminivisual.js"></script> <!-- AÑADIDO -->
+<script src="geminivisual.js"></script> 
 <script src="exportar.js"></script>
 <script src="exportarjuego.js"></script>
+<script src="exportartomas.js"></script>
 <script src="momentos.js"></script>
 
 </body>

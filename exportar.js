@@ -12,6 +12,37 @@ function abrirModalExportar() {
     if (overlay) {
         overlay.onclick = cerrarModalExportar;
     }
+
+    // --- INICIO: Lógica para poblar el dropdown de escenas de tomas ---
+    const selectEscenasTomas = document.getElementById('tomas-export-select');
+    if (selectEscenasTomas) {
+        selectEscenasTomas.innerHTML = ''; // Limpiar opciones anteriores
+        selectEscenasTomas.disabled = false;
+
+        // CORRECCIÓN: Se accede a la variable 'storyScenes' directamente en lugar de 'window.storyScenes'
+        if (typeof storyScenes !== 'undefined' && storyScenes.length > 0) {
+            // Opción para exportar todas las escenas
+            const todasOption = document.createElement('option');
+            todasOption.value = 'all';
+            todasOption.textContent = 'Todas las Escenas';
+            selectEscenasTomas.appendChild(todasOption);
+
+            // Añadir cada escena individualmente
+            storyScenes.forEach(escena => {
+                const option = document.createElement('option');
+                option.value = escena.id;
+                option.textContent = escena.nombre || 'Escena sin título';
+                selectEscenasTomas.appendChild(option);
+            });
+        } else {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'No hay escenas disponibles';
+            selectEscenasTomas.appendChild(option);
+            selectEscenasTomas.disabled = true;
+        }
+    }
+    // --- FIN: Lógica para poblar el dropdown ---
 }
 
 function cerrarModalExportar() {

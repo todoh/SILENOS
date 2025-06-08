@@ -408,6 +408,16 @@ top:10dvh;
 width: 10dvw;
 height: auto;
 margin: 0%; z-index:   1000 ;}
+
+#sumarpersonaje-ia {
+position: fixed; display: flex;
+right: 2dvw;
+transform: translateY(-2dvh);
+top:15dvh;
+width: 10dvw;
+height: auto;
+margin: 0%; z-index:   1000 ;}
+
 .nombreh {
     left: 0%;
     top: 45%;
@@ -1290,4 +1300,96 @@ top: 1%;left: 2%;}
 }
 .contenido-guion-editor li {
     margin-bottom: 5px;
+}
+
+
+
+
+#ia-datos-area {
+    width: 95%;
+    height: 250px;
+    font-family: monospace;
+    font-size: 0.9em;
+    padding: 10px;
+    border-radius: 5px;
+    resize: vertical;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    color: #333;
+}
+
+.dark-theme #ia-datos-area {
+    background-color: #333;
+    color: #e0e0e0;
+    border: 1px solid #555;
+}
+/* ... (al final del archivo, junto a otros estilos de botones) ... */
+
+/* Botón para generar los frames desde la sección Guion */
+.generar-frames-btn {
+    width: 100%;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    background-color: #ffc107; /* Amarillo para llamar la atención sobre una acción pendiente */
+    color: #212529; /* Texto oscuro para contraste */
+}
+
+.dark-theme .generar-frames-btn {
+    background-color: #d39e00;
+}
+
+
+/* Estilo existente del botón de generar tomas (lo ajustamos ligeramente para consistencia) */
+.generar-tomas-btn {
+    width: 100%;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    background-color: #28a745; /* Verde para la acción de generar */
+}
+
+.dark-theme .generar-tomas-btn {
+    background-color: #218838;
+}
+
+
+/* ... (al final del archivo) ... */
+
+.visual-universe-summary {
+    background-color: #f0f8ff;
+    border: 1px solid #cce0ff;
+    border-left: 5px solid #007bff;
+    padding: 10px 15px;
+    margin: 10px 0;
+    border-radius: 5px;
+    font-size: 0.9em;
+    text-align: left;
+    white-space: normal;
+}
+
+.visual-universe-summary h3, .visual-universe-summary h4 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.visual-universe-summary hr {
+    border: none;
+    border-top: 1px solid #cce0ff;
+    margin: 15px 0;
+}
+
+.dark-theme .visual-universe-summary {
+    background-color: #2d333b;
+    border-color: #00529B;
+    border-left-color: #58a6ff;
+    color: #c9d1d9;
+}
+
+.dark-theme .visual-universe-summary h3, .dark-theme .visual-universe-summary h4 {
+    color: #adbac7;
+}
+
+.dark-theme .visual-universe-summary hr {
+    border-top-color: #484f58;
 }

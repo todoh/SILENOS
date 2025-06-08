@@ -271,3 +271,24 @@ function actualizarParametrosIA() {
     window.cantidaddeescenas = cantidaddeescenas;
     window.cantidadframes = cantidadframes;
 }
+
+// --- LÓGICA DEL MODAL DE DATOS CON IA ---
+function abrirModalAIDatos() {
+    const overlay = document.getElementById('modal-overlay');
+    const modal = document.getElementById('modal-ia-datos');
+    if (overlay) overlay.style.display = 'block';
+    if (modal) modal.style.display = 'flex';
+    if (overlay) {
+        overlay.onclick = cerrarModalAIDatos;
+    }
+}
+
+function cerrarModalAIDatos() {
+    const overlay = document.getElementById('modal-overlay');
+    const modal = document.getElementById('modal-ia-datos');
+    if (overlay) overlay.style.display = 'none';
+    if (modal) modal.style.display = 'none';
+    if (overlay) {
+        overlay.onclick = null;
+    }
+}
