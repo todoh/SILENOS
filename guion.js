@@ -8,22 +8,26 @@ function abrirGuion() {
 }
 
 function agregarCapituloYMostrar() {
-    const nuevoCapitulo = { titulo: "Nuevo Capítulo " + String(guionLiterarioData.length + 1).padStart(3, '0'), contenido: "" };
+    const nuevoCapitulo = { 
+        titulo: "Nuevo Capítulo " + String(guionLiterarioData.length + 1).padStart(3, '0'), 
+        contenido: "",
+        generadoPorIA: false 
+    };
     guionLiterarioData.push(nuevoCapitulo);
-    // Ordenar para encontrar el nuevo índice y establecerlo como activo
     guionLiterarioData.sort((a, b) => a.titulo.localeCompare(b.titulo));
     indiceCapituloActivo = guionLiterarioData.findIndex(cap => cap === nuevoCapitulo);
     renderizarGuion();
+    mostrarCapituloSeleccionado(indiceCapituloActivo); 
 }
 
 function mostrarCapituloSeleccionado(index) {
     indiceCapituloActivo = index;
     const contenidoDiv = document.getElementById('contenido-capitulo-activo');
-    contenidoDiv.innerHTML = ''; // Limpiar contenido anterior
+    contenidoDiv.innerHTML = ''; 
 
     if (index < 0 || index >= guionLiterarioData.length) {
         contenidoDiv.innerHTML = '<p class="mensaje-placeholder">Selecciona un capítulo de la lista o crea uno nuevo.</p>';
-        renderizarGuion(); // Para actualizar la lista de títulos (quitar resaltado)
+        renderizarGuion(); 
         return;
     }
 
@@ -33,29 +37,54 @@ function mostrarCapituloSeleccionado(index) {
     inputTitulo.type = 'text';
     inputTitulo.placeholder = 'Título del Capítulo';
     inputTitulo.value = capitulo.titulo;
-    inputTitulo.oninput = function() {
-        if (indiceCapituloActivo !== -1) {
-            guionLiterarioData[indiceCapituloActivo].titulo = this.value;
-            const capituloActualObjeto = guionLiterarioData[indiceCapituloActivo];
-            guionLiterarioData.sort((a, b) => a.titulo.localeCompare(b.titulo));
-            indiceCapituloActivo = guionLiterarioData.findIndex(cap => cap === capituloActualObjeto);
-            renderizarGuion(); // Re-renderizar para actualizar orden y resaltado
-        }
-    };
 
-    const textareaContenido = document.createElement('textarea');
-    textareaContenido.placeholder = 'Contenido del capítulo...';
-    textareaContenido.value = capitulo.contenido;
-    textareaContenido.oninput = function() {
-        if (indiceCapituloActivo !== -1) {
-            guionLiterarioData[indiceCapituloActivo].contenido = this.value;
-        }
-    };
-
+    if (capitulo.generadoPorIA) {
+        inputTitulo.readOnly = true;
+        inputTitulo.classList.add('input-no-editable');
+        inputTitulo.title = "Este título fue generado por la IA y no se puede editar.";
+    } else {
+        inputTitulo.oninput = function() {
+            if (indiceCapituloActivo !== -1) {
+                guionLiterarioData[indiceCapituloActivo].titulo = this.value;
+                const capituloActualObjeto = guionLiterarioData[indiceCapituloActivo];
+                guionLiterarioData.sort((a, b) => a.titulo.localeCompare(b.titulo));
+                indiceCapituloActivo = guionLiterarioData.findIndex(cap => cap === capituloActualObjeto);
+                renderizarGuion(); 
+            }
+        };
+    }
+    
     contenidoDiv.appendChild(inputTitulo);
-    contenidoDiv.appendChild(textareaContenido);
 
-    renderizarGuion(); // Para actualizar el resaltado en la lista
+    // ========= INICIO: Lógica del botón "Generar Tomas" =========
+    if (capitulo.generadoPorIA) {
+        const botonGenerarTomas = document.createElement('button');
+        botonGenerarTomas.textContent = 'Generar Tomas';
+        botonGenerarTomas.className = 'pro generar-tomas-btn'; // Clases para estilo
+        botonGenerarTomas.onclick = () => {
+            if (typeof iniciarGeneracionDeTomas === 'function') {
+                iniciarGeneracionDeTomas(indiceCapituloActivo);
+            } else {
+                alert("Error: La función para generar tomas no está disponible. Asegúrate de que 'geminivisual.js' esté cargado.");
+            }
+        };
+        contenidoDiv.appendChild(botonGenerarTomas);
+    }
+    // ========= FIN: Lógica del botón =========
+
+    const editorContenido = document.createElement('div');
+    editorContenido.className = 'contenido-guion-editor';
+    editorContenido.contentEditable = true;
+    editorContenido.innerHTML = capitulo.contenido; 
+    editorContenido.oninput = function() {
+        if (indiceCapituloActivo !== -1) {
+            guionLiterarioData[indiceCapituloActivo].contenido = this.innerHTML;
+        }
+    };
+
+    contenidoDiv.appendChild(editorContenido);
+
+    renderizarGuion();
 }
 
 function eliminarCapituloDesdeIndice(indexToDelete) {
@@ -65,20 +94,34 @@ function eliminarCapituloDesdeIndice(indexToDelete) {
         guionLiterarioData.splice(indexToDelete, 1);
 
         if (indiceCapituloActivo === indexToDelete) {
-            indiceCapituloActivo = -1;
+            indiceCapituloActivo = -1; 
         } else if (indiceCapituloActivo > indexToDelete) {
             indiceCapituloActivo--;
         }
-        renderizarGuion();
+        
+        renderizarGuion(); 
+        
+        if (indiceCapituloActivo === -1) {
+             const contenidoDiv = document.getElementById('contenido-capitulo-activo');
+             contenidoDiv.innerHTML = '<p class="mensaje-placeholder">Selecciona un capítulo de la lista o crea uno nuevo.</p>';
+        }
     }
 }
+
 
 function renderizarGuion() {
     const indiceDiv = document.getElementById('indice-capitulos-guion');
     const contenidoDiv = document.getElementById('contenido-capitulo-activo');
-    indiceDiv.innerHTML = ''; // Limpiar lista de títulos
+    const capituloActivoActual = indiceCapituloActivo !== -1 ? guionLiterarioData[indiceCapituloActivo] : null;
+
+    indiceDiv.innerHTML = ''; 
 
     guionLiterarioData.sort((a, b) => a.titulo.localeCompare(b.titulo));
+
+    if (capituloActivoActual) {
+        indiceCapituloActivo = guionLiterarioData.findIndex(cap => cap === capituloActivoActual);
+    }
+
 
     guionLiterarioData.forEach((capitulo, index) => {
         const tituloContainer = document.createElement('div');
@@ -107,11 +150,7 @@ function renderizarGuion() {
         indiceDiv.appendChild(tituloContainer);
     });
 
-    if (indiceCapituloActivo === -1 || guionLiterarioData.length === 0) {
+    if (indiceCapituloActivo === -1 && contenidoDiv.querySelector('.contenido-guion-editor') === null) {
         contenidoDiv.innerHTML = '<p class="mensaje-placeholder">Selecciona un capítulo de la lista o crea uno nuevo.</p>';
-    } else if (indiceCapituloActivo >= 0 && indiceCapituloActivo < guionLiterarioData.length) {
-        if (contenidoDiv.innerHTML.trim() === '' || contenidoDiv.querySelector('.mensaje-placeholder')) {
-             mostrarCapituloSeleccionado(indiceCapituloActivo);
-        }
     }
 }

@@ -69,46 +69,34 @@ async function llamarIAConFeedback(prompt, etapaDescriptiva, esJsonEsperado = tr
         const replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text || (esJsonEsperado ? "{}" : "");
 
         if (esJsonEsperado) {
-            // === INICIO DE LA CORRECCIÓN ===
-            // Estrategia de limpieza mejorada para la respuesta de la IA.
-            
             let textoJsonLimpio = replyText;
-
-            // 1. Busca un bloque de código JSON envuelto en markdown ```json ... ```
             const match = textoJsonLimpio.match(/```json\s*([\s\S]*?)\s*```/);
             if (match && match[1]) {
                 textoJsonLimpio = match[1];
             } else {
-                // 2. Si no hay markdown, busca el primer '{' y el último '}' como antes, pero como fallback.
                 const inicioJson = textoJsonLimpio.indexOf('{');
                 const finJson = textoJsonLimpio.lastIndexOf('}');
                 if (inicioJson !== -1 && finJson !== -1 && finJson > inicioJson) {
                     textoJsonLimpio = textoJsonLimpio.substring(inicioJson, finJson + 1);
                 } else {
-                    // Si ni siquiera encuentra llaves, es un error claro.
                     throw new Error(`La respuesta de la IA para ${etapaDescriptiva} no parece contener un objeto JSON.`);
                 }
             }
-
-            // 3. Intenta analizar el JSON, y si falla, muestra un error detallado.
             try {
                 return JSON.parse(textoJsonLimpio);
             } catch (parseError) {
-                // Este error es crucial para depurar. Lo lanzamos con más contexto.
                 console.error("Texto que falló el parseo JSON:", textoJsonLimpio);
                 throw new Error(`Error al analizar el JSON de la IA para ${etapaDescriptiva}. Detalles: ${parseError.message}`);
             }
-            // === FIN DE LA CORRECCIÓN ===
-
         }
-        return replyText; // Para respuestas que no son JSON
+        return replyText;
 
     } catch (error) {
         if (chatDiv) {
             chatDiv.innerHTML += `<p><strong>Error en ${etapaDescriptiva}:</strong> ${error.message}</p>`;
             chatDiv.scrollTop = chatDiv.scrollHeight;
         }
-        throw error; // Propaga el error para que la función principal lo capture
+        throw error;
     }
 }
 
@@ -129,13 +117,11 @@ async function enviarTextoConInstrucciones() {
         chatDiv.innerHTML += `<p><strong>Tu idea inicial:</strong><br>${geminichat}</p>`;
     }
 
-    // Reiniciar variables globales de la historia
     planteamientoGeneralGlobal = "";
     resumenPorEscenasGlobal = [];
     tituloHistoriaGlobal = "";
     ultimaHistoriaGeneradaJson = { titulo_historia: "", historia: [] };
 
-    // --- LÓGICA DE DATOS ---
     const incluirDatos = document.getElementById('incluir-datos-ia').checked;
     let contextoDeDatos = "";
 
@@ -152,10 +138,8 @@ async function enviarTextoConInstrucciones() {
             }
         }
     }
-    // --- FIN LÓGICA ---
 
     try {
-        // --- PASO 1: Generar Planteamiento General y Título ---
         const promptPaso1 = `
 ${contextoDeDatos}
 **Idea Inicial del Usuario:**
@@ -188,7 +172,6 @@ Responde ÚNICAMENTE con un objeto JSON válido con la siguiente estructura. No 
 
         await sleep(1000);
 
-        // --- PASO 2: Dividir Planteamiento en Resúmenes de Escenas ---
         if (window.cantidaddeescenas <= 0) throw new Error("La cantidad de escenas debe ser mayor a cero.");
         
         const promptPaso2 = `Título de la Historia: ${tituloHistoriaGlobal}
@@ -225,7 +208,6 @@ Asegúrate de que haya exactamente ${window.cantidaddeescenas} objetos en el arr
             geminimenteDiv.appendChild(ulResumen);
         }
 
-        // --- PASO 3: Desarrollar Cada Escena en Frames ---
         if (window.cantidadframes <= 0) throw new Error("La cantidad de frames por escena debe ser mayor a cero.");
         let contextoEscenaAnteriorSerializado = "";
 
@@ -259,7 +241,9 @@ Responde ÚNICAMENTE con un objeto JSON con la estructura:
 
             const escenaProcesada = {
                 titulo_escena: respuestaPaso3Escena.titulo_escena_desarrollada,
-                frames: respuestaPaso3Escena.frames_desarrollados.map(f => ({ contenido: f.contenido_frame || "" }))
+                frames: respuestaPaso3Escena.frames_desarrollados.map(f => ({ contenido: f.contenido_frame || "" })),
+                // ========= CAMBIO CLAVE: Marcar como generado por IA =========
+                generadoPorIA: true
             };
             ultimaHistoriaGeneradaJson.historia.push(escenaProcesada);
             contextoEscenaAnteriorSerializado = JSON.stringify(respuestaPaso3Escena, null, 2); 
@@ -281,23 +265,46 @@ Responde ÚNICAMENTE con un objeto JSON con la estructura:
              if (chatDiv) chatDiv.innerHTML += `<p><strong>Éxito:</strong> Escena ${i+1} ("${escenaProcesada.titulo_escena}") desarrollada con ${escenaProcesada.frames.length} frames.</p>`;
         } 
 
-        // --- PASO 4: Crear Capítulo en Guion Literario ---
         if (typeof agregarCapituloYMostrar === 'function') {
-             agregarCapituloYMostrar(); 
+            agregarCapituloYMostrar(); 
             if (indiceCapituloActivo >= 0 && guionLiterarioData[indiceCapituloActivo]) {
                 guionLiterarioData[indiceCapituloActivo].titulo = tituloHistoriaGlobal || "Guion de Historia IA";
-                let contenidoGuion = `<h1>${tituloHistoriaGlobal}</h1>\n\n<h2>Planteamiento General</h2>\n<pre>${planteamientoGeneralGlobal}</pre>\n\n`;
-                ultimaHistoriaGeneradaJson.historia.forEach((escena, idx) => {
-                    contenidoGuion += `<h3>${escena.titulo_escena || `Escena ${idx + 1}`}</h3>\n`;
-                    escena.frames.forEach((frame, frameIdx) => {
-                        contenidoGuion += `<h4>Frame ${frameIdx + 1}</h4>\n<pre>${frame.contenido || ""}</pre>\n`;
+                 // ========= CAMBIO CLAVE: Marcar como generado por IA =========
+                guionLiterarioData[indiceCapituloActivo].generadoPorIA = true;
+                
+                let contenidoGuion = `<h1>${tituloHistoriaGlobal}</h1>
+                <div class="guion-ia-general">
+                    <h2>Planteamiento General</h2>
+                    <p>${planteamientoGeneralGlobal.replace(/\n/g, "<br>")}</p>
+                </div>`;
+
+                if (resumenPorEscenasGlobal && resumenPorEscenasGlobal.length > 0) {
+                    contenidoGuion += `<div class="guion-ia-general">
+                        <h2>Planteamiento por Escenas</h2>
+                        <ul>`;
+                    resumenPorEscenasGlobal.forEach((res, idx) => {
+                        contenidoGuion += `<li><strong>Escena ${idx + 1}:</strong> ${res.resumen_escena || ""}</li>`;
                     });
-                    contenidoGuion += "\n";
+                    contenidoGuion += `</ul></div>`;
+                }
+
+                ultimaHistoriaGeneradaJson.historia.forEach((escena, idx) => {
+                    contenidoGuion += `<div class="guion-ia-escena">
+                    <h3>${escena.titulo_escena || `Escena ${idx + 1}`}</h3>`;
+                    escena.frames.forEach((frame, frameIdx) => {
+                        contenidoGuion += `<div class="guion-ia-frame">
+                        <h4>Frame ${frameIdx + 1}</h4>
+                        <p>${(frame.contenido || "").replace(/\n/g, "<br>")}</p>
+                    </div>`;
+                    });
+                    contenidoGuion += `</div>`;
                 });
+
                 guionLiterarioData[indiceCapituloActivo].contenido = contenidoGuion;
-                renderizarGuion(); 
+                mostrarCapituloSeleccionado(indiceCapituloActivo); 
             }
         }
+        
         if (chatDiv) chatDiv.innerHTML += `<p><strong>PROCESO COMPLETADO:</strong> La generación de la historia y el guion ha finalizado.</p>`;
         alert("¡Proceso de generación de historia completado!");
 

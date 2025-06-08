@@ -1,5 +1,68 @@
+// ===================================
+// GESTIÓN DE MODALES DE EXPORTACIÓN Y LÓGICA
+// ===================================
+
+// --- MODAL DE EXPORTACIÓN ---
+
+function abrirModalExportar() {
+    const overlay = document.getElementById('modal-overlay');
+    const modal = document.getElementById('modal-exportar');
+    if (overlay) overlay.style.display = 'block';
+    if (modal) modal.style.display = 'flex';
+    if (overlay) {
+        overlay.onclick = cerrarModalExportar;
+    }
+}
+
+function cerrarModalExportar() {
+    const overlay = document.getElementById('modal-overlay');
+    const modal = document.getElementById('modal-exportar');
+    if (overlay) overlay.style.display = 'none';
+    if (modal) modal.style.display = 'none';
+    if (overlay) {
+        overlay.onclick = null;
+    }
+}
+
+// --- FUNCIONES DE EXPORTACIÓN ---
+
+/**
+ * Inicia la exportación del videojuego, validando el NOMBRE del momento inicial.
+ */
+function iniciarExportacionJuego() {
+    const nombreMomentoInicial = document.getElementById('momento-inicial-id').value.trim();
+    if (!nombreMomentoInicial) {
+        alert("Por favor, introduce el NOMBRE del momento con el que comenzará el videojuego.");
+        return;
+    }
+    
+    // Validar que el momento exista en el lienzo por su nombre
+    let momentoEncontrado = false;
+    const todosLosMomentos = document.querySelectorAll('#momentos-lienzo .momento-nodo');
+    for (const nodo of todosLosMomentos) {
+        const tituloMomento = nodo.querySelector('.momento-titulo').textContent.trim();
+        if (tituloMomento === nombreMomentoInicial) {
+            momentoEncontrado = true;
+            break;
+        }
+    }
+
+    if (!momentoEncontrado) {
+        alert(`No se encontró ningún momento con el NOMBRE "${nombreMomentoInicial}". Por favor, verifica que el nombre sea exacto.`);
+        return;
+    }
+    
+    // Llamar a generarGAME con el nombre del momento
+    generarGAME(nombreMomentoInicial);
+    cerrarModalExportar();
+}
+
+
+/**
+ * Exporta la sección de Capítulos (escenas y frames) a un archivo HTML simple.
+ */
 async function generarHTML() {
-    console.log("Iniciando generación de HTML...");
+    console.log("Iniciando generación de HTML para Guion...");
     const tituloProyecto = document.getElementById("titulo-proyecto").innerText;
 
     let bodyContent = `<h1>${tituloProyecto}</h1>`;
@@ -15,6 +78,7 @@ async function generarHTML() {
                 bodyContent += '<div class="frame-export">';
                 if (frame.imagen) {
                     try {
+                        // Se asume que _compressImageForSave existe en el scope (io.js)
                         const imagenComprimida = await _compressImageForSave(frame.imagen);
                         if (imagenComprimida) {
                            bodyContent += `<img src="${imagenComprimida}" alt="Imagen del frame">`;
@@ -39,13 +103,13 @@ async function generarHTML() {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>${tituloProyecto}</title>
             <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; background-color: #f4f4f4; color: #333; }
-                .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+                body { font-family: sans-serif; line-height: 1.6; margin: 0; padding: 20px; background-color: #f4f4f4; color: #333; }
+                .container { max-width: 800px; margin: auto; background: white; padding: 20px 40px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
                 h1, h2 { color: #333; }
-                h1 { text-align: center; }
-                h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; }
+                h1 { text-align: center; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+                h2 { border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 40px; }
                 .frame-export { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background: #fafafa; }
-                img { max-width: 100%; height: auto; border-radius: 4px; margin-bottom: 10px; }
+                img { max-width: 100%; height: auto; border-radius: 4px; margin-bottom: 10px; display: block; }
                 p { margin-top: 0; }
             </style>
         </head>
@@ -60,7 +124,8 @@ async function generarHTML() {
     const blob = new Blob([htmlCompleto], { type: 'text/html' });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `${tituloProyecto.replace(/\s+/g, '_')}.html`;
+    a.download = `${tituloProyecto.replace(/\s+/g, '_')}_Guion.html`;
     a.click();
-    console.log("Exportación a HTML completada.");
+    console.log("Exportación de Guion a HTML completada.");
+    cerrarModalExportar();
 }

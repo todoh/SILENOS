@@ -6,6 +6,7 @@
 let guionLiterarioData = [];
 let escenas = {}; // Para la sección "Capítulos"
 let storyScenes = []; 
+// La variable 'momentos' ya no es necesaria, los datos se leen/escriben del DOM.
 let activeSceneId = null;
 
 let ultimoId = 0;
@@ -102,12 +103,13 @@ function reiniciarEstadoApp() {
     document.getElementById("titulo-proyecto").innerText = "Silenos Versión 1.1.8";
     document.getElementById("listapersonajes").innerHTML = "";
     document.getElementById("lista-capitulos").innerHTML = "";
+    document.getElementById("momentos-lienzo").innerHTML = ""; // Limpiar lienzo de momentos
     
     // Limpiar y re-renderizar secciones complejas
     renderizarGuion();
     renderEscenasUI();
     actualizarLista();
-
+    
     console.log("Estado de la aplicación reseteado.");
 }
 

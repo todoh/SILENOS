@@ -16,7 +16,8 @@ function nuevaEscena() {
         imagen: "",
         opciones: [],
         botones: [],
-        frames: []
+        frames: [],
+        generadoPorIA: false // Marcar como no generado por IA por defecto
     };
     if (typeof(Storage) !== "undefined") {
         localStorage.setItem("escenas", JSON.stringify(escenas));
@@ -79,15 +80,26 @@ function actualizarLista() {
         inputNombre.className = "imput";
         inputNombre.value = escenas[id].texto || id;
         inputNombre.style.marginRight = "5px";
-        inputNombre.onchange = (event) => {
-            let nuevoNombre = event.target.value;
-            if (nuevoNombre && nuevoNombre !== id) {
-                escenas[nuevoNombre] = escenas[id];
-                delete escenas[id];
-                guardarCambios();
-                actualizarLista();
-            }
-        };
+
+        // ========= CAMBIO CLAVE: Hacer el input no editable si es de la IA =========
+        if (escenas[id].generadoPorIA) {
+            inputNombre.readOnly = true;
+            inputNombre.classList.add('input-no-editable'); // Para estilos CSS
+            inputNombre.title = "Este título fue generado por la IA y no se puede editar.";
+        } else {
+            inputNombre.onchange = (event) => {
+                let nuevoNombre = event.target.value;
+                if (nuevoNombre && nuevoNombre !== id) {
+                    // Esto es para renombrar, lo cual no aplica a los generados por IA
+                    escenas[nuevoNombre] = escenas[id];
+                    delete escenas[id];
+                    guardarCambios();
+                    actualizarLista();
+                }
+            };
+        }
+        // ========= FIN DEL CAMBIO =========
+        
         let eliminarBtn = document.createElement("button");
         eliminarBtn.textContent = "X";
         eliminarBtn.className = "ide";
@@ -114,7 +126,6 @@ function actualizarLista() {
         let contenedorFrames = document.createElement("div");
         contenedorFrames.className = "contenedor-frames";
         
-        // --- Lógica de Drag-and-Drop para el contenedor de frames ---
         contenedorFrames.ondragover = (event) => event.preventDefault();
         contenedorFrames.ondrop = (event) => {
             event.preventDefault();
@@ -140,7 +151,6 @@ function actualizarLista() {
             frameDiv.appendChild(textSpan);
             frameDiv.draggable = true;
 
-            // --- Lógica de Drag-and-Drop para cada frame ---
             frameDiv.ondragstart = (event) => {
                 draggedFrameIndex = index;
                 draggedFrameEscenaId = id;
@@ -171,7 +181,6 @@ function actualizarLista() {
                 const framesArray = escenas[id].frames;
                 const [draggedItem] = framesArray.splice(data.index, 1);
                 
-                // Corrección para el índice de destino al mover dentro de la misma lista
                 let targetIndex = index;
                 if(data.index < index) targetIndex--;
 
@@ -255,7 +264,6 @@ function crearEscenasAutomaticamente(nombreBase, numEscenas, numFrames) {
         return;
     }
 
-    // Obtenemos el número más alto existente para este nombre base para no sobreescribir
     let maxNumExistente = 0;
     Object.keys(escenas).forEach(key => {
         if (key.startsWith(nombreBase)) {
@@ -281,7 +289,9 @@ function crearEscenasAutomaticamente(nombreBase, numEscenas, numFrames) {
             imagen: "",
             opciones: [],
             botones: [],
-            frames: []
+            frames: [],
+            // ========= CAMBIO CLAVE: Marcar como generado por IA =========
+            generadoPorIA: true
         };
 
         for (let j = 0; j < numFrames; j++) {
@@ -296,22 +306,10 @@ function crearEscenasAutomaticamente(nombreBase, numEscenas, numFrames) {
     console.log(`${numEscenas} escenas creadas con el nombre base "${nombreBase}".`);
 }
 
-
-
-
-// ===================================
-// FUNCIONES DE UTILIDAD COMPARTIDAS
-// ===================================
-
-/**
- * Guarda el estado actual del objeto 'escenas' en el localStorage.
- * Esta función se puede llamar desde cualquier parte del código que modifique 'escenas'.
- */
 function guardarCambios() {
     if (typeof(Storage) !== "undefined") {
         try {
-            // Se asegura de que escenas no contenga referencias circulares antes de guardar
-            const cleanEscenas = JSON.parse(JSON.stringify(escenas)); // Corrección aquí
+            const cleanEscenas = JSON.parse(JSON.stringify(escenas));
             localStorage.setItem("escenas", JSON.stringify(cleanEscenas));
             console.log("Cambios guardados en localStorage.");
         } catch (error) {
@@ -322,11 +320,6 @@ function guardarCambios() {
     }
 }
 
-/**
- * Convierte un objeto File a una cadena de texto en formato Base64.
- * @param {File} file El archivo a convertir.
- * @returns {Promise<string>} Una promesa que se resuelve con la cadena en Base64.
- */
 function fileToBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();

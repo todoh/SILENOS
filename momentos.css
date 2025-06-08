@@ -191,12 +191,11 @@
 }
 
 .drop-zone-estilo img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* Cambiado para que la imagen llene el espacio */
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: cover;
     border-radius: 6px;
     display: none;
-    transform: translateX(-50%) ;
 }
 
 /* Ocultar el texto de ayuda si la imagen está visible */
@@ -215,4 +214,77 @@
 .dark-theme .drop-zone-estilo {
     border-color: #555;
     color: #aaa;
+}
+
+/* --- ESTILOS PARA ACCIONES --- */
+#acciones-container {
+    width: 95%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 180px; /* Altura máxima para el contenedor */
+    overflow-y: auto; /* Scroll vertical si hay muchas acciones */
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.dark-theme #acciones-container {
+    border-color: #555;
+}
+
+.accion-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    background-color: var(--background-color-medium, #f0f0f0);
+    border-radius: 4px;
+}
+
+.dark-theme .accion-item {
+     background-color: #2c323a;
+}
+
+.accion-item input[type="text"],
+.accion-item select { /* Aplicar estilos también al select */
+    flex-grow: 1;
+    width: auto;
+    padding: 6px 8px;
+    font-size: 0.9em;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+}
+
+.dark-theme .accion-item input[type="text"],
+.dark-theme .accion-item select {
+    background-color: #333;
+    color: #e0e0e0;
+    border-color: #555;
+}
+
+
+.accion-item .delete-accion-btn {
+    padding: 4px 8px;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+.accion-item .delete-accion-btn:hover {
+    background-color: #c0392b;
+}
+
+.modal-buttons-container {
+    width: 95%;
+    display: flex;
+    justify-content: space-between; /* Espacio entre botones */
+    gap: 10px;
+}
+
+.modal-buttons-container .modal-button {
+    flex-grow: 1; /* Para que ocupen el espacio disponible */
 }

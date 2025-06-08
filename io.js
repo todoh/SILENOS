@@ -46,9 +46,10 @@ let _compressImageForSave = (imagenSrc) => {
 
 async function guardarJSON() {
     console.log("Guardando el proyecto en formato JSON...");
-    const listapersonajes = document.getElementById("listapersonajes").children;
-
+    
     try {
+        // ... (código existente para guardar capítulos, personajes, escenas, etc., sin cambios)
+        const listapersonajes = document.getElementById("listapersonajes").children;
         const promesasCapitulos = Object.keys(escenas).map(async (id) => {
             const capitulo = escenas[id];
             const framesProcesados = await Promise.all(
@@ -81,15 +82,35 @@ async function guardarJSON() {
             return { ...escena, tomas: tomasProcesadas };
         }));
 
+        // --- NUEVO: Lógica para guardar MOMENTOS desde el DOM ---
+        const nodosMomento = document.querySelectorAll('#momentos-lienzo .momento-nodo');
+        const promesasMomentos = Array.from(nodosMomento).map(async (nodo) => {
+            const imagenComprimida = await _compressImageForSave(nodo.querySelector('.momento-imagen').src);
+            return {
+                id: nodo.id,
+                titulo: nodo.querySelector('.momento-titulo').textContent,
+                descripcion: nodo.dataset.descripcion || '',
+                x: parseInt(nodo.style.left, 10),
+                y: parseInt(nodo.style.top, 10),
+                imagen: imagenComprimida,
+                acciones: JSON.parse(nodo.dataset.acciones || '[]')
+            };
+        });
+        // --- FIN NUEVO ---
+
+
         const processedChapters = (await Promise.all(promesasCapitulos)).sort((a,b) => a.id.localeCompare(b.id));
         const processedCharacters = (await Promise.all(promesasPersonajes)).filter(Boolean);
         const processedStoryScenes = await promesasEscenasStory;
+        const processedMomentos = await Promise.all(promesasMomentos); // Array de momentos
+        
 
         const data = {
             titulo: document.getElementById("titulo-proyecto").innerText.trim(),
             capitulos: processedChapters,
             escenas: processedStoryScenes,
             personajes: processedCharacters,
+            momentos: processedMomentos, // Guardar el array de momentos
             guionLiterario: guionLiterarioData,
             apiKeyGemini: typeof apiKey !== 'undefined' ? apiKey : ''
         };
@@ -107,13 +128,11 @@ async function guardarJSON() {
     }
 }
 
-// Reemplaza tu función cargarJSON en io.js con esta versión
 
 function cargarJSON(event) {
     let file = event.target.files[0];
     if (!file) return;
 
-    // Reiniciar el estado de la aplicación antes de cargar nuevos datos
     reiniciarEstadoApp();
 
     let reader = new FileReader();
@@ -130,45 +149,34 @@ function cargarJSON(event) {
         if (data.titulo) {
             document.getElementById("titulo-proyecto").innerText = data.titulo;
         }
-
-        // =================================================================
-        // BLOQUE DE COMPATIBILIDAD PARA JSON ANTIGUOS
-        // Este bloque detecta y convierte el formato antiguo.
-        // =================================================================
+        
+        // ... (código existente para cargar capítulos, personajes, escenas, etc., sin cambios)
         if (data.escenas && !data.capitulos && Array.isArray(data.escenas)) {
             console.warn("Detectado formato JSON antiguo. Realizando conversión...");
             let idCounter = 0;
             data.escenas.forEach(escenaAntigua => {
                 idCounter++;
                 const newId = String(idCounter).padStart(3, '0');
-                escenas[newId] = escenaAntigua; // Añade la escena antigua al objeto 'escenas' global con un ID nuevo.
+                escenas[newId] = escenaAntigua; 
+                const idsNumericos = Object.keys(escenas).map(id => parseInt(id, 10));
+                ultimoId = idsNumericos.length > 0 ? Math.max(...idsNumericos) : 0;
             });
-            const idsNumericos = Object.keys(escenas).map(id => parseInt(id, 10));
-            ultimoId = idsNumericos.length > 0 ? Math.max(...idsNumericos) : 0;
             actualizarLista();
         }
-        // =================================================================
-
-        // Carga de "Capítulos" (formato nuevo)
         const capitulosData = data.capitulos || [];
         if (Array.isArray(capitulosData) && capitulosData.length > 0) {
-            capitulosData.forEach(capitulo => {
+             capitulosData.forEach(capitulo => {
                 const capituloId = capitulo.id;
                 if(capituloId) {
                     escenas[capituloId] = { ...capitulo };
-                    delete escenas[capituloId].id; // El ID ya es la clave, no es necesario tenerlo dentro del objeto
+                    delete escenas[capituloId].id;
                 }
             });
             const idsNumericos = Object.keys(escenas).map(id => parseInt(id.replace(/[^0-9]/g, ''), 10)).filter(num => !isNaN(num));
             ultimoId = idsNumericos.length > 0 ? Math.max(...idsNumericos) : 0;
             actualizarLista();
         }
-        
-        // Carga de "Escenas" (storyboard)
         if (data.escenas && Array.isArray(data.escenas)) {
-            // Esta condición ahora debe asegurar que no estamos procesando el formato antiguo otra vez
-            // La carga de "storyScenes" solo debe ocurrir si el archivo es del nuevo formato.
-            // Si tiene 'capitulos', es el formato nuevo. Si no, ya fue manejado por el bloque de compatibilidad.
             if (data.capitulos) {
                  storyScenes = data.escenas.map(escena => {
                     const tomasConDatosCompletos = (escena.tomas || []).map(toma => ({
@@ -185,14 +193,10 @@ function cargarJSON(event) {
         }
         activeSceneId = storyScenes.length > 0 ? storyScenes[0].id : null;
         renderEscenasUI();
-
-        // Carga de Personajes
         if (data.personajes && Array.isArray(data.personajes)) {
             const listapersonajes = document.getElementById("listapersonajes");
             listapersonajes.innerHTML = "";
             data.personajes.forEach(personajeData => {
-                // Aquí va todo tu código para recrear los elementos de personaje en el DOM
-                // (Lo he omitido por brevedad, pero debe ser el mismo que tenías)
                  let contenedor = document.createElement('div');
                  contenedor.classList.add('personaje');
                  contenedor.style.position = 'relative';
@@ -256,21 +260,64 @@ function cargarJSON(event) {
             agregarBotonEliminarAPersonajes();
         }
 
-        // Carga de Guion Literario
+        // --- NUEVO: Lógica para cargar MOMENTOS al DOM ---
+        if (data.momentos && Array.isArray(data.momentos)) {
+            const lienzo = document.getElementById('momentos-lienzo');
+            lienzo.innerHTML = ''; // Limpiar lienzo antes de cargar
+            data.momentos.forEach(momentoData => {
+                const nuevoNodo = document.createElement('div');
+                nuevoNodo.className = 'momento-nodo';
+                nuevoNodo.id = momentoData.id;
+                
+                nuevoNodo.innerHTML = `
+                    <p contenteditable="true" class="momento-titulo">${momentoData.titulo}</p>
+                    <div class="momento-contenido">
+                         <img class="momento-imagen" src="${momentoData.imagen || ''}" style="display: ${momentoData.imagen ? 'block' : 'none'};">
+                         <span class="placeholder-contenido"></span>
+                    </div>
+                    <div class="momento-botones">
+                        <button class="momento-btn btn-editar">Editar</button>
+                        <button class="momento-btn btn-eliminar">Eliminar</button>
+                    </div>
+                `;
+
+                nuevoNodo.style.top = `${momentoData.y}px`;
+                nuevoNodo.style.left = `${momentoData.x}px`;
+                if(momentoData.imagen) nuevoNodo.classList.add('con-imagen');
+
+                // Guardar datos en el dataset
+                nuevoNodo.dataset.descripcion = momentoData.descripcion || "";
+                nuevoNodo.dataset.acciones = JSON.stringify(momentoData.acciones || []);
+
+                lienzo.appendChild(nuevoNodo);
+
+                // Asignar eventos
+                nuevoNodo.querySelector('.btn-editar').onclick = () => abrirModalEditarMomento(nuevoNodo);
+                nuevoNodo.querySelector('.btn-eliminar').onclick = () => {
+                    if (confirm('¿Estás seguro de que quieres eliminar este momento?')) {
+                        nuevoNodo.remove();
+                    }
+                };
+                nuevoNodo.querySelector('.momento-titulo').addEventListener('mousedown', e => e.stopPropagation());
+                
+                makeDraggable(nuevoNodo);
+            });
+        }
+        // --- FIN NUEVO ---
+
         if (data.guionLiterario && Array.isArray(data.guionLiterario)) {
             guionLiterarioData = data.guionLiterario;
             indiceCapituloActivo = guionLiterarioData.length > 0 ? 0 : -1;
             renderizarGuion();
         }
 
-        // Carga de API Key
         if (data.apiKeyGemini) {
             apiKey = data.apiKeyGemini;
             document.getElementById("apiKeyDisplay").textContent = apiKey;
         }
         
         cerrartodo();
-        abrir('capitulosh');
+        abrir('momentos'); // Abrir momentos para ver el resultado
     };
     reader.readAsText(file);
 }

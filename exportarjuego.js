@@ -1,184 +1,204 @@
-  function generarGAME(titulo) {
-    titulo2 = document.getElementById("titulo-proyecto").innerText;
-// Obtener el contenido del archivo CSS de manera sincrónica
+/**
+ * Genera un archivo HTML interactivo a partir de los momentos del lienzo, usando sus nombres como identificadores.
+ * @param {string} nombreMomentoInicial - El NOMBRE del primer momento que se mostrará.
+ */
+async function generarGAME(nombreMomentoInicial) {
+    const tituloProyecto = document.getElementById("titulo-proyecto").innerText;
 
-
-
-
-    const cssContent = `
-    /* Aquí va el contenido de tu archivo styles.css */
-    body {
-        font-family: Arial, sans-serif;
-        align-items: center;
-        text-align: center;
-        justify-content: center;
-        font-size: xx-large;
-        background-image:
-            radial-gradient(circle, rgba(0,0,0,0.1) 1px, transparent 1px),
-            radial-gradient(circle, rgba(0,0,0,0.1) 1px, transparent 1px);
-        background-size: 10px 10px, 20px 20px;
-        background-position: 0 0, 5px 5px;}
-    .estiloso {
-        border: 0px solid gray;
-        margin: 1%;
-        padding: 1%;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        width: 100%; /* Ocupar la mitad del ancho */
-        min-width: 300px; /* Evitar que sea demasiado pequeño */
-        text-align: left;
-        margin-left: 15%;
-        overflow: hidden;
-        box-shadow: 10px 10px 15px rgba(0, 0, 0, 0.3);
-        border-radius: 2%;
-        background-color: #ffffffa9;
-        backdrop-filter: blur(0.9px); }
-    h2 {
-        color: white;
-        display: flex;
-        margin: 0%;
-        padding: 0%;
-        position: block;
-        text-align: left;
-        background-color: gray;}
-    h3 { background-color: black;
-        color: white;
-        font-size: xxx-large;}
-    img {
-        margin-left: 25dvw;
-        transform: translateX(-50%);
-        max-width: 98%;
-        max-height: 33vh;}
-    button {
-        background-color: #4CAF50;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        cursor: pointer;}
-    button:hover {
-        background-color: #45a049;}
-    pre {
-        white-space: pre-wrap; /* Asegura que los saltos de línea se respeten */}
-    .tabla-personajes {
-        width: 75%;
-        margin: 20px auto;
-        border-collapse: collapse;
-        background-color: #ffffffa9;
-        backdrop-filter: blur(0.9px);
-        font-size: xx-large;}
-    .tabla-personajes td {
-        border: 1px solid #ccc;
-        padding: 0px;}
-    .tabla-personajes th {
-        background-color: black;
-        color: white;
-        display: none;}
-    .tabla-personajes img {
-    position: relative;
-    left: 30%;
-    margin-left: 0%;
-        max-width: 100%;
-        max-height: 100%;}
-    .tabla-personajes th:nth-child(1),
-    .tabla-personajes td:nth-child(1) {
-        width: 25%; /* Ajusta la columna de la imagen */
+    /**
+     * Convierte un texto a un formato válido para un atributo ID de HTML.
+     * @param {string} texto El texto a sanitizar.
+     * @returns {string} El texto sanitizado.
+     */
+    function sanitizarParaId(texto) {
+        if (!texto) return '';
+        return texto.trim()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar acentos
+            .replace(/[^a-zA-Z0-9\s-]/g, "") // Quitar caracteres especiales excepto espacios y guiones
+            .replace(/\s+/g, '-') // Reemplazar espacios con guiones
+            .toLowerCase();
     }
 
-    .tabla-personajes th:nth-child(2),
-    .tabla-personajes td:nth-child(2) {
-        width: 75%; /* Ajusta la columna del texto */
+    const nodosMomento = document.querySelectorAll('#momentos-lienzo .momento-nodo');
+    let momentosHTML = '';
+
+    // PASO 1: Validar nombres duplicados y crear mapas de referencia
+    const idToSanitizedNameMap = new Map();
+    const sanitizedNameCheck = new Map(); // [nombreSanitizado]: tituloOriginal
+    let hasDuplicates = false;
+    let duplicateErrorMsg = 'Error: No se puede exportar. Se encontraron nombres de momentos que resultan en el mismo identificador. Por favor, renómbralos para que sean únicos:\n';
+
+    for (const nodo of nodosMomento) {
+        const id = nodo.id;
+        const titulo = nodo.querySelector('.momento-titulo').textContent;
+        const sanitizedTitulo = sanitizarParaId(titulo);
+
+        if (sanitizedNameCheck.has(sanitizedTitulo)) {
+            hasDuplicates = true;
+            const originalDuplicateTitle = sanitizedNameCheck.get(sanitizedTitulo);
+            if (!duplicateErrorMsg.includes(originalDuplicateTitle)) {
+                 duplicateErrorMsg += `\n- "${originalDuplicateTitle}" y "${titulo}" (ambos generan "${sanitizedTitulo}")`;
+            } else {
+                 duplicateErrorMsg += `, y también "${titulo}"`;
+            }
+
+        } else if (sanitizedTitulo) {
+            sanitizedNameCheck.set(sanitizedTitulo, titulo);
+        }
+        idToSanitizedNameMap.set(id, sanitizedTitulo);
     }
 
-    `;
-    let htmlOutput = `
+    if (hasDuplicates) {
+        alert(duplicateErrorMsg);
+        return; // Detener la exportación
+    }
 
+    // PASO 2: Recopilar todos los datos de los momentos del DOM
+    for (const nodo of nodosMomento) {
+        const id = nodo.id;
+        const titulo = nodo.querySelector('.momento-titulo').textContent;
+        const sanitizedTitulo = idToSanitizedNameMap.get(id);
 
-<!DOCTYPE html><html lang="es">
-<head><meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${titulo2}</title> <style>${cssContent}</style> </head><body>`; htmlOutput += `<h3>${titulo2}</h3>`;
-// Recorrer escenas
-for (let id in escenas) {
-        htmlOutput += `<div class="estiloso">`; // Apertura del contenedor
-        htmlOutput += `<h2>${id}</h2>`;
-// Mostrar la imagen de la escena
-if (escenas[id].imagen) {
-            htmlOutput += `<img src="${escenas[id].imagen}" alt="Imagen de la escena">`;}
-// Mostrar los botones de la escena
-if (escenas[id].botones.length > 0) {
-            htmlOutput += "<ul>";
-            escenas[id].botones.forEach(boton => {
-                htmlOutput += `<li><button onclick="${boton.accion}">${boton.texto}</button></li>`;
-            });
-            htmlOutput += "</ul>";}
-// Mostrar los frames de la escena
-if (escenas[id].frames && escenas[id].frames.length > 0) {
-    escenas[id].frames.forEach((frame, index) => {
-    htmlOutput += `<div class="frame" id="frame-${id}-${index}" style="display: ${index === 0 ? 'block' : 'none'};">`;
+        const descripcion = nodo.dataset.descripcion || '';
+        const imagenSrc = nodo.querySelector('.momento-imagen').src;
+        const acciones = JSON.parse(nodo.dataset.acciones || '[]');
 
-
-
-
-// Mostrar el texto del frame
-if (frame.texto) {
-                    let textoFrameConSaltos = frame.texto.replace(/\n/g, "<br>");
-                    htmlOutput += `<pre>${textoFrameConSaltos}</pre>`;
+        let botonesHTML = '';
+        if (acciones.length > 0) {
+            acciones.forEach(accion => {
+                const idDestino = accion.idDestino;
+                const nombreDestinoSanitizado = idToSanitizedNameMap.get(idDestino) || '';
+                
+                if (nombreDestinoSanitizado) {
+                    botonesHTML += `<button onclick="mostrarMomento('${nombreDestinoSanitizado}')">${accion.textoBoton}</button>`;
+                } else {
+                    console.warn(`En el momento "${titulo}", la acción "${accion.textoBoton}" apunta a un ID de destino no válido o inexistente: "${idDestino}".`);
+                    botonesHTML += `<button disabled title="Destino no encontrado">${accion.textoBoton}</button>`;
                 }
-// Mostrar la imagen del frame
-if (frame.imagen) {htmlOutput += `<img src="${frame.imagen}" alt="Imagen del frame ${index + 1}">`;}
-htmlOutput += `</div>`;});}
+            });
+        }
 
-if (escenas[id].frames.length > 1) {
-    htmlOutput += `
-        <button onclick="cambiarFrame('${id}', -1)">Anterior</button>
-        <button onclick="cambiarFrame('${id}', 1)">Siguiente</button>
-
-
-    `;
-}
-
-htmlOutput += `</div>`;}
-
-
-
-// Extraer personajes y organizarlos en una tabla
-    const contenedorPersonajes = document.getElementById("listapersonajes");
-    let filas = "";
-    for (let personaje of contenedorPersonajes.children) {
-        const nombre = personaje.querySelector("input.nombreh")?.value || "";
-        const descripcion = personaje.querySelector("textarea")?.value || "";
-        const imagen = personaje.querySelector("img")?.src || "";
-        filas += `<tr>
-                <td>${imagen ? `<img src="${imagen}" alt=" ">` : ''}</td>
-                <td><strong>${nombre}</strong><br>${descripcion}</td></tr>`;}
-    if (filas) {
-        htmlOutput += `
-          <h3>Datos</h3>
-          <table class="tabla-personajes">
-            <thead>
-              <tr>
-                <th>Imagen</th>
-                <th>Descripción</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${filas}
-            </tbody>
-          </table>
+        // Crea el bloque HTML para este momento usando el nombre sanitizado como ID
+        momentosHTML += `
+            <div class="momento-exportado" id="${sanitizedTitulo}">
+                <h3>${titulo}</h3>
+                ${imagenSrc && !imagenSrc.endsWith('/null') ? `<img src="${imagenSrc}" alt="Imagen para ${titulo}">` : ''}
+                <p>${descripcion.replace(/\n/g, "<br>")}</p>
+                <div class="acciones-exportadas">
+                    ${botonesHTML}
+                </div>
+            </div>
         `;
     }
 
-    htmlOutput +=  ``;
-    htmlOutput += `
+    // PASO 3: Crear el contenido del archivo HTML final
+    const nombreInicialSanitizado = sanitizarParaId(nombreMomentoInicial);
+    const htmlCompleto = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${tituloProyecto}</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #1c1e21;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .juego-container {
+            max-width: 680px;
+            width: 100%;
+        }
+        .momento-exportado {
+            background-color: #ffffff;
+            border: 1px solid #dddfe2;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.1);
+            display: none; /* Oculto por defecto */
+        }
+        .momento-exportado h3 {
+            font-size: 1.5em;
+            margin-top: 0;
+            color: #1c1e21;
+        }
+        .momento-exportado img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .momento-exportado p {
+            font-size: 1.1em;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+        .acciones-exportadas {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .acciones-exportadas button {
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 1em;
+            font-weight: bold;
+            color: #fff;
+            background-color: #1877f2;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .acciones-exportadas button:hover {
+            background-color: #166fe5;
+        }
+        .error-container { text-align: center; color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 20px; border-radius: 8px;}
+    </style>
+</head>
+<body>
+    <div class="juego-container">
+        ${momentosHTML}
+    </div>
 
-</body></html>`;
+    <script>
+        function mostrarMomento(nombreMomento) {
+            const todosLosMomentos = document.querySelectorAll('.momento-exportado');
+            todosLosMomentos.forEach(momento => {
+                momento.style.display = 'none';
+            });
 
+            const momentoActual = document.getElementById(nombreMomento);
+            if (momentoActual) {
+                momentoActual.style.display = 'block';
+            } else {
+                console.error('No se encontró el momento con el nombre:', nombreMomento);
+                const container = document.querySelector('.juego-container');
+                container.innerHTML = '<div class="error-container"><h1>Error de Navegación</h1><p>El momento de destino <strong>(' + nombreMomento + ')</strong> no existe.</p><p>Posibles causas:<ul><li>El nombre del momento de destino fue cambiado.</li><li>El botón apunta a un nombre incorrecto.</li><li>El momento de destino fue eliminado.</li></ul></p></div>';
+            }
+        }
 
+        window.onload = function() {
+            mostrarMomento('${nombreInicialSanitizado}');
+        };
+    <\/script>
+</body>
+</html>
+    `;
 
-// Descargar archivo
-    let blob = new Blob([htmlOutput], { type: 'text/html' });
-    let link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${titulo2}.html`;
-    link.click();}
+    // 4. Descargar el archivo
+    const blob = new Blob([htmlCompleto], { type: 'text/html' });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${tituloProyecto.replace(/\s+/g, '_')}_Juego.html`;
+    a.click();
+    console.log("Exportación de Videojuego a HTML completada.");
+}

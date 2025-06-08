@@ -58,6 +58,16 @@ html {
     color: #e0e0e0;
     border: 0px solid #555;
 }
+
+/* ========= INICIO: NUEVOS ESTILOS ========= */
+.dark-theme .input-no-editable {
+    background-color: #3a3a3a !important; /* Un poco más oscuro */
+    color: #a0a0a0 !important; /* Texto grisáceo */
+    cursor: not-allowed;
+}
+/* ========= FIN: NUEVOS ESTILOS ========= */
+
+
 .dark-theme #guion-literario {
     background-color: #2c2c2c; /* Fondo principal del guion */
 }
@@ -95,7 +105,6 @@ html {
 .dark-theme .titulo-capitulo-indice-container.activo-container {
     background-color: #00529B; /* Azul para activo */
 }
-/* .dark-theme .titulo-capitulo-indice-texto.activo-texto will inherit font-weight: bold */
 .dark-theme .eliminar-capitulo-btn-indice {
     color: #ff8a80; /* Light red for dark theme */
     background-color: transparent; /* Ensure it's transparent initially */
@@ -107,20 +116,15 @@ html {
 .dark-theme #contenido-capitulo-activo .mensaje-placeholder, .dark-theme .mensaje-placeholder {
     color: #aaa; /* Lighter placeholder text for dark theme */
 }
-
-/* NUEVO ESTILO PARA EL CONTENEDOR RAW DE GEMINI EN DARK THEME */
 .dark-theme #gemini-raw-output {
-    background-color: #22272e; /* Fondo oscuro similar a geminimente */
-    color: #c9d1d9; /* Texto claro */
-    border-color: #484f58; /* Borde oscuro */
+    background-color: #22272e; 
+    color: #c9d1d9; 
+    border-color: #484f58; 
 }
-
 .dark-theme ::-webkit-scrollbar-track { background-color: #2c2c2c; }
 .dark-theme ::-webkit-scrollbar-thumb { background-color: #555; }
 .dark-theme ::-webkit-scrollbar-thumb:hover { background-color: #666; }
 .dark-theme ::-webkit-scrollbar-thumb:active { background-color: #777; }
-
-
 ::-webkit-scrollbar {
     width:20px;
     height: 20px; }
@@ -138,22 +142,19 @@ html {
 ::-webkit-scrollbar-thumb:active {
     background-color: #888888;
 }
-
-
 ::-webkit-scrollbar-horizontal {
     height: 8px; }
 ::-webkit-scrollbar-vertical {
-
-    width: 8px; /* Ancho de la barra vertical */}
+    width: 8px; }
 body input, body textarea {
-    -webkit-autofill: none;  /* Desactiva el autocompletado en algunos navegadores */}
-body {background-color: #f8f9fa; /* Un gris muy claro */
-    color: #333; /* Un gris oscuro para el texto principal */
+    -webkit-autofill: none;  }
+body {background-color: #f8f9fa; 
+    color: #333; 
     margin: 0;
     padding: 0;
     text-align: center;}
-h2 {background-color: black; /* Sin fondo */
-    color:#ffffff; /* Mismo color que el texto principal */
+h2 {background-color: black; 
+    color:#ffffff; 
      padding: 1%;
     line-height: 1;
   margin-left: 1%;
@@ -161,18 +162,17 @@ h2 {background-color: black; /* Sin fondo */
     border-radius: 5px;
     width: 37%;
     height: 50%;
-    max-height: auto; /* Ajustado para contenido */
+    max-height: auto; 
     justify-content: center;
     align-items: center;
     text-align: center;
     display: flex;
     flex-direction: column;
-
     text-align: left;
     word-wrap: break-word;
-    border-bottom: 1px solid #eee;} /* Línea sutil para separación */
+    border-bottom: 1px solid #eee;} 
 #escena-vista {background-color: #ffffff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Sombra más suave */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
     right: 0%;
     top: 7.7%;
     left: 26%;
@@ -197,17 +197,16 @@ p {background-color: #2e2e5e00;
 #chat p { margin: 0;
     padding: 8px;
     border-radius: 5px;
-    white-space: pre-line; /* Permite saltos de línea en respuestas */}
+    white-space: pre-line; }
 #chat p strong {
     display: block;
     margin-bottom: 4px;
 }
-
 #chat p:nth-child(odd) {
-    background-color: #f1f3f5; /* Gris claro para Gemini */
+    background-color: #f1f3f5; 
    color: #333;}
 #chat p:nth-child(even) {
-    background-color: #e9ecef; /* Gris un poco más oscuro para usuario */
+    background-color: #e9ecef; 
     color: #333;}
 #user-input {
     margin-left: -2%;
@@ -226,22 +225,22 @@ img {max-width: 80%;
 ul {list-style-type: none;padding: 0;}
 li { margin-bottom: 10px;}
 button {
-    background-color: #e9ecef; /* Gris claro */
-    color: #333; /* Texto oscuro */
+    background-color: #e9ecef; 
+    color: #333; 
     padding: 12px 20px;
-    border: 1px solid #ced4da; /* Borde sutil */
+    border: 1px solid #ced4da; 
     border-radius: 5px;
     cursor: pointer;
     font-size:small;
     transition: background-color 0.2s ease, transform 0.1s ease-in-out;
     display: inline-block;
     width: auto;}
-button:hover {background-color:#dee2e6; /* Gris un poco más oscuro al pasar el ratón */ transform: scale(1.02);}
+button:hover {background-color:#dee2e6;  transform: scale(1.02);}
 button:active {transform: scale(0.95);}
 .guardado {margin: 1%;}
-.pro {background-color: #5a6268; color:white; border:none;} /* Botones "pro" un poco más oscuros */
+.pro {background-color: #5a6268; color:white; border:none;} 
 body { font-family: Arial, sans-serif; display: flex; position: absolute; width: 98%; height: 98%;
-    font-size: 16px; /* Tamaño de fuente base más estándar */
+    font-size: 16px; 
     overflow: hidden; }
 #opciones {
 position: absolute;
@@ -271,16 +270,15 @@ right: 0%;
     display: none;
 }
 
-/* --- ESTILOS DEL MODAL DE CONFIGURACIÓN (MODIFICADOS) --- */
 #modal-overlay {
-    display: none; /* Oculto por defecto */
+    display: none; 
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     background-color: rgb(156, 156, 156);
-    z-index: 10000; /* Asegura que esté por encima de todo */
+    z-index: 10000; 
 }
 
 .modal-content {
@@ -356,7 +354,6 @@ background-color: white;
     opacity: 0.9;
 }
 
-/* Dark Theme para Modales */
 .dark-theme .modal-content {
     background-color: #2c2c2c;
     color: #000000;
@@ -381,7 +378,7 @@ background-color: white;
 }
 
 #lugares {color: black;
-    display: none; /* Oculto por defecto, controlado por JS */
+    display: none; 
 }
 #lugares p {color: rgb(255, 255, 255);
     text-align: center;
@@ -396,11 +393,9 @@ background-color: white;
     width: 80%;
     text-align: center;
 }
-/* --- FIN DE LOS ESTILOS DEL MODAL --- */
-
 
 #editor {         position: absolute; top: 10%; left: 0%;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); bottom: 0%; /* Sombra más suave */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); bottom: 0%; 
     width: 13%;     border-right: 1px solid #ccc;
     background-color: #fff;     line-height: 2; display: none;}
 #escena-texto { flex: 1; padding: 10px; width: 98%; height: 7%; }
@@ -445,7 +440,7 @@ grid-auto-rows: 40dvh; }
 .personaje {  width: 100%;  border-radius: 2%;
     margin-top: 0.5%;
     margin-bottom: 0.5%;
-    border:1px solid #e0e0e0; /* Borde sutil */
+    border:1px solid #e0e0e0; 
     height: 39dvh;
     position: relative; background-color: #fff;      box-sizing: border-box;  box-shadow: 0 1px 3px rgba(0,0,0,0.05); bottom: 0%; padding: 0%; }
 
@@ -502,7 +497,6 @@ display: flex;
 left: 52%;
 right: 5%;
 height: auto;
-
 top: 55%;}
 #capitulos, #escenass {position: absolute;
  bottom: 0%;
@@ -516,10 +510,6 @@ left: 2%;
 top: 5%;
 z-index: 100;
 font-size: large;}
-
-
-
-
 #menu {position: absolute;
 top: 15%;
 margin: 0%;
@@ -540,6 +530,27 @@ line-height: 1.5;}
     outline: none; background-color: black;
     font-size: x-large; margin: 0%;
   margin-bottom: 1%;}
+  
+/* ========= INICIO: NUEVOS ESTILOS ========= */
+.input-no-editable {
+    background-color: #555555 !important;
+    color: #a0a0a0 !important;
+    cursor: not-allowed;
+    border: 0px solid transparent !important;
+}
+
+.generar-tomas-btn {
+    width: 100%;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    background-color: #28a745; /* Verde para la acción de generar */
+}
+
+.dark-theme .generar-tomas-btn {
+    background-color: #218838;
+}
+/* ========= FIN: NUEVOS ESTILOS ========= */
+
 .ide {
     top: 1%; left: 104%;
     position: absolute;
@@ -562,12 +573,10 @@ line-height: 1.5;}
     width: 95%; position: absolute;
     bottom: 0%; top: 51%; left: 0%;
     padding: 2%;
-
     border-radius: 5px;
     border: 2px solid #ccc;
     resize: none;
     font-family: Arial, sans-serif;}
-
     .frameh input[type="file"] {
    opacity: 0;
 }
@@ -588,7 +597,6 @@ position: absolute;
 .custom-label:hover {
     color: #000; 
 }
-
 .frameh img {max-width: 100%; position: absolute;
     max-height: 53%;
     top: -4.5%;
@@ -646,34 +654,32 @@ top: 1%;left: 2%;}
     flex-direction: column;
     overflow: auto; padding: 3%; width: 70%; top: 10%; bottom: 0%; right: 0%; position: absolute; display: flex; white-space: pre-wrap;}
 
- #gemini1 { /* Textarea para la idea de la historia */
+ #gemini1 { 
     position: absolute;
-    top: 25%; /* Alineado con los botones de abajo */
+    top: 25%; 
     left: 0%; 
-    width: 24%; /* Ancho del textarea */
-    height: 30%; /* Altura ajustada para el textarea */
+    width: 24%; 
+    height: 30%; 
     resize: none;
     margin-left: 1%;
-  
-    margin-bottom: 1%; /* Pequeño margen inferior */
+    margin-bottom: 1%; 
 }
 
-/* NUEVO DIV PARA LA RESPUESTA CRUDA DE LA IA */
 #gemini-raw-output {
     position: absolute;
-    top: 50%; /* Debajo de #gemini1, ajusta el 50% si #gemini1 cambia mucho de altura */
+    top: 50%; 
     left: 0%;
-    width: 20%; /* Mismo ancho que #gemini1 */
-    bottom: 0%; /* Ocupa el espacio restante hasta abajo */
-    background-color: #f8f9fa; /* Fondo claro */
-    border: 1px solid #dee2e6; /* Borde sutil */
+    width: 20%; 
+    bottom: 0%; 
+    background-color: #f8f9fa; 
+    border: 1px solid #dee2e6; 
     border-radius: 4px;
     padding: 10px;
-    overflow-y: auto; /* Scroll si el contenido es largo */
-    font-family: monospace; /* Para ver bien el JSON */
-    white-space: pre-wrap; /* Para respetar saltos de línea y espacios del JSON */
+    overflow-y: auto; 
+    font-family: monospace; 
+    white-space: pre-wrap; 
     font-size: 0.9em;
-    color: #212529; /* Color de texto oscuro */
+    color: #212529; 
 }
 
 
@@ -798,7 +804,7 @@ top: 1%;left: 2%;}
 
 #contenido-capitulo-activo input[type="text"] {
     width: calc(100% - 16px); 
-    margin-bottom: 10px;
+    margin-bottom: 0px; /* Ajustado */
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 3px;
@@ -958,19 +964,12 @@ top: 1%;left: 2%;}
 }
 
 #ia #gemini1 { 
-    /* height: 15%;  Ya se definió arriba con una altura fija */
-    margin-bottom: 10px; /* Mantenido de arriba */
+    margin-bottom: 10px; 
 }
 #ia #creasion, #ia #chateo {
     margin-bottom: 10px; 
 }
-#ia #geminimente {
-   /* La altura de geminimente es dinámica por el posicionamiento absoluto (top, bottom), 
-      así que el calc() aquí podría ser redundante o conflictivo si no se ajusta bien.
-      Se mantiene el posicionamiento absoluto definido previamente para #geminimente. */
-}
 
-/* --- ESTILOS PARA LA NUEVA SECCIÓN DE ESCENAS --- */
 #escenah {
     flex-direction: column;
     padding: 20px;
@@ -982,7 +981,7 @@ top: 1%;left: 2%;}
     display: flex;
     gap: 10px;
     align-items: center;
-    flex-wrap: wrap; /* Para que se ajuste en pantallas pequeñas */
+    flex-wrap: wrap; 
     flex-shrink: 0;
 }
 
@@ -996,19 +995,19 @@ top: 1%;left: 2%;}
 }
 
 .escena-toolbar input {
-    flex-grow: 1; /* El input de nombre ocupa el espacio restante */
+    flex-grow: 1; 
 }
 
 #tomas-timeline {
     border: 1px solid #ccc;
     border-radius: 5px;
-    flex-grow: 1; /* Ocupa el espacio vertical restante */
+    flex-grow: 1; 
     display: flex;
-    align-items: stretch; /* Estira los items para que ocupen toda la altura */
-    overflow-x: auto; /* Scroll horizontal */
+    align-items: stretch; 
+    overflow-x: auto; 
     overflow-y: hidden;
     padding: 10px;
-    gap: 10px; /* Aumentado para más separación */
+    gap: 10px; 
     background-color: #f0f0f0;
 }
 
@@ -1019,8 +1018,6 @@ top: 1%;left: 2%;}
     font-style: italic;
 }
 
-
-/* --- Dark Theme para la nueva sección --- */
 .dark-theme #escenah {
     background-color: transparent;
 }
@@ -1036,14 +1033,10 @@ top: 1%;left: 2%;}
     background-color: #22272e;
 }
 
-/* ======================================================= */
-/* === MODIFICACIONES PARA LAYOUT DE TARJETA DE TOMA === */
-/* ======================================================= */
-
 .toma-card {
     min-width: 250px;
     width: 250px;
-    height: 100%; /* Ocupa toda la altura del timeline */
+    height: 100%; 
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -1051,8 +1044,8 @@ top: 1%;left: 2%;}
     background-color: #fff;
     border: 1px solid #ddd;
     border-radius: 8px;
-    box-sizing: border-box; /* Importante para que el padding no sume al tamaño */
-    transition: opacity 0.2s ease, transform 0.2s ease; /* Transición suave */
+    box-sizing: border-box; 
+    transition: opacity 0.2s ease, transform 0.2s ease; 
     cursor: grab;
 }
 .toma-card:active {
@@ -1066,15 +1059,15 @@ top: 1%;left: 2%;}
 }
 
 .toma-controles {
-    flex-shrink: 0; /* No se encoge */
+    flex-shrink: 0; 
     display: flex;
-    justify-content: flex-end; /* Alinea botones a la derecha */
+    justify-content: flex-end; 
     gap: 5px;
 }
 
 .toma-imagen-area {
-    height: 140px; /* Altura fija y predecible */
-    flex-shrink: 0; /* No se encoge */
+    height: 140px; 
+    flex-shrink: 0; 
     position: relative;
     background-color: #f0f0f0;
     border-radius: 6px;
@@ -1095,21 +1088,21 @@ top: 1%;left: 2%;}
 }
 
 .toma-textos-area {
-    flex-grow: 1; /* Ocupa todo el espacio vertical restante */
+    flex-grow: 1; 
     display: flex;
     flex-direction: column;
     gap: 5px;
-    min-height: 0; /* Clave para que flex-grow funcione correctamente */
+    height: 40%; 
 }
-
-/* Aplicamos flex-grow al textarea y al contenedor del prompt */
 .toma-textos-area > textarea,
 .toma-textos-area > .toma-prompt-container {
-    flex-grow: 1; /* Ambos crecen para repartirse el espacio */
-    min-height: 0; /* Permitir que se encojan si es necesario */
+    flex-grow: 1; 
+    min-height: 0; 
 }
-
-/* Estilo general para los textareas dentro de la tarjeta */
+.toma-prompt-container {
+    flex-grow: 1; 
+    height: 60%; 
+}
 .toma-textos-area textarea {
     width: 100%;
     height: 100%;
@@ -1129,11 +1122,10 @@ top: 1%;left: 2%;}
 
 
 .toma-prompt-container {
-    position: relative; /* Para el botón de copiar */
-    display: flex; /* Para que el textarea hijo ocupe todo el espacio */
+    position: relative; 
+    display: flex; 
 }
 
-/* Espacio en el textarea del prompt para el botón de copiar */
 .toma-prompt-container > textarea {
     padding-right: 35px; 
 }
@@ -1150,8 +1142,6 @@ top: 1%;left: 2%;}
     z-index: 2;
 }
 
-/* === ESTILOS PARA DRAG AND DROP === */
-
 .toma-card.toma-dragging {
     opacity: 0.4;
     transform: scale(0.98);
@@ -1160,19 +1150,13 @@ top: 1%;left: 2%;}
 .toma-drop-indicator {
     width: 5px;
     min-height: 100%;
-    background-color: #007bff; /* Azul brillante */
+    background-color: #007bff; 
     border-radius: 2.5px;
     flex-shrink: 0;
-    margin: 0 2px; /* Pequeño margen para que no se pegue a las tarjetas */
+    margin: 0 2px; 
 }
 
-
-/* ======================================================= */
-/* === FIN DE MODIFICACIONES === */
-/* ======================================================= */
-
 #modal-overlay {
-    /* ... tus estilos existentes ... */
     display: none;
     position: fixed;
     top: 0;
@@ -1184,8 +1168,7 @@ top: 1%;left: 2%;}
 }
 
 .modal-content {
-    /* ... tus estilos existentes ... */
-    display: none; /* Oculto por defecto */
+    display: none; 
     position: fixed;
     top: 50%;
     left: 50%;
@@ -1223,7 +1206,6 @@ top: 1%;left: 2%;}
     margin-top: 10px;
 }
 
-/* Estilos específicos para el área de texto del nuevo modal */
 #json-import-area {
     width: 100%;
     min-height: 200px;
@@ -1237,16 +1219,75 @@ top: 1%;left: 2%;}
     background-color: var(--background-color-light);
     color: white;
     resize: vertical;
-    box-sizing: border-box; /* Asegura que el padding no afecte el ancho total */
+    box-sizing: border-box; 
 }
 
-/* Aseguramos que el nuevo botón se vea bien */
 #import-data-button {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 1.5rem; /* Ajusta el tamaño del emoji */
+    font-size: 1.5rem; 
     padding: 5px;
     line-height: 1;
     color: var(--text-color);
+}
+
+.contenido-guion-editor {
+    width: calc(100% - 16px);
+    flex-grow: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    overflow-y: auto;
+    font-family: Arial, sans-serif;
+    font-size: 1em;
+    line-height: 1.5;
+    background: white;
+    min-height: 200px; 
+    text-align: left; 
+}
+
+.dark-theme .contenido-guion-editor {
+    background-color: #333;
+    color: #e0e0e0;
+    border-color: #555;
+}
+
+.guion-ia-general, .guion-ia-escena {
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.guion-ia-general {
+    background-color: #f0f8ff;
+    border: 1px solid #cce0ff;
+}
+
+.guion-ia-escena {
+    background-color: #fafafa;
+    border: 1px solid #e8e8e8;
+}
+
+.dark-theme .guion-ia-general {
+    background-color: #2d333b;
+    border-color: #00529B;
+}
+
+.dark-theme .guion-ia-escena {
+    background-color: #22272e;
+    border-color: #484f58;
+}
+
+.contenido-guion-editor h1, .contenido-guion-editor h2, .contenido-guion-editor h3, .contenido-guion-editor h4 {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+.contenido-guion-editor ul {
+    list-style-type: disc;
+    padding-left: 40px;
+}
+.contenido-guion-editor li {
+    margin-bottom: 5px;
 }

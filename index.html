@@ -8,46 +8,6 @@
 <link rel="stylesheet" href="momentos.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✒️</text></svg>">
 
-<style>
-    /* Estilos específicos para el panel de IA */
-    #ia {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    #chateo {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        padding: 10px;
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        background-color: var(--background-color-light);
-    }
-
-    #ia-options {
-        position: fixed ; 
-        bottom:10%;
-        
-      
-    }
-
-    #ia-options label {
-        cursor: pointer;
-        font-size: 0.9em;
-    }
-    
-    #ia-buttons {
-        display: flex;
-        gap: 10px;
-    }
-
-    #ia-buttons .pro {
-        flex-grow: 1; /* Para que los botones ocupen el espacio */
-    }
-</style>
-
 </head>
 <body>
 
@@ -63,14 +23,13 @@
     <button  onclick="cerrartodo(), abrir('ia');">IA</button>
 
     <button class="pro" onclick="reiniciar()"> 🆕 </button>
-        <button class="pro" onclick="generarHTML()">💽 Export</button>
-        <button id="game" class="pro" onclick="generarGAME()">🎮 Game</button>
-        <button class="pro" onclick="guardarJSON()">💾 Save</button>
-        <input type="file" id="file-load" accept="application/json"  onchange="cargarJSON(event)" style="display: none;">
-        <button class="pro" onclick="document.getElementById('file-load').click()">🗂️ Load</button>
-        <button class="pro" onclick="abrirModalConfig()"> ⚙️ </button>
-        <button class="pro" id="import-data-button" onclick="abrirModalImportar()">📥</button>
-        <button class="pro" id="theme-toggle-button" onclick="toggleTheme()">🌙</button>
+    <button class="pro" onclick="abrirModalExportar()">💽 Export</button>
+    <button class="pro" onclick="guardarJSON()">💾 Save</button>
+    <input type="file" id="file-load" accept="application/json"  onchange="cargarJSON(event)" style="display: none;">
+    <button class="pro" onclick="document.getElementById('file-load').click()">🗂️ Load</button>
+    <button class="pro" onclick="abrirModalConfig()"> ⚙️ </button>
+    <button class="pro" id="import-data-button" onclick="abrirModalImportar()">📥</button>
+    <button class="pro" id="theme-toggle-button" onclick="toggleTheme()">🌙</button>
 </div></div>
 
 <div id="momentos">
@@ -193,7 +152,34 @@
         <img id="momento-editor-imagen-preview" alt="Vista previa">
         <input type="file" id="momento-editor-file-input" accept="image/*" style="display: none;">
     </div>
-    <button class="modal-button" onclick="guardarCambiosMomento()">Guardar Cambios</button>
+
+    <!-- Contenedor para las acciones dinámicas -->
+    <div id="acciones-container"></div>
+
+    <!-- Contenedor para los botones del modal -->
+    <div class="modal-buttons-container">
+        <button id="boton-agregar-accion" class="modal-button">Añadir Acción</button>
+        <button class="modal-button" onclick="guardarCambiosMomento()">Guardar Cambios</button>
+    </div>
+</div>
+
+<!-- Modal para Exportar -->
+<div id="modal-exportar" class="modal-content">
+    <button class="modal-close-button" onclick="cerrarModalExportar()">&times;</button>
+    <h3>Opciones de Exportación</h3>
+    
+    <div class="export-option">
+        <h4>Exportar Guion</h4>
+        <p>Exporta los capítulos y sus frames a un archivo HTML simple.</p>
+        <button class="modal-button" onclick="generarHTML()">Exportar Guion HTML</button>
+    </div>
+
+    <div class="export-option">
+        <h4>Exportar Videojuego</h4>
+        <p>Exporta los momentos como una experiencia interactiva.</p>
+        <input type="text" id="momento-inicial-id" placeholder="Nombre exacto del primer momento...">
+        <button class="modal-button" onclick="iniciarExportacionJuego()">Exportar Videojuego HTML</button>
+    </div>
 </div>
 
 
@@ -205,6 +191,7 @@
 <script src="io.js"></script>
 <script src="gemini.js"></script>
 <script src="geminialfa.js"></script>
+<script src="geminivisual.js"></script> <!-- AÑADIDO -->
 <script src="exportar.js"></script>
 <script src="exportarjuego.js"></script>
 <script src="momentos.js"></script>
