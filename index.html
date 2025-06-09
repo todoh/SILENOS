@@ -8,9 +8,11 @@
 <link rel="stylesheet" href="styles2.css">
 <link rel="stylesheet" href="clarooscuro.css">
 <link rel="stylesheet" href="momentos.css">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✒️</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>S</text></svg>">
 
- 
+<!-- ▼▼▼ SCRIPT DE GOOGLE AÑADIDO ▼▼▼ -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- ▲▲▲ FIN SCRIPT DE GOOGLE ▲▲▲ -->
 
 </head>
 <body>
@@ -133,7 +135,52 @@
     text-align: right;
 }
 
+/* ▼▼▼ ESTILOS PARA LA AUTENTICACIÓN AÑADIDOS ▼▼▼ */
+#google-auth-container {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    z-index: 10001; /* Encima de la esfera */
+}
 
+#user-session-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 5px 10px;
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    color: #333;
+}
+
+#user-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+#user-name {
+    font-weight: 500;
+}
+
+#logout-button {
+    font-size: 18px;
+    padding: 4px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.dark-theme #user-session-display {
+    background-color: rgba(30, 30, 30, 0.8);
+    color: #eee;
+}
+
+/* ▲▲▲ FIN ESTILOS DE AUTENTICACIÓN ▲▲▲ */
 </style>
 <!-- PEGA ESTE SCRIPT EN index.html, ANTES DEL SCRIPT DEL CONTADOR DE LLAMADAS -->
 
@@ -359,10 +406,13 @@ function animacionReiniciar() {
 <div id="menuprincipio">
     <button class="pro3 pro" onclick="flexear('silenos');">Nuevo</button>
     <button class="pro3 pro" onclick="document.getElementById('file-load').click()">Cargar</button>
-
 </div>
 
-
+<!-- ▼▼▼ CONTENEDOR DE AUTENTICACIÓN AÑADIDO ▼▼▼ -->
+<div id="google-auth-container">
+    <!-- El contenido (botón de login o perfil de usuario) será insertado aquí por google.js -->
+</div>
+<!-- ▲▲▲ FIN CONTENEDOR ▲▲▲ -->
 
 </div>
 
@@ -600,6 +650,9 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 <script src="exportar.js"></script>
 <script src="exportarjuego.js"></script>
 <script src="exportartomas.js"></script>
+<!-- ▼▼▼ SCRIPT DE GOOGLE AÑADIDO ▼▼▼ -->
+<script src="google.js"></script>
+<!-- ▲▲▲ FIN SCRIPT DE GOOGLE ▲▲▲ -->
 <script src="main.js"></script> </body>
 
 <button id="asistente-btn" title="Asistente IA">S</button>

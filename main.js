@@ -36,7 +36,7 @@ window.onload = function() {
         document.body.classList.add('dark-theme');
         if (themeToggleButton) themeToggleButton.textContent = '☀️';
     } else {
-        if (themeToggleButton) themeToggleButton.textContent = '🌙';
+        if (themeToggleButton) themeToggleButton.textContent = '�';
     }
     actualizarParametrosIA();
     initEscenas();
@@ -330,7 +330,7 @@ function cerrarModalAIDatos() {
     }
 }
 // =======================================================================
-//  INICIO DE LA CORRECIÓN: Función para poblar el dropdown de guiones
+//  INICIO DE LA CORRECCIÓN: Función para poblar el dropdown de guiones
 // =======================================================================
 
 /**
@@ -380,7 +380,7 @@ function cargarGuionesEnDropdown() {
 }
 
 // =======================================================================
-//  FIN DE LA CORRECIÓN
+//  FIN DE LA CORRECCIÓN
 // =======================================================================
 
 
