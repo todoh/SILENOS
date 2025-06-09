@@ -40,7 +40,7 @@ window.onload = function() {
     }
     actualizarParametrosIA();
     initEscenas();
-    initMomentos();  
+    initMomentos();  // Llama a la inicialización de todas las secciones
 };
 
 document.getElementById("titulo-proyecto").addEventListener("input", function() {
@@ -59,14 +59,27 @@ function cerrartodo() {
 }
 
 function abrir(escena) {
+    cerrartodo();
     document.getElementById(escena).style.display = 'flex';
 
-    // Lógica especial para centrar el lienzo de momentos al abrirlo
+    // =======================================================================
+    //  INICIO DE LA CORRECCIÓN
+    // =======================================================================
+    // Lógica especial para cada sección al abrirla.
+    // Esto asegura que ciertos componentes se actualicen siempre que
+    // el usuario navegue a su sección correspondiente.
     if (escena === 'momentos') {
+        console.log("Abriendo sección Momentos. Actualizando lista de guiones.");
+        // Asegura que la lista de guiones para la IA esté siempre actualizada.
+        if (typeof cargarGuionesEnDropdown === 'function') {
+            cargarGuionesEnDropdown();
+        } else {
+            console.error("Error: La función cargarGuionesEnDropdown no fue encontrada.");
+        }
+
+        // Lógica para centrar el lienzo de momentos
         const momentosContainer = document.getElementById('momentos');
         const lienzo = document.getElementById('momentos-lienzo');
-
-        // Usamos requestAnimationFrame para asegurar que el DOM está actualizado
         requestAnimationFrame(() => {
             if (momentosContainer && lienzo) {
                 const containerWidth = momentosContainer.clientWidth;
@@ -74,7 +87,6 @@ function abrir(escena) {
                 const containerHeight = momentosContainer.clientHeight;
                 const lienzoHeight = lienzo.scrollHeight;
 
-                // Calcula la posición de scroll para centrar el contenido del lienzo
                 const scrollLeft = (lienzoWidth - containerWidth) / 2;
                 const scrollTop = (lienzoHeight - containerHeight) / 2;
                 
@@ -83,10 +95,14 @@ function abrir(escena) {
             }
         });
     }
+    // =======================================================================
+    //  FIN DE LA CORRECCIÓN
+    // =======================================================================
 }
 
 
 function gridear(escena) {
+    cerrartodo();
     document.getElementById(escena).style.display = 'grid';
 }
 
@@ -106,9 +122,9 @@ function reiniciarEstadoApp() {
     document.getElementById("momentos-lienzo").innerHTML = ""; // Limpiar lienzo de momentos
     
     // Limpiar y re-renderizar secciones complejas
-    renderizarGuion();
-    renderEscenasUI();
-    actualizarLista();
+    if(typeof renderizarGuion === 'function') renderizarGuion();
+    if(typeof renderEscenasUI === 'function') renderEscenasUI();
+    if(typeof actualizarLista === 'function') actualizarLista();
     
     console.log("Estado de la aplicación reseteado.");
 }
@@ -183,8 +199,11 @@ function importarDatosDesdeJSON() {
         // Valida que el objeto 'dato' tenga la estructura correcta
         if (dato && typeof dato.nombre !== 'undefined' && typeof dato.descripcion !== 'undefined' && typeof dato.etiqueta !== 'undefined') {
             try {
-                agregarPersonajeDesdeDatos(dato);
-                return true; // Éxito
+                if (typeof agregarPersonajeDesdeDatos === 'function') {
+                    agregarPersonajeDesdeDatos(dato);
+                    return true; // Éxito
+                }
+                return false;
             } catch (e) {
                 console.error("Error al intentar añadir el 'Dato': ", dato.nombre, e);
                 return false; // Fracaso
@@ -292,3 +311,56 @@ function cerrarModalAIDatos() {
         overlay.onclick = null;
     }
 }
+// =======================================================================
+//  INICIO DE LA CORRECIÓN: Función para poblar el dropdown de guiones
+// =======================================================================
+
+/**
+ * Carga los títulos de los guiones desde la variable global guionLiterarioData 
+ * en el dropdown de la sección 'Momentos'.
+ * Esta función es llamada cuando se abre la sección 'Momentos' o cuando se 
+ * modifica la lista de guiones.
+ */
+function cargarGuionesEnDropdown() {
+    const guionSelect = document.getElementById('guion-select');
+    if (!guionSelect) {
+        console.error("Error crítico: No se encontró el elemento <select> con id 'guion-select'.");
+        return;
+    }
+
+    // Guardar el valor que estaba seleccionado para intentar restaurarlo después
+    const valorSeleccionadoAnteriormente = guionSelect.value;
+    
+    // 1. Limpiar completamente las opciones existentes
+    guionSelect.innerHTML = '';
+
+    // 2. Crear y añadir una opción por defecto (placeholder)
+    const placeholder = document.createElement('option');
+    placeholder.value = ""; // Sin valor para que no sea una selección válida
+
+    if (guionLiterarioData.length === 0) {
+        placeholder.textContent = "No hay guiones creados";
+        placeholder.disabled = true; // Deshabilitar si no hay guiones
+    } else {
+        placeholder.textContent = "Selecciona un guion...";
+    }
+    guionSelect.appendChild(placeholder);
+
+    // 3. Poblar el dropdown con los guiones disponibles
+    guionLiterarioData.forEach(guion => {
+        // Solo añadir guiones que tengan un título
+        if (guion.titulo && guion.titulo.trim() !== "") {
+            const option = document.createElement('option');
+            option.value = guion.titulo; // El valor de la opción será el título del guion
+            option.textContent = guion.titulo; // El texto visible será también el título
+            guionSelect.appendChild(option);
+        }
+    });
+
+    // 4. Intentar restaurar la selección que tenía el usuario
+    guionSelect.value = valorSeleccionadoAnteriormente || "";
+}
+
+// =======================================================================
+//  FIN DE LA CORRECIÓN
+// =======================================================================

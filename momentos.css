@@ -14,16 +14,55 @@
     background-color: var(--background-color, #f8f9fa);
 }
 
-#momentos .pro {
-    position: fixed; /* Mantiene el botón fijo en la ventana del navegador */
+/* Contenedor para todos los botones flotantes */
+#momentos-controles-flotantes {
+    position: fixed;
     right: 2dvw;
-    transform: translateY(-2dvh);
-    top:10dvh;
-    width: 10dvw;
-    height: auto;
-    margin: 0%;
-    z-index: 1000;
+    top: 10dvh;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1001;
+    width: 220px;
 }
+
+#momentos-controles-flotantes .pro {
+    width: 100%;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+/* Grupo específico para los controles de IA */
+#momentos-controles-ia {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background-color: var(--background-color-light-translucent, rgba(255, 255, 255, 0.8));
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.dark-theme #momentos-controles-ia {
+     background-color: var(--background-color-dark-translucent, rgba(40, 40, 40, 0.85));
+}
+
+
+#guion-select {
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid var(--border-color, #ccc);
+    background-color: var(--background-color-light, #fff);
+    color: var(--text-color, #333);
+    cursor: pointer;
+}
+
+.dark-theme #guion-select {
+    background-color: var(--background-color-dark, #333);
+    color: var(--text-color-dark, #e0e0e0);
+    border-color: var(--border-color-dark, #555);
+}
+
 
 #momentos-lienzo {
     position: relative; /* Para que los nodos absolutos se posicionen dentro de él */

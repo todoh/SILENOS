@@ -33,7 +33,19 @@
 </div></div>
 
 <div id="momentos">
-    <button class="pro" id="agregar-momento-btn">Añadir Momento</button>
+    <!-- Controles flotantes para la sección de momentos -->
+    <div id="momentos-controles-flotantes">
+        <button class="pro" id="agregar-momento-btn">Añadir Momento</button>
+        <div id="momentos-controles-ia">      
+            <button class="pro" id="generar-aventura-ia-btn" title="Usa la IA para generar una aventura interactiva completa a partir del guion seleccionado.">Generar Aventura con IA ✨</button>
+            <select id="guion-select" class="pro" title="Selecciona un guion para usar como base para la IA"></select>
+            
+            <!-- INICIO DE LA MODIFICACIÓN -->
+            <input type="number" id="ia-call-budget-input" class="pro ia-input-numero" min="5" max="100" value="15" title="Presupuesto de Llamadas a la IA. Define el número máximo de peticiones para crear y expandir ramas en la historia. Un número más alto crea una aventura más grande y compleja.">
+            <!-- FIN DE LA MODIFICACIÓN -->
+        </div>
+    </div>
+
     <div id="momentos-lienzo">
         <!-- Los nodos de momento se agregarán aquí dinámicamente -->
     </div>
@@ -41,13 +53,19 @@
 
 
 <div id="guion-literario">
-
-    <button class="pro" id="sumar-capitulo-guion" onclick="agregarCapituloYMostrar()">Agregar Capítulo</button>
+    <!-- Barra de herramientas para los botones de acción -->
+    <div id="guion-toolbar">
+        <button class="pro" id="sumar-capitulo-guion" onclick="agregarCapituloYMostrar()">Agregar Capítulo</button>
+        <!-- Los botones dinámicos de IA se insertarán aquí -->
+    </div>
+    <!-- Layout principal del guion -->
     <div id="guion-layout">
         <div id="indice-capitulos-guion">
-            </div>
+            <!-- La lista de capítulos va aquí -->
+        </div>
         <div id="contenido-capitulo-activo">
-            </div>
+            <!-- El editor del capítulo seleccionado va aquí -->
+        </div>
     </div>
 </div>
 
@@ -211,9 +229,8 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
     </div>
 </div>
 
-
-<script src="main.js"></script>
 <script src="gestionEscenas.js"></script>
+<script src="momentos.js"></script>
 <script src="guion.js"></script>
 <script src="escenas.js"></script>
 <script src="datos.js"></script>
@@ -224,7 +241,7 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 <script src="exportar.js"></script>
 <script src="exportarjuego.js"></script>
 <script src="exportartomas.js"></script>
-<script src="momentos.js"></script>
+<script src="main.js"></script> <!-- main.js se carga al final -->
 
 </body>
 </html>

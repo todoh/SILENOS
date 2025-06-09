@@ -6,19 +6,10 @@ function abrirGuion() {
     cerrartodo();
     document.getElementById('guion-literario').style.display = 'flex';
     
-    // =======================================================================
-    //  INICIO DE LA CORRECCIÓN
-    // =======================================================================
     // Si había un capítulo activo, lo volvemos a renderizar.
-    // Esto asegura que la vista se actualice con cualquier cambio que
-    // haya ocurrido en segundo plano (como la generación de frames),
-    // mostrando el botón correcto ("Generar Tomas") cuando el usuario regrese.
     if (indiceCapituloActivo !== -1) {
         mostrarCapituloSeleccionado(indiceCapituloActivo);
     }
-    // =======================================================================
-    //  FIN DE LA CORRECCIÓN
-    // =======================================================================
 }
 
 function agregarCapituloYMostrar() {
@@ -31,7 +22,21 @@ function agregarCapituloYMostrar() {
     guionLiterarioData.sort((a, b) => a.titulo.localeCompare(b.titulo));
     indiceCapituloActivo = guionLiterarioData.findIndex(cap => cap === nuevoCapitulo);
     renderizarGuion();
-    mostrarCapituloSeleccionado(indiceCapituloActivo); 
+    mostrarCapituloSeleccionado(indiceCapituloActivo);
+    
+    // =======================================================================
+    //  INICIO DE LA CORRECCIÓN
+    // =======================================================================
+    // Se asegura de que la lista de guiones en 'Momentos' se actualice
+    // inmediatamente después de añadir un nuevo capítulo.
+    if (typeof cargarGuionesEnDropdown === 'function') {
+        cargarGuionesEnDropdown();
+    } else {
+        console.error("Error al agregar capítulo: La función cargarGuionesEnDropdown no está definida.");
+    }
+    // =======================================================================
+    //  FIN DE LA CORRECCIÓN
+    // =======================================================================
 }
 
 /**
@@ -40,6 +45,7 @@ function agregarCapituloYMostrar() {
  * @returns {boolean} True si existen escenas para ese guion y al menos una tiene frames.
  */
 function hanSidoFramesGenerados(tituloGuion) {
+    if (!tituloGuion) return false;
     const escenasDelGuion = Object.keys(escenas)
         .filter(id => id.startsWith(tituloGuion));
 
@@ -55,7 +61,13 @@ function hanSidoFramesGenerados(tituloGuion) {
 
 function mostrarCapituloSeleccionado(index) {
     indiceCapituloActivo = index;
+    
+    const toolbar = document.getElementById('guion-toolbar');
     const contenidoDiv = document.getElementById('contenido-capitulo-activo');
+    
+    // Limpiar botones dinámicos previos de la barra de herramientas
+    toolbar.querySelectorAll('.generar-tomas-btn, .generar-frames-btn').forEach(btn => btn.remove());
+    
     contenidoDiv.innerHTML = ''; 
 
     if (index < 0 || index >= guionLiterarioData.length) {
@@ -83,12 +95,16 @@ function mostrarCapituloSeleccionado(index) {
                 guionLiterarioData.sort((a, b) => a.titulo.localeCompare(b.titulo));
                 indiceCapituloActivo = guionLiterarioData.findIndex(cap => cap === capituloActualObjeto);
                 renderizarGuion(); 
+                if (typeof cargarGuionesEnDropdown === 'function') {
+                    cargarGuionesEnDropdown();
+                }
             }
         };
     }
     
     contenidoDiv.appendChild(inputTitulo);
 
+    // Añadir botones a la barra de herramientas en lugar de al contenido
     if (capitulo.generadoPorIA) {
         if (hanSidoFramesGenerados(capitulo.titulo)) {
             const botonGenerarTomas = document.createElement('button');
@@ -102,7 +118,7 @@ function mostrarCapituloSeleccionado(index) {
                     alert("Error: La función para generar tomas no está disponible.");
                 }
             };
-            contenidoDiv.appendChild(botonGenerarTomas);
+            toolbar.appendChild(botonGenerarTomas);
         } else {
             const botonGenerarFrames = document.createElement('button');
             botonGenerarFrames.textContent = 'Generar Frames de la Historia';
@@ -124,7 +140,7 @@ function mostrarCapituloSeleccionado(index) {
                     alert("Error: La función para desarrollar frames ('desarrollarFramesDesdeGeminimente') no está disponible.");
                 }
             };
-            contenidoDiv.appendChild(botonGenerarFrames);
+            toolbar.appendChild(botonGenerarFrames);
         }
     }
 
@@ -147,19 +163,27 @@ function eliminarCapituloDesdeIndice(indexToDelete) {
     if (indexToDelete < 0 || indexToDelete >= guionLiterarioData.length) return;
 
     if (confirm("¿Estás seguro de que quieres eliminar este capítulo?")) {
+        const fueActivo = indiceCapituloActivo === indexToDelete;
+        
         guionLiterarioData.splice(indexToDelete, 1);
 
-        if (indiceCapituloActivo === indexToDelete) {
-            indiceCapituloActivo = -1; 
+        if (fueActivo) {
+            indiceCapituloActivo = -1;
+            // Limpiar la barra de herramientas y el contenido si el capítulo eliminado era el activo
+             const toolbar = document.getElementById('guion-toolbar');
+             toolbar.querySelectorAll('.generar-tomas-btn, .generar-frames-btn').forEach(btn => btn.remove());
+             const contenidoDiv = document.getElementById('contenido-capitulo-activo');
+             contenidoDiv.innerHTML = '<p class="mensaje-placeholder">Selecciona un capítulo de la lista o crea uno nuevo.</p>';
+
         } else if (indiceCapituloActivo > indexToDelete) {
             indiceCapituloActivo--;
         }
         
         renderizarGuion(); 
         
-        if (indiceCapituloActivo === -1) {
-             const contenidoDiv = document.getElementById('contenido-capitulo-activo');
-             contenidoDiv.innerHTML = '<p class="mensaje-placeholder">Selecciona un capítulo de la lista o crea uno nuevo.</p>';
+        // Se asegura de que la lista de guiones en 'Momentos' se actualice.
+        if (typeof cargarGuionesEnDropdown === 'function') {
+            cargarGuionesEnDropdown();
         }
     }
 }

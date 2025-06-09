@@ -14,6 +14,10 @@ function initMomentos() {
     document.getElementById('agregar-momento-btn')?.addEventListener('click', agregarMomento);
     document.getElementById('boton-agregar-accion')?.addEventListener('click', agregarAccion);
 
+    // CORRECCIÓN: Se añade el listener para el botón de generación con IA aquí.
+    // Esto es más robusto que usar onclick en el HTML.
+    document.getElementById('generar-aventura-ia-btn')?.addEventListener('click', generarAventuraConIA);
+
 
     const dropZone = document.getElementById('momento-editor-drop-zone');
     const fileInput = document.getElementById('momento-editor-file-input');
@@ -42,45 +46,22 @@ function agregarMomento() {
     if (!lienzo || !scrollContainer) return;
 
     const nodoId = `momento_${Date.now()}`;
-    const nuevoNodo = document.createElement('div');
-    nuevoNodo.className = 'momento-nodo';
-    nuevoNodo.id = nodoId;
     
-    // Estructura interna del nodo
-    nuevoNodo.innerHTML = `
-        <p contenteditable="true" class="momento-titulo">Momento ${lienzo.children.length + 1}</p>
-        <div class="momento-contenido">
-             <img class="momento-imagen" src="" style="display: none;">
-             <span class="placeholder-contenido"></span>
-        </div>
-        <div class="momento-botones">
-            <button class="momento-btn btn-editar">Editar</button>
-            <button class="momento-btn btn-eliminar">Eliminar</button>
-        </div>
-    `;
-
-    // CORREGIDO: Calcular posición en el centro de la vista del usuario
+    // Calcula la mejor posición para el nuevo nodo
     const { top, left } = calcularPosicionNodo(lienzo, scrollContainer);
-    nuevoNodo.style.top = `${top}px`;
-    nuevoNodo.style.left = `${left}px`;
-    
-    // Guardar datos iniciales en el dataset
-    nuevoNodo.dataset.descripcion = "";
-    nuevoNodo.dataset.acciones = "[]";
 
-    lienzo.appendChild(nuevoNodo);
-
-    // Asignar eventos
-    nuevoNodo.querySelector('.btn-editar').onclick = () => abrirModalEditarMomento(nuevoNodo);
-    nuevoNodo.querySelector('.btn-eliminar').onclick = () => {
-        if (confirm('¿Estás seguro de que quieres eliminar este momento?')) {
-            nuevoNodo.remove();
-        }
-    };
-    nuevoNodo.querySelector('.momento-titulo').addEventListener('mousedown', e => e.stopPropagation());
-    
-    makeDraggable(nuevoNodo);
+    // Crea el nodo usando la nueva función centralizada
+    crearNodoEnLienzo({
+        id: nodoId,
+        titulo: `Momento ${lienzo.children.length + 1}`,
+        descripcion: "",
+        x: left,
+        y: top,
+        imagen: "",
+        acciones: []
+    });
 }
+
 
 /**
  * Abre el modal para editar un nodo específico.
@@ -220,7 +201,6 @@ function crearElementoAccion(numero, textoBoton = '', idDestino = '') {
     textoInput.placeholder = `Texto del botón ${numero}`;
     textoInput.value = textoBoton;
     
-    // Reemplazar input de ID con un <select>
     const selectDestino = document.createElement('select');
     selectDestino.className = 'accion-destino-select';
 
@@ -257,7 +237,7 @@ function crearElementoAccion(numero, textoBoton = '', idDestino = '') {
 }
 
 /**
- * CORREGIDO: Hace que un elemento sea arrastrable de forma suave y predecible.
+ * Hace que un elemento sea arrastrable de forma suave y predecible.
  * @param {HTMLElement} element - El elemento a hacer arrastrable.
  */
 function makeDraggable(element) {
@@ -265,7 +245,6 @@ function makeDraggable(element) {
     let initialX, initialY, initialLeft, initialTop;
 
     const onMouseDown = (e) => {
-        // No arrastrar si se hace clic en un botón o en un campo editable
         if (e.target.isContentEditable || e.target.closest('.momento-btn, .btn-editar, .btn-eliminar')) {
             return;
         }
@@ -273,13 +252,11 @@ function makeDraggable(element) {
         
         isDragging = true;
         element.style.cursor = 'grabbing';
-        element.style.zIndex = 1001; // Poner el nodo al frente
+        element.style.zIndex = 1001; 
 
-        // Posición inicial del nodo relativa al lienzo
         initialLeft = element.offsetLeft;
         initialTop = element.offsetTop;
         
-        // Posición inicial del ratón relativa a la página
         initialX = e.pageX;
         initialY = e.pageY;
 
@@ -290,15 +267,12 @@ function makeDraggable(element) {
     const onMouseMove = (e) => {
         if (!isDragging) return;
         
-        // Calcular el desplazamiento del ratón
         const dx = e.pageX - initialX;
         const dy = e.pageY - initialY;
         
-        // Calcular la nueva posición del nodo
         let newLeft = initialLeft + dx;
         let newTop = initialTop + dy;
 
-        // Limitar la posición dentro del lienzo de 5000x5000
         const lienzo = element.parentElement;
         const lienzoAncho = lienzo.scrollWidth;
         const lienzoAlto = lienzo.scrollHeight;
@@ -313,15 +287,240 @@ function makeDraggable(element) {
     const onMouseUp = () => {
         isDragging = false;
         element.style.cursor = 'grab';
-        element.style.zIndex = 1; // Devolver a su z-index normal
+        element.style.zIndex = 1;
         document.removeEventListener('mousemove', onMouseMove);
     };
 
     element.addEventListener('mousedown', onMouseDown);
 }
 
+
+// =======================================================================
+//  INICIO DE LA NUEVA FUNCIONALIDAD: GENERACIÓN DE AVENTURA CON IA
+// =======================================================================
+
 /**
- * CORREGIDO: Calcula la posición para un nuevo nodo, centrado en la vista del usuario
+ * Inicia el proceso de generación de una aventura interactiva a partir de un guion.
+ */
+async function generarAventuraConIA() {
+    // SEÑAL 1: La función ha comenzado
+    console.log("[IA Aventura] Proceso iniciado.");
+
+    const chatDiv = window.chatDiv || document.getElementById('chat');
+    const guionSelect = document.getElementById('guion-select');
+    const lienzo = document.getElementById('momentos-lienzo');
+
+    // 1. Validar selección
+    const tituloGuionSeleccionado = guionSelect.value;
+    if (!tituloGuionSeleccionado) {
+        alert("Por favor, selecciona un guion de la lista para generar la aventura.");
+        // SEÑAL DE ERROR TEMPRANO
+        console.warn("[IA Aventura] Proceso cancelado: no se seleccionó ningún guion.");
+        return;
+    }
+    // SEÑAL 2: Guion seleccionado
+    console.log(`[IA Aventura] Guion seleccionado: "${tituloGuionSeleccionado}"`);
+
+    if (!confirm(`¿Estás seguro de que quieres generar una nueva aventura a partir del guion "${tituloGuionSeleccionado}"? Se borrarán todos los momentos actuales en el lienzo.`)) {
+        // SEÑAL DE CANCELACIÓN
+        console.log("[IA Aventura] Proceso cancelado por el usuario.");
+        return;
+    }
+
+    // 2. Encontrar el guion y extraer su contenido
+    const capituloSeleccionado = guionLiterarioData.find(g => g.titulo === tituloGuionSeleccionado);
+    if (!capituloSeleccionado || !capituloSeleccionado.contenido) {
+        alert("Error: No se pudo encontrar el contenido del guion seleccionado.");
+        // SEÑAL DE ERROR
+        console.error("[IA Aventura] No se pudo encontrar el objeto del capítulo o su contenido está vacío.");
+        return;
+    }
+
+    const contenidoTextoPlano = _extraerTextoPlanoDeGuionHTML(capituloSeleccionado.contenido);
+    if (!contenidoTextoPlano.trim()) {
+        alert("El guion seleccionado parece estar vacío. No se puede generar una aventura.");
+        // SEÑAL DE ERROR
+        console.error("[IA Aventura] El contenido extraído del guion está vacío.");
+        return;
+    }
+    // SEÑAL 3: Contenido extraído
+    console.log("[IA Aventura] Contenido del guion extraído con éxito. Longitud:", contenidoTextoPlano.length);
+    
+    // 3. Preparar y enviar el prompt a la IA
+    const prompt = `
+Eres un diseñador de juegos de ficción interactiva. Tu tarea es convertir el siguiente guion en una aventura basada en elecciones, estructurada como una red de "momentos".
+
+Basado en el guion proporcionado, genera un objeto JSON que represente esta aventura. El objeto debe tener una única clave raíz llamada "momentos", que contenga un array de objetos.
+
+Cada objeto "momento" debe tener la siguiente estructura:
+- "id": Un ID único y TEMPORAL para este momento (ej: "momento_temp_1", "momento_temp_2").
+- "titulo": Un título corto y descriptivo para el momento (máximo 4 palabras).
+- "descripcion": Una descripción breve de lo que ocurre en este momento.
+- "x" e "y": Coordenadas para una disposición lógica en un lienzo 2D (de 0 a 4800). La historia principal debe fluir de izquierda a derecha. Las ramificaciones pueden ir hacia arriba o hacia abajo.
+- "acciones": Un array de objetos "accion". Cada acción representa una elección para el jugador.
+  - Cada objeto "accion" debe tener:
+    - "textoBoton": El texto que aparecerá en el botón de elección (ej: "Investigar la cueva", "Seguir el camino").
+    - "idDestino": El ID temporal del momento al que conduce esta elección.
+- "imagen": Dejar este campo como una cadena vacía "".
+
+Guion a procesar:
+---
+${contenidoTextoPlano}
+---
+
+Responde ÚNICAMENTE con el objeto JSON válido. No incluyas explicaciones, texto introductorio, ni marcadores de código como \`\`\`json.
+`;
+
+    try {
+        // SEÑAL 4: Llamando a la IA
+        console.log("[IA Aventura] Enviando prompt a la IA...");
+        const respuestaJson = await llamarIAConFeedback(prompt, "Generando Aventura Interactiva", true);
+        
+        // SEÑAL 5: Respuesta recibida
+        console.log("[IA Aventura] Respuesta JSON recibida de la IA:", respuestaJson);
+
+        if (!respuestaJson || !Array.isArray(respuestaJson.momentos) || respuestaJson.momentos.length === 0) {
+            throw new Error("La respuesta de la IA no tuvo el formato esperado (se esperaba un objeto con una clave 'momentos' que sea un array).");
+        }
+
+        // 4. Procesar la respuesta y dibujar los nodos
+        console.log("[IA Aventura] Limpiando el lienzo y procesando la respuesta.");
+        lienzo.innerHTML = ''; // Limpiar el lienzo
+        const momentosGenerados = respuestaJson.momentos;
+        const idMap = new Map();
+
+        // Primera pasada: Crear todos los nodos y mapear los IDs temporales a los reales
+        console.log("[IA Aventura] Creando nodos en el lienzo (primera pasada)...");
+        momentosGenerados.forEach(datosMomento => {
+            const nuevoId = `momento_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+            idMap.set(datosMomento.id, nuevoId); // Mapear ID temporal de la IA al ID real
+            
+            crearNodoEnLienzo({
+                ...datosMomento,
+                id: nuevoId, // Usar el nuevo ID real para el elemento
+                acciones: [] // Las acciones se añadirán en la segunda pasada
+            });
+        });
+
+        // Segunda pasada: Actualizar las acciones con los IDs de destino reales
+        console.log("[IA Aventura] Conectando acciones entre nodos (segunda pasada)...");
+        momentosGenerados.forEach(datosMomento => {
+            const idOriginal = datosMomento.id;
+            const idReal = idMap.get(idOriginal);
+            const nodoElement = document.getElementById(idReal);
+
+            if (nodoElement) {
+                const accionesOriginales = datosMomento.acciones || [];
+                const accionesTraducidas = accionesOriginales
+                    .map(accion => {
+                        const idDestinoOriginal = accion.idDestino;
+                        const idDestinoReal = idMap.get(idDestinoOriginal);
+                        if (!idDestinoReal) {
+                             console.warn(`[IA Aventura] Enlace roto detectado: El ID de destino "${idDestinoOriginal}" no fue encontrado en los momentos generados.`);
+                        }
+                        return {
+                            textoBoton: accion.textoBoton,
+                            idDestino: idDestinoReal
+                        };
+                    })
+                    .filter(a => a.idDestino); // Filtrar enlaces rotos
+
+                nodoElement.dataset.acciones = JSON.stringify(accionesTraducidas);
+            }
+        });
+
+        if (chatDiv) {
+            chatDiv.innerHTML += `<p><strong>Éxito:</strong> Se ha generado una nueva aventura interactiva en el lienzo de Momentos.</p>`;
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+        // SEÑAL 6: Proceso completado
+        console.log("[IA Aventura] Proceso completado con éxito.");
+        alert("¡Aventura generada con éxito!");
+
+    } catch (error) {
+        // SEÑAL DE ERROR EN EJECUCIÓN
+        console.error("[IA Aventura] Ocurrió un error catastrófico durante la generación:", error);
+        if (chatDiv) {
+            chatDiv.innerHTML += `<p><strong>Error:</strong> ${error.message}</p>`;
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+        alert("Ocurrió un error al generar la aventura. Revisa la consola del navegador (F12) para más detalles.");
+    }
+}
+
+/**
+ * Crea un nodo de momento en el lienzo a partir de un objeto de datos.
+ * @param {object} datos - Objeto con la información del momento (id, titulo, x, y, etc.).
+ */
+function crearNodoEnLienzo(datos) {
+    const lienzo = document.getElementById('momentos-lienzo');
+    if (!lienzo) return null;
+
+    const nuevoNodo = document.createElement('div');
+    nuevoNodo.className = 'momento-nodo';
+    nuevoNodo.id = datos.id;
+    
+    nuevoNodo.innerHTML = `
+        <p contenteditable="true" class="momento-titulo">${datos.titulo || 'Sin Título'}</p>
+        <div class="momento-contenido">
+             <img class="momento-imagen" src="" style="display: none;">
+             <span class="placeholder-contenido"></span>
+        </div>
+        <div class="momento-botones">
+            <button class="momento-btn btn-editar">Editar</button>
+            <button class="momento-btn btn-eliminar">Eliminar</button>
+        </div>
+    `;
+
+    nuevoNodo.style.left = `${datos.x || 0}px`;
+    nuevoNodo.style.top = `${datos.y || 0}px`;
+    
+    nuevoNodo.dataset.descripcion = datos.descripcion || "";
+    nuevoNodo.dataset.acciones = JSON.stringify(datos.acciones || "[]");
+
+    const imagenNodo = nuevoNodo.querySelector('.momento-imagen');
+    if (datos.imagen) {
+        imagenNodo.src = datos.imagen;
+        imagenNodo.style.display = 'block';
+        nuevoNodo.classList.add('con-imagen');
+    }
+
+    lienzo.appendChild(nuevoNodo);
+
+    nuevoNodo.querySelector('.btn-editar').onclick = () => abrirModalEditarMomento(nuevoNodo);
+    nuevoNodo.querySelector('.btn-eliminar').onclick = () => {
+        if (confirm('¿Estás seguro de que quieres eliminar este momento?')) {
+            nuevoNodo.remove();
+        }
+    };
+    nuevoNodo.querySelector('.momento-titulo').addEventListener('mousedown', e => e.stopPropagation());
+    
+    makeDraggable(nuevoNodo);
+    return nuevoNodo;
+}
+
+/**
+ * Helper para extraer el texto plano de un contenido de guion en HTML.
+ * @param {string} contenidoHTML - El string HTML del guion.
+ * @returns {string} El texto plano extraído.
+ */
+function _extraerTextoPlanoDeGuionHTML(contenidoHTML) {
+    try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(contenidoHTML, 'text/html');
+        return doc.body.innerText || "";
+    } catch (e) {
+        console.error("Error al parsear HTML del guion:", e);
+        return "";
+    }
+}
+
+// =======================================================================
+//  FIN DE LA NUEVA FUNCIONALIDAD
+// =======================================================================
+
+/**
+ * Calcula la posición para un nuevo nodo, centrado en la vista del usuario
  * y buscando un lugar libre si el centro está ocupado.
  * @param {HTMLElement} lienzo - El elemento del lienzo donde se colocan los nodos.
  * @param {HTMLElement} scrollContainer - El contenedor que tiene el scroll.
@@ -330,7 +529,6 @@ function makeDraggable(element) {
 function calcularPosicionNodo(lienzo, scrollContainer) {
     const nodosExistentes = lienzo.querySelectorAll('.momento-nodo');
 
-    // 1. Calcular el centro de la vista actual
     const centroVisibleX = scrollContainer.scrollLeft + (scrollContainer.clientWidth / 2);
     const centroVisibleY = scrollContainer.scrollTop + (scrollContainer.clientHeight / 2);
 
@@ -356,12 +554,10 @@ function calcularPosicionNodo(lienzo, scrollContainer) {
         return false;
     };
 
-    // 2. Intentar colocar en el centro. Si no hay colisión, devolver esa posición.
     if (!hayColision(centroLeftInicial, centroTopInicial)) {
         return { top: centroTopInicial, left: centroLeftInicial };
     }
 
-    // 3. Si hay colisión, buscar en espiral hacia afuera desde el centro de la vista.
     let x = 0, y = 0, delta = [0, -1];
     let sideLength = 0, steps_to_turn = 1, step = 0;
 
