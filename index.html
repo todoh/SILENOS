@@ -1,25 +1,386 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>  
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Silenos Versión 1.1.8</title>
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles2.css">
+<link rel="stylesheet" href="clarooscuro.css">
 <link rel="stylesheet" href="momentos.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✒️</text></svg>">
 
+ 
+
 </head>
 <body>
+<style>
+    /* Estilo para el contenedor del contador de llamadas a la API */
+    #api-call-counter-container {
+        position: fixed;
+        bottom: 20px;
+        /* Ajusta este valor para separar el contador del botón 'S' */
+        left: 75px; 
+        
+        display: flex;
+        align-items: center;
+        
+        background-color: var(--color-fondo-secundario, #f0f0f0);
+        color: var(--color-texto, #333);
+        border: 1px solid var(--color-borde, #ccc);
+        
+        padding: 5px 12px;
+        border-radius: 16px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        
+        z-index: 9998; /* Justo debajo del botón S si se superponen */
+        
+        /* Empieza oculto y aparecerá con una transición suave */
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+        pointer-events: none; /* Para que no interfiera con el clic */
+    }
+
+    /* Clase que se añadirá para mostrar el contador */
+    #api-call-counter-container.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    #api-call-count {
+        margin-left: 6px;
+        font-weight: bold;
+        background-color: var(--color-primario, #1877f2);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 12px;
+    }
+
+
+/* PEGA ESTO DENTRO DE LA ETIQUETA <style> EXISTENTE EN EL <head> */
+
+/* Estilo genérico para los indicadores de estado */
+.status-indicator {
+    position: fixed;
+    bottom: 20px;
+    display: flex;
+    align-items: center;
+    background-color: var(--color-fondo-secundario, #f0f0f0);
+    color: var(--color-texto, #333);
+    border: 1px solid var(--color-borde, #ccc);
+    padding: 5px 12px;
+    border-radius: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 9998;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+    pointer-events: none; /* No interfiere con el clic */
+}
+
+.status-indicator.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* Posicionamiento específico del contador y la barra */
+#api-call-counter-container {
+    left: 75px; /* Mantiene la posición del contador */
+}
+
+#progress-bar-container {
+    left: 215px; /* Posiciona la barra a la derecha del contador */
+    width: 250px;
+}
+
+/* Estilos de la barra de progreso */
+#progress-bar-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+    margin-right: 8px;
+}
+
+.progress-bar-background {
+    flex-grow: 1;
+    height: 12px;
+    background-color: var(--color-fondo, #e9ecef);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+#progress-bar-fill {
+    width: 0%;
+    height: 100%;
+    background-color: #28a745; /* Verde para éxito */
+    border-radius: 6px;
+    transition: width 0.3s ease-in-out, background-color 0.3s ease;
+}
+
+#progress-bar-percentage {
+    margin-left: 8px;
+    font-weight: bold;
+    font-size: 12px;
+    min-width: 35px;
+    text-align: right;
+}
+
+
+</style>
+<!-- PEGA ESTE SCRIPT EN index.html, ANTES DEL SCRIPT DEL CONTADOR DE LLAMADAS -->
+
+<script>
+// --- GESTOR DE LA BARRA DE PROGRESO GLOBAL ---
+const progressBarManager = {
+    container: null,
+    label: null,
+    fill: null,
+    percentage: null,
+    isActive: false,
+
+    // Inicializa los elementos del DOM una sola vez
+    init() {
+        if (this.container) return; // Ya inicializado
+        this.container = document.getElementById('progress-bar-container');
+        this.label = document.getElementById('progress-bar-label');
+        this.fill = document.getElementById('progress-bar-fill');
+        this.percentage = document.getElementById('progress-bar-percentage');
+    },
+
+    /**
+     * Inicia y muestra la barra de progreso para un nuevo proceso.
+     * @param {string} labelText - El texto que describe el proceso (ej. "Generando historia...").
+     */
+    start(labelText) {
+        this.init();
+        if (this.isActive || !this.container) return;
+
+        this.isActive = true;
+        if (this.label) this.label.textContent = labelText;
+        if (this.fill) this.fill.style.backgroundColor = '#28a745'; // Color verde por defecto
+        this.set(0); // Empezar en 0%
+        this.container.classList.add('visible');
+    },
+
+    /**
+     * Actualiza el porcentaje de la barra de progreso.
+     * @param {number} percent - Un número entre 0 y 100.
+     * @param {string} [newLabel] - (Opcional) Un nuevo texto para la etiqueta.
+     */
+    set(percent, newLabel) {
+        if (!this.isActive || !this.container) return;
+        const p = Math.min(100, Math.max(0, Math.round(percent)));
+        
+        if (this.fill) this.fill.style.width = `${p}%`;
+        if (this.percentage) this.percentage.textContent = `${p}%`;
+        if (newLabel && this.label) this.label.textContent = newLabel;
+    },
+
+    /**
+     * Finaliza el proceso, mostrando 100% y luego ocultando la barra.
+     */
+    finish() {
+        if (!this.isActive || !this.container) return;
+        this.set(100, 'Completado');
+        
+        setTimeout(() => {
+            if (this.container) this.container.classList.remove('visible');
+            this.isActive = false;
+        }, 1500);
+    },
+
+    /**
+     * Muestra un estado de error y oculta la barra.
+     * @param {string} errorMessage - El mensaje de error a mostrar.
+     */
+    error(errorMessage) {
+        if (!this.isActive || !this.container) return;
+        if (this.label) this.label.textContent = errorMessage || 'Error';
+        if (this.fill) this.fill.style.backgroundColor = '#e74c3c'; // Rojo para error
+        
+        setTimeout(() => {
+            if (this.container) this.container.classList.remove('visible');
+            this.isActive = false;
+        }, 4000);
+    }
+};
+</script>
+<script>
+    // Se ejecuta cuando el DOM está completamente cargado
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // 1. Inicializamos las variables
+        let apiCallCount = 0;
+        const countDisplayElement = document.getElementById('api-call-count');
+        const counterContainerElement = document.getElementById('api-call-counter-container');
+        const googleApiUrl = 'generativelanguage.googleapis.com';
+
+        // 2. Guardamos una referencia a la función 'fetch' original
+        const originalFetch = window.fetch;
+
+        // 3. Creamos nuestra función para actualizar el contador en la UI
+        function updateApiCount() {
+            apiCallCount++;
+            if (countDisplayElement) {
+                countDisplayElement.textContent = apiCallCount;
+            }
+            // Hacemos visible el contador en la primera llamada
+            if (apiCallCount === 1 && counterContainerElement) {
+                counterContainerElement.classList.add('visible');
+            }
+        }
+
+        // 4. Sobrescribimos la función 'fetch' global con nuestra versión "espía"
+        window.fetch = function(...args) {
+            const url = args[0]; // La URL es el primer argumento de fetch
+
+            // 5. Comprobamos si la URL de la petición es la de la API de Google
+            if (typeof url === 'string' && url.includes(googleApiUrl)) {
+                // Si es, actualizamos nuestro contador
+                updateApiCount();
+            }
+
+            // 6. Finalmente, ejecutamos la petición real usando la función 'fetch' original
+            // y devolvemos su resultado. Esto es crucial para que la app siga funcionando.
+            return originalFetch.apply(this, args);
+        };
+    });
+</script>
+
+</body> </html>
+
+<div id="principio" >
+<script>
+  /**
+     * Función de animación de entrada.
+     * Orquesta una aparición en 3 fases: Esfera -> Botón S -> UI Principal.
+     * Corrige la aparición brusca de la interfaz.
+     */
+    function flexear(id) {
+        const silenosUI = document.getElementById(id);
+        const principio = document.getElementById('principio');
+        const esfera = document.getElementById('esfera');
+        const menuPrincipio = document.getElementById('menuprincipio');
+        const titulo1 = document.getElementById('titulo1');
+        const asistenteBtn = document.getElementById('asistente-btn');
+
+        // 1. Ocultar el contenido de la pantalla de inicio
+        menuPrincipio.style.opacity = '0';
+        titulo1.style.opacity = '0';
+
+        // 2. Iniciar la expansión de la esfera
+        esfera.classList.add('expandir');
+
+        // 3. Programar la aparición del botón 'S'
+        setTimeout(() => {
+            asistenteBtn.classList.add('visible');
+        }, 1000);
+
+        // 4. Programar la aparición suave de la UI principal
+        setTimeout(() => {
+            // Hacemos visible el contenedor pero lo mantenemos transparente
+            silenosUI.style.display = 'flex';
+            
+            // *** ✨ LA CORRECCIÓN CLAVE ✨ ***
+            // Usamos requestAnimationFrame para asegurarnos de que el navegador
+            // procesa el cambio de 'display' ANTES de aplicar el cambio de 'opacity'.
+            // Esto permite que la transición de opacidad se ejecute correctamente.
+            requestAnimationFrame(() => {
+                silenosUI.style.opacity = '1';
+            });
+
+        }, 1500); // La UI comienza a aparecer a los 1.5 segundos
+
+        // 5. Limpiar la pantalla de inicio cuando la animación termine
+        setTimeout(() => {
+            principio.style.display = 'none';
+        }, 4000); // Debe coincidir con la duración de la animación de la esfera
+    }
+
+function animacionReiniciar() {
+        const silenosUI = document.getElementById('silenos');
+        const principio = document.getElementById('principio');
+        const esfera = document.getElementById('esfera');
+        const menuPrincipio = document.getElementById('menuprincipio');
+        const titulo1 = document.getElementById('titulo1');
+        const asistenteBtn = document.getElementById('asistente-btn');
+
+        // 1. Aseguramos que el contenedor de la pantalla de inicio esté visible
+        //    para que la esfera tenga un fondo sobre el que encogerse.
+        if (principio) principio.style.display = 'flex';
+
+        // 2. Inicia la desaparición de la UI principal y el botón 'S'.
+        if (silenosUI) silenosUI.style.opacity = '0';
+        if (asistenteBtn) asistenteBtn.classList.remove('visible');
+
+        // 3. Después de un breve instante, inicia la animación de la esfera encogiéndose.
+        //    Esto se logra simplemente quitando la clase 'expandir'.
+        setTimeout(() => {
+            if (esfera) esfera.classList.remove('expandir');
+        }, 500); // 0.5s de retraso para que la UI empiece a desaparecer primero.
+
+        // 4. A mitad de la animación de la esfera, empieza a reaparecer el texto y menú inicial.
+        setTimeout(() => {
+            if (menuPrincipio) menuPrincipio.style.opacity = '1';
+            if (titulo1) titulo1.style.opacity = '1';
+        }, 2000); // 2s de retraso.
+
+        // 5. Al finalizar toda la animación, oculta completamente el contenedor de la UI principal
+        //    con 'display: none' para que no interfiera con la página.
+        setTimeout(() => {
+            if (silenosUI) silenosUI.style.display = 'none';
+        }, 4000); // Debe coincidir con la duración de la animación de la esfera (4s).
+    }
+
+
+
+</script>
+<div id="titulo1">
+    <div>
+        <span>SILEN</span><span class="os-red">OS</span>
+    </div>
+    <div class="version-text">
+        versión 1.1.8
+    </div>
+</div>
+
+
+
+<div id="esfera" ></div>
+
+<div id="menuprincipio">
+    <button class="pro3 pro" onclick="flexear('silenos');">Nuevo</button>
+    <button class="pro3 pro" onclick="document.getElementById('file-load').click()">Cargar</button>
+
+</div>
+
+
+
+</div>
+
+
+
+<div id="silenos" >
+
+
 
 <div id="opciones" >
 <h2 id="titulo-proyecto" contenteditable="true" placeholder="Escribe el título del proyecto">Silenos Versión 1.1.8</h2>
-<div id="menu" >        
-   
+<div id="menu" >
+
     <button  onclick="cerrartodo(), gridear('personajes'),agregarBotonEliminarAPersonajes();">Datos</button>
     <button  onclick="cerrartodo(), abrir('momentos');">Momentos</button>
     <button  onclick="cerrartodo(), abrir('capitulosh');">Capitulos</button>
     <button  onclick="cerrartodo(), abrir('escenah');">Escenas</button>
-    <button  onclick="cerrartodo(), abrirGuion();">Guion</button> 
+    <button  onclick="cerrartodo(), abrirGuion();">Guion</button>
     <button  onclick="cerrartodo(), abrir('ia');">IA</button>
 
     <button class="pro" onclick="reiniciar()"> 🆕 </button>
@@ -33,39 +394,42 @@
 </div></div>
 
 <div id="momentos">
-    <!-- Controles flotantes para la sección de momentos -->
     <div id="momentos-controles-flotantes">
         <button class="pro" id="agregar-momento-btn">Añadir Momento</button>
-        <div id="momentos-controles-ia">      
+                    <button class="pro" id="preview-connections-btn" title="Muestra u oculta las líneas de conexión entre momentos.">Previsualizar Conexiones</button>
+
+        <div class="control-group">
+            <button class="pro" id="zoom-out-btn" title="Alejar la vista">-</button>
+            <span id="zoom-level-indicator">100%</span>
+            <button class="pro" id="zoom-in-btn" title="Acercar la vista">+</button>
+        </div>
+
+        
+        <div id="momentos-controles-ia">
             <button class="pro" id="generar-aventura-ia-btn" title="Usa la IA para generar una aventura interactiva completa a partir del guion seleccionado.">Generar Aventura con IA ✨</button>
             <select id="guion-select" class="pro" title="Selecciona un guion para usar como base para la IA"></select>
-            
-            <!-- INICIO DE LA MODIFICACIÓN -->
+
             <input type="number" id="ia-call-budget-input" class="pro ia-input-numero" min="5" max="100" value="15" title="Presupuesto de Llamadas a la IA. Define el número máximo de peticiones para crear y expandir ramas en la historia. Un número más alto crea una aventura más grande y compleja.">
-            <!-- FIN DE LA MODIFICACIÓN -->
-        </div>
+            </div>
     </div>
 
-    <div id="momentos-lienzo">
-        <!-- Los nodos de momento se agregarán aquí dinámicamente -->
+    <div id="momentos-lienzo-wrapper">
+        <div id="momentos-lienzo">
+            <svg id="connections-svg"></svg>
+        </div>
     </div>
 </div>
 
 
 <div id="guion-literario">
-    <!-- Barra de herramientas para los botones de acción -->
     <div id="guion-toolbar">
         <button class="pro" id="sumar-capitulo-guion" onclick="agregarCapituloYMostrar()">Agregar Capítulo</button>
-        <!-- Los botones dinámicos de IA se insertarán aquí -->
-    </div>
-    <!-- Layout principal del guion -->
+        </div>
     <div id="guion-layout">
         <div id="indice-capitulos-guion">
-            <!-- La lista de capítulos va aquí -->
-        </div>
+            </div>
         <div id="contenido-capitulo-activo">
-            <!-- El editor del capítulo seleccionado va aquí -->
-        </div>
+            </div>
     </div>
 </div>
 
@@ -78,7 +442,7 @@
     </div>
 
     <textarea id="gemini1"  placeholder="Escribe tu Historia..."></textarea>
-    
+
     <div id="chateo" >
         <div id="ia-options">
             <input type="checkbox" id="incluir-datos-ia" checked>
@@ -90,7 +454,7 @@
         </div>
     </div>
 
-    <div id="geminimente"></div> 
+    <div id="geminimente"></div>
 </div>
 
 
@@ -141,7 +505,7 @@
 </div>
 <video id="hiddenVideoPlayer" style="display:none;"></video>
 <canvas id="hiddenCanvas" style="display:none;"></canvas>
- 
+
 <div id="modal-overlay"></div>
 
 <div id="lugares" class="modal-content">
@@ -153,7 +517,7 @@
     </a><p></p>
     <input type="text" id="apiInput" placeholder="Ingresa tu API Key">
     <button onclick="updateApiKey()">Actualizar</button>
-    <p>API Key actual: <span id="apiKeyDisplay">[No definida]</span></p> 
+    <p>API Key actual: <span id="apiKeyDisplay">[No definida]</span></p>
 </div>
 
 <div id="modal-importar-json" class="modal-content">
@@ -164,7 +528,6 @@
     <button class="modal-button" onclick="importarDatosDesdeJSON()">Añadir Datos</button>
 </div>
 
-<!-- Modal para Añadir Datos con IA -->
 <div id="modal-ia-datos" class="modal-content">
     <button class="modal-close-button" onclick="cerrarModalAIDatos()">&times;</button>
     <h3>Añadir Datos con Inteligencia Artificial</h3>
@@ -178,7 +541,6 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 </div>
 
 
-<!-- Modal para Editar Momentos -->
 <div id="modal-editar-momento" class="modal-content">
     <button class="modal-close-button" onclick="cerrarModalEditarMomento()">&times;</button>
     <h3>Editar Momento</h3>
@@ -190,28 +552,24 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
         <input type="file" id="momento-editor-file-input" accept="image/*" style="display: none;">
     </div>
 
-    <!-- Contenedor para las acciones dinámicas -->
     <div id="acciones-container"></div>
 
-    <!-- Contenedor para los botones del modal -->
     <div class="modal-buttons-container">
         <button id="boton-agregar-accion" class="modal-button">Añadir Acción</button>
         <button class="modal-button" onclick="guardarCambiosMomento()">Guardar Cambios</button>
     </div>
 </div>
 
-<!-- Modal para Exportar -->
 <div id="modal-exportar" class="modal-content">
     <button class="modal-close-button" onclick="cerrarModalExportar()">&times;</button>
     <h3>Opciones de Exportación</h3>
-    
+
     <div class="export-option">
         <h4>Exportar Guion</h4>
         <p>Exporta los capítulos y sus frames a un archivo HTML simple.</p>
         <button class="modal-button" onclick="generarHTML()">Exportar Guion HTML</button>
     </div>
-   <!-- INICIO: Nueva Opción de Exportación -->
-    <div class="export-option">
+   <div class="export-option">
         <h4>Exportar Storyboard de Tomas</h4>
         <p>Exporta las escenas de storyboard (imágenes y texto) a un archivo HTML.</p>
 
@@ -219,15 +577,16 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
              <select id="tomas-export-select" class="modal-select"></select>
              <button class="modal-button" onclick="generarHTMLTomas()">Exportar Tomas HTML</button>
         </div>    </div>
-    <!-- FIN: Nueva Opción de Exportación -->
-
     <div class="export-option">
         <h4>Exportar Videojuego</h4>
         <p>Exporta los momentos como una experiencia interactiva.</p>
-        <input type="text" id="momento-inicial-id" placeholder="Nombre exacto del primer momento...">
+        <select id="momento-inicial-id" class="modal-select"></select>
         <button class="modal-button" onclick="iniciarExportacionJuego()">Exportar Videojuego HTML</button>
     </div>
 </div>
+
+ </div>
+
 
 <script src="gestionEscenas.js"></script>
 <script src="momentos.js"></script>
@@ -237,11 +596,27 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 <script src="io.js"></script>
 <script src="gemini.js"></script>
 <script src="geminialfa.js"></script>
-<script src="geminivisual.js"></script> 
+<script src="geminivisual.js"></script>
 <script src="exportar.js"></script>
 <script src="exportarjuego.js"></script>
 <script src="exportartomas.js"></script>
-<script src="main.js"></script> <!-- main.js se carga al final -->
+<script src="main.js"></script> </body>
 
-</body>
+<button id="asistente-btn" title="Asistente IA">S</button>
+<div id="api-call-counter-container" title="Llamadas a la API de IA en esta sesión">
+    <span>Llamadas IA: </span>
+    <span id="api-call-count">0</span>
+</div>
+
+<!-- PEGA ESTO EN index.html, JUSTO DESPUÉS DE <div id="api-call-counter-container"> -->
+
+<div id="progress-bar-container" class="status-indicator">
+    <span id="progress-bar-label">Procesando...</span>
+    <div class="progress-bar-background">
+        <div id="progress-bar-fill"></div>
+    </div>
+    <span id="progress-bar-percentage">0%</span>
+</div>
+
+<!-- ... tu código existente ... -->
 </html>

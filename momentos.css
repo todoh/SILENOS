@@ -3,15 +3,15 @@
 /* =================================== */
 
 #momentos {
-    display: none; /* Oculto por defecto, se muestra con JS */
+    display: none;
     flex-direction: column;
     position: absolute;
     top: 9%;
     left: 1%;
     right: 1%;
     bottom: 1%;
-    overflow: auto; /* Hace que este contenedor sea el que tenga scroll */
     background-color: var(--background-color, #f8f9fa);
+    overflow: hidden; /* El scroll ahora lo maneja el wrapper */
 }
 
 /* Contenedor para todos los botones flotantes */
@@ -32,7 +32,43 @@
     box-sizing: border-box;
 }
 
-/* Grupo específico para los controles de IA */
+.control-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 5px;
+}
+
+.control-group #preview-connections-btn {
+    flex-grow: 2;
+}
+
+.control-group #zoom-out-btn,
+.control-group #zoom-in-btn {
+    flex-grow: 1;
+    font-weight: bold;
+}
+
+#zoom-level-indicator {
+    padding: 5px;
+    background-color: var(--background-color-light-translucent, rgba(255, 255, 255, 0.8));
+    border-radius: 4px;
+    text-align: center;
+    font-size: 0.9em;
+    min-width: 50px;
+}
+
+.dark-theme #zoom-level-indicator {
+    background-color: var(--background-color-dark-translucent, rgba(40, 40, 40, 0.85));
+}
+
+
+#momentos-controles-flotantes #preview-connections-btn.active {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
 #momentos-controles-ia {
     display: flex;
     flex-direction: column;
@@ -63,28 +99,47 @@
     border-color: var(--border-color-dark, #555);
 }
 
-
-#momentos-lienzo {
-    position: relative; /* Para que los nodos absolutos se posicionen dentro de él */
-    width: 5000px;
-    height: 5000px;
-    flex-shrink: 0; /* Evita que el lienzo se encoja para que mantenga su tamaño */
-    margin: 0;
-    overflow: visible; /* Asegura que no se corte contenido */
+#momentos-lienzo-wrapper {
+    width: 100%;
+    height: 100%;
+    overflow: auto; /* Este es el nuevo contenedor con scroll */
+    position: relative;
     background-color: var(--background-color-medium, #eee);
-    /* Fondo de cuadrícula para dar sensación de lienzo infinito */
     background-image:
         linear-gradient(rgba(0, 0, 0, 0.07) 1px, transparent 1px),
         linear-gradient(90deg, rgba(0, 0, 0, 0.07) 1px, transparent 1px);
     background-size: 40px 40px;
 }
 
-.dark-theme #momentos-lienzo {
+.dark-theme #momentos-lienzo-wrapper {
     background-color: #22272e;
     background-image:
         linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
 }
+
+
+#momentos-lienzo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 5000px; /* Tamaño inicial */
+    height: 5000px; /* Tamaño inicial */
+    transform-origin: 0 0; /* Punto de anclaje para el zoom */
+    transition: transform 0.2s ease-out; /* Animación suave para el zoom */
+}
+
+#connections-svg {
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    pointer-events: none; 
+    z-index: 0;
+    overflow: visible;
+}
+
 
 .momento-nodo {
     position: absolute;
@@ -97,12 +152,12 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between; /* Alinear contenido */
+    justify-content: space-between;
     padding: 5px;
     box-sizing: border-box;
     font-size: 1em;
     cursor: grab;
-    transition: all 0.1s ease;
+    transition: all 0.2s ease-in-out;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -118,7 +173,40 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     cursor: text;
+    padding-left: 30px; 
 }
+
+
+.marcador-inicio {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    font-size: 1.5em; /* 24px */
+    cursor: pointer;
+    z-index: 3;
+    transition: transform 0.2s ease;
+    filter: grayscale(100%);
+    opacity: 0.7;
+}
+
+.marcador-inicio:hover {
+    transform: scale(1.2);
+    filter: grayscale(50%);
+    opacity: 0.9;
+}
+
+.momento-nodo.inicio .marcador-inicio {
+    filter: grayscale(0%);
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.momento-nodo.inicio {
+    border-color: #28a745; /* Verde brillante */
+    box-shadow: 0 0 15px rgba(40, 167, 69, 0.7);
+    border-width: 3px;
+}
+
 
 .momento-nodo .momento-contenido {
     width: 100%;
@@ -156,7 +244,6 @@
     cursor: pointer;
 }
 
-/* Estilos para el nodo cuando tiene una imagen */
 .momento-nodo.con-imagen {
     justify-content: flex-start; 
     padding: 0;
@@ -173,6 +260,7 @@
     border-radius: 4px;
     z-index: 2;
     height: auto;
+    padding-left: 35px;
 }
 
 .momento-nodo.con-imagen .momento-contenido {
@@ -237,7 +325,6 @@
     display: none;
 }
 
-/* Ocultar el texto de ayuda si la imagen está visible */
 .drop-zone-estilo:has(img[style*="display: block"]) {
     color: transparent;
 }
@@ -261,8 +348,8 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    max-height: 180px; /* Altura máxima para el contenedor */
-    overflow-y: auto; /* Scroll vertical si hay muchas acciones */
+    max-height: 180px; 
+    overflow-y: auto;
     padding: 5px;
     border: 1px solid #ddd;
     border-radius: 5px;
@@ -286,7 +373,7 @@
 }
 
 .accion-item input[type="text"],
-.accion-item select { /* Aplicar estilos también al select */
+.accion-item select { 
     flex-grow: 1;
     width: auto;
     padding: 6px 8px;
@@ -320,10 +407,51 @@
 .modal-buttons-container {
     width: 95%;
     display: flex;
-    justify-content: space-between; /* Espacio entre botones */
+    justify-content: space-between; 
     gap: 10px;
 }
 
 .modal-buttons-container .modal-button {
-    flex-grow: 1; /* Para que ocupen el espacio disponible */
+    flex-grow: 1; 
+}
+
+/* --- Estilos para las líneas de conexión SVG --- */
+#connections-svg line {
+    stroke: var(--connection-line-color, rgba(0, 123, 255, 0.6));
+    stroke-width: 3;
+    stroke-dasharray: 5, 5;
+    animation: dash 1.5s linear infinite;
+}
+
+#connections-svg marker path {
+    fill: var(--connection-line-color, rgba(0, 123, 255, 0.6));
+}
+
+.dark-theme #connections-svg line,
+.dark-theme #connections-svg marker path {
+    stroke: var(--connection-line-color-dark, rgba(13, 110, 253, 0.7));
+    fill: var(--connection-line-color-dark, rgba(13, 110, 253, 0.7));
+}
+
+@keyframes dash {
+    to {
+        stroke-dashoffset: -30;
+    }
+}
+
+/* --- Estilos para el Zoom --- */
+.zoom-level-2 .momento-nodo {
+    transform: scale(0.5);
+    transform-origin: top left;
+}
+.zoom-level-3 .momento-nodo {
+    transform: scale(0.25);
+    transform-origin: top left;
+}
+.zoom-level-3 .momento-botones,
+.zoom-level-3 .marcador-inicio {
+    display: none;
+}
+.zoom-level-3 .momento-titulo {
+    font-size: 1.5em; /* Hacer el título más grande para que sea legible */
 }

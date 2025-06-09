@@ -261,48 +261,23 @@ function cargarJSON(event) {
         }
 
         // --- NUEVO: Lógica para cargar MOMENTOS al DOM ---
-        if (data.momentos && Array.isArray(data.momentos)) {
-            const lienzo = document.getElementById('momentos-lienzo');
-            lienzo.innerHTML = ''; // Limpiar lienzo antes de cargar
-            data.momentos.forEach(momentoData => {
-                const nuevoNodo = document.createElement('div');
-                nuevoNodo.className = 'momento-nodo';
-                nuevoNodo.id = momentoData.id;
-                
-                nuevoNodo.innerHTML = `
-                    <p contenteditable="true" class="momento-titulo">${momentoData.titulo}</p>
-                    <div class="momento-contenido">
-                         <img class="momento-imagen" src="${momentoData.imagen || ''}" style="display: ${momentoData.imagen ? 'block' : 'none'};">
-                         <span class="placeholder-contenido"></span>
-                    </div>
-                    <div class="momento-botones">
-                        <button class="momento-btn btn-editar">Editar</button>
-                        <button class="momento-btn btn-eliminar">Eliminar</button>
-                    </div>
-                `;
+       // io.js - DENTRO DE cargarJSON
+// --- ESTE ES EL NUEVO CÓDIGO CORREGIDO ---
+if (data.momentos && Array.isArray(data.momentos)) {
+    const lienzo = document.getElementById('momentos-lienzo');
+    // Limpiamos el lienzo de momentos y el SVG de conexiones antes de cargar.
+    lienzo.innerHTML = ''; 
+    const svg = document.getElementById('connections-svg');
+    if(svg) svg.innerHTML = '';
 
-                nuevoNodo.style.top = `${momentoData.y}px`;
-                nuevoNodo.style.left = `${momentoData.x}px`;
-                if(momentoData.imagen) nuevoNodo.classList.add('con-imagen');
-
-                // Guardar datos en el dataset
-                nuevoNodo.dataset.descripcion = momentoData.descripcion || "";
-                nuevoNodo.dataset.acciones = JSON.stringify(momentoData.acciones || []);
-
-                lienzo.appendChild(nuevoNodo);
-
-                // Asignar eventos
-                nuevoNodo.querySelector('.btn-editar').onclick = () => abrirModalEditarMomento(nuevoNodo);
-                nuevoNodo.querySelector('.btn-eliminar').onclick = () => {
-                    if (confirm('¿Estás seguro de que quieres eliminar este momento?')) {
-                        nuevoNodo.remove();
-                    }
-                };
-                nuevoNodo.querySelector('.momento-titulo').addEventListener('mousedown', e => e.stopPropagation());
-                
-                makeDraggable(nuevoNodo);
-            });
-        }
+    data.momentos.forEach(momentoData => {
+        // Llamamos a la función centralizada y correcta de momentos.js
+        // para crear cada nodo. Esto asegura que todos los eventos
+        // y propiedades se asignen correctamente.
+        crearNodoEnLienzo(momentoData);
+    });
+}
+// --- FIN DEL CÓDIGO CORREGIDO ---
         // --- FIN NUEVO ---
 
         if (data.guionLiterario && Array.isArray(data.guionLiterario)) {
@@ -318,6 +293,7 @@ function cargarJSON(event) {
         
         cerrartodo();
         abrir('momentos'); // Abrir momentos para ver el resultado
+        flexear('silenos');
     };
     reader.readAsText(file);
 }

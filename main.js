@@ -256,9 +256,27 @@ function importarDatosDesdeJSON() {
 }
 
 
+// EN EL ARCHIVO: main.js
+// REEMPLAZA LA FUNCIÓN EXISTENTE 'reiniciar' CON ESTA VERSIÓN:
+
+// EN EL ARCHIVO: main.js
+// REEMPLAZA LA FUNCIÓN EXISTENTE 'reiniciar' CON ESTA VERSIÓN:
+
 function reiniciar() {
-    if (confirm("¿Reiniciar el proyecto? Se perderán todos los cambios no guardados.")) {
+    if (confirm("¿Reiniciar el proyecto? Se perderán todos los cambios no guardados y volverás a la pantalla de inicio.")) {
+        
+        // 1. Resetea todos los datos internos de la aplicación, como antes.
         reiniciarEstadoApp();
+
+        // 2. Llama a la nueva función que controla la animación de salida.
+        if (typeof animacionReiniciar === 'function') {
+            animacionReiniciar();
+        } else {
+            // Si por alguna razón la función no existe, volvemos al método instantáneo.
+            console.error("La función animacionReiniciar no fue encontrada. Reiniciando de forma instantánea.");
+            document.getElementById('silenos').style.display = 'none';
+            document.getElementById('principio').style.display = 'flex';
+        }
     }
 }
 
@@ -364,3 +382,43 @@ function cargarGuionesEnDropdown() {
 // =======================================================================
 //  FIN DE LA CORRECIÓN
 // =======================================================================
+
+
+// AÑADIR ESTE CÓDIGO AL ARCHIVO: main.js
+
+/**
+ * Abre el modal de Opciones de Exportación.
+ * Al abrirse, se encarga de poblar el selector de momentos iniciales.
+ */
+function abrirModalExportar() {
+    const overlay = document.getElementById('modal-overlay');
+    const modal = document.getElementById('modal-exportar');
+    if (overlay) overlay.style.display = 'block';
+    if (modal) modal.style.display = 'flex';
+    if (overlay) {
+        overlay.onclick = function() {
+            cerrarModalExportar();
+        }
+    }
+
+    // --- ¡ESTA ES LA LÍNEA CLAVE! ---
+    // Llama a la función para llenar el dropdown cada vez que se abre el modal.
+    if (typeof poblarSelectorMomentoInicial === 'function') {
+        poblarSelectorMomentoInicial();
+    } else {
+        console.error("La función para poblar el selector de momentos no está disponible.");
+    }
+}
+
+/**
+ * Cierra el modal de Opciones de Exportación.
+ */
+function cerrarModalExportar() {
+    const overlay = document.getElementById('modal-overlay');
+    const modal = document.getElementById('modal-exportar');
+    if (overlay) overlay.style.display = 'none';
+    if (modal) modal.style.display = 'none';
+    if (overlay) {
+        overlay.onclick = null;
+    }
+}

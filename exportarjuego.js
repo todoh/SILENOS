@@ -202,3 +202,69 @@ async function generarGAME(nombreMomentoInicial) {
     a.click();
     console.log("Exportación de Videojuego a HTML completada.");
 }
+
+
+// AÑADIR ESTE CÓDIGO AL ARCHIVO: exportarjuego.js
+
+/**
+ * Popula el menú desplegable para seleccionar el momento inicial en el modal de exportación.
+ * Lee todos los nodos de momento del lienzo y los añade como opciones.
+ */
+function poblarSelectorMomentoInicial() {
+    const selectMomentoInicial = document.getElementById('momento-inicial-id');
+    if (!selectMomentoInicial) {
+        console.error("Error: No se encontró el elemento select 'momento-inicial-id'.");
+        return;
+    }
+
+    const nodosMomento = document.querySelectorAll('#momentos-lienzo .momento-nodo');
+    const valorSeleccionadoPreviamente = selectMomentoInicial.value; // Guardar selección si la hubiera
+
+    selectMomentoInicial.innerHTML = ''; // Limpiar opciones antiguas
+
+    if (nodosMomento.length === 0) {
+        const option = document.createElement('option');
+        option.value = "";
+        option.textContent = "No hay momentos creados";
+        option.disabled = true;
+        selectMomentoInicial.appendChild(option);
+        return;
+    }
+
+    // Añadir una opción por defecto
+    const placeholder = document.createElement('option');
+    placeholder.value = "";
+    placeholder.textContent = "Selecciona un momento inicial...";
+    selectMomentoInicial.appendChild(placeholder);
+
+    // Añadir cada momento como una opción
+    nodosMomento.forEach(nodo => {
+        const option = document.createElement('option');
+        const titulo = nodo.querySelector('.momento-titulo').textContent.trim();
+        
+        // La función generarGAME() espera el nombre original del momento.
+        option.value = titulo; 
+        option.textContent = titulo;
+        selectMomentoInicial.appendChild(option);
+    });
+
+    // Intentar restaurar la selección anterior si aún es válida
+    selectMomentoInicial.value = valorSeleccionadoPreviamente;
+}
+
+/**
+ * Inicia la exportación del juego HTML.
+ * Se llama desde el botón "Exportar Videojuego HTML" en el modal.
+ */
+function iniciarExportacionJuego() {
+    const momentoInicialSelect = document.getElementById('momento-inicial-id');
+    const nombreMomentoInicial = momentoInicialSelect.value;
+
+    if (!nombreMomentoInicial) {
+        alert("Por favor, selecciona un momento inicial para comenzar el juego.");
+        return;
+    }
+
+    // Llama a la función principal de exportación con el nombre seleccionado.
+    generarGAME(nombreMomentoInicial);
+}
