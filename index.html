@@ -10,9 +10,10 @@
 <link rel="stylesheet" href="momentos.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>S</text></svg>">
 
-<!-- ▼▼▼ SCRIPT DE GOOGLE AÑADIDO ▼▼▼ -->
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-<!-- ▲▲▲ FIN SCRIPT DE GOOGLE ▲▲▲ -->
+<!-- ▼▼▼ SCRIPTS DE GOOGLE MODIFICADOS PARA DRIVE API ▼▼▼ -->
+<script src="https://apis.google.com/js/api.js" async defer></script>
+<script src="https://accounts.google.com/gsi/client" onload="gapiLoaded()" async defer></script>
+<!-- ▲▲▲ FIN SCRIPTS DE GOOGLE ▲▲▲ -->
 
 </head>
 <body>
@@ -21,37 +22,27 @@
     #api-call-counter-container {
         position: fixed;
         bottom: 20px;
-        /* Ajusta este valor para separar el contador del botón 'S' */
         left: 75px; 
-        
         display: flex;
         align-items: center;
-        
         background-color: var(--color-fondo-secundario, #f0f0f0);
         color: var(--color-texto, #333);
         border: 1px solid var(--color-borde, #ccc);
-        
         padding: 5px 12px;
         border-radius: 16px;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         font-size: 14px;
         font-weight: 500;
-        
-        z-index: 9998; /* Justo debajo del botón S si se superponen */
-        
-        /* Empieza oculto y aparecerá con una transición suave */
+        z-index: 9998;
         opacity: 0;
         transform: translateY(10px);
         transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
-        pointer-events: none; /* Para que no interfiera con el clic */
+        pointer-events: none;
     }
-
-    /* Clase que se añadirá para mostrar el contador */
     #api-call-counter-container.visible {
         opacity: 1;
         transform: translateY(0);
     }
-
     #api-call-count {
         margin-left: 6px;
         font-weight: bold;
@@ -61,250 +52,136 @@
         border-radius: 10px;
         font-size: 12px;
     }
-
-
-/* PEGA ESTO DENTRO DE LA ETIQUETA <style> EXISTENTE EN EL <head> */
-
-/* Estilo genérico para los indicadores de estado */
-.status-indicator {
-    position: fixed;
-    bottom: 20px;
-    display: flex;
-    align-items: center;
-    background-color: var(--color-fondo-secundario, #f0f0f0);
-    color: var(--color-texto, #333);
-    border: 1px solid var(--color-borde, #ccc);
-    padding: 5px 12px;
-    border-radius: 16px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    z-index: 9998;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
-    pointer-events: none; /* No interfiere con el clic */
-}
-
-.status-indicator.visible {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-}
-
-/* Posicionamiento específico del contador y la barra */
-#api-call-counter-container {
-    left: 75px; /* Mantiene la posición del contador */
-}
-
-#progress-bar-container {
-    left: 215px; /* Posiciona la barra a la derecha del contador */
-    width: 250px;
-}
-
-/* Estilos de la barra de progreso */
-#progress-bar-label {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100px;
-    margin-right: 8px;
-}
-
-.progress-bar-background {
-    flex-grow: 1;
-    height: 12px;
-    background-color: var(--color-fondo, #e9ecef);
-    border-radius: 6px;
-    overflow: hidden;
-}
-
-#progress-bar-fill {
-    width: 0%;
-    height: 100%;
-    background-color: #28a745; /* Verde para éxito */
-    border-radius: 6px;
-    transition: width 0.3s ease-in-out, background-color 0.3s ease;
-}
-
-#progress-bar-percentage {
-    margin-left: 8px;
-    font-weight: bold;
-    font-size: 12px;
-    min-width: 35px;
-    text-align: right;
-}
-
-/* ▼▼▼ ESTILOS PARA LA AUTENTICACIÓN AÑADIDOS ▼▼▼ */
-#google-auth-container {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    z-index: 10001; /* Encima de la esfera */
-}
-
-#user-session-display {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background-color: rgba(255, 255, 255, 0.9);
-    padding: 5px 10px;
-    border-radius: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    color: #333;
-}
-
-#user-avatar {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    border: 2px solid white;
-}
-
-#user-name {
-    font-weight: 500;
-}
-
-#logout-button {
-    font-size: 18px;
-    padding: 4px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-}
-
-.dark-theme #user-session-display {
-    background-color: rgba(30, 30, 30, 0.8);
-    color: #eee;
-}
-
-/* ▲▲▲ FIN ESTILOS DE AUTENTICACIÓN ▲▲▲ */
-</style>
-<!-- PEGA ESTE SCRIPT EN index.html, ANTES DEL SCRIPT DEL CONTADOR DE LLAMADAS -->
-
-<script>
-// --- GESTOR DE LA BARRA DE PROGRESO GLOBAL ---
-const progressBarManager = {
-    container: null,
-    label: null,
-    fill: null,
-    percentage: null,
-    isActive: false,
-
-    // Inicializa los elementos del DOM una sola vez
-    init() {
-        if (this.container) return; // Ya inicializado
-        this.container = document.getElementById('progress-bar-container');
-        this.label = document.getElementById('progress-bar-label');
-        this.fill = document.getElementById('progress-bar-fill');
-        this.percentage = document.getElementById('progress-bar-percentage');
-    },
-
-    /**
-     * Inicia y muestra la barra de progreso para un nuevo proceso.
-     * @param {string} labelText - El texto que describe el proceso (ej. "Generando historia...").
-     */
-    start(labelText) {
-        this.init();
-        if (this.isActive || !this.container) return;
-
-        this.isActive = true;
-        if (this.label) this.label.textContent = labelText;
-        if (this.fill) this.fill.style.backgroundColor = '#28a745'; // Color verde por defecto
-        this.set(0); // Empezar en 0%
-        this.container.classList.add('visible');
-    },
-
-    /**
-     * Actualiza el porcentaje de la barra de progreso.
-     * @param {number} percent - Un número entre 0 y 100.
-     * @param {string} [newLabel] - (Opcional) Un nuevo texto para la etiqueta.
-     */
-    set(percent, newLabel) {
-        if (!this.isActive || !this.container) return;
-        const p = Math.min(100, Math.max(0, Math.round(percent)));
-        
-        if (this.fill) this.fill.style.width = `${p}%`;
-        if (this.percentage) this.percentage.textContent = `${p}%`;
-        if (newLabel && this.label) this.label.textContent = newLabel;
-    },
-
-    /**
-     * Finaliza el proceso, mostrando 100% y luego ocultando la barra.
-     */
-    finish() {
-        if (!this.isActive || !this.container) return;
-        this.set(100, 'Completado');
-        
-        setTimeout(() => {
-            if (this.container) this.container.classList.remove('visible');
-            this.isActive = false;
-        }, 1500);
-    },
-
-    /**
-     * Muestra un estado de error y oculta la barra.
-     * @param {string} errorMessage - El mensaje de error a mostrar.
-     */
-    error(errorMessage) {
-        if (!this.isActive || !this.container) return;
-        if (this.label) this.label.textContent = errorMessage || 'Error';
-        if (this.fill) this.fill.style.backgroundColor = '#e74c3c'; // Rojo para error
-        
-        setTimeout(() => {
-            if (this.container) this.container.classList.remove('visible');
-            this.isActive = false;
-        }, 4000);
+    .status-indicator {
+        position: fixed;
+        bottom: 20px;
+        display: flex;
+        align-items: center;
+        background-color: var(--color-fondo-secundario, #f0f0f0);
+        color: var(--color-texto, #333);
+        border: 1px solid var(--color-borde, #ccc);
+        padding: 5px 12px;
+        border-radius: 16px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 9998;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+        pointer-events: none;
     }
-};
-</script>
-<script>
-    // Se ejecuta cuando el DOM está completamente cargado
-    document.addEventListener('DOMContentLoaded', () => {
+    .status-indicator.visible {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+    #api-call-counter-container {
+        left: 75px;
+    }
+    #progress-bar-container {
+        left: 215px;
+        width: 250px;
+    }
+    #progress-bar-label {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100px;
+        margin-right: 8px;
+    }
+    .progress-bar-background {
+        flex-grow: 1;
+        height: 12px;
+        background-color: var(--color-fondo, #e9ecef);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+    #progress-bar-fill {
+        width: 0%;
+        height: 100%;
+        background-color: #28a745;
+        border-radius: 6px;
+        transition: width 0.3s ease-in-out, background-color 0.3s ease;
+    }
+    #progress-bar-percentage {
+        margin-left: 8px;
+        font-weight: bold;
+        font-size: 12px;
+        min-width: 35px;
+        text-align: right;
+    }
+    #google-auth-container {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        z-index: 10001;
+    }
+    #user-session-display {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 5px 10px;
+        border-radius: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+        color: #333;
+    }
+    #user-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 2px solid white;
+    }
+    #user-name {
+        font-weight: 500;
+    }
+    #drive-save-button, #logout-button {
+        font-size: 18px;
+        padding: 4px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+    }
+    .dark-theme #user-session-display {
+        background-color: rgba(30, 30, 30, 0.8);
+        color: #eee;
+    }
 
-        // 1. Inicializamos las variables
-        let apiCallCount = 0;
-        const countDisplayElement = document.getElementById('api-call-count');
-        const counterContainerElement = document.getElementById('api-call-counter-container');
-        const googleApiUrl = 'generativelanguage.googleapis.com';
+    /* ▼▼▼ ESTILOS MEJORADOS PARA EL BOTÓN DE GOOGLE ▼▼▼ */
+    #google-signin-button {
+        /* Se quitan las clases pro/pro3 para tener control total */
+        background-color: #FFFFFF;
+        color: #444;
+        border: 1px solid #DADCE0;
+        border-radius: 25px; /* Más redondeado */
+        padding: 10px 24px;
+        font-size: 16px;
+        font-weight: 500;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        cursor: pointer;
+        display: inline-flex; /* Para alinear el logo y el texto */
+        align-items: center;
+        justify-content: center;
+        gap: 12px; /* Espacio entre el logo y el texto */
+        transition: background-color .3s, box-shadow .3s;
+        box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+    }
 
-        // 2. Guardamos una referencia a la función 'fetch' original
-        const originalFetch = window.fetch;
+    #google-signin-button:hover {
+        background-color: #F8F9FA;
+        box-shadow: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
+    }
 
-        // 3. Creamos nuestra función para actualizar el contador en la UI
-        function updateApiCount() {
-            apiCallCount++;
-            if (countDisplayElement) {
-                countDisplayElement.textContent = apiCallCount;
-            }
-            // Hacemos visible el contador en la primera llamada
-            if (apiCallCount === 1 && counterContainerElement) {
-                counterContainerElement.classList.add('visible');
-            }
-        }
+    #google-signin-button img {
+        width: 18px;
+        height: 18px;
+    }
+    /* ▲▲▲ FIN DE ESTILOS MEJORADOS ▲▲▲ */
 
-        // 4. Sobrescribimos la función 'fetch' global con nuestra versión "espía"
-        window.fetch = function(...args) {
-            const url = args[0]; // La URL es el primer argumento de fetch
-
-            // 5. Comprobamos si la URL de la petición es la de la API de Google
-            if (typeof url === 'string' && url.includes(googleApiUrl)) {
-                // Si es, actualizamos nuestro contador
-                updateApiCount();
-            }
-
-            // 6. Finalmente, ejecutamos la petición real usando la función 'fetch' original
-            // y devolvemos su resultado. Esto es crucial para que la app siga funcionando.
-            return originalFetch.apply(this, args);
-        };
-    });
-</script>
-
-</body> </html>
-
-<div id="principio" >
+</style>
 <script>
   /**
      * Función de animación de entrada.
@@ -390,59 +267,46 @@ function animacionReiniciar() {
 
 
 </script>
-<div id="titulo1">
-    <div>
-        <span>SILEN</span><span class="os-red">OS</span>
+<!-- El resto de tu body no cambia -->
+<div id="principio" >
+    <div id="titulo1">
+        <div>
+            <span>SILEN</span><span class="os-red">OS</span>
+        </div>
+        <div class="version-text">
+            versión 1.1.8
+        </div>
     </div>
-    <div class="version-text">
-        versión 1.1.8
+    <div id="esfera" ></div>
+    <div id="menuprincipio">
+        <button class="pro3 pro" onclick="flexear('silenos');">Nuevo</button>
+        <button class="pro3 pro" onclick="document.getElementById('file-load').click()">Cargar</button>
     </div>
+ 
 </div>
-
-
-
-<div id="esfera" ></div>
-
-<div id="menuprincipio">
-    <button class="pro3 pro" onclick="flexear('silenos');">Nuevo</button>
-    <button class="pro3 pro" onclick="document.getElementById('file-load').click()">Cargar</button>
-</div>
-
-<!-- ▼▼▼ CONTENEDOR DE AUTENTICACIÓN AÑADIDO ▼▼▼ -->
-<div id="google-auth-container">
-    <!-- El contenido (botón de login o perfil de usuario) será insertado aquí por google.js -->
-</div>
-<!-- ▲▲▲ FIN CONTENEDOR ▲▲▲ -->
-
-</div>
-
-
-
+   
 <div id="silenos" >
-
-
-
-<div id="opciones" >
-<h2 id="titulo-proyecto" contenteditable="true" placeholder="Escribe el título del proyecto">Silenos Versión 1.1.8</h2>
-<div id="menu" >
-
-    <button  onclick="cerrartodo(), gridear('personajes'),agregarBotonEliminarAPersonajes();">Datos</button>
-    <button  onclick="cerrartodo(), abrir('momentos');">Momentos</button>
-    <button  onclick="cerrartodo(), abrir('capitulosh');">Capitulos</button>
-    <button  onclick="cerrartodo(), abrir('escenah');">Escenas</button>
-    <button  onclick="cerrartodo(), abrirGuion();">Guion</button>
-    <button  onclick="cerrartodo(), abrir('ia');">IA</button>
-
-    <button class="pro" onclick="reiniciar()"> 🆕 </button>
-    <button class="pro" onclick="abrirModalExportar()">💽 Export</button>
-    <button class="pro" onclick="guardarJSON()">💾 Save</button>
-    <input type="file" id="file-load" accept="application/json"  onchange="cargarJSON(event)" style="display: none;">
-    <button class="pro" onclick="document.getElementById('file-load').click()">🗂️ Load</button>
-    <button class="pro" onclick="abrirModalConfig()"> ⚙️ </button>
-    <button class="pro" style="display: none;" id="import-data-button" onclick="abrirModalImportar()">📥</button>
-    <button class="pro" id="theme-toggle-button" onclick="toggleTheme()">🌙</button>
-</div></div>
-
+    <div id="opciones" >
+        <h2 id="titulo-proyecto" contenteditable="true" placeholder="Escribe el título del proyecto">Silenos Versión 1.1.8</h2>
+        <div id="menu" >
+            <button  onclick="cerrartodo(), gridear('personajes'),agregarBotonEliminarAPersonajes();">Datos</button>
+            <button  onclick="cerrartodo(), abrir('momentos');">Momentos</button>
+            <button  onclick="cerrartodo(), abrir('capitulosh');">Capitulos</button>
+            <button  onclick="cerrartodo(), abrir('escenah');">Escenas</button>
+            <button  onclick="cerrartodo(), abrirGuion();">Guion</button>
+            <button  onclick="cerrartodo(), abrir('ia');">IA</button>
+            <button class="pro" onclick="reiniciar()"> 🆕 </button>
+            <button class="pro" onclick="abrirModalExportar()">💽 Export</button>
+            <button class="pro" onclick="guardarJSON()">💾 Save</button>
+            <input type="file" id="file-load" accept="application/json"  onchange="cargarJSON(event)" style="display: none;">
+            <button class="pro" onclick="document.getElementById('file-load').click()">🗂️ Load</button>
+            <button class="pro" onclick="abrirModalConfig()"> ⚙️ </button>
+            <button class="pro" style="display: none;" id="import-data-button" onclick="abrirModalImportar()">📥</button>
+            <button class="pro" id="theme-toggle-button" onclick="toggleTheme()">🌙</button>
+        </div>
+    </div>
+ 
+ 
 <div id="momentos">
     <div id="momentos-controles-flotantes">
         <button class="pro" id="agregar-momento-btn">Añadir Momento</button>
@@ -634,10 +498,26 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
         <button class="modal-button" onclick="iniciarExportacionJuego()">Exportar Videojuego HTML</button>
     </div>
 </div>
+ 
+ 
+ 
+ 
+ <button id="asistente-btn" title="Asistente IA"  style="display: none;" >S</button>
 
- </div>
+ 
+ 
+ 
+    <!-- ... Resto de tus divs de contenido ... -->
+</div>
 
 
+<div id="google-auth-container">
+        <!-- El contenido se inserta aquí por google.js -->
+    </div>
+
+
+
+<!-- Scripts al final del body -->
 <script src="gestionEscenas.js"></script>
 <script src="momentos.js"></script>
 <script src="guion.js"></script>
@@ -650,26 +530,9 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 <script src="exportar.js"></script>
 <script src="exportarjuego.js"></script>
 <script src="exportartomas.js"></script>
-<!-- ▼▼▼ SCRIPT DE GOOGLE AÑADIDO ▼▼▼ -->
 <script src="google.js"></script>
-<!-- ▲▲▲ FIN SCRIPT DE GOOGLE ▲▲▲ -->
-<script src="main.js"></script> </body>
+<script src="main.js"></script>
 
-<button id="asistente-btn" title="Asistente IA">S</button>
-<div id="api-call-counter-container" title="Llamadas a la API de IA en esta sesión">
-    <span>Llamadas IA: </span>
-    <span id="api-call-count">0</span>
-</div>
-
-<!-- PEGA ESTO EN index.html, JUSTO DESPUÉS DE <div id="api-call-counter-container"> -->
-
-<div id="progress-bar-container" class="status-indicator">
-    <span id="progress-bar-label">Procesando...</span>
-    <div class="progress-bar-background">
-        <div id="progress-bar-fill"></div>
-    </div>
-    <span id="progress-bar-percentage">0%</span>
-</div>
-
-<!-- ... tu código existente ... -->
+<!-- Resto de tu HTML al final... -->
+</body>
 </html>
