@@ -8,7 +8,7 @@
     position: absolute;
     top: 9%;
     left: 1%;
-    right: 1%;
+    right: 0%;
     bottom: 1%;
     background-color: var(--background-color, #f8f9fa);
     overflow: hidden; /* El scroll ahora lo maneja el wrapper */

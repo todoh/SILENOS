@@ -210,7 +210,7 @@ function updateAuthUI() {
                 <img id="user-avatar" src="${currentUserProfile.picture}" alt="User Avatar">
                 <span id="user-name">${currentUserProfile.name}</span>
                 <button id="drive-save-button" class="" title="Guardar en Google Drive">💾</button>
-                <button id="logout-button" class="" title="Cerrar sesión">🚪</button>
+                <button id="logout-button" class="" title="Cerrar sesión">Desconectar</button>
             </div>
         `;
         document.getElementById('logout-button').addEventListener('click', handleLogout);

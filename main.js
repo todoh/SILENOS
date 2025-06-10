@@ -234,6 +234,7 @@ function reiniciar() {
     if (confirm("¿Reiniciar el proyecto? Se perderán todos los cambios no guardados y volverás a la pantalla de inicio.")) {
         reiniciarEstadoApp();
         if (typeof animacionReiniciar === 'function') {
+            reiniciarEstadoApp()
             animacionReiniciar();
         } else {
             console.error("La función animacionReiniciar no fue encontrada. Reiniciando de forma instantánea.");

@@ -211,7 +211,7 @@ function agregarPersonajeDesdeDatos(personajeData) {
     etiqueta.style.top = '10px';
     etiqueta.style.right = '10px';
     etiqueta.style.cursor = 'pointer';
-    etiqueta.style.zIndex = '888888888';
+    etiqueta.style.zIndex = '888';
     etiqueta.onclick = () => mostrarMenuEtiquetas(etiqueta);
     contenedor.appendChild(etiqueta);
 

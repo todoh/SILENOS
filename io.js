@@ -394,3 +394,22 @@ function cargarJSON(event) {
     };
     reader.readAsText(file);
 }
+
+
+function limpiarCacheDelProyecto() {
+         const clavesAGuardar = ['silenos_gapi_token', 'theme', 'google_api_key'];
+      
+        const todasLasClaves = Object.keys(localStorage);
+
+       
+        todasLasClaves.forEach(clave => {
+            if (!clavesAGuardar.includes(clave)) {
+                localStorage.removeItem(clave);
+                console.log(`Clave eliminada de la caché: ${clave}`);
+            }
+        });
+
+        
+     
+   
+}

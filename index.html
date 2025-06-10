@@ -115,10 +115,12 @@
         text-align: right;
     }
     #google-auth-container {
-        position: absolute;
-        bottom: 20px;
-        left: 20px;
-        z-index: 10001;
+        position: fixed;
+        display: flex;
+        bottom: 2%;
+        left: 2%;
+        z-index: 1000001;
+         height:4%;
     }
     #user-session-display {
         display: flex;
@@ -153,22 +155,20 @@
         color: #eee;
     }
 
-    /* ▼▼▼ ESTILOS MEJORADOS PARA EL BOTÓN DE GOOGLE ▼▼▼ */
     #google-signin-button {
-        /* Se quitan las clases pro/pro3 para tener control total */
         background-color: #FFFFFF;
         color: #444;
         border: 1px solid #DADCE0;
-        border-radius: 25px; /* Más redondeado */
+        border-radius: 25px;
         width: auto;
         font-size: 16px;
         font-weight: 500;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         cursor: pointer;
-        display: inline-flex; /* Para alinear el logo y el texto */
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 12px; /* Espacio entre el logo y el texto */
+        gap: 12px;
         transition: background-color .3s, box-shadow .3s;
         box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
     }
@@ -182,7 +182,18 @@
         width: 18px;
         height: 18px;
     }
-    /* ▲▲▲ FIN DE ESTILOS MEJORADOS ▲▲▲ */
+    
+    /* ▼▼▼ ESTILOS PARA LA NUEVA TRANSICIÓN ▼▼▼ */
+    #silenos {
+        /* Silenos está visible desde el principio, pero debajo de #principio */
+        display: flex;
+        opacity: 1;
+    }
+    #principio {
+        /* #principio está encima y se le añade una transición de opacidad */
+        transition: opacity 1.5s ease-out;
+    }
+    /* ▲▲▲ FIN DE LA CORRECCIÓN ▲▲▲ */
 
 </style>
 <script>
@@ -194,66 +205,41 @@ const progressBarManager = {
     percentage: null,
     isActive: false,
 
-    // Inicializa los elementos del DOM una sola vez
     init() {
-        if (this.container) return; // Ya inicializado
+        if (this.container) return;
         this.container = document.getElementById('progress-bar-container');
         this.label = document.getElementById('progress-bar-label');
         this.fill = document.getElementById('progress-bar-fill');
         this.percentage = document.getElementById('progress-bar-percentage');
     },
-
-    /**
-     * Inicia y muestra la barra de progreso para un nuevo proceso.
-     * @param {string} labelText - El texto que describe el proceso (ej. "Generando historia...").
-     */
     start(labelText) {
         this.init();
         if (this.isActive || !this.container) return;
-
         this.isActive = true;
         if (this.label) this.label.textContent = labelText;
-        if (this.fill) this.fill.style.backgroundColor = '#28a745'; // Color verde por defecto
-        this.set(0); // Empezar en 0%
+        if (this.fill) this.fill.style.backgroundColor = '#28a745';
+        this.set(0);
         this.container.classList.add('visible');
     },
-
-    /**
-     * Actualiza el porcentaje de la barra de progreso.
-     * @param {number} percent - Un número entre 0 y 100.
-     * @param {string} [newLabel] - (Opcional) Un nuevo texto para la etiqueta.
-     */
     set(percent, newLabel) {
         if (!this.isActive || !this.container) return;
         const p = Math.min(100, Math.max(0, Math.round(percent)));
-        
         if (this.fill) this.fill.style.width = `${p}%`;
         if (this.percentage) this.percentage.textContent = `${p}%`;
         if (newLabel && this.label) this.label.textContent = newLabel;
     },
-
-    /**
-     * Finaliza el proceso, mostrando 100% y luego ocultando la barra.
-     */
     finish() {
         if (!this.isActive || !this.container) return;
         this.set(100, 'Completado');
-        
         setTimeout(() => {
             if (this.container) this.container.classList.remove('visible');
             this.isActive = false;
         }, 1500);
     },
-
-    /**
-     * Muestra un estado de error y oculta la barra.
-     * @param {string} errorMessage - El mensaje de error a mostrar.
-     */
     error(errorMessage) {
         if (!this.isActive || !this.container) return;
         if (this.label) this.label.textContent = errorMessage || 'Error';
-        if (this.fill) this.fill.style.backgroundColor = '#e74c3c'; // Rojo para error
-        
+        if (this.fill) this.fill.style.backgroundColor = '#e74c3c';
         setTimeout(() => {
             if (this.container) this.container.classList.remove('visible');
             this.isActive = false;
@@ -262,54 +248,36 @@ const progressBarManager = {
 };
 </script>
 <script>
-    // Se ejecuta cuando el DOM está completamente cargado
     document.addEventListener('DOMContentLoaded', () => {
-
-        // 1. Inicializamos las variables
         let apiCallCount = 0;
         const countDisplayElement = document.getElementById('api-call-count');
         const counterContainerElement = document.getElementById('api-call-counter-container');
         const googleApiUrl = 'generativelanguage.googleapis.com';
-
-        // 2. Guardamos una referencia a la función 'fetch' original
         const originalFetch = window.fetch;
-
-        // 3. Creamos nuestra función para actualizar el contador en la UI
         function updateApiCount() {
             apiCallCount++;
             if (countDisplayElement) {
                 countDisplayElement.textContent = apiCallCount;
             }
-            // Hacemos visible el contador en la primera llamada
             if (apiCallCount === 1 && counterContainerElement) {
                 counterContainerElement.classList.add('visible');
             }
         }
-
-        // 4. Sobrescribimos la función 'fetch' global con nuestra versión "espía"
         window.fetch = function(...args) {
-            const url = args[0]; // La URL es el primer argumento de fetch
-
-            // 5. Comprobamos si la URL de la petición es la de la API de Google
+            const url = args[0];
             if (typeof url === 'string' && url.includes(googleApiUrl)) {
-                // Si es, actualizamos nuestro contador
                 updateApiCount();
             }
-
-            // 6. Finalmente, ejecutamos la petición real usando la función 'fetch' original
-            // y devolvemos su resultado. Esto es crucial para que la app siga funcionando.
             return originalFetch.apply(this, args);
         };
     });
 </script>
 <script>
-  /**
+    /**
      * Función de animación de entrada.
-     * Orquesta una aparición en 3 fases: Esfera -> Botón S -> UI Principal.
-     * Corrige la aparición brusca de la interfaz.
+     * Desvanece la pantalla de inicio para revelar la app.
      */
-    function flexear(id) {
-        const silenosUI = document.getElementById(id);
+    function flexear() {
         const principio = document.getElementById('principio');
         const esfera = document.getElementById('esfera');
         const menuPrincipio = document.getElementById('menuprincipio');
@@ -328,83 +296,59 @@ const progressBarManager = {
             asistenteBtn.classList.add('visible');
         }, 1000);
 
-        // 4. Programar la aparición suave de la UI principal
+        // 4. Iniciar el desvanecimiento de TODA la pantalla de inicio
         setTimeout(() => {
-            // Hacemos visible el contenedor pero lo mantenemos transparente
-            silenosUI.style.display = 'flex';
-            
-            // *** ✨ LA CORRECCIÓN CLAVE ✨ ***
-            // Usamos requestAnimationFrame para asegurarnos de que el navegador
-            // procesa el cambio de 'display' ANTES de aplicar el cambio de 'opacity'.
-            // Esto permite que la transición de opacidad se ejecute correctamente.
-            requestAnimationFrame(() => {
-                silenosUI.style.opacity = '1';
-            });
+            principio.style.opacity = '0';
+        }, 1500); 
 
-        }, 1500); // La UI comienza a aparecer a los 1.5 segundos
-
-        // 5. Limpiar la pantalla de inicio cuando la animación termine
+        // 5. Cuando el desvanecimiento termine, ocultar la pantalla de inicio 
+        //    para que no bloquee los clics en la interfaz de abajo.
         setTimeout(() => {
             principio.style.display = 'none';
-        }, 4000); // Debe coincidir con la duración de la animación de la esfera
+        }, 3000); // 1500ms de delay + 1500ms de transición de opacidad
     }
 
-function animacionReiniciar() {
-        const silenosUI = document.getElementById('silenos');
+    /**
+     * Función de animación para reiniciar y volver a la pantalla de inicio.
+     */
+    function animacionReiniciar() {
+ 
         const principio = document.getElementById('principio');
         const esfera = document.getElementById('esfera');
         const menuPrincipio = document.getElementById('menuprincipio');
         const titulo1 = document.getElementById('titulo1');
         const asistenteBtn = document.getElementById('asistente-btn');
-
-        // 1. Aseguramos que el contenedor de la pantalla de inicio esté visible
-        //    para que la esfera tenga un fondo sobre el que encogerse.
-        if (principio) principio.style.display = 'flex';
-
-        // 2. Inicia la desaparición de la UI principal y el botón 'S'.
-        if (silenosUI) silenosUI.style.opacity = '0';
+        
+        // Ocultar el botón 'S' al reiniciar
         if (asistenteBtn) asistenteBtn.classList.remove('visible');
 
-        // 3. Después de un breve instante, inicia la animación de la esfera encogiéndose.
-        //    Esto se logra simplemente quitando la clase 'expandir'.
-        setTimeout(() => {
-            if (esfera) esfera.classList.remove('expandir');
-        }, 500); // 0.5s de retraso para que la UI empiece a desaparecer primero.
+        // 1. Asegurarse de que la pantalla de inicio esté en el DOM para la animación
+        if (principio) {
+            principio.style.display = 'flex';
+        }
+        
+        // 2. Encoger la esfera (animación inversa)
+        if (esfera) {
+            esfera.classList.remove('expandir');
+        }
 
-        // 4. A mitad de la animación de la esfera, empieza a reaparecer el texto y menú inicial.
+        // 3. Forzar un pequeño delay y luego hacerla visible con transición
+        //    Esto asegura que el navegador procese el display:flex antes de animar la opacidad.
+        setTimeout(() => {
+            if (principio) {
+                principio.style.opacity = '1';
+            }
+        }, 50);
+
+        // 4. A mitad de la animación, reaparecer el texto y menú
         setTimeout(() => {
             if (menuPrincipio) menuPrincipio.style.opacity = '1';
             if (titulo1) titulo1.style.opacity = '1';
-        }, 2000); // 2s de retraso.
-
-        // 5. Al finalizar toda la animación, oculta completamente el contenedor de la UI principal
-        //    con 'display: none' para que no interfiera con la página.
-        setTimeout(() => {
-            if (silenosUI) silenosUI.style.display = 'none';
-        }, 4000); // Debe coincidir con la duración de la animación de la esfera (4s).
-    }
-
-
-
+        }, 1500); 
+   limpiarCacheDelProyecto(); }
 </script>
-<!-- El resto de tu body no cambia -->
-<div id="principio" >
-    <div id="titulo1">
-        <div>
-            <span>SILEN</span><span class="os-red">OS</span>
-        </div>
-        <div class="version-text">
-            versión 1.1.8
-        </div>
-    </div>
-    <div id="esfera" ></div>
-    <div id="menuprincipio">
-        <button class="pro3 pro" onclick="flexear('silenos');">Nuevo</button>
-        <button class="pro3 pro" onclick="document.getElementById('file-load').click()">Cargar</button>
-    </div>
- 
-</div>
-   
+
+<!-- ▼▼▼ ESTRUCTURA HTML REORDENADA ▼▼▼ -->
 <div id="silenos" >
     <div id="opciones" >
         <h2 id="titulo-proyecto" contenteditable="true" placeholder="Escribe el título del proyecto">Silenos Versión 1.1.8</h2>
@@ -618,22 +562,29 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
         <button class="modal-button" onclick="iniciarExportacionJuego()">Exportar Videojuego HTML</button>
     </div>
 </div>
- 
- 
- 
- 
  <button id="asistente-btn" title="Asistente IA"  style="display: none;" >S</button>
-
- 
- 
- 
-    <!-- ... Resto de tus divs de contenido ... -->
 </div>
 
 
+<div id="principio" >
+    <div id="titulo1">
+        <div>
+            <span>SILEN</span><span class="os-red">OS</span>
+        </div>
+        <div class="version-text">
+            versión 1.1.8
+        </div>
+    </div>
+    <div id="esfera" ></div>
+    <div id="menuprincipio">
+        <button class="pro3 pro" onclick=" reiniciarEstadoApp(), flexear('silenos');">Nuevo</button>
+        <button class="pro3 pro" onclick="document.getElementById('file-load').click()">Cargar</button>
+    </div>
+</div>
+
 <div id="google-auth-container">
         <!-- El contenido se inserta aquí por google.js -->
-    </div>
+</div>
 
 <div id="progress-bar-container" class="status-indicator">
     <span id="progress-bar-label">Procesando...</span>
