@@ -41,19 +41,27 @@ function initGapiClient() {
 /**
  * Initializes the authentication flow and sets up the token client.
  */
-function initAuth() {
+/**
+ * Initializes the authentication flow, sets up the token client,
+ * AND attempts to restore a session from localStorage.
+ */
+async function initAuth() {
     if (typeof google === 'undefined' || !google.accounts) {
         console.error("Google accounts script not loaded yet.");
         return;
     }
     
+    // 1. We still initialize the client in case the user needs to log in manually.
     tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: GOOGLE_CLIENT_ID,
-        scope: DRIVE_SCOPE,
+        scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
         callback: async (tokenResponse) => {
             if (tokenResponse && tokenResponse.access_token) {
                 gapi_access_token = tokenResponse.access_token;
-                console.log("Access Token received.");
+                // ▼▼▼ GUARDAR EL TOKEN EN LOCALSTORAGE ▼▼▼
+                localStorage.setItem('silenos_gapi_token', gapi_access_token);
+                // ▲▲▲ FIN DE LA MODIFICACIÓN ▲▲▲
+                console.log("Access Token received and saved.");
                 
                 await fetchUserProfile();
                 updateAuthUI();
@@ -70,7 +78,42 @@ function initAuth() {
         },
     });
 
-    // Render the initial UI (the login button)
+    // 2. ▼▼▼ NUEVA LÓGICA DE PERSISTENCIA DE SESIÓN ▼▼▼
+    // Check for a saved token in localStorage.
+    const savedToken = localStorage.getItem('silenos_gapi_token');
+    if (savedToken) {
+        console.log("Found saved token. Attempting to restore session...");
+        gapi_access_token = savedToken;
+        try {
+            // Re-fetch the user profile to validate the token.
+            // If the token is expired, this will fail and enter the catch block.
+            await fetchUserProfile(); 
+            
+            if (currentUserProfile) {
+                console.log("Session restored successfully for:", currentUserProfile.name);
+                updateAuthUI();
+                // Transition to main app view and load data, just like in the callback
+                if (typeof flexear === 'function') flexear('silenos');
+                if (typeof cargarProyectoDesdeDrive === 'function') await cargarProyectoDesdeDrive();
+                
+                // IMPORTANT: We exit the function here because the session is restored,
+                // and we don't need to show the login button.
+                return;
+            } else {
+                // This case is unlikely but good to handle.
+                throw new Error("Token was saved but the user profile could not be fetched.");
+            }
+        } catch (error) {
+            console.error("Failed to restore session with saved token:", error);
+            // If the token is invalid or expired, clean it up.
+            localStorage.removeItem('silenos_gapi_token');
+            gapi_access_token = null;
+            currentUserProfile = null;
+        }
+    }
+    // ▲▲▲ FIN DE LA NUEVA LÓGICA ▲▲▲
+
+    // 3. If no session was restored, render the initial UI (the login button).
     updateAuthUI();
 }
 
@@ -114,6 +157,9 @@ async function fetchUserProfile() {
 /**
  * Handles the user sign-out process.
  */
+/**
+ * Handles the user sign-out process, including clearing the saved token.
+ */
 function handleLogout() {
     if (confirm("¿Estás seguro de que quieres cerrar sesión?")) {
         console.log("User signing out.");
@@ -123,6 +169,10 @@ function handleLogout() {
                 console.log('Access token revoked.');
             });
         }
+
+        // ▼▼▼ LIMPIAR TOKEN DE LOCALSTORAGE ▼▼▼
+        localStorage.removeItem('silenos_gapi_token');
+        // ▲▲▲ FIN DE LA MODIFICACIÓN ▲▲▲
 
         currentUserProfile = null;
         gapi_access_token = null;
@@ -151,7 +201,7 @@ function updateAuthUI() {
                 <img id="user-avatar" src="${currentUserProfile.picture}" alt="User Avatar">
                 <span id="user-name">${currentUserProfile.name}</span>
                 <button id="drive-save-button" class="" title="Guardar en Google Drive">💾</button>
-                <button id="logout-button" class="" title="Cerrar sesión">Desconectars</button>
+                <button id="logout-button" class="" title="Cerrar sesión">Desconectar</button>
             </div>
         `;
         document.getElementById('logout-button').addEventListener('click', handleLogout);
@@ -166,7 +216,7 @@ function updateAuthUI() {
     } else {
         // User is not logged in: Show a custom Sign-In button.
         authContainer.innerHTML = `
-            <button id="google-signin-button" class="pro pro3">
+            <button id="google-signin-button" class=" ">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" style="width:18px; height:18px; vertical-align: middle; margin-right: 8px;">
                 Iniciar Sesión con Google
             </button>
