@@ -3,23 +3,19 @@
 // ===================================
 
 // --- VARIABLES GLOBALES ---
+// Se declaran las variables aquí, pero las que dependen del DOM se asignarán más tarde.
 let guionLiterarioData = [];
-let escenas = {}; // Para la sección "Capítulos"
-let storyScenes = []; 
-// La variable 'momentos' ya no es necesaria, los datos se leen/escriben del DOM.
+let escenas = {};
+let storyScenes = [];
 let activeSceneId = null;
-
 let ultimoId = 0;
-let titulo2 = document.getElementById("titulo-proyecto").innerText;
-
+let titulo2; // Se asignará en window.onload
 let indiceCapituloActivo = -1;
 let draggedFrameIndex = null;
 let draggedFrameEscenaId = null;
 let currentDragOverFrameElement = null;
+let chatDiv; // Se asignará en window.onload
 
-let chatDiv = document.getElementById("chat");
-
-// --- Variables para la generación automática desde el panel de IA ---
 let nombredelahistoria = "Nombre de la Historia";
 let cantidaddeescenas = 2;
 let cantidadframes = 3;
@@ -27,25 +23,27 @@ let cantidadframes = 3;
 
 // --- INICIALIZACIÓN DE LA APLICACIÓN ---
 window.onload = function() {
-    // No cargamos desde localStorage aquí para empezar siempre limpios.
-    // La carga se maneja explícitamente con el botón.
-    
+    // Ahora que el DOM está cargado, es seguro asignar valores a las variables que dependen de él.
+    titulo2 = document.getElementById("titulo-proyecto").innerText;
+    chatDiv = document.getElementById("chat");
+
+    document.getElementById("titulo-proyecto").addEventListener("input", function() {
+        titulo2 = document.getElementById("titulo-proyecto").innerText;
+    });
+
     const themeToggleButton = document.getElementById('theme-toggle-button');
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark') {
         document.body.classList.add('dark-theme');
         if (themeToggleButton) themeToggleButton.textContent = '☀️';
     } else {
-        if (themeToggleButton) themeToggleButton.textContent = '�';
+        if (themeToggleButton) themeToggleButton.textContent = '🌙';
     }
     actualizarParametrosIA();
     initEscenas();
-    initMomentos();  // Llama a la inicialización de todas las secciones
+    initMomentos();
 };
 
-document.getElementById("titulo-proyecto").addEventListener("input", function() {
-    titulo2 = document.getElementById("titulo-proyecto").innerText;
-});
 
 // --- FUNCIONES GENERALES DE UI ---
 function cerrartodo() {
@@ -62,22 +60,14 @@ function abrir(escena) {
     cerrartodo();
     document.getElementById(escena).style.display = 'flex';
 
-    // =======================================================================
-    //  INICIO DE LA CORRECCIÓN
-    // =======================================================================
-    // Lógica especial para cada sección al abrirla.
-    // Esto asegura que ciertos componentes se actualicen siempre que
-    // el usuario navegue a su sección correspondiente.
     if (escena === 'momentos') {
         console.log("Abriendo sección Momentos. Actualizando lista de guiones.");
-        // Asegura que la lista de guiones para la IA esté siempre actualizada.
         if (typeof cargarGuionesEnDropdown === 'function') {
             cargarGuionesEnDropdown();
         } else {
             console.error("Error: La función cargarGuionesEnDropdown no fue encontrada.");
         }
 
-        // Lógica para centrar el lienzo de momentos
         const momentosContainer = document.getElementById('momentos');
         const lienzo = document.getElementById('momentos-lienzo');
         requestAnimationFrame(() => {
@@ -95,9 +85,6 @@ function abrir(escena) {
             }
         });
     }
-    // =======================================================================
-    //  FIN DE LA CORRECCIÓN
-    // =======================================================================
 }
 
 
@@ -107,7 +94,7 @@ function gridear(escena) {
 }
 
 function reiniciarEstadoApp() {
-    // Resetear variables de datos
+    // Esta función ahora se llama de forma segura despu√©s de que las variables han sido inicializadas.
     guionLiterarioData = [];
     escenas = {};
     storyScenes = [];
@@ -119,7 +106,7 @@ function reiniciarEstadoApp() {
     document.getElementById("titulo-proyecto").innerText = "Silenos Versión 1.1.8";
     document.getElementById("listapersonajes").innerHTML = "";
     document.getElementById("lista-capitulos").innerHTML = "";
-    document.getElementById("momentos-lienzo").innerHTML = ""; // Limpiar lienzo de momentos
+    document.getElementById("momentos-lienzo").innerHTML = "";
     
     // Limpiar y re-renderizar secciones complejas
     if(typeof renderizarGuion === 'function') renderizarGuion();
@@ -174,11 +161,6 @@ function cerrarModalImportar() {
     }
 }
 
-/**
- * Función corregida para importar datos JSON.
- * Ahora solo admite 'Datos' (personajes, objetos, etc.).
- * Puede procesar un único objeto JSON o un array de objetos.
- */
 function importarDatosDesdeJSON() {
     const jsonText = document.getElementById('json-import-area').value;
     if (!jsonText.trim()) {
@@ -194,29 +176,26 @@ function importarDatosDesdeJSON() {
         return;
     }
 
-    // Función interna para procesar un único objeto de dato
     const procesarDato = (dato) => {
-        // Valida que el objeto 'dato' tenga la estructura correcta
         if (dato && typeof dato.nombre !== 'undefined' && typeof dato.descripcion !== 'undefined' && typeof dato.etiqueta !== 'undefined') {
             try {
                 if (typeof agregarPersonajeDesdeDatos === 'function') {
                     agregarPersonajeDesdeDatos(dato);
-                    return true; // Éxito
+                    return true;
                 }
                 return false;
             } catch (e) {
                 console.error("Error al intentar añadir el 'Dato': ", dato.nombre, e);
-                return false; // Fracaso
+                return false;
             }
         }
-        return false; // Estructura incorrecta
+        return false;
     };
 
     let datosImportados = 0;
     let errores = 0;
 
     if (Array.isArray(jsonData)) {
-        // El usuario pegó un array de datos
         jsonData.forEach(dato => {
             if (procesarDato(dato)) {
                 datosImportados++;
@@ -225,19 +204,16 @@ function importarDatosDesdeJSON() {
             }
         });
     } else if (typeof jsonData === 'object' && jsonData !== null) {
-        // El usuario pegó un único objeto
         if (procesarDato(jsonData)) {
             datosImportados++;
         } else {
             errores++;
         }
     } else {
-        // El formato no es ni un objeto ni un array de objetos
         alert("El JSON proporcionado no es válido. Debe ser un único objeto de 'Dato' o un array de 'Datos'.");
         return;
     }
 
-    // Informar al usuario sobre el resultado
     if (datosImportados > 0) {
         alert(`¡Se importaron ${datosImportados} dato(s) con éxito en la sección "Datos"!`);
         cerrarModalImportar();
@@ -245,34 +221,21 @@ function importarDatosDesdeJSON() {
     }
     
     if (errores > 0) {
-        // Este mensaje solo aparece si hubo tanto éxitos como errores, o solo errores.
         const mensajeError = `Se encontraron ${errores} objeto(s) con formato incorrecto o que no son 'Datos'. Solo se importan los que tienen las claves 'nombre', 'descripcion' y 'etiqueta'.`;
         if (datosImportados === 0) {
              alert(mensajeError);
         } else {
-            console.warn(mensajeError); // Si algo se importó, no molestamos con otra alerta, pero lo dejamos en consola.
+            console.warn(mensajeError);
         }
     }
 }
 
-
-// EN EL ARCHIVO: main.js
-// REEMPLAZA LA FUNCIÓN EXISTENTE 'reiniciar' CON ESTA VERSIÓN:
-
-// EN EL ARCHIVO: main.js
-// REEMPLAZA LA FUNCIÓN EXISTENTE 'reiniciar' CON ESTA VERSIÓN:
-
 function reiniciar() {
     if (confirm("¿Reiniciar el proyecto? Se perderán todos los cambios no guardados y volverás a la pantalla de inicio.")) {
-        
-        // 1. Resetea todos los datos internos de la aplicación, como antes.
         reiniciarEstadoApp();
-
-        // 2. Llama a la nueva función que controla la animación de salida.
         if (typeof animacionReiniciar === 'function') {
             animacionReiniciar();
         } else {
-            // Si por alguna razón la función no existe, volvemos al método instantáneo.
             console.error("La función animacionReiniciar no fue encontrada. Reiniciando de forma instantánea.");
             document.getElementById('silenos').style.display = 'none';
             document.getElementById('principio').style.display = 'flex';
@@ -293,13 +256,14 @@ function toggleTheme() {
 }
 
 function herramientacopiar() {
-    const chatParagraphs = chatDiv.getElementsByTagName("p");
-    if (chatParagraphs.length === 0) return;
-    const lastMessage = chatParagraphs[chatParagraphs.length - 1].innerText;
-    document.execCommand('copy');
+    if (chatDiv && chatDiv.getElementsByTagName) {
+        const chatParagraphs = chatDiv.getElementsByTagName("p");
+        if (chatParagraphs.length === 0) return;
+        const lastMessage = chatParagraphs[chatParagraphs.length - 1].innerText;
+        document.execCommand('copy');
+    }
 }
 
-// Actualiza las variables globales desde los inputs del panel de IA
 function actualizarParametrosIA() {
     nombredelahistoria = document.getElementById("nombrehistoria").value;
     cantidaddeescenas = parseInt(document.getElementById("cantidadescenas").value) || 0;
@@ -309,7 +273,6 @@ function actualizarParametrosIA() {
     window.cantidadframes = cantidadframes;
 }
 
-// --- LÓGICA DEL MODAL DE DATOS CON IA ---
 function abrirModalAIDatos() {
     const overlay = document.getElementById('modal-overlay');
     const modal = document.getElementById('modal-ia-datos');
@@ -329,16 +292,7 @@ function cerrarModalAIDatos() {
         overlay.onclick = null;
     }
 }
-// =======================================================================
-//  INICIO DE LA CORRECCIÓN: Función para poblar el dropdown de guiones
-// =======================================================================
 
-/**
- * Carga los títulos de los guiones desde la variable global guionLiterarioData 
- * en el dropdown de la sección 'Momentos'.
- * Esta función es llamada cuando se abre la sección 'Momentos' o cuando se 
- * modifica la lista de guiones.
- */
 function cargarGuionesEnDropdown() {
     const guionSelect = document.getElementById('guion-select');
     if (!guionSelect) {
@@ -346,50 +300,30 @@ function cargarGuionesEnDropdown() {
         return;
     }
 
-    // Guardar el valor que estaba seleccionado para intentar restaurarlo después
     const valorSeleccionadoAnteriormente = guionSelect.value;
-    
-    // 1. Limpiar completamente las opciones existentes
     guionSelect.innerHTML = '';
-
-    // 2. Crear y añadir una opción por defecto (placeholder)
     const placeholder = document.createElement('option');
-    placeholder.value = ""; // Sin valor para que no sea una selección válida
+    placeholder.value = "";
 
     if (guionLiterarioData.length === 0) {
         placeholder.textContent = "No hay guiones creados";
-        placeholder.disabled = true; // Deshabilitar si no hay guiones
+        placeholder.disabled = true;
     } else {
         placeholder.textContent = "Selecciona un guion...";
     }
     guionSelect.appendChild(placeholder);
 
-    // 3. Poblar el dropdown con los guiones disponibles
     guionLiterarioData.forEach(guion => {
-        // Solo añadir guiones que tengan un título
         if (guion.titulo && guion.titulo.trim() !== "") {
             const option = document.createElement('option');
-            option.value = guion.titulo; // El valor de la opción será el título del guion
-            option.textContent = guion.titulo; // El texto visible será también el título
+            option.value = guion.titulo;
+            option.textContent = guion.titulo;
             guionSelect.appendChild(option);
         }
     });
-
-    // 4. Intentar restaurar la selección que tenía el usuario
     guionSelect.value = valorSeleccionadoAnteriormente || "";
 }
 
-// =======================================================================
-//  FIN DE LA CORRECCIÓN
-// =======================================================================
-
-
-// AÑADIR ESTE CÓDIGO AL ARCHIVO: main.js
-
-/**
- * Abre el modal de Opciones de Exportación.
- * Al abrirse, se encarga de poblar el selector de momentos iniciales.
- */
 function abrirModalExportar() {
     const overlay = document.getElementById('modal-overlay');
     const modal = document.getElementById('modal-exportar');
@@ -400,9 +334,6 @@ function abrirModalExportar() {
             cerrarModalExportar();
         }
     }
-
-    // --- ¡ESTA ES LA LÍNEA CLAVE! ---
-    // Llama a la función para llenar el dropdown cada vez que se abre el modal.
     if (typeof poblarSelectorMomentoInicial === 'function') {
         poblarSelectorMomentoInicial();
     } else {
@@ -410,9 +341,6 @@ function abrirModalExportar() {
     }
 }
 
-/**
- * Cierra el modal de Opciones de Exportación.
- */
 function cerrarModalExportar() {
     const overlay = document.getElementById('modal-overlay');
     const modal = document.getElementById('modal-exportar');
@@ -420,5 +348,31 @@ function cerrarModalExportar() {
     if (modal) modal.style.display = 'none';
     if (overlay) {
         overlay.onclick = null;
+    }
+}
+
+function reproducirTexto(texto) {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(texto);
+        utterance.lang = 'es-ES';
+        utterance.rate = 1;
+        utterance.pitch = 1;
+
+        let voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+            let spanishVoice = voices.find(voice => voice.lang === 'es-ES');
+            if (spanishVoice) utterance.voice = spanishVoice;
+            window.speechSynthesis.speak(utterance);
+        } else {
+            window.speechSynthesis.onvoiceschanged = function() {
+                voices = window.speechSynthesis.getVoices();
+                let spanishVoice = voices.find(voice => voice.lang === 'es-ES');
+                if (spanishVoice) utterance.voice = spanishVoice;
+                window.speechSynthesis.speak(utterance);
+            };
+        }
+    } else {
+        console.error('La API de Síntesis de Voz no es compatible con este navegador.');
     }
 }
