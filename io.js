@@ -259,31 +259,95 @@ async function cargarProyectoDesdeDrive() {
 /**
  * Carga un objeto de datos en el estado de la aplicación.
  */
+/**
+ * Carga un objeto de datos en el estado de la aplicación.
+ * VERSIÓN CORREGIDA Y COMPLETADA
+ */
 function cargarDatosEnLaApp(data) {
-     reiniciarEstadoApp();
-     if (data.titulo) {
+    // 1. Reinicia el estado de la aplicación para empezar de cero.
+    if(typeof reiniciarEstadoApp === 'function') reiniciarEstadoApp();
+
+    // 2. Carga el título del proyecto.
+    if (data.titulo) {
         document.getElementById("titulo-proyecto").innerText = data.titulo;
     }
+
+    // 3. Carga los datos de los "Capítulos" (la variable 'escenas').
     if (data.capitulos && Array.isArray(data.capitulos)) {
         data.capitulos.forEach(capitulo => {
             const capituloId = capitulo.id;
-            if(capituloId) {
+            if (capituloId) {
                 escenas[capituloId] = { ...capitulo };
                 delete escenas[capituloId].id;
             }
         });
         const idsNumericos = Object.keys(escenas).map(id => parseInt(id.replace(/[^0-9]/g, ''), 10)).filter(num => !isNaN(num));
         ultimoId = idsNumericos.length > 0 ? Math.max(...idsNumericos) : 0;
-        if(typeof actualizarLista === 'function') actualizarLista();
+        if (typeof actualizarLista === 'function') actualizarLista();
     }
+
+    // 4. Carga los "Datos" (personajes, objetos, etc.).
     if (data.personajes && Array.isArray(data.personajes)) {
         data.personajes.forEach(p => {
-            if(typeof agregarPersonajeDesdeDatos === 'function') agregarPersonajeDesdeDatos(p);
+            if (typeof agregarPersonajeDesdeDatos === 'function') agregarPersonajeDesdeDatos(p);
         });
     }
-     // ... Lógica de carga para otras secciones ...
-     console.log("Datos del proyecto cargados en la aplicación.");
-     if(typeof flexear === 'function') flexear('silenos');
+
+    // 5. ▼▼▼ CÓDIGO AÑADIDO PARA CARGAR EL GUION LITERARIO ▼▼▼
+    if (data.guionLiterario && Array.isArray(data.guionLiterario)) {
+        // Asigna los datos del archivo a la variable global.
+        guionLiterarioData = data.guionLiterario;
+        console.log("Guion Literario cargado.");
+
+        // Llama a las funciones para actualizar la interfaz de usuario del guion.
+        if (typeof renderizarGuion === 'function') renderizarGuion();
+        
+        // Opcional: muestra el primer capítulo si existe alguno.
+        if (guionLiterarioData.length > 0 && typeof mostrarCapituloSeleccionado === 'function') {
+            mostrarCapituloSeleccionado(0);
+        }
+    }
+    // ▲▲▲ FIN DEL CÓDIGO PARA EL GUION ▲▲▲
+
+    // 6. ▼▼▼ CÓDIGO AÑADIDO PARA CARGAR LA API KEY DE GEMINI ▼▼▼
+    if (data.apiKeyGemini && typeof data.apiKeyGemini === 'string') {
+        // Asigna la clave del archivo a la variable global 'apiKey'.
+        // (Asegúrate de que 'apiKey' esté declarada como 'let' en gemini.js para que esto funcione).
+        if(typeof updateApiKey === 'function') {
+             // La forma más segura es usar la función que ya existe para actualizarla
+             const tempInput = document.createElement('input');
+             tempInput.value = data.apiKeyGemini;
+             const originalInput = document.getElementById('apiInput');
+             if(originalInput) originalInput.value = data.apiKeyGemini;
+             updateApiKey(); // Llama a la función que actualiza la variable y la UI
+             console.log("API Key de Gemini cargada.");
+        }
+    }
+    // ▲▲▲ FIN DEL CÓDIGO PARA LA API KEY ▲▲▲
+
+    // Carga los momentos (esta lógica puede que ya la tuvieras o necesites añadirla)
+    if (data.momentos && Array.isArray(data.momentos)) {
+         data.momentos.forEach(momento => {
+            if (typeof crearMomentoEnLienzoDesdeDatos === 'function') {
+                crearMomentoEnLienzoDesdeDatos(momento);
+            }
+        });
+        if(typeof redrawAllConnections === 'function') {
+           setTimeout(redrawAllConnections, 100); // Pequeño delay para asegurar que los nodos están en el DOM
+        }
+    }
+     
+     // Carga las escenas de storyboard (sección "Escenas")
+    if (data.escenas && Array.isArray(data.escenas)) {
+        storyScenes = data.escenas;
+        if(typeof renderEscenasUI === 'function') renderEscenasUI();
+    }
+
+
+    console.log("Datos del proyecto cargados en la aplicación.");
+
+    // Muestra la interfaz principal de la aplicación.
+    if (typeof flexear === 'function') flexear('silenos');
 }
 
 // ===================================
