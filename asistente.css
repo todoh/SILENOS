@@ -97,7 +97,7 @@
         display: flex;
         bottom: 2%;
         left: 2%;
-        z-index: 1000001;
+        z-index: 1001;
          height:4%;
     }
     #user-session-display {
