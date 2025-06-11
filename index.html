@@ -127,12 +127,10 @@
 
        
             <button class="pro" onclick="abrirModalConfig()">⚙️ Configuraciones </button>
-        <button class="pro" onclick="abrirModalExportar()">💽 Exportar</button>
-        <button class="pro" onclick="guardarJSON()">💾 Guardar</button>
+               <button class="pro" onclick="guardarJSON()">💾 Guardar</button>
         <input type="file" id="file-load" accept="application/json" onchange="cargarJSON(event)" style="display: none;">
         <button class="pro" onclick="document.getElementById('file-load').click()">🗂️ Cargar</button>
-    
-        <button class="pro" style="display: none;" id="import-data-button" onclick="abrirModalImportar()">📥 Importar</button>
+       <button class="pro" onclick="abrirModalExportar()">💽 Exportar</button>
         <button class="pro" id="theme-toggle-button" onclick="toggleTheme()">🌙 Tema</button>
     </div>
 </div>
