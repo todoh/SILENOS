@@ -1,27 +1,71 @@
+/* styles2.css (Versión Corregida y Actualizada) */
+
 /* styles2.css */
+
+/* ▼▼▼ PASO 1: AÑADIMOS LA ANIMACIÓN DE FADE-IN ▼▼▼ */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
 
 #principio {
     background-color: black;
-    display: flex; /* Usamos flex para centrar el contenido */
+    display: flex;
     justify-content: center;
     align-items: center;
-    position: fixed; /* Usamos fixed para que ocupe toda la pantalla */
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     z-index: 1000;
-    opacity: 1;
-    transition: opacity 1.5s ease-out; /* Transición para cuando desaparezca */
+    
+    /* Aplicamos la nueva animación de aparición */
+    opacity: 1; /* El estado final es opacidad completa */
+    animation: fadeIn 2s ease-in-out; /* Nombre, duración y suavizado */
+
+    /* La transición de salida sigue aquí para cuando se oculte */
+    transition: opacity 1s ease-out;
 }
 
-/* Contenedor que agrupa título y esfera */
+#p5-canvas-container {
+    position: absolute;
+    top: 0%;
+    left: 0;
+    width: 100%;
+    height: 207%;
+    z-index: 1; 
+}
+
 #titulo-esfera-container {
+    position: relative;
+    z-index: 2;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 40px; /* Espacio entre el título y la esfera */
+    width: 100%;
+    height: 100%;
+    gap: 40px;
+}
+
+#inicio-botones {
+    display: flex;
+    flex-direction: column; 
+    gap: 20px;
+    align-items: center; 
+    
+    position: fixed;
+    top: 57%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
+    /* ▼▼▼ PASO 2: BAJAMOS LA ALTURA DE LOS BOTONES ▼▼▼ */
+     /* Ajustado para bajarlo más (antes era 70px) */
 }
 
 #titulo1 {
@@ -32,17 +76,23 @@
     line-height: 1;
     font-family: 'Helvetica Neue', 'Arial', sans-serif;
     font-weight: 300;
-    font-size: 8vw; /* Tamaño de fuente relativo al ancho de la ventana */
+    font-size: 8vw;
     letter-spacing: 0.07em;
     text-shadow: 0 0 15px rgba(255, 255, 255, 0.25);
     color: white;
     text-transform: uppercase;
-    transition: opacity 0.5s ease-out; /* Animación de desaparición */
+    transition: opacity 0.5s ease-out;
+    position: absolute;
+    top: 14%;
+    left: 50%;
+    transform: translateX(-50%);  
+    
+    background-color: rgba(0, 0, 0, 0.555);
 }
 
 .os-red {
     color: #E53935;
-    font-weight: 500;
+    font-weight: 500;    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
 }
 
 .version-text {
@@ -54,72 +104,31 @@
     text-shadow: none;
 }
 
-#esfera {
-    background-color: white;
-    border-radius: 50%;
-  /* Mantiene la proporción de aspecto */;
-   
-      /* Ancho máximo para pantallas grandes */
- 
-    /* Centrado de los botones internos */
-    display: flex;
-    flex-direction: column;
-    justify-content: center; 
-    align-items: center;
-    gap: 1%;
- width: calc(12vh  + 12vw); /* Ancho relativo */
-    /* Propiedad clave para la animación */
-    transition: transform 1s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.5s ease-out;
-    animation: pulse-halo 4s infinite ease-in-out;
-aspect-ratio: 1 / 1; /* Mantiene la proporción de aspecto */
- 
-}
-
-/* Clase que dispara la expansión */
-#esfera.expandir {
-    transform: scale(50);   aspect-ratio: 1 / 1 !important; 
-}
-
-/* Clase para ocultar suavemente los elementos */
-.oculto {
-    opacity: 0 !important;
-    pointer-events: none; /* Evita interacciones mientras está oculto */
-}
-
-
-.pro3 {
-    background-color: transparent;
+.pro3 { background-color: rgba(0, 0, 0, 0);
+     
     border: none;
- 
     margin: 0;
-    color: black; /* Texto negro para que sea visible sobre la esfera blanca */
+    color: rgb(0, 0, 0);
     font-family: 'Arial', sans-serif;
-    font-size: calc(1.2vh  + 1.2vw);
+    font-size: calc(1vh + 1vw);
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 5px;
     cursor: pointer;
-    transition: transform 0.3s ease, letter-spacing 0.3s ease;
+    transition: transform 0.3s ease, letter-spacing 0.3s ease, opacity 0.3s ease-out;
 }
 
 .pro3:hover {
     letter-spacing: 7px;
-    transform: scale(1.1);
+    transform: scale(1);    color: black;
+background-color: #41414154;
 }
-/* Dentro de styles2.css */
 
-.pro3 {
+.oculto {
+    opacity: 0 !important;
+    pointer-events: none;
+}
 
-    transition: transform 0.3s ease, letter-spacing 0.3s ease, opacity 0.3s ease-out;
-}
-@keyframes pulse-halo {
-  0%, 100% {
-    box-shadow: 0 0 20px 7px rgba(255, 255, 255, 0.5), 0 0 8px 2px rgba(255, 255, 255, 0.1) inset;
-  }
-  50% {
-    box-shadow: 0 0 35px 22px rgba(255, 255, 255, 0.7), 0 0 12px 4px rgba(255, 255, 255, 0.3) inset;
-  }
-}
 
 /* Estilos para el botón S (Asistente), movidos aquí desde el otro CSS para unificar */
 #asistente-btn {
