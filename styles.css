@@ -237,7 +237,7 @@ button:active {transform: scale(0.95);}
 .pro3 {background-color: #000000; color:rgb(255, 0, 0); border:none; width: auto;} 
 
 .pro {background-color: #5a6268; color:white; border:none;
-
+z-index: 1000;
 height: fit-content;
 width: fit-content;
 
