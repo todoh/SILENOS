@@ -54,7 +54,8 @@ function cerrartodo() {
     document.getElementById('escenah').style.display = 'none';
     document.getElementById('guion-literario').style.display = 'none';
     document.getElementById('momentos').style.display = 'none';
-    document.getElementById('galeria').style.display = 'none'; // AÑADIDO
+    document.getElementById('galeria').style.display = 'none';
+    actualizarBotonContextual(); // <--- AÑADIR ESTA LÍNEA
 }
 
 function abrir(escena) {
@@ -86,12 +87,17 @@ function abrir(escena) {
             }
         });
     }
+
+   actualizarBotonContextual(); 
+
 }
 
 
 function gridear(escena) {
     cerrartodo();
     document.getElementById(escena).style.display = 'grid';
+        actualizarBotonContextual(); // <--- AÑADIR ESTA LÍNEA
+
 }
 
 function reiniciarEstadoApp() {
@@ -244,7 +250,52 @@ function reiniciar() {
         }
     }
 }
+/**
+ * Actualiza la visibilidad, el icono y la función del botón de acción contextual
+ * basándose en la sección que está actualmente visible en la aplicación.
+ */
+/**
+ * Actualiza la visibilidad, el icono y la función del botón de acción contextual
+ * basándose en la sección activa Y en si la API Key está configurada.
+ */
+function actualizarBotonContextual() {
+    const btn = document.getElementById('contextual-action-btn');
+    if (!btn) return;
 
+    // First, check for API Key. If it's not set, do nothing.
+    if (typeof apiKey === 'undefined' || !apiKey || !apiKey.trim()) {
+        btn.style.display = 'none';
+        return;
+    }
+
+    // List of sections where the AI button should be visible
+    const seccionesVisibles = [
+        'personajes', 'momentos', 'capitulosh', 'escenah', 'guion-literario'
+    ];
+
+    // Find the ID of the currently visible section
+    const idSeccionActiva = seccionesVisibles.find(id => {
+        const seccion = document.getElementById(id);
+        return seccion && seccion.style.display !== 'none';
+    });
+
+    if (idSeccionActiva) {
+        btn.innerHTML = '✨';
+        btn.style.display = 'flex';
+
+        // Check if the active section is 'personajes'
+        if (idSeccionActiva === 'personajes') {
+            btn.title = 'Analizar datos del personaje con IA';
+            btn.onclick = abrirModalAIDatos; // Call the specific function
+        } else {
+            // For any other active section, use the default function
+            btn.title = 'Abrir Herramientas de IA';
+            btn.onclick = abrirModalIAHerramientas;
+        }
+    } else {
+        btn.style.display = 'none';
+    }
+}
 function toggleTheme() {
     document.body.classList.toggle('dark-theme');
     const themeToggleButton = document.getElementById('theme-toggle-button');
@@ -411,5 +462,26 @@ function reproducirTexto(texto) {
         }
     } else {
         console.error('La API de Síntesis de Voz no es compatible con este navegador.');
+    }
+}
+
+
+function abrirModalIAHerramientas() {
+    const overlay = document.getElementById('modal-overlay');
+    const modal = document.getElementById('modal-ia-herramientas');
+    if (overlay) overlay.style.display = 'block';
+    if (modal) modal.style.display = 'flex';
+    if (overlay) {
+        overlay.onclick = cerrarModalIAHerramientas;
+    }
+}
+
+function cerrarModalIAHerramientas() {
+    const overlay = document.getElementById('modal-overlay');
+    const modal = document.getElementById('modal-ia-herramientas');
+    if (overlay) overlay.style.display = 'none';
+    if (modal) modal.style.display = 'none';
+    if (overlay) {
+        overlay.onclick = null;
     }
 }

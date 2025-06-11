@@ -6,10 +6,10 @@
     display: none;
     flex-direction: column;
     position: absolute;
-    top: 9%;
-    left: 1%;
+    top: 0%;
+    left: 0%;
     right: 0%;
-    bottom: 1%;
+    bottom: 0%; padding: 1%;
     background-color: var(--background-color, #f8f9fa);
     overflow: hidden; /* El scroll ahora lo maneja el wrapper */
 }
@@ -17,14 +17,15 @@
 /* Contenedor para todos los botones flotantes */
 #momentos-controles-flotantes {
     position: fixed;
-    right: 2dvw;
-    top: 10dvh;
+    right: 50%;
+    transform: translateX(50%);
+    bottom: 1%;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 10px;
     z-index: 1001;
-    width: 220px;
-}
+    
+align-items: end;}
 
 #momentos-controles-flotantes .pro {
     width: 100%;
@@ -69,7 +70,7 @@
 }
 
 #momentos-controles-ia {
-    display: flex;
+    display: flex; width: 100%;
     flex-direction: column;
     gap: 10px;
     background-color: var(--background-color-light-translucent, rgba(255, 255, 255, 0.8));

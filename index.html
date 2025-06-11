@@ -43,10 +43,10 @@
     }
 
     #asistente-titulo-input {
-        position: fixed;
+        position: absolute;
         top: 2%;
         left: 50%; 
-        width: 45%;
+        width: 90%;
         padding: 10px 15px;
     height: 3%;
         font-size: 100%;
@@ -56,7 +56,7 @@
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.5);
         transform: translateY(-10px); transform: translateX(-50%);
-        transition: transform 0.3s ease;
+        transition: transform 0.3s ease; z-index: 9998;
     }
 
     #asistente-popup.visible #asistente-titulo-input {
@@ -114,19 +114,18 @@
 
 <button id="asistente-btn" title="Asistente IA">S</button>
 <div id="asistente-popup">
-    <input type="text" id="asistente-titulo-input" placeholder="Título del proyecto">
     <div id="asistente-menu">
 
    <button  onclick="cerrartodo(), gridear('personajes'),agregarBotonEliminarAPersonajes();">Datos</button>
             <button  onclick="cerrartodo(), abrir('momentos');">Momentos</button>
             <button  onclick="cerrartodo(), abrir('capitulosh');">Capitulos</button>
             <button  onclick="cerrartodo(), abrir('escenah');">Escenas</button>
-            <button  onclick="cerrartodo(), abrirGuion();">Guion</button>
+           <button  onclick="cerrartodo(), abrirGuion(), actualizarBotonContextual();">Guion</button>
             <button  onclick="cerrartodo(), abrir('galeria');">Galería</button>
-            <button  onclick="cerrartodo(), abrir('ia');">IA</button>
+         
 
         <button class="pro" onclick="reiniciar()">🆕 Nuevo</button>
-            <button class="pro" onclick="abrirModalConfig()">⚙️ IA </button>
+            <button class="pro" onclick="abrirModalConfig()">⚙️ Configuraciones </button>
         <button class="pro" onclick="abrirModalExportar()">💽 Exportar</button>
         <button class="pro" onclick="guardarJSON()">💾 Guardar</button>
         <input type="file" id="file-load" accept="application/json" onchange="cargarJSON(event)" style="display: none;">
@@ -269,10 +268,10 @@
 
 <div id="escenah">
     <div class="escena-toolbar">
-        <button id="crear-escena-btn">Nueva Escena</button>
+        <button id="crear-escena-btn" class="pro" >Nueva Escena</button>
         <select id="escenas-dropdown"></select>
         <input type="text" id="escena-nombre-input" placeholder="Nombre de la Escena...">
-        <button id="agregar-toma-btn">Añadir Toma (8s)</button>
+        <button id="agregar-toma-btn" class="escena2 pro "  >Añadir Toma</button>
     </div>
     <div id="tomas-timeline">
         </div>
@@ -280,16 +279,24 @@
 
 
 <div id="capitulosh"  >
+ 
+
 <button class="pro" id="sumarpersonaje" onclick="nuevaEscena()">Agregar Capítulo</button>
+
+
 <div id="capitulos" >
 <div id="lista-capitulos"></div></div></div>
 
 <div id="personajes">
+    
+    
+    
+    <div class="herramientas" ></div>
     <div id="datos-botones-superiores">
         <button class="pro" id="sumarpersonaje" onclick="agregarPersonaje()">Agregar Dato</button>
-        <button class="pro" id="sumarpersonaje-ia" onclick="abrirModalAIDatos()">Añadir Datos con IA ✨</button>
+       
     </div>
-    <div id="listapersonajes"></div>
+    <div id="listapersonajes"></div></div>
 </div>
 
 <div id="escena-vista">
@@ -307,8 +314,47 @@
 
 <div id="modal-overlay"></div>
 
+
+
+
+<div id="modal-ia-herramientas" class="modal-content">
+    <button class="modal-close-button" onclick="cerrarModalIAHerramientas()">&times;</button>
+    <h3>Herramientas de Creación con IA</h3>
+
+    <div class="ia-modal-section">
+        <label for="gemini1-modal">Escribe la idea para tu historia:</label>
+        <textarea id="gemini1-modal" placeholder="Ej: Un detective en un Madrid futurista investiga la desaparición de un androide con recuerdos humanos..."></textarea>
+    </div>
+
+    <div class="ia-modal-section">
+        <h4>Opciones de Generación</h4>
+        <div class="ia-modal-controls">
+            <div class="ia-modal-control-group">
+                <label for="cantidadescenas-modal">Capítulos a generar:</label>
+                <input type="number" id="cantidadescenas-modal" value="3" min="1">
+            </div>
+            <div class="ia-modal-control-group">
+                <label for="cantidadeframes-modal">Frames por capítulo:</label>
+                <input type="number" id="cantidadeframes-modal" value="4" min="1">
+            </div>
+        </div>
+        <div class="ia-modal-checkbox">
+            <input type="checkbox" id="incluir-datos-ia-modal" checked>
+            <label for="incluir-datos-ia-modal">Usar "Datos" guardados como contexto</label>
+        </div>
+    </div>
+
+    <div class="ia-modal-actions">
+        <button class="modal-button principal-action" onclick="lanzarGeneracionHistoria()">✨ Generar Historia Completa</button>
+    </div>
+</div>
+
+
+
 <div id="lugares" class="modal-content">
     <button class="modal-close-button" onclick="cerrarModalConfig()">&times;</button>
+        <input type="text" id="asistente-titulo-input" placeholder="Título del proyecto">
+
     <p>Para utilizar la inteligencia artificial de Silenos necesita:</p>
     <p>Una API KEY de GOOGLE, puede obtenerla aquí:</p>
     <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer"  style="padding: 10px 20px; background-color: rgb(0, 0, 0); color: white; text-decoration: none; border-radius: 5px;">
@@ -416,6 +462,10 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 <script src="editor-personajes-head.js"></script>
 <script src="editor-personajes-body.js"></script>
 <script src="editor-personajes-main.js"></script>
+
+<button id="contextual-action-btn" title="Acción contextual" style="display: none;">✨</button>
+
+
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {

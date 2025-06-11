@@ -102,6 +102,7 @@ async function llamarIAConFeedback(prompt, etapaDescriptiva, esJsonEsperado = tr
 
 
 async function enviarTextoConInstrucciones() {
+    // --- PASO 1: INICIO Y RECOLECCIÓN DE DATOS (SIN CAMBIOS EN LA LÓGICA) ---
     actualizarParametrosIA();
 
     const geminichat = document.getElementById("gemini1").value;
@@ -110,12 +111,9 @@ async function enviarTextoConInstrucciones() {
         return;
     }
 
-    const geminimenteDiv = document.getElementById("geminimente");
-    if (geminimenteDiv) geminimenteDiv.innerHTML = '';
-
-    if (typeof chatDiv !== 'undefined') {
-        chatDiv.innerHTML += `<p><strong>Tu idea inicial:</strong><br>${geminichat}</p>`;
-    }
+    // INICIO CAMBIO: Iniciar la barra de progreso y eliminar feedback visual antiguo.
+    progressBarManager.start('Iniciando proceso de IA...');
+    // FIN CAMBIO
 
     planteamientoGeneralGlobal = "";
     resumenPorEscenasGlobal = [];
@@ -140,6 +138,7 @@ async function enviarTextoConInstrucciones() {
     }
 
     try {
+        // --- PASO 2: GENERAR PLANTEAMIENTO (SIN CAMBIOS EN LA LÓGICA) ---
         const promptPaso1 = `
 ${contextoDeDatos}
 **Idea Inicial del Usuario:**
@@ -155,23 +154,19 @@ Responde ÚNICAMENTE con un objeto JSON válido con la siguiente estructura. No 
   "titulo_historia_sugerido": "El título que generaste",
   "planteamiento_general_historia": "El texto extenso del planteamiento general."
 }`;
-
+        
+        // INICIO CAMBIO: Añadir mensaje a la barra de progreso
+        progressBarManager.set(10, 'Generando título y planteamiento...');
+        // FIN CAMBIO
+        
         const respuestaPaso1 = await llamarIAConFeedback(promptPaso1, "Paso 1: Planteamiento General y Título");
         tituloHistoriaGlobal = respuestaPaso1.titulo_historia_sugerido || "Historia Sin Título (IA)";
         planteamientoGeneralGlobal = respuestaPaso1.planteamiento_general_historia || "No se generó planteamiento general.";
-        
-        ultimaHistoriaGeneradaJson.titulo_historia = tituloHistoriaGlobal; 
-        if (geminimenteDiv) {
-            const tituloElem = document.createElement('h3');
-            tituloElem.textContent = `Título: ${tituloHistoriaGlobal}`;
-            geminimenteDiv.appendChild(tituloElem);
-            const pGeneral = document.createElement('p');
-            pGeneral.innerHTML = `<strong>Planteamiento General:</strong><br>${planteamientoGeneralGlobal.replace(/\n/g, "<br>")}`;
-            geminimenteDiv.appendChild(pGeneral);
-        }
+        ultimaHistoriaGeneradaJson.titulo_historia = tituloHistoriaGlobal;
 
-        await sleep(1000);
+        await sleep(500);
 
+        // --- PASO 3: DIVIDIR EN ESCENAS (SIN CAMBIOS EN LA LÓGICA) ---
         if (window.cantidaddeescenas <= 0) throw new Error("La cantidad de escenas debe ser mayor a cero.");
         
         const promptPaso2 = `Título de la Historia: ${tituloHistoriaGlobal}
@@ -189,31 +184,28 @@ Responde ÚNICAMENTE con un objeto JSON válido con la siguiente estructura:
 }
 Asegúrate de que haya exactamente ${window.cantidaddeescenas} objetos en el array "resumen_por_escenas".`;
 
+        // INICIO CAMBIO: Añadir mensaje a la barra de progreso
+        progressBarManager.set(25, 'Dividiendo la historia en capítulos...');
+        // FIN CAMBIO
+        
         const respuestaPaso2 = await llamarIAConFeedback(promptPaso2, `Paso 2: Dividir en ${window.cantidaddeescenas} Resúmenes de Escena`);
         if (!respuestaPaso2.resumen_por_escenas || !Array.isArray(respuestaPaso2.resumen_por_escenas) || respuestaPaso2.resumen_por_escenas.length === 0) {
             throw new Error("La IA no devolvió los resúmenes de escenas en el formato esperado.");
         }
         resumenPorEscenasGlobal = respuestaPaso2.resumen_por_escenas;
 
-        if (geminimenteDiv) {
-            const resumenTitulo = document.createElement('h4');
-            resumenTitulo.textContent = "Resumen por Escenas (Plan de la IA):";
-            geminimenteDiv.appendChild(resumenTitulo);
-            const ulResumen = document.createElement('ul');
-            resumenPorEscenasGlobal.forEach((res, idx) => {
-                const li = document.createElement('li');
-                li.innerHTML = `<strong>Escena ${idx + 1}:</strong> ${(res.resumen_escena || "").replace(/\n/g, "<br>")}`;
-                ulResumen.appendChild(li);
-            });
-            geminimenteDiv.appendChild(ulResumen);
-        }
-
         if (window.cantidadframes <= 0) throw new Error("La cantidad de frames por escena debe ser mayor a cero.");
         let contextoEscenaAnteriorSerializado = "";
 
+        // --- PASO 4: DESARROLLAR CADA ESCENA (SIN CAMBIOS EN LA LÓGICA) ---
         for (let i = 0; i < resumenPorEscenasGlobal.length; i++) {
-            if (i > 0) await sleep(1000);
+            if (i > 0) await sleep(500);
             
+            // INICIO CAMBIO: Añadir mensaje a la barra de progreso para cada capítulo
+            const progress = 30 + (60 * (i / resumenPorEscenasGlobal.length));
+            progressBarManager.set(progress, `Desarrollando capítulo ${i + 1} de ${resumenPorEscenasGlobal.length}...`);
+            // FIN CAMBIO
+
             const resumenEscenaActualTexto = resumenPorEscenasGlobal[i].resumen_escena;
             const promptPaso3 = `Título Global de la Historia: ${tituloHistoriaGlobal}
 Planteamiento General Completo: ${planteamientoGeneralGlobal}
@@ -242,34 +234,19 @@ Responde ÚNICAMENTE con un objeto JSON con la estructura:
             const escenaProcesada = {
                 titulo_escena: respuestaPaso3Escena.titulo_escena_desarrollada,
                 frames: respuestaPaso3Escena.frames_desarrollados.map(f => ({ contenido: f.contenido_frame || "" })),
-                // ========= CAMBIO CLAVE: Marcar como generado por IA =========
                 generadoPorIA: true
             };
             ultimaHistoriaGeneradaJson.historia.push(escenaProcesada);
             contextoEscenaAnteriorSerializado = JSON.stringify(respuestaPaso3Escena, null, 2); 
-
-            if (geminimenteDiv) {
-                const escenaContainer = document.createElement('div');
-                escenaContainer.className = 'gemini-escena'; 
-                const tituloEscenaElem = document.createElement('h4');
-                tituloEscenaElem.textContent = escenaProcesada.titulo_escena;
-                escenaContainer.appendChild(tituloEscenaElem);
-                escenaProcesada.frames.forEach((frameData, frameIndex) => {
-                    const frameDiv = document.createElement('div');
-                    frameDiv.className = 'gemini-frame';
-                    frameDiv.innerHTML = `<p><strong>Frame ${frameIndex + 1}:</strong></p><p>${(frameData.contenido || "").replace(/\n/g, "<br>")}</p>`;
-                    escenaContainer.appendChild(frameDiv);
-                });
-                geminimenteDiv.appendChild(escenaContainer);
-            }
-             if (chatDiv) chatDiv.innerHTML += `<p><strong>Éxito:</strong> Escena ${i+1} ("${escenaProcesada.titulo_escena}") desarrollada con ${escenaProcesada.frames.length} frames.</p>`;
         } 
 
+        // --- PASO 5: GUARDAR Y NOTIFICAR (LÓGICA DE GUARDADO INTACTA) ---
+        progressBarManager.set(95, 'Guardando en la sección de Guion...');
+        
         if (typeof agregarCapituloYMostrar === 'function') {
             agregarCapituloYMostrar(); 
             if (indiceCapituloActivo >= 0 && guionLiterarioData[indiceCapituloActivo]) {
                 guionLiterarioData[indiceCapituloActivo].titulo = tituloHistoriaGlobal || "Guion de Historia IA";
-                 // ========= CAMBIO CLAVE: Marcar como generado por IA =========
                 guionLiterarioData[indiceCapituloActivo].generadoPorIA = true;
                 
                 let contenidoGuion = `<h1>${tituloHistoriaGlobal}</h1>
@@ -305,15 +282,43 @@ Responde ÚNICAMENTE con un objeto JSON con la estructura:
             }
         }
         
-        if (chatDiv) chatDiv.innerHTML += `<p><strong>PROCESO COMPLETADO:</strong> La generación de la historia y el guion ha finalizado.</p>`;
-        alert("¡Proceso de generación de historia completado!");
+        // INICIO CAMBIO: Bloque final de notificación y redirección
+        progressBarManager.finish("¡Proceso completado!");
+        await sleep(500); // Pausa para que el usuario vea el tick verde
+
+        alert("¡Proceso completado! La historia ha sido generada y guardada. Serás redirigido a la sección 'Guion' para ver el resultado.");
+        
+        if(typeof abrirGuion === 'function') abrirGuion();
+        if(typeof actualizarBotonContextual === 'function') actualizarBotonContextual();
+        // FIN CAMBIO
 
     } catch (error) {
+        // INICIO CAMBIO: Mostrar error en la barra de progreso
         console.error("Error general en enviarTextoConInstrucciones:", error);
-        if (chatDiv) chatDiv.innerHTML += `<p><strong>Error Fatal en Generación:</strong> ${error.message}</p>`;
-        if (geminimenteDiv) geminimenteDiv.innerHTML = `<p style="color: red;">Error fatal durante la generación: ${error.message}</p>`;
+        progressBarManager.error(`Error: ${error.message}`);
+        alert(`Se produjo un error durante la generación: ${error.message}`);
+        // FIN CAMBIO
         ultimaHistoriaGeneradaJson = null; 
-    } finally {
-        if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
     }
+}
+
+
+
+
+function lanzarGeneracionHistoria() {
+    // Gather data from the new modal's inputs
+    const idea = document.getElementById('gemini1-modal').value;
+    const escenas = document.getElementById('cantidadescenas-modal').value;
+    const frames = document.getElementById('cantidadeframes-modal').value;
+    const usarDatos = document.getElementById('incluir-datos-ia-modal').checked;
+
+    // Populate the old, now hidden, inputs for the main function to use
+    document.getElementById('gemini1').value = idea;
+    document.getElementById('cantidadescenas').value = escenas;
+    document.getElementById('cantidadeframes').value = frames;
+    document.getElementById('incluir-datos-ia').checked = usarDatos;
+
+    // Close the modal and start the generation process
+    cerrarModalIAHerramientas();
+    enviarTextoConInstrucciones();
 }

@@ -88,7 +88,7 @@ const progressBarManager = {
         titulo1.style.opacity = '0';
 
         // 2. Iniciar la expansión de la esfera
-        esfera.classList.add('expandir');
+       
 
         // 3. Programar la aparición del botón 'S'
         setTimeout(() => {
