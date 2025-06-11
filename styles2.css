@@ -66,7 +66,7 @@
     flex-direction: column;
     justify-content: center; 
     align-items: center;
-    gap: 10%;
+    gap: 1%;
  width: calc(12vh  + 12vw); /* Ancho relativo */
     /* Propiedad clave para la animación */
     transition: transform 1s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.5s ease-out;
