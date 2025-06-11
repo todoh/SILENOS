@@ -62,7 +62,6 @@
     background-color: var(--background-color-dark-translucent, rgba(40, 40, 40, 0.85));
 }
 
-
 #momentos-controles-flotantes #preview-connections-btn.active {
     background-color: #28a745;
     border-color: #28a745;
@@ -83,7 +82,6 @@
      background-color: var(--background-color-dark-translucent, rgba(40, 40, 40, 0.85));
 }
 
-
 #guion-select {
     padding: 10px;
     border-radius: 5px;
@@ -102,7 +100,7 @@
 #momentos-lienzo-wrapper {
     width: 100%;
     height: 100%;
-    overflow: auto; /* Este es el nuevo contenedor con scroll */
+    overflow: auto;
     position: relative;
     background-color: var(--background-color-medium, #eee);
     background-image:
@@ -118,15 +116,14 @@
         linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
 }
 
-
 #momentos-lienzo {
     position: absolute;
     top: 0;
     left: 0;
-    width: 5000px; /* Tamaño inicial */
-    height: 5000px; /* Tamaño inicial */
-    transform-origin: 0 0; /* Punto de anclaje para el zoom */
-    transition: transform 0.2s ease-out; /* Animación suave para el zoom */
+    width: 5000px;
+    height: 5000px;
+    transform-origin: 0 0;
+    transition: transform 0.2s ease-out;
 }
 
 #connections-svg {
@@ -139,7 +136,6 @@
     z-index: 0;
     overflow: visible;
 }
-
 
 .momento-nodo {
     position: absolute;
@@ -176,12 +172,11 @@
     padding-left: 30px; 
 }
 
-
 .marcador-inicio {
     position: absolute;
     top: 5px;
     left: 5px;
-    font-size: 1.5em; /* 24px */
+    font-size: 1.5em;
     cursor: pointer;
     z-index: 3;
     transition: transform 0.2s ease;
@@ -202,11 +197,10 @@
 }
 
 .momento-nodo.inicio {
-    border-color: #28a745; /* Verde brillante */
+    border-color: #28a745;
     box-shadow: 0 0 15px rgba(40, 167, 69, 0.7);
     border-width: 3px;
 }
-
 
 .momento-nodo .momento-contenido {
     width: 100%;
@@ -227,7 +221,6 @@
     border-radius: 4px;
     cursor: grab;
 }
-
 
 .momento-nodo .momento-botones {
     display: flex;
@@ -282,139 +275,6 @@
     width: auto;
 }
 
-/* --- Estilos para el Modal de Edición --- */
-#modal-editar-momento {
-    gap: 15px;
-}
-
-#modal-editar-momento input[type="text"],
-#modal-editar-momento textarea {
-    width: 95%;
-    padding: 10px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-}
-
-#modal-editar-momento textarea {
-    height: 120px;
-    resize: vertical;
-}
-
-.drop-zone-estilo {
-    border: 2px dashed #ccc;
-    text-align: center;
-    border-radius: 8px;
-    cursor: pointer;
-    position: relative;
-    width: 95%;
-    height: 150px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #777;
-    overflow: hidden;
-     
-    box-sizing: border-box;
-}
-
-.drop-zone-estilo img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: cover;
-    border-radius: 6px;
-    display: none;
-}
-
-.drop-zone-estilo:has(img[style*="display: block"]) {
-    color: transparent;
-}
-
-
-.dark-theme #modal-editar-momento input,
-.dark-theme #modal-editar-momento textarea {
-    background-color: #333;
-    color: #e0e0e0;
-    border-color: #555;
-}
-
-.dark-theme .drop-zone-estilo {
-    border-color: #555;
-    color: #aaa;
-}
-
-/* --- ESTILOS PARA ACCIONES --- */
-#acciones-container {
-    width: 95%;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    max-height: 180px; 
-    overflow-y: auto;
-    padding: 5px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-}
-
-.dark-theme #acciones-container {
-    border-color: #555;
-}
-
-.accion-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px;
-    background-color: var(--background-color-medium, #f0f0f0);
-    border-radius: 4px;
-}
-
-.dark-theme .accion-item {
-     background-color: #2c323a;
-}
-
-.accion-item input[type="text"],
-.accion-item select { 
-    flex-grow: 1;
-    width: auto;
-    padding: 6px 8px;
-    font-size: 0.9em;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    background-color: #fff;
-}
-
-.dark-theme .accion-item input[type="text"],
-.dark-theme .accion-item select {
-    background-color: #333;
-    color: #e0e0e0;
-    border-color: #555;
-}
-
-
-.accion-item .delete-accion-btn {
-    padding: 4px 8px;
-    background-color: #e74c3c;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-}
-.accion-item .delete-accion-btn:hover {
-    background-color: #c0392b;
-}
-
-.modal-buttons-container {
-    width: 95%;
-    display: flex;
-    justify-content: space-between; 
-    gap: 10px;
-}
-
-.modal-buttons-container .modal-button {
-    flex-grow: 1; 
-}
-
 /* --- Estilos para las líneas de conexión SVG --- */
 #connections-svg line {
     stroke: var(--connection-line-color, rgba(0, 123, 255, 0.6));
@@ -437,21 +297,4 @@
     to {
         stroke-dashoffset: -30;
     }
-}
-
-/* --- Estilos para el Zoom --- */
-.zoom-level-2 .momento-nodo {
-    transform: scale(0.5);
-    transform-origin: top left;
-}
-.zoom-level-3 .momento-nodo {
-    transform: scale(0.25);
-    transform-origin: top left;
-}
-.zoom-level-3 .momento-botones,
-.zoom-level-3 .marcador-inicio {
-    display: none;
-}
-.zoom-level-3 .momento-titulo {
-    font-size: 1.5em; /* Hacer el título más grande para que sea legible */
 }

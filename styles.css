@@ -148,11 +148,7 @@ html {
     width: 8px; }
 body input, body textarea {
     -webkit-autofill: none;  }
-body {background-color: #f8f9fa; 
-    color: #333; 
-    margin: 0;
-    padding: 0;
-    text-align: center;}
+
 h2 {background-color: black; 
     color:#ffffff; 
      padding: 1%;
@@ -238,16 +234,34 @@ button {
 button:hover {background-color:#dee2e6;  transform: scale(1.02);}
 button:active {transform: scale(0.95);}
 .guardado {margin: 1%;}
+.pro3 {background-color: #000000; color:rgb(255, 0, 0); border:none; width: auto;} 
+
 .pro {background-color: #5a6268; color:white; border:none;} 
-body { font-family: Arial, sans-serif; display: flex; position: absolute; width: 100%; height: 100%;
+
+
+
+body { 
+    
+    
+    font-family: Arial, sans-serif; display: flex; position: fixed; width: 100%; height: 100%;
     font-size: 16px; 
-    overflow: hidden; }
+    overflow: hidden; 
+top: 0%;
+left: 0%;right: 0%;
+left: 0%; background-color: #f8f9fa; 
+    color: #333; 
+    margin: 0;
+    padding: 0;
+    text-align: center;}
+
+
+
 #opciones {
 position: absolute;
 left: 0%;
 right: 0%;
 top: 0%;
-height: 8%;
+height: 6%;
 background-color: #ffffff00;
 width: 100%; flex-direction: row;}
 
@@ -526,7 +540,8 @@ font-size: large;}
 #menu {position: absolute;
 top: 15%;
 margin: 0%;
-left:41%;
+left:50%;
+transform: translateX(-50%);
 flex-direction: row;
 line-height: 1.5;}
 .lista {   position: absolute;

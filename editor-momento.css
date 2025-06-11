@@ -1,0 +1,229 @@
+/* ===================================== */
+/* ESTILOS PARA EL PANEL DE EDICIÓN      */
+/* ===================================== */
+
+#panel-edicion-momento {
+    position: fixed;
+    bottom: 0%;
+    right: 0%;
+    width: 50%;
+    background-color: var(--color-fondo-secundario, #f8f9fa);
+    color: var(--color-texto, #333);
+    border: 1px solid var(--color-borde, #ccc);
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    z-index: 1002; /* Por encima de los controles flotantes de momentos */
+    
+    display: flex;
+    flex-direction: column;
+    
+    /* Transiciones para aparecer y desaparecer */
+    opacity: 0;
+    transform: translateY(20px);
+    visibility: hidden;
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+}
+
+#panel-edicion-momento.visible {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+}
+
+.dark-theme #panel-edicion-momento {
+    background-color: #2c323a;
+    color: var(--color-texto-dark, #e0e0e0);
+    border-color: #444;
+}
+
+/* --- Cabecera del Panel --- */
+.panel-edicion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--color-borde, #ccc);
+}
+
+.dark-theme .panel-edicion-header {
+    border-bottom-color: #444;
+}
+
+.panel-edicion-header h3 {
+    margin: 0;
+    font-size: 1.1em;
+}
+
+#panel-edicion-cerrar-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--color-texto, #888);
+    padding: 0;
+    line-height: 1;
+}
+#panel-edicion-cerrar-btn:hover {
+    color: var(--color-texto, #333);
+}
+.dark-theme #panel-edicion-cerrar-btn {
+    color: #aaa;
+}
+.dark-theme #panel-edicion-cerrar-btn:hover {
+    color: #fff;
+}
+
+
+/* --- Contenido del Panel (Scrollable) --- */
+.panel-edicion-contenido {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    overflow-y: auto;
+    max-height: 60vh; /* Límite de altura para que no ocupe toda la pantalla */
+}
+
+/* --- Estilos de los campos del formulario --- */
+#panel-edicion-momento input[type="text"],
+#panel-edicion-momento textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid var(--color-borde, #ccc);
+    background-color: var(--color-fondo, #fff);
+    color: var(--color-texto, #333);
+    box-sizing: border-box;
+}
+
+#panel-edicion-momento textarea {
+    height: 100px;
+    resize: vertical;
+}
+
+.dark-theme #panel-edicion-momento input[type="text"],
+.dark-theme #panel-edicion-momento textarea {
+    background-color: #333;
+    color: #e0e0e0;
+    border-color: #555;
+}
+
+/* --- Drop Zone de Imagen --- */
+#panel-editor-drop-zone {
+    border: 2px dashed #ccc;
+    text-align: center;
+    border-radius: 8px;
+    cursor: pointer;
+    position: relative;
+    width: 100%;
+    height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #777;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+#panel-editor-imagen-preview {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: cover;
+    border-radius: 6px;
+    display: none;
+}
+#panel-editor-drop-zone:has(img[style*="display: block"]) {
+    color: transparent;
+}
+.dark-theme #panel-editor-drop-zone {
+    border-color: #555;
+    color: #aaa;
+}
+
+
+/* ===================================== */
+/* ESTILOS PARA LAS ACCIONES (CORREGIDO) */
+/* ===================================== */
+
+/* --- Contenedor de Acciones --- */
+#panel-acciones-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* --- Estilos para los Items de Acción --- */
+.panel-edicion-contenido .accion-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    background-color: var(--background-color-medium, #e9ecef);
+    border-radius: 4px;
+}
+
+.dark-theme .panel-edicion-contenido .accion-item {
+     background-color: #3a4049;
+}
+
+.panel-edicion-contenido .accion-item input[type="text"],
+.panel-edicion-contenido .accion-item select { 
+    flex-grow: 1;
+    width: auto;
+    padding: 6px 8px;
+    font-size: 0.9em;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+}
+
+.dark-theme .panel-edicion-contenido .accion-item input[type="text"],
+.dark-theme .panel-edicion-contenido .accion-item select {
+    background-color: #333;
+    color: #e0e0e0;
+    border-color: #555;
+}
+
+
+.panel-edicion-contenido .accion-item .delete-accion-btn {
+    padding: 0;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-weight: bold;
+    flex-shrink: 0;
+    line-height: 22px;
+    width: 22px;
+    height: 22px;
+    font-size: 14px;
+    text-align: center;
+}
+.panel-edicion-contenido .accion-item .delete-accion-btn:hover {
+    background-color: #c0392b;
+}
+
+
+/* --- Botón de Añadir Acción --- */
+#panel-boton-agregar-accion {
+    width: 100%;
+    margin-top: 5px;
+}
+
+
+/* ========================================== */
+/* ESTILO PARA EL NODO DE MOMENTO SELECCIONADO */
+/* ========================================== */
+
+.momento-nodo.momento-seleccionado {
+    border-color: #ff5722; /* Un color naranja-rojizo que destaque */
+    border-width: 3px;
+    box-shadow: 0 0 20px rgba(255, 87, 34, 0.7);
+    z-index: 1000; /* Asegura que esté por encima de otros nodos */
+}
+
+.dark-theme .momento-nodo.momento-seleccionado {
+    border-color: #ff7043;
+    box-shadow: 0 0 20px rgba(255, 112, 67, 0.7);
+}

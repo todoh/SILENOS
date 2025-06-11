@@ -1,0 +1,139 @@
+/* --- ESTILOS PARA EL EDITOR DE PERSONAJES INTEGRADO --- */
+
+#galeria-editor-personajes {
+    font-family: 'Inter', sans-serif;
+    background-color: #1a202c; /* bg-gray-900 */
+    color: #e2e8f0; /* text-gray-300 */
+    height: 100%;
+    overflow: hidden; /* Para que el layout no se rompa */
+}
+
+/* Estilos para los sliders */
+#galeria-editor-personajes input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 5px;
+    background: #4a5568;
+    outline: none;
+    opacity: 0.7;
+    transition: opacity .2s;
+}
+
+#galeria-editor-personajes input[type="range"]:hover {
+    opacity: 1;
+}
+
+#galeria-editor-personajes input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #a0aec0;
+    cursor: pointer;
+}
+
+#galeria-editor-personajes input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #a0aec0;
+    cursor: pointer;
+}
+
+/* Estilo para el selector de color */
+#galeria-editor-personajes input[type="color"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 48px;
+    height: 48px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    padding: 0;
+    background-color: transparent;
+}
+
+#galeria-editor-personajes input[type="color"]::-webkit-color-swatch {
+    border-radius: 50%;
+    border: 2px solid #4a5568;
+}
+
+#galeria-editor-personajes input[type="color"]::-moz-color-swatch {
+    border-radius: 50%;
+    border: 2px solid #4a5568;
+}
+
+/* Estilos para las tarjetas de selección */
+#galeria-editor-personajes .option-card {
+    border: 2px solid #4a5568;
+    transition: all 0.2s ease-in-out;
+}
+
+#galeria-editor-personajes .option-card.selected {
+    border-color: #63b3ed;
+    box-shadow: 0 0 15px rgba(99, 179, 237, 0.5);
+    transform: scale(1.05);
+}
+
+#galeria-editor-personajes .accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out;
+}
+
+#galeria-editor-personajes .accordion-content.open {
+     max-height: 1000px; /* Aumentado para más controles */
+}
+
+/* Clases de Tailwind usadas en el HTML del editor para que funcionen aquí */
+#galeria-editor-personajes .bg-gray-800 { background-color: #2d3748; }
+#galeria-editor-personajes .bg-gray-900 { background-color: #1a202c; }
+#galeria-editor-personajes .text-white { color: #ffffff; }
+#galeria-editor-personajes .p-6 { padding: 1.5rem; }
+#galeria-editor-personajes .p-4 { padding: 1rem; }
+#galeria-editor-personajes .pt-0 { padding-top: 0; }
+#galeria-editor-personajes .mb-6 { margin-bottom: 1.5rem; }
+#galeria-editor-personajes .space-y-2 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.5rem; }
+#galeria-editor-personajes .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 1rem; }
+#galeria-editor-personajes .space-y-6 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.5rem; }
+#galeria-editor-personajes .rounded-lg { border-radius: 0.5rem; }
+#galeria-editor-personajes .font-bold { font-weight: 700; }
+#galeria-editor-personajes .font-semibold { font-weight: 600; }
+#galeria-editor-personajes .font-medium { font-weight: 500; }
+#galeria-editor-personajes .text-3xl { font-size: 1.875rem; }
+#galeria-editor-personajes .text-lg { font-size: 1.125rem; }
+#galeria-editor-personajes .w-full { width: 100%; }
+#galeria-editor-personajes .h-full { height: 100%; }
+#galeria-editor-personajes .flex { display: flex; }
+#galeria-editor-personajes .flex-col { flex-direction: column; }
+#galeria-editor-personajes .items-center { align-items: center; }
+#galeria-editor-personajes .justify-center { justify-content: center; }
+#galeria-editor-personajes .justify-between { justify-content: space-between; }
+#galeria-editor-personajes .overflow-y-auto { overflow-y: auto; }
+#galeria-editor-personajes .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+#galeria-editor-personajes .grid { display: grid; }
+#galeria-editor-personajes .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#galeria-editor-personajes .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+#galeria-editor-personajes .gap-2 { gap: 0.5rem; }
+#galeria-editor-personajes .gap-4 { gap: 1rem; }
+#galeria-editor-personajes .cursor-pointer { cursor: pointer; }
+#galeria-editor-personajes .block { display: block; }
+#galeria-editor-personajes .mb-2 { margin-bottom: 0.5rem; }
+#galeria-editor-personajes .h-10 { height: 2.5rem; }
+#galeria-editor-personajes .max-w-lg { max-width: 32rem; }
+#galeria-editor-personajes .max-h-full { max-height: 100%; }
+
+@media (min-width: 1024px) {
+    #galeria-editor-personajes .lg\:flex-row { flex-direction: row; }
+    #galeria-editor-personajes .lg\:w-1\/3 { width: 33.333333%; }
+    #galeria-editor-personajes .lg\:w-2\/3 { width: 66.666667%; }
+}
+
+@media (min-width: 1280px) {
+    #galeria-editor-personajes .xl\:w-1\/4 { width: 25%; }
+    #galeria-editor-personajes .xl\:w-3\/4 { width: 75%; }
+}

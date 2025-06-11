@@ -4,46 +4,7 @@
 
 // --- MODAL DE EXPORTACIÓN ---
 
-function abrirModalExportar() {
-    const overlay = document.getElementById('modal-overlay');
-    const modal = document.getElementById('modal-exportar');
-    if (overlay) overlay.style.display = 'block';
-    if (modal) modal.style.display = 'flex';
-    if (overlay) {
-        overlay.onclick = cerrarModalExportar;
-    }
 
-    // --- INICIO: Lógica para poblar el dropdown de escenas de tomas ---
-    const selectEscenasTomas = document.getElementById('tomas-export-select');
-    if (selectEscenasTomas) {
-        selectEscenasTomas.innerHTML = ''; // Limpiar opciones anteriores
-        selectEscenasTomas.disabled = false;
-
-        // CORRECCIÓN: Se accede a la variable 'storyScenes' directamente en lugar de 'window.storyScenes'
-        if (typeof storyScenes !== 'undefined' && storyScenes.length > 0) {
-            // Opción para exportar todas las escenas
-            const todasOption = document.createElement('option');
-            todasOption.value = 'all';
-            todasOption.textContent = 'Todas las Escenas';
-            selectEscenasTomas.appendChild(todasOption);
-
-            // Añadir cada escena individualmente
-            storyScenes.forEach(escena => {
-                const option = document.createElement('option');
-                option.value = escena.id;
-                option.textContent = escena.nombre || 'Escena sin título';
-                selectEscenasTomas.appendChild(option);
-            });
-        } else {
-            const option = document.createElement('option');
-            option.value = '';
-            option.textContent = 'No hay escenas disponibles';
-            selectEscenasTomas.appendChild(option);
-            selectEscenasTomas.disabled = true;
-        }
-    }
-    // --- FIN: Lógica para poblar el dropdown ---
-}
 
 function cerrarModalExportar() {
     const overlay = document.getElementById('modal-overlay');
@@ -57,38 +18,7 @@ function cerrarModalExportar() {
 
 // --- FUNCIONES DE EXPORTACIÓN ---
 
-/**
- * Inicia la exportación del videojuego, validando el NOMBRE del momento inicial.
- */
-function iniciarExportacionJuego() {
-    const nombreMomentoInicial = document.getElementById('momento-inicial-id').value.trim();
-    if (!nombreMomentoInicial) {
-        alert("Por favor, introduce el NOMBRE del momento con el que comenzará el videojuego.");
-        return;
-    }
-    
-    // Validar que el momento exista en el lienzo por su nombre
-    let momentoEncontrado = false;
-    const todosLosMomentos = document.querySelectorAll('#momentos-lienzo .momento-nodo');
-    for (const nodo of todosLosMomentos) {
-        const tituloMomento = nodo.querySelector('.momento-titulo').textContent.trim();
-        if (tituloMomento === nombreMomentoInicial) {
-            momentoEncontrado = true;
-            break;
-        }
-    }
-
-    if (!momentoEncontrado) {
-        alert(`No se encontró ningún momento con el NOMBRE "${nombreMomentoInicial}". Por favor, verifica que el nombre sea exacto.`);
-        return;
-    }
-    
-    // Llamar a generarGAME con el nombre del momento
-    generarGAME(nombreMomentoInicial);
-    cerrarModalExportar();
-}
-
-
+ 
 /**
  * Exporta la sección de Capítulos (escenas y frames) a un archivo HTML simple.
  */

@@ -6,8 +6,7 @@ const NODE_SIZE = 150;
 const NODE_GAP = 60; // Aumentado para más espacio
 const EXPANSION_MARGIN = 300; // Margen para expandir el lienzo
 const EXPANSION_AMOUNT = 1000; // Cuánto se expande el lienzo
-let nodoSiendoEditado = null;
-let previsualizacionActiva = false;
+let previsualizacionActiva = false; // Hecho global para acceso desde editor-momento.js
 
 // --- NUEVO: Estado para el Pan y Zoom ---
 const canvasState = {
@@ -25,33 +24,18 @@ let currentZoomIndex = 2; // Índice para ZOOM_LEVELS (1.0)
  */
 function initMomentos() {
     document.getElementById('agregar-momento-btn')?.addEventListener('click', agregarMomento);
-    document.getElementById('boton-agregar-accion')?.addEventListener('click', agregarAccion);
     document.getElementById('generar-aventura-ia-btn')?.addEventListener('click', generarAventuraConIA);
     document.getElementById('preview-connections-btn')?.addEventListener('click', alternarPrevisualizacionConexiones);
     
-    // --- NUEVO: Listeners para Zoom ---
+    // --- Listeners para Zoom ---
     document.getElementById('zoom-in-btn')?.addEventListener('click', () => zoom(1));
     document.getElementById('zoom-out-btn')?.addEventListener('click', () => zoom(-1));
 
     const wrapper = document.getElementById('momentos-lienzo-wrapper');
-    // Se elimina el listener de la rueda del ratón para el zoom, según la petición anterior.
     wrapper?.addEventListener('mousedown', startPan);
     wrapper?.addEventListener('mousemove', pan);
     wrapper?.addEventListener('mouseup', endPan);
     wrapper?.addEventListener('mouseleave', endPan);
-
-
-    const dropZone = document.getElementById('momento-editor-drop-zone');
-    const fileInput = document.getElementById('momento-editor-file-input');
-    const handleFileSelection = (e) => {
-        e.preventDefault();
-        const files = e.dataTransfer ? e.dataTransfer.files : e.target.files;
-        if (files.length) handleFileSelect(files[0]);
-    };
-    dropZone?.addEventListener('click', () => fileInput.click());
-    dropZone?.addEventListener('dragover', (e) => e.preventDefault());
-    dropZone?.addEventListener('drop', handleFileSelection);
-    fileInput?.addEventListener('change', handleFileSelection);
 }
 
 
@@ -69,7 +53,7 @@ function agregarMomento() {
     const centerX = (wrapper.scrollLeft + wrapper.clientWidth / 2) / canvasState.scale;
     const centerY = (wrapper.scrollTop + wrapper.clientHeight / 2) / canvasState.scale;
 
-    crearNodoEnLienzo({
+    const nuevoNodo = crearNodoEnLienzo({
         id: nodoId,
         titulo: `Momento ${lienzo.querySelectorAll('.momento-nodo').length + 1}`,
         descripcion: "",
@@ -78,152 +62,37 @@ function agregarMomento() {
         imagen: "",
         acciones: []
     });
+
+    // Seleccionar el nuevo momento para edición inmediata
+    if (nuevoNodo) {
+        seleccionarMomentoParaEdicion(nuevoNodo);
+    }
 }
 
 
 /**
- * Abre el modal para editar un nodo específico.
+ * Selecciona un momento para editarlo en el panel flotante.
+ * @param {HTMLElement} nodo - El nodo del momento que se ha seleccionado.
  */
-function abrirModalEditarMomento(nodo) {
-    nodoSiendoEditado = nodo;
-    const overlay = document.getElementById('modal-overlay');
-    const modal = document.getElementById('modal-editar-momento');
+function seleccionarMomentoParaEdicion(nodo) {
+    // Deseleccionar cualquier otro nodo que estuviera seleccionado
+    const nodoYaSeleccionado = document.querySelector('.momento-nodo.momento-seleccionado');
+    if (nodoYaSeleccionado) {
+        nodoYaSeleccionado.classList.remove('momento-seleccionado');
+    }
 
-    document.getElementById('momento-editor-titulo').value = nodo.querySelector('.momento-titulo').textContent;
-    document.getElementById('momento-editor-descripcion').value = nodo.dataset.descripcion || '';
-    
-    const preview = document.getElementById('momento-editor-imagen-preview');
-    const imagenSrc = nodo.querySelector('.momento-imagen').src;
-    if (imagenSrc && !imagenSrc.endsWith('/null') && !imagenSrc.includes('undefined')) {
-        preview.src = imagenSrc;
-        preview.style.display = 'block';
+    // Seleccionar el nuevo nodo
+    nodo.classList.add('momento-seleccionado');
+
+    // Mostrar el panel de edición con los datos de este nodo
+    // Esta función ahora vive en editor-momento.js
+    if (typeof mostrarPanelEdicion === 'function') {
+        mostrarPanelEdicion(nodo);
     } else {
-        preview.src = '';
-        preview.style.display = 'none';
+        console.error("La función mostrarPanelEdicion no está definida. Asegúrate de que editor-momento.js está cargado.");
     }
-
-    const accionesContainer = document.getElementById('acciones-container');
-    accionesContainer.innerHTML = '';
-    const accionesData = JSON.parse(nodo.dataset.acciones || '[]');
-    accionesData.forEach((accion, index) => {
-        const accionDiv = crearElementoAccion(index + 1, accion.textoBoton, accion.idDestino);
-        accionesContainer.appendChild(accionDiv);
-    });
-
-    if (overlay) {
-        overlay.style.display = 'block';
-        overlay.onclick = cerrarModalEditarMomento;
-    }
-    if (modal) modal.style.display = 'flex';
 }
 
-/**
- * Cierra el modal de edición de momentos.
- */
-function cerrarModalEditarMomento() {
-    const overlay = document.getElementById('modal-overlay');
-    const modal = document.getElementById('modal-editar-momento');
-    if (overlay) {
-        overlay.style.display = 'none';
-        overlay.onclick = null;
-    }
-    if (modal) modal.style.display = 'none';
-    
-    document.getElementById('acciones-container').innerHTML = '';
-    nodoSiendoEditado = null;
-}
-
-/**
- * Guarda los cambios del modal en el nodo correspondiente.
- */
-function guardarCambiosMomento() {
-    if (!nodoSiendoEditado) return;
-
-    nodoSiendoEditado.querySelector('.momento-titulo').textContent = document.getElementById('momento-editor-titulo').value;
-    nodoSiendoEditado.dataset.descripcion = document.getElementById('momento-editor-descripcion').value;
-
-    const imagenNodo = nodoSiendoEditado.querySelector('.momento-imagen');
-    const nuevaImagenSrc = document.getElementById('momento-editor-imagen-preview').src;
-    if (nuevaImagenSrc && !nuevaImagenSrc.endsWith('/null') && nuevaImagenSrc.startsWith('data:image')) {
-        imagenNodo.src = nuevaImagenSrc;
-        imagenNodo.style.display = 'block';
-        nodoSiendoEditado.classList.add('con-imagen');
-    } else {
-        imagenNodo.src = '';
-        imagenNodo.style.display = 'none';
-        nodoSiendoEditado.classList.remove('con-imagen');
-    }
-
-    const accionesItems = document.querySelectorAll('#acciones-container .accion-item');
-    const accionesData = Array.from(accionesItems).map(item => ({
-        textoBoton: item.querySelector('input[type="text"]').value,
-        idDestino: item.querySelector('select.accion-destino-select').value
-    })).filter(a => a.textoBoton && a.idDestino);
-    
-    nodoSiendoEditado.dataset.acciones = JSON.stringify(accionesData);
-    
-    cerrarModalEditarMomento();
-
-    if (previsualizacionActiva) dibujarConexiones();
-}
-
-/**
- * Maneja la selección de un archivo de imagen y lo muestra en la vista previa.
- */
-async function handleFileSelect(file) {
-    if (!file || !file.type.startsWith('image/')) return;
-    const preview = document.getElementById('momento-editor-imagen-preview');
-    preview.src = await fileToBase64(file);
-    preview.style.display = 'block';
-}
-
-// --- LÓGICA PARA AÑADIR ACCIONES EN EL MODAL ---
-
-function agregarAccion() {
-    const accionesContainer = document.getElementById('acciones-container');
-    if (accionesContainer.children.length >= 5) {
-        alert("Se puede añadir un máximo de 5 acciones por momento.");
-        return;
-    }
-    const nuevoNumero = accionesContainer.children.length + 1;
-    accionesContainer.appendChild(crearElementoAccion(nuevoNumero));
-}
-
-/**
- * Crea el HTML para una acción (botón) en el modal de edición.
- */
-function crearElementoAccion(numero, textoBoton = '', idDestino = '') {
-    const accionDiv = document.createElement('div');
-    accionDiv.className = 'accion-item';
-    
-    const textoInput = document.createElement('input');
-    textoInput.type = 'text';
-    textoInput.placeholder = `Texto del botón ${numero}`;
-    textoInput.value = textoBoton;
-    
-    const selectDestino = document.createElement('select');
-    selectDestino.className = 'accion-destino-select';
-    selectDestino.innerHTML = '<option value="">Seleccionar destino...</option>';
-
-    document.querySelectorAll('#momentos-lienzo .momento-nodo').forEach(nodo => {
-        if (nodo.id !== nodoSiendoEditado.id) {
-            const option = document.createElement('option');
-            option.value = nodo.id;
-            option.textContent = nodo.querySelector('.momento-titulo').textContent.trim();
-            selectDestino.appendChild(option);
-        }
-    });
-    selectDestino.value = idDestino;
-    
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'delete-accion-btn';
-    deleteBtn.textContent = 'X';
-    deleteBtn.title = 'Eliminar esta acción';
-    deleteBtn.onclick = () => accionDiv.remove();
-    
-    accionDiv.append(textoInput, selectDestino, deleteBtn);
-    return accionDiv;
-}
 
 /**
  * Hace que un elemento sea arrastrable y expande el lienzo si es necesario.
@@ -234,7 +103,17 @@ function makeDraggable(element) {
     const lienzo = document.getElementById('momentos-lienzo');
 
     const onMouseDown = (e) => {
-        if (e.target.isContentEditable || e.target.closest('.momento-btn, .btn-editar, .btn-eliminar, .marcador-inicio')) return;
+        // MODIFICADO: No iniciar arrastre si se hace clic en el botón de editar.
+        if (e.target.isContentEditable || e.target.closest('.btn-eliminar, .marcador-inicio')) return;
+        
+        // Si se hace clic en el botón de editar, se selecciona, no se arrastra.
+        if (e.target.closest('.btn-editar')) {
+            seleccionarMomentoParaEdicion(element);
+            return;
+        }
+
+        // Si se hace clic en cualquier otra parte del nodo, se selecciona Y se prepara para arrastrar.
+        seleccionarMomentoParaEdicion(element);
         
         e.preventDefault();
         isDragging = true;
@@ -292,42 +171,15 @@ function makeDraggable(element) {
 
 
 // =======================================================================
-//  GENERACIÓN DE AVENTURA CON IA
+//  GENERACIÓN DE AVENTURA CON IA (sin cambios)
 // =======================================================================
-function marcarComoInicio(nodoId) {
-    document.querySelectorAll('#momentos-lienzo .momento-nodo').forEach(n => n.classList.remove('inicio'));
-    document.getElementById(nodoId)?.classList.add('inicio');
-}
-
-function centrarVistaEnNodo(nodoElement) {
-    const wrapper = document.getElementById('momentos-lienzo-wrapper');
-    if (!wrapper || !nodoElement) return;
-
-    const nodoX = parseFloat(nodoElement.style.left || 0);
-    const nodoY = parseFloat(nodoElement.style.top || 0);
-
-    const scrollToX = (nodoX + NODE_SIZE / 2) * canvasState.scale - wrapper.clientWidth / 2;
-    const scrollToY = (nodoY + NODE_SIZE / 2) * canvasState.scale - wrapper.clientHeight / 2;
-    
-    wrapper.scrollTo({ left: scrollToX, top: scrollToY, behavior: 'smooth' });
-}
-
-
-// EN EL ARCHIVO: momentos.js
-
-// EN EL ARCHIVO: momentos.js
-// REEMPLAZA LA FUNCIÓN EXISTENTE CON ESTA VERSIÓN
-
 async function generarAventuraConIA() {
-    // --- INICIO DE LA INTEGRACIÓN DE LA BARRA DE PROGRESO ---
     if (progressBarManager.isActive) {
         alert("Ya hay un proceso de IA en ejecución. Por favor, espera a que termine.");
         return;
     }
     progressBarManager.start('Iniciando Aventura...');
-    // --- FIN DE LA INTEGRACIÓN ---
 
-    const chatDiv = window.chatDiv || document.getElementById('chat');
     const tituloGuion = document.getElementById('guion-select').value;
     if (!tituloGuion) {
         progressBarManager.error("Selecciona un guion");
@@ -414,16 +266,21 @@ Responde ÚNICAMENTE con un objeto JSON con una clave "momentos" que contenga un
             setTimeout(() => centrarVistaEnNodo(document.getElementById(primerId)), 100);
         }
 
-        progressBarManager.finish(); // ¡Proceso completado con éxito!
+        progressBarManager.finish();
         alert("¡Nueva aventura añadida al lienzo con nombres únicos!");
 
     } catch (error) {
         console.error("Error generando aventura con IA:", error);
-        progressBarManager.error('Error en la IA'); // Muestra error en la barra
+        progressBarManager.error('Error en la IA');
         alert(`Ocurrió un error: ${error.message}`);
     }
 }
 
+/**
+ * Crea el nodo visual en el lienzo.
+ * @param {object} datos - Los datos del momento.
+ * @returns {HTMLElement} El elemento del nodo creado.
+ */
 function crearNodoEnLienzo(datos) {
     const lienzo = document.getElementById('momentos-lienzo');
     if (!lienzo) return null;
@@ -432,9 +289,10 @@ function crearNodoEnLienzo(datos) {
     nuevoNodo.className = 'momento-nodo';
     nuevoNodo.id = datos.id;
     
+    // Se mantiene el botón de "Editar" en el nodo, pero ahora funciona para seleccionar.
     nuevoNodo.innerHTML = `
         <span class="marcador-inicio" title="Marcar como inicio de la historia">🚩</span>
-        <p contenteditable="true" class="momento-titulo">${datos.titulo || 'Sin Título'}</p>
+        <p contenteditable="false" class="momento-titulo">${datos.titulo || 'Sin Título'}</p>
         <div class="momento-contenido">
              <img class="momento-imagen" src="" style="display: none;">
         </div>
@@ -462,17 +320,45 @@ function crearNodoEnLienzo(datos) {
     lienzo.appendChild(nuevoNodo);
 
     nuevoNodo.querySelector('.marcador-inicio').onclick = (e) => { e.stopPropagation(); marcarComoInicio(nuevoNodo.id); };
-    nuevoNodo.querySelector('.btn-editar').onclick = () => abrirModalEditarMomento(nuevoNodo);
-    nuevoNodo.querySelector('.btn-eliminar').onclick = () => {
+    
+    // El botón de editar ahora selecciona el nodo
+    nuevoNodo.querySelector('.btn-editar').onclick = (e) => { 
+        e.stopPropagation(); // Evita que el mousedown del draggable se active
+        seleccionarMomentoParaEdicion(nuevoNodo); 
+    };
+    
+    nuevoNodo.querySelector('.btn-eliminar').onclick = (e) => {
+        e.stopPropagation();
         if (confirm('¿Eliminar este momento?')) {
+            // Si el nodo a eliminar es el que se está editando, oculta el panel
+            if (nuevoNodo.classList.contains('momento-seleccionado')) {
+                ocultarPanelEdicion();
+            }
             nuevoNodo.remove();
             if (previsualizacionActiva) dibujarConexiones();
         }
     };
-    nuevoNodo.querySelector('.momento-titulo').addEventListener('mousedown', e => e.stopPropagation());
     
     makeDraggable(nuevoNodo);
     return nuevoNodo;
+}
+
+function marcarComoInicio(nodoId) {
+    document.querySelectorAll('#momentos-lienzo .momento-nodo').forEach(n => n.classList.remove('inicio'));
+    document.getElementById(nodoId)?.classList.add('inicio');
+}
+
+function centrarVistaEnNodo(nodoElement) {
+    const wrapper = document.getElementById('momentos-lienzo-wrapper');
+    if (!wrapper || !nodoElement) return;
+
+    const nodoX = parseFloat(nodoElement.style.left || 0);
+    const nodoY = parseFloat(nodoElement.style.top || 0);
+
+    const scrollToX = (nodoX + NODE_SIZE / 2) * canvasState.scale - wrapper.clientWidth / 2;
+    const scrollToY = (nodoY + NODE_SIZE / 2) * canvasState.scale - wrapper.clientHeight / 2;
+    
+    wrapper.scrollTo({ left: scrollToX, top: scrollToY, behavior: 'smooth' });
 }
 
 function _extraerTextoPlanoDeGuionHTML(html) {
@@ -480,14 +366,7 @@ function _extraerTextoPlanoDeGuionHTML(html) {
     return doc.body.textContent || "";
 }
 
-// --- NUEVAS FUNCIONES PARA EL AUTO-LAYOUT ---
-
-/**
- * Organiza los nodos en el lienzo usando un algoritmo de capas (BFS).
- * @param {Array} momentos - El array de datos de momentos de la IA.
- * @param {Map} idMap - El mapa que traduce IDs temporales de la IA a IDs reales del DOM.
- * @param {number} offsetX - El desplazamiento horizontal para colocar los nuevos nodos.
- */
+// --- FUNCIONES DE AUTO-LAYOUT (sin cambios) ---
 function organizarNodosEnLienzo(momentos, idMap, offsetX = 0) {
     if (!momentos || momentos.length === 0) return;
 
@@ -513,18 +392,17 @@ function organizarNodosEnLienzo(momentos, idMap, offsetX = 0) {
 
     const niveles = new Map();
     const visitados = new Set();
-    const cola = [[rootId, 0]]; // [nodeId, nivel]
+    const cola = [[rootId, 0]];
     
     visitados.add(rootId);
 
-    // BFS para determinar niveles
     while(cola.length > 0) {
         const [nodoActualId, nivelActual] = cola.shift();
         niveles.set(nodoActualId, nivelActual);
 
         const hijos = adyacencias.get(nodoActualId) || [];
         hijos.forEach(hijoId => {
-            if(!visitados.has(hijoId) && nodosEnEstaAventura.has(hijoId)) { // Solo visitar nodos de esta aventura
+            if(!visitados.has(hijoId) && nodosEnEstaAventura.has(hijoId)) {
                 visitados.add(hijoId);
                 cola.push([hijoId, nivelActual + 1]);
             }
@@ -533,7 +411,7 @@ function organizarNodosEnLienzo(momentos, idMap, offsetX = 0) {
     
     nodosEnEstaAventura.forEach(nodeId => {
         if(!visitados.has(nodeId)){
-             niveles.set(nodeId, 0); // Colocar nodos desconectados en el nivel 0
+             niveles.set(nodeId, 0);
         }
     });
 
@@ -564,10 +442,6 @@ function organizarNodosEnLienzo(momentos, idMap, offsetX = 0) {
     reajustarTamanioLienzo();
 }
 
-
-/**
- * Revisa las posiciones de todos los nodos y expande el lienzo si es necesario.
- */
 function reajustarTamanioLienzo() {
     const lienzo = document.getElementById('momentos-lienzo');
     if(!lienzo) return;
@@ -590,9 +464,8 @@ function reajustarTamanioLienzo() {
 
 
 // =======================================================================
-//  LÓGICA DE ZOOM Y PAN
+//  LÓGICA DE ZOOM Y PAN (CORREGIDA)
 // =======================================================================
-
 function applyTransform() {
     const lienzo = document.getElementById('momentos-lienzo');
     if (!lienzo) return;
@@ -640,18 +513,18 @@ function zoom(direction) {
     document.getElementById('zoom-level-indicator').textContent = `${Math.round(canvasState.scale * 100)}%`;
 }
 
-function handleWheelZoom(e) {
-    // Esta función se mantiene por si se decide reactivarla, pero el listener está desactivado
-    e.preventDefault();
-    zoom(e.deltaY > 0 ? -1 : 1);
-}
-
 function startPan(e) {
-    if (e.target.closest('.momento-nodo')) return;
+    // Si el clic se originó dentro de un nodo de momento, deja que makeDraggable lo maneje.
+    if (e.target.closest('.momento-nodo')) {
+        return;
+    }
+
+    // De lo contrario, inicia el paneo del lienzo.
     canvasState.panning = true;
     canvasState.lastX = e.clientX;
     canvasState.lastY = e.clientY;
-    e.target.style.cursor = 'grabbing';
+    e.currentTarget.style.cursor = 'grabbing';
+    document.body.style.cursor = 'grabbing';
 }
 
 function pan(e) {
@@ -668,15 +541,17 @@ function pan(e) {
 }
 
 function endPan(e) {
-    canvasState.panning = false;
-    e.target.style.cursor = 'grab';
+    if (canvasState.panning) {
+        canvasState.panning = false;
+        e.currentTarget.style.cursor = 'default';
+        document.body.style.cursor = 'default';
+    }
 }
 
 
 // =======================================================================
-//  FUNCIONES PARA PREVISUALIZACIÓN DE CONEXIONES (MODIFICADAS)
+//  FUNCIONES PARA PREVISUALIZACIÓN DE CONEXIONES (sin cambios)
 // =======================================================================
-
 function getOrCreateSvgCanvas() {
     const lienzo = document.getElementById('momentos-lienzo');
     if (!lienzo) return null;

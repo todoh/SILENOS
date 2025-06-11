@@ -1,0 +1,94 @@
+/* --- ESTILOS PARA LA GALERÍA --- */
+
+#galeria {
+    display: none; /* Oculta por defecto */
+    position: absolute;
+    top: 9%;
+    left: 1%;
+    right: 1%;
+    bottom: 1%;
+    background-color: #f0f2f5;
+    border-radius: 8px;
+    flex-direction: row-reverse; /* Cambia el orden visual de los hijos */
+    overflow: hidden;
+}
+
+.dark-theme #galeria {
+    background-color: #242526;
+}
+
+#galeria-lista {
+    width: 200px;
+    height: 100%;
+    padding: 15px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    background-color: #ffffff;
+    border-left: 1px solid #d1d5db;
+}
+
+.dark-theme #galeria-lista {
+    background-color: #18191a;
+    border-left: 1px solid #3a3b3c;
+}
+
+#galeria-lista button {
+    width: 100%;
+    padding: 12px;
+    text-align: left;
+    background-color: #e4e6eb;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dark-theme #galeria-lista button {
+    background-color: #3a3b3c;
+    color: #e4e6eb;
+}
+
+#galeria-lista button:hover {
+    background-color: #d1d5db;
+}
+
+.dark-theme #galeria-lista button:hover {
+    background-color: #4e4f50;
+}
+
+#galeria-lista button.active {
+    background-color: #007bff;
+    color: white;
+}
+
+.dark-theme #galeria-lista button.active {
+    background-color: #0d6efd;
+}
+
+#galeria-contenedor {
+    flex-grow: 1;
+    height: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    position: relative;
+}
+
+.galeria-seccion {
+    display: none; /* Todas las secciones ocultas por defecto */
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.galeria-seccion.active {
+    display: block; /* Muestra la sección activa */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+

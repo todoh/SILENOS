@@ -54,6 +54,7 @@ function cerrartodo() {
     document.getElementById('escenah').style.display = 'none';
     document.getElementById('guion-literario').style.display = 'none';
     document.getElementById('momentos').style.display = 'none';
+    document.getElementById('galeria').style.display = 'none'; // AÑADIDO
 }
 
 function abrir(escena) {
@@ -325,6 +326,8 @@ function cargarGuionesEnDropdown() {
     guionSelect.value = valorSeleccionadoAnteriormente || "";
 }
 
+// main.js
+
 function abrirModalExportar() {
     const overlay = document.getElementById('modal-overlay');
     const modal = document.getElementById('modal-exportar');
@@ -335,10 +338,43 @@ function abrirModalExportar() {
             cerrarModalExportar();
         }
     }
+    
+    // --- LÓGICA CONSOLIDADA PARA POBLAR TODOS LOS SELECTORES ---
+
+    // Poblar el selector de momentos para el videojuego
     if (typeof poblarSelectorMomentoInicial === 'function') {
         poblarSelectorMomentoInicial();
     } else {
-        console.error("La función para poblar el selector de momentos no está disponible.");
+        console.error("La función para poblar el selector de momentos (poblarSelectorMomentoInicial) no está disponible.");
+    }
+
+    // Poblar el selector de escenas de tomas
+    const selectEscenasTomas = document.getElementById('tomas-export-select');
+    if (selectEscenasTomas) {
+        selectEscenasTomas.innerHTML = ''; // Limpiar opciones anteriores
+        selectEscenasTomas.disabled = false;
+
+        if (typeof storyScenes !== 'undefined' && storyScenes.length > 0) {
+            // Opción para exportar todas las escenas
+            const todasOption = document.createElement('option');
+            todasOption.value = 'all';
+            todasOption.textContent = 'Todas las Escenas';
+            selectEscenasTomas.appendChild(todasOption);
+
+            // Añadir cada escena individualmente
+            storyScenes.forEach(escena => {
+                const option = document.createElement('option');
+                option.value = escena.id;
+                option.textContent = escena.nombre || 'Escena sin título';
+                selectEscenasTomas.appendChild(option);
+            });
+        } else {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'No hay escenas de tomas';
+            option.disabled = true;
+            selectEscenasTomas.appendChild(option);
+        }
     }
 }
 
