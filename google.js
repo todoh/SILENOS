@@ -227,7 +227,7 @@ function updateAuthUI() {
         authContainer.innerHTML = `
             <button id="google-signin-button" class="">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" style="width:18px; height:18px; vertical-align: middle; margin-right: 8px;">
-                Iniciar Sesión con Google
+         
             </button>
         `;
         document.getElementById('google-signin-button').addEventListener('click', handleAuthClick);
