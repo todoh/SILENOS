@@ -7,32 +7,7 @@
 /* ===================================== */
 /* --- MODO DE EDICIÓN (Overlay) --- */
 /* ===================================== */
-
-.personaje-edit-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0);
-    border-radius: 15px; /* Coincide con el contenedor visual */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    
-    /* Estado inicial (oculto) */
-    opacity: 0;
-    pointer-events: none;
-    transform: scale(0.9);
-    transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
-}
-
-/* Cuando el personaje está en modo edición */
-.personaje.editing .personaje-edit-overlay {
-    opacity: 1;
-    pointer-events: auto;
-    transform: scale(1);
-}
+ 
 
 /* --- Contenedor para los controles de edición --- */
 .edit-controls {

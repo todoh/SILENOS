@@ -212,11 +212,11 @@ p {background-color: #2e2e5e00;
     margin-top: 2%;
     border: 1px solid #ccc;
     border-radius: 5px;  resize: none; }
-img {max-width: 80%;
+img { 
     height: auto;
     border-radius: 3%;
     display: block;
-    margin: 20px auto;
+ 
     box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);}
 ul {list-style-type: none;padding: 0;}
 li { margin-bottom: 10px;}
