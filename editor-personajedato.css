@@ -1,0 +1,94 @@
+/* editor-personajes.css */
+ 
+
+
+ 
+
+/* ===================================== */
+/* --- MODO DE EDICIÓN (Overlay) --- */
+/* ===================================== */
+
+.personaje-edit-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    border-radius: 15px; /* Coincide con el contenedor visual */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+    /* Estado inicial (oculto) */
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.9);
+    transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+/* Cuando el personaje está en modo edición */
+.personaje.editing .personaje-edit-overlay {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+}
+
+/* --- Contenedor para los controles de edición --- */
+.edit-controls {
+    display: flex;
+    flex-direction: column;
+    width: 90%;
+    height: 90%;
+    gap: 10px;
+}
+
+/* --- Textarea de descripción en el overlay --- */
+.edit-controls textarea {
+    width: 100%;
+    height: 100%; /* Ocupa el espacio disponible */
+    flex-grow: 1;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 8px;
+    box-sizing: border-box;
+    resize: none;
+}
+
+.dark-theme .edit-controls textarea {
+    background-color: #3a3a3a;
+    color: #e0e0e0;
+    border-color: #555;
+}
+
+/* --- Contenedor para los botones redondos --- */
+.edit-buttons-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-shrink: 0; /* Evita que los botones se encojan */
+}
+
+/* --- Botones de edición redondos --- */
+.edit-btn {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%; /* Círculo perfecto */
+    border: 2px solid white;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    font-size: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+    transform-origin: center center;
+}
+
+.edit-btn:hover {
+    transform: scale(1.15);
+    background-color: rgba(0, 123, 255, 0.8);
+}

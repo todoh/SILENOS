@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="momentos.css">
 <link rel="stylesheet" href="editor-momento.css">
 <link rel="stylesheet" href="galeria.css">
+<!-- Hoja de estilos para el nuevo editor de datos -->
 <link rel="stylesheet" href="editor-personajes.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>S</text></svg>">
 <link rel="stylesheet" href="asistente.css">
@@ -55,7 +56,7 @@
         border: 1px solid #666;
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        transform: translateY(-10px); transform: translateX(-50%);
+        transform: translateY(-10px) translateX(-50%);
         transition: transform 0.3s ease; z-index: 9998;
     }
 
@@ -116,26 +117,25 @@
 <div id="asistente-popup">
     <div id="asistente-menu">
 
-<button  onclick="cerrartodo(), gridear('personajes'),agregarBotonEliminarAPersonajes();">Datos</button>
+   <button  onclick="cerrartodo(), gridear('personajes'),agregarBotonEliminarAPersonajes();">Datos</button>
            <button  onclick="cerrartodo(), abrirGuion(), actualizarBotonContextual();">Guion</button>
             <button  onclick="cerrartodo(), abrir('capitulosh');">Capitulos</button>
             <button  onclick="cerrartodo(), abrir('escenah');">Escenas</button>
          
             <button  onclick="cerrartodo(), abrir('galeria');">Galería</button>
             <button  onclick="cerrartodo(), abrir('momentos');">Momentos</button>
-         
-
-       
+ 
             <button class="pro" onclick="abrirModalConfig()">⚙️ Configuraciones </button>
-               <button class="pro" onclick="guardarJSON()">💾 Guardar</button>
+     
+        <button class="pro" onclick="guardarJSON()">💾 Guardar</button>
         <input type="file" id="file-load" accept="application/json" onchange="cargarJSON(event)" style="display: none;">
         <button class="pro" onclick="document.getElementById('file-load').click()">🗂️ Cargar</button>
        <button class="pro" onclick="abrirModalExportar()">💽 Exportar</button>
         <button class="pro" id="theme-toggle-button" onclick="toggleTheme()">🌙 Tema</button>
     </div>
 </div>
-<div id="google-auth-container"></div>
 
+<div id="google-auth-container"></div>
 <div id="galeria">
     <div id="galeria-contenedor">
         <div id="galeria-elementos" class="galeria-seccion"><h2>Elementos</h2></div>
@@ -220,13 +220,20 @@
 
 <div id="guion-literario">
     <div id="guion-toolbar">
+        <!-- El botón para abrir el selector de guiones se mueve aquí -->
+        <button class="" id="selector-guion-btn-local">☰</button>
         <button class="pro" id="sumar-capitulo-guion" onclick="agregarCapituloYMostrar()">Agregar Capítulo</button>
-        </div>
+    </div>
     <div id="guion-layout">
-        <div id="indice-capitulos-guion">
-            </div>
+        <!-- El índice lateral se elimina de la vista, pero el div se puede mantener para compatibilidad -->
+        <div id="indice-capitulos-guion" style="display: none;"></div>
+        
+        <!-- Contenedor para la lista emergente de guiones -->
+        <div id="lista-guiones-popup-local"></div>
+
+        <!-- El contenido del capítulo ahora ocupa más espacio -->
         <div id="contenido-capitulo-activo">
-            </div>
+        </div>
     </div>
 </div>
 

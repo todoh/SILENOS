@@ -1,139 +1,260 @@
-/* --- ESTILOS PARA EL EDITOR DE PERSONAJES INTEGRADO --- */
+/* editor-personajes.css */
 
-#galeria-editor-personajes {
-    font-family: 'Inter', sans-serif;
-    background-color: #1a202c; /* bg-gray-900 */
-    color: #e2e8f0; /* text-gray-300 */
+/* --- Contenedor principal para la lista de datos --- */
+#listapersonajes {
+    display: grid;
+    /* Columnas responsivas: se ajustan al ancho, con un mínimo de 180px */
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
+    grid-auto-rows: auto;
+    gap: 50px 25px; /* Aumentado el espacio vertical para el nombre */
+    padding: 25px;
     height: 100%;
-    overflow: hidden; /* Para que el layout no se rompa */
+    overflow-y: auto;
+    box-sizing: border-box;
+    width: 100%; /* Asegura que la cuadrícula ocupe todo el ancho */
 }
 
-/* Estilos para los sliders */
-#galeria-editor-personajes input[type="range"] {
-    -webkit-appearance: none;
-    appearance: none;
+/* --- Contenedor base para cada tarjeta de dato/personaje --- */
+.personaje {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* La tarjeta ahora es perfectamente cuadrada */
+    aspect-ratio: 1 / 1; 
+    background-color: transparent;
+    border: none;
+    user-select: none;
+}
+
+/* --- El cuadrado blanco principal que contiene la imagen o la descripción --- */
+.personaje-visual {
+    position: relative;
     width: 100%;
-    height: 8px;
-    border-radius: 5px;
-    background: #4a5568;
-    outline: none;
-    opacity: 0.7;
-    transition: opacity .2s;
+    height: 100%;
+    background-color: #ffffff;
+    border-radius: 15px;
+    cursor: pointer;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0; /* Eliminamos el padding para que la imagen ocupe todo */
+    box-sizing: border-box;
 }
 
-#galeria-editor-personajes input[type="range"]:hover {
+.personaje-visual:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.dark-theme .personaje-visual {
+    background-color: #2c2c2c;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* --- La imagen dentro del cuadrado visual --- */
+/* --- La imagen dentro del cuadrado visual --- */
+.personaje-visual img {
+    /* REGLAS CORREGIDAS PARA LA SOLUCIÓN */
+  
+    width: 100%; /* Asegura que la imagen ocupe todo el ancho del cuadrado */
+    height: 100%; /* Asegura que la imagen ocupe todo el alto del cuadrado */
+    object-fit: cover; 
+    /* 'cover' asegura que la imagen rellene el espacio, conservando la proporción y recortando el exceso. */
+ /* Cambiado a max-content para que la imagen no se recorte */
+    
+    /* El resto de tus estilos están correctos */
+    position: absolute;
+    top: 0; right: 0;
+    left: 0; bottom: 0;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+    z-index: 2;
+    padding: 0; 
+   
+}
+
+
+.personaje-visual img[src=""], .personaje-visual img.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* --- Vista previa de la descripción (cuando no hay imagen) --- */
+.personaje-descripcion-preview {
+    font-size: 0.9em;
+    color: #555;
+    text-align: center;
+    overflow: hidden;
+    z-index: 1;
+    padding: 10px; /* Le damos padding al texto en su lugar */
+}
+
+.dark-theme .personaje-descripcion-preview {
+    color: #bbb;
+}
+
+/* --- El nombre del personaje debajo de la tarjeta --- */
+.nombreh {
+    position: absolute;
+    bottom: -40px; /* Ajustado para estar debajo del cuadrado */
+    width: 100%;
+    padding: 8px 5px;
+    background-color: rgba(0, 0, 0, 0);
+    color: rgb(0, 0, 0);
+    border: none;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 1em;
+    font-weight: 500;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.dark-theme .nombreh {
+    background-color: #1e1e1e00;
+    color: #e0e0e0;
+}
+
+/* ========================================= */
+/* --- MODO DE EDICIÓN Y SUS CONTROLES --- */
+/* ========================================= */
+
+.personaje-edit-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    border-radius: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.9);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 10;
+}
+
+.personaje.editing .personaje-edit-overlay {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+}
+
+.edit-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 90%;
+    height: 90%;
+    gap: 10px;
+    transform: scale(0.8) translateY(20px);
+    opacity: 0;
+    transition: opacity 0.25s ease 0.1s, transform 0.25s ease 0.1s;
+}
+
+.personaje.editing .edit-controls {
+    transform: scale(1) translateY(0);
     opacity: 1;
 }
 
-#galeria-editor-personajes input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
+.edit-controls textarea {
+    width: 100%;
+    flex-grow: 1;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 8px;
+    box-sizing: border-box;
+    resize: none;
+}
+
+.dark-theme .edit-controls textarea {
+    background-color: #3a3a3a;
+    color: #e0e0e0;
+    border-color: #555;
+}
+
+.edit-buttons-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-shrink: 0;
+}
+
+.edit-btn {
+    width: 45px;
+    height: 45px;
     border-radius: 50%;
-    background: #a0aec0;
+    border: 2px solid white;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
-#galeria-editor-personajes input[type="range"]::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #a0aec0;
+.edit-btn:hover {
+    transform: scale(1.15);
+    background-color: rgba(0, 123, 255, 0.8);
+}
+
+/* Estilo específico para el botón de eliminar */
+.edit-btn.delete-btn:hover {
+    background-color: #E53935; /* Rojo al pasar el ratón */
+}
+
+/* ========================================= */
+/* --- MENÚ DE SELECCIÓN DE ETIQUETAS --- */
+/* ========================================= */
+
+.menu-etiquetas {
+    position: absolute;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    padding: 5px;
+}
+
+.dark-theme .menu-etiquetas {
+    background-color: #3a3a3a;
+    border-color: #555;
+}
+
+.item-menu-etiqueta {
+    padding: 8px 12px;
     cursor: pointer;
+    color: #333;
+    border-radius: 5px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-/* Estilo para el selector de color */
-#galeria-editor-personajes input[type="color"] {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    width: 48px;
-    height: 48px;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    padding: 0;
-    background-color: transparent;
+.dark-theme .item-menu-etiqueta {
+    color: #e0e0e0;
 }
 
-#galeria-editor-personajes input[type="color"]::-webkit-color-swatch {
-    border-radius: 50%;
-    border: 2px solid #4a5568;
+.item-menu-etiqueta:hover {
+    background-color: #f0f0f0;
 }
 
-#galeria-editor-personajes input[type="color"]::-moz-color-swatch {
-    border-radius: 50%;
-    border: 2px solid #4a5568;
-}
-
-/* Estilos para las tarjetas de selección */
-#galeria-editor-personajes .option-card {
-    border: 2px solid #4a5568;
-    transition: all 0.2s ease-in-out;
-}
-
-#galeria-editor-personajes .option-card.selected {
-    border-color: #63b3ed;
-    box-shadow: 0 0 15px rgba(99, 179, 237, 0.5);
-    transform: scale(1.05);
-}
-
-#galeria-editor-personajes .accordion-content {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease-in-out;
-}
-
-#galeria-editor-personajes .accordion-content.open {
-     max-height: 1000px; /* Aumentado para más controles */
-}
-
-/* Clases de Tailwind usadas en el HTML del editor para que funcionen aquí */
-#galeria-editor-personajes .bg-gray-800 { background-color: #2d3748; }
-#galeria-editor-personajes .bg-gray-900 { background-color: #1a202c; }
-#galeria-editor-personajes .text-white { color: #ffffff; }
-#galeria-editor-personajes .p-6 { padding: 1.5rem; }
-#galeria-editor-personajes .p-4 { padding: 1rem; }
-#galeria-editor-personajes .pt-0 { padding-top: 0; }
-#galeria-editor-personajes .mb-6 { margin-bottom: 1.5rem; }
-#galeria-editor-personajes .space-y-2 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.5rem; }
-#galeria-editor-personajes .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 1rem; }
-#galeria-editor-personajes .space-y-6 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.5rem; }
-#galeria-editor-personajes .rounded-lg { border-radius: 0.5rem; }
-#galeria-editor-personajes .font-bold { font-weight: 700; }
-#galeria-editor-personajes .font-semibold { font-weight: 600; }
-#galeria-editor-personajes .font-medium { font-weight: 500; }
-#galeria-editor-personajes .text-3xl { font-size: 1.875rem; }
-#galeria-editor-personajes .text-lg { font-size: 1.125rem; }
-#galeria-editor-personajes .w-full { width: 100%; }
-#galeria-editor-personajes .h-full { height: 100%; }
-#galeria-editor-personajes .flex { display: flex; }
-#galeria-editor-personajes .flex-col { flex-direction: column; }
-#galeria-editor-personajes .items-center { align-items: center; }
-#galeria-editor-personajes .justify-center { justify-content: center; }
-#galeria-editor-personajes .justify-between { justify-content: space-between; }
-#galeria-editor-personajes .overflow-y-auto { overflow-y: auto; }
-#galeria-editor-personajes .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
-#galeria-editor-personajes .grid { display: grid; }
-#galeria-editor-personajes .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-#galeria-editor-personajes .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-#galeria-editor-personajes .gap-2 { gap: 0.5rem; }
-#galeria-editor-personajes .gap-4 { gap: 1rem; }
-#galeria-editor-personajes .cursor-pointer { cursor: pointer; }
-#galeria-editor-personajes .block { display: block; }
-#galeria-editor-personajes .mb-2 { margin-bottom: 0.5rem; }
-#galeria-editor-personajes .h-10 { height: 2.5rem; }
-#galeria-editor-personajes .max-w-lg { max-width: 32rem; }
-#galeria-editor-personajes .max-h-full { max-height: 100%; }
-
-@media (min-width: 1024px) {
-    #galeria-editor-personajes .lg\:flex-row { flex-direction: row; }
-    #galeria-editor-personajes .lg\:w-1\/3 { width: 33.333333%; }
-    #galeria-editor-personajes .lg\:w-2\/3 { width: 66.666667%; }
-}
-
-@media (min-width: 1280px) {
-    #galeria-editor-personajes .xl\:w-1\/4 { width: 25%; }
-    #galeria-editor-personajes .xl\:w-3\/4 { width: 75%; }
+.dark-theme .item-menu-etiqueta:hover {
+    background-color: #555;
 }
