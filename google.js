@@ -18,9 +18,14 @@ let tokenClient; // Google's OAuth2 client
 /**
  * Initializes the GAPI client. This is the entry point called from index.html's onload attribute.
  */
+
+ 
 function gapiLoaded() {
     gapi.load('client', initGapiClient);
 }
+
+// Add this line to expose the function globally
+window.gapiLoaded = gapiLoaded;
 
 /**
  * Initializes the GAPI client library.

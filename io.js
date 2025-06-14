@@ -325,17 +325,24 @@ function cargarDatosEnLaApp(data) {
     }
     // ▲▲▲ FIN DEL CÓDIGO PARA LA API KEY ▲▲▲
 
-    // Carga los momentos (esta lógica puede que ya la tuvieras o necesites añadirla)
-    if (data.momentos && Array.isArray(data.momentos)) {
-         data.momentos.forEach(momento => {
-            if (typeof crearMomentoEnLienzoDesdeDatos === 'function') {
-                crearMomentoEnLienzoDesdeDatos(momento);
-            }
-        });
-        if(typeof redrawAllConnections === 'function') {
-           setTimeout(redrawAllConnections, 100); // Pequeño delay para asegurar que los nodos están en el DOM
+   // io.js - DENTRO DE LA FUNCIÓN cargarDatosEnLaApp (VERSIÓN CORREGIDA)
+
+// Carga los momentos (Lógica corregida)
+if (data.momentos && Array.isArray(data.momentos)) {
+     data.momentos.forEach(momento => {
+        // CORREGIDO: Se llama a la función correcta 'crearNodoEnLienzo' que existe en momentos.js
+        if (typeof crearNodoEnLienzo === 'function') {
+            crearNodoEnLienzo(momento);
+        } else {
+            console.error("Error: La función 'crearNodoEnLienzo' no se encontró. Asegúrate de que el script 'momentos.js' se carga correctamente.");
         }
+    });
+    
+    // Opcional: Redibuja las conexiones si la previsualización está activa
+    if (window.previsualizacionActiva && typeof dibujarConexiones === 'function') {
+       setTimeout(dibujarConexiones, 100); 
     }
+}
      
      // Carga las escenas de storyboard (sección "Escenas")
     if (data.escenas && Array.isArray(data.escenas)) {
