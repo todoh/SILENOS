@@ -362,3 +362,98 @@ async function procesarEntradaConIA() {
         chatDiv.scrollTop = chatDiv.scrollHeight;
     }
 }
+/**
+ * Adds a delete button to each character element.
+ * This function assumes character elements have a class 'personaje' 
+ * and that you have a function to handle the actual data deletion.
+ */
+function agregarBotonEliminarAPersonajes() {
+    // Select all character containers. We'll assume they have the class '.personaje' based on your CSS.
+    const personajes = document.querySelectorAll('.personaje');
+
+    personajes.forEach(personajeDiv => {
+        // Prevent adding a button if one already exists
+        if (personajeDiv.querySelector('.eliminar-personaje-btn')) {
+            return;
+        }
+
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Eliminar';
+        deleteButton.className = 'eliminar-personaje-btn pro'; // Add classes for styling
+
+        // Add the click event to handle the deletion
+        deleteButton.onclick = function(event) {
+            // Stop the click from propagating to parent elements
+            event.stopPropagation();
+
+            // Confirm before deleting
+            if (confirm('¿Estás seguro de que quieres eliminar este dato?')) {
+                // Here, you would typically remove the character from your data array first.
+                // For example:
+                // const characterId = personajeDiv.dataset.id; // Assuming you set a data-id attribute
+                // eliminarDatoPorId(characterId); // A function you would create in datos.js
+
+                // Then, remove the element from the DOM
+                personajeDiv.remove();
+            }
+        };
+
+        // Append the button to the character's div
+        personajeDiv.appendChild(deleteButton);
+    });
+}
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const selectorBtn = document.getElementById('selector-guion-btn-local');
+    const popup = document.getElementById('lista-guiones-popup-local');
+
+    // Si el botón existe en la página actual, le añadimos la funcionalidad.
+    if (selectorBtn && popup) {
+        
+        // Función para llenar el popup con la lista de capítulos (guiones).
+        function popularListaGuiones() {
+            popup.innerHTML = ''; // Limpia la lista anterior para no duplicar.
+
+            // Usa el array 'guionLiterarioData' que ya tienes en tu código.
+            guionLiterarioData.forEach((capitulo, index) => {
+                const item = document.createElement('button');
+                item.className = 'guion-popup-item-local'; // Estilo definido en styles.css.
+                item.textContent = capitulo.titulo;
+                
+                // Al hacer clic en un guion de la lista, lo muestra y cierra el popup.
+                item.onclick = () => {
+                    mostrarCapituloSeleccionado(index); // Función que ya usas para mostrar capítulos.
+                    popup.style.display = 'none';
+                };
+                popup.appendChild(item);
+            });
+        }
+
+        // 1. Evento principal: Abrir/cerrar el popup al hacer clic en el botón '☰'.
+        selectorBtn.addEventListener('click', (event) => {
+            event.stopPropagation(); // Evita que el clic se propague y cierre el menú inmediatamente.
+            
+            const isVisible = popup.style.display === 'block';
+
+            if (!isVisible) {
+                popularListaGuiones(); // Rellena la lista cada vez que se abre.
+                popup.style.display = 'block';
+            } else {
+                popup.style.display = 'none';
+            }
+        });
+
+        // 2. Evento secundario: Cerrar el popup si se hace clic en cualquier otro lugar de la página.
+        document.addEventListener('click', () => {
+            if (popup.style.display === 'block') {
+                popup.style.display = 'none';
+            }
+        });
+
+        // 3. Evitar que el popup se cierre al hacer clic dentro de él.
+        popup.addEventListener('click', (event) => {
+            event.stopPropagation();
+        });
+    }
+});
