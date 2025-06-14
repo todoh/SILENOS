@@ -440,11 +440,11 @@ margin: 0%; z-index:   1000 ;}
 
  #personajes {
     background-color: transparent;
-    width: 98%;
+    width: 99%;
     margin: 0%;
     position: absolute; left: 1%;
-    top: 7%;
-    height: calc(100% - 9%);
+    top: 3%;
+    height: 97%;
     display: none;
     align-items: flex-start;
 }

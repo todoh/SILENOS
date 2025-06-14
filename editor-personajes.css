@@ -8,6 +8,7 @@
     grid-auto-rows: auto;
     gap: 50px 25px; /* Aumentado el espacio vertical para el nombre */
     padding: 25px;
+    padding-bottom: 9%;
     height: 100%;
     overflow-y: auto;
     box-sizing: border-box;
@@ -123,39 +124,56 @@
 /* --- MODO DE EDICIÓN Y SUS CONTROLES --- */
 /* ========================================= */
 
+/* --- ESTADO BASE DEL OVERLAY (OCULTO) --- */
 .personaje-edit-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.65);
-    backdrop-filter: blur(4px);
-    border-radius: 15px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    opacity: 0;
-    pointer-events: none;
-    transform: scale(0.9);
-    transition: opacity 0.2s ease, transform 0.2s ease;
-    z-index: 10;
+  
+  /* Posicionamiento y centrado */
+  position: fixed;
+  top: 50%; /* 50% de la altura del viewport */
+  left: 50%; /* 50% del ancho del viewport */
+  
+  /* El truco para el centrado perfecto:
+     Mueve el elemento hacia arriba un 50% de SU PROPIA altura
+     y hacia la izquierda un 50% de SU PROPIO ancho. */
+  transform: translate(-50%, -50%) scale(0.9);
+
+  /* Dimensiones y Estilos */
+  width: 80dvw;
+ height: 80dvh;
+  background-color: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(4px);
+  border-radius: 15px;
+  z-index: 10;
+  
+  /* Contenido interno centrado (si lo tienes) */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  /* Estado inicial para la transición */
+  opacity: 0;
+  pointer-events: none;
+  
+  /* Transición suave para las propiedades que cambian */
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
+/* --- ESTADO ACTIVO (VISIBLE) CUANDO SE AÑADE LA CLASE 'editing' --- */
 .personaje.editing .personaje-edit-overlay {
-    opacity: 1;
-    pointer-events: auto;
-    transform: scale(1.3) translateY(13%);
-
+  opacity: 1;
+  pointer-events: auto;
+  
+  /* Mantenemos el 'translate' y cambiamos solo el 'scale' */
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .edit-controls {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 90%;
-    height: 90%;
-    gap: 10px;
+    width: 100%;
+    height: 100%;
+    gap: 0px;
     transform: scale(0.8) translateY(20px);
     opacity: 0;
     transition: opacity 0.25s ease 0.1s, transform 0.25s ease 0.1s;
@@ -171,15 +189,17 @@
     flex-grow: 1;
     background-color: rgba(255, 255, 255, 0.9);
     color: #333;
-    border: 1px solid #ccc;
+    border: 0px solid #ccc;
     border-radius: 8px;
-    padding: 8px;
+    padding: 0px;
     box-sizing: border-box;
     resize: none;
+    padding: 4%;   font-size: x-large;
 }
 
 .dark-theme .edit-controls textarea {
-    background-color: #3a3a3a;
+    background-color: #3a3a3aea;
+ 
     color: #e0e0e0;
     border-color: #555;
 }
