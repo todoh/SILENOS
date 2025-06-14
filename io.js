@@ -50,7 +50,7 @@ let _compressImageForSave = (imagenSrc) => {
 
 
 async function empaquetarDatosDelProyecto() {
-    // Esta función no cambia. Sigue empaquetando todo en un objeto JSON.
+    // Esta función empaqueta todo en un objeto JSON.
     console.log("Empaquetando datos del proyecto...");
     const listapersonajes = document.getElementById("listapersonajes").children;
     const promesasCapitulos = Object.keys(escenas).map(async (id) => {
@@ -60,16 +60,23 @@ async function empaquetarDatosDelProyecto() {
         );
         return { ...capitulo, id, frames: framesProcesados };
     });
+
     const promesasPersonajes = Array.from(listapersonajes).map(async (personajeNode) => {
         const nombre = personajeNode.querySelector("input.nombreh")?.value || "";
         const descripcion = personajeNode.querySelector("textarea")?.value || "";
         const imagenSrc = personajeNode.querySelector("img")?.src || "";
-        const etiquetaEl = personajeNode.querySelector(".etiqueta-personaje");
+        
+        // --- CORRECCIÓN ---
+        // Se asegura que el selector encuentre el botón de la etiqueta,
+        // que ahora es un hijo directo del contenedor del dato.
+        const etiquetaEl = personajeNode.querySelector(".change-tag-btn"); 
         const etiqueta = etiquetaEl ? etiquetaEl.dataset.etiqueta : 'indeterminado';
+        
         if (!nombre && !descripcion && !imagenSrc) return null;
         const imagenComprimida = await _compressImageForSave(imagenSrc);
         return { nombre, descripcion, imagen: imagenComprimida, etiqueta };
     });
+
     const promesasEscenasStory = Promise.all((storyScenes || []).map(async (escena) => {
          const tomasProcesadas = await Promise.all(
             (escena.tomas || []).map(async (toma) => ({ ...toma, imagen: await _compressImageForSave(toma.imagen || "") }))
@@ -259,10 +266,6 @@ async function cargarProyectoDesdeDrive() {
 /**
  * Carga un objeto de datos en el estado de la aplicación.
  */
-/**
- * Carga un objeto de datos en el estado de la aplicación.
- * VERSIÓN CORREGIDA Y COMPLETADA
- */
 function cargarDatosEnLaApp(data) {
     // 1. Reinicia el estado de la aplicación para empezar de cero.
     if(typeof reiniciarEstadoApp === 'function') reiniciarEstadoApp();
@@ -293,39 +296,31 @@ function cargarDatosEnLaApp(data) {
         });
     }
 
-    // 5. ▼▼▼ CÓDIGO AÑADIDO PARA CARGAR EL GUION LITERARIO ▼▼▼
+    // 5. Carga el guion literario
     if (data.guionLiterario && Array.isArray(data.guionLiterario)) {
-        // Asigna los datos del archivo a la variable global.
         guionLiterarioData = data.guionLiterario;
         console.log("Guion Literario cargado.");
 
-        // Llama a las funciones para actualizar la interfaz de usuario del guion.
         if (typeof renderizarGuion === 'function') renderizarGuion();
         
-        // Opcional: muestra el primer capítulo si existe alguno.
         if (guionLiterarioData.length > 0 && typeof mostrarCapituloSeleccionado === 'function') {
             mostrarCapituloSeleccionado(0);
         }
     }
-    // ▲▲▲ FIN DEL CÓDIGO PARA EL GUION ▲▲▲
 
-    // 6. ▼▼▼ CÓDIGO AÑADIDO PARA CARGAR LA API KEY DE GEMINI ▼▼▼
+    // 6. Carga la API Key de Gemini
     if (data.apiKeyGemini && typeof data.apiKeyGemini === 'string') {
-        // Asigna la clave del archivo a la variable global 'apiKey'.
-        // (Asegúrate de que 'apiKey' esté declarada como 'let' en gemini.js para que esto funcione).
         if(typeof updateApiKey === 'function') {
-             // La forma más segura es usar la función que ya existe para actualizarla
              const tempInput = document.createElement('input');
              tempInput.value = data.apiKeyGemini;
              const originalInput = document.getElementById('apiInput');
              if(originalInput) originalInput.value = data.apiKeyGemini;
-             updateApiKey(); // Llama a la función que actualiza la variable y la UI
+             updateApiKey();
              console.log("API Key de Gemini cargada.");
         }
     }
-    // ▲▲▲ FIN DEL CÓDIGO PARA LA API KEY ▲▲▲
 
-    // Carga los momentos (esta lógica puede que ya la tuvieras o necesites añadirla)
+    // Carga los momentos
     if (data.momentos && Array.isArray(data.momentos)) {
          data.momentos.forEach(momento => {
             if (typeof crearMomentoEnLienzoDesdeDatos === 'function') {
@@ -333,7 +328,7 @@ function cargarDatosEnLaApp(data) {
             }
         });
         if(typeof redrawAllConnections === 'function') {
-           setTimeout(redrawAllConnections, 100); // Pequeño delay para asegurar que los nodos están en el DOM
+           setTimeout(redrawAllConnections, 100); 
         }
     }
      
@@ -351,7 +346,7 @@ function cargarDatosEnLaApp(data) {
 }
 
 // ===================================
-// FUNCIONES DE GUARDADO/CARGA OFFLINE (SIN CAMBIOS)
+// FUNCIONES DE GUARDADO/CARGA OFFLINE
 // ===================================
 
 /**
@@ -409,7 +404,4 @@ function limpiarCacheDelProyecto() {
             }
         });
 
-        
-     
-   
 }
