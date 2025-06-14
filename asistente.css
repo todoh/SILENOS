@@ -95,7 +95,7 @@
     #google-auth-container {
         position: fixed;
         display: flex;
-        bottom: 1%;
+        bottom: 2%;
         left: 2%;
         z-index: 1001;
          height:4%;

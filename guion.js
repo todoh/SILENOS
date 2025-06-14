@@ -2,42 +2,13 @@
 // GESTIÓN DEL GUIÓN LITERARIO
 // ===================================
 
-document.addEventListener('DOMContentLoaded', () => {
-    const guionBtnLocal = document.getElementById('selector-guion-btn-local');
-    const guionPopupLocal = document.getElementById('lista-guiones-popup-local');
-
-    if (guionBtnLocal && guionPopupLocal) {
-        // Event listener to show/hide the popup
-        guionBtnLocal.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isVisible = guionPopupLocal.style.display === 'block';
-            if (isVisible) {
-                guionPopupLocal.style.display = 'none';
-            } else {
-                renderizarGuionesEnPopupLocal();
-                guionPopupLocal.style.display = 'block';
-            }
-        });
-
-        // Event listener to close the popup when clicking outside
-        document.addEventListener('click', (e) => {
-            if (guionPopupLocal.style.display === 'block' && !guionPopupLocal.contains(e.target) && e.target !== guionBtnLocal) {
-                guionPopupLocal.style.display = 'none';
-            }
-        });
-    }
-});
-
-
 function abrirGuion() {
     cerrartodo();
     document.getElementById('guion-literario').style.display = 'flex';
     
-    // If there was an active chapter, re-render it.
+    // Si había un capítulo activo, lo volvemos a renderizar.
     if (indiceCapituloActivo !== -1) {
         mostrarCapituloSeleccionado(indiceCapituloActivo);
-    } else {
-       
     }
 }
 
@@ -50,21 +21,28 @@ function agregarCapituloYMostrar() {
     guionLiterarioData.push(nuevoCapitulo);
     guionLiterarioData.sort((a, b) => a.titulo.localeCompare(b.titulo));
     indiceCapituloActivo = guionLiterarioData.findIndex(cap => cap === nuevoCapitulo);
-    
+    renderizarGuion();
     mostrarCapituloSeleccionado(indiceCapituloActivo);
     
-    // Update the dropdown in the 'Momentos' section
+    // =======================================================================
+    //  INICIO DE LA CORRECCIÓN
+    // =======================================================================
+    // Se asegura de que la lista de guiones en 'Momentos' se actualice
+    // inmediatamente después de añadir un nuevo capítulo.
     if (typeof cargarGuionesEnDropdown === 'function') {
         cargarGuionesEnDropdown();
     } else {
         console.error("Error al agregar capítulo: La función cargarGuionesEnDropdown no está definida.");
     }
+    // =======================================================================
+    //  FIN DE LA CORRECCIÓN
+    // =======================================================================
 }
 
 /**
- * Checks if frames have already been generated in the "Capítulos" section for a specific script.
- * @param {string} tituloGuion The title of the script to check.
- * @returns {boolean} True if scenes exist for that script and at least one has frames.
+ * Verifica si ya se han generado frames en la sección "Capítulos" para un guion específico.
+ * @param {string} tituloGuion El título del guion a verificar.
+ * @returns {boolean} True si existen escenas para ese guion y al menos una tiene frames.
  */
 function hanSidoFramesGenerados(tituloGuion) {
     if (!tituloGuion) return false;
@@ -87,13 +65,14 @@ function mostrarCapituloSeleccionado(index) {
     const toolbar = document.getElementById('guion-toolbar');
     const contenidoDiv = document.getElementById('contenido-capitulo-activo');
     
-    // Clear previous dynamic buttons from the toolbar
+    // Limpiar botones dinámicos previos de la barra de herramientas
     toolbar.querySelectorAll('.generar-tomas-btn, .generar-frames-btn').forEach(btn => btn.remove());
     
     contenidoDiv.innerHTML = ''; 
 
     if (index < 0 || index >= guionLiterarioData.length) {
-        contenidoDiv.innerHTML = '<p class="mensaje-placeholder">Selecciona un capítulo con el botón ☰ o crea uno nuevo.</p>';
+        contenidoDiv.innerHTML = '<p class="mensaje-placeholder">Selecciona un capítulo de la lista o crea uno nuevo.</p>';
+        renderizarGuion(); 
         return;
     }
 
@@ -111,25 +90,21 @@ function mostrarCapituloSeleccionado(index) {
     } else {
         inputTitulo.oninput = function() {
             if (indiceCapituloActivo !== -1) {
-                const tituloAnterior = guionLiterarioData[indiceCapituloActivo].titulo;
                 guionLiterarioData[indiceCapituloActivo].titulo = this.value;
-
-                // Update dropdown in 'Momentos' if it exists
+                const capituloActualObjeto = guionLiterarioData[indiceCapituloActivo];
+                guionLiterarioData.sort((a, b) => a.titulo.localeCompare(b.titulo));
+                indiceCapituloActivo = guionLiterarioData.findIndex(cap => cap === capituloActualObjeto);
+                renderizarGuion(); 
                 if (typeof cargarGuionesEnDropdown === 'function') {
                     cargarGuionesEnDropdown();
                 }
             }
         };
-        inputTitulo.onchange = function() {
-             // Re-sort and re-render the popup list after title change is final
-            guionLiterarioData.sort((a, b) => a.titulo.localeCompare(b.titulo));
-            indiceCapituloActivo = guionLiterarioData.findIndex(cap => cap.titulo === this.value);
-        };
     }
     
     contenidoDiv.appendChild(inputTitulo);
 
-    // Add buttons to the toolbar instead of the content area
+    // Añadir botones a la barra de herramientas en lugar de al contenido
     if (capitulo.generadoPorIA) {
         if (hanSidoFramesGenerados(capitulo.titulo)) {
             const botonGenerarTomas = document.createElement('button');
@@ -180,9 +155,11 @@ function mostrarCapituloSeleccionado(index) {
     };
 
     contenidoDiv.appendChild(editorContenido);
+
+    renderizarGuion();
 }
 
-function eliminarCapitulo(indexToDelete) {
+function eliminarCapituloDesdeIndice(indexToDelete) {
     if (indexToDelete < 0 || indexToDelete >= guionLiterarioData.length) return;
 
     if (confirm("¿Estás seguro de que quieres eliminar este capítulo?")) {
@@ -192,73 +169,68 @@ function eliminarCapitulo(indexToDelete) {
 
         if (fueActivo) {
             indiceCapituloActivo = -1;
-            const toolbar = document.getElementById('guion-toolbar');
-            toolbar.querySelectorAll('.generar-tomas-btn, .generar-frames-btn').forEach(btn => btn.remove());
-            const contenidoDiv = document.getElementById('contenido-capitulo-activo');
-            contenidoDiv.innerHTML = '<p class="mensaje-placeholder">Selecciona un capítulo con el botón ☰ o crea uno nuevo.</p>';
+            // Limpiar la barra de herramientas y el contenido si el capítulo eliminado era el activo
+             const toolbar = document.getElementById('guion-toolbar');
+             toolbar.querySelectorAll('.generar-tomas-btn, .generar-frames-btn').forEach(btn => btn.remove());
+             const contenidoDiv = document.getElementById('contenido-capitulo-activo');
+             contenidoDiv.innerHTML = '<p class="mensaje-placeholder">Selecciona un capítulo de la lista o crea uno nuevo.</p>';
+
         } else if (indiceCapituloActivo > indexToDelete) {
             indiceCapituloActivo--;
         }
         
+        renderizarGuion(); 
+        
+        // Se asegura de que la lista de guiones en 'Momentos' se actualice.
         if (typeof cargarGuionesEnDropdown === 'function') {
             cargarGuionesEnDropdown();
         }
     }
 }
 
-/**
- * Renders the list of scripts into the local popup.
- */
-function renderizarGuionesEnPopupLocal() {
-    const contenidoPopup = document.getElementById('lista-guiones-popup-local');
-    if (!contenidoPopup) return;
 
-    contenidoPopup.innerHTML = ''; // Clear previous list
+function renderizarGuion() {
+    const indiceDiv = document.getElementById('indice-capitulos-guion');
+    const contenidoDiv = document.getElementById('contenido-capitulo-activo');
+    const capituloActivoActual = indiceCapituloActivo !== -1 ? guionLiterarioData[indiceCapituloActivo] : null;
+
+    indiceDiv.innerHTML = ''; 
 
     guionLiterarioData.sort((a, b) => a.titulo.localeCompare(b.titulo));
 
-    if (guionLiterarioData.length > 0) {
-        guionLiterarioData.forEach((guion, index) => {
-            const itemContainer = document.createElement('div');
-            itemContainer.style.display = 'flex';
-            itemContainer.style.alignItems = 'center';
-            
-            const item = document.createElement('button');
-            item.className = 'guion-popup-item-local';
-            item.textContent = guion.titulo || `Capítulo sin título ${index + 1}`;
-            item.style.flexGrow = '1';
-            item.onclick = () => {
-                mostrarCapituloSeleccionado(index);
-                document.getElementById('lista-guiones-popup-local').style.display = 'none'; // Close popup on selection
-            };
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = 'X';
-            deleteBtn.className = 'eliminar-capitulo-btn-indice'; // Reuse class for styling
-            deleteBtn.style.marginLeft = '10px';
-            deleteBtn.onclick = (e) => {
-                e.stopPropagation();
-                eliminarCapitulo(index);
-                renderizarGuionesEnPopupLocal(); // Re-render popup after deletion
-            };
-            
-            itemContainer.appendChild(item);
-            itemContainer.appendChild(deleteBtn);
-            contenidoPopup.appendChild(itemContainer);
-        });
-    } else {
-        const emptyMsg = document.createElement('p');
-        emptyMsg.textContent = 'No hay guiones. Crea uno con "Agregar Capítulo".';
-        emptyMsg.style.padding = '10px 15px';
-        emptyMsg.style.color = '#888';
-        contenidoPopup.appendChild(emptyMsg);
+    if (capituloActivoActual) {
+        indiceCapituloActivo = guionLiterarioData.findIndex(cap => cap === capituloActivoActual);
     }
-}
 
-// This legacy function is no longer needed to render the main list, 
-// but it can be kept for compatibility if other parts of the app call it.
-// For now, it will do nothing.
-function renderizarGuion() {
-    // The main list rendering is now handled by renderizarGuionesEnPopupLocal()
-    // This function can be left empty or removed if no longer called from elsewhere.
+
+    guionLiterarioData.forEach((capitulo, index) => {
+        const tituloContainer = document.createElement('div');
+        tituloContainer.className = 'titulo-capitulo-indice-container';
+
+        const tituloElement = document.createElement('div');
+        tituloElement.className = 'titulo-capitulo-indice-texto';
+        tituloElement.textContent = capitulo.titulo || "Capítulo sin título";
+
+        if (index === indiceCapituloActivo) {
+            tituloContainer.classList.add('activo-container');
+            tituloElement.classList.add('activo-texto');
+        }
+        tituloElement.onclick = () => mostrarCapituloSeleccionado(index);
+
+        const botonEliminarIndice = document.createElement('button');
+        botonEliminarIndice.textContent = 'X';
+        botonEliminarIndice.className = 'eliminar-capitulo-btn-indice';
+        botonEliminarIndice.onclick = (event) => {
+            event.stopPropagation();
+            eliminarCapituloDesdeIndice(index);
+        };
+
+        tituloContainer.appendChild(tituloElement);
+        tituloContainer.appendChild(botonEliminarIndice);
+        indiceDiv.appendChild(tituloContainer);
+    });
+
+    if (indiceCapituloActivo === -1 && contenidoDiv.querySelector('.contenido-guion-editor') === null) {
+        contenidoDiv.innerHTML = '<p class="mensaje-placeholder">Selecciona un capítulo de la lista o crea uno nuevo.</p>';
+    }
 }
