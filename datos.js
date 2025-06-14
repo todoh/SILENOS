@@ -65,7 +65,7 @@ function mostrarMenuEtiquetas(botonEtiqueta) {
 }
 
 /**
- * Crea y añade un nuevo elemento de "Dato" al DOM.
+ * Crea y añade un nuevo elemento de "Dato" al DOM, con la etiqueta visible.
  * @param {object} personajeData - El objeto con los datos del personaje/dato.
  */
 function agregarPersonajeDesdeDatos(personajeData = {}) {
@@ -83,6 +83,42 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     const contenedor = document.createElement('div');
     contenedor.className = 'personaje';
 
+    // --- Botón de Etiqueta (Movido fuera del área de edición) ---
+    const etiquetaBtn = document.createElement('button');
+    // Se mantiene la clase 'change-tag-btn' para que la función de guardado (io.js) siga funcionando.
+    etiquetaBtn.className = 'change-tag-btn'; 
+    const opcionGuardada = opcionesEtiqueta.find(op => op.valor === etiquetaValor) || opcionesEtiqueta[0];
+    etiquetaBtn.innerHTML = opcionGuardada.emoji;
+    etiquetaBtn.title = `Etiqueta: ${opcionGuardada.titulo}`;
+    etiquetaBtn.dataset.etiqueta = opcionGuardada.valor;
+    etiquetaBtn.onclick = (e) => {
+        // Se detiene la propagación para evitar que el clic en la etiqueta abra/cierre la tarjeta.
+        e.stopPropagation(); 
+        mostrarMenuEtiquetas(etiquetaBtn);
+    };
+    
+    // Se añaden estilos con JavaScript para posicionar el botón en la esquina superior derecha.
+    Object.assign(etiquetaBtn.style, {
+        position: 'absolute',
+        top: '8px',
+        right: '8px',
+        zIndex: '3', // Para que esté por encima de la imagen de fondo.
+        padding: '2px 6px',
+        fontSize: '16px',
+        border: 'none',
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+        color: 'white',
+        borderRadius: '5px',
+        cursor: 'pointer',
+        lineHeight: '1',
+        transition: 'background-color 0.2s'
+    });
+    // Efecto visual al pasar el ratón por encima.
+    etiquetaBtn.onmouseover = () => { etiquetaBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.7)'; };
+    etiquetaBtn.onmouseout = () => { etiquetaBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.4)'; };
+
+    contenedor.appendChild(etiquetaBtn);
+
     // --- Parte Visual (El cuadrado clicable) ---
     const visual = document.createElement('div');
     visual.className = 'personaje-visual';
@@ -91,12 +127,11 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     const descripcionPreview = document.createElement('div');
     descripcionPreview.className = 'personaje-descripcion-preview';
     
-    // Función para actualizar la visibilidad y contenido
     const actualizarVisual = (nuevaImagenSrc, nuevaDescripcion) => {
         img.src = nuevaImagenSrc || '';
         descripcionPreview.textContent = nuevaDescripcion;
         
-        if (img.src && !img.src.endsWith('/')) { // Si hay una URL de imagen válida
+        if (img.src && !img.src.endsWith('/')) {
              img.classList.remove('hidden');
         } else {
              img.classList.add('hidden');
@@ -130,7 +165,6 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     const cajaTexto = document.createElement('textarea');
     cajaTexto.value = descripcion;
     cajaTexto.placeholder = 'Descripción...';
-    // Actualiza la vista previa en tiempo real mientras se escribe
     cajaTexto.addEventListener('input', () => {
         actualizarVisual(img.src, cajaTexto.value);
     });
@@ -158,15 +192,7 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     };
     buttonsWrapper.appendChild(botonCargar);
 
-    // Botón para elegir etiqueta
-    const etiquetaBtn = document.createElement('button');
-    etiquetaBtn.className = 'edit-btn change-tag-btn';
-    const opcionGuardada = opcionesEtiqueta.find(op => op.valor === etiquetaValor) || opcionesEtiqueta[0];
-    etiquetaBtn.innerHTML = opcionGuardada.emoji;
-    etiquetaBtn.title = `Etiqueta: ${opcionGuardada.titulo}`;
-    etiquetaBtn.dataset.etiqueta = opcionGuardada.valor;
-    etiquetaBtn.onclick = () => mostrarMenuEtiquetas(etiquetaBtn);
-    buttonsWrapper.appendChild(etiquetaBtn);
+    // Botón para elegir etiqueta (YA NO SE AÑADE AQUÍ)
     
     // Botón para eliminar dato
     const botonEliminar = document.createElement('button');
@@ -174,8 +200,6 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     botonEliminar.innerHTML = '🗑️';
     botonEliminar.title = 'Eliminar Dato';
     botonEliminar.onclick = () => {
-        // Usamos un modal de confirmación personalizado en lugar de `confirm()` si es posible.
-        // Por ahora, `confirm` es una solución simple.
         if (confirm(`¿Estás seguro de que quieres eliminar "${cajaNombre.value || 'este dato'}"?`)) {
             contenedor.remove();
         }
@@ -188,7 +212,6 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
 
     lista.appendChild(contenedor);
     
-    // Llamada inicial para establecer el estado correcto al crear la tarjeta
     actualizarVisual(imagen, descripcion);
 }
 
@@ -378,7 +401,7 @@ function agregarBotonEliminarAPersonajes() {
         }
 
         const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Eliminar';
+        deleteButton.textContent = '';
         deleteButton.className = 'eliminar-personaje-btn pro'; // Add classes for styling
 
         // Add the click event to handle the deletion

@@ -18,7 +18,11 @@ function recolectarYAgruparDatos() {
     for (const nodoDato of contenedorDatos.children) {
         const nombre = nodoDato.querySelector("input.nombreh")?.value.trim() || "";
         const descripcion = nodoDato.querySelector("textarea")?.value.trim() || "";
-        const etiquetaEl = nodoDato.querySelector(".etiqueta-personaje");
+        
+        // --- CORRECCIÓN ---
+        // Se cambió el selector de ".etiqueta-personaje" a ".change-tag-btn"
+        // para que coincida con el elemento correcto que contiene la etiqueta.
+        const etiquetaEl = nodoDato.querySelector(".change-tag-btn"); 
         const etiqueta = etiquetaEl ? etiquetaEl.dataset.etiqueta : 'indeterminado';
 
         if (etiqueta === 'indeterminado' || !nombre) {
@@ -79,7 +83,14 @@ async function llamarIAConFeedback(prompt, etapaDescriptiva, esJsonEsperado = tr
                 if (inicioJson !== -1 && finJson !== -1 && finJson > inicioJson) {
                     textoJsonLimpio = textoJsonLimpio.substring(inicioJson, finJson + 1);
                 } else {
-                    throw new Error(`La respuesta de la IA para ${etapaDescriptiva} no parece contener un objeto JSON.`);
+                     // Si no encuentra un JSON claro, intentamos buscar un array.
+                    const inicioArray = textoJsonLimpio.indexOf('[');
+                    const finArray = textoJsonLimpio.lastIndexOf(']');
+                    if (inicioArray !== -1 && finArray !== -1 && finArray > inicioArray) {
+                        textoJsonLimpio = textoJsonLimpio.substring(inicioArray, finArray + 1);
+                    } else {
+                        throw new Error(`La respuesta de la IA para ${etapaDescriptiva} no parece contener un objeto o array JSON válido.`);
+                    }
                 }
             }
             try {

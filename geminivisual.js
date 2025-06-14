@@ -2,6 +2,44 @@
 // GESTIÓN DE GENERACIÓN VISUAL (TOMAS)
 // ===================================
 
+
+/**
+ * Recolecta y agrupa los datos de la sección "Datos" por su etiqueta para dar contexto a la IA.
+ * Esta función es una copia de la versión corregida para asegurar que este script funcione de forma independiente.
+ * @returns {Object} Un objeto con los datos agrupados por categoría.
+ */
+function recolectarYAgruparDatosParaVisual() {
+    const datosAgrupados = {};
+    const contenedorDatos = document.getElementById("listapersonajes");
+    if (!contenedorDatos) return datosAgrupados;
+
+    // Itera sobre cada tarjeta de "Dato" en el DOM.
+    for (const nodoDato of contenedorDatos.children) {
+        const nombre = nodoDato.querySelector("input.nombreh")?.value.trim() || "";
+        const descripcion = nodoDato.querySelector("textarea")?.value.trim() || "";
+        
+        // Se utiliza el selector '.change-tag-btn' que es el correcto para el botón de la etiqueta.
+        const etiquetaEl = nodoDato.querySelector(".change-tag-btn");
+        const etiqueta = etiquetaEl ? etiquetaEl.dataset.etiqueta : 'indeterminado';
+
+        if (etiqueta === 'indeterminado' || !nombre) {
+            continue;
+        }
+
+        // Se crea un nombre de categoría legible (ej: 'personaje' -> 'Personaje').
+        const nombreCategoria = etiqueta.charAt(0).toUpperCase() + etiqueta.slice(1).replace(/_/g, ' ');
+
+        if (!datosAgrupados[nombreCategoria]) {
+            datosAgrupados[nombreCategoria] = [];
+        }
+        datosAgrupados[nombreCategoria].push({ nombre, descripcion });
+    }
+    
+    console.log("Datos recolectados para el contexto visual de la IA:", datosAgrupados);
+    return datosAgrupados;
+}
+
+
 /**
  * Inicia el proceso de generación de tomas para un guion literario generado por IA.
  * Este proceso ahora incluye una fase de creación de un "Universo Visual"
@@ -41,7 +79,8 @@ async function iniciarGeneracionDeTomas(indiceCapitulo) {
         const { planteamientoGeneral, planteamientoPorEscenas } = extraerPlanteamientos(capituloGuion.contenido);
         const resumenTrama = `Planteamiento General: ${planteamientoGeneral}\n\nPlan de Escenas: ${planteamientoPorEscenas}`;
 
-        const datosAgrupados = recolectarYAgruparDatos(); // Función de geminialfa.js
+        // Llamada a la función local corregida.
+        const datosAgrupados = recolectarYAgruparDatosParaVisual(); 
         
         // 2.1. Síntesis visual de la trama
         const promptSintesisTrama = `Basado en el siguiente resumen de la trama, genera una "Síntesis Visual General". Describe el estilo artístico, la paleta de colores principal, la atmósfera general y el tono cinematográfico de la historia.\n\nTrama:\n${resumenTrama}`;
