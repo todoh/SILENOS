@@ -37,7 +37,7 @@
         transition: opacity 0.3s ease, visibility 0.3s;
         z-index: 9997;
     }
-    
+
     #asistente-popup.visible {
         opacity: 1;
         visibility: visible;
@@ -46,7 +46,7 @@
     #asistente-titulo-input {
         position: absolute;
         top: 2%;
-        left: 50%; 
+        left: 50%;
         width: 90%;
         padding: 10px 15px;
     height: 3%;
@@ -61,12 +61,12 @@
     }
 
     #asistente-popup.visible #asistente-titulo-input {
-  
+
     }
-    
+
     #asistente-menu {
         position: fixed;
-        top: 50%; 
+        top: 50%;
         right: 1%;
         width: 160px;
         background-color: #2c2c2c;
@@ -74,7 +74,7 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.5);
         display: flex;
         flex-direction: column;
-        gap: 8px; 
+        gap: 8px;
         padding: 10px;
         transform: translateY(-50%);
 
@@ -85,18 +85,18 @@
          /* transform: translateY(0); */ /* Eliminado para mantener el centrado vertical */
     }
 
-    #asistente-menu .pro {
+    #asistente-menu .pro { /* This class might be deprecated if .btn-primary covers its styling */
         width: 100%;
         margin: 0;
         text-align: left;
-        padding: 10px 15px;
-        background-color: #444;
-        border: 1px solid #666;
+        padding: 10px 15px; /* Custom padding, check if var(--btn-padding-y) var(--btn-padding-x) is better */
+        /* background-color: #444; */ /* Will be overridden by .btn-primary or .btn-secondary */
+        /* border: 1px solid #666; */ /* Will be overridden by .btn-primary or .btn-secondary */
     }
 
-    #asistente-menu .pro:hover {
-        background-color: #555;
-        transform: scale(1.03);
+    #asistente-menu .pro:hover { /* This will be handled by button:hover or .btn-primary:hover */
+        /* background-color: #555; */
+        /* transform: scale(1.03); */ /* transform is now on base button, this might conflict or enhance */
     }
 </style>
 
@@ -107,31 +107,29 @@
     <div id="opciones" >
         <h2 id="titulo-proyecto" style="display: none;" contenteditable="true" placeholder="Escribe el título del proyecto">Silenos Versión 1.1.8</h2>
         <div id="menu" >
-         
+
         </div>
     </div>
- 
+
     </div>
 
-<button id="asistente-btn" title="Asistente IA">S</button>
+<button id="asistente-btn" class="btn-icon" title="Asistente IA">S</button> <!-- Assuming S is an icon placeholder -->
 <div id="asistente-popup">
     <div id="asistente-menu">
+        <!-- These could be .btn-secondary or a new specific class .btn-menu-item if padding/text-align needs to be different -->
+        <button class="btn-secondary" onclick="cerrartodo(), gridear('personajes');">Datos</button>
+        <button class="btn-secondary" onclick="cerrartodo(), abrirGuion(), actualizarBotonContextual();">Guion</button>
+        <button class="btn-secondary" onclick="cerrartodo(), abrir('capitulosh');">Libro</button>
+        <button class="btn-secondary" onclick="cerrartodo(), abrir('escenah');">Storyboard</button>
+        <button class="btn-secondary" onclick="cerrartodo(), abrir('galeria');">Pelicula</button>
+        <button class="btn-secondary" onclick="cerrartodo(), abrir('momentos');">Videojuego</button>
 
-   <button  onclick="cerrartodo(), gridear('personajes');">Datos</button>
-           <button  onclick="cerrartodo(), abrirGuion(), actualizarBotonContextual();">Guion</button>
-            <button  onclick="cerrartodo(), abrir('capitulosh');">Libro</button>
-            <button  onclick="cerrartodo(), abrir('escenah');">Storyboard</button>
-         
-            <button  onclick="cerrartodo(), abrir('galeria');">Pelicula</button>
-            <button  onclick="cerrartodo(), abrir('momentos');">Videojuego</button>
- 
-            <button class="pro" onclick="abrirModalConfig()">⚙️ Ajustes </button>
-     
-        <button class="pro" onclick="guardarJSON()">💾 Guardar</button>
+        <button class="pro btn-primary" onclick="abrirModalConfig()">⚙️ Ajustes </button>
+        <button class="pro btn-primary" onclick="guardarJSON()">💾 Guardar</button>
         <input type="file" id="file-load" accept="application/json" onchange="cargarJSON(event)" style="display: none;">
-        <button class="pro" onclick="document.getElementById('file-load').click()">🗂️ Cargar</button>
-       <button class="pro" onclick="abrirModalExportar()">💽 Exportar</button>
-        <button class="pro" id="theme-toggle-button" onclick="toggleTheme()">🌙 Tema</button>
+        <button class="pro btn-primary" onclick="document.getElementById('file-load').click()">🗂️ Cargar</button>
+        <button class="pro btn-primary" onclick="abrirModalExportar()">💽 Exportar</button>
+        <button class="pro btn-primary" id="theme-toggle-button" onclick="toggleTheme()">🌙 Tema</button>
     </div>
 </div>
 
@@ -151,34 +149,35 @@
         <div id="galeria-estudio-montaje" class="galeria-seccion"><h2>Estudio de Montaje</h2></div>
     </div>
     <div id="galeria-lista">
-        <button onclick="mostrarSeccionGaleria('galeria-elementos')">Elementos</button>
-        <button onclick="mostrarSeccionGaleria('galeria-proyectos')">Proyectos</button>
-        <button onclick="mostrarSeccionGaleria('galeria-lienzo-css')">Lienzo CSS</button>
-        <button onclick="mostrarSeccionGaleria('galeria-editor-personajes')">Editor de Personajes</button>
-        <button onclick="mostrarSeccionGaleria('galeria-editor-plantas')">Editor de Plantas</button>
-        <button onclick="mostrarSeccionGaleria('galeria-editor-monstruos')">Editor de Monstruos</button>
-        <button onclick="mostrarSeccionGaleria('galeria-editor-texturas')">Editor de Texturas</button>
-        <button onclick="mostrarSeccionGaleria('galeria-editor-objetos-3d')">Editor de Objetos 3D</button>
-        <button onclick="mostrarSeccionGaleria('galeria-editor-edificios-3d')">Editor de Edificios 3D</button>
-        <button onclick="mostrarSeccionGaleria('galeria-editor-relieves-3d')">Editor de Relieves 3D</button>
-        <button onclick="mostrarSeccionGaleria('galeria-estudio-montaje')">Estudio de Montaje</button>
+        <!-- Assuming these are secondary navigation-like buttons -->
+        <button class="btn-secondary" onclick="mostrarSeccionGaleria('galeria-elementos')">Elementos</button>
+        <button class="btn-secondary" onclick="mostrarSeccionGaleria('galeria-proyectos')">Proyectos</button>
+        <button class="btn-secondary" onclick="mostrarSeccionGaleria('galeria-lienzo-css')">Lienzo CSS</button>
+        <button class="btn-secondary" onclick="mostrarSeccionGaleria('galeria-editor-personajes')">Editor de Personajes</button>
+        <button class="btn-secondary" onclick="mostrarSeccionGaleria('galeria-editor-plantas')">Editor de Plantas</button>
+        <button class="btn-secondary" onclick="mostrarSeccionGaleria('galeria-editor-monstruos')">Editor de Monstruos</button>
+        <button class="btn-secondary" onclick="mostrarSeccionGaleria('galeria-editor-texturas')">Editor de Texturas</button>
+        <button class="btn-secondary" onclick="mostrarSeccionGaleria('galeria-editor-objetos-3d')">Editor de Objetos 3D</button>
+        <button class="btn-secondary" onclick="mostrarSeccionGaleria('galeria-editor-edificios-3d')">Editor de Edificios 3D</button>
+        <button class="btn-secondary" onclick="mostrarSeccionGaleria('galeria-editor-relieves-3d')">Editor de Relieves 3D</button>
+        <button class="btn-secondary" onclick="mostrarSeccionGaleria('galeria-estudio-montaje')">Estudio de Montaje</button>
     </div>
 </div>
 <div id="momentos">
     <div id="momentos-controles-flotantes">
-        <button class="pro" id="agregar-momento-btn">Añadir Momento</button>
-        <button class="pro" id="preview-connections-btn" title="Muestra u oculta las líneas de conexión entre momentos.">Previsualizar Conexiones</button>
+        <button class="pro btn-primary" id="agregar-momento-btn">Añadir Momento</button>
+        <button class="pro btn-secondary" id="preview-connections-btn" title="Muestra u oculta las líneas de conexión entre momentos.">Previsualizar Conexiones</button>
 
         <div class="control-group">
-            <button class="pro" id="zoom-out-btn" title="Alejar la vista">-</button>
+            <button class="pro btn-icon btn-secondary" id="zoom-out-btn" title="Alejar la vista">-</button>
             <span id="zoom-level-indicator">100%</span>
-            <button class="pro" id="zoom-in-btn" title="Acercar la vista">+</button>
+            <button class="pro btn-icon btn-secondary" id="zoom-in-btn" title="Acercar la vista">+</button>
         </div>
 
-        
+
         <div id="momentos-controles-ia">
-            <button class="pro" id="generar-aventura-ia-btn" title="Usa la IA para generar una aventura interactiva completa a partir del guion seleccionado.">Generar Aventura con IA ✨</button>
-            <select id="guion-select" class="pro" title="Selecciona un guion para usar como base para la IA"></select>
+            <button class="pro btn-primary" id="generar-aventura-ia-btn" title="Usa la IA para generar una aventura interactiva completa a partir del guion seleccionado.">Generar Aventura con IA ✨</button>
+            <select id="guion-select" class="pro"></select> <!-- Selects are not buttons, keep .pro if it affects appearance -->
 
             <input type="number" id="ia-call-budget-input" class="pro ia-input-numero" min="5" max="100" value="15" title="Presupuesto de Llamadas a la IA. Define el número máximo de peticiones para crear y expandir ramas en la historia. Un número más alto crea una aventura más grande y compleja.">
             </div>
@@ -189,11 +188,12 @@
             <svg id="connections-svg"></svg>
         </div>
     </div>
-    
+
         <!-- NUEVO: Panel de Edición de Momentos -->
     <div id="panel-edicion-momento">
         <div class="panel-edicion-header">
             <h3>Editar Momento</h3>
+            <!-- This close button is likely styled by .panel-edicion-header button or similar, not a global button -->
             <button id="panel-edicion-cerrar-btn">&times;</button>
         </div>
         <div class="panel-edicion-contenido">
@@ -204,13 +204,10 @@
                 <img id="panel-editor-imagen-preview" alt="Vista previa de la imagen">
                 <input type="file" id="panel-editor-file-input" accept="image/*" style="display: none;">
             </div>
-            
-            <!-- ===================================== -->
-            <!-- ELEMENTOS RESTAURADOS - ¡ESTO ES LO QUE FALTABA! -->
-            <!-- ===================================== -->
+
             <div id="panel-acciones-container"></div>
-            <button id="panel-boton-agregar-accion" class="modal-button ">+ Acción</button>
-            
+            <button id="panel-boton-agregar-accion" class="modal-button btn-primary ">+ Acción</button>
+
         </div>
     </div>
 
@@ -220,18 +217,12 @@
 
 <div id="guion-literario">
     <div id="guion-toolbar">
-        <!-- El botón para abrir el selector de guiones se mueve aquí -->
-        <button class="" id="selector-guion-btn-local">☰</button>
-        <button class="pro" id="sumar-capitulo-guion" onclick="agregarCapituloYMostrar()">Agregar Capítulo</button>
+        <button class="btn-icon btn-secondary" id="selector-guion-btn-local">☰</button>
+        <button class="pro btn-primary" id="sumar-capitulo-guion" onclick="agregarCapituloYMostrar()">Agregar Capítulo</button>
     </div>
     <div id="guion-layout">
-        <!-- El índice lateral se elimina de la vista, pero el div se puede mantener para compatibilidad -->
         <div id="indice-capitulos-guion" style="display: none;"></div>
-        
-        <!-- Contenedor para la lista emergente de guiones -->
         <div id="lista-guiones-popup-local"></div>
-
-        <!-- El contenido del capítulo ahora ocupa más espacio -->
         <div id="contenido-capitulo-activo">
         </div>
     </div>
@@ -239,7 +230,7 @@
 
 <div id="ia" >
     <div id="creasion" >
-        <button class="pro" onclick="cerrartodo(), abrir('capitulosh'), actualizarParametrosIA(), crearEscenasAutomaticamente(nombredelahistoria, cantidaddeescenas, cantidadframes);">Insertar Capítulos vacíos en la Historia</button>
+        <button class="pro btn-primary" onclick="cerrartodo(), abrir('capitulosh'), actualizarParametrosIA(), crearEscenasAutomaticamente(nombredelahistoria, cantidaddeescenas, cantidadframes);">Insertar Capítulos vacíos en la Historia</button>
         <input type="text" id="nombrehistoria" placeholder="Nombre de las Escenas" value="Nombre de la Historia">
         <input type="number" id="cantidadescenas" placeholder= "Cantidad de Escenas" value="2">
         <input type="number" id="cantidadeframes" placeholder= "Cantidad de Frames" value="3">
@@ -253,8 +244,8 @@
             <label for="incluir-datos-ia">Usar Datos ya Guardados en la generación de la Historia</label>
         </div>
         <div id="ia-buttons">
-            <button id="enviargemini"  class="pro" onclick="actualizarParametrosIA(), enviarTextoConInstrucciones()">Generar Historia</button>
-            <button id="enviargemini-desarrollar"  class="pro" onclick="actualizarParametrosIA(), desarrollarFramesDesdeGeminimente(nombredelahistoria); cerrartodo(); abrir('capitulosh');">Insertar Frames en la Historia</button>
+            <button id="enviargemini"  class="pro btn-primary" onclick="actualizarParametrosIA(), enviarTextoConInstrucciones()">Generar Historia</button>
+            <button id="enviargemini-desarrollar"  class="pro btn-primary" onclick="actualizarParametrosIA(), desarrollarFramesDesdeGeminimente(nombredelahistoria); cerrartodo(); abrir('capitulosh');">Insertar Frames en la Historia</button>
         </div>
     </div>
 
@@ -267,17 +258,17 @@
       <p></p>
       <p></p>
 <div id="chat"></div>
-<button onclick="herramientacopiar()"> 📥 </button><div id="herramienta" ></div>
+<button class="btn-icon btn-secondary" onclick="herramientacopiar()"> 📥 </button><div id="herramienta" ></div>
 <textarea id="user-input" placeholder="Escribe tu mensaje..."></textarea>
-<button id="enviar" onclick="enviartexto()">Enviar</button>
+<button id="enviar" class="btn-primary" onclick="enviartexto()">Enviar</button>
 <div id="modos" ></div></div>
 
 <div id="escenah">
     <div class="escena-toolbar">
-        <button id="crear-escena-btn" class="pro" >Nueva Escena</button>
+        <button id="crear-escena-btn" class="pro btn-primary" >Nueva Escena</button>
         <select id="escenas-dropdown"></select>
         <input type="text" id="escena-nombre-input" placeholder="Nombre de la Escena...">
-        <button id="agregar-toma-btn" class="escena2 pro "  >+ Toma</button>
+        <button id="agregar-toma-btn" class="escena2 pro btn-primary"  >+ Toma</button>
     </div>
     <div id="tomas-timeline">
         </div>
@@ -285,22 +276,22 @@
 
 
 <div id="capitulosh"  >
- 
 
-<button class="pro" id="sumarpersonaje" onclick="nuevaEscena()">Agregar Capítulo</button>
-
+<!-- Assuming this button is a primary action for adding a chapter -->
+<button class="pro btn-primary" id="sumar-capitulo-btn" onclick="nuevaEscena()">Agregar Capítulo</button>
+<!-- Note: Changed the ID from sumarpersonaje to sumar-capitulo-btn for clarity as it adds a chapter, not a character -->
 
 <div id="capitulos" >
 <div id="lista-capitulos"></div></div></div>
 
 <div id="personajes">
-    
-    
-    
+
+
+
     <div class="herramientas" ></div>
     <div id="datos-botones-superiores">
-        <button class="pro" id="sumarpersonaje" onclick="agregarPersonaje()">+ Dato</button>
-       
+        <button class="pro btn-primary" id="sumarpersonaje" onclick="agregarPersonaje()">+ Dato</button>
+
     </div>
     <div id="listapersonajes"></div></div>
 </div>
@@ -311,8 +302,8 @@
         <img id="imagen-preview" alt="Vista previa de la imagen">
     <input type="file" id="file-input" accept="image/*, video/mp4, video/webm, image/gif"  style="display: none;" ></div>
 <div id="botonesss"   >
-    <button class="botoness" onclick="agregarBoton('transicion')">+ Botón de Transición</button>
-    <button class="botoness" onclick="agregarBoton('accion')">+ Botón de Acción</button></div>
+    <button class="botoness btn-secondary" onclick="agregarBoton('transicion')">+ Botón de Transición</button>
+    <button class="botoness btn-secondary" onclick="agregarBoton('accion')">+ Botón de Acción</button></div>
 <div class="lista" > <div id="botones-lista"></div></div>
 </div>
 <video id="hiddenVideoPlayer" style="display:none;"></video>
@@ -324,7 +315,7 @@
 
 
 <div id="modal-ia-herramientas" class="modal-content">
-    <button class="modal-close-button" onclick="cerrarModalIAHerramientas()">&times;</button>
+    <button class="modal-close-button btn-icon" onclick="cerrarModalIAHerramientas()">&times;</button>
     <h3>Herramientas de Creación con IA</h3>
 
     <div class="ia-modal-section">
@@ -351,36 +342,36 @@
     </div>
 
     <div class="ia-modal-actions">
-        <button class="modal-button principal-action" onclick="lanzarGeneracionHistoria()">✨ Generar Historia Completa</button>
+        <button class="modal-button principal-action btn-primary" onclick="lanzarGeneracionHistoria()">✨ Generar Historia Completa</button>
     </div>
 </div>
 
 
 
 <div id="lugares" class="modal-content">
-    <button class="modal-close-button" onclick="cerrarModalConfig()">&times;</button>
+    <button class="modal-close-button btn-icon" onclick="cerrarModalConfig()">&times;</button>
         <input type="text" id="asistente-titulo-input" placeholder="Título del proyecto">
 
     <p>Para utilizar la inteligencia artificial de Silenos necesita:</p>
     <p>Una API KEY de GOOGLE, puede obtenerla aquí:</p>
-    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer"  style="padding: 10px 20px; background-color: rgb(0, 0, 0); color: white; text-decoration: none; border-radius: 5px;">
+    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="btn-primary" style="padding: 10px 20px; text-decoration: none; border-radius: 5px; display:inline-block; margin-bottom:1em;">
      AI Studio de Google.com
     </a><p></p>
     <input type="text" id="apiInput" placeholder="Ingresa tu API Key">
-    <button onclick="updateApiKey()">Actualizar</button>
+    <button class="btn-primary" onclick="updateApiKey()">Actualizar</button>
     <p>API Key actual: <span id="apiKeyDisplay">[No definida]</span></p>
 </div>
 
 <div id="modal-importar-json" class="modal-content">
-    <button class="modal-close-button" onclick="cerrarModalImportar()">&times;</button>
+    <button class="modal-close-button btn-icon" onclick="cerrarModalImportar()">&times;</button>
     <h3>Importar Datos desde JSON</h3>
     <p>Pega el contenido de un único objeto JSON (un dato, capítulo, etc.) en el siguiente campo.</p>
     <textarea id="json-import-area" placeholder='Ejemplo para un "Dato":\n{\n  "nombre": "Espada Legendaria",\n  "descripcion": "Forjada por los dioses.",\n  "etiqueta": "objeto",\n  "imagen": ""\n}'></textarea>
-    <button class="modal-button" onclick="importarDatosDesdeJSON()">Añadir Datos</button>
+    <button class="modal-button btn-primary" onclick="importarDatosDesdeJSON()">Añadir Datos</button>
 </div>
 
 <div id="modal-ia-datos" class="modal-content">
-    <button class="modal-close-button" onclick="cerrarModalAIDatos()">&times;</button>
+    <button class="modal-close-button btn-icon" onclick="cerrarModalAIDatos()">&times;</button>
     <h3>Añadir Datos con Inteligencia Artificial</h3>
     <p>Pega aquí el nombre de una obra (ej: "Star Wars"), una lista de ideas, o un JSON para que la IA los procese y añada como datos estructurados.</p>
     <textarea id="ia-datos-area" placeholder='Ejemplo 1: El Señor de los Anillos
@@ -388,19 +379,19 @@
 Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el reino de Camelot.
 
 Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
-    <button class="modal-button" onclick="procesarEntradaConIA()">✨ Analizar y Agregar Datos</button>
+    <button class="modal-button btn-primary" onclick="procesarEntradaConIA()">✨ Analizar y Agregar Datos</button>
 </div>
 
 <!-- ELIMINADO: Modal de editar momento -->
 
 <div id="modal-exportar" class="modal-content">
-    <button class="modal-close-button" onclick="cerrarModalExportar()">&times;</button>
+    <button class="modal-close-button btn-icon" onclick="cerrarModalExportar()">&times;</button>
     <h3>Opciones de Exportación</h3>
 
     <div class="export-option">
         <h4>Exportar Guion</h4>
         <p>Exporta los capítulos y sus frames a un archivo HTML simple.</p>
-        <button class="modal-button" onclick="generarHTML()">Exportar Guion HTML</button>
+        <button class="modal-button btn-primary" onclick="generarHTML()">Exportar Guion HTML</button>
     </div>
    <div class="export-option">
         <h4>Exportar Storyboard de Tomas</h4>
@@ -408,22 +399,22 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 
          <div class="export-controls">
              <select id="tomas-export-select" class="modal-select"></select>
-             <button class="modal-button" onclick="generarHTMLTomas()">Exportar Tomas HTML</button>
+             <button class="modal-button btn-primary" onclick="generarHTMLTomas()">Exportar Tomas HTML</button>
         </div>    </div>
     <div class="export-option">
         <h4>Exportar Videojuego</h4>
         <p>Exporta los momentos como una experiencia interactiva.</p>
         <select id="momento-inicial-id" class="modal-select"></select>
-        <button class="modal-button" onclick="iniciarExportacionJuego()">Exportar Videojuego HTML</button>
+        <button class="modal-button btn-primary" onclick="iniciarExportacionJuego()">Exportar Videojuego HTML</button>
     </div>
 </div>
- <button id="asistente-btn" title="Asistente IA"  style="display: none;" >S</button>
+ <button id="asistente-btn-duplicate" class="btn-icon" title="Asistente IA"  style="display: none;" >S</button> <!-- Duplicated ID, should be fixed if used -->
 </div>
 
 <div id="principio">
     <div id="p5-canvas-container"></div>
 
-    <div id="titulo-esfera-container"> 
+    <div id="titulo-esfera-container">
         <div id="titulo1">
             <div>
                 <span>SILEN</span><span class="os-red">OS</span>
@@ -434,8 +425,9 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
         </div>
 
         <div id="inicio-botones">
-            <button class="pro3" onclick="iniciarAnimacionSalida()">Nuevo</button>
-            <button class="pro3" onclick="document.getElementById('file-load').click(); iniciarAnimacionSalida();">Cargar</button>
+            <!-- .pro3 is very specific, might need its own vars or careful integration -->
+            <button class="pro3 btn-primary" onclick="iniciarAnimacionSalida()">Nuevo</button>
+            <button class="pro3 btn-primary" onclick="document.getElementById('file-load').click(); iniciarAnimacionSalida();">Cargar</button>
         </div>
     </div>
 </div>
@@ -453,9 +445,9 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 
 <script src="gestionEscenas.js"></script>
 <script src="momentos.js"></script>
-<script src="editor-momento.js"></script> 
+<script src="editor-momento.js"></script>
 <script src="guion.js"></script>
-<script src="galeria.js"></script> 
+<script src="galeria.js"></script>
 <script src="escenas.js"></script>
 <script src="datos.js"></script>
 <script src="io.js"></script>
@@ -469,7 +461,7 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 <script src="editor-personajes-body.js"></script>
 <script src="editor-personajes-main.js"></script>
 
-<button id="contextual-action-btn" title="Acción contextual" style="display: none;">✨</button>
+<button id="contextual-action-btn" class="btn-icon btn-primary" title="Acción contextual" style="display: none;">✨</button>
 
 
 
@@ -521,7 +513,7 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
     function iniciarAnimacionSalida() {
         const principio = document.getElementById('principio');
         const silenos = document.getElementById('silenos');
-        const asistenteBtn = document.getElementById('asistente-btn');
+        const asistenteBtn = document.getElementById('asistente-btn'); // Main assistant button
         const botonesInicio = document.getElementById('inicio-botones');
 
         // 1. Ocultar los botones y el título para que no distraigan
@@ -544,7 +536,9 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
             silenos.style.display = 'flex';
             silenos.getBoundingClientRect(); // Forzar reflow
             silenos.style.opacity = '1';
-            asistenteBtn.classList.add('visible');
+            // Ensure the correct assistant button is shown. Assuming 'asistente-btn' is the main one.
+            const mainAsistenteBtn = document.getElementById('asistente-btn');
+            if(mainAsistenteBtn) mainAsistenteBtn.classList.add('visible');
         }, 1500); // 500ms + 1000ms de fade-out
     }
 </script>
@@ -559,12 +553,12 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
     function setup() {
         const container = document.getElementById('p5-canvas-container');
         if (!container) return;
-        
+
         const canvas = createCanvas(windowWidth, windowHeight, WEBGL);
         canvas.parent(container);
 
         centerSphere = new CenterSphere();
-        
+
         while (particles.length < maxParticles) {
             particles.push(new Particle());
         }
@@ -573,11 +567,11 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
     function draw() {
         background(0);
         rotateY(frameCount * 0.005);
-        
+
         // ▼▼▼ LÍNEA NUEVA: Desplaza toda la escena 3D hacia abajo ▼▼▼
         // El resultado es que la esfera y las partículas se ven más bajas.
-        translate(0, windowHeight * 0.07, 0); 
-        
+        translate(0, windowHeight * 0.07, 0);
+
         // El resto del código funciona igual
         if (iniciarSalida) {
             centerSphere.shrink();
@@ -608,7 +602,7 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
             }
         }
     }
-    
+
     function windowResized() {
         resizeCanvas(windowWidth, windowHeight);
     }

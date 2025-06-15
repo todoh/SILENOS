@@ -1,8 +1,8 @@
-  /* Estilo para el contenedor del contador de llamadas a la API */
+/* Estilo para el contenedor del contador de llamadas a la API */
     #api-call-counter-container {
         position: fixed;
         bottom: 20px;
-        left: 75px; 
+        left: 75px;
         display: flex;
         align-items: center;
         background-color: var(--color-fondo-secundario, #f0f0f0);
@@ -37,7 +37,7 @@
         top: 7%;
         left: 1% !important;
         display: flex;
-       
+
         background-color: var(--color-fondo-secundario, #f0f0f0);
         color: var(--color-texto, #333);
         border: 1px solid var(--color-borde, #ccc);
@@ -48,7 +48,7 @@
         font-weight: 500;
         z-index: 9998;
         opacity: 0;
-        
+
         transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
         pointer-events: none;
     }
@@ -122,32 +122,46 @@
         font-weight: 500;
     }
     #drive-save-button, #logout-button {
-        font-size: 18px;
-        padding: 4px;
+        font-size: 18px; /* Kept specific font size */
+        padding: var(--btn-icon-padding, 4px); /* Use icon padding variable, fallback to original */
         background: transparent;
         border: none;
         cursor: pointer;
+        color: var(--btn-secondary-text-color); /* Use variable for text/icon color */
+        transition: var(--btn-transition);
     }
+    #drive-save-button:hover, #logout-button:hover {
+        color: var(--btn-secondary-text-color-hover, var(--btn-primary-bg-color)); /* Use a hover color, fallback to primary if not defined for secondary text */
+        /* background-color: var(--btn-secondary-bg-color-hover); */ /* Optional: if a subtle background hover is desired */
+    }
+
     .dark-theme #user-session-display {
         background-color: rgba(30, 30, 30, 0.8);
-        color: #eee;
+        color: #eee; /* This will be overridden by button color var if applied directly to buttons */
+    }
+    .dark-theme #drive-save-button, .dark-theme #logout-button {
+        color: var(--btn-secondary-text-color); /* Uses dark theme variable */
+    }
+    .dark-theme #drive-save-button:hover, .dark-theme #logout-button:hover {
+        color: var(--btn-secondary-text-color-hover, var(--btn-primary-bg-color)); /* Uses dark theme variable */
     }
 
     #google-signin-button {
         background-color: #FFFFFF;
         color: #444;
         border: 1px solid #DADCE0;
-        border-radius: 25px;
+        border-radius: 25px; /* Kept specific Google style */
         width: auto;
-        font-size: 16px;
-        font-weight: 500;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        padding: 8px 16px; /* Adjusted to be more button like, but can be specific */
+        font-size: 16px; /* Kept specific Google style */
+        font-weight: var(--btn-font-weight, 500); /* Use variable with fallback */
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* Kept specific Google style */
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 12px;
-        transition: background-color .3s, box-shadow .3s;
+        transition: background-color .3s, box-shadow .3s, var(--btn-transition); /* Added btn transition for other properties if any */
         box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
     }
 
@@ -160,7 +174,7 @@
         width: 18px;
         height: 18px;
     }
-    
+
     /* ▼▼▼ ESTILOS PARA LA NUEVA TRANSICIÓN ▼▼▼ */
     #silenos {
         /* Silenos está visible desde el principio, pero debajo de #principio */

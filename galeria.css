@@ -7,88 +7,93 @@
     left: 1%;
     right: 1%;
     bottom: 1%;
-    background-color: #f0f2f5;
-    border-radius: 8px;
-    flex-direction: row-reverse; /* Cambia el orden visual de los hijos */
+    background-color: var(--body-bg-color); /* Using body background for main area */
+    color: var(--body-text-color); /* Using body text color */
+    border-radius: var(--section-border-radius, 8px); /* Use section radius, fallback to original */
+    flex-direction: row-reverse;
     overflow: hidden;
+    padding: var(--section-padding, 1%); /* Added padding, fallback to original implicit padding through child elements */
+    border: 1px solid var(--section-border-color, transparent); /* Optional border, transparent if not defined */
+    box-shadow: var(--section-box-shadow, none); /* Optional shadow, none if not defined */
 }
 
 .dark-theme #galeria {
-    background-color: #242526;
+    background-color: var(--body-bg-color-dark); /* Uses dark theme body background */
+    color: var(--body-text-color-dark);
+    border-color: var(--section-border-color-dark, transparent);
+    box-shadow: var(--section-box-shadow-dark, none);
 }
 
-#galeria-lista {
+#galeria-lista { /* This is a sub-section within #galeria */
     width: 200px;
     height: 100%;
-    padding: 15px;
+    padding: 15px; /* Specific padding */
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     gap: 10px;
     overflow-y: auto;
-    background-color: #ffffff;
-    border-left: 1px solid #d1d5db;
+    background-color: var(--section-bg-color); /* Use section background for this sub-panel */
+    color: var(--section-text-color);
+    border-left: 1px solid var(--section-border-color);
+    border-radius: var(--section-border-radius); /* Added border radius */
 }
 
 .dark-theme #galeria-lista {
-    background-color: #18191a;
-    border-left: 1px solid #3a3b3c;
+    background-color: var(--section-bg-color-dark);
+    color: var(--section-text-color-dark);
+    border-left-color: var(--section-border-color-dark);
 }
 
 #galeria-lista button {
     width: 100%;
-    padding: 12px;
     text-align: left;
-    background-color: #e4e6eb;
-    border: none;
-    border-radius: 6px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .dark-theme #galeria-lista button {
-    background-color: #3a3b3c;
-    color: #e4e6eb;
+    /* Styling handled by .btn-secondary and dark theme variables */
 }
 
 #galeria-lista button:hover {
-    background-color: #d1d5db;
+    /* Styling handled by .btn-secondary:hover and dark theme variables */
 }
 
 .dark-theme #galeria-lista button:hover {
-    background-color: #4e4f50;
+    /* Styling handled by .btn-secondary:hover and dark theme variables */
 }
 
 #galeria-lista button.active {
-    background-color: #007bff;
-    color: white;
+    background-color: var(--btn-primary-bg-color);
+    color: var(--btn-primary-text-color);
+    border-color: var(--btn-primary-border-color);
 }
 
 .dark-theme #galeria-lista button.active {
-    background-color: #0d6efd;
+    background-color: var(--btn-primary-bg-color); /* Uses dark theme primary vars */
+    color: var(--btn-primary-text-color);
+    border-color: var(--btn-primary-border-color);
 }
 
-#galeria-contenedor {
+#galeria-contenedor { /* This is the main content area within #galeria */
     flex-grow: 1;
     height: 100%;
-    padding: 20px;
+    padding: var(--section-padding, 20px); /* Use section padding, fallback to original */
     box-sizing: border-box;
     overflow-y: auto;
     position: relative;
+    /* No background color here, it will show #galeria's background */
 }
 
 .galeria-seccion {
-    display: none; /* Todas las secciones ocultas por defecto */
+    display: none;
     animation: fadeIn 0.5s ease-in-out;
 }
 
 .galeria-seccion.active {
-    display: block; /* Muestra la sección activa */
+    display: block;
 }
 
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
-
