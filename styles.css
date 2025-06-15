@@ -121,31 +121,55 @@ html {
     color: #c9d1d9; 
     border-color: #484f58; 
 }
-.dark-theme ::-webkit-scrollbar-track { background-color: #2c2c2c; }
-.dark-theme ::-webkit-scrollbar-thumb { background-color: #555; }
-.dark-theme ::-webkit-scrollbar-thumb:hover { background-color: #666; }
-.dark-theme ::-webkit-scrollbar-thumb:active { background-color: #777; }
+
+
+/* --- ESTILOS PARA LA BARRA DE DESPLAZAMIENTO (SCROLLBAR) --- */
+
+/* Define el tamaño general de la barra de desplazamiento */
 ::-webkit-scrollbar {
-    width:20px;
-    height: 20px; }
+    width: 8px;  /* Ancho para barras verticales */
+    height: 8px; /* Alto para barras horizontales */
+}
+
+/* Estiliza la pista (la "línea" de fondo) */
 ::-webkit-scrollbar-track {
-    background-color: #f1f1f100;
-    border-radius: 10px;}
+    background-color: #f1f1f100; /* Un gris muy claro para el tema por defecto */
+    border-radius: 10px;
+}
+
+/* Estiliza el control deslizante (el "punto") */
 ::-webkit-scrollbar-thumb {
-    background-color: #cccccc;
+    background-color: #000000; /* Negro, como se solicitó */
     border-radius: 10px;
     transition: background-color 0.3s ease;
 }
+
+/* Estilo del control al pasar el ratón por encima */
 ::-webkit-scrollbar-thumb:hover {
-    background-color: #aaaaaa;
+    background-color: #333333; /* Un gris oscuro para el efecto hover */
 }
-::-webkit-scrollbar-thumb:active {
-    background-color: #888888;
+
+/* --- AJUSTES PARA EL TEMA OSCURO --- */
+
+/* En el tema oscuro, la pista necesita un color que contraste con el fondo oscuro y el control negro */
+.dark-theme ::-webkit-scrollbar-track {
+    background-color: #3a3a3a00; /* Un gris más oscuro pero visible */
 }
-::-webkit-scrollbar-horizontal {
-    height: 8px; }
-::-webkit-scrollbar-vertical {
-    width: 8px; }
+
+/* El control sigue siendo negro en el tema oscuro, como se solicitó */
+.dark-theme ::-webkit-scrollbar-thumb {
+    background-color: #000000;
+}
+
+/* Efecto hover ligeramente diferente para el tema oscuro */
+.dark-theme ::-webkit-scrollbar-thumb:hover {
+    background-color: #222222; /* Un negro un poco más claro */
+}
+
+
+
+
+
 body input, body textarea {
     -webkit-autofill: none;  }
 
@@ -230,7 +254,7 @@ button {
     font-size:small;
     transition: background-color 0.2s ease, transform 0.1s ease-in-out;
     display: inline-block;
-    width: auto;}
+    width: auto;    height: fit-content;}
 button:hover {background-color:#dee2e6;  transform: scale(1.02);}
 button:active {transform: scale(0.95);}
 .guardado {margin: 1%;}
@@ -451,13 +475,21 @@ margin: 0%; z-index:   1000 ;}
 
 
 
-.escena { cursor: pointer; padding: 0px; border: 0px solid #8a8a8a; margin: 5px 0; margin-bottom: 1%;
+.escena {    border: 0px solid #8a8a8a; margin: 5px 0; margin-bottom: 1%;
  margin-right: 0%;  margin-left: 0%;   box-shadow: 0 2px 5px rgba(0,0,0,0.1);  
-    border-radius: 2%;    background-color: #fff;
-    height: 43dvh;
-padding-left: 1%;}
-
-
+    border-radius: 0%;    background-color: transparent;
+     
+padding-left: 1%; 
+    cursor: default;
+    padding: 0px;
+    
+    margin: 15px 5px;
+  
+        overflow-y: hidden !important;    
+    
+    height: auto;
+    overflow: hidden !important; /* Importante para que el borde redondeado funcione bien */
+}
 #drop-zone { position: absolute;
 border: 2px dashed #ccc; padding: 20px; 
 display: flex; bottom: 3%;
@@ -484,7 +516,7 @@ height: auto;
 top: 55%;}
 #capitulos, #escenass {position: absolute;
  bottom: 0%;
-width: 99%; left: 1%;
+width: 99%; left:0%;
  background-color: #ff606000;
   height: 100%;
  overflow-y:scroll; padding-left: 0%; padding-right: 0%;}
@@ -511,14 +543,14 @@ line-height: 1.5;}
 .imput {width: 99%;
     height: 99%;
     border: 0px solid #b3b3b3;
-    border-radius: 5px; color: white;
-    outline: none; background-color: black;
+    border-radius: 5px; color: rgb(0, 0, 0);
+    outline: none; background-color: rgba(0, 0, 0, 0);
     font-size: x-large; margin: 0%;
   margin-bottom: 1%;}
   
 /* ========= INICIO: NUEVOS ESTILOS ========= */
 .input-no-editable {
-    background-color: #555555 !important;
+    background-color: #55555500 !important;
     color: #a0a0a0 !important;
     cursor: not-allowed;
     border: 0px solid transparent !important;
@@ -550,17 +582,19 @@ line-height: 1.5;}
     margin: 0%;
     margin-right: 1%;width: 8dvw; }
 
-    .ideframeh { padding: 1%; position: absolute;
-    width: auto;z-index: 100;
-    margin: 0;
+    .ideframeh { padding: 1%; position: relative;
+    width: auto;z-index: 10000 !important;
+    margin: 0; left: 1%;
     margin-right: 1%;}
 .frameh textarea {
-    width: 95%; position: absolute;
-    bottom: 0%; top: 51%; left: 0%;
-    padding: 2%;
-    border-radius: 5px;
-    border: 2px solid #ccc;
-    resize: none;
+    width: 55%; position: absolute;
+     height: 90%;
+font-size: x-large;
+   top: 5%;     left: 30%;
+    padding: 0%;
+    border-radius: 5px; 
+    border: 0px solid #ccc;
+    resize: none;    
     font-family: Arial, sans-serif;}
     .frameh input[type="file"] {
    opacity: 0;
@@ -582,39 +616,58 @@ position: absolute;
 .custom-label:hover {
     color: #000; 
 }
-.frameh img {max-width: 100%; position: absolute;
-    max-height: 53%;
-    top: -4.5%;
-   aspect-ratio: 1 / 1; padding: 0%;
-    border-radius: 5px; margin: 0%;
+.frameh img {max-width: 20%; position: absolute;
+    max-height: 100%;
+    left: 5%;
+    top: 0%;
+  padding: 0%;
+    border-radius: 5px; margin-top: 0% !important;
     display: flex; 
+    
 }
-.frameh {top: 0%;
-    height: 97%;
-    aspect-ratio: 1.2 / 1;
+.frameh { 
+    height:250px;
+ 
+ width: 100%;
     position: relative;
-    display: inline-flex;
- margin-left: 0.5%; margin-right: 0.5%;
- background-color: #fff;  
-    width: auto;    box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+    display: flex;
+ left: 0%; 
+ background-color: #7e232300;  
+       box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
     text-align: center;      flex-shrink: 0;}
 
-    .framehtxt {padding-left: 10%; }
+    .framehtxt {padding-left: 5%;   gap: 5%;}
 
 .contenedor-frames {
     display: flex;           
-    flex-direction: row;     
+        gap: 5%;
     overflow-x: scroll !important ;      
-    overflow-y: hidden;      
+    overflow-y: hidden !important;      
     position: relative;      
     top: 3%;
     bottom: 9%;
+    left: 0%;
     width:100%;
-    height: 90%;
+    height: max-content;
     flex-wrap: nowrap !important;        
-    background-color: #ff606000; 
+    background-color: transparent; 
     padding: 0; white-space: nowrap !important;         
+ 
+
+    
+ 
+    flex-direction: column; /* Apila los frames verticalmente */
+   /* Espacio entre frames */
+    
+    /* Anulación de estilos antiguos que causaban problemas */
+    overflow: visible; 
+ 
+
 }
+
+
+
+
 #enviar {
     top: -2%;
     position: relative;}
@@ -624,7 +677,7 @@ top: 0%;
 height: 9%;
 left: 0%;
 width: 60%;
-background-color: #ffffff00;
+background-color: transparent;
 justify-content: center;
 align-items: center;
 text-align: center;}
@@ -792,7 +845,7 @@ top: 1%;left: 2%;}
 }
 
 #contenido-capitulo-activo input[type="text"] {
-    width: calc(100% - 16px); 
+    width: 80%; 
     margin-bottom: 0px; /* Ajustado */
     padding: 8px;
     border: 1px solid #ccc;
@@ -1229,9 +1282,9 @@ width: 15%;
 }
 
 .contenido-guion-editor {
-    width: 100%;
+    width:70%; height: 100%;
     flex-grow: 1;
-   
+   left: 15%; top: 0%;
     border: 1px solid #ccc;
     border-radius: 3px;
     overflow-y: auto;
@@ -1239,7 +1292,7 @@ width: 15%;
     font-size: 1em;
     line-height: 1.5;
     background: white;
- 
+ position: absolute;
     text-align: left; 
 }
 
@@ -1636,3 +1689,80 @@ transform: translateY(-50%);
 .dark-theme .guion-popup-item-local:hover {
     background-color: #444;
 }
+
+/* ================================================= */
+/* INICIO: ESTILOS CORREGIDOS PARA ESCENAS EXPANDIBLES */
+/* ================================================= */
+
+/* Contenedor principal del capítulo (escena) */
+
+.dark-theme .escena {
+    border-color: #444;
+    background-color: #2c2c2c;
+}
+
+/* Cabecera que contiene el título y los controles */
+.escena-header {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Espacio entre elementos de la cabecera */
+    padding: 8px 10px;
+    background-color: #f0f0f0;
+    border-bottom: 1px solid #ddd;
+}
+.dark-theme .escena-header {
+    background-color: #3a3a3a;
+    border-bottom-color: #555;
+}
+
+/* El input del título ocupa el espacio sobrante */
+.escena-header .imput {
+    flex-grow: 1; /* Hace que el input ocupe el espacio disponible */
+}
+
+/* Botón para expandir/contraer (la flecha) */
+.toggle-frames-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.5em; /* Tamaño de la flecha */
+    padding: 0 10px;
+    line-height: 1; /* Alineación vertical */
+    transition: transform 0.3s ease;
+    flex-shrink: 0; /* Evita que el botón se encoja */
+    color: #555;
+}
+.dark-theme .toggle-frames-btn {
+    color: #bbb;
+}
+
+/* Contenedor para los botones de la derecha (X, +Frame) */
+.escena-action-buttons {
+    display: flex;
+    gap: 5px;
+    flex-shrink: 0;
+}
+.escena-action-buttons button {
+    padding: 4px 10px; /* Hacemos los botones un poco más pequeños */
+    font-size: 0.9em;
+}
+
+/* Contenedor de los frames (el que se oculta) */
+
+.dark-theme .contenedor-frames {
+    background-color: #22272e;
+}
+
+/* Oculta el contenedor de frames cuando la escena tiene la clase .contraido */
+.escena.contraido > .contenedor-frames {
+    display: none;
+}
+
+/* Gira el icono de la flecha cuando la escena tiene la clase .contraido */
+.escena.contraido .toggle-frames-btn {
+    transform: rotate(-90deg);
+}
+
+/* =============================================== */
+/* FIN: ESTILOS CORREGIDOS PARA ESCENAS EXPANDIBLES */
+/* =============================================== */
