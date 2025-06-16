@@ -36,9 +36,9 @@
     position: absolute;
     top: 0%;
     left: 0;
-    width: 100%;
-    height: 207%;
-    z-index: 1; 
+    width: 0%;
+    height:0%;
+    z-index: 1; display: none;
 }
 
 #titulo-esfera-container {
@@ -76,18 +76,17 @@
     line-height: 1;
     font-family: 'Helvetica Neue', 'Arial', sans-serif;
     font-weight: 300;
-    font-size: 8vw;
+    font-size: 4vw;
     letter-spacing: 0.07em;
     text-shadow: 0 0 15px rgba(255, 255, 255, 0.25);
     color: white;
     text-transform: uppercase;
     transition: opacity 0.5s ease-out;
     position: absolute;
-    top: 14%;
-    left: 50%;
-    transform: translateX(-50%);  
-    
-    background-color: rgba(0, 0, 0, 0.555);
+    top: 7%;
+    right: 5%;
+     
+    background-color: rgba(0, 0, 0, 0);
 }
 
 .os-red {
@@ -104,6 +103,47 @@
     text-shadow: none;
 }
 
+#esfera {
+    background-color: white;
+    border-radius: 50%;
+  /* Mantiene la proporción de aspecto */;
+   
+      /* Ancho máximo para pantallas grandes */
+ 
+    /* Centrado de los botones internos */
+    display: flex;
+    flex-direction: column;
+    justify-content: center; 
+    align-items: center;
+    gap: 1%;
+ width: calc(12vh  + 12vw); /* Ancho relativo */
+    /* Propiedad clave para la animación */
+    transition: transform 1s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.5s ease-out;
+    animation: pulse-halo 4s infinite ease-in-out;
+aspect-ratio: 1 / 1; /* Mantiene la proporción de aspecto */
+ 
+}
+
+/* Clase para ocultar suavemente los elementos */
+.oculto {
+    opacity: 0 !important;
+    pointer-events: none; /* Evita interacciones mientras está oculto */
+}
+
+
+@keyframes pulse-halo {
+  0%, 100% {
+    box-shadow: 0 0 20px 7px rgba(255, 255, 255, 0.5), 0 0 8px 2px rgba(255, 255, 255, 0.1) inset;
+  }
+  50% {
+    box-shadow: 0 0 35px 22px rgba(255, 255, 255, 0.7), 0 0 12px 4px rgba(255, 255, 255, 0.3) inset;
+  }
+}
+
+/* Clase que dispara la expansión */
+#esfera.expandir {
+    transform: scale(50);   aspect-ratio: 1 / 1 !important; 
+}
 .pro3 { background-color: rgba(0, 0, 0, 0);
      
     border: none;
@@ -121,7 +161,7 @@
 .pro3:hover {
     letter-spacing: 7px;
     transform: scale(1);    color: black;
-background-color: #41414154;
+background-color: #41414100;
 }
 
 .oculto {
