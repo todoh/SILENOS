@@ -48,7 +48,7 @@ function eliminarFrame(frameIndex, escenaId) {
 
 function crearBotonEliminarFrame(frameIndex, escenaId) {
     let eliminarFrameBtn = document.createElement("button");
-    eliminarFrameBtn.textContent = "X";
+    eliminarFrameBtn.textContent = "❌";
     eliminarFrameBtn.className = "ideframeh";
     eliminarFrameBtn.onclick = (event) => {
         event.stopPropagation();
@@ -101,7 +101,7 @@ function actualizarLista() {
         // ========= FIN DEL CAMBIO =========
         
         let eliminarBtn = document.createElement("button");
-        eliminarBtn.textContent = "X";
+        eliminarBtn.textContent = "❌";
         eliminarBtn.className = "ide";
         eliminarBtn.onclick = (event) => {
             event.stopPropagation();
@@ -112,7 +112,7 @@ function actualizarLista() {
             }
         };
         let frameBtn = document.createElement("button");
-        frameBtn.textContent = "🖼️ + Frame";
+        frameBtn.textContent = "➕ 🖼️";
         frameBtn.className = "ideframe";
         frameBtn.onclick = (event) => {
             event.stopPropagation();
@@ -147,7 +147,7 @@ function actualizarLista() {
             frameDiv.className = "frameh";
             const textSpan = document.createElement('span');
             textSpan.classList.add('framehtxt');
-            textSpan.textContent = `. . . . . Frame ${index + 1}`;
+            textSpan.textContent = ` ${index + 1}`;
             frameDiv.appendChild(textSpan);
             frameDiv.draggable = true;
 
