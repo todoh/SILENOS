@@ -127,6 +127,7 @@ function crearInputParaEtiqueta(botonEtiqueta) {
 // ===================================
 
 let etiquetasFiltroActivas = new Set();
+let ordenAlfabeticoActivo = true; // Puedes cambiar esto para controlar la ordenación
 
 /**
  * Recoge todas las etiquetas únicas de los datos actualmente en el DOM.
@@ -156,6 +157,7 @@ function actualizarVistaDatos() {
     const ordenPredefinido = new Map(opcionesEtiqueta.map((op, index) => [op.valor, index]));
     
     elementos.sort((a, b) => {
+        // Criterio 1: Ordenación por Etiqueta
         const tagA = a.querySelector('.change-tag-btn')?.dataset.etiqueta || 'indeterminado';
         const tagB = b.querySelector('.change-tag-btn')?.dataset.etiqueta || 'indeterminado';
         
@@ -165,7 +167,12 @@ function actualizarVistaDatos() {
         if (ordenA !== ordenB) {
             return ordenA - ordenB;
         }
-        return tagA.localeCompare(tagB);
+
+        // Criterio 2: Ordenación Alfabética por Nombre
+        const nombreA = a.querySelector('.nombreh')?.value.trim().toLowerCase() || '';
+        const nombreB = b.querySelector('.nombreh')?.value.trim().toLowerCase() || '';
+        
+        return nombreA.localeCompare(nombreB);
     });
 
     // 2. RE-INSERCIÓN ORDENADA EN EL DOM
@@ -181,6 +188,7 @@ function actualizarVistaDatos() {
         }
     });
 }
+
 
 /**
  * Rellena y muestra el popup de filtros.
@@ -384,6 +392,9 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     cajaNombre.className = 'nombreh';
     cajaNombre.value = nombre;
     cajaNombre.placeholder = 'Nombre';
+    cajaNombre.addEventListener('change', () => { // Escuchar cambios para reordenar
+        actualizarVistaDatos();
+    });
     contenedor.appendChild(cajaNombre);
 
     const overlay = document.createElement('div');

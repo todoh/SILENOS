@@ -10,13 +10,17 @@
 <link rel="stylesheet" href="momentos.css">
 <link rel="stylesheet" href="editor-momento.css">
 <link rel="stylesheet" href="galeria.css">
+
+    <link rel="stylesheet" href="escenas/styles.css">
+
+
 <!-- Hoja de estilos para el nuevo editor de datos -->
 <link rel="stylesheet" href="editor-personajes.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>S</text></svg>">
 <link rel="stylesheet" href="asistente.css">
 
      <link rel="stylesheet" href="asistente.css">
-
+<script src="https://unpkg.com/gifler@0.1.0/gifler.min.js"></script>
 <script src="animaciones.js"></script>
 <script src="google.js"></script>
 <script src="main.js"></script>
@@ -118,6 +122,8 @@
     <div id="asistente-menu">
 
    <button  onclick="cerrartodo(), gridear('personajes');">Datos</button>
+               <button  onclick="cerrartodo(), abrir('vistageneral');">👁️‍🗨️ Vista General</button>
+
            <button  onclick="cerrartodo(), abrirGuion(), actualizarBotonContextual();">Guion</button>
             <button  onclick="cerrartodo(), abrir('capitulosh');">Libro</button>
             <button  onclick="cerrartodo(), abrir('escenah');">Storyboard</button>
@@ -137,32 +143,196 @@
 
 <div id="google-auth-container"></div>
 <div id="galeria">
-    <div id="galeria-contenedor">
-        <div id="galeria-elementos" class="galeria-seccion"><h2>Elementos</h2></div>
-        <div id="galeria-proyectos" class="galeria-seccion"><h2>Proyectos</h2></div>
-        <div id="galeria-lienzo-css" class="galeria-seccion"><h2>Lienzo CSS</h2></div>
-        <div id="galeria-editor-personajes" class="galeria-seccion"><h2>Editor de Personajes</h2></div>
-        <div id="galeria-editor-plantas" class="galeria-seccion"><h2>Editor de Plantas</h2></div>
-        <div id="galeria-editor-monstruos" class="galeria-seccion"><h2>Editor de Monstruos</h2></div>
-        <div id="galeria-editor-texturas" class="galeria-seccion"><h2>Editor de Texturas</h2></div>
-        <div id="galeria-editor-objetos-3d" class="galeria-seccion"><h2>Editor de Objetos 3D</h2></div>
-        <div id="galeria-editor-edificios-3d" class="galeria-seccion"><h2>Editor de Edificios 3D</h2></div>
-        <div id="galeria-editor-relieves-3d" class="galeria-seccion"><h2>Editor de Relieves 3D</h2></div>
-        <div id="galeria-estudio-montaje" class="galeria-seccion"><h2>Estudio de Montaje</h2></div>
+     <!-- Botones para sidebars -->
+    <button id="palette-toggle-btn" class="sidebar-toggle-btn left">🎨</button>
+    <button id="inspector-toggle-btn" class="sidebar-toggle-btn right">🔍</button>
+    <!-- ================== -->
+    <!-- LÍNEA DE TIEMPO    -->
+    <!-- ================== -->
+    <div id="timeline-panel">
+        <div id="timeline-controls">
+            <button id="play-btn" class="btn-base w-auto">▶️</button>
+            <button id="pause-btn" class="btn-base w-auto">⏸️</button>
+            <button id="reset-btn" class="btn-base w-auto">⏪</button>
+            <button id="start-realtime-record-btn" class="btn-base btn-danger">🔴</button>
+            <button id="stop-realtime-record-btn" class="btn-base btn-danger" style="display: none;">⬛</button>
+            <button id="export-btn" class="btn-base btn-secondary">📸</button>
+            <span id="timeline-time-display">0.00s</span> </div>
+        <div id="timeline-scrubber-area">
+            <div id="timeline-ruler">
+                </div>
+            <div id="timeline-tracks">
+                </div>
+            <div id="timeline-scrubber">
+                <div class="scrubber-handle"></div>
+            </div>
+        </div>
     </div>
-    <div id="galeria-lista">
-        <button onclick="mostrarSeccionGaleria('galeria-elementos')">Elementos</button>
-        <button onclick="mostrarSeccionGaleria('galeria-proyectos')">Proyectos</button>
-        <button onclick="mostrarSeccionGaleria('galeria-lienzo-css')">Lienzo CSS</button>
-        <button onclick="mostrarSeccionGaleria('galeria-editor-personajes')">Editor de Personajes</button>
-        <button onclick="mostrarSeccionGaleria('galeria-editor-plantas')">Editor de Plantas</button>
-        <button onclick="mostrarSeccionGaleria('galeria-editor-monstruos')">Editor de Monstruos</button>
-        <button onclick="mostrarSeccionGaleria('galeria-editor-texturas')">Editor de Texturas</button>
-        <button onclick="mostrarSeccionGaleria('galeria-editor-objetos-3d')">Editor de Objetos 3D</button>
-        <button onclick="mostrarSeccionGaleria('galeria-editor-edificios-3d')">Editor de Edificios 3D</button>
-        <button onclick="mostrarSeccionGaleria('galeria-editor-relieves-3d')">Editor de Relieves 3D</button>
-        <button onclick="mostrarSeccionGaleria('galeria-estudio-montaje')">Estudio de Montaje</button>
+    <!-- Contenedor Principal Flexbox -->
+    <div id="main-container">
+
+        <!-- ================== -->
+        <!-- BARRA LATERAL IZQUIERDA -->
+        <!-- ================== -->
+        <aside id="palette-panel" class="sidebar left">
+        
+
+            <div class="sidebar-main-content">
+                <div id="section-buttons" class="section-buttons-container">
+                    <button class="section-btn active" data-section="palette-section">🎨</button>
+                    <button class="section-btn" data-section="ground-section">🌿</button>
+                    <button class="section-btn" data-section="weather-section">☀️</button>
+               
+                    <button class="section-btn" data-section="general-controls-section">⚙️</button>
+                </div>
+
+                <div id="section-content" class="section-content-container">
+                    <!-- Sección: Paleta de Objetos -->
+                    <div id="palette-section" class="sidebar-section-content active">
+                        <h2 class="section-title">Paleta de Objetos</h2>
+                        <div id="object-palette-grid" class="palette-grid">
+                            <!-- Los items de la paleta se generarán aquí con JS -->
+                             <!-- NUEVO: Botón para crear personaje -->
+                            <div id="create-character-btn-container" class="palette-item" title="Crear un nuevo personaje">
+                                <div class="thumbnail-container">
+                                    <span style="font-size: 2.5rem; line-height: 1; color: var(--color-text-secondary);">+</span>
+                                </div>
+                                <span>Crear Personaje</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección: Suelo -->
+                    <div id="ground-section" class="sidebar-section-content">
+                        <h2 class="section-title">Suelo</h2>
+                        <div class="sidebar-content">
+                            <label class="control-label checkbox-label">
+                                <input type="checkbox" id="ground-texture-toggle" checked>
+                                <span>Textura de césped</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Sección: Clima y Hora -->
+                    <div id="weather-section" class="sidebar-section-content">
+                        <h2 class="section-title">Clima y Hora</h2>
+                        <div class="sidebar-content">
+                             <div class="control-group">
+                                <label for="day-time-slider" class="control-label">Hora del día</label>
+                                <input type="range" id="day-time-slider" min="0" max="1" step="0.01" value="0.5">
+                            </div>
+                            <div class="control-group">
+                                <label for="precipitation-select" class="control-label">Precipitación</label>
+                                <select id="precipitation-select" class="select-input">
+                                    <option value="none">Ninguno</option>
+                                    <option value="rain">Lluvia 🌧️</option>
+                                    <option value="snow">Nieve ❄️</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <label for="fog-density-slider" class="control-label">Densidad de Niebla</label>
+                                <input type="range" id="fog-density-slider" min="0" max="0.01" step="0.0001" value="0.00025">
+                            </div>
+                            <div class="control-group">
+                                <label for="cloud-density-slider" class="control-label">Opacidad de Nubes (Cielo)</label>
+                                <input type="range" id="cloud-density-slider" min="0" max="100" step="1" value="0">
+                            </div>
+                            <div class="control-group">
+                                <label for="volumetric-cloud-slider" class="control-label">Nubes Volumétricas</label>
+                                <input type="range" id="volumetric-cloud-slider" min="0" max="100" step="1" value="0">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sección: Controles Generales -->
+                    <div id="general-controls-section" class="sidebar-section-content">
+                        <h2 class="section-title">Configuración General</h2>
+                         <div class="sidebar-content">
+                            <button class="" onclick="hablar()">📣 Hablar</button>
+                            <div class="btn-group">
+                                <button id="toggle-gravity-btn" class="btn-base tool-btn">🍎</button>
+                                <button id="compass-btn" class="btn-base tool-btn">🧭</button>
+                                <button id="settings-btn" class="btn-base tool-btn">⚙️</button>
+                            </div>
+                            <hr class="my-4 border-zinc-600"> 
+<div class="control-group">
+    <label for="export-resolution-select" class="control-label">Resolución de Exportación</label>
+    <select id="export-resolution-select" class="select-input">
+        <option value="640x480">640x480 (SD) Horizontal</option>
+                <option value="480x640">480x640 (SD) Vertical</option>
+<option value="480x480">480x480 (SD) Cuadrado</option>
+
+        <option value="1280x720" selected>1280x720 (HD) Horizontal</option>
+                <option value="720x1280">720x1280 (HD) Vertical</option>
+                <option value="720x720">720x720 (HD) Cuadrado</option>
+
+        <option value="1920x1080">1920x1080 (Full HD) Horizontal</option>
+                <option value="1080x1920">1080x1920 (Full HD) Vertical</option>
+                <option value="1080x1080">1080x1880 (Full HD) Cuadrado</option>
+
+        <option value="3840x2160">3840x2160 (4K UHD) Horizontal</option>
+                <option value="2160x3840">2160x3840 (4K UHD) Vertical</option>
+                <option value="2160x2160">2160x2160 (4K UHD) Cuadrado</option>
+
+    </select>
+</div>
+
+
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ================== -->
+        <!-- VISOR 3D           -->
+        <!-- ================== -->
+        <main id="scene-container"></main>
+
+        <!-- ================== -->
+        <!-- BARRA LATERAL DERECHA-->
+        <!-- ================== -->
+        <aside id="inspector-panel" class="sidebar right">
+           
+                <div class="botoon">
+                       <button id="free-mode-btn" class="btn-base camera-mode-btn">🕊️</button>
+                                <button id="first-person-mode-btn" class="btn-base camera-mode-btn">🚶</button>
+                                <button id="programmed-mode-btn" class="btn-base camera-mode-btn">🎥</button>
+
+  <label for="gltf-input" class="btn-base btn-tertiary">📦 GLB</label>
+                            <input type="file" id="gltf-input" class="hidden-input" accept=".glb">
+                            <label for="image-input" class="btn-base btn-tertiary">🖼️ IMG</label>
+                            <input type="file" id="image-input" class="hidden-input" accept="image/png, image/jpeg, image/gif">
+
+                      <button id="save-scene-btn" class="btn-base btn-primary">💾</button>
+                            <label for="load-scene-input" class="btn-base btn-action">📂</label>
+                            <input type="file" id="load-scene-input" class="hidden-input" accept=".json"> </details>
+                        
+                        </div>
+         
+            
+            <!-- Sección: Inspector -->
+            <details class="sidebar-section" open>
+                <summary>🔍 Inspector</summary>
+                <div class="sidebar-content" id="inspector-content">
+                    <p class="placeholder-text">Selecciona un objeto para ver sus propiedades.</p>
+                </div>
+            </details>
+
+            <!-- Sección: Objetos en Escena -->
+            <details class="sidebar-section" open>
+                <summary>🌳 Objetos en Escena</summary>
+                <div class="sidebar-content">
+                    <ul id="object-list"></ul>
+                </div> 
+            
+               
+        </aside>
+
     </div>
+
+
 </div>
 <div id="momentos">
     <div id="momentos-controles-flotantes">
@@ -216,6 +386,25 @@
 
 
 </div>
+<!-- INICIO DE LA SECCIÓN DE VISTA GENERAL -->
+
+ <div id="vistageneral" >
+    
+    <!-- Encabezado y botón de acción -->
+    <div>
+        
+    
+        <button id="analizar-datos-btn" class="pro5" >
+            Analizar Datos del Proyecto
+        </button>
+    </div>
+
+    <div id="informe-container">
+ 
+      
+    </div>
+</div>
+ 
 
 
 <div id="guion-literario">
@@ -448,6 +637,59 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 
 <div id="esfera2" ></div>
 
+
+
+   <!-- ================== -->
+    <!-- MODAL PERSONALIZADO-->
+    <!-- ================== -->
+    <div id="custom-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <p id="modal-text"></p>
+            <p id="modal-progress"></p>
+            <input type="text" id="modal-input" class="modal-input" style="display: none;">
+            <div class="modal-buttons">
+                <button id="modal-cancel-btn" class="btn-base w-auto">Cancelar</button>
+                <button id="modal-ok-btn" class="btn-base w-auto btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ================== -->
+    <!-- MODAL CREADOR DE PERSONAJES -->
+    <!-- ================== -->
+    <div id="character-creator-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <h2 class="section-title">Creador de Personajes</h2>
+            <div id="character-creator-content">
+                <div id="character-preview"></div>
+                <div id="character-options">
+                     <div class="control-group">
+                        <label for="char-name" class="control-label">Nombre del Personaje</label>
+                        <input type="text" id="char-name" class="modal-input" value="Mi Personaje" style="display: block;">
+                    </div>
+                    <div class="control-group">
+                        <label for="char-head-color" class="control-label">Color de Cabeza</label>
+                        <input type="color" id="char-head-color" value="#ffc0cb">
+                    </div>
+                     <div class="control-group">
+                        <label for="char-body-color" class="control-label">Color de Cuerpo</label>
+                        <input type="color" id="char-body-color" value="#87ceeb">
+                    </div>
+                     <div class="control-group">
+                        <label for="char-height" class="control-label">Altura</label>
+                        <input type="range" id="char-height" min="0.5" max="2" step="0.1" value="1">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button id="cancel-char-creation-btn" class="btn-base w-auto">Cancelar</button>
+                <button id="save-char-btn" class="btn-base w-auto btn-primary">Guardar en Paleta</button>
+            </div>
+        </div>
+    </div>
+
+
+
 <script src="gestionEscenas.js"></script>
 <script src="momentos.js"></script>
 <script src="editor-momento.js"></script> 
@@ -468,7 +710,9 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 
 <button id="contextual-action-btn" title="Acción contextual" style="display: none;">✨</button>
 
-
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="geminiasistente.js"></script>
+    
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -510,6 +754,25 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
     });
 </script>
 
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/" : "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+            "tween": "https://cdn.jsdelivr.net/npm/@tweenjs/tween.js@21.0.0/dist/tween.esm.js"
+        }
+    }
+</script>
+
+<script type="module" src="editor-escenas-main.js"></script>
+    <script type="module" src="escenas/editor-escenas-ui.js"></script>
+    <script type="module" src="escenas/editor-escenas-objects.js"></script>
+    <script type="module" src="escenas/editor-escenas-weather.js"></script>
+    <script type="module" src="escenas/editor-escenas-modelos.js"></script>
+    <script type="module" src="escenas/editor-escenas-exportar.js"></script>
+    <script type="module" src="escenas/editor-escenas-terreno.js"></script>
+    <script type="module" src="escenas/editor-escenas-animacion.js"></script>
+    <script type="module" src="escenas/character-creator.js"></script>
 <script>
     /**
      * Función de animación de salida MEJORADA.

@@ -55,6 +55,8 @@ function cerrartodo() {
     document.getElementById('guion-literario').style.display = 'none';
     document.getElementById('momentos').style.display = 'none';
     document.getElementById('galeria').style.display = 'none';
+        document.getElementById('vistageneral').style.display = 'none';
+
     actualizarBotonContextual(); // <--- AÑADIR ESTA LÍNEA
 }
 
@@ -87,7 +89,21 @@ function abrir(escena) {
             }
         });
     }
-
+ if (escena === 'vistageneral') {
+        // Comprueba si existen datos de informe guardados en la variable global.
+        if (typeof ultimoInformeGenerado !== 'undefined' && ultimoInformeGenerado) {
+            // Si existen, llama a la función para dibujarlos en el DOM.
+            if (typeof renderizarInformeCompleto === 'function') {
+                renderizarInformeCompleto(ultimoInformeGenerado);
+            }
+        } else {
+            // Si no hay datos, muestra un mensaje para que el usuario genere uno.
+            const informeContainer = document.getElementById('informe-container');
+            if (informeContainer && informeContainer.innerHTML.trim() === '') {
+                 informeContainer.innerHTML = '<p style="text-align: center; margin-top: 2rem;">Haz clic en "Analizar Datos del Proyecto" para generar un nuevo informe.</p>';
+            }
+        }
+    }
    actualizarBotonContextual(); 
 
 }

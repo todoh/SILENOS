@@ -109,7 +109,8 @@ async function empaquetarDatosDelProyecto() {
         personajes: processedCharacters,
         momentos: processedMomentos,
         guionLiterario: guionLiterarioData,
-        apiKeyGemini: typeof apiKey !== 'undefined' ? apiKey : ''
+        apiKeyGemini: typeof apiKey !== 'undefined' ? apiKey : '',
+        informeGeneral: typeof ultimoInformeGenerado !== 'undefined' ? ultimoInformeGenerado : null
     };
 }
 
@@ -336,6 +337,14 @@ function cargarDatosEnLaApp(data) {
     if (data.escenas && Array.isArray(data.escenas)) {
         storyScenes = data.escenas;
         if(typeof renderEscenasUI === 'function') renderEscenasUI();
+    }
+
+
+    // Carga los datos del informe de Vista General ---
+    if (data.informeGeneral) {
+        // Guarda los datos en la variable global para que estén listos.
+        ultimoInformeGenerado = data.informeGeneral;
+        console.log("Datos del informe de Vista General cargados y listos.");
     }
 
 

@@ -516,6 +516,19 @@ margin: 0%; z-index:   1000 ;}
     display: none;
     align-items: flex-start;
 }
+ #vistageneral {
+    background-color: transparent;
+    width: 99%;
+    margin: 0%;
+    position: absolute; left: 1%;
+    top: 3%;
+    height: 97%;
+    display: none;
+    align-items: flex-start;
+   
+}
+
+
 
 
 
@@ -1825,4 +1838,137 @@ transform: translateY(-50%);
     background-color: #333;
     color: white;
     box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
+
+/* Estilos para el contenedor del asistente y el informe */
+
+#asistente-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 400px;
+    height: 600px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+}
+
+/*
+ * Contenedor principal del informe.
+ * Usamos Flexbox para distribuir el espacio entre los elementos hijos (como un título y el contenido).
+ * 'overflow: hidden' se mantiene para que los bordes redondeados funcionen correctamente,
+ * pero el scroll se gestionará en el elemento hijo '#informe-content'.
+ */
+
+
+/*
+ * Contenedor del contenido del informe.
+ * Aquí es donde aplicamos la magia de Flexbox para el scroll.
+ */
+
+#informe-container { overflow: scroll !important; height: 3000px;}
+#informe-container {
+    position: fixed;
+    bottom: 7%;
+    left: 0%;
+    height: 93%;
+    width: 100%;
+    right: 0%;
+    top: 0%;
+   background-color: #ffffff00;
+    border: 0px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    overflow: hidden; /* Esto es para que los bordes redondeados corten bien a los hijos */
+}
+ 
+
+/* Otros estilos que puedas tener para el chat, etc. */
+#chat-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#chat-input {
+    display: flex;
+    border-top: 1px solid #ccc;
+    padding: 10px;
+}
+
+#chat-input input {
+    flex-grow: 1;
+    border: 0px solid #ccc;
+    border-radius: 5px;
+    padding: 8px;
+}
+
+#chat-input button {
+    margin-left: 10px;
+    padding: 8px 12px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#chat-input button:hover {
+    background-color: #0056b3;
+}
+
+
+#character-cloud-canvas {
+width: 100%;
+height: 75dvh;
+ 
+
+
+
+}
+
+
+/* ===================================== */
+/* ESTILOS PARA LA VISTA GENERAL (INFORME) */
+/* ===================================== */
+ 
+
+/* Estilos para las tarjetas del informe */
+.platzhalter-card {
+    border: 1px solid #ddd;
+    padding: 1.5em;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+}
+
+.dark-theme .platzhalter-card {
+    background-color: #2c2c2c;
+    border-color: #444;
+}
+
+/* Regla para que una tarjeta ocupe todo el ancho del grid si es necesario */
+.full-width-card {
+    grid-column: 1 / -1;
+}
+
+/* Contenedor para los gráficos para asegurar que no se desborden */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+    margin-top: 1em;
 }
