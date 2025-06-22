@@ -53,11 +53,8 @@ function hanSidoFramesGenerados(tituloGuion) {
         return false;
     }
 
-const hayFrames = escenasDelGuion.some(id => 
-    escenas[id] && 
-    escenas[id].frames && 
-    escenas[id].frames.some(frame => frame.texto && frame.texto.trim() !== '')
-);
+    const hayFrames = escenasDelGuion.some(id => escenas[id] && escenas[id].frames && escenas[id].frames.length > 0);
+
     return hayFrames;
 }
 

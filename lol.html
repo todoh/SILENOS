@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Escenas 3D Supervisado</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        /* Estilos generales y tema oscuro */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121212; 
+            color: #e0e0e0; 
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1e1e1e;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+        h1, h2 { 
+            text-align: center; 
+            color: #bb86fc;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        h2 {
+            color: #03dac6;
+            margin-top: 30px;
+        }
+
+        /* Panel de control */
+        .control-panel { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px; 
+            margin-bottom: 30px; 
+        }
+        textarea { 
+            min-height: 80px; 
+            background-color: #2c2c2c; 
+            color: #fff; 
+            border: 1px solid #444; 
+            border-radius: 8px; 
+            padding: 12px;
+            font-size: 16px;
+            resize: vertical;
+        }
+        .buttons-wrapper {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        button { 
+            padding: 12px 20px; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.1s;
+            flex-grow: 1;
+        }
+        #btn-iniciar-preproduccion { background-color: #6200ee; }
+        #btn-iniciar-preproduccion:hover { background-color: #7f39fb; }
+        #btn-componer-escena { background-color: #03dac6; color: #121212; }
+        #btn-componer-escena:hover { background-color: #36ebd8; }
+        
+        button:disabled { 
+            background-color: #333; 
+            color: #777; 
+            cursor: not-allowed; 
+        }
+        button:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        /* Lista de Activos */
+        #pre-production-container { 
+            background-color: #2c2c2c; 
+            padding: 20px; 
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        #asset-list .asset-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 15px; 
+            border-bottom: 1px solid #444; 
+            gap: 15px;
+        }
+        #asset-list .asset-item:last-child { 
+            border-bottom: none; 
+        }
+        #asset-list .asset-name {
+            flex-grow: 1;
+        }
+        #asset-list .asset-status { 
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        #asset-list .status-found { color: #81C784; } /* Verde */
+        #asset-list .status-missing { color: #E57373; } /* Rojo */
+        .generate-btn { 
+            background-color: #ffb74d; 
+            color: black; 
+            padding: 8px 12px; 
+            font-size: 14px; 
+            font-weight: normal;
+        }
+        .generate-btn:hover { background-color: #ffca7b; }
+        .generate-btn:disabled { background-color: #555; color: #888; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Generador de Escenas 3D Supervisado</h1>
+
+        <div class="control-panel">
+            <textarea id="user-prompt-input" placeholder="Ej: 'una hoguera crepitante rodeada de pinos altos en las montañas rocosas bajo una noche estrellada con luna llena'"></textarea>
+            <div class="buttons-wrapper">
+                <button id="btn-iniciar-preproduccion">Paso 1: Analizar y Listar Activos</button>
+                <button id="btn-componer-escena" disabled>Paso 2: Componer Escena Final</button>
+            </div>
+        </div>
+
+        <div id="pre-production-container" style="display: none;">
+            <h2>Lista de Activos Requeridos</h2>
+            <div id="asset-list">
+                <!-- La lista de activos se generará aquí dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- La biblioteca de modelos 3D. Normalmente estaría oculta. -->
+    <!-- Los datos del modelo se guardan dentro de un script para no interferir con el HTML -->
+    <div id="biblioteca" style="display: none;">
+        <!-- Ejemplo de un objeto pre-existente para demostrar la funcionalidad de "Encontrado" -->
+        <div class="modelo3d" id="pino-generico">
+            <script type="application/json">
+            {
+              "objects": [
+                {
+                  "type": "Group",
+                  "name": "pino-generico",
+                  "position": {"x": 0, "y": 0, "z": 0},
+                  "children": [
+                    {"type": "Cylinder", "name": "tronco", "position": {"x": 0, "y": 5, "z": 0}, "size": {"radius": 1, "height": 10}, "color": "#A0522D"},
+                    {"type": "Cone", "name": "copa", "position": {"x": 0, "y": 12, "z": 0}, "size": {"radius": 4, "height": 8}, "color": "#228B22"}
+                  ]
+                }
+              ]
+            }
+            </script>
+        </div>
+    </div>
+
+    <script>
+        // PEGA AQUÍ TU CLAVE DE API DE GEMINI
+        const apiKey = "AIzaSyDrGHtiDN0frMLIZx9q1NTTnsvkta6dL-Q";
+    </script>
+    <script>
+        // --- INICIO DEL CÓDIGO JavaScript ---
+
+        // --- Estado Global de la Aplicación ---
+        let sceneAssets = { cielo: null, suelo: null, objetos: [] };
+
+        // --- Variables Globales para la Escena y el Modal de Three.js ---
+        let localScene, localCamera, localRenderer, localControls;
+        let modalContainer = null;
+        let animationFrameId = null;
+
+        // --- Event Listeners de la Interfaz ---
+        document.getElementById('btn-iniciar-preproduccion').addEventListener('click', iniciarPreProduccion);
+        document.getElementById('btn-componer-escena').addEventListener('click', componerEscenaFinal);
+
+        /**
+         * PASO 1, FASE A: Analiza el prompt y genera la lista de activos necesarios.
+         */
+        async function iniciarPreProduccion() {
+            const userPrompt = document.getElementById('user-prompt-input').value;
+            if (!userPrompt) {
+                alert("Por favor, describe la escena que quieres crear.");
+                return;
+            }
+
+            console.log("Iniciando análisis del prompt:", userPrompt);
+            document.getElementById('pre-production-container').style.display = 'block';
+            document.getElementById('asset-list').innerHTML = `<p style="text-align: center;">Analizando tu idea y buscando en la biblioteca...</p>`;
+            document.getElementById('btn-componer-escena').disabled = true;
+
+            try {
+                // 1. Analizar prompt para dividirlo en categorías.
+                const analysisResult = await llamarApiYParsearJson(createAnalysisPrompt(userPrompt));
+                console.log("Análisis completado:", analysisResult);
+
+                // 2. Generar datos para cielo y suelo (siempre se generan de nuevo por simplicidad).
+                const [skyData, groundData] = await Promise.all([
+                    llamarApiYParsearJson(createSkyPrompt(analysisResult.cielo)),
+                    llamarApiYParsearJson(createGroundPrompt(analysisResult.suelo))
+                ]);
+                sceneAssets.cielo = skyData;
+                sceneAssets.suelo = groundData;
+                
+                // 3. Aplanar la lista de objetos requeridos.
+                sceneAssets.objetos = []; // Limpiamos la lista anterior
+                const categorias = ['gigante', 'grande', 'mediano', 'pequeno'];
+                categorias.forEach(cat => {
+                    if (analysisResult[cat] && analysisResult[cat].trim() !== "") {
+                        sceneAssets.objetos.push({
+                            id: slugify(analysisResult[cat]),
+                            description: analysisResult[cat],
+                            sizeCategory: cat,
+                            status: 'pending' // pending, found, missing
+                        });
+                    }
+                });
+                
+                // 4. Mostrar la lista en la UI y verificar la biblioteca.
+                actualizarListaDeActivosUI();
+
+            } catch (error) {
+                console.error("Error en la fase de pre-producción:", error);
+                document.getElementById('asset-list').innerHTML = `<p style="color: #E57373; text-align: center;">Error: ${error.message}</p>`;
+            }
+        }
+
+        /**
+         * Renderiza la lista de activos en el HTML y comprueba su estado.
+         */
+        function actualizarListaDeActivosUI() {
+            const assetListDiv = document.getElementById('asset-list');
+            assetListDiv.innerHTML = '';
+            let allFound = true;
+
+            // Elementos especiales: Cielo y Suelo
+            assetListDiv.innerHTML += `
+                <div class="asset-item">
+                    <span class="asset-name">Cielo y Suelo</span>
+                    <span class="asset-status status-found">✓ Generados</span>
+                </div>`;
+
+            if (sceneAssets.objetos.length === 0) {
+                assetListDiv.innerHTML += `<p style="text-align: center; padding: 10px 0;">No se identificaron objetos específicos para generar.</p>`;
+            }
+
+            // Resto de objetos
+            sceneAssets.objetos.forEach(asset => {
+                const isInLibrary = !!document.querySelector(`#biblioteca .modelo3d#${asset.id}`);
+                asset.status = isInLibrary ? 'found' : 'missing';
+                if (!isInLibrary) allFound = false;
+
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'asset-item';
+                itemDiv.innerHTML = `
+                    <span class="asset-name">${asset.description} <em>(Cat: ${asset.sizeCategory})</em></span>
+                    <div class="asset-status">
+                    ${asset.status === 'found' 
+                        ? `<span class="status-found">✓ Encontrado</span>`
+                        : `<span class="status-missing">✗ Faltante</span>
+                           <button class="generate-btn" data-id="${asset.id}" data-desc="${asset.description}" data-size="${asset.sizeCategory}">Generar</button>`
+                    }
+                    </div>
+                `;
+                assetListDiv.appendChild(itemDiv);
+            });
+            
+            // Añadir listeners a los nuevos botones de "Generar"
+            document.querySelectorAll('.generate-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const { id, desc, size } = e.target.dataset;
+                    generarObjetoIndividual(id, desc, size, e.target);
+                });
+            });
+
+            // Habilitar el botón de composición final si todo está listo.
+            document.getElementById('btn-componer-escena').disabled = !allFound;
+            if (allFound && (sceneAssets.cielo || sceneAssets.objetos.length > 0)) {
+                console.log("¡Todos los activos están listos! Puedes componer la escena.");
+            }
+        }
+
+        /**
+         * PASO 1, FASE B: Genera un único objeto que falta.
+         */
+        async function generarObjetoIndividual(id, description, sizeCategory, buttonElement) {
+            console.log(`Generando objeto: ${id}`);
+            buttonElement.disabled = true;
+            buttonElement.textContent = 'Generando...';
+
+            try {
+                const preDesignPrompt = createObjectPreDesignPrompt(description);
+                const detailedDescription = await llamarApiGeminiInterna(preDesignPrompt);
+
+                const finalJsonPrompt = createObjectJsonPrompt(detailedDescription, sizeCategory);
+                const objectJson = await llamarApiYParsearJson(finalJsonPrompt);
+
+                agregarABiblioteca(id, objectJson);
+                console.log(`Objeto "${id}" añadido a la biblioteca.`);
+                
+                actualizarListaDeActivosUI();
+            } catch (error) {
+                console.error(`Error generando el objeto ${id}:`, error);
+                alert(`No se pudo generar el objeto: ${description}. Revisa la consola.`);
+                buttonElement.disabled = false;
+                buttonElement.textContent = 'Generar';
+            }
+        }
+
+        /**
+         * Añade un elemento generado al div de la biblioteca en el DOM.
+         */
+        function agregarABiblioteca(id, objectJson) {
+            const biblioteca = document.getElementById('biblioteca');
+            const newModelDiv = document.createElement('div');
+            newModelDiv.className = 'modelo3d';
+            newModelDiv.id = id;
+
+            const scriptTag = document.createElement('script');
+            scriptTag.type = 'application/json';
+            scriptTag.textContent = JSON.stringify(objectJson, null, 2);
+
+            newModelDiv.appendChild(scriptTag);
+            biblioteca.appendChild(newModelDiv);
+        }
+
+        /**
+         * PASO 2: Recopila todos los activos de la biblioteca y construye la escena 3D.
+         */
+        function componerEscenaFinal() {
+            console.log("Iniciando composición de la escena final...");
+            showModalWithMessage("Ensamblando la escena final...");
+
+            const finalSceneData = {
+                sky: sceneAssets.cielo,
+                ground: sceneAssets.suelo,
+                giant: { objects: [] },
+                large: { objects: [] },
+                medium: { objects: [] },
+                small: { objects: [] }
+            };
+
+            // Recopilar todos los objetos desde la biblioteca
+            sceneAssets.objetos.forEach(asset => {
+                if (asset.status === 'found') {
+                    const modelDiv = document.querySelector(`#biblioteca .modelo3d#${asset.id}`);
+                    if (modelDiv) {
+                        const scriptTag = modelDiv.querySelector('script[type="application/json"]');
+                        try {
+                            const modelData = JSON.parse(scriptTag.textContent);
+                            const categoryKey = asset.sizeCategory.toLowerCase();
+                            if (finalSceneData[categoryKey]) {
+                                finalSceneData[categoryKey].objects.push(...modelData.objects);
+                            }
+                        } catch (e) {
+                            console.error(`Error al parsear el JSON del activo ${asset.id}`, e);
+                        }
+                    }
+                }
+            });
+
+            console.log("Datos finales para la escena:", finalSceneData);
+            buildComplexScene(finalSceneData);
+        }
+        
+        // --- COPIED AND ADAPTED FUNCTIONS FROM ORIGINAL SCRIPT ---
+
+        function slugify(text) {
+            return text.toString().toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^\w\-]+/g, '')
+                .replace(/\-\-+/g, '-')
+                .replace(/^-+/, '')
+                .replace(/-+$/, '');
+        }
+
+        function createAnalysisPrompt(userPrompt) {
+            return `Analiza el siguiente prompt de un usuario para una escena 3D: "${userPrompt}". Identifica los elementos y clasifícalos en categorías: cielo, suelo, gigante (montañas, cañones), grande (árboles, casas), mediano (coches, rocas) y pequeno (hoguera, flores). Genera un JSON con una descripción textual para cada categoría. Si una categoría no tiene elementos, su valor debe ser un string vacío. SOLO GENERA EL JSON, SIN TEXTO ADICIONAL NI COMENTARIOS. Ejemplo de entrada: "una hoguera rodeada de arboles en las montañas en un cielo de luna llena" Ejemplo de salida JSON: { "cielo": "Un cielo nocturno oscuro con una luna llena brillante y muchas estrellas.", "suelo": "Un suelo de hierba verde, un poco irregular.", "gigante": "Grandes montañas rocosas en la distancia.", "grande": "Varios pinos altos alrededor de la zona central.", "mediano": "", "pequeno": "Una hoguera crepitante en el centro." }`;
+        }
+
+        function createSkyPrompt(description) {
+            if (!description) return 'Genera un JSON para un cielo simple de color azul claro. La estructura debe ser: { "type": "color", "colors": ["#87CEEB"] }';
+            return `Genera un JSON para un cielo de Three.js basado en: "${description}". Si es un color sólido, usa type: "color". Si es un degradado, usa type: "gradient". Si hay estrellas, añade un objeto "stars" con "count" y "size". Si hay una luna, añade un objeto "moon" con "size", "color" y "position". SOLO GENERA EL JSON. ESTRUCTURA: { "type": "color"|"gradient", "colors": ["#hex1", "#hex2"], "stars": {"count": int, "size": float}, "moon": {"size": float, "color":"#hex", "position": {"x":int, "y":int, "z":int}} }`;
+        }
+
+        function createGroundPrompt(description) {
+            if (!description) return 'Genera un JSON para un suelo de color marrón por defecto. La estructura debe ser: { "texture": "color", "color": "#A0522D" }';
+            return `Genera un JSON para un suelo (un plano) en Three.js basado en: "${description}". Solo implementa color sólido. SOLO GENERA EL JSON. ESTRUCTURA: { "texture": "color", "color": "#hexcolor" }`;
+        }
+        
+        function createObjectPreDesignPrompt(description) {
+            return `Describe con gran detalle los componentes visuales de lo siguiente para una escena 3D: "${description}". Desglosa el objeto en sus partes geométricas básicas (ej: cilindro, cono, esfera), mencionando sus colores y relaciones. Si se mencionan varios objetos (ej. "árboles"), describe las características de un solo árbol genérico que luego se pueda replicar. El resultado debe ser solo texto descriptivo, no JSON. Ejemplo de entrada: "Varios pinos altos alrededor de la zona central." Ejemplo de salida: "Un pino alto consiste en un tronco cilíndrico de color marrón oscuro (#A0522D) y una copa cónica de color verde intenso (#228B22) que se asienta sobre el tronco."`;
+        }
+
+        function createObjectJsonPrompt(detailedDescription, sizeCategory) {
+            return `Genera un array de objetos 3D para Three.js en JSON basado en la siguiente descripción detallada: "${detailedDescription}". La categoría de tamaño es "${sizeCategory}", ajusta las dimensiones de "size" a esta escala (gigante > 100, grande > 10, mediano > 1, pequeno < 1). Para modelos complejos, usa type: "Group" y anida sus partes en "children". Si la descripción implica varios objetos, crea al menos 3 instancias con posiciones distintas y ligeras variaciones. SOLO GENERA EL JSON. ESTRUCTURA: { "objects": [{"type": "Box"|"Sphere"|"Cylinder"|"Cone"|"Group", "name": "string", "position": {"x", "y", "z"}, "size": {"width", "height",...}, "color": "#hex", "children": []}] }`;
+        }
+        
+        async function llamarApiYParsearJson(prompt, maxRetries = 3) {
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    const rawResponse = await llamarApiGeminiInterna(prompt);
+                    const jsonString = extractJson(rawResponse);
+                    return JSON.parse(jsonString);
+                } catch (error) {
+                    console.warn(`Intento ${attempt}/${maxRetries} fallido al parsear JSON. Reintentando...`);
+                    if (attempt === maxRetries) throw new Error(`No se pudo obtener una respuesta JSON válida tras ${maxRetries} intentos.`);
+                }
+            }
+        }
+        
+        async function llamarApiGeminiInterna(prompt) {
+            if (typeof apiKey === 'undefined' || !apiKey || apiKey === "YOUR_GEMINI_API_KEY") {
+                throw new Error("La clave de API de Gemini no está definida. Por favor, edita el script y añade tu clave.");
+            }
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            const response = await fetch(apiUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+            if (!response.ok) throw new Error(`Error de API (${response.status}): ${await response.text()}`);
+            const data = await response.json();
+            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!text) throw new Error("La respuesta de la API no contiene texto válido.");
+            return text;
+        }
+
+        function extractJson(text) {
+            const match = text.match(/```json\n([\s\S]*?)\n```/);
+            if (match && match[1]) return match[1];
+            const startIndex = text.indexOf('{');
+            const endIndex = text.lastIndexOf('}');
+            if (startIndex !== -1 && endIndex > startIndex) return text.substring(startIndex, endIndex + 1);
+            return text;
+        }
+
+        // --- Three.js Scene Building and Modal Management ---
+        function buildComplexScene(sceneElements) {
+            const rendererContainer = document.getElementById('gemini-renderer-container');
+            const messageContainer = document.getElementById('gemini-message-container');
+            if (!rendererContainer || !messageContainer) { showModalWithMessage("Error: Contenedores del modal no encontrados."); return; }
+            rendererContainer.style.display = 'block';
+            messageContainer.style.display = 'none';
+            cleanupScene();
+            localScene = new THREE.Scene();
+            const sky = sceneElements.sky;
+            if (sky.type === 'color') localScene.background = new THREE.Color(sky.colors[0]);
+            else if (sky.type === 'gradient' && sky.colors.length >= 2) {
+                const canvas = document.createElement('canvas'); canvas.width = 2; canvas.height = 256;
+                const context = canvas.getContext('2d');
+                const gradient = context.createLinearGradient(0, 0, 0, 256);
+                gradient.addColorStop(0, sky.colors[0]); gradient.addColorStop(1, sky.colors[1]);
+                context.fillStyle = gradient; context.fillRect(0, 0, 2, 256);
+                localScene.background = new THREE.CanvasTexture(canvas);
+            }
+            if (sky.stars) addStars(sky.stars);
+            if (sky.moon) addMoon(sky.moon);
+            const ground = sceneElements.ground;
+            const groundMesh = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), new THREE.MeshStandardMaterial({ color: ground.color || '#8C6854', side: THREE.DoubleSide }));
+            groundMesh.rotation.x = -Math.PI / 2;
+            localScene.add(groundMesh);
+            const allObjects = [...(sceneElements.giant?.objects || []), ...(sceneElements.large?.objects || []), ...(sceneElements.medium?.objects || []), ...(sceneElements.small?.objects || [])];
+            allObjects.forEach(objData => { const mesh = createMeshFromData(objData); if (mesh) localScene.add(mesh); });
+            localCamera = new THREE.PerspectiveCamera(75, rendererContainer.clientWidth / rendererContainer.clientHeight, 0.1, 3000);
+            localCamera.position.set(25, 30, 60);
+            localCamera.lookAt(0, 0, 0);
+            localRenderer = new THREE.WebGLRenderer({ antialias: true });
+            localRenderer.setSize(rendererContainer.clientWidth, rendererContainer.clientHeight);
+            rendererContainer.innerHTML = '';
+            rendererContainer.appendChild(localRenderer.domElement);
+            localControls = new THREE.OrbitControls(localCamera, localRenderer.domElement);
+            localControls.enableDamping = true;
+            localScene.add(new THREE.AmbientLight(0xffffff, 0.7));
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+            dirLight.position.set(50, 100, 25);
+            localScene.add(dirLight);
+            animateLocal();
+        }
+
+        function createMeshFromData(objData) {
+            if (objData.type.toLowerCase() === 'group') {
+                const group = new THREE.Group();
+                objData.children?.forEach(childData => { const childMesh = createMeshFromData(childData); if (childMesh) group.add(childMesh); });
+                group.position.set(objData.position?.x || 0, objData.position?.y || 0, objData.position?.z || 0);
+                return group;
+            }
+            let geometry;
+            const mat = new THREE.MeshStandardMaterial({ color: objData.color || '#ffffff' });
+            const s = objData.size || {};
+            switch (objData.type.toLowerCase()) {
+                case 'box': geometry = new THREE.BoxGeometry(s.width || 1, s.height || 1, s.depth || 1); break;
+                case 'sphere': geometry = new THREE.SphereGeometry(s.radius || 1, 32, 16); break;
+                case 'cylinder': geometry = new THREE.CylinderGeometry(s.radiusTop ?? s.radius ?? 1, s.radiusBottom ?? s.radius ?? 1, s.height || 2, 32); break;
+                case 'cone': geometry = new THREE.ConeGeometry(s.radius || 1, s.height || 2, 32); break;
+                default: return null;
+            }
+            const mesh = new THREE.Mesh(geometry, mat);
+            mesh.position.set(objData.position?.x || 0, objData.position?.y || 0, objData.position?.z || 0);
+            return mesh;
+        }
+
+        function addStars(starData) {
+            const vertices = [];
+            for (let i = 0; i < starData.count; i++) {
+                vertices.push(THREE.MathUtils.randFloatSpread(2000), THREE.MathUtils.randFloat(100, 1000), THREE.MathUtils.randFloatSpread(2000));
+            }
+            const geom = new THREE.BufferGeometry();
+            geom.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            localScene.add(new THREE.Points(geom, new THREE.PointsMaterial({ color: 0xffffff, size: starData.size })));
+        }
+
+        function addMoon(moonData) {
+            const moon = new THREE.Mesh(new THREE.SphereGeometry(moonData.size, 32, 16), new THREE.MeshBasicMaterial({ color: moonData.color }));
+            moon.position.set(moonData.position.x, moonData.position.y, moonData.position.z);
+            localScene.add(moon);
+        }
+
+        function showModalWithMessage(message) {
+            if (!modalContainer) {
+                modalContainer = document.createElement('div');
+                modalContainer.id = 'gemini-video-modal';
+                Object.assign(modalContainer.style, { position: 'fixed', top: '0', left: '0', width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.8)', zIndex: '10001', display: 'flex', alignItems: 'center', justifyContent: 'center' });
+                document.body.appendChild(modalContainer);
+            }
+            modalContainer.innerHTML = `<div style="background: #1e1e1e; padding: 20px; border-radius: 10px; width: 90%; max-width: 900px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 5px 25px rgba(0,0,0,0.5);">
+                <div id="gemini-renderer-container" style="width: 100%; height: 500px; display: none; border-radius: 8px; margin-bottom: 15px;"></div>
+                <div id="gemini-message-container" style="font-family: monospace; text-align: center; white-space: pre-wrap; padding: 20px;">${message}</div>
+                <button id="close-gemini-modal" style="position: absolute; top: 15px; right: 15px; background: #333; border: none; color: white; cursor: pointer; border-radius: 50%; width: 30px; height: 30px; font-weight: bold; line-height: 30px; text-align: center;">X</button>
+            </div>`;
+            modalContainer.style.display = 'flex';
+            document.getElementById('close-gemini-modal').addEventListener('click', hideModal);
+        }
+
+        function hideModal() {
+            if (modalContainer) modalContainer.style.display = 'none';
+            if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
+            cleanupScene();
+        }
+
+        function cleanupScene() {
+            if (!localScene) return;
+            while(localScene.children.length > 0){
+                const obj = localScene.children[0];
+                if(obj.geometry) obj.geometry.dispose();
+                if(obj.material) Array.isArray(obj.material) ? obj.material.forEach(m => m.dispose()) : obj.material.dispose();
+                localScene.remove(obj);
+            }
+            if (localRenderer) { localRenderer.dispose(); localRenderer = null; }
+        }
+
+        function animateLocal() {
+            animationFrameId = requestAnimationFrame(animateLocal);
+            if (localRenderer) {
+                if(localControls) localControls.update();
+                localRenderer.render(localScene, localCamera);
+            }
+        }
+    </script>
+</body>
+</html>

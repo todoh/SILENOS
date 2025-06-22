@@ -3,12 +3,12 @@
 #galeria {
     display: none; /* Oculta por defecto */
     position: absolute;
-    top: 1%;
-    left: 1%;
-    right: 1%;
-    bottom: 1%;
+    top: 0%;
+    left: 0%;
+    right: 0%;
+    bottom: 0%;
     background-color: #f0f2f5;
-    border-radius: 8px;
+    border-radius: 0px;
     flex-direction: row-reverse; /* Cambia el orden visual de los hijos */
     overflow: hidden;
 }

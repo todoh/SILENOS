@@ -12,7 +12,8 @@
 <link rel="stylesheet" href="galeria.css">
 
     <link rel="stylesheet" href="escenas/styles.css">
-
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
 <!-- Hoja de estilos para el nuevo editor de datos -->
 <link rel="stylesheet" href="editor-personajes.css">
@@ -128,9 +129,9 @@
             <button  onclick="cerrartodo(), abrir('capitulosh');">Libro</button>
             <button  onclick="cerrartodo(), abrir('escenah');">Storyboard</button>
          
-            <button  onclick="cerrartodo(), abrir('galeria');">Pelicula</button>
+            <button id="pelicula" onclick="cerrartodo(), abrir('galeria');">Pelicula</button>
             <button  onclick="cerrartodo(), abrir('momentos');">Videojuego</button>
- 
+            <button  onclick="cerrartodo(), abrir('biblioteca');">📚 Biblioteca</button>
             <button class="pro" onclick="abrirModalConfig()">⚙️ Ajustes </button>
      
         <button class="pro" onclick="guardarJSON()">💾 Guardar</button>
@@ -142,8 +143,10 @@
 </div>
 
 <div id="google-auth-container"></div>
-<div id="galeria">
-     <!-- Botones para sidebars -->
+<div id="galeria" style="display: none;">
+  
+    
+  <!-- Botones para sidebars -->
     <button id="palette-toggle-btn" class="sidebar-toggle-btn left">🎨</button>
     <button id="inspector-toggle-btn" class="sidebar-toggle-btn right">🔍</button>
     <!-- ================== -->
@@ -181,6 +184,8 @@
                 <div id="section-buttons" class="section-buttons-container">
                     <button class="section-btn active" data-section="palette-section">🎨</button>
                     <button class="section-btn" data-section="ground-section">🌿</button>
+                    <button class="section-btn" data-section="terrain-brush-section">🖌️</button>
+                    <button class="section-btn" data-section="terrain-sculpt-section">🏔️</button> <!-- NUEVO: Botón para la sección de modelado -->
                     <button class="section-btn" data-section="weather-section">☀️</button>
                
                     <button class="section-btn" data-section="general-controls-section">⚙️</button>
@@ -206,12 +211,72 @@
                     <div id="ground-section" class="sidebar-section-content">
                         <h2 class="section-title">Suelo</h2>
                         <div class="sidebar-content">
-                            <label class="control-label checkbox-label">
-                                <input type="checkbox" id="ground-texture-toggle" checked>
-                                <span>Textura de césped</span>
-                            </label>
+                            <p class="placeholder-text">Usa las secciones "Pincel de Terreno" y "Modelado de Terreno" para modificar el suelo.</p>
                         </div>
                     </div>
+
+                    <!-- Sección de Pincel de Terreno -->
+                    <div id="terrain-brush-section" class="sidebar-section-content">
+                        <h2 class="section-title">Pincel de Terreno</h2>
+                        <div class="sidebar-content">
+                            <button id="terrain-brush-toggle-btn" class="btn-base btn-primary mb-4">
+                                Activar/Desactivar Pincel 🖌️
+                            </button>
+                            
+                            <div class="control-group">
+                                <label class="control-label">Textura del Pincel</label>
+                                <div class="btn-group">
+                                    <button class="btn-base terrain-texture-btn active" data-texture="grass">Césped 🌿</button>
+                                    <button class="btn-base terrain-texture-btn" data-texture="rock">Roca 🪨</button>
+                                    <button class="btn-base terrain-texture-btn" data-texture="sand">Arena 🏖️</button>
+                                    <button class="btn-base terrain-texture-btn" data-texture="snow">Nieve ❄️</button>
+                                    <button class="btn-base terrain-texture-btn" data-texture="dirt">Tierra 🌰</button>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label for="brush-size-slider" class="control-label">Tamaño del Pincel</label>
+                                <input type="range" id="brush-size-slider" min="1" max="200" step="1" value="50">
+                            </div>
+
+                            <div class="control-group">
+                                <label for="brush-strength-slider" class="control-label">Intensidad del Pincel</label>
+                                <input type="range" id="brush-strength-slider" min="0.01" max="1.0" step="0.01" value="0.1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- NUEVO: Sección de Modelado de Terreno -->
+                    <div id="terrain-sculpt-section" class="sidebar-section-content">
+                        <h2 class="section-title">Modelado de Terreno</h2>
+                        <div class="sidebar-content">
+                            <button id="terrain-sculpt-toggle-btn" class="btn-base btn-primary mb-4">
+                                Activar/Desactivar Esculpir ⛰️
+                            </button>
+                            
+                            <div class="control-group">
+                                <label class="control-label">Modo de Esculpir</label>
+                                <div class="btn-group">
+                                    <button class="btn-base sculpt-mode-btn active" data-mode="raise">Elevar ⬆️</button>
+                                    <button class="btn-base sculpt-mode-btn" data-mode="lower">Bajar ⬇️</button>
+                                    <button class="btn-base sculpt-mode-btn" data-mode="flatten">Aplanar 〰️</button>
+                                    <button class="btn-base sculpt-mode-btn" data-mode="smooth">Suavizar 🌊</button>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label for="sculpt-strength-slider" class="control-label">Fuerza de Esculpir</label>
+                                <input type="range" id="sculpt-strength-slider" min="0.1" max="10" step="0.1" value="1.0">
+                            </div>
+
+                            <div class="control-group">
+                                <label for="flatten-height-input" class="control-label">Altura de Aplanado</label>
+                                <input type="number" id="flatten-height-input" class="text-input" value="0.0" step="0.1">
+                                <p class="text-zinc-400 text-sm mt-1">Fija la altura al activar 'Aplanar' o escribe un valor.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- FIN NUEVA SECCIÓN DE MODELADO -->
 
                     <!-- Sección: Clima y Hora -->
                     <div id="weather-section" class="sidebar-section-content">
@@ -333,7 +398,30 @@
     </div>
 
 
+    
+    <!-- ================== -->
+    <!-- MODAL PERSONALIZADO-->
+    <!-- ================== -->
+    <div id="custom-modal" class="modal-overlay" style="display: none;">
+        <div class="scene-modal-content">
+            <p id="modal-text"></p>
+            <p id="modal-progress"></p>
+            <input type="text" id="modal-input" class="modal-input" style="display: none;">
+            <div class="modal-buttons">
+                <button id="modal-cancel-btn" class="btn-base w-auto">Cancelar</button>
+                <button id="modal-ok-btn" class="btn-base w-auto btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+    
+    
+
+
+
 </div>
+
+
+
 <div id="momentos">
     <div id="momentos-controles-flotantes">
         <button class="pro5" id="agregar-momento-btn">➕</button>
@@ -389,7 +477,7 @@
 <!-- INICIO DE LA SECCIÓN DE VISTA GENERAL -->
 
  <div id="vistageneral" >
-    
+     <button class="pro6" id="selector-general-btn-local">☰</button>
     <!-- Encabezado y botón de acción -->
     <div>
         
@@ -399,13 +487,20 @@
         </button>
     </div>
 
+
+
+
     <div id="informe-container">
  
       
     </div>
 </div>
  
+<div id="biblioteca" style="display: none;" >
 
+Aqui va el editor 3D
+
+</div>
 
 <div id="guion-literario">
     <div id="guion-toolbar">
@@ -620,7 +715,7 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
             </div>
         </div>
         <div id="esfera">
-           <button class="pro3" onclick="iniciarAnimacionSalida()">Nuevo</button>
+           <button class="pro3" onclick="iniciarAnimacionSalida(), cerrartodo(), abrir('personajes'); ">Nuevo</button>
             <button class="pro3" onclick="document.getElementById('file-load').click(); iniciarAnimacionSalida();">Cargar</button>
         </div>
     </div>
@@ -658,7 +753,7 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
     <!-- MODAL CREADOR DE PERSONAJES -->
     <!-- ================== -->
     <div id="character-creator-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content" style="max-width: 600px;">
+        <div class="scene-modal-content" style="max-width: 600px;">
             <h2 class="section-title">Creador de Personajes</h2>
             <div id="character-creator-content">
                 <div id="character-preview"></div>
@@ -689,8 +784,17 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
     </div>
 
 
+<script type="module">
+  import { generarToma } from './escenas/geminivideo.js';
+  window.generarToma = generarToma; 
+</script>
+<script src="escenas/geminivideo.js"></script>
+
+<script src="escenas/generacion2d.js"></script>
 
 <script src="gestionEscenas.js"></script>
+
+
 <script src="momentos.js"></script>
 <script src="editor-momento.js"></script> 
 <script src="guion.js"></script>
@@ -708,11 +812,42 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 <script src="editor-personajes-body.js"></script>
 <script src="editor-personajes-main.js"></script>
 
+
+
+
 <button id="contextual-action-btn" title="Acción contextual" style="display: none;">✨</button>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="geminiasistente.js"></script>
     
+
+
+
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/" : "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+            "tween": "https://cdn.jsdelivr.net/npm/@tweenjs/tween.js@21.0.0/dist/tween.esm.js"
+        }
+    }
+</script>
+
+
+
+
+
+    <script type="module" src="editor-escenas-main.js"></script>
+    <script type="module" src="escenas/editor-escenas-ui.js"></script>
+    <script type="module" src="escenas/editor-escenas-objects.js"></script>
+    <script type="module" src="escenas/editor-escenas-weather.js"></script>
+    <script type="module" src="escenas/editor-escenas-modelos.js"></script>
+    <script type="module" src="escenas/editor-escenas-exportar.js"></script>
+    <script type="module" src="escenas/editor-escenas-terreno.js"></script>
+    <script type="module" src="escenas/editor-escenas-animacion.js"></script>
+    <script type="module" src="escenas/character-creator.js"></script>
+  
+
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -754,25 +889,7 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
     });
 </script>
 
-<script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-            "three/addons/" : "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-            "tween": "https://cdn.jsdelivr.net/npm/@tweenjs/tween.js@21.0.0/dist/tween.esm.js"
-        }
-    }
-</script>
 
-<script type="module" src="editor-escenas-main.js"></script>
-    <script type="module" src="escenas/editor-escenas-ui.js"></script>
-    <script type="module" src="escenas/editor-escenas-objects.js"></script>
-    <script type="module" src="escenas/editor-escenas-weather.js"></script>
-    <script type="module" src="escenas/editor-escenas-modelos.js"></script>
-    <script type="module" src="escenas/editor-escenas-exportar.js"></script>
-    <script type="module" src="escenas/editor-escenas-terreno.js"></script>
-    <script type="module" src="escenas/editor-escenas-animacion.js"></script>
-    <script type="module" src="escenas/character-creator.js"></script>
 <script>
     /**
      * Función de animación de salida MEJORADA.

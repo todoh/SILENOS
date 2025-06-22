@@ -22,6 +22,10 @@ function initEscenas() {
     renderEscenasUI();
 }
 
+
+
+
+
 /**
  * Crea una nueva escena, la añade al array global y refresca la UI.
  */
@@ -233,9 +237,31 @@ function renderEscenasUI() {
                     copyBtn.textContent = '✔️';
                     setTimeout(() => { copyBtn.innerHTML = '&#128203;'; }, 1500);
                 };
-
+       // ---// --- BOTÓN DE VIDEO CORREGIDO ---
+                const videoBtn = document.createElement('button');
+                videoBtn.className = 'toma-video-btn';
+                videoBtn.innerHTML = '&#127909;'; // Icono 🎥
+                videoBtn.title = 'Generar escena 3D desde este prompt';
+            videoBtn.onclick = () => {
+                    // Se comprueba si la función correcta existe en window
+                    if (typeof window.handleAnalyzeScript === 'function') {
+                        const prompt = toma.guionTecnico;
+                        if (prompt && prompt.trim() !== '') {
+                            // Se llama a la función para analizar el guion de la toma
+                            window.handleAnalyzeScript(prompt);
+                        } else {
+                            alert('El prompt visual de la toma está vacío. Escribe una descripción para poder generar la escena 2D.');
+                        }
+                    } else {
+                        // El mensaje de error ahora es correcto
+                        console.error('La función handleAnalyzeScript no está definida. Asegúrate de que generacion2d.js está cargado correctamente.');
+                        alert('La funcionalidad de generar escenas 2D no está disponible.');
+                    }
+                };
+                // --- FIN DEL NUEVO BOTÓN ---
                 promptTomaContainer.appendChild(promptToma);
                 promptTomaContainer.appendChild(copyBtn);
+                promptTomaContainer.appendChild(videoBtn);
                 textosArea.appendChild(textoToma);
                 textosArea.appendChild(promptTomaContainer);
 

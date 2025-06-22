@@ -157,9 +157,6 @@ Responde ÚNICAMENTE con un objeto JSON válido con la estructura de un array:
                     }
                 });
                 
-                // =================================================================
-                // INICIO DE LA MODIFICACIÓN: PROMPT FINAL AJUSTADO
-                // =================================================================
                 const promptFinal = `
 --- INICIO CONTEXTO VISUAL GLOBAL (Estilo General) ---
 ${sintesisVisualTrama}
@@ -171,32 +168,27 @@ Contenido del Frame a procesar:
 "${frame.texto}"
 
 Tarea:
-1.  Analiza el "Contenido del Frame a procesar" basándote en el Estilo General y las descripciones de los elementos relevantes.
-2.  Divide el frame en las tomas cinematográficas necesarias si se describe más de una acción o momento visual.
+1.  Analiza el "Contenido del Frame a procesar" basándote en el Estilo General y las descripciones de elementos relevantes.
+2.  Divide el frame en las tomas cinematográficas necesarias.
 3.  Para CADA toma, genera:
-    -   Un "guion_conceptual": El diálogo, la acción o la descripción de esa toma específica.
-    -   Un "prompt_visual": **ESTE CAMPO DEBE SER UN TEXTO (string)**. Describe la escena estatica de forma clara, sin planos o detalles de luz o movimiento,  concisa y autocontenida para que sirva de entrada a otra IA que extrae elementos visuales (personajes, objetos, escenario) de un texto. Incluye todos los elementos visuales relevantes en la descripción.
-        Ejemplo de formato para el prompt_visual: "Un astronauta con un traje blanco está de pie solo en un vasto desierto de arena roja en Marte, bajo un cielo nocturno lleno de estrellas brillantes y dos lunas pequeñas."
+    -   Un "guion_conceptual": El diálogo, acción o descripción de esa toma.
+    -   Un "prompt_visual": Párrafo en inglés, AUTOCONTENIDO y DETALLADO. Describe la composición, personajes, vestuario, entorno, iluminación, ángulo de cámara, etc. INCLUYE EN EL PROMT TODOS LOS DETALLES DE DISEÑO VISUAL DE LOS PERSONAJES QUE SALGAN EN LA TOMA ASI COMO DE LOS LUGARES, OBJETOS, ETC..**
 
-Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional ni markdown. La estructura de tu respuesta final debe ser:
+Responde ÚNICAMENTE con un objeto JSON válido. Estructura:
 {
   "tomas_generadas": [
     {
       "guion_conceptual": "Diálogo/descripción de la toma.",
-      "prompt_visual": "El texto descriptivo de la escena va aquí."
+      "prompt_visual": "Detailed, self-contained image prompt..."
     }
   ]
 }`;
-                // =================================================================
-                // FIN DE LA MODIFICACIÓN
-                // =================================================================
                 
                 const respuestaJson = await llamarIAConFeedback(promptFinal, `Frame ${index + 1}/${escena.frames.length} de la escena ${idEscena}`);
 
                 if (respuestaJson && respuestaJson.tomas_generadas && Array.isArray(respuestaJson.tomas_generadas)) {
                     if (chatDiv) chatDiv.innerHTML += `<p><strong>IA Respondió:</strong> Se generaron ${respuestaJson.tomas_generadas.length} tomas para el frame.</p>`;
                     
-                    // Este código no se modifica, ahora guardará el texto descriptivo en 'guionTecnico'
                     respuestaJson.tomas_generadas.forEach(tomaData => {
                         agregarTomaAEscenaStory(nuevaEscenaStoryId, {
                             guionConceptual: tomaData.guion_conceptual || "",

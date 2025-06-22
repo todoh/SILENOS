@@ -42,6 +42,7 @@ window.onload = function() {
     actualizarParametrosIA();
     initEscenas();
     initMomentos();
+    
 };
 
 
@@ -52,12 +53,13 @@ function cerrartodo() {
     document.getElementById('escena-vista').style.display = 'none';
     document.getElementById('capitulosh').style.display = 'none';
     document.getElementById('escenah').style.display = 'none';
+    document.getElementById('biblioteca').style.display = 'none';
     document.getElementById('guion-literario').style.display = 'none';
     document.getElementById('momentos').style.display = 'none';
     document.getElementById('galeria').style.display = 'none';
         document.getElementById('vistageneral').style.display = 'none';
 
-    actualizarBotonContextual(); // <--- AÑADIR ESTA LÍNEA
+    actualizarBotonContextual(); 
 }
 
 function abrir(escena) {
@@ -112,8 +114,8 @@ function abrir(escena) {
 function gridear(escena) {
     cerrartodo();
     document.getElementById(escena).style.display = 'grid';
-        actualizarBotonContextual(); // <--- AÑADIR ESTA LÍNEA
-
+        actualizarBotonContextual();   
+ 
 }
 
 function reiniciarEstadoApp() {
@@ -501,3 +503,73 @@ function cerrarModalIAHerramientas() {
         overlay.onclick = null;
     }
 }
+ 
+
+ // --- NUEVA LÓGICA: Selector para la sección Vista General ---
+    const selectorGeneralBtn = document.getElementById('selector-general-btn-local');
+    const informeContainer = document.getElementById('informe-container');
+    const bibliotecaContainer = document.getElementById('biblioteca');
+
+    // Crear el popup dinámicamente para mantener el HTML limpio
+    const vistaGeneralPopup = document.createElement('div');
+    vistaGeneralPopup.id = 'vista-general-popup';
+    vistaGeneralPopup.className = 'lista-guiones-popup-local'; // Reutilizar estilos existentes
+    vistaGeneralPopup.style.display = 'none';
+    vistaGeneralPopup.style.position = 'absolute';
+    vistaGeneralPopup.style.zIndex = '1002';
+    document.body.appendChild(vistaGeneralPopup);
+
+    function popularVistaGeneralPopup() {
+        vistaGeneralPopup.innerHTML = ''; // Limpiar contenido previo
+
+        // Botón para "Informe actual"
+        const informeBtn = document.createElement('button');
+        informeBtn.className = 'guion-popup-item-local';
+        informeBtn.textContent = 'Informe actual';
+        informeBtn.onclick = () => {
+            if (informeContainer) informeContainer.style.display = 'block';
+            if (bibliotecaContainer) bibliotecaContainer.style.display = 'none';
+            vistaGeneralPopup.style.display = 'none';
+        };
+        vistaGeneralPopup.appendChild(informeBtn);
+
+        // Botón para "Biblioteca"
+        const bibliotecaBtn = document.createElement('button');
+        bibliotecaBtn.className = 'guion-popup-item-local';
+        bibliotecaBtn.textContent = 'Biblioteca';
+        bibliotecaBtn.onclick = () => {
+            if (bibliotecaContainer) bibliotecaContainer.style.display = 'flex';
+            if (informeContainer) informeContainer.style.display = 'none';
+            vistaGeneralPopup.style.display = 'none';
+        };
+        vistaGeneralPopup.appendChild(bibliotecaBtn);
+    }
+
+    if (selectorGeneralBtn) {
+        selectorGeneralBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const isVisible = vistaGeneralPopup.style.display === 'block';
+
+            if (!isVisible) {
+                popularVistaGeneralPopup();
+                const rect = selectorGeneralBtn.getBoundingClientRect();
+                vistaGeneralPopup.style.top = `${rect.bottom + window.scrollY}px`;
+                vistaGeneralPopup.style.left = `${rect.left + window.scrollX}px`;
+                vistaGeneralPopup.style.display = 'block';
+            } else {
+                vistaGeneralPopup.style.display = 'none';
+            }
+        });
+    }
+
+    // Listener global para cerrar el popup de Vista General al hacer clic fuera
+    document.addEventListener('click', (event) => {
+        if (vistaGeneralPopup.style.display === 'block' && !vistaGeneralPopup.contains(event.target) && event.target !== selectorGeneralBtn) {
+            vistaGeneralPopup.style.display = 'none';
+        }
+    });
+
+    // Evitar que el popup se cierre al hacer clic dentro de él
+    vistaGeneralPopup.addEventListener('click', (event) => {
+        event.stopPropagation();
+    });

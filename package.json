@@ -4,13 +4,12 @@
   "description": "Bienestar y Perfección.",
   "main": "index.js",
   "scripts": {
-     "start": "http-server -o -c-1"
+    "start": "http-server datos -o -c-1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "http-server": "^14.1.1"
-    
   }
 }
