@@ -1,0 +1,697 @@
+/* ==========================================================================
+   Configuración Base y Variables
+   ========================================================================== */
+:root {
+    --color-bg-dark: #18181bb4;       /* zinc-900 */
+    --color-bg-med: #27272ae5;        /* zinc-800 */
+    --color-bg-light: #3f3f46c9;      /* zinc-700 */
+    --color-border: #52525b;       /* zinc-600 */
+    --color-text-primary: #f4f4f5;  /* zinc-100 */
+    --color-text-secondary: #a1a1aa;/* zinc-400 */
+    --color-primary: #4f46e5;      /* indigo-600 */
+    --color-primary-hover: #6366f1;/* indigo-500 */
+    --font-family-base: 'Inter', sans-serif;
+    --sidebar-transition: transform 0.3s ease-in-out;
+}
+
+
+
+
+/* ==========================================================================
+   Layout Principal
+   ========================================================================== */
+#main-container {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+    position: relative; /* Para el posicionamiento absoluto de los sidebars */
+}
+
+#scene-container {
+    cursor: grab;
+    background-color: #f8f9fa;
+    flex-grow: 1;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+#scene-container:active {
+    cursor: grabbing;
+}
+
+canvas {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+
+/* ==========================================================================
+   Barras Laterales (Sidebars)
+   ========================================================================== */
+.sidebar {
+    width: 600px;
+    max-width: 100%;
+    background-color: rgba(255, 255, 255, 0.76);
+    padding: 1rem;
+    overflow-y: auto;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 0;
+    height: 98dvh; /* Ocupa la altura del contenedor principal */
+    z-index: 1000 !important;
+    transition: var(--sidebar-transition);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.sidebar.left {
+    left: 0;
+    transform: translateX(-100%);
+    border-right: 0px solid var(--color-border);
+}
+
+.sidebar.right {
+    right: 0;
+    transform: translateX(100%);
+    border-left: 0px solid var(--color-border);
+}
+
+.sidebar.open {
+    transform: translateX(0);
+}
+
+.sidebar-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+}
+
+.sidebar-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--color-text-primary);
+    white-space: nowrap; 
+}
+
+.sidebar-main-content {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.section-buttons-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-right: 0.75rem;
+    border-right: 1px solid var(--color-border);
+}
+
+.section-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 2px solid var(--color-border);
+    background-color: var(--color-bg-light);
+    color: var(--color-text-primary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.section-btn:hover {
+    border-color: var(--color-primary-hover);
+}
+
+.section-btn.active {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary-hover);
+}
+
+.section-content-container {
+    flex-grow: 1;
+    padding-left: 0.75rem;
+    overflow-y: auto;
+    min-width: 0; 
+}
+
+.sidebar-section-content { display: none; }
+.sidebar-section-content.active { display: block; }
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+/* ==========================================================================
+   Botones para plegar/desplegar Sidebars
+   ========================================================================== */
+.sidebar-toggle-btn {
+    display: flex; 
+    position: fixed;
+    top: 1rem;
+    z-index: 1001; 
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.733);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: all 0.3s ease-in-out;
+    justify-content: center;
+    align-items: center;
+}
+
+.sidebar-toggle-btn.left {
+    left: 1rem;
+    top:50%;
+
+        transform: translateY(-50%);
+}
+
+.sidebar-toggle-btn.right {
+    right: 1rem;
+    top:50%;
+    transform: translateY(-50%);
+}
+
+#palette-panel.open + #inspector-panel + #main-container .sidebar-toggle-btn.left {
+    transform: translateX(280px);
+}
+ 
+/* REEMPLAZA la regla '#inspector-panel.open ~ .sidebar-toggle-btn.right' por esta */
+#inspector-panel.open ~ #quick-actions-container {
+    transform: translateY(-50%) translateX(-610px); /* Mueve el contenedor completo */
+}
+/* ==========================================================================
+   Paleta de Objetos (Grid Layout)
+   ========================================================================== */
+.palette-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 1rem;
+}
+
+.palette-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background-color: rgba(255, 255, 255, 0.849);
+    border: 1px solid transparent;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.palette-item:hover {
+    border-color: var(--color-primary-hover);
+    transform: translateY(-2px);
+}
+
+.palette-item.active {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 10px rgba(79, 70, 229, 0.5);
+}
+
+.palette-item .thumbnail-container {
+    width: 100%;
+    height: 80px;
+    background-color: rgb(59, 59, 59);
+    border-radius: 0.375rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.palette-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.palette-item span {
+    font-size: 0.8rem;
+    text-align: center;
+    white-space: nowrap;
+}
+
+
+/* ==========================================================================
+   Secciones Desplegables <details> (para la barra derecha)
+   ========================================================================== */
+.sidebar-section {
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-bg-light);
+}
+
+.sidebar-section:last-child { border-bottom: none; }
+.sidebar-section summary { font-weight: 600; padding: 0.75rem; cursor: pointer; list-style: none; transition: background-color 0.2s ease; border-radius: 0.375rem; }
+.sidebar-section summary::-webkit-details-marker { display: none; }
+.sidebar-section summary:hover { background-color: var(--color-bg-light); }
+.sidebar-section summary::before { content: '▶'; display: inline-block; margin-right: 0.75rem; font-size: 0.7rem; transition: transform 0.2s ease-in-out; }
+.sidebar-section[open] > summary::before { transform: rotate(90deg); }
+.sidebar-content { padding: 0.75rem; }
+
+
+/* ==========================================================================
+   Controles (Botones, Inputs, Sliders)
+   ========================================================================== */
+.btn-base {width: auto;  display: block;  padding: 0.75rem 1rem; margin-bottom: 0.75rem; background-color: var(--color-bg-light); border: 1px solid var(--color-border); color: var(--color-text-primary); border-radius: 0.5rem; font-weight: 500; cursor: pointer; text-align: center; transition: all 0.2s ease; }
+.btn-base:hover { border-color: var(--color-primary-hover); filter: brightness(1.2); }
+.btn-base:disabled { background-color: #52525b; cursor: not-allowed; filter: brightness(0.8); }
+.btn-base.active, .btn-base:active { background-color: var(--color-primary); border-color: var(--color-primary-hover); color: white; box-shadow: 0 0 10px rgba(79, 70, 229, 0.5); }
+ 
+.btn-primary { background-color: #16a34a; border-color: #22c55e; width: auto; } 
+.btn-secondary { background-color: #a16207; border-color: #ca8a04;width: auto; }
+.btn-tertiary { background-color: #0d9488; border-color: #14b8a6;width: auto;  }
+.btn-danger { background-color: #be185d; border-color: #db2777; width: auto; }
+.btn-action { background-color: #c026d3; border-color: #d946ef; color: white;width: auto; }
+.botoon {flex-direction: row; display: flex; gap: 0.5rem;}
+.btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.btn-group .btn-base { flex-grow: 1; margin-bottom: 0; }
+.hidden-input { display: none; }
+.control-group { margin-bottom: 1.25rem; }
+.control-label { display: block; font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--color-text-secondary); }
+.placeholder-text { color: var(--color-text-secondary); font-style: italic; font-size: 0.9rem; text-align: center; padding: 1rem 0; }
+.select-input { width: 100%; padding: 0.75rem; border-radius: 0.5rem; background-color: var(--color-bg-light); border: 1px solid var(--color-border); color: var(--color-text-primary); }
+.checkbox-label { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; }
+.checkbox-label input[type="checkbox"] { appearance: none; width: 1.25rem; height: 1.25rem; border: 2px solid var(--color-border); border-radius: 0.25rem; background-color: var(--color-bg-light); transition: all 0.2s; cursor: pointer; position: relative; }
+.checkbox-label input[type="checkbox"]:checked { background-color: var(--color-primary); border-color: var(--color-primary-hover); }
+.checkbox-label input[type="checkbox"]:checked::before { content: '✔'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 0.8rem; }
+input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; background: var(--color-bg-light); border-radius: 3px; outline: none; transition: opacity .2s; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; background: var(--color-primary); cursor: pointer; border-radius: 50%; border: 2px solid white; transition: background .2s; }
+input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; background: var(--color-primary); cursor: pointer; border-radius: 50%; border: 2px solid white; }
+input[type="range"]:hover::-webkit-slider-thumb { background: var(--color-primary-hover); }
+input[type="range"]:hover::-moz-range-thumb { background: var(--color-primary-hover); }
+
+/* ==========================================================================
+   Lista de Objetos
+   ========================================================================== */
+#object-list { list-style: none; padding: 0; margin: 0; }
+#object-list li { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.75rem; background-color: var(--color-bg-light); border-radius: 0.375rem; margin-bottom: 0.5rem; font-size: 0.9rem; transition: all 0.2s; border: 1px solid transparent; }
+#object-list li:hover { background-color: #52525b; }
+#object-list li.selected { background-color: var(--color-primary); color: white; border-color: var(--color-primary-hover); }
+#object-list li span { flex-grow: 1; cursor: pointer; padding: 0.25rem; }
+.delete-btn { background: #ef4444; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-weight: bold; line-height: 24px; text-align: center; transition: background-color 0.2s; flex-shrink: 0; margin-left: 0.5rem; }
+.delete-btn:hover { background: #dc2626; }
+
+
+/* ==========================================================================
+   Línea de Tiempo
+   ========================================================================== */
+#timeline-panel { 
+    position: absolute;  color: black;
+    bottom: 0;
+    width: 100%; height: 30vh; background-color: transparent;
+     border-top: 0px solid var(--color-border); display: flex; flex-direction: column; padding: 1rem; box-sizing: border-box; z-index: 500; flex-shrink: 0; }
+#timeline-controls { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-shrink: 0; }
+
+/* ==========================================================================
+   Modal Personalizado
+   ========================================================================== */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center;     ; 
+ }
+
+
+.modal-content p { margin-top: 0; margin-bottom: 1.5rem; color: #e4e4e7; }
+.modal-input { width: 100%; padding: 0.75rem; border-radius: 0.5rem; background-color: var(--color-bg-light); border: 1px solid var(--color-border); color: white; margin-bottom: 1.5rem; box-sizing: border-box; }
+.modal-buttons { display: flex; justify-content: flex-end; gap: 1rem; }
+#modal-progress { color: var(--color-text-secondary); font-style: italic; margin-bottom: 1rem; }
+/* ==========================================================================
+   Modal Personalizado (Unificado)
+   ========================================================================== */
+.scene-modal-content {
+    background-color: var(--color-bg-med);
+    padding: 2rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--color-border);
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+/* Estilos específicos para el modal avanzado de creación de personajes */
+.character-creator-advanced .scene-modal-content {
+    max-width: 1400px;
+    max-height: 800px;
+    height: 90vh;
+    width: 90vw;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+     
+
+
+.character-creator-main-view {
+    display: flex;
+    flex-grow: 1;
+    gap: 1.5rem;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.character-preview-advanced {
+    flex-grow: 3; /* Más espacio para la preview */
+    background-color: #3a3a44; /* Un fondo ligeramente diferente para la preview */
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-border);
+    min-width: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.character-preview-advanced canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.character-options-advanced {
+    flex-grow: 2;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+#morph-controls-container .control-label {
+    display: flex;
+    justify-content: space-between;
+}
+
+input[type="color"] {
+    -webkit-appearance: none; -moz-appearance: none; appearance: none;
+    width: 100%; height: 40px; padding: 0;
+    border: 1px solid var(--color-border);
+    background: none; cursor: pointer; border-radius: 0.375rem;
+}
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: none; border-radius: 0.375rem; }
+
+.hidden { display: none; }
+
+
+
+/* ==========================================================================
+   Estilos de la Línea de Tiempo Interactiva (MEJORADO)
+   ========================================================================== */
+#timeline-time-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    background-color: var(--color-bg-dark);
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    min-width: 70px;
+    text-align: center;
+}
+
+#timeline-scrubber-area {
+    position: relative;
+    width: 100%;
+    flex-grow: 1;
+    background-color: var(--color-bg-dark);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0; /* Ajustado para alinear la regla */
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+#timeline-ruler {
+    position: relative;
+    height: 20px;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 10px;
+}
+
+.time-marker {
+    position: absolute;
+    width: 1px;
+    height: 10px;
+    background-color: var(--color-text-secondary);
+    bottom: 0;
+}
+
+.time-marker.major {
+    height: 20px;
+}
+
+.time-label {
+    position: absolute;
+    bottom: 22px;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    user-select: none;
+}
+
+#timeline-tracks {
+    position: relative;
+    min-height: 100px;
+    height: calc(100% - 30px);
+    padding: 0;
+    white-space: normal;
+}
+
+.animation-track-bar {
+    position: absolute;
+    height: 24px;
+    background-color: var(--color-primary);
+    border-radius: 0.375rem;
+    color: white;
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+    box-sizing: border-box;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border: 1px solid var(--color-primary-hover);
+    user-select: none;
+    cursor: move;
+}
+
+/* --- NUEVOS ESTILOS PARA INTERACTIVIDAD --- */
+.resize-handle {
+    position: absolute;
+    top: 0;
+    width: 8px;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.2);
+    z-index: 10;
+}
+
+.resize-handle:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+}
+
+.resize-handle.left {
+    left: 0;
+    cursor: w-resize;
+    border-top-left-radius: 0.375rem;
+    border-bottom-left-radius: 0.375rem;
+}
+
+.resize-handle.right {
+    right: 0;
+    cursor: e-resize;
+    border-top-right-radius: 0.375rem;
+    border-bottom-right-radius: 0.375rem;
+}
+/* --- FIN NUEVOS ESTILOS --- */
+
+
+#timeline-scrubber {
+    position: absolute;
+    top: 0;
+    /* 'left' es controlado por JavaScript */
+    width: 2px;
+    height: 100%;
+    background-color: #ef4444; /* Rojo para alta visibilidad */
+    cursor: ew-resize;
+    z-index: 100;
+}
+
+#timeline-scrubber .scrubber-handle {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 14px;
+    height: 14px;
+    background-color: #ef4444;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+/* Contenedor para la nueva columna de botones a la derecha */
+#quick-actions-container {
+    position: fixed;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem; /* Espacio entre los botones */
+    transition: transform 0.3s ease-in-out; /* Añadimos transición para el movimiento */
+}
+
+/* Le damos el estilo de botón redondo a los botones de acción que hemos movido */
+#quick-actions-container .sidebar-toggle-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: var(--color-bg-med);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#quick-actions-container .sidebar-toggle-btn:hover {
+    border-color: var(--color-primary-hover);
+    filter: brightness(1.2);
+}
+
+/* --- ESTILOS PARA EL CREADOR DE PERSONAJES --- */
+#character-creator-content {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+#character-preview {
+    flex-shrink: 0;
+    width: 200px;
+    height: 300px;
+    background-color: var(--color-bg-dark);
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-border);
+    overflow: hidden; /* Para que el canvas no se salga */
+}
+
+#character-options {
+    flex-grow: 1;
+}
+
+#character-options input[type="color"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 40px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    background: none;
+    cursor: pointer;
+    border-radius: 0.375rem;
+}
+
+#character-options input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+#character-options input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 0.375rem;
+}
+
+
+
+/* ==========================================================================
+   ESTILOS PARA EL CREADOR DE PERSONAJES AVANZADO
+   ========================================================================== */
+.character-creator-advanced .modal-content-advanced {
+    width: 90vw;
+    height: 90vh;
+    max-width: 1400px;
+    max-height: 800px;
+    background-color: var(--color-bg-med);
+    border-radius: 0.75rem;
+    border: 1px solid var(--color-border);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+.character-creator-main-view {
+    display: flex;
+    flex-grow: 1;
+    gap: 1.5rem;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.character-preview-advanced {
+    flex-grow: 3; /* Más espacio para la preview */
+    background-color: #3a3a44; /* Un fondo ligeramente diferente para la preview */
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-border);
+    min-width: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.character-preview-advanced canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.character-options-advanced {
+    flex-grow: 2;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+#morph-controls-container .control-label {
+    display: flex;
+    justify-content: space-between;
+}
+
+input[type="color"] {
+    -webkit-appearance: none; -moz-appearance: none; appearance: none;
+    width: 100%; height: 40px; padding: 0;
+    border: 1px solid var(--color-border);
+    background: none; cursor: pointer; border-radius: 0.375rem;
+}
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: none; border-radius: 0.375rem; }
+
+.hidden { display: none; }
