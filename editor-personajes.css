@@ -8,7 +8,7 @@
     grid-auto-rows: auto;
     gap: 50px 25px; /* Aumentado el espacio vertical para el nombre */
     padding: 25px;
-    padding-bottom: 9%;
+    padding-bottom: 17%;
     height: 100%;
     overflow-y: auto;
     box-sizing: border-box;
@@ -63,7 +63,7 @@
   
     width: 100%; /* Asegura que la imagen ocupe todo el ancho del cuadrado */
     height: 100%; /* Asegura que la imagen ocupe todo el alto del cuadrado */
-    object-fit: cover; 
+    object-fit: max-content; 
     /* 'cover' asegura que la imagen rellene el espacio, conservando la proporción y recortando el exceso. */
  /* Cambiado a max-content para que la imagen no se recorte */
     

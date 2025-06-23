@@ -147,20 +147,54 @@ async function enviarTextoConInstrucciones() {
     const incluirDatos = document.getElementById('incluir-datos-ia').checked;
     let contextoDeDatos = "";
 
-    if (incluirDatos) {
-        const datosAgrupados = recolectarYAgruparDatos();
-        if (Object.keys(datosAgrupados).length > 0) {
-            contextoDeDatos += "Aquí tienes una lista de Datos Fundamentales que DEBEN ser incluidos y desarrollados en la historia. Intégralos de forma natural y coherente:\n\n";
-            for (const categoria in datosAgrupados) {
-                contextoDeDatos += `**Categoría: ${categoria}**\n`;
-                datosAgrupados[categoria].forEach(dato => {
-                    contextoDeDatos += `- **${dato.nombre}**: ${dato.descripcion}\n`;
-                });
-                contextoDeDatos += "\n";
+     if (incluirDatos) {
+        const arcosSeleccionados = new Set();
+        document.querySelectorAll('#ia-arcos-filter-container .ia-arc-filter-checkbox:checked').forEach(checkbox => {
+            arcosSeleccionados.add(checkbox.value);
+        });
+
+        if (arcosSeleccionados.size > 0) {
+            const todosLosDatos = [];
+            const contenedorDatos = document.getElementById("listapersonajes");
+            if (contenedorDatos) {
+                for (const nodoDato of contenedorDatos.children) {
+                    const nombre = nodoDato.querySelector("input.nombreh")?.value.trim() || "";
+                    const descripcion = nodoDato.querySelector("textarea")?.value.trim() || "";
+                    const etiquetaEl = nodoDato.querySelector(".change-tag-btn");
+                    const arcoEl = nodoDato.querySelector(".change-arc-btn");
+                    
+                    const etiqueta = etiquetaEl ? etiquetaEl.dataset.etiqueta : 'indeterminado';
+                    const arco = arcoEl ? arcoEl.dataset.arco : 'sin_arco';
+
+                    if (etiqueta !== 'indeterminado' && etiqueta !== 'visual' && nombre) {
+                        todosLosDatos.push({ nombre, descripcion, etiqueta, arco });
+                    }
+                }
+            }
+
+            const datosFiltrados = todosLosDatos.filter(dato => arcosSeleccionados.has(dato.arco));
+            
+            const datosAgrupados = datosFiltrados.reduce((acc, dato) => {
+                const nombreCategoria = dato.etiqueta.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                if (!acc[nombreCategoria]) {
+                    acc[nombreCategoria] = [];
+                }
+                acc[nombreCategoria].push({ nombre: dato.nombre, descripcion: dato.descripcion });
+                return acc;
+            }, {});
+
+            if (Object.keys(datosAgrupados).length > 0) {
+                contextoDeDatos += "Aquí tienes una lista de Datos Fundamentales que DEBEN ser incluidos y desarrollados en la historia. Intégralos de forma natural y coherente:\n\n";
+                for (const categoria in datosAgrupados) {
+                    contextoDeDatos += `**Categoría: ${categoria}**\n`;
+                    datosAgrupados[categoria].forEach(dato => {
+                        contextoDeDatos += `- **${dato.nombre}**: ${dato.descripcion}\n`;
+                    });
+                    contextoDeDatos += "\n";
+                }
             }
         }
     }
-
     try {
         const promptPaso1 = `
 ${contextoDeDatos}

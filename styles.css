@@ -1997,8 +1997,7 @@ height: 75dvh;
     margin-top: 1em;
 }
 
-
-
+ 
 .control-panel { display: flex; flex-direction: column; gap: 10px; max-width: 600px; margin: 0 auto 30px auto; }
   
 #pre-production-container { max-width: 600px; margin: 0 auto; background-color: #222; padding: 20px; border-radius: 8px; }

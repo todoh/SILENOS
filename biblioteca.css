@@ -1,0 +1,159 @@
+/* datos/biblioteca.css (Versión corregida para ancho completo y alturas variables) */
+
+#biblioteca {
+    display: none; /* Oculta por defecto, gestionado por main.js */
+    padding: 25px;
+    box-sizing: border-box;
+    height: 100%;
+    width: 100%;
+    overflow-y: auto;
+}
+
+/* --- AQUI ESTÁ LA CORRECCIÓN --- */
+#biblioteca-grid {
+    /* Mantenemos el sistema de columnas que permite alturas variables */
+    column-width: 220px;
+    column-gap: 20px;
+
+    /* AÑADIDO CLAVE: Nos aseguramos de que la propia cuadrícula ocupe todo el ancho disponible */
+    width: 100%;
+}
+
+.biblioteca-item {
+    /* Propiedades clave para el layout de columnas (masonry) */
+    width: 100%;
+    break-inside: avoid; /* Evita que una imagen se parta entre dos columnas */
+    margin-bottom: 20px; /* Espacio vertical entre imágenes */
+
+    /* Estilos visuales que se mantienen */
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: #e9ecef;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out;
+}
+
+.dark-theme .biblioteca-item {
+    background-color: #3a3a3a;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.biblioteca-item:hover {
+    transform: scale(1.03);
+    z-index: 10;
+}
+
+.biblioteca-item img {
+    width: 100%;
+    height: auto; /* La altura automática es fundamental para mantener la proporción */
+    display: block;
+    cursor: pointer;
+}
+
+.biblioteca .mensaje-placeholder {
+    width: 100%;
+    text-align: center;
+}
+
+/* --- ESTILOS PARA EL VISOR DE IMAGEN (LIGHTBOX) --- */
+
+#visor-overlay {
+    position: fixed; /* Se posiciona sobre toda la pantalla */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85); /* Fondo negro semitransparente */
+    display: none; /* Oculto por defecto */
+    justify-content: center; /* Centra la imagen horizontalmente */
+    align-items: center; /* Centra la imagen verticalmente */
+    flex-direction: column; /* Coloca el botón debajo de la imagen */
+    z-index: 2000; /* Se asegura de que esté por encima de todo lo demás */
+    cursor: pointer; /* Cambia el cursor para indicar que se puede cerrar */
+}
+
+#visor-imagen {
+    max-width: 90vw; /* Ancho máximo del 90% del ancho de la pantalla */
+    max-height: 80vh; /* Altura máxima del 80% de la altura de la pantalla */
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+    cursor: default; /* El cursor vuelve a la normalidad sobre la imagen */
+}
+
+ 
+
+/* --- ESTILOS ADICIONALES PARA CONTROLES DEL VISOR --- */
+
+#visor-controles {
+    display: flex; /* Pone los botones uno al lado del otro */
+    gap: 15px; /* Espacio entre los botones */
+    margin-top: 20px;
+}
+
+/* Estilo para ambos botones dentro del visor */
+#visor-controles a,
+#visor-controles button {
+    padding: 12px 25px;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border: none;
+    font-size: 1em;
+}
+
+/* Colores específicos para cada botón */
+#visor-boton-descargar {
+    background-color: #007bff; /* Azul */
+}
+#visor-boton-descargar:hover {
+    background-color: #0056b3;
+}
+
+#visor-boton-reemplazar {
+    background-color: #28a745; /* Verde */
+}
+#visor-boton-reemplazar:hover {
+    background-color: #218838;
+}
+
+/* --- ESTILOS PARA ETIQUETAS DE IMAGEN EN BIBLIOTECA --- */
+
+.biblioteca-item-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    
+    /* Gradiente oscuro para asegurar que el texto sea legible */
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%);
+    
+    color: white;
+    padding: 20px 10px 8px 10px; /* Espaciado interno (más arriba para el gradiente) */
+    box-sizing: border-box;
+    
+    text-align: center;
+    font-size: 0.9em;
+    font-weight: 500;
+    
+    /* Para manejar textos largos */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    
+    /* Efecto de aparición */
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    
+    /* Para que no interfiera con los clics en la imagen */
+    pointer-events: none; 
+}
+
+/* Muestra la etiqueta cuando el ratón está sobre el item */
+.biblioteca-item:hover .biblioteca-item-label {
+    opacity: 1;
+}

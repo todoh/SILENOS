@@ -58,6 +58,7 @@ function cerrartodo() {
     document.getElementById('momentos').style.display = 'none';
     document.getElementById('galeria').style.display = 'none';
         document.getElementById('vistageneral').style.display = 'none';
+ 
 
     actualizarBotonContextual(); 
 }
@@ -106,6 +107,15 @@ function abrir(escena) {
             }
         }
     }
+
+if (escena === 'biblioteca') {
+        // Cuando se abre la sección de la biblioteca,
+        // llamamos a las funciones del nuevo script para que la preparen.
+        const todasLasImagenes = recopilarTodasLasImagenes();
+        renderizarGaleria(todasLasImagenes);
+    }
+
+
    actualizarBotonContextual(); 
 
 }
@@ -492,6 +502,49 @@ function abrirModalIAHerramientas() {
     if (overlay) {
         overlay.onclick = cerrarModalIAHerramientas;
     }
+
+    // --- INICIO DE LA LÓGICA AÑADIDA ---
+    // Poblar la lista de arcos narrativos disponibles
+    const arcosContainer = document.getElementById('ia-arcos-filter-container');
+    if (arcosContainer) {
+        arcosContainer.innerHTML = ''; // Limpiar lista anterior
+
+        // Obtener arcos únicos y las opciones predefinidas
+        const arcosUnicos = obtenerArcosUnicos(); // Asumiendo que esta función ya existe en datos.js
+        const opcionesArcoMap = new Map(opcionesArco.map(op => [op.valor, op]));
+
+        if (arcosUnicos.length === 0) {
+            arcosContainer.innerHTML = '<p style="font-style: italic; font-size: 0.9em; color: #999;">No se encontraron arcos en la sección de Datos.</p>';
+            return;
+        }
+
+        arcosUnicos.forEach(arcoValor => {
+            const opcion = opcionesArcoMap.get(arcoValor);
+            const displayName = opcion ? `${opcion.emoji} ${opcion.titulo}` : arcoValor;
+
+            const itemDiv = document.createElement('div');
+            itemDiv.style.display = 'flex';
+            itemDiv.style.alignItems = 'center';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `arc-filter-${arcoValor}`;
+            checkbox.value = arcoValor;
+            checkbox.className = 'ia-arc-filter-checkbox';
+            checkbox.checked = true; // Por defecto, todos marcados
+
+            const label = document.createElement('label');
+            label.htmlFor = `arc-filter-${arcoValor}`;
+            label.textContent = displayName;
+            label.style.marginLeft = '8px';
+            label.style.cursor = 'pointer';
+
+            itemDiv.appendChild(checkbox);
+            itemDiv.appendChild(label);
+            arcosContainer.appendChild(itemDiv);
+        });
+    }
+    // --- FIN DE LA LÓGICA AÑADIDA ---
 }
 
 function cerrarModalIAHerramientas() {

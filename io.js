@@ -66,15 +66,18 @@ async function empaquetarDatosDelProyecto() {
         const descripcion = personajeNode.querySelector("textarea")?.value || "";
         const imagenSrc = personajeNode.querySelector("img")?.src || "";
         
-        // --- CORRECCIÓN ---
-        // Se asegura que el selector encuentre el botón de la etiqueta,
-        // que ahora es un hijo directo del contenedor del dato.
-        const etiquetaEl = personajeNode.querySelector(".change-tag-btn"); 
+        // --- MODIFICADO: Añadir la lectura del botón de arco ---
+        const etiquetaEl = personajeNode.querySelector(".change-tag-btn");
+        const arcoEl = personajeNode.querySelector(".change-arc-btn"); // NUEVO
+        
         const etiqueta = etiquetaEl ? etiquetaEl.dataset.etiqueta : 'indeterminado';
+        const arco = arcoEl ? arcoEl.dataset.arco : 'sin_arco'; // NUEVO
         
         if (!nombre && !descripcion && !imagenSrc) return null;
         const imagenComprimida = await _compressImageForSave(imagenSrc);
-        return { nombre, descripcion, imagen: imagenComprimida, etiqueta };
+        
+        // AÑADIDO: Devolvemos el objeto con la nueva propiedad 'arco'
+        return { nombre, descripcion, imagen: imagenComprimida, etiqueta, arco };
     });
 
     const promesasEscenasStory = Promise.all((storyScenes || []).map(async (escena) => {
@@ -113,6 +116,7 @@ async function empaquetarDatosDelProyecto() {
         informeGeneral: typeof ultimoInformeGenerado !== 'undefined' ? ultimoInformeGenerado : null
     };
 }
+
 
 /**
  * Busca en Google Drive un archivo de proyecto creado por esta aplicación.
@@ -268,15 +272,12 @@ async function cargarProyectoDesdeDrive() {
  * Carga un objeto de datos en el estado de la aplicación.
  */
 function cargarDatosEnLaApp(data) {
-    // 1. Reinicia el estado de la aplicación para empezar de cero.
     if(typeof reiniciarEstadoApp === 'function') reiniciarEstadoApp();
 
-    // 2. Carga el título del proyecto.
     if (data.titulo) {
         document.getElementById("titulo-proyecto").innerText = data.titulo;
     }
 
-    // 3. Carga los datos de los "Capítulos" (la variable 'escenas').
     if (data.capitulos && Array.isArray(data.capitulos)) {
         data.capitulos.forEach(capitulo => {
             const capituloId = capitulo.id;
@@ -290,14 +291,15 @@ function cargarDatosEnLaApp(data) {
         if (typeof actualizarLista === 'function') actualizarLista();
     }
 
-    // 4. Carga los "Datos" (personajes, objetos, etc.).
+    // --- MODIFICADO: COMPATIBILIDAD CON ARCOS ---
+    // La función agregarPersonajeDesdeDatos ya está preparada para manejar datos sin la propiedad 'arco'.
+    // Simplemente le pasará 'undefined' y la función usará el valor por defecto 'sin_arco'.
     if (data.personajes && Array.isArray(data.personajes)) {
         data.personajes.forEach(p => {
             if (typeof agregarPersonajeDesdeDatos === 'function') agregarPersonajeDesdeDatos(p);
         });
     }
 
-    // 5. Carga el guion literario
     if (data.guionLiterario && Array.isArray(data.guionLiterario)) {
         guionLiterarioData = data.guionLiterario;
         console.log("Guion Literario cargado.");
@@ -309,7 +311,6 @@ function cargarDatosEnLaApp(data) {
         }
     }
 
-    // 6. Carga la API Key de Gemini
     if (data.apiKeyGemini && typeof data.apiKeyGemini === 'string') {
         if(typeof updateApiKey === 'function') {
              const tempInput = document.createElement('input');
@@ -321,7 +322,6 @@ function cargarDatosEnLaApp(data) {
         }
     }
 
-    // Carga los momentos
     if (data.momentos && Array.isArray(data.momentos)) {
          data.momentos.forEach(momento => {
             if (typeof crearMomentoEnLienzoDesdeDatos === 'function') {
@@ -333,16 +333,12 @@ function cargarDatosEnLaApp(data) {
         }
     }
      
-     // Carga las escenas de storyboard (sección "Escenas")
     if (data.escenas && Array.isArray(data.escenas)) {
         storyScenes = data.escenas;
         if(typeof renderEscenasUI === 'function') renderEscenasUI();
     }
 
-
-    // Carga los datos del informe de Vista General ---
     if (data.informeGeneral) {
-        // Guarda los datos en la variable global para que estén listos.
         ultimoInformeGenerado = data.informeGeneral;
         console.log("Datos del informe de Vista General cargados y listos.");
     }
@@ -350,7 +346,6 @@ function cargarDatosEnLaApp(data) {
 
     console.log("Datos del proyecto cargados en la aplicación.");
 
-    // Muestra la interfaz principal de la aplicación.
     if (typeof flexear === 'function') flexear('silenos');
 }
 
