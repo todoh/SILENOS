@@ -132,7 +132,7 @@
             <button  onclick="cerrartodo(), abrir('capitulosh');">Libro</button>
             <button  onclick="cerrartodo(), abrir('escenah');">Storyboard</button>
          
-            <button id="pelicula" onclick="cerrartodo(), abrir('galeria');">Pelicula</button>
+            <button id="pelicula" onclick="cerrartodo(), abrir('galeria');" style="display: none;" >Pelicula</button>
             <button  onclick="cerrartodo(), abrir('momentos');">Videojuego</button>
             <button  id="biblioteca-btn" style="display: none;" onclick="cerrartodo(), abrir('biblioteca');">📚 Biblioteca</button>
             <button class="pro" onclick="abrirModalConfig()">⚙️ Ajustes </button>
@@ -580,19 +580,40 @@
 </div>
 
 
-<div id="capitulosh"  >
- 
+<div id="capitulosh">
+    <button id="selector-libro-btn" class="pro6" onclick="abrirSelectorDeLibro(event)">☰</button>
+    
+    <div id="libro-activo-titulo">Selecciona un libro para empezar</div>
+    
+    <button class="pro5" id="sumarpersonaje" onclick="nuevaEscena()">➕</button>
 
-<button class="pro5" id="sumarpersonaje" onclick="nuevaEscena()">➕</button>
+    <div id="capitulos">
+        <div id="lista-capitulos"></div>
+    </div>
+</div>
 
+<div id="selector-libro-popup" class="lista-guiones-popup-local" style="display: none;">
+    </div>
+<div id="modal-seleccionar-libro-para-frames" class="modal-content" style="display: none;">
+    <button class="modal-close-button" onclick="cerrarModalSeleccionLibro()">&times;</button>
+    <h3>Generar Frames con IA</h3>
 
-<div id="capitulos" >
-<div id="lista-capitulos"></div></div></div>
+    <div class="modal-seccion">
+        <label for="guion-origen-select">1. Elige el Guion a utilizar como base:</label>
+        <select id="guion-origen-select" class="modal-select"></select>
+    </div>
 
+    <div class="modal-seccion">
+        <label>2. Elige el Libro donde se guardarán los capítulos:</label>
+        <div id="lista-libros-para-frames" class="lista-libros-popup-estilo">
+            </div>
+    </div>
+
+    <button id="confirmar-generacion-frames-btn" class="modal-button principal-action" onclick="confirmarSeleccionYProcesar()">
+        ✨ Generar en Libro Seleccionado
+    </button>
+</div>
 <div id="personajes">
-    
-    
-    
     <div class="herramientas" ></div>
     <div id="datos-botones-superiores">
         <button class="pro5" id="sumarpersonaje" onclick="agregarPersonaje()">➕</button>

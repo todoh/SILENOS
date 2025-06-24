@@ -3,22 +3,31 @@
 // ===================================
 
 function nuevaEscena() {
+    // AÑADIDO: Comprobar si hay un libro activo antes de crear un capítulo
+    if (!libroActivoId) {
+        alert("Por favor, selecciona o crea un libro usando el botón '📚 Seleccionar Libro' antes de añadir un capítulo.");
+        return;
+    }
+
     ultimoId++;
     let id = String(ultimoId).padStart(3, '0');
-    // Verificar si el ID ya existe
     while (escenas[id]) {
         ultimoId++;
         id = String(ultimoId).padStart(3, '0');
     }
+    
+    // MODIFICADO: Añadir la propiedad libroId al crear la escena/capítulo
     escenas[id] = {
         tipo: "generica",
-        texto: "",
+        texto: "", // El usuario le pondrá nombre
         imagen: "",
         opciones: [],
         botones: [],
         frames: [],
-        generadoPorIA: false // Marcar como no generado por IA por defecto
+        generadoPorIA: false,
+        libroId: libroActivoId // <-- LÍNEA AÑADIDA
     };
+
     if (typeof(Storage) !== "undefined") {
         localStorage.setItem("escenas", JSON.stringify(escenas));
     } else {
@@ -67,45 +76,56 @@ function editarEscena(escenaId) {
 function actualizarLista() {
     let lista = document.getElementById("lista-capitulos");
     lista.innerHTML = "";
-    let escenasOrdenadas = Object.keys(escenas).sort();
-    escenasOrdenadas.forEach(id => {
+
+    const tituloContainer = document.getElementById('libro-activo-titulo');
+
+    // Si no hay un libro seleccionado, mostrar un mensaje y salir.
+    if (!libroActivoId) {
+        if (tituloContainer) tituloContainer.textContent = "Selecciona un libro para empezar";
+        lista.innerHTML = '<p class="mensaje-placeholder">Usa el botón "📚 Seleccionar Libro" para empezar.</p>';
+        return;
+    }
+
+    // MODIFICADO: Filtrar las escenas para mostrar solo las del libro activo
+    let escenasDelLibroActivo = Object.keys(escenas).filter(id => escenas[id].libroId === libroActivoId);
+
+    // Ordenar las escenas/capítulos
+    escenasDelLibroActivo.sort();
+
+    if (escenasDelLibroActivo.length === 0) {
+        lista.innerHTML = '<p class="mensaje-placeholder">Este libro está vacío. Haz clic en el botón "+" para añadir tu primer capítulo.</p>';
+    }
+
+    // El resto de la función es casi igual, pero itera sobre la lista filtrada
+    escenasDelLibroActivo.forEach(id => {
+        // El código para crear cada tarjeta de capítulo (div.escena, inputs, botones, etc.)
+        // permanece exactamente igual que antes. Solo lo pegas aquí.
+        
         let div = document.createElement("div");
         div.className = "escena";
-        div.setAttribute("data-id", id);
+        // ... (resto de tu código para crear la tarjeta del capítulo) ...
+         div.setAttribute("data-id", id);
         div.onclick = () => editarEscena(id);
 
         let detallediv = document.createElement("div");
         detallediv.className = "detalle";
         let inputNombre = document.createElement("input");
         inputNombre.className = "imput";
-        inputNombre.value = escenas[id].texto || id;
-        inputNombre.style.marginRight = "5px";
-
-        // ========= CAMBIO CLAVE: Hacer el input no editable si es de la IA =========
-        if (escenas[id].generadoPorIA) {
-            inputNombre.readOnly = true;
-            inputNombre.classList.add('input-no-editable'); // Para estilos CSS
-            inputNombre.title = "Este título fue generado por la IA y no se puede editar.";
-        } else {
-            inputNombre.onchange = (event) => {
-                let nuevoNombre = event.target.value;
-                if (nuevoNombre && nuevoNombre !== id) {
-                    // Esto es para renombrar, lo cual no aplica a los generados por IA
-                    escenas[nuevoNombre] = escenas[id];
-                    delete escenas[id];
-                    guardarCambios();
-                    actualizarLista();
-                }
-            };
-        }
-        // ========= FIN DEL CAMBIO =========
+        inputNombre.value = escenas[id].texto || `Capítulo ${id}`; // Texto por defecto
+        inputNombre.placeholder = "Nombre del Capítulo";
         
+        // Asignar el nombre al objeto escena cuando el usuario lo cambia
+        inputNombre.onchange = (event) => {
+            escenas[id].texto = event.target.value;
+            guardarCambios(); 
+        };
+
         let eliminarBtn = document.createElement("button");
         eliminarBtn.textContent = "❌";
         eliminarBtn.className = "ide";
         eliminarBtn.onclick = (event) => {
             event.stopPropagation();
-            if (confirm("¿Eliminar esta escena?")) {
+            if (confirm("¿Eliminar este capítulo?")) {
                 delete escenas[id];
                 guardarCambios();
                 actualizarLista();
@@ -124,24 +144,8 @@ function actualizarLista() {
         div.appendChild(detallediv);
 
         let contenedorFrames = document.createElement("div");
-        contenedorFrames.className = "contenedor-frames";
+        // ... y así sucesivamente hasta el final del bucle.
         
-        contenedorFrames.ondragover = (event) => event.preventDefault();
-        contenedorFrames.ondrop = (event) => {
-            event.preventDefault();
-            if (event.target !== contenedorFrames) return;
-            const data = JSON.parse(event.dataTransfer.getData("text/plain"));
-            const sourceEscenaId = data.escenaId;
-            const sourceFrameIndex = data.index;
-            if (sourceEscenaId === id) {
-                const framesArray = escenas[id].frames;
-                const [draggedItem] = framesArray.splice(sourceFrameIndex, 1);
-                framesArray.push(draggedItem);
-                guardarCambios();
-                actualizarLista();
-            }
-        };
-
         (escenas[id].frames || []).forEach((frame, index) => {
             let frameDiv = document.createElement("div");
             frameDiv.className = "frameh";
@@ -151,7 +155,8 @@ function actualizarLista() {
             frameDiv.appendChild(textSpan);
             frameDiv.draggable = true;
 
-            frameDiv.ondragstart = (event) => {
+            // ... (Toda la lógica de drag-and-drop y creación de frames) ...
+             frameDiv.ondragstart = (event) => {
                 draggedFrameIndex = index;
                 draggedFrameEscenaId = id;
                 event.dataTransfer.setData("text/plain", JSON.stringify({ index, escenaId: id }));
@@ -160,7 +165,7 @@ function actualizarLista() {
             frameDiv.ondragend = (event) => {
                 event.target.style.opacity = "";
             };
-            frameDiv.ondragover = (event) => {
+             frameDiv.ondragover = (event) => {
                 event.preventDefault();
                 if (draggedFrameEscenaId !== id || index === draggedFrameIndex) return;
                 const rect = frameDiv.getBoundingClientRect();
@@ -192,16 +197,14 @@ function actualizarLista() {
                 guardarCambios();
                 actualizarLista();
             };
-
-            let inputTexto = document.createElement("textarea");
+             let inputTexto = document.createElement("textarea");
             inputTexto.value = frame.texto || "";
             inputTexto.placeholder = "Escribe el texto aquí";
             inputTexto.oninput = (event) => {
                 frame.texto = event.target.value;
                 guardarCambios();
             };
-
-            let inputImagen = document.createElement("input");
+             let inputImagen = document.createElement("input");
             inputImagen.type = "file";
             inputImagen.accept = "image/*, video/mp4, video/webm, image/gif";
             inputImagen.style.display = 'none';
@@ -221,8 +224,7 @@ function actualizarLista() {
                     }
                 }
             };
-            
-            let imagenPreview = document.createElement("img");
+             let imagenPreview = document.createElement("img");
             imagenPreview.style.width = "100%";
             imagenPreview.style.height = "auto";
             imagenPreview.style.marginTop = "10px";
@@ -230,8 +232,7 @@ function actualizarLista() {
             if (frame.imagen) {
                 imagenPreview.src = frame.imagen;
             }
-
-            let label = document.createElement("label");
+             let label = document.createElement("label");
             label.htmlFor = `fileInput-${id}-${index}`;
             label.className = "custom-label";
             label.textContent = "📷";
@@ -244,66 +245,76 @@ function actualizarLista() {
                 event.stopPropagation();
                 agregarFrame(id, index);
             };
-            
-            frameDiv.appendChild(inputTexto);
+             frameDiv.appendChild(inputTexto);
             frameDiv.appendChild(label);
             frameDiv.appendChild(imagenPreview);
             frameDiv.appendChild(agregarFrameBtn);
             frameDiv.appendChild(crearBotonEliminarFrame(index, id));
+
+
             contenedorFrames.appendChild(frameDiv);
         });
+         div.appendChild(contenedorFrames);
 
-        div.appendChild(contenedorFrames);
+
         lista.appendChild(div);
     });
-}
+}   
 
+// AÑADE ESTA FUNCIÓN COMPLETA EN EL ARCHIVO datos/escenas.js
+
+/**
+ * Crea múltiples escenas (capítulos) de forma automática y las asocia al libro activo.
+ * @param {string} nombreBase - El nombre base para los nuevos capítulos.
+ * @param {number} numEscenas - El número de capítulos a crear.
+ * @param {number} numFrames - El número de frames vacíos a crear en cada capítulo.
+ */
 function crearEscenasAutomaticamente(nombreBase, numEscenas, numFrames) {
-    if (!nombreBase || numEscenas <= 0) {
-        alert("Por favor, define un nombre base y un número de escenas mayor a cero.");
+    // 1. Comprobación crucial: Asegurarse de que hay un libro activo.
+    if (!libroActivoId) {
+        alert("Error interno: Se intentó crear capítulos sin un libro activo seleccionado.");
         return;
     }
 
-    let maxNumExistente = 0;
-    Object.keys(escenas).forEach(key => {
-        if (key.startsWith(nombreBase)) {
-            const num = parseInt(key.replace(nombreBase, '').trim());
-            if (!isNaN(num) && num > maxNumExistente) {
-                maxNumExistente = num;
-            }
-        }
-    });
+    if (!nombreBase || numEscenas <= 0) {
+        console.error("Llamada inválida a crearEscenasAutomaticamente: se requiere nombre base y número de escenas.");
+        return;
+    }
 
+    // 2. Lógica para crear las escenas en un bucle.
     for (let i = 1; i <= numEscenas; i++) {
-        const nuevoNum = maxNumExistente + i;
-        const id = `${nombreBase} ${String(nuevoNum).padStart(3, '0')}`;
-
+        ultimoId++;
+        const id = `${nombreBase} ${String(ultimoId).padStart(3, '0')}`;
+        
+        // Comprobar si ya existe para evitar sobreescribir.
         if (escenas[id]) {
-            console.warn(`La escena con ID ${id} ya existía y no se ha sobreescrito. Considera un nombre base diferente.`);
+            console.warn(`La escena con ID ${id} ya existía. Se omitió la creación.`);
             continue;
         }
 
+        const framesIniciales = [];
+        for (let j = 0; j < numFrames; j++) {
+            framesIniciales.push({ texto: "", imagen: "" });
+        }
+
+        // 3. LA CORRECCIÓN CLAVE: Asignar el 'libroId' al crear la escena.
         escenas[id] = {
             tipo: "generica",
-            texto: id,
+            texto: id, // El nombre se refinará más tarde
             imagen: "",
             opciones: [],
             botones: [],
-            frames: [],
-            // ========= CAMBIO CLAVE: Marcar como generado por IA =========
-            generadoPorIA: true
+            frames: framesIniciales,
+            generadoPorIA: true,
+            libroId: libroActivoId // <--- ¡AQUÍ ESTÁ LA MAGIA!
         };
-
-        for (let j = 0; j < numFrames; j++) {
-            escenas[id].frames.push({
-                texto: "",
-                imagen: ""
-            });
-        }
     }
-    actualizarLista();
+
+    console.log(`${numEscenas} escenas creadas con el nombre base "${nombreBase}" y asociadas al libro ID: ${libroActivoId}.`);
+    
+    // 4. Se guarda y se actualiza la lista para que los cambios sean visibles.
     guardarCambios();
-    console.log(`${numEscenas} escenas creadas con el nombre base "${nombreBase}".`);
+    actualizarLista();
 }
 
 function guardarCambios() {

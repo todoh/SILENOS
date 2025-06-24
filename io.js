@@ -113,7 +113,8 @@ async function empaquetarDatosDelProyecto() {
         momentos: processedMomentos,
         guionLiterario: guionLiterarioData,
         apiKeyGemini: typeof apiKey !== 'undefined' ? apiKey : '',
-        informeGeneral: typeof ultimoInformeGenerado !== 'undefined' ? ultimoInformeGenerado : null
+        informeGeneral: typeof ultimoInformeGenerado !== 'undefined' ? ultimoInformeGenerado : null,
+        libros: typeof libros !== 'undefined' ? libros : [] // <-- AÑADIDO
     };
 }
 
@@ -341,6 +342,15 @@ function cargarDatosEnLaApp(data) {
     if (data.informeGeneral) {
         ultimoInformeGenerado = data.informeGeneral;
         console.log("Datos del informe de Vista General cargados y listos.");
+    }
+ // AÑADIR ESTE BLOQUE al final de la función, antes de la carga de la biblioteca si existe
+    if (data.libros && Array.isArray(data.libros)) {
+        libros = data.libros;
+        // Si hay libros, selecciona el primero por defecto para que la vista no esté vacía
+        if (libros.length > 0) {
+            seleccionarLibro(libros[0].id);
+        }
+        console.log("Estructura de Libros cargada.");
     }
 
 

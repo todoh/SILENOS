@@ -19,7 +19,9 @@ let chatDiv; // Se asignará en window.onload
 let nombredelahistoria = "Nombre de la Historia";
 let cantidaddeescenas = 2;
 let cantidadframes = 3;
-
+let libros = [];
+let libroActivoId = null;
+let contenidoAProcesar = null;
 
 // --- INICIALIZACIÓN DE LA APLICACIÓN ---
 window.onload = function() {
@@ -42,8 +44,18 @@ window.onload = function() {
     actualizarParametrosIA();
     initEscenas();
     initMomentos();
-    
+    // Listener para cerrar el popup de libros al hacer clic fuera
+    document.addEventListener('click', (event) => {
+        const popup = document.getElementById('selector-libro-popup');
+        const btn = document.getElementById('selector-libro-btn');
+        if (popup && btn && popup.style.display === 'block') {
+            if (!popup.contains(event.target) && event.target !== btn) {
+                cerrarSelectorDeLibro();
+            }
+        }
+    });
 };
+
 
 
 // --- FUNCIONES GENERALES DE UI ---
@@ -283,6 +295,7 @@ function actualizarBotonContextual() {
     const btn = document.getElementById('contextual-action-btn');
     if (!btn) return;
 
+    // La lógica para ocultar el botón si no hay API Key se mantiene
     if (typeof apiKey === 'undefined' || !apiKey || !apiKey.trim()) {
         btn.style.display = 'none';
         return;
@@ -299,18 +312,27 @@ function actualizarBotonContextual() {
 
     if (idSeccionActiva) {
         btn.innerHTML = '✨';
-        btn.style.display = 'flex';
+        btn.style.display = 'flex'; // Usamos flex para centrar el icono
 
+   
         if (idSeccionActiva === 'personajes') {
             btn.title = 'Analizar o importar datos con IA';
             btn.onclick = abrirModalAIDatos;
-        } else if (idSeccionActiva === 'momentos') { // <-- ESTE ES EL CAMBIO PRINCIPAL
-            btn.title = 'Generar Aventura con IA';
-            btn.onclick = abrirModalMomentosIA; // Llama a la nueva función de momentos.js
+        } else if (idSeccionActiva === 'momentos') {
+            btn.title = 'Generar Aventura Interactiva con IA';
+            btn.onclick = abrirModalMomentosIA;
+        
+        // AÑADIMOS ESTA CONDICIÓN ESPECÍFICA PARA LA SECCIÓN 'LIBRO'
+        } else if (idSeccionActiva === 'capitulosh') {
+            btn.title = 'Generar Frames con IA en un Libro';
+            btn.onclick = abrirModalSeleccionLibroParaFrames;
+        
         } else {
+            // Comportamiento por defecto para las otras secciones ('guion-literario', 'escenah')
             btn.title = 'Abrir Herramientas de IA';
             btn.onclick = abrirModalIAHerramientas;
         }
+
     } else {
         btn.style.display = 'none';
     }
@@ -615,3 +637,271 @@ function cerrarModalIAHerramientas() {
     vistaGeneralPopup.addEventListener('click', (event) => {
         event.stopPropagation();
     });
+
+    /**
+ * Abre el popup para seleccionar o crear un libro.
+ */
+/**
+ * Abre el popup para seleccionar o crear un libro. Se posiciona junto al botón que se ha pulsado.
+ * @param {MouseEvent} event - El evento de clic del botón.
+ */
+function abrirSelectorDeLibro(event) {
+    event.stopPropagation(); // Evita que el clic se propague y cierre el menú al instante.
+    const popup = document.getElementById('selector-libro-popup');
+    if (!popup) return;
+
+    const isVisible = popup.style.display === 'block';
+
+    if (isVisible) {
+        popup.style.display = 'none';
+    } else {
+        renderizarSelectorDeLibro();
+        const rect = event.currentTarget.getBoundingClientRect();
+        popup.style.top = `${rect.bottom + window.scrollY + 5}px`;
+        popup.style.left = `${rect.left + window.scrollX}px`;
+        popup.style.display = 'block';
+    }
+}
+
+/**
+ * Cierra el popup del selector de libros.
+ */
+function cerrarSelectorDeLibro() {
+    const popup = document.getElementById('selector-libro-popup');
+    if (popup) {
+        popup.style.display = 'none';
+    }
+}
+
+/**
+ * Renderiza la lista de libros en el popup con un estilo limpio.
+ */
+function renderizarSelectorDeLibro() {
+    const popup = document.getElementById('selector-libro-popup');
+    if (!popup) return;
+
+    popup.innerHTML = ''; 
+
+    const crearLibroBtn = document.createElement('button');
+    crearLibroBtn.className = 'guion-popup-item-local crear-libro-btn-popup';
+    crearLibroBtn.innerHTML = '➕ Crear Nuevo Libro';
+    crearLibroBtn.onclick = () => crearNuevoLibro();
+    popup.appendChild(crearLibroBtn);
+
+    if (libros.length > 0) {
+        popup.appendChild(document.createElement('hr'));
+    }
+    
+    // MODIFICADO: Ahora crea un div con nombre y botón de editar
+    libros.forEach(libro => {
+        const libroItem = document.createElement('div');
+        libroItem.className = 'guion-popup-item-local libro-item-container';
+        // El clic en el contenedor selecciona el libro, excepto si se pulsa el botón de editar
+        libroItem.onclick = () => seleccionarLibro(libro.id);
+
+        const libroTituloSpan = document.createElement('span');
+        libroTituloSpan.className = 'libro-popup-titulo';
+        libroTituloSpan.textContent = libro.titulo;
+        
+        const editarBtn = document.createElement('button');
+        editarBtn.className = 'libro-popup-editar-btn';
+        editarBtn.innerHTML = '✏️';
+        editarBtn.title = 'Cambiar nombre';
+        editarBtn.onclick = (event) => {
+            event.stopPropagation(); // Previene que se seleccione el libro
+            iniciarEdicionNombreLibro(event, libro.id);
+        };
+        
+        libroItem.appendChild(libroTituloSpan);
+        libroItem.appendChild(editarBtn);
+        popup.appendChild(libroItem);
+    });
+}
+
+/**
+ * NUEVA FUNCIÓN: Inicia la edición del nombre de un libro.
+ */
+function iniciarEdicionNombreLibro(event, libroId) {
+    const botonEditar = event.currentTarget;
+    const itemContainer = botonEditar.parentElement;
+    const tituloSpan = itemContainer.querySelector('.libro-popup-titulo');
+
+    // Crear input
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = tituloSpan.textContent;
+    input.className = 'libro-nombre-input-edicion';
+    
+    // Reemplazar span con input
+    itemContainer.replaceChild(input, tituloSpan);
+    input.focus();
+    input.select();
+
+    // Guardar al perder el foco (blur)
+    input.addEventListener('blur', () => {
+        guardarNuevoNombreLibro(input, libroId);
+    });
+
+    // Guardar con Enter, cancelar con Escape
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            input.blur(); // Llama al evento blur para guardar
+        } else if (e.key === 'Escape') {
+            // Si se presiona Escape, simplemente volvemos a renderizar sin guardar
+            renderizarSelectorDeLibro();
+        }
+    });
+}
+
+/**
+ * NUEVA FUNCIÓN: Guarda el nombre editado del libro.
+ */
+function guardarNuevoNombreLibro(inputElement, libroId) {
+    const nuevoTitulo = inputElement.value.trim();
+    const libro = libros.find(l => l.id === libroId);
+
+    if (libro && nuevoTitulo) {
+        libro.titulo = nuevoTitulo;
+
+        // Si el libro editado era el activo, actualizamos el título principal
+        if (libro.id === libroActivoId) {
+            const tituloContainer = document.getElementById('libro-activo-titulo');
+            if (tituloContainer) {
+                tituloContainer.textContent = `Libro: ${nuevoTitulo}`;
+            }
+        }
+    }
+
+    // Volver a renderizar la lista para mostrar el estado final
+    renderizarSelectorDeLibro();
+}
+
+
+function crearNuevoLibro() {
+    const titulo = prompt("Nombre del nuevo libro:", `Libro ${libros.length + 1}`);
+    if (titulo) {
+        const nuevoLibro = {
+            id: `libro_${Date.now()}`,
+            titulo: titulo
+        };
+        libros.push(nuevoLibro);
+        seleccionarLibro(nuevoLibro.id); 
+    }
+}
+
+function seleccionarLibro(id) {
+    libroActivoId = id;
+    const libro = libros.find(l => l.id === id);
+    const tituloContainer = document.getElementById('libro-activo-titulo');
+    if (libro && tituloContainer) {
+        tituloContainer.textContent = `Libro: ${libro.titulo}`;
+    }
+    cerrarSelectorDeLibro();
+    if (typeof actualizarLista === 'function') {
+        actualizarLista();
+    }
+}
+
+/**
+ * Abre el modal para que el usuario elija un libro de destino.
+ * @param {string} contenido - El texto generado por la IA que se va a procesar.
+ */
+/**
+ * Abre el modal para que el usuario elija un guion de origen y un libro de destino.
+ */
+function abrirModalSeleccionLibroParaFrames() {
+    const modal = document.getElementById('modal-seleccionar-libro-para-frames');
+    const overlay = document.getElementById('modal-overlay');
+    const listaLibrosContainer = document.getElementById('lista-libros-para-frames');
+    const selectGuiones = document.getElementById('guion-origen-select');
+    
+    if (!modal || !overlay || !listaLibrosContainer || !selectGuiones) return;
+
+    // --- Poblar el dropdown de Guiones ---
+    selectGuiones.innerHTML = '';
+    if (guionLiterarioData && guionLiterarioData.length > 0) {
+        guionLiterarioData.forEach(guion => {
+            if (guion.generadoPorIA) { // Opcional: mostrar solo guiones de IA
+                const option = document.createElement('option');
+                option.value = guion.titulo;
+                option.textContent = guion.titulo;
+                selectGuiones.appendChild(option);
+            }
+        });
+    } else {
+        selectGuiones.innerHTML = '<option disabled>No hay guiones de IA disponibles</option>';
+    }
+
+    // --- Poblar la lista de Libros ---
+    listaLibrosContainer.innerHTML = '';
+    if (libros.length === 0) {
+        listaLibrosContainer.innerHTML = '<p>No hay libros creados. Ve a la sección "Libro" para crear uno.</p>';
+    } else {
+        libros.forEach(libro => {
+            const libroBtn = document.createElement('button');
+            libroBtn.className = 'libro-item-seleccion';
+            libroBtn.textContent = libro.titulo;
+            libroBtn.dataset.libroId = libro.id; // Guardamos el ID en el dataset
+            libroBtn.onclick = (event) => marcarLibroSeleccionado(event);
+            listaLibrosContainer.appendChild(libroBtn);
+        });
+    }
+
+    overlay.style.display = 'block';
+    modal.style.display = 'flex';
+    overlay.onclick = cerrarModalSeleccionLibro;
+}
+
+/**
+ * Resalta visualmente el libro seleccionado en el modal.
+ */
+function marcarLibroSeleccionado(event) {
+    const todosLosBotones = document.querySelectorAll('#lista-libros-para-frames .libro-item-seleccion');
+    todosLosBotones.forEach(btn => btn.classList.remove('selected'));
+
+    const botonPulsado = event.currentTarget;
+    botonPulsado.classList.add('selected');
+    libroDestinoSeleccionadoId = botonPulsado.dataset.libroId;
+}
+
+/**
+ * Cierra el modal de selección y resetea el estado.
+ */
+function cerrarModalSeleccionLibro() {
+    const modal = document.getElementById('modal-seleccionar-libro-para-frames');
+    const overlay = document.getElementById('modal-overlay');
+    if (modal) modal.style.display = 'none';
+    if (overlay) {
+        overlay.style.display = 'none';
+        overlay.onclick = null;
+    }
+    libroDestinoSeleccionadoId = null; // Resetea la selección
+}
+
+/**
+ * Valida las selecciones y lanza el proceso de generación de frames.
+ */
+function confirmarSeleccionYProcesar() {
+    const guionSeleccionado = document.getElementById('guion-origen-select').value;
+
+    if (!guionSeleccionado) {
+        alert("Por favor, selecciona un guion de la lista.");
+        return;
+    }
+    if (!libroDestinoSeleccionadoId) {
+        alert("Por favor, selecciona un libro de destino.");
+        return;
+    }
+
+    // ¡Paso clave! Establece el libro activo para que `nuevaEscena` sepa dónde guardar.
+    libroActivoId = libroDestinoSeleccionadoId;
+
+    if (typeof desarrollarFramesDesdeGeminimente === 'function') {
+        desarrollarFramesDesdeGeminimente(guionSeleccionado);
+    } else {
+        alert("Error: La función 'desarrollarFramesDesdeGeminimente' no se encontró.");
+    }
+    
+    cerrarModalSeleccionLibro();
+    abrir('capitulosh');
+}

@@ -588,7 +588,7 @@ top: 55%;}
  bottom: 0%;
 width: 100%; left:0%;
  background-color: #ff606000;
-  height: 100%;
+  height: 93%;
  overflow-y:scroll; padding-left: 0%; padding-right: 0%;}
 #file-input {
 position: absolute;
@@ -894,6 +894,7 @@ top: 1%;left: 2%;}
 }
 
 #lista-capitulos-guion {
+ 
     display: flex;
     flex-direction: column;
     gap: 10px; 
@@ -1706,28 +1707,7 @@ transform: translateY(-50%);
 #guion-toolbar #selector-guion-btn-local {
     margin-right: auto; /* Empuja los otros botones a la derecha */
 }
-
-/* Popup de la lista de guiones (local) */
-#lista-guiones-popup-local {
-    display: none; /* Oculto por defecto */
-    position: absolute;
-    top: 50px; /* Posicionado debajo de la barra de herramientas */
-    left: 10px;
-    width: 300px;
-    max-height: 500px;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    z-index: 1001; /* Por encima del contenido del guion */
-    overflow-y: auto;
-    padding: 8px;
-}
-
-.dark-theme #lista-guiones-popup-local {
-    background-color: #2c2c2c;
-    border-color: #444;
-}
+ 
 
 /* Estilo para cada elemento en la lista del popup */
 .guion-popup-item-local {
@@ -1983,3 +1963,287 @@ height: 75dvh;
 #asset-list .status-found { color: #81C784; } /* Verde */
 #asset-list .status-missing { color: #E57373; } /* Rojo */
 #asset-list .generate-btn { background-color: #FFC107; color: black; padding: 8px 12px; font-size: 14px; }
+
+/* En datos/styles.css */
+
+/* ELIMINA o COMENTA estas reglas que añadimos antes, ya que no son el estilo deseado */
+/*
+.crear-libro-btn {
+    background-color: #28a745 !important;
+    color: white !important;
+    font-weight: bold;
+    text-align: center !important;
+    position: absolute;
+    top: 10%;
+}
+.dark-theme .crear-libro-btn { ... }
+.popup-separador { ... }
+.dark-theme .popup-separador { ... }
+*/
+
+
+/* AÑADE estos estilos para asegurar que el popup y su contenido se vean como en la sección de Guion */
+
+/* Estilo base para el popup (reutilizando la clase del guion) */
+.lista-guiones-popup-local {
+    display: none;
+    position: absolute;
+    width: 340px; /* Ancho fijo para consistencia */
+    max-height: 80%;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    z-index: 1001;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 8px;
+}
+
+.dark-theme .lista-guiones-popup-local {
+    background-color: #2c2c2c;
+    border-color: #444;
+}
+
+/* Estilo para el botón de "Crear Nuevo Libro" dentro del popup */
+.crear-libro-btn-popup {
+    font-weight: bold !important;
+    color: #007bff !important;
+    background-color: #f0f8ff !important;
+}
+
+.dark-theme .crear-libro-btn-popup {
+    color: #58a6ff !important;
+    background-color: #2d333b !important;
+}
+
+/* Separador horizontal */
+.lista-guiones-popup-local hr {
+    border: none;
+    height: 1px;
+    background-color: #e0e0e0;
+    margin: 8px 4px;
+}
+
+.dark-theme .lista-guiones-popup-local hr {
+    background-color: #444;
+}
+
+/* Estilo para los ítems de la lista (reutilizado) */
+.guion-popup-item-local {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    background-color: transparent;
+    border: none;
+    color: #333;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 1em;
+}
+
+.guion-popup-item-local:hover {
+    background-color: #f0f0f0;
+}
+
+.dark-theme .guion-popup-item-local {
+    color: #e0e0e0;
+}
+
+.dark-theme .guion-popup-item-local:hover {
+    background-color: #444;
+}
+
+
+/* --- ESTILOS PARA LA EDICIÓN DE NOMBRES DE LIBROS (AÑADIR AL FINAL) --- */
+
+/* Contenedor de cada libro en la lista */
+.libro-item-container {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+/* Título del libro (ocupa el espacio disponible) */
+.libro-popup-titulo {
+    flex-grow: 1;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    padding-right: 10px; /* Espacio antes del botón de editar */
+}
+
+/* Botón de editar (pequeño y discreto) */
+.libro-popup-editar-btn {
+    background: transparent !important;
+    border: none !important;
+    color: #888 !important;
+    padding: 2px 6px !important;
+    margin: 0 !important;
+    font-size: 1em !important;
+    cursor: pointer !important;
+    flex-shrink: 0; /* Evita que el botón se encoja */
+    border-radius: 4px;
+}
+
+.dark-theme .libro-popup-editar-btn {
+    color: #aaa !important;
+}
+
+.libro-popup-editar-btn:hover {
+    background-color: rgba(0,0,0,0.1) !important;
+    color: #000 !important;
+    transform: none !important; /* Anulamos el efecto de escala de otros botones */
+}
+
+.dark-theme .libro-popup-editar-btn:hover {
+    background-color: rgba(255,255,255,0.15) !important;
+    color: #fff !important;
+}
+
+/* Estilo del campo de texto cuando se está editando */
+.libro-nombre-input-edicion {
+    flex-grow: 1;
+    padding: 6px;
+    border: 1px solid #007bff;
+    border-radius: 4px;
+    background-color: #fff;
+    color: #000;
+    font-size: 1em;
+    outline: none;
+    box-shadow: 0 0 5px rgba(0,123,255,0.5);
+}
+
+.dark-theme .libro-nombre-input-edicion {
+    background-color: #3a3a3a;
+    color: #e0e0e0;
+    border-color: #58a6ff;
+}
+
+#libro-activo-titulo {
+
+    position: fixed;
+    top: 2%;
+    height: 5%;
+    background-color: transparent;
+    color: #000;
+    left: 10%;
+    width: 80%;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.5em;
+    border: none;
+
+}
+
+/* En styles.css, al final del archivo */
+
+/* Contenedor para la lista de libros dentro del modal */
+.lista-libros-popup-estilo {
+    width: 100%;
+    max-height: 40vh; /* Altura máxima para evitar que sea muy grande */
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 8px;
+    margin-top: 15px;
+    background-color: rgba(0,0,0,0.02);
+}
+
+.dark-theme .lista-libros-popup-estilo {
+    border-color: #444;
+    background-color: rgba(255,255,255,0.05);
+}
+
+/* Estilo para cada libro en la lista del modal */
+.libro-item-seleccion {
+    display: block;
+    width: 100%;
+    padding: 12px 15px;
+    margin-bottom: 5px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    color: #333;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.libro-item-seleccion:hover {
+    background-color: #e9efff;
+    border-color: #007bff;
+}
+
+.dark-theme .libro-item-seleccion {
+    background-color: #3a3a3a;
+    border-color: #555;
+    color: #e0e0e0;
+}
+
+.dark-theme .libro-item-seleccion:hover {
+    background-color: #4a525c;
+    border-color: #58a6ff;
+}
+
+/* En styles.css, al final del archivo */
+
+/* Estilos para las secciones dentro del modal */
+.modal-seccion {
+    width: 100%;
+    margin-bottom: 20px;
+    text-align: left;
+}
+.modal-seccion label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #555;
+}
+.dark-theme .modal-seccion label {
+    color: #bbb;
+}
+
+/* Estilo para el dropdown (select) del modal */
+.modal-select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    font-size: 1em;
+}
+.dark-theme .modal-select {
+    background-color: #333;
+    color: #e0e0e0;
+    border-color: #555;
+}
+
+/* Estilo para resaltar el libro seleccionado */
+.libro-item-seleccion.selected {
+    background-color: #cce0ff !important;
+    border-color: #007bff !important;
+    color: #000 !important;
+    box-shadow: 0 0 8px rgba(0,123,255,0.5);
+}
+.dark-theme .libro-item-seleccion.selected {
+    background-color: #00529B !important;
+    border-color: #58a6ff !important;
+    color: #fff !important;
+}
+
+/* Estilo para el botón de acción principal del modal */
+.modal-button.principal-action {
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 1.1em;
+    background-color: #28a745;
+    color: white;
+}
+.dark-theme .modal-button.principal-action {
+    background-color: #218838;
+}

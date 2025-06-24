@@ -6,7 +6,6 @@ function abrirGuion() {
     cerrartodo();
     document.getElementById('guion-literario').style.display = 'flex';
     
-    // Si había un capítulo activo, lo volvemos a renderizar.
     if (indiceCapituloActivo !== -1) {
         mostrarCapituloSeleccionado(indiceCapituloActivo);
     }
@@ -24,43 +23,28 @@ function agregarCapituloYMostrar() {
     renderizarGuion();
     mostrarCapituloSeleccionado(indiceCapituloActivo);
     
-    // =======================================================================
-    //  INICIO DE LA CORRECCIÓN
-    // =======================================================================
-    // Se asegura de que la lista de guiones en 'Momentos' se actualice
-    // inmediatamente después de añadir un nuevo capítulo.
     if (typeof cargarGuionesEnDropdown === 'function') {
         cargarGuionesEnDropdown();
     } else {
         console.error("Error al agregar capítulo: La función cargarGuionesEnDropdown no está definida.");
     }
-    // =======================================================================
-    //  FIN DE LA CORRECCIÓN
-    // =======================================================================
 }
 
-/**
- * Verifica si ya se han generado frames en la sección "Capítulos" para un guion específico.
- * @param {string} tituloGuion El título del guion a verificar.
- * @returns {boolean} True si existen escenas para ese guion y al menos una tiene frames.
- */
 function hanSidoFramesGenerados(tituloGuion) {
     if (!tituloGuion) return false;
-    const escenasDelGuion = Object.keys(escenas)
-        .filter(id => id.startsWith(tituloGuion));
+    const escenasDelGuion = Object.keys(escenas).filter(id => id.startsWith(tituloGuion));
 
     if (escenasDelGuion.length === 0) {
         return false;
     }
 
-const hayFrames = escenasDelGuion.some(id => 
-    escenas[id] && 
-    escenas[id].frames && 
-    escenas[id].frames.some(frame => frame.texto && frame.texto.trim() !== '')
-);
+    const hayFrames = escenasDelGuion.some(id => 
+        escenas[id] && 
+        escenas[id].frames && 
+        escenas[id].frames.some(frame => frame.texto && frame.texto.trim() !== '')
+    );
     return hayFrames;
 }
-
 
 function mostrarCapituloSeleccionado(index) {
     indiceCapituloActivo = index;
@@ -68,7 +52,6 @@ function mostrarCapituloSeleccionado(index) {
     const toolbar = document.getElementById('guion-toolbar');
     const contenidoDiv = document.getElementById('contenido-capitulo-activo');
     
-    // Limpiar botones dinámicos previos de la barra de herramientas
     toolbar.querySelectorAll('.generar-tomas-btn, .generar-frames-btn').forEach(btn => btn.remove());
     
     contenidoDiv.innerHTML = ''; 
@@ -107,7 +90,6 @@ function mostrarCapituloSeleccionado(index) {
     
     contenidoDiv.appendChild(inputTitulo);
 
-    // Añadir botones a la barra de herramientas en lugar de al contenido
     if (capitulo.generadoPorIA) {
         if (hanSidoFramesGenerados(capitulo.titulo)) {
             const botonGenerarTomas = document.createElement('button');
@@ -123,27 +105,27 @@ function mostrarCapituloSeleccionado(index) {
             };
             toolbar.appendChild(botonGenerarTomas);
         } else {
+            // =======================================================================
+            // INICIO DE LA MODIFICACIÓN
+            // =======================================================================
             const botonGenerarFrames = document.createElement('button');
             botonGenerarFrames.textContent = 'Generar Frames de la Historia';
             botonGenerarFrames.className = 'pro generar-frames-btn';
             botonGenerarFrames.title = 'Rellena los capítulos con los frames detallados por la IA.';
+            
+            // Ahora llama a la función que abre el modal de selección de libro.
+            // Esta función está en main.js y ya la tienes implementada.
             botonGenerarFrames.onclick = () => {
-                if (typeof desarrollarFramesDesdeGeminimente === 'function') {
-                    if (!ultimaHistoriaGeneradaJson || !ultimaHistoriaGeneradaJson.historia || ultimaHistoriaGeneradaJson.historia.length === 0) {
-                        alert("No se pueden generar los frames. El plan de la historia de la IA no está cargado. Por favor, vuelve a la pestaña 'IA' y genera la historia primero.");
-                        return;
-                    }
-                    alert(`Se iniciará la generación de frames para "${capitulo.titulo}". Serás redirigido a la sección 'Capítulos' para ver el progreso.`);
-                    
-                    desarrollarFramesDesdeGeminimente(capitulo.titulo);
-
-                    cerrartodo();
-                    abrir('capitulosh');
+                if (typeof abrirModalSeleccionLibroParaFrames === 'function') {
+                    abrirModalSeleccionLibroParaFrames();
                 } else {
-                    alert("Error: La función para desarrollar frames ('desarrollarFramesDesdeGeminimente') no está disponible.");
+                     alert("Error: La función para abrir el modal de generación no está disponible.");
                 }
             };
             toolbar.appendChild(botonGenerarFrames);
+            // =======================================================================
+            // FIN DE LA MODIFICACIÓN
+            // =======================================================================
         }
     }
 
@@ -172,7 +154,6 @@ function eliminarCapituloDesdeIndice(indexToDelete) {
 
         if (fueActivo) {
             indiceCapituloActivo = -1;
-            // Limpiar la barra de herramientas y el contenido si el capítulo eliminado era el activo
              const toolbar = document.getElementById('guion-toolbar');
              toolbar.querySelectorAll('.generar-tomas-btn, .generar-frames-btn').forEach(btn => btn.remove());
              const contenidoDiv = document.getElementById('contenido-capitulo-activo');
@@ -184,13 +165,11 @@ function eliminarCapituloDesdeIndice(indexToDelete) {
         
         renderizarGuion(); 
         
-        // Se asegura de que la lista de guiones en 'Momentos' se actualice.
         if (typeof cargarGuionesEnDropdown === 'function') {
             cargarGuionesEnDropdown();
         }
     }
 }
-
 
 function renderizarGuion() {
     const indiceDiv = document.getElementById('indice-capitulos-guion');
@@ -204,7 +183,6 @@ function renderizarGuion() {
     if (capituloActivoActual) {
         indiceCapituloActivo = guionLiterarioData.findIndex(cap => cap === capituloActivoActual);
     }
-
 
     guionLiterarioData.forEach((capitulo, index) => {
         const tituloContainer = document.createElement('div');
