@@ -134,9 +134,9 @@ async function desarrollarFramesDesdeGeminimente(guionSeleccionadoTitulo) {
             return;
         }
 
-        const idsEscenasCreadasEnPrincipal = Object.keys(escenas)
-            .filter(id => id.startsWith(nombreBaseReal))
-            .sort();
+      const idsEscenasCreadasEnPrincipal = Object.keys(escenas)
+    .filter(id => id.startsWith(`${libroActivoId}-${nombreBaseReal}`))
+    .sort();
 
         for (let i = 0; i < idsEscenasCreadasEnPrincipal.length; i++) {
             const idEscenaPrincipal = idsEscenasCreadasEnPrincipal[i];

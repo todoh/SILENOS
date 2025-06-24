@@ -284,8 +284,9 @@ function crearEscenasAutomaticamente(nombreBase, numEscenas, numFrames) {
     // 2. Lógica para crear las escenas en un bucle.
     for (let i = 1; i <= numEscenas; i++) {
         ultimoId++;
-        const id = `${nombreBase} ${String(ultimoId).padStart(3, '0')}`;
-        
+            const id = `${libroActivoId}-${nombreBase} ${String(ultimoId).padStart(3, '0')}`;
+
+
         // Comprobar si ya existe para evitar sobreescribir.
         if (escenas[id]) {
             console.warn(`La escena con ID ${id} ya existía. Se omitió la creación.`);
@@ -316,7 +317,10 @@ function crearEscenasAutomaticamente(nombreBase, numEscenas, numFrames) {
     guardarCambios();
     actualizarLista();
 }
-
+function reiniciarContadorEscenas() {
+    ultimoId = 0;
+    console.log("Contador de escenas (ultimoId) reiniciado a 0.");
+}
 function guardarCambios() {
     if (typeof(Storage) !== "undefined") {
         try {

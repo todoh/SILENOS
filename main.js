@@ -892,7 +892,9 @@ function confirmarSeleccionYProcesar() {
         alert("Por favor, selecciona un libro de destino.");
         return;
     }
-
+ if (typeof reiniciarContadorEscenas === 'function') {
+        reiniciarContadorEscenas();
+    }
     // ¡Paso clave! Establece el libro activo para que `nuevaEscena` sepa dónde guardar.
     libroActivoId = libroDestinoSeleccionadoId;
 
