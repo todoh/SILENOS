@@ -128,13 +128,13 @@
    <button  onclick="cerrartodo(), gridear('personajes');">Datos</button>
                <button  onclick="cerrartodo(), abrir('vistageneral');">👁️‍🗨️ Vista General</button>
 
-           <button  onclick="cerrartodo(), abrirGuion(), actualizarBotonContextual();">Guion</button>
+            <button onclick="abrir('guion-literario');">Guión</button>
             <button  onclick="cerrartodo(), abrir('capitulosh');">Libro</button>
             <button  onclick="cerrartodo(), abrir('escenah');">Storyboard</button>
          
             <button id="pelicula" onclick="cerrartodo(), abrir('galeria');">Pelicula</button>
             <button  onclick="cerrartodo(), abrir('momentos');">Videojuego</button>
-            <button  id="biblioteca-btn" onclick="cerrartodo(), abrir('biblioteca');">📚 Biblioteca</button>
+            <button  id="biblioteca-btn" style="display: none;" onclick="cerrartodo(), abrir('biblioteca');">📚 Biblioteca</button>
             <button class="pro" onclick="abrirModalConfig()">⚙️ Ajustes </button>
      
         <button class="pro" onclick="guardarJSON()">💾 Guardar</button>
@@ -426,8 +426,9 @@
 
 
 <div id="momentos">
+    <button class="pro5" id="agregar-momento-btn">➕</button>
     <div id="momentos-controles-flotantes">
-        <button class="pro5" id="agregar-momento-btn">➕</button>
+        
         <button class="pro" id="preview-connections-btn" title="Muestra u oculta las líneas de conexión entre momentos.">Previsualizar Conexiones</button>
 
         <div class="control-group">
@@ -480,7 +481,11 @@
 <!-- INICIO DE LA SECCIÓN DE VISTA GENERAL -->
 
  <div id="vistageneral" >
-     <button class="pro6" id="selector-general-btn-local">☰</button>
+
+
+
+
+     <button  style="display: none;"  class="pro6" id="selector-general-btn-local">☰</button>
     <!-- Encabezado y botón de acción -->
     <div>
         
@@ -490,18 +495,24 @@
         </button>
     </div>
 
-
-
+<div id="biblioteca" style="display: none;" >
+    <div id="biblioteca-grid"></div>
+</div>
 
     <div id="informe-container">
  
       
     </div>
+
+    
+<div id="vistageneral-secciones" >
+    <button class="" onclick=" document.getElementById('informe-container').style.display = 'flex', document.getElementById('biblioteca').style.display = 'none'; " >📜 Informe</button>
+    <button class="" onclick=" document.getElementById('informe-container').style.display = 'none', abrir('biblioteca'), document.getElementById('vistageneral').style.display = 'flex';  " >🖼️ Galería de imágenes</button>
+
+</div>
 </div>
  
-<div id="biblioteca" style="display: none;" >
-    <div id="biblioteca-grid"></div>
-</div>
+
 
 <div id="guion-literario">
     <div id="guion-toolbar">
@@ -741,6 +752,57 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 <div id="esfera2" ></div>
 
 
+<div id="modal-momentos-ia" class="modal-content" style="display: none; width: auto; max-width: 600px;">
+    <button class="modal-close-button" onclick="cerrarModalMomentosIA()">&times;</button>
+    
+    <h3>Generar Aventura Interactiva con IA</h3>
+    <p style="font-size: 0.9em; color: #666; text-align: center; margin-bottom: 15px;">
+        Define los parámetros de tu historia. La IA construirá una red de momentos basada en tus especificaciones y el guion seleccionado.
+    </p>
+
+    <div id="modal-ia-content-placeholder" style="width: 100%; display: flex; flex-direction: column; gap: 20px;">
+        <div class="ia-control-row">
+            <label for="guion-select-modal">Guion de Referencia:</label>
+            <select id="guion-select-modal" class="pro"></select>
+        </div>
+
+        <div class="ia-control-row">
+            <label for="ia-nodos-input">Momentos Totales (Nodos):</label>
+            <input type="number" id="ia-nodos-input" class="pro ia-input-numero" min="5" max="100" value="15">
+        </div>
+
+        <div class="ia-control-row">
+            <label for="ia-finales-input">Finales Deseados:</label>
+            <input type="number" id="ia-finales-input" class="pro ia-input-numero" min="1" max="10" value="2">
+        </div>
+        
+        <div class="ia-control-row">
+            <label for="ia-densidad-slider">Densidad de Ramificación:</label>
+            <input type="range" id="ia-densidad-slider" min="1" max="5" value="2" step="1">
+            <span id="ia-densidad-label">Baja</span>
+        </div>
+
+        <div class="ia-info-box">
+            <div id="ia-min-nodos-display">Nodos mínimos recomendados: 7</div>
+            <div id="ia-api-calls-display">Peticiones a la API estimadas: ~16</div>
+        </div>
+
+        <button id="generar-aventura-ia-btn-modal" class="pro modal-button">✨ Generar Aventura</button>
+    </div>
+</div>
+
+<style>
+    .ia-control-row { display: flex; justify-content: space-between; align-items: center; gap: 15px; }
+    .ia-control-row label { font-weight: 500; flex-shrink: 0; }
+    .ia-control-row input[type="number"], .ia-control-row select { width: 80px; text-align: center; }
+    .ia-control-row input[type="range"] { flex-grow: 1; }
+    .ia-info-box { 
+        text-align: center; font-size: 0.85em; background-color: rgba(0,0,0,0.05); 
+        padding: 8px; border-radius: 4px; color: #555; margin-top: 10px;
+    }
+    .dark-theme .ia-info-box { background-color: rgba(255,255,255,0.08); color: #ccc; }
+    #generar-aventura-ia-btn-modal:disabled { background-color: #999; cursor: not-allowed; }
+</style>
 
    <!-- ================== -->
     <!-- MODAL PERSONALIZADO-->

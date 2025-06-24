@@ -322,7 +322,7 @@ function renderizarSeccionNubePersonajes(data, personajesOriginales) {
     const canvasId = 'character-cloud-canvas';
     
     container.innerHTML = `
-        <h3>Nube de Personajes</h3>
+        <h3> </h3>
         <canvas id="${canvasId}" style="width: 100%; display: block; border: 1px solid #ccc;"></canvas>
     `;
 

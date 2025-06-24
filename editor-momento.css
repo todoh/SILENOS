@@ -4,9 +4,11 @@
 
 #panel-edicion-momento {
     position: fixed;
+    top: 10%;
     bottom: 0%;
     right: 0%;
-    width: 50%;
+    width: 35%;
+    min-width: 500px;
     background-color: var(--color-fondo-secundario, #f8f9fa);
     color: var(--color-texto, #333);
     border: 1px solid var(--color-borde, #ccc);

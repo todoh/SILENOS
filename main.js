@@ -60,7 +60,7 @@ function cerrartodo() {
         document.getElementById('vistageneral').style.display = 'none';
  
 
-    actualizarBotonContextual(); 
+
 }
 
 function abrir(escena) {
@@ -92,15 +92,12 @@ function abrir(escena) {
             }
         });
     }
- if (escena === 'vistageneral') {
-        // Comprueba si existen datos de informe guardados en la variable global.
+    if (escena === 'vistageneral') {
         if (typeof ultimoInformeGenerado !== 'undefined' && ultimoInformeGenerado) {
-            // Si existen, llama a la función para dibujarlos en el DOM.
             if (typeof renderizarInformeCompleto === 'function') {
                 renderizarInformeCompleto(ultimoInformeGenerado);
             }
         } else {
-            // Si no hay datos, muestra un mensaje para que el usuario genere uno.
             const informeContainer = document.getElementById('informe-container');
             if (informeContainer && informeContainer.innerHTML.trim() === '') {
                  informeContainer.innerHTML = '<p style="text-align: center; margin-top: 2rem;">Haz clic en "Analizar Datos del Proyecto" para generar un nuevo informe.</p>';
@@ -108,24 +105,20 @@ function abrir(escena) {
         }
     }
 
-if (escena === 'biblioteca') {
-        // Cuando se abre la sección de la biblioteca,
-        // llamamos a las funciones del nuevo script para que la preparen.
+    if (escena === 'biblioteca') {
         const todasLasImagenes = recopilarTodasLasImagenes();
         renderizarGaleria(todasLasImagenes);
     }
 
-
-   actualizarBotonContextual(); 
-
+   // Llamamos a la función una sola vez, pasándole el nombre de la escena activa.
+   actualizarBotonContextual(escena); 
 }
-
 
 function gridear(escena) {
     cerrartodo();
     document.getElementById(escena).style.display = 'grid';
         actualizarBotonContextual();   
- 
+  actualizarBotonContextual(escena);
 }
 
 function reiniciarEstadoApp() {
@@ -290,18 +283,15 @@ function actualizarBotonContextual() {
     const btn = document.getElementById('contextual-action-btn');
     if (!btn) return;
 
-    // First, check for API Key. If it's not set, do nothing.
     if (typeof apiKey === 'undefined' || !apiKey || !apiKey.trim()) {
         btn.style.display = 'none';
         return;
     }
 
-    // List of sections where the AI button should be visible
     const seccionesVisibles = [
         'personajes', 'momentos', 'capitulosh', 'escenah', 'guion-literario'
     ];
 
-    // Find the ID of the currently visible section
     const idSeccionActiva = seccionesVisibles.find(id => {
         const seccion = document.getElementById(id);
         return seccion && seccion.style.display !== 'none';
@@ -311,12 +301,13 @@ function actualizarBotonContextual() {
         btn.innerHTML = '✨';
         btn.style.display = 'flex';
 
-        // Check if the active section is 'personajes'
         if (idSeccionActiva === 'personajes') {
-            btn.title = 'Analizar datos del personaje con IA';
-            btn.onclick = abrirModalAIDatos; // Call the specific function
+            btn.title = 'Analizar o importar datos con IA';
+            btn.onclick = abrirModalAIDatos;
+        } else if (idSeccionActiva === 'momentos') { // <-- ESTE ES EL CAMBIO PRINCIPAL
+            btn.title = 'Generar Aventura con IA';
+            btn.onclick = abrirModalMomentosIA; // Llama a la nueva función de momentos.js
         } else {
-            // For any other active section, use the default function
             btn.title = 'Abrir Herramientas de IA';
             btn.onclick = abrirModalIAHerramientas;
         }
@@ -374,15 +365,13 @@ function cerrarModalAIDatos() {
     }
 }
 
-function cargarGuionesEnDropdown() {
-    const guionSelect = document.getElementById('guion-select');
-    if (!guionSelect) {
-        console.error("Error crítico: No se encontró el elemento <select> con id 'guion-select'.");
+function cargarGuionesEnDropdown(selectElement) {
+    if (!selectElement) {
+        console.error("No se proporcionó un elemento <select> a cargarGuionesEnDropdown.");
         return;
     }
-
-    const valorSeleccionadoAnteriormente = guionSelect.value;
-    guionSelect.innerHTML = '';
+    const valorSeleccionadoAnteriormente = selectElement.value;
+    selectElement.innerHTML = '';
     const placeholder = document.createElement('option');
     placeholder.value = "";
 
@@ -392,17 +381,17 @@ function cargarGuionesEnDropdown() {
     } else {
         placeholder.textContent = "Selecciona un guion...";
     }
-    guionSelect.appendChild(placeholder);
+    selectElement.appendChild(placeholder);
 
     guionLiterarioData.forEach(guion => {
         if (guion.titulo && guion.titulo.trim() !== "") {
             const option = document.createElement('option');
             option.value = guion.titulo;
             option.textContent = guion.titulo;
-            guionSelect.appendChild(option);
+            selectElement.appendChild(option);
         }
     });
-    guionSelect.value = valorSeleccionadoAnteriormente || "";
+    selectElement.value = valorSeleccionadoAnteriormente || "";
 }
 
 // main.js

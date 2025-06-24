@@ -713,45 +713,90 @@ async function procesarEntradaConIA() {
     }
     cerrarModalAIDatos();
     const chatDiv = window.chatDiv || document.getElementById('chat');
-    chatDiv.innerHTML += `<p><strong>Solicitud enviada:</strong> Analizando entrada...</p>`;
+    chatDiv.innerHTML += `<p><strong>Tú:</strong> ${textoUsuario}</p><p><strong>Silenos:</strong> Analizando entrada...</p>`;
     chatDiv.scrollTop = chatDiv.scrollHeight;
 
     try {
         if (textoUsuario.startsWith('[') || textoUsuario.startsWith('{')) {
-            const promptCorreccion = `Rol: Eres un asistente experto en formateo de datos... [Resto del prompt sin cambios]`;
+            // La lógica para importar JSON directo no cambia y funciona bien.
+            chatDiv.innerHTML += `<p><strong>Info:</strong> Se ha detectado una estructura tipo JSON. Se intentará formatear.</p>`;
+            const promptCorreccion = `Rol: Eres un asistente experto en formateo de datos. Tarea: Convierte la siguiente cadena de texto en un array JSON válido que siga la estructura: { "nombre": "string", "descripcion": "string", "etiqueta": "string (personaje, ubicacion, objeto, etc.)", "imagen": "" }. Sintetiza toda la información en el campo "descripcion". Responde ÚNICAMENTE con el array JSON. Texto a convertir: --- ${textoUsuario} ---`;
             const respuestaCorregida = await llamarIAConFeedback(promptCorreccion, "Formateando JSON");
             if (Array.isArray(respuestaCorregida) && respuestaCorregida.length > 0) {
                 respuestaCorregida.forEach(dato => agregarPersonajeDesdeDatos(dato));
+                alert(`La IA formateó y añadió ${respuestaCorregida.length} dato(s).`);
             } else {
                 throw new Error("La IA no pudo formatear el JSON a la estructura esperada.");
             }
         } else {
-            const promptCategorias = `Analiza la siguiente obra: "${textoUsuario}"... [Resto del prompt sin cambios]`;
-            const respuestaCategorias = await llamarIAConFeedback(promptCategorias, "Identificando categorías");
+            // CORRECCIÓN CLAVE: Un prompt mucho más directo y restrictivo.
+            const promptCategorias = `
+                Analiza el siguiente texto de una historia: "${textoUsuario}".
+                Tu ÚNICA tarea es extraer los nombres de las entidades clave y clasificarlas. NO escribas un ensayo ni análisis.
+                Identifica las categorías de datos más importantes y relevantes (ej: Personajes Principales, Personajes Secundarios, Lugares Clave, Objetos, Facciones, etc.).
+
+                **Instrucción crucial**: Responde ÚNICAMENTE con un objeto JSON. No añadas texto introductorio, explicaciones, ni marcadores de código. La estructura debe ser:
+                {
+                  "categorias_identificadas": ["Categoría 1", "Categoría 2", "Categoría 3"]
+                }
+
+                Si el texto es demasiado corto o ambiguo para extraer categorías, devuelve un JSON con un array vacío, así:
+                {
+                  "categorias_identificadas": []
+                }
+            `;
+            
+            let respuestaCategorias;
+            try {
+                respuestaCategorias = await llamarIAConFeedback(promptCategorias, "Identificando categorías");
+            } catch (error) {
+                // Este catch es para los errores de parseo de JSON
+                throw new Error("La IA respondió en un formato inesperado. Por favor, intenta ser más descriptivo en tu idea. Error original: " + error.message);
+            }
+            
             const categorias = respuestaCategorias.categorias_identificadas;
             if (!categorias || !Array.isArray(categorias) || categorias.length === 0) {
-                throw new Error("La IA no pudo identificar categorías relevantes.");
+                throw new Error("La IA no pudo identificar categorías relevantes en el texto. Intenta ser más específico.");
             }
+            
+            chatDiv.innerHTML += `<p><strong>Silenos:</strong> Categorías encontradas: ${categorias.join(', ')}. Extrayendo detalles...</p>`;
+            chatDiv.scrollTop = chatDiv.scrollHeight;
 
+            let totalDatosImportados = 0;
             for (const categoria of categorias) {
-                const promptDetalles = `Para la obra "${textoUsuario}", genera... [Resto del prompt sin cambios]`;
+                const etiquetaSugerida = categoria.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+                const promptDetalles = `
+                    Para la obra "${textoUsuario}", genera una lista de elementos que pertenecen a la categoría "${categoria}".
+                    Para cada elemento, proporciona una descripción detallada.
+                    Responde ÚNICAMENTE con un objeto JSON válido en formato de array. Cada objeto debe tener: {"nombre": "...", "descripcion": "...", "etiqueta": "${etiquetaSugerida}", "imagen": ""}`;
+
                 const respuestaDetalles = await llamarIAConFeedback(promptDetalles, `Extrayendo detalles de "${categoria}"`);
-                 if (Array.isArray(respuestaDetalles) && respuestaDetalles.length > 0) {
+                
+                if (Array.isArray(respuestaDetalles) && respuestaDetalles.length > 0) {
+                    let importadosCategoria = 0;
                     respuestaDetalles.forEach(dato => {
-                        if (dato.nombre && dato.descripcion) agregarPersonajeDesdeDatos(dato);
+                        if (dato.nombre && dato.descripcion) {
+                            agregarPersonajeDesdeDatos(dato);
+                            importadosCategoria++;
+                        }
                     });
+                    totalDatosImportados += importadosCategoria;
+                    chatDiv.innerHTML += `<p><strong>Éxito:</strong> Se agregaron ${importadosCategoria} datos de la categoría "${categoria}".</p>`;
                 }
             }
+            
+            if (totalDatosImportados > 0) {
+                alert(`¡Proceso completado! Se importaron un total de ${totalDatosImportados} datos detallados.`);
+                document.getElementById('ia-datos-area').value = '';
+            } else {
+                alert("El proceso finalizó, pero no se pudo importar ningún dato. Revisa el chat para más información.");
+            }
         }
-        
-        reinicializarFiltrosYActualizarVista();
-        alert("Proceso de IA completado. Los datos han sido añadidos y ordenados.");
-
     } catch (error) {
-        alert("Ocurrió un error al procesar la solicitud con IA: " + error.message);
+        alert("Ocurrió un error al procesar la solicitud: " + error.message);
         console.error("Error en procesarEntradaConIA:", error);
     } finally {
-        if(chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
+        if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
     }
 }
 

@@ -9,7 +9,7 @@
     top: 0%;
     left: 0%;
     right: 0%;
-    bottom: 0%; padding: 1%;
+    bottom: 0%; padding: 0%;
     background-color: var(--background-color, #f8f9fa);
     overflow: hidden; /* El scroll ahora lo maneja el wrapper */
 }
@@ -19,7 +19,7 @@
     position: fixed;
     right: 50%;
     transform: translateX(50%);
-    bottom: 1%;
+    top: 1%;
     display: flex;
     flex-direction: row;
     gap: 10px;
@@ -298,4 +298,8 @@ align-items: end;}
     to {
         stroke-dashoffset: -30;
     }
+}
+
+#momentos-controles-ia {
+    display: none;
 }

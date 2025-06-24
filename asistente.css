@@ -172,3 +172,23 @@
         transition: opacity 1.5s ease-out;
     }
     /* ▲▲▲ FIN DE LA CORRECCIÓN ▲▲▲ */
+
+
+
+    #vistageneral-secciones {
+position: fixed;
+top: 0%;
+ background-color: #28a74600;
+left: 0%;
+right: 0%;
+height: 8%;
+color: #333;
+ flex-direction: row;
+ justify-content: center;
+ align-items: center;
+
+ display: flex;
+ gap: 1%;
+ z-index: 1000;
+width: 100%;
+    }
