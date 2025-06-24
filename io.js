@@ -291,6 +291,34 @@ function cargarDatosEnLaApp(data) {
         ultimoId = idsNumericos.length > 0 ? Math.max(...idsNumericos) : 0;
         if (typeof actualizarLista === 'function') actualizarLista();
     }
+// =========================================================================
+    // INICIO: LÓGICA DE INTEGRACIÓN DE LA MIGRACIÓN
+    // =========================================================================
+
+    // Cargar los libros del proyecto. Si no existen, inicializa un array vacío.
+    if (data.libros && Array.isArray(data.libros)) {
+        libros = data.libros;
+    } else {
+        libros = []; // Para proyectos antiguos que no tenían la propiedad 'libros'
+    }
+
+    // Ejecutar la función de migración después de cargar escenas y libros.
+    // Esta función revisará si hay escenas sin 'libroId' y las organizará.
+    migrarEscenasSinLibro();
+    
+    // Si después de la migración hay libros, selecciona el primero.
+    if (libros.length > 0) {
+        seleccionarLibro(libros[0].id);
+    }
+    
+    // Se asegura de que la UI se renderice con los datos potencialmente migrados.
+    if (typeof actualizarLista === 'function') actualizarLista();
+
+    // =========================================================================
+    // FIN: LÓGICA DE INTEGRACIÓN DE LA MIGRACIÓN
+    // =========================================================
+
+
 
     // --- MODIFICADO: COMPATIBILIDAD CON ARCOS ---
     // La función agregarPersonajeDesdeDatos ya está preparada para manejar datos sin la propiedad 'arco'.
@@ -419,3 +447,51 @@ function limpiarCacheDelProyecto() {
         });
 
 }
+
+// AÑADE ESTA FUNCIÓN COMPLETA EN datos/io.js
+
+/**
+ * Revisa las escenas cargadas y migra las que no tienen un 'libroId' a un libro especial.
+ * Esto asegura la compatibilidad con proyectos de versiones anteriores.
+ *//**
+ * Revisa las escenas cargadas y migra las que no tienen un 'libroId' a un libro especial.
+ * Esto asegura la compatibilidad con proyectos de versiones anteriores.
+ */
+function migrarEscenasSinLibro() {
+    const escenasHuerfanasIds = Object.keys(escenas).filter(id => !escenas[id].libroId);
+
+    // Si no hay escenas huérfanas, no hay nada que hacer.
+    if (escenasHuerfanasIds.length === 0) {
+        console.log("No se encontraron escenas de formato antiguo. No se requiere migración.");
+        return;
+    }
+
+    console.log(`Se encontraron ${escenasHuerfanasIds.length} capítulos de una versión anterior. Migrando...`);
+
+    const nombreLibroAntiguo = "Capitulos Antiguos";
+    let libroDeMigracion = libros.find(libro => libro.titulo === nombreLibroAntiguo);
+
+    // Si el libro "Capitulos Antiguos" no existe, lo creamos.
+    if (!libroDeMigracion) {
+        libroDeMigracion = {
+            id: `libro_migracion_${Date.now()}`,
+            titulo: nombreLibroAntiguo
+        };
+        libros.push(libroDeMigracion);
+        console.log(`Se ha creado el libro "${nombreLibroAntiguo}" para alojar los capítulos antiguos.`);
+    }
+
+    // Asignamos cada escena huérfana al libro de migración.
+    escenasHuerfanasIds.forEach(id => {
+        escenas[id].libroId = libroDeMigracion.id;
+    });
+
+    // Notificamos al usuario del resultado.
+    alert(`Se han encontrado ${escenasHuerfanasIds.length} capítulos de una versión anterior. Se han movido a un nuevo libro llamado "${nombreLibroAntiguo}" para que puedas seguir accediendo a ellos.`);
+
+    // Es crucial guardar los cambios para que la migración persista.
+    guardarCambios();
+}
+// =========================================================================
+// FIN: NUEVA FUNCIÓN DE MIGRACIÓN
+// =========================================================================
