@@ -65,6 +65,7 @@ function cerrartodo() {
     document.getElementById('escena-vista').style.display = 'none';
     document.getElementById('capitulosh').style.display = 'none';
     document.getElementById('escenah').style.display = 'none';
+        document.getElementById('animaciones').style.display = 'none';
     document.getElementById('biblioteca').style.display = 'none';
     document.getElementById('guion-literario').style.display = 'none';
     document.getElementById('momentos').style.display = 'none';

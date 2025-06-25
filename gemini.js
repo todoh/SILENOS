@@ -1,4 +1,5 @@
 let apiKey = ""; // Reemplaza con tu clave real o asegúrate que se carga desde otro sitio.
+
 // Es importante que 'apiKey' y 'ultimaHistoriaGeneradaJson' sean accesibles por este script.
 // Si 'ultimaHistoriaGeneradaJson' se define en 'geminialfa.js', asegúrate que 'geminialfa.js' se carga antes o que la variable es global.
 
