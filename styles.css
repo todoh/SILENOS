@@ -2296,7 +2296,7 @@ height: 75dvh;
     position: fixed;
     top: 41%;
     height: 12%;
-    width: 90%;
+    width: 40%;
      
 }
 
@@ -2374,7 +2374,7 @@ position: fixed;
     flex-direction: column;
   top: 55%;
   height: 45%;
-  width: 90%;
+  width: 40%;
   left: 5%;
  justify-items: center;
  align-items: center;
@@ -2467,6 +2467,15 @@ height: 100%;
 background-color: transparent;
 
 width: 100%
+
+
+
+}
+ 
+#canvas-container {
+
+position: relative; width: 100%; border-radius: 0.5rem; overflow: hidden; aspect-ratio: 16 / 9; top: 0%; height: auto; background-color: #111827;
+
 
 
 
