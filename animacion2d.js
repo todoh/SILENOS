@@ -51,7 +51,24 @@ document.addEventListener('DOMContentLoaded', () => {
         "Llanura Nevada": "img/llanura_nevada.png",
         "Cima Nevada": "img/cima_nevada.png",
         "Textura Hierba": "img/textura_cesped.jpg",
-        "Textura Tierra": "img/textura_tierra.jpg"
+        "Textura Tierra": "img/textura_tierra.jpg",
+        "Textura Nieve": "img/textura_nieve.jpg",
+
+ 
+ "Aguila": "img/aguila.png",
+  "Buho": "img/buho.png",
+   "Unicornio": "img/unicornio.png",
+    "Lobo": "img/lobo.png",
+    "Caballo": "img/caballo.png", 
+     "Zebra": "img/zebra.png",
+    "Caballo": "img/caballo.png", 
+    "Caracol": "img/caracol.png", 
+    "Jirafa": "img/jirafa.png", 
+    "Luciernaga": "img/luciernaga.png", 
+    "Polilla": "img/polilla.png", 
+
+
+
     };
     const API_URL_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=';
 
