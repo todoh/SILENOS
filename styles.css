@@ -2532,3 +2532,35 @@ transform: translateX(-50%);
                 box-shadow: 0 0 0 10px rgba(22, 163, 74, 0);
             }
         }
+
+
+
+#render-container {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #fa5f5f00;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        canvas {position: fixed;
+            background-color: #a7f0c800;
+            border-radius: 8px;
+             width: 512px;
+            height: 512px; left: 50%; top: 50%;
+            transform: translateX(-50%) translateY(-50%); 
+            border: 1px solid #444444a9;
+        }
+        #status-message {
+            font-style: italic;
+            color: #aaa;
+            min-height: 1.2em;
+        }        
+
+        .control-panel {
+position: fixed;
+width: 70%;
+top: 10%;
+left: 10%;
+
+        }

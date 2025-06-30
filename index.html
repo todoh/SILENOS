@@ -155,7 +155,9 @@
             <button class="tons" onclick="abrir('guion-literario');">Guión</button>
             <button class="tons" onclick="cerrartodo(), abrir('capitulosh');">Libro</button>
             <button class="tons" onclick="cerrartodo(), abrir('escenah');">Storyboard</button>
-         <button class="tons" onclick="cerrartodo(), abrir('animaciones');">Animaciones</button>
+            <button class="tons" onclick="cerrartodo(), abrir('imagenes');">Imagenes</button>
+            <button class="tons" onclick="cerrartodo(), abrir('animaciones');">Animaciones</button>
+
             <button class="tons" id="pelicula" onclick="cerrartodo(), abrir('galeria');" style="display: none;" >Pelicula</button>
             <button class="tons" onclick="cerrartodo(), abrir('momentos');">Videojuego</button>
             <button class="tons" id="biblioteca-btn" style="display: none;" onclick="cerrartodo(), abrir('biblioteca');">📚 Biblioteca</button>
@@ -500,6 +502,21 @@
     </div>
 </div>
 
+
+<div id="imagenes" style="display: none;"> <div class="container">
+    
+
+        <div class="control-panel">
+            <textarea id="user-prompt-input" placeholder="Ej: 'un hechicero de hielo en un bosque nevado', 'un caballero con armadura dorada frente a un castillo'"></textarea>
+            <button id="btn-generate">Diseñar y Renderizar Escena</button>
+        </div>
+
+        <div id="render-container" style="display: none;">
+            <h2>Resultado</h2>
+            <canvas id="render-canvas" width="512" height="512"></canvas>
+            <p id="status-message"></p>
+        </div>
+    </div> </div>
 
 
 <div id="momentos">
@@ -991,6 +1008,7 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 <script src="editor-personajes-body.js"></script>
 <script src="editor-personajes-main.js"></script>
     <script type="module" src="animacion2d.js"></script>
+    <script  src="generador.js"></script>
 
 
 
