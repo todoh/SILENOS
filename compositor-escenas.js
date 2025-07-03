@@ -5,7 +5,7 @@
  * las compone en una escena de Three.js y devuelve una imagen final.
  */
 
-// Delay para no saturar la API
+// Función de delay para no saturar la API
 // const delay = ms => new Promise(res => setTimeout(res, ms));
 
 /**
@@ -82,7 +82,7 @@ Devuelve únicamente un objeto JSON con la siguiente estructura:
 }
 
 /**
- * Busca las entidades en la galería y crea las que no existen.
+ * Busca las entidades en la galería, crea las que no existen y las guarda.
  * @param {string[]} listaEntidades - Nombres de las entidades a buscar/crear.
  * @param {function} updateStatus - Función para reportar el progreso.
  * @returns {Promise<Object[]>} Un array de objetos {nombre, imageUrl}.
@@ -95,7 +95,6 @@ async function recolectarYCrearEntidades(listaEntidades, updateStatus) {
         const promptEl = item.querySelector('.generacion-prompt');
         const imgEl = item.querySelector('img');
         if (promptEl && imgEl) {
-            // Clave en minúsculas para una búsqueda más flexible
             galeriaMap.set(promptEl.textContent.trim().toLowerCase(), imgEl.src);
         }
     });
@@ -113,15 +112,19 @@ async function recolectarYCrearEntidades(listaEntidades, updateStatus) {
             });
         } else {
             updateStatus(`-> No encontrada. Creando: ${nombreEntidad}...`);
-            // Usamos la función de generador.js para crear la imagen
             if (typeof generarImagenParaToma !== 'function') {
                 throw new Error("La función 'generarImagenParaToma' no está disponible.");
             }
             const imageUrl = await generarImagenParaToma(`un solo objeto: ${nombreEntidad}, sobre fondo transparente`);
-            entidadesFinales.push({ nombre: nombreEntidad, imageUrl });
-            updateStatus(`-> Creada: ${nombreEntidad}`);
+            
+            if (imageUrl) {
+                entidadesFinales.push({ nombre: nombreEntidad, imageUrl });
+                guardarEnGaleria(imageUrl, nombreEntidad);
+                updateStatus(`-> Creada y guardada: ${nombreEntidad}`);
+            } else {
+                 updateStatus(`-> Falló la creación de: ${nombreEntidad}`);
+            }
 
-            // Pausa de 4 segundos para no exceder el límite de la API
             if (i < listaEntidades.length - 1) {
                 updateStatus('Esperando 4 segundos antes de la siguiente petición...');
                 await delay(4000);
@@ -137,16 +140,82 @@ async function recolectarYCrearEntidades(listaEntidades, updateStatus) {
  * @returns {Promise<string>} La URL de la imagen de la textura.
  */
 async function generarTexturaSuelo(prompt) {
-    const promptSuelo = `Basado en la descripción de escena "${prompt}", crea un prompt corto para generar una textura de suelo o terreno apropiada. Describe solo la textura. Ejemplo: 'suelo de adoquines mojados' o 'hierba verde y frondosa'.`;
-    const descripcionSuelo = await callApiAndParseJson(promptSuelo); // Suponiendo que devuelve un JSON con una clave "prompt_suelo"
+    const promptSuelo = `Basado en la descripción de escena "${prompt}", crea un prompt corto para generar una textura de suelo o terreno apropiada que sea perfectamente repetible (seamless tileable texture). Describe solo la textura. Ejemplo: 'suelo de adoquines mojados' o 'hierba verde y frondosa'.`;
+    const descripcionSuelo = await callApiAndParseJson(promptSuelo);
     
-    let promptFinalSuelo = "una textura de suelo sin costuras";
+    let promptFinalSuelo = "una textura de suelo sin costuras, seamless tileable texture";
     if(descripcionSuelo && descripcionSuelo.prompt_suelo){
-        promptFinalSuelo = descripcionSuelo.prompt_suelo;
+        promptFinalSuelo = `${descripcionSuelo.prompt_suelo}, seamless tileable texture`;
     }
 
     return await generarImagenParaToma(promptFinalSuelo);
 }
+
+// ===============================================
+// INICIO DE LA NUEVA FUNCIÓN DE CORRECCIÓN
+// ===============================================
+/**
+ * Carga una imagen, la procesa en un canvas para hacerla "seamless" (sin costuras)
+ * clonando los bordes, y devuelve una textura de Three.js lista para usar.
+ * @param {string} imageUrl - La URL de la imagen a procesar.
+ * @param {THREE.WebGLRenderer} renderer - El renderer para obtener capacidades.
+ * @returns {Promise<THREE.CanvasTexture>} Una promesa que se resuelve con la textura corregida.
+ */
+async function makeTextureSeamless(imageUrl, renderer) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "Anonymous"; // Necesario si la imagen viene de otro dominio
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            // ===============================================
+            // INICIO DE LA MODIFICACIÓN 2
+            // ===============================================
+            // Se añade el atributo 'willReadFrequently' para optimizar el rendimiento.
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            // ===============================================
+            // FIN DE LA MODIFICACIÓN 2
+            // ===============================================
+            const width = img.width;
+            const height = img.height;
+            canvas.width = width;
+            canvas.height = height;
+
+            // 1. Dibuja la imagen original en el canvas.
+            ctx.drawImage(img, 0, 0);
+
+            // 2. Clona la columna de píxeles de la izquierda y la pega en el borde derecho.
+            const leftEdge = ctx.getImageData(0, 0, 1, height);
+            ctx.putImageData(leftEdge, width - 1, 0);
+
+            // 3. Clona la fila de píxeles de arriba y la pega en el borde inferior.
+            const topEdge = ctx.getImageData(0, 0, width, 1);
+            ctx.putImageData(topEdge, 0, height - 1);
+            
+            // 4. Crea la textura de Three.js a partir del canvas modificado.
+            const seamlessTexture = new THREE.CanvasTexture(canvas);
+            seamlessTexture.wrapS = THREE.RepeatWrapping;
+            seamlessTexture.wrapT = THREE.RepeatWrapping;
+            seamlessTexture.repeat.set(10, 10);
+            
+            // Se aplican optimizaciones que siguen siendo buenas prácticas.
+            seamlessTexture.minFilter = THREE.LinearFilter;
+            if (renderer) {
+               seamlessTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+            }
+            seamlessTexture.needsUpdate = true;
+
+            resolve(seamlessTexture);
+        };
+        img.onerror = (err) => {
+            console.error("Falló la carga de la imagen de textura para su procesamiento.", err);
+            reject(err);
+        };
+        img.src = imageUrl;
+    });
+}
+// ===============================================
+// FIN DE LA NUEVA FUNCIÓN DE CORRECCIÓN
+// ===============================================
 
 
 /**
@@ -161,7 +230,7 @@ async function componerYRenderizarEscena3D(entidades, texturaSueloUrl, promptOri
     const ancho = 512;
     const alto = 512;
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xcccccc); // Fondo neutro
+    scene.background = new THREE.Color(0xcccccc);
     const camera = new THREE.PerspectiveCamera(75, ancho / alto, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(ancho, alto);
@@ -174,35 +243,46 @@ async function componerYRenderizarEscena3D(entidades, texturaSueloUrl, promptOri
 
     const loader = new THREE.TextureLoader();
     const allPromises = [];
+    
+    // ===============================================
+    // INICIO DE LA MODIFICACIÓN 1
+    // ===============================================
+    // Se declara el array 'sprites' aquí para que esté disponible en el scope.
+    const sprites = [];
+    // ===============================================
+    // FIN DE LA MODIFICACIÓN 1
+    // ===============================================
 
-    // --- Cargar textura del suelo y crear el plano ---
-    const sueloPromise = new Promise((resolve, reject) => {
-        loader.load(texturaSueloUrl, (texture) => {
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
-            texture.repeat.set(10, 10);
-            const groundMaterial = new THREE.MeshStandardMaterial({ map: texture });
-            const groundGeometry = new THREE.PlaneGeometry(100, 100);
-            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-            ground.rotation.x = -Math.PI / 2; // Poner el plano horizontal
-            scene.add(ground);
-            resolve();
-        }, undefined, reject);
+    // --- Cargar y procesar textura del suelo para hacerla seamless ---
+    const sueloPromise = makeTextureSeamless(texturaSueloUrl, renderer).then(seamlessTexture => {
+        const groundMaterial = new THREE.MeshStandardMaterial({ map: seamlessTexture });
+        const groundGeometry = new THREE.PlaneGeometry(100, 100);
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        scene.add(ground);
+    }).catch(error => {
+        console.error("No se pudo procesar la textura del suelo:", error);
+        // Se crea un suelo de color plano como alternativa si falla la textura.
+        const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x888888 });
+        const groundGeometry = new THREE.PlaneGeometry(100, 100);
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        scene.add(ground);
     });
     allPromises.push(sueloPromise);
 
+
     // --- Cargar las imágenes de las entidades como Sprites ---
-    const sprites = [];
     entidades.forEach(entidad => {
         const spritePromise = new Promise((resolve, reject) => {
             loader.load(entidad.imageUrl, (texture) => {
                 const material = new THREE.SpriteMaterial({ map: texture });
                 const sprite = new THREE.Sprite(material);
                 
-                // Tamaño inicial (se ajustará después)
                 const aspectRatio = texture.image.width / texture.image.height;
                 sprite.scale.set(5 * aspectRatio, 5, 1);
                 
+                // Ahora 'sprites.push' funciona porque el array ya existe.
                 sprites.push(sprite);
                 scene.add(sprite);
                 resolve();
@@ -215,14 +295,13 @@ async function componerYRenderizarEscena3D(entidades, texturaSueloUrl, promptOri
     await Promise.all(allPromises);
 
     // --- Posicionar los Sprites en la escena ---
-    // Lógica simple de distribución en círculo para el ejemplo.
-    // Esto podría mejorarse pidiendo a la IA una distribución.
+    // Se elimina la redeclaración de 'sprites' y se usa el array ya poblado.
     const radio = 15;
     sprites.forEach((sprite, index) => {
         const angulo = (index / sprites.length) * Math.PI * 2;
         const x = Math.cos(angulo) * radio;
         const z = Math.sin(angulo) * radio;
-        const y = sprite.scale.y / 2; // Elevar el sprite para que su base toque el suelo
+        const y = sprite.scale.y / 2;
         sprite.position.set(x, y, z);
     });
     
@@ -261,10 +340,64 @@ function configurarCamaraParaCaptura(camera, objetos) {
     const fov = camera.fov * (Math.PI / 180);
     let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
     
-    // Añadimos un poco de distancia extra
     cameraZ *= 1.5; 
 
     camera.position.set(center.x, center.y + size.y / 2, center.z + cameraZ);
     camera.lookAt(center);
     camera.updateProjectionMatrix();
+}
+
+/**
+ * Guarda una imagen generada en la galería del DOM.
+ * @param {string} imageUrl - La URL (DataURL) de la imagen generada.
+ * @param {string} promptText - El prompt que se usó para generar la imagen.
+ */
+function guardarEnGaleria(imageUrl, promptText) {
+    const generacionesContainer = document.getElementById('generaciones-container');
+    const generacionesGrid = document.getElementById('generaciones-grid');
+
+    if (!generacionesGrid || !generacionesContainer) {
+        console.error('Error: No se encontró el contenedor #generaciones-grid o #generaciones-container.');
+        return;
+    }
+
+    try {
+        const itemContainer = document.createElement('div');
+        itemContainer.className = 'generacion-item';
+
+        const imgElement = document.createElement('img');
+        imgElement.src = imageUrl;
+
+        const infoContainer = document.createElement('div');
+        infoContainer.className = 'generacion-info';
+
+        const promptElement = document.createElement('p');
+        promptElement.className = 'generacion-prompt';
+        promptElement.contentEditable = true;
+        promptElement.textContent = promptText || 'Entidad sin prompt';
+
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'generacion-delete-btn';
+        deleteButton.innerHTML = '&times;';
+        deleteButton.title = 'Eliminar esta imagen';
+        deleteButton.onclick = () => {
+            itemContainer.remove();
+            if (generacionesGrid.childElementCount === 0) {
+                generacionesContainer.style.display = 'none';
+            }
+        };
+
+        infoContainer.appendChild(promptElement);
+        infoContainer.appendChild(deleteButton);
+        itemContainer.appendChild(imgElement);
+        itemContainer.appendChild(infoContainer);
+        
+        generacionesGrid.prepend(itemContainer);
+
+        if (generacionesContainer.style.display === 'none') {
+            generacionesContainer.style.display = 'block';
+        }
+    } catch (error) {
+        console.error("Error al guardar la imagen en la galería:", error);
+    }
 }

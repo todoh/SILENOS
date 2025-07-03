@@ -501,15 +501,16 @@
 <div id="imagenes" style="display: none;">
     <div class="container">
         <div class="control-panel">
-            <textarea id="user-prompt-input" placeholder="Ej: 'un hechicero de hielo en un bosque nevado', 'un caballero con armadura dorada frente a un castillo'"></textarea>
+            <textarea class="area-texto" id="user-prompt-input" placeholder="Ej: 'un hechicero de hielo en un bosque nevado', 'un caballero con armadura dorada frente a un castillo'"></textarea>
             <button id="btn-generate">Diseñar y Renderizar Escena</button>
+             <p id="status-message"></p>
             <button id="btn-save-generation" style="display: none;">Guardar en Generaciones</button>
         </div>
 
         <div id="render-container" style="display: none;">
-            <h2>Resultado</h2>
+            
             <canvas id="render-canvas" width="512" height="512"></canvas>
-            <p id="status-message"></p>
+           
         </div>
         
         <!-- Nueva sección para las imágenes guardadas -->
@@ -673,6 +674,7 @@
         <input type="text" id="escena-nombre-input" placeholder="Nombre de la Escena...">
         <button id="agregar-toma-btn" class="escena2 pro5 "  >➕</button>
     </div>
+    <button id="generargraficos" >Generar gráficos de la escena con IA</button>
     <div id="tomas-timeline">
         </div>
 </div>

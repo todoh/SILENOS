@@ -1139,6 +1139,7 @@ width: 15%;
     align-items: stretch; 
     overflow-x: auto; 
     overflow-y: hidden;
+    margin-top: 3%;
     padding: 0px;
     gap: 10px; 
     background-color: #f0f0f0;
@@ -1958,9 +1959,9 @@ height: 75dvh;
     width: 100%;
     margin-top: 1em;
 }
-
+.area-texto { resize: none; width: 30dvw; }
  
-.control-panel { display: flex; flex-direction: column; gap: 10px; max-width: 600px; margin: 0 auto 30px auto; }
+.control-panel { display: flex; flex-direction: row; gap: 10px; max-width: 600px; margin: 0 auto 30px auto; }
   
 #pre-production-container { max-width: 600px; margin: 0 auto; background-color: #222; padding: 20px; border-radius: 8px; }
 #asset-list .asset-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #444; }
@@ -2547,11 +2548,12 @@ transform: translateX(-50%);
             background-color: #a7f0c800;
             border-radius: 8px;
              width: 512px;
-            height: 512px; left: 50%; top: 50%;
-            transform: translateX(-50%) translateY(-50%); 
+            height: 512px; right: 15%; top: 50%;
+            transform:  translateY(-50%); 
             border: 1px solid #444444a9;
         }
         #status-message {
+            position: fixed;
             font-style: italic;
             color: #aaa;
             min-height: 1.2em;
@@ -2574,8 +2576,13 @@ left: 10%;
    reemplazando los estilos anteriores si existen. */
 
 #generaciones-container {
-    margin-top: 2rem;
-    padding-top: 1.5rem;
+    position: fixed;
+    width: 50%;
+    height: 80%;
+    top: 20%; background-color: #1d4fd800;
+    bottom: 0;
+left: 0%; right: 50%;     
+    padding-top: 1.5rem; overflow-y: scroll;
     border-top: 1px solid #4a5568; /* Ajusta el color al de tu tema */
 }
 
