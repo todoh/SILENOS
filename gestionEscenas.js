@@ -12,6 +12,8 @@ function initEscenas() {
     document.getElementById('agregar-toma-btn')?.addEventListener('click', () => agregarToma());
     document.getElementById('escenas-dropdown')?.addEventListener('change', seleccionarEscenaDesdeDropdown);
     document.getElementById('escena-nombre-input')?.addEventListener('input', cambiarNombreEscena);
+    // Listener para el botón de generación secuencial
+    document.getElementById('generargraficos')?.addEventListener('click', generarGraficosSecuencialmente);
     
     const timelineDiv = document.getElementById('tomas-timeline');
     if (timelineDiv) {
@@ -295,6 +297,109 @@ function renderEscenasUI() {
 
     timelineDiv.scrollLeft = scrollLeft;
 }
+
+/**
+ * Genera secuencialmente las imágenes para todas las tomas de la escena activa.
+ */
+async function generarGraficosSecuencialmente() {
+    const boton = document.getElementById('generargraficos');
+    if (!boton || boton.disabled) return; // Evitar ejecuciones múltiples
+
+    const originalButtonText = boton.textContent;
+    boton.disabled = true;
+    boton.textContent = 'Generando...';
+
+    const escenaActiva = storyScenes.find(s => s.id === activeSceneId);
+
+    if (!escenaActiva || !escenaActiva.tomas || escenaActiva.tomas.length === 0) {
+        alert("No hay tomas en la escena activa para generar gráficos.");
+        boton.disabled = false;
+        boton.textContent = originalButtonText;
+        return;
+    }
+
+    // Añade un estilo para resaltar la toma en proceso
+    const style = document.createElement('style');
+    style.id = 'toma-procesando-style-secuencial';
+    style.textContent = `
+        .toma-procesando-secuencial {
+            outline: 3px solid #0d6efd;
+            box-shadow: 0 0 15px rgba(13, 110, 253, 0.7);
+            transition: outline 0.3s ease, box-shadow 0.3s ease;
+        }
+    `;
+    document.head.appendChild(style);
+
+    for (let i = 0; i < escenaActiva.tomas.length; i++) {
+        const toma = escenaActiva.tomas[i];
+        const tomaContainer = document.querySelector(`.toma-card[data-toma-id="${toma.id}"]`);
+
+        if (!tomaContainer) {
+            console.warn(`No se encontró el elemento DOM para la toma ${toma.id}. Saltando.`);
+            continue;
+        }
+
+        const prompt = toma.guionTecnico;
+        if (!prompt || !prompt.trim()) {
+            console.warn(`La toma ${toma.id} tiene un prompt (Guion Técnico) vacío. Saltando.`);
+            continue;
+        }
+
+        if (typeof generarEscenaCompuesta !== 'function') {
+            alert('Error: La función para componer escenas (generarEscenaCompuesta) no está disponible.');
+            break; 
+        }
+
+        const imagenArea = tomaContainer.querySelector('.toma-imagen-area');
+        const imagenPreview = tomaContainer.querySelector('.toma-imagen-preview');
+
+        if (!imagenArea || !imagenPreview) {
+            console.warn(`No se encontraron los elementos de imagen para la toma ${toma.id}. Saltando.`);
+            continue;
+        }
+        
+        console.log(`Procesando toma ${i + 1}/${escenaActiva.tomas.length}...`);
+        tomaContainer.classList.add('toma-procesando-secuencial');
+        tomaContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        const statusDiv = document.createElement('div');
+        statusDiv.className = 'toma-loading-overlay';
+        statusDiv.innerHTML = '<div class="loading-spinner-toma"></div><p>Iniciando composición...</p>';
+        imagenArea.appendChild(statusDiv);
+
+        try {
+            const imageUrl = await generarEscenaCompuesta(prompt, statusDiv);
+            
+            toma.imagen = imageUrl;
+            imagenPreview.src = imageUrl;
+            imagenPreview.style.display = 'block';
+
+            const placeholder = imagenArea.querySelector('.imagen-placeholder');
+            if(placeholder) placeholder.style.display = 'none';
+
+        } catch (error) {
+            console.error(`Error al componer la escena para la toma ${toma.id}:`, error);
+            statusDiv.innerHTML = `<p style="color: red; font-size: 0.8em;">Error</p>`;
+            await new Promise(resolve => setTimeout(resolve, 3000));
+        } finally {
+            if(statusDiv.parentElement) {
+               statusDiv.remove();
+            }
+            tomaContainer.classList.remove('toma-procesando-secuencial');
+        }
+
+        if (i < escenaActiva.tomas.length - 1) {
+            console.log("Esperando 4 segundos...");
+            await new Promise(resolve => setTimeout(resolve, 4000));
+        }
+    }
+
+    console.log("Generación secuencial completada.");
+    document.getElementById('toma-procesando-style-secuencial')?.remove();
+    boton.disabled = false;
+    boton.textContent = originalButtonText;
+}
+
 
 // --- FUNCIONES DE DRAG AND DROP (sin cambios) ---
 function handleDragStart(e) {
