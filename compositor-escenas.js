@@ -6,7 +6,7 @@
  */
 
 // Delay para no saturar la API
-const delay = ms => new Promise(res => setTimeout(res, ms));
+// const delay = ms => new Promise(res => setTimeout(res, ms));
 
 /**
  * Función principal para generar una escena 3D compuesta a partir de un prompt.

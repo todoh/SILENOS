@@ -35,8 +35,7 @@
     </style>
 
     <link rel="stylesheet" href="escenas/styles.css">
- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+ 
 
 <!-- Hoja de estilos para el nuevo editor de datos -->
 <link rel="stylesheet" href="editor-personajes.css">
@@ -47,8 +46,8 @@
 <script src="https://unpkg.com/gifler@0.1.0/gifler.min.js"></script>
 
 
- 
- 
+
+
 <script src="https://apis.google.com/js/api.js" async defer></script>
 <script src="https://accounts.google.com/gsi/client" onload="gapiLoaded()" async defer></script>
 
@@ -981,29 +980,17 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
     </div>
     <input type="file" id="reemplazar-input" accept="image/*" style="display: none;">
 </div>
-</body>
-</html>
 
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<!-- SCRIPTS MOVED HERE, INSIDE THE BODY TAG -->
 <script type="module">
   import { generarToma } from './escenas/geminivideo.js';
   window.generarToma = generarToma; 
 </script>
 
-
-
-
-
-<script src="escenas/geminivideo.js"></script>
-
+<!-- <script src="escenas/geminivideo.js"></script> <!-- This was a duplicate load and has been removed -->
 <script src="escenas/generacion2d.js"></script>
-
-
-
-
-
-
-
 <script src="momentos.js"></script>
 <script src="editor-momento.js"></script> 
 <script src="guion.js"></script>
@@ -1014,26 +1001,21 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 <script src="gemini.js"></script>
 <script src="geminialfa.js"></script>
 <script src="geminivisual.js"></script>
-    <script src="generador.js"></script>
-    <script src="compositor-escenas.js"></script> <!-- Define generarEscenaCompuesta -->
-    <script src="gestionEscenas.js"></script>  
+<script src="generador.js"></script>
+<script src="compositor-escenas.js"></script> <!-- Define generarEscenaCompuesta -->
+<script src="gestionEscenas.js"></script>  
 <script src="exportar.js"></script>
 <script src="exportarjuego.js"></script>
 <script src="exportartomas.js"></script>
 <script src="editor-personajes-head.js"></script>
 <script src="editor-personajes-body.js"></script>
 <script src="editor-personajes-main.js"></script>
-    <script type="module" src="animacion2d.js"></script>
- 
-
+<script type="module" src="animacion2d.js"></script>
 
 <button id="contextual-action-btn" title="Acción contextual" style="display: none;">✨</button>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="geminiasistente.js"></script>
-    
-
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="geminiasistente.js"></script>
 
 <script type="importmap">
     {
@@ -1045,20 +1027,15 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
     }
 </script>
 
-
-
-
-
-
-    <script type="module" src="editor-escenas-main.js"></script>
-    <script type="module" src="escenas/editor-escenas-ui.js"></script>
-    <script type="module" src="escenas/editor-escenas-objects.js"></script>
-    <script type="module" src="escenas/editor-escenas-weather.js"></script>
-    <script type="module" src="escenas/editor-escenas-modelos.js"></script>
-    <script type="module" src="escenas/editor-escenas-exportar.js"></script>
-    <script type="module" src="escenas/editor-escenas-terreno.js"></script>
-    <script type="module" src="escenas/editor-escenas-animacion.js"></script>
-    <script type="module" src="escenas/character-creator.js"></script>
+<script type="module" src="editor-escenas-main.js"></script>
+<script type="module" src="escenas/editor-escenas-ui.js"></script>
+<script type="module" src="escenas/editor-escenas-objects.js"></script>
+<script type="module" src="escenas/editor-escenas-weather.js"></script>
+<script type="module" src="escenas/editor-escenas-modelos.js"></script>
+<script type="module" src="escenas/editor-escenas-exportar.js"></script>
+<script type="module" src="escenas/editor-escenas-terreno.js"></script>
+<script type="module" src="escenas/editor-escenas-animacion.js"></script>
+<script type="module" src="escenas/character-creator.js"></script>
   
 <script src="main.js"></script>
 

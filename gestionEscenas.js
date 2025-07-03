@@ -226,8 +226,6 @@ function renderEscenasUI() {
                     });
                 };
 
-                // --- MODIFICADO ---
-                // El botón ahora llama a la nueva función para componer escenas 3D.
                 const videoBtn = document.createElement('button');
                 videoBtn.className = 'toma-video-btn';
                 videoBtn.innerHTML = '🎬'; // Icono de claqueta
@@ -271,7 +269,6 @@ function renderEscenasUI() {
                         }
                     }
                 };
-                // --- FIN DE LA MODIFICACIÓN ---
 
                 promptTomaContainer.appendChild(promptToma);
                 promptTomaContainer.appendChild(copyBtn);
@@ -407,4 +404,3 @@ function fileToBase64(file) {
         reader.onerror = error => reject(error);
     });
 }
-window.generarEscenaCompuesta = generarEscenaCompuesta;
