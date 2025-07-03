@@ -19,10 +19,7 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #2d3748; }
-        ::-webkit-scrollbar-thumb { background: #4a5568; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #718096; }
+       
         .transition-all-ease { transition: all 0.3s ease-in-out; }
         .pulse-animation { animation: pulse 2s infinite; }
         @keyframes pulse {
@@ -48,9 +45,9 @@
 
      <link rel="stylesheet" href="asistente.css">
 <script src="https://unpkg.com/gifler@0.1.0/gifler.min.js"></script>
-<script src="animaciones.js"></script>
-<script src="google.js"></script>
-<script src="biblioteca.js"></script>
+
+
+ 
  
 <script src="https://apis.google.com/js/api.js" async defer></script>
 <script src="https://accounts.google.com/gsi/client" onload="gapiLoaded()" async defer></script>
@@ -446,7 +443,6 @@
     
 
 
-
 </div>
 
 <div id="animaciones" style="display: none;">
@@ -503,12 +499,12 @@
 </div>
 
 
-<div id="imagenes" style="display: none;"> <div class="container">
-    
-
+<div id="imagenes" style="display: none;">
+    <div class="container">
         <div class="control-panel">
             <textarea id="user-prompt-input" placeholder="Ej: 'un hechicero de hielo en un bosque nevado', 'un caballero con armadura dorada frente a un castillo'"></textarea>
             <button id="btn-generate">Diseñar y Renderizar Escena</button>
+            <button id="btn-save-generation" style="display: none;">Guardar en Generaciones</button>
         </div>
 
         <div id="render-container" style="display: none;">
@@ -516,7 +512,16 @@
             <canvas id="render-canvas" width="512" height="512"></canvas>
             <p id="status-message"></p>
         </div>
-    </div> </div>
+        
+        <!-- Nueva sección para las imágenes guardadas -->
+        <div id="generaciones-container" style="display: none;">
+            <h3>Generaciones</h3>
+            <div id="generaciones-grid">
+                <!-- Las imágenes guardadas se añadirán aquí dinámicamente -->
+            </div>
+        </div>
+    </div>
+</div>
 
 
 <div id="momentos">
@@ -984,11 +989,19 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
   import { generarToma } from './escenas/geminivideo.js';
   window.generarToma = generarToma; 
 </script>
+
+
+
+
+
 <script src="escenas/geminivideo.js"></script>
 
 <script src="escenas/generacion2d.js"></script>
 
-<script src="gestionEscenas.js"></script>
+
+
+
+
 
 
 <script src="momentos.js"></script>
@@ -1001,6 +1014,9 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 <script src="gemini.js"></script>
 <script src="geminialfa.js"></script>
 <script src="geminivisual.js"></script>
+    <script src="generador.js"></script>
+    <script src="compositor-escenas.js"></script> <!-- Define generarEscenaCompuesta -->
+    <script src="gestionEscenas.js"></script>  
 <script src="exportar.js"></script>
 <script src="exportarjuego.js"></script>
 <script src="exportartomas.js"></script>
@@ -1008,9 +1024,7 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 <script src="editor-personajes-body.js"></script>
 <script src="editor-personajes-main.js"></script>
     <script type="module" src="animacion2d.js"></script>
-    <script  src="generador.js"></script>
-
-
+ 
 
 
 <button id="contextual-action-btn" title="Acción contextual" style="display: none;">✨</button>

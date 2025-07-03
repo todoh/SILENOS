@@ -22,6 +22,7 @@ let cantidadframes = 3;
 let libros = [];
 let libroActivoId = null;
 let contenidoAProcesar = null;
+let libroDestinoSeleccionadoId = null;
 
 // --- INICIALIZACIÓN DE LA APLICACIÓN ---
 window.onload = function() {
@@ -132,8 +133,7 @@ function abrir(escena) {
 function gridear(escena) {
     cerrartodo();
     document.getElementById(escena).style.display = 'grid';
-        actualizarBotonContextual();   
-  actualizarBotonContextual(escena);
+    actualizarBotonContextual(escena);
 }
 
 function reiniciarEstadoApp() {
@@ -286,21 +286,21 @@ function reiniciar() {
         }
     }
 }
+
 /**
- * Actualiza la visibilidad, el icono y la función del botón de acción contextual
- * basándose en la sección que está actualmente visible en la aplicación.
- */
-/**
- * Actualiza la visibilidad, el icono y la función del botón de acción contextual
- * basándose en la sección activa Y en si la API Key está configurada.
+ * MODIFICADO: Actualiza el botón contextual basándose en la sección activa.
+ * Se ha añadido una nueva condición para la sección 'escenah' (Storyboard).
  */
 function actualizarBotonContextual() {
     const btn = document.getElementById('contextual-action-btn');
     if (!btn) return;
 
-    // La lógica para ocultar el botón si no hay API Key se mantiene
+    // Clonar y reemplazar para limpiar listeners antiguos
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+
     if (typeof apiKey === 'undefined' || !apiKey || !apiKey.trim()) {
-        btn.style.display = 'none';
+        newBtn.style.display = 'none';
         return;
     }
 
@@ -314,32 +314,284 @@ function actualizarBotonContextual() {
     });
 
     if (idSeccionActiva) {
-        btn.innerHTML = '✨';
-        btn.style.display = 'flex'; // Usamos flex para centrar el icono
+        newBtn.innerHTML = '✨';
+        newBtn.style.display = 'flex';
 
-   
         if (idSeccionActiva === 'personajes') {
-            btn.title = 'Analizar o importar datos con IA';
-            btn.onclick = abrirModalAIDatos;
+            newBtn.title = 'Analizar o importar datos con IA';
+            newBtn.onclick = abrirModalAIDatos;
         } else if (idSeccionActiva === 'momentos') {
-            btn.title = 'Generar Aventura Interactiva con IA';
-            btn.onclick = abrirModalMomentosIA;
-        
-        // AÑADIMOS ESTA CONDICIÓN ESPECÍFICA PARA LA SECCIÓN 'LIBRO'
+            newBtn.title = 'Generar Aventura Interactiva con IA';
+            newBtn.onclick = abrirModalMomentosIA;
         } else if (idSeccionActiva === 'capitulosh') {
-            btn.title = 'Generar Frames con IA en un Libro';
-            btn.onclick = abrirModalSeleccionLibroParaFrames;
-        
+            newBtn.title = 'Generar Frames con IA desde un Guion';
+            newBtn.onclick = abrirModalSeleccionLibroParaFrames;
+        } else if (idSeccionActiva === 'escenah') {
+            // --- LÓGICA CORRECTA PARA STORYBOARD ---
+            newBtn.innerHTML = '🎬';
+            newBtn.title = 'Generar Storyboard desde Libro';
+            newBtn.onclick = abrirModalGenerarStoryboardDesdeLibro;
+            // --- FIN LÓGICA CORRECTA ---
         } else {
-            // Comportamiento por defecto para las otras secciones ('guion-literario', 'escenah')
-            btn.title = 'Abrir Herramientas de IA';
-            btn.onclick = abrirModalIAHerramientas;
+            newBtn.title = 'Abrir Herramientas de IA';
+            newBtn.onclick = abrirModalIAHerramientas;
         }
-
     } else {
-        btn.style.display = 'none';
+        newBtn.style.display = 'none';
     }
 }
+
+
+/**
+ * CORREGIDO: Abre un modal para seleccionar un LIBRO y generar el storyboard.
+ * Esta función ahora solo pide un libro y llama a la función correcta.
+ */
+function abrirModalGenerarStoryboardDesdeLibro() {
+    // Comprobar si hay libros disponibles
+    if (!libros || libros.length === 0) {
+        alert("No hay libros en la biblioteca. Por favor, crea un libro primero.");
+        return;
+    }
+
+    // Eliminar modales anteriores
+    const existingOverlay = document.getElementById('storyboard-gen-modal-overlay');
+    if (existingOverlay) {
+        existingOverlay.remove();
+    }
+
+    // HTML del modal, ahora solo con selector de libro
+    const modalHTML = `
+        <div id="storyboard-gen-modal-overlay" class="modal-overlay" style="display: block;">
+            <div id="storyboard-gen-modal" class="modal-content" style="display: flex; flex-direction: column;">
+                <button class="modal-close-btn" onclick="cerrarModalGenerarStoryboard()">&times;</button>
+                <h2 style="font-size: 1.5em; font-weight: bold; margin-bottom: 1rem;">Generar Storyboard desde Libro</h2>
+                <p style="margin-bottom: 1.5rem;">Selecciona un libro. La IA leerá su contenido y generará una escena con una toma por cada párrafo.</p>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label for="libro-select-storyboard" style="display: block; margin-bottom: 0.5rem;">Libro:</label>
+                    <select id="libro-select-storyboard" class="modal-select">
+                        <option value="">Selecciona un libro...</option>
+                        ${libros.map(libro => `<option value="${libro.id}">${libro.titulo}</option>`).join('')}
+                    </select>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+                    <button onclick="cerrarModalGenerarStoryboard()" class="btn btn-secondary">Cancelar</button>
+                    <button id="confirm-storyboard-gen" class="btn btn-primary">Generar Tomas</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Lógica del botón de confirmación
+    document.getElementById('confirm-storyboard-gen').onclick = () => {
+        const selectedLibroId = document.getElementById('libro-select-storyboard').value;
+
+        if (!selectedLibroId) {
+            alert("Por favor, selecciona un libro.");
+            return;
+        }
+
+        // --- LÓGICA CLAVE ---
+        // Se llama a la función que procesa un LIBRO.
+        // Ahora está definida en este mismo archivo, por lo que no dará error.
+        if (typeof crearYMostrarEscenasParaLibro === 'function') {
+            console.log(`Iniciando generación de storyboard desde el libro ID: ${selectedLibroId}`);
+            crearYMostrarEscenasParaLibro(selectedLibroId);
+        } else {
+            // Este error ya no debería ocurrir.
+            alert("Error: La función 'crearYMostrarEscenasParaLibro' no está disponible. Asegúrate de que el script correspondiente esté cargado.");
+        }
+        
+        cerrarModalGenerarStoryboard();
+        // Nos aseguramos de que el usuario vea la sección del storyboard.
+        abrir('escenah'); 
+    };
+
+    // Cierre del modal
+    document.getElementById('storyboard-gen-modal-overlay').onclick = function(e) {
+        if (e.target.id === 'storyboard-gen-modal-overlay') {
+            cerrarModalGenerarStoryboard();
+        }
+    };
+}
+
+
+/**
+ * Cierra el modal de generación de storyboard.
+ */
+function cerrarModalGenerarStoryboard() {
+    const overlay = document.getElementById('storyboard-gen-modal-overlay');
+    if (overlay) {
+        overlay.remove();
+    }
+}
+
+/**
+ * NUEVA FUNCIÓN: Muestra u oculta un indicador de carga global.
+ */
+function mostrarIndicadorCarga(mostrar, mensaje = "Procesando...") {
+    let overlay = document.getElementById('loading-overlay');
+    if (mostrar) {
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'loading-overlay';
+            overlay.innerHTML = `
+                <div class="loading-spinner"></div>
+                <p class="loading-message">${mensaje}</p>
+            `;
+            document.body.appendChild(overlay);
+        }
+        overlay.style.display = 'flex';
+        overlay.querySelector('.loading-message').textContent = mensaje;
+    } else {
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+    }
+}
+
+
+/**
+ * CORREGIDO: Procesa un libro para generar escenas y tomas de storyboard.
+ * @param {string} libroId - El ID del libro a procesar.
+ */
+// main.js
+
+// main.js
+
+// main.js
+
+// main.js
+
+async function crearYMostrarEscenasParaLibro(libroId) {
+    if (!libroId) {
+        alert("No se ha seleccionado ningún libro.");
+        return;
+    }
+
+    const libro = libros.find(l => l.id === libroId);
+    if (!libro) {
+        alert("El libro seleccionado no se encontró.");
+        return;
+    }
+
+    let contenidoCompleto = "";
+    const capitulosDelLibro = Object.values(escenas).filter(cap => cap.libroId === libroId);
+
+    for (const capitulo of capitulosDelLibro) {
+        if (capitulo.frames && Array.isArray(capitulo.frames)) {
+            for (const frame of capitulo.frames) {
+                if (frame.texto && frame.texto.trim() !== "") {
+                    contenidoCompleto += frame.texto + "\n\n";
+                }
+            }
+        }
+    }
+
+    if (!contenidoCompleto.trim()) {
+        alert("El libro seleccionado está vacío o sus capítulos no contienen texto. No se pueden generar tomas.");
+        return;
+    }
+
+    const parrafos = contenidoCompleto.split('\n\n').filter(p => p.trim() !== '');
+    if (parrafos.length === 0) {
+        alert("No se encontraron párrafos válidos en el libro para generar tomas.");
+        return;
+    }
+
+    mostrarIndicadorCarga(true, `Preparando escena para "${libro.titulo}"...`);
+
+    // --- CORRECCIÓN CLAVE 1: Crear y mostrar la escena ANTES de procesar los párrafos ---
+    const nuevaEscena = {
+        id: `scene_${Date.now()}`,
+        nombre: `Storyboard de ${libro.titulo}`,
+        tomas: []
+    };
+    
+    storyScenes.push(nuevaEscena);
+    activeSceneId = nuevaEscena.id; // Hacerla activa inmediatamente
+    
+    // Renderiza el contenedor de la escena vacío para que el usuario lo vea
+    if (typeof renderEscenasUI === 'function') {
+        renderEscenasUI();
+    } else {
+        console.error("La función `renderEscenasUI` no está disponible para actualizar la vista.");
+        mostrarIndicadorCarga(false);
+        return;
+    }
+    // --- FIN CORRECCIÓN 1 ---
+
+    try {
+        // Itera sobre cada párrafo del libro
+        for (let i = 0; i < parrafos.length; i++) {
+            const parrafo = parrafos[i];
+            
+            mostrarIndicadorCarga(true, `Generando tomas para el párrafo ${i + 1}/${parrafos.length}...`);
+
+            const prompt = `Basado en el siguiente párrafo de una historia, divídelo en las tomas cinematográficas necesarias y genera una descripción y un prompt de imagen para CADA TOMA.
+
+Párrafo: "${parrafo}"
+
+Formato de respuesta (JSON estricto con un array de tomas):
+{
+  "tomas_generadas": [
+    {
+      "guion_conceptual": "Descripción detallada de la primera toma, incluyendo personajes, acciones, entorno, tipo de plano y emoción.",
+      "prompt_visual": "Prompt conciso y efectivo para generar una imagen de la primera toma. Incluye estilo artístico."
+    }
+  ]
+}`;
+            
+            if (typeof llamarIAConFeedback !== 'function') {
+                 throw new Error("La función `llamarIAConFeedback` no está definida.");
+            }
+            
+            const respuestaAPI = await llamarIAConFeedback(prompt, `Párrafo ${i+1}`, true);
+
+            if (respuestaAPI && Array.isArray(respuestaAPI.tomas_generadas) && respuestaAPI.tomas_generadas.length > 0) {
+                
+                for (const tomaData of respuestaAPI.tomas_generadas) {
+                    if (tomaData.guion_conceptual && tomaData.prompt_visual) {
+                        const nuevaToma = {
+                            id: `toma_${nuevaEscena.id}_${nuevaEscena.tomas.length}`,
+                            duracion: 8,
+                            imagen: '',
+                            guionConceptual: tomaData.guion_conceptual,
+                            guionTecnico: tomaData.prompt_visual,
+                            guionArtistico: ""
+                        };
+                        // Añade la toma al array de la escena que ya está activa
+                        nuevaEscena.tomas.push(nuevaToma);
+                    }
+                }
+                
+                // --- CORRECCIÓN CLAVE 2: Renderizar la UI DESPUÉS de añadir las tomas de cada párrafo ---
+                // Esto actualizará la vista con las nuevas tomas sin esperar al final del proceso.
+                if (typeof renderEscenasUI === 'function') {
+                    renderEscenasUI();
+                }
+                // --- FIN CORRECCIÓN 2 ---
+
+            } else {
+                console.warn(`No se pudo generar ninguna toma para el párrafo ${i+1}:`, parrafo);
+            }
+        }
+        
+        console.log(`Generación de storyboard completada con ${nuevaEscena.tomas.length} tomas.`);
+
+    } catch (error) {
+        console.error("Error durante la generación del storyboard:", error);
+        alert("Ocurrió un error al generar las tomas. Revisa la consola para más detalles.");
+    } finally {
+        // Al final de todo, se oculta el indicador de carga.
+        mostrarIndicadorCarga(false);
+    }
+}
+
+
 function toggleTheme() {
     document.body.classList.toggle('dark-theme');
     const themeToggleButton = document.getElementById('theme-toggle-button');
@@ -357,7 +609,7 @@ function herramientacopiar() {
         const chatParagraphs = chatDiv.getElementsByTagName("p");
         if (chatParagraphs.length === 0) return;
         const lastMessage = chatParagraphs[chatParagraphs.length - 1].innerText;
-        document.execCommand('copy');
+        navigator.clipboard.writeText(lastMessage);
     }
 }
 
@@ -517,14 +769,11 @@ function abrirModalIAHerramientas() {
         overlay.onclick = cerrarModalIAHerramientas;
     }
 
-    // --- INICIO DE LA LÓGICA AÑADIDA ---
-    // Poblar la lista de arcos narrativos disponibles
     const arcosContainer = document.getElementById('ia-arcos-filter-container');
     if (arcosContainer) {
-        arcosContainer.innerHTML = ''; // Limpiar lista anterior
+        arcosContainer.innerHTML = ''; 
 
-        // Obtener arcos únicos y las opciones predefinidas
-        const arcosUnicos = obtenerArcosUnicos(); // Asumiendo que esta función ya existe en datos.js
+        const arcosUnicos = obtenerArcosUnicos(); 
         const opcionesArcoMap = new Map(opcionesArco.map(op => [op.valor, op]));
 
         if (arcosUnicos.length === 0) {
@@ -545,7 +794,7 @@ function abrirModalIAHerramientas() {
             checkbox.id = `arc-filter-${arcoValor}`;
             checkbox.value = arcoValor;
             checkbox.className = 'ia-arc-filter-checkbox';
-            checkbox.checked = true; // Por defecto, todos marcados
+            checkbox.checked = true; 
 
             const label = document.createElement('label');
             label.htmlFor = `arc-filter-${arcoValor}`;
@@ -558,7 +807,6 @@ function abrirModalIAHerramientas() {
             arcosContainer.appendChild(itemDiv);
         });
     }
-    // --- FIN DE LA LÓGICA AÑADIDA ---
 }
 
 function cerrarModalIAHerramientas() {
@@ -572,24 +820,21 @@ function cerrarModalIAHerramientas() {
 }
  
 
- // --- NUEVA LÓGICA: Selector para la sección Vista General ---
     const selectorGeneralBtn = document.getElementById('selector-general-btn-local');
     const informeContainer = document.getElementById('informe-container');
     const bibliotecaContainer = document.getElementById('biblioteca');
 
-    // Crear el popup dinámicamente para mantener el HTML limpio
     const vistaGeneralPopup = document.createElement('div');
     vistaGeneralPopup.id = 'vista-general-popup';
-    vistaGeneralPopup.className = 'lista-guiones-popup-local'; // Reutilizar estilos existentes
+    vistaGeneralPopup.className = 'lista-guiones-popup-local'; 
     vistaGeneralPopup.style.display = 'none';
     vistaGeneralPopup.style.position = 'absolute';
     vistaGeneralPopup.style.zIndex = '1002';
     document.body.appendChild(vistaGeneralPopup);
 
     function popularVistaGeneralPopup() {
-        vistaGeneralPopup.innerHTML = ''; // Limpiar contenido previo
+        vistaGeneralPopup.innerHTML = ''; 
 
-        // Botón para "Informe actual"
         const informeBtn = document.createElement('button');
         informeBtn.className = 'guion-popup-item-local';
         informeBtn.textContent = 'Informe actual';
@@ -600,7 +845,6 @@ function cerrarModalIAHerramientas() {
         };
         vistaGeneralPopup.appendChild(informeBtn);
 
-        // Botón para "Biblioteca"
         const bibliotecaBtn = document.createElement('button');
         bibliotecaBtn.className = 'guion-popup-item-local';
         bibliotecaBtn.textContent = 'Biblioteca';
@@ -629,27 +873,19 @@ function cerrarModalIAHerramientas() {
         });
     }
 
-    // Listener global para cerrar el popup de Vista General al hacer clic fuera
     document.addEventListener('click', (event) => {
         if (vistaGeneralPopup.style.display === 'block' && !vistaGeneralPopup.contains(event.target) && event.target !== selectorGeneralBtn) {
             vistaGeneralPopup.style.display = 'none';
         }
     });
 
-    // Evitar que el popup se cierre al hacer clic dentro de él
     vistaGeneralPopup.addEventListener('click', (event) => {
         event.stopPropagation();
     });
 
-    /**
- * Abre el popup para seleccionar o crear un libro.
- */
-/**
- * Abre el popup para seleccionar o crear un libro. Se posiciona junto al botón que se ha pulsado.
- * @param {MouseEvent} event - El evento de clic del botón.
- */
+
 function abrirSelectorDeLibro(event) {
-    event.stopPropagation(); // Evita que el clic se propague y cierre el menú al instante.
+    event.stopPropagation(); 
     const popup = document.getElementById('selector-libro-popup');
     if (!popup) return;
 
@@ -666,9 +902,6 @@ function abrirSelectorDeLibro(event) {
     }
 }
 
-/**
- * Cierra el popup del selector de libros.
- */
 function cerrarSelectorDeLibro() {
     const popup = document.getElementById('selector-libro-popup');
     if (popup) {
@@ -676,9 +909,6 @@ function cerrarSelectorDeLibro() {
     }
 }
 
-/**
- * Renderiza la lista de libros en el popup con un estilo limpio.
- */
 function renderizarSelectorDeLibro() {
     const popup = document.getElementById('selector-libro-popup');
     if (!popup) return;
@@ -695,11 +925,9 @@ function renderizarSelectorDeLibro() {
         popup.appendChild(document.createElement('hr'));
     }
     
-    // MODIFICADO: Ahora crea un div con nombre y botón de editar
     libros.forEach(libro => {
         const libroItem = document.createElement('div');
         libroItem.className = 'guion-popup-item-local libro-item-container';
-        // El clic en el contenedor selecciona el libro, excepto si se pulsa el botón de editar
         libroItem.onclick = () => seleccionarLibro(libro.id);
 
         const libroTituloSpan = document.createElement('span');
@@ -711,7 +939,7 @@ function renderizarSelectorDeLibro() {
         editarBtn.innerHTML = '✏️';
         editarBtn.title = 'Cambiar nombre';
         editarBtn.onclick = (event) => {
-            event.stopPropagation(); // Previene que se seleccione el libro
+            event.stopPropagation(); 
             iniciarEdicionNombreLibro(event, libro.id);
         };
         
@@ -721,44 +949,33 @@ function renderizarSelectorDeLibro() {
     });
 }
 
-/**
- * NUEVA FUNCIÓN: Inicia la edición del nombre de un libro.
- */
 function iniciarEdicionNombreLibro(event, libroId) {
     const botonEditar = event.currentTarget;
     const itemContainer = botonEditar.parentElement;
     const tituloSpan = itemContainer.querySelector('.libro-popup-titulo');
 
-    // Crear input
     const input = document.createElement('input');
     input.type = 'text';
     input.value = tituloSpan.textContent;
     input.className = 'libro-nombre-input-edicion';
     
-    // Reemplazar span con input
     itemContainer.replaceChild(input, tituloSpan);
     input.focus();
     input.select();
 
-    // Guardar al perder el foco (blur)
     input.addEventListener('blur', () => {
         guardarNuevoNombreLibro(input, libroId);
     });
 
-    // Guardar con Enter, cancelar con Escape
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
-            input.blur(); // Llama al evento blur para guardar
+            input.blur(); 
         } else if (e.key === 'Escape') {
-            // Si se presiona Escape, simplemente volvemos a renderizar sin guardar
             renderizarSelectorDeLibro();
         }
     });
 }
 
-/**
- * NUEVA FUNCIÓN: Guarda el nombre editado del libro.
- */
 function guardarNuevoNombreLibro(inputElement, libroId) {
     const nuevoTitulo = inputElement.value.trim();
     const libro = libros.find(l => l.id === libroId);
@@ -766,7 +983,6 @@ function guardarNuevoNombreLibro(inputElement, libroId) {
     if (libro && nuevoTitulo) {
         libro.titulo = nuevoTitulo;
 
-        // Si el libro editado era el activo, actualizamos el título principal
         if (libro.id === libroActivoId) {
             const tituloContainer = document.getElementById('libro-activo-titulo');
             if (tituloContainer) {
@@ -774,8 +990,6 @@ function guardarNuevoNombreLibro(inputElement, libroId) {
             }
         }
     }
-
-    // Volver a renderizar la lista para mostrar el estado final
     renderizarSelectorDeLibro();
 }
 
@@ -805,13 +1019,6 @@ function seleccionarLibro(id) {
     }
 }
 
-/**
- * Abre el modal para que el usuario elija un libro de destino.
- * @param {string} contenido - El texto generado por la IA que se va a procesar.
- */
-/**
- * Abre el modal para que el usuario elija un guion de origen y un libro de destino.
- */
 function abrirModalSeleccionLibroParaFrames() {
     const modal = document.getElementById('modal-seleccionar-libro-para-frames');
     const overlay = document.getElementById('modal-overlay');
@@ -820,11 +1027,10 @@ function abrirModalSeleccionLibroParaFrames() {
     
     if (!modal || !overlay || !listaLibrosContainer || !selectGuiones) return;
 
-    // --- Poblar el dropdown de Guiones ---
     selectGuiones.innerHTML = '';
     if (guionLiterarioData && guionLiterarioData.length > 0) {
         guionLiterarioData.forEach(guion => {
-            if (guion.generadoPorIA) { // Opcional: mostrar solo guiones de IA
+            if (guion.generadoPorIA) { 
                 const option = document.createElement('option');
                 option.value = guion.titulo;
                 option.textContent = guion.titulo;
@@ -835,7 +1041,6 @@ function abrirModalSeleccionLibroParaFrames() {
         selectGuiones.innerHTML = '<option disabled>No hay guiones de IA disponibles</option>';
     }
 
-    // --- Poblar la lista de Libros ---
     listaLibrosContainer.innerHTML = '';
     if (libros.length === 0) {
         listaLibrosContainer.innerHTML = '<p>No hay libros creados. Ve a la sección "Libro" para crear uno.</p>';
@@ -844,7 +1049,7 @@ function abrirModalSeleccionLibroParaFrames() {
             const libroBtn = document.createElement('button');
             libroBtn.className = 'libro-item-seleccion';
             libroBtn.textContent = libro.titulo;
-            libroBtn.dataset.libroId = libro.id; // Guardamos el ID en el dataset
+            libroBtn.dataset.libroId = libro.id; 
             libroBtn.onclick = (event) => marcarLibroSeleccionado(event);
             listaLibrosContainer.appendChild(libroBtn);
         });
@@ -855,9 +1060,6 @@ function abrirModalSeleccionLibroParaFrames() {
     overlay.onclick = cerrarModalSeleccionLibro;
 }
 
-/**
- * Resalta visualmente el libro seleccionado en el modal.
- */
 function marcarLibroSeleccionado(event) {
     const todosLosBotones = document.querySelectorAll('#lista-libros-para-frames .libro-item-seleccion');
     todosLosBotones.forEach(btn => btn.classList.remove('selected'));
@@ -867,9 +1069,6 @@ function marcarLibroSeleccionado(event) {
     libroDestinoSeleccionadoId = botonPulsado.dataset.libroId;
 }
 
-/**
- * Cierra el modal de selección y resetea el estado.
- */
 function cerrarModalSeleccionLibro() {
     const modal = document.getElementById('modal-seleccionar-libro-para-frames');
     const overlay = document.getElementById('modal-overlay');
@@ -878,12 +1077,9 @@ function cerrarModalSeleccionLibro() {
         overlay.style.display = 'none';
         overlay.onclick = null;
     }
-    libroDestinoSeleccionadoId = null; // Resetea la selección
+    libroDestinoSeleccionadoId = null; 
 }
 
-/**
- * Valida las selecciones y lanza el proceso de generación de frames.
- */
 function confirmarSeleccionYProcesar() {
     const guionSeleccionado = document.getElementById('guion-origen-select').value;
 
@@ -898,7 +1094,6 @@ function confirmarSeleccionYProcesar() {
  if (typeof reiniciarContadorEscenas === 'function') {
         reiniciarContadorEscenas();
     }
-    // ¡Paso clave! Establece el libro activo para que `nuevaEscena` sepa dónde guardar.
     libroActivoId = libroDestinoSeleccionadoId;
 
     if (typeof desarrollarFramesDesdeGeminimente === 'function') {

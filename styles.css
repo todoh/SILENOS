@@ -176,7 +176,7 @@ padding-left: 1% !important; padding-right: 1% !important; /* Añadido para marg
 
 /* Estiliza la pista (la "línea" de fondo) */
 ::-webkit-scrollbar-track {
-    background-color: #f1f1f100; /* Un gris muy claro para el tema por defecto */
+    background-color: #ff000000; /* Un gris muy claro para el tema por defecto */
     border-radius: 10px;
 }
 
@@ -196,7 +196,7 @@ padding-left: 1% !important; padding-right: 1% !important; /* Añadido para marg
 
 /* En el tema oscuro, la pista necesita un color que contraste con el fondo oscuro y el control negro */
 .dark-theme ::-webkit-scrollbar-track {
-    background-color: #3a3a3a00; /* Un gris más oscuro pero visible */
+    background-color: #ff000000; /* Un gris más oscuro pero visible */
 }
 
 /* El control sigue siendo negro en el tema oscuro, como se solicitó */
@@ -2564,3 +2564,121 @@ top: 10%;
 left: 10%;
 
         }
+
+
+/* --- Estilos para la Galería de Generaciones --- */
+/* Pega este código al final de tu archivo CSS principal. */
+
+/* --- Estilos para la Galería de Generaciones --- */
+/* Pega este código al final de tu archivo CSS principal, 
+   reemplazando los estilos anteriores si existen. */
+
+#generaciones-container {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #4a5568; /* Ajusta el color al de tu tema */
+}
+
+#generaciones-container h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #e2e8f0; /* Ajusta el color al de tu tema */
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+#generaciones-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+    padding: 0 1rem;
+}
+
+.generacion-item {
+    position: relative;
+    background-color: #2d3748; /* Fondo para el contenedor */
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column;
+}
+
+.generacion-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+.generacion-item img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    display: block;
+    background-color: #4a5568;
+}
+
+.generacion-info {
+    padding: 0.75rem;
+    background-color: #1a202c; /* Fondo más oscuro para la info */
+    position: relative;
+}
+
+.generacion-prompt {
+    font-size: 0.8rem;
+    color: #cbd5e0;
+    margin: 0;
+    padding: 5px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    transition: background-color 0.2s, border-color 0.2s;
+    min-height: 2.5em; /* Para que no se colapse si está vacío */
+}
+
+.generacion-prompt:focus {
+    background-color: #2d3748;
+    border-color: #4299e1; /* Borde azul al editar */
+    outline: none;
+    color: #fff;
+}
+
+.generacion-delete-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+    border-radius: 50%;
+    font-size: 16px;
+    line-height: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.generacion-delete-btn:hover {
+    background-color: #e53e3e; /* Rojo al pasar el ratón */
+    color: #fff;
+}
+
+/* Estilo para el nuevo botón de guardar */
+#btn-save-generation {
+    background-color: #2f855a; /* Verde */
+    color: white;
+    margin-left: 10px;
+}
+
+#btn-save-generation:hover {
+    background-color: #276749;
+}
+
+#btn-save-generation:disabled {
+    background-color: #4a5568;
+    cursor: not-allowed;
+}
+
+

@@ -13,18 +13,15 @@ function initEscenas() {
     document.getElementById('escenas-dropdown')?.addEventListener('change', seleccionarEscenaDesdeDropdown);
     document.getElementById('escena-nombre-input')?.addEventListener('input', cambiarNombreEscena);
     
-    // Listeners para Drag and Drop en el contenedor principal
     const timelineDiv = document.getElementById('tomas-timeline');
-    timelineDiv.addEventListener('dragover', handleDragOverTimeline);
-    timelineDiv.addEventListener('drop', handleDropOnTimeline);
-    timelineDiv.addEventListener('dragleave', handleDragLeaveTimeline);
+    if (timelineDiv) {
+        timelineDiv.addEventListener('dragover', handleDragOverTimeline);
+        timelineDiv.addEventListener('drop', handleDropOnTimeline);
+        timelineDiv.addEventListener('dragleave', handleDragLeaveTimeline);
+    }
 
     renderEscenasUI();
 }
-
-
-
-
 
 /**
  * Crea una nueva escena, la añade al array global y refresca la UI.
@@ -43,8 +40,6 @@ function crearNuevaEscena() {
 
 /**
  * Agrega una nueva toma a la escena activa, opcionalmente en un índice específico.
- * @param {number} duracion - La duración de la toma en segundos.
- * @param {number} [index=-1] - El índice después del cual insertar la nueva toma. Si es -1, se añade al final.
  */
 function agregarToma(duracion = 8, index = -1) {
     if (!activeSceneId) {
@@ -73,7 +68,6 @@ function agregarToma(duracion = 8, index = -1) {
 
 /**
  * Elimina una toma de la escena activa.
- * @param {string} tomaId - El ID de la toma a eliminar.
  */
 function eliminarToma(tomaId) {
     if (!activeSceneId) return;
@@ -81,8 +75,10 @@ function eliminarToma(tomaId) {
     if (escenaActiva) {
         const tomaIndex = escenaActiva.tomas.findIndex(t => t.id === tomaId);
         if (tomaIndex > -1) {
-            escenaActiva.tomas.splice(tomaIndex, 1);
-            renderEscenasUI();
+            if (confirm("¿Seguro que quieres eliminar esta toma?")) {
+                escenaActiva.tomas.splice(tomaIndex, 1);
+                renderEscenasUI();
+            }
         }
     }
 }
@@ -90,7 +86,6 @@ function eliminarToma(tomaId) {
 
 /**
  * Actualiza la escena activa cuando se selecciona una del dropdown.
- * @param {Event} event - El evento 'change' del select.
  */
 function seleccionarEscenaDesdeDropdown(event) {
     activeSceneId = event.target.value;
@@ -99,7 +94,6 @@ function seleccionarEscenaDesdeDropdown(event) {
 
 /**
  * Cambia el nombre de la escena activa a medida que el usuario escribe en el input.
- * @param {Event} event - El evento 'input' del campo de texto.
  */
 function cambiarNombreEscena(event) {
     if (!activeSceneId) return;
@@ -150,39 +144,39 @@ function renderEscenasUI() {
                 tomaContainer.dataset.tomaId = toma.id;
                 tomaContainer.draggable = true;
 
-                // --- Eventos de Drag and Drop ---
                 tomaContainer.addEventListener('dragstart', handleDragStart);
                 tomaContainer.addEventListener('dragend', handleDragEnd);
                 tomaContainer.addEventListener('dragover', handleDragOver);
                 tomaContainer.addEventListener('dragleave', handleDragLeave);
                 tomaContainer.addEventListener('drop', handleDrop);
 
-
-                // --- Controles (arriba) ---
                 const controlesDiv = document.createElement('div');
                 controlesDiv.className = 'toma-controles';
-
                 const addBtn = document.createElement('button');
                 addBtn.className = 'toma-btn';
                 addBtn.innerHTML = '&#10133;';
                 addBtn.title = 'Crear toma a la derecha';
                 addBtn.onclick = () => agregarToma(8, index);
-
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'toma-btn';
                 deleteBtn.innerHTML = '&#10006;';
                 deleteBtn.title = 'Eliminar toma';
                 deleteBtn.onclick = () => eliminarToma(toma.id);
-
                 controlesDiv.appendChild(addBtn);
                 controlesDiv.appendChild(deleteBtn);
 
-                // --- Área de Imagen (en medio) ---
                 const imagenArea = document.createElement('div');
                 imagenArea.className = 'toma-imagen-area';
                 const imagenPreview = document.createElement('img');
                 imagenPreview.className = 'toma-imagen-preview';
-                if (toma.imagen) imagenPreview.src = toma.imagen;
+                if (toma.imagen) {
+                    imagenPreview.src = toma.imagen;
+                } else {
+                    // Placeholder o estilo para cuando no hay imagen
+                    imagenPreview.style.display = 'none'; 
+                    imagenArea.innerHTML += '<span class="imagen-placeholder">🖼️</span>';
+                }
+
                 const uploadLabel = document.createElement('label');
                 uploadLabel.className = 'toma-upload-btn';
                 uploadLabel.innerHTML = '&#128247;';
@@ -197,7 +191,7 @@ function renderEscenasUI() {
                     if (file) {
                         try {
                             toma.imagen = await fileToBase64(file);
-                            imagenPreview.src = toma.imagen;
+                            renderEscenasUI(); // Re-render para mostrar la nueva imagen
                         } catch (error) {
                             console.error("Error al procesar la imagen:", error);
                         }
@@ -207,19 +201,17 @@ function renderEscenasUI() {
                 imagenArea.appendChild(uploadLabel);
                 imagenArea.appendChild(fileInput);
 
-                // --- Área de Textos (abajo) ---
                 const textosArea = document.createElement('div');
                 textosArea.className = 'toma-textos-area';
-
                 const textoToma = document.createElement('textarea');
-                textoToma.placeholder = 'Texto de la toma...';
+                textoToma.placeholder = 'Guion Conceptual...';
                 textoToma.value = toma.guionConceptual || '';
                 textoToma.oninput = (e) => { toma.guionConceptual = e.target.value; };
                 
                 const promptTomaContainer = document.createElement('div');
                 promptTomaContainer.className = 'toma-prompt-container';
                 const promptToma = document.createElement('textarea');
-                promptToma.placeholder = 'Prompt de la toma...';
+                promptToma.placeholder = 'Guion Técnico (Prompt)...';
                 promptToma.value = toma.guionTecnico || '';
                 promptToma.oninput = (e) => { toma.guionTecnico = e.target.value; };
                 
@@ -228,37 +220,59 @@ function renderEscenasUI() {
                 copyBtn.innerHTML = '&#128203;';
                 copyBtn.title = 'Copiar prompt';
                 copyBtn.onclick = () => {
-                    const tempTextArea = document.createElement('textarea');
-                    tempTextArea.value = promptToma.value;
-                    document.body.appendChild(tempTextArea);
-                    tempTextArea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(tempTextArea);
-                    copyBtn.textContent = '✔️';
-                    setTimeout(() => { copyBtn.innerHTML = '&#128203;'; }, 1500);
+                    navigator.clipboard.writeText(promptToma.value).then(() => {
+                        copyBtn.textContent = '✔️';
+                        setTimeout(() => { copyBtn.innerHTML = '&#128203;'; }, 1500);
+                    });
                 };
-       // ---// --- BOTÓN DE VIDEO CORREGIDO ---
+
+                // --- MODIFICADO ---
+                // El botón ahora llama a la nueva función para componer escenas 3D.
                 const videoBtn = document.createElement('button');
                 videoBtn.className = 'toma-video-btn';
-                videoBtn.innerHTML = '&#127909;'; // Icono 🎥
-                videoBtn.title = 'Generar escena 3D desde este prompt';
-            videoBtn.onclick = () => {
-                    // Se comprueba si la función correcta existe en window
-                    if (typeof window.handleAnalyzeScript === 'function') {
-                        const prompt = toma.guionTecnico;
-                        if (prompt && prompt.trim() !== '') {
-                            // Se llama a la función para analizar el guion de la toma
-                            window.handleAnalyzeScript(prompt);
-                        } else {
-                            alert('El prompt visual de la toma está vacío. Escribe una descripción para poder generar la escena 2D.');
+                videoBtn.innerHTML = '🎬'; // Icono de claqueta
+                videoBtn.title = 'Componer Escena 3D para esta Toma';
+                videoBtn.onclick = async () => {
+                    const prompt = toma.guionTecnico;
+                    if (!prompt || !prompt.trim()) {
+                        alert('El Guion Técnico (Prompt) de la toma está vacío. Escribe una descripción para poder generar la imagen.');
+                        return;
+                    }
+                    
+                    if (typeof generarEscenaCompuesta !== 'function') {
+                        alert('Error: La función para componer escenas no está disponible. Asegúrate de que compositor-escenas.js está cargado.');
+                        return;
+                    }
+
+                    const statusDiv = document.createElement('div');
+                    statusDiv.className = 'toma-loading-overlay';
+                    statusDiv.innerHTML = '<div class="loading-spinner-toma"></div><p>Iniciando composición...</p>';
+                    imagenArea.appendChild(statusDiv);
+                    
+                    try {
+                        // Llamamos a la nueva función del compositor
+                        const imageUrl = await generarEscenaCompuesta(prompt, statusDiv);
+                        
+                        // Guardamos y mostramos la imagen
+                        toma.imagen = imageUrl;
+                        imagenPreview.src = imageUrl;
+                        imagenPreview.style.display = 'block';
+
+                        const placeholder = imagenArea.querySelector('.imagen-placeholder');
+                        if(placeholder) placeholder.style.display = 'none';
+
+                    } catch (error) {
+                        console.error("Error al componer la escena para la toma:", error);
+                        statusDiv.innerHTML = `<p style="color: red; font-size: 0.8em;">Error</p>`;
+                        setTimeout(() => statusDiv.remove(), 5000);
+                    } finally {
+                        if(statusDiv.parentElement) {
+                           statusDiv.remove();
                         }
-                    } else {
-                        // El mensaje de error ahora es correcto
-                        console.error('La función handleAnalyzeScript no está definida. Asegúrate de que generacion2d.js está cargado correctamente.');
-                        alert('La funcionalidad de generar escenas 2D no está disponible.');
                     }
                 };
-                // --- FIN DEL NUEVO BOTÓN ---
+                // --- FIN DE LA MODIFICACIÓN ---
+
                 promptTomaContainer.appendChild(promptToma);
                 promptTomaContainer.appendChild(copyBtn);
                 promptTomaContainer.appendChild(videoBtn);
@@ -285,8 +299,7 @@ function renderEscenasUI() {
     timelineDiv.scrollLeft = scrollLeft;
 }
 
-// --- FUNCIONES DE DRAG AND DROP ---
-
+// --- FUNCIONES DE DRAG AND DROP (sin cambios) ---
 function handleDragStart(e) {
     draggedTomaId = e.target.closest('.toma-card').dataset.tomaId;
     e.dataTransfer.effectAllowed = 'move';
@@ -295,13 +308,14 @@ function handleDragStart(e) {
         e.target.closest('.toma-card').classList.add('toma-dragging');
     }, 0);
 }
-
 function handleDragEnd(e) {
-    e.target.closest('.toma-card').classList.remove('toma-dragging');
+    const draggedElement = document.querySelector('.toma-dragging');
+    if (draggedElement) {
+        draggedElement.classList.remove('toma-dragging');
+    }
     draggedTomaId = null;
     removeDropIndicator();
 }
-
 function handleDragOver(e) {
     e.preventDefault();
     const targetCard = e.target.closest('.toma-card');
@@ -309,10 +323,8 @@ function handleDragOver(e) {
         const timeline = document.getElementById('tomas-timeline');
         const rect = targetCard.getBoundingClientRect();
         const offset = e.clientX - rect.left;
-
         removeDropIndicator();
         const indicator = createDropIndicator();
-
         if (offset < rect.width / 2) {
             timeline.insertBefore(indicator, targetCard);
         } else {
@@ -320,14 +332,11 @@ function handleDragOver(e) {
         }
     }
 }
-
 function handleDragLeave(e) {
-    // Solo removemos el indicador si salimos de un elemento que no sea una tarjeta o sus hijos
     if (!e.currentTarget.contains(e.relatedTarget)) {
          removeDropIndicator();
     }
 }
-
 function handleDrop(e) {
     e.preventDefault();
     removeDropIndicator();
@@ -335,76 +344,67 @@ function handleDrop(e) {
     if (!draggedTomaId || !targetCard || targetCard.dataset.tomaId === draggedTomaId) {
         return;
     }
-
     const escenaActiva = storyScenes.find(s => s.id === activeSceneId);
     if (!escenaActiva) return;
-
     const fromIndex = escenaActiva.tomas.findIndex(t => t.id === draggedTomaId);
     let toIndex = escenaActiva.tomas.findIndex(t => t.id === targetCard.dataset.tomaId);
     if (fromIndex === -1 || toIndex === -1) return;
-
     const [draggedItem] = escenaActiva.tomas.splice(fromIndex, 1);
-    
-    // Ajuste del índice si el elemento se mueve hacia adelante en la lista
     if (fromIndex < toIndex) toIndex--;
-
     const rect = targetCard.getBoundingClientRect();
     const offset = e.clientX - rect.left;
     const insertAtIndex = (offset < rect.width / 2) ? toIndex : toIndex + 1;
-    
     escenaActiva.tomas.splice(insertAtIndex, 0, draggedItem);
     renderEscenasUI();
 }
-
-
 function handleDragOverTimeline(e) {
     e.preventDefault();
     const isOverCard = e.target.closest('.toma-card');
-    // Si estamos sobre el timeline pero no sobre una tarjeta, mostramos indicador al final
     if (!isOverCard) {
         removeDropIndicator();
         const indicator = createDropIndicator();
         document.getElementById('tomas-timeline').appendChild(indicator);
     }
 }
-
 function handleDropOnTimeline(e){
     e.preventDefault();
-    // Solo actuar si el drop es directamente en el timeline
      if (e.target.id !== 'tomas-timeline' || !draggedTomaId) {
          removeDropIndicator();
          return;
      }
-
     const escenaActiva = storyScenes.find(s => s.id === activeSceneId);
     if (!escenaActiva) return;
-    
     const fromIndex = escenaActiva.tomas.findIndex(t => t.id === draggedTomaId);
     if (fromIndex === -1) return;
-
     const [draggedItem] = escenaActiva.tomas.splice(fromIndex, 1);
     escenaActiva.tomas.push(draggedItem);
-    
     removeDropIndicator();
     renderEscenasUI();
 }
-
 function handleDragLeaveTimeline(e) {
     if (e.target.id === 'tomas-timeline' && !e.relatedTarget.closest('#tomas-timeline')) {
         removeDropIndicator();
     }
 }
-
-// --- Funciones de utilidad para los indicadores ---
 function createDropIndicator() {
     const indicator = document.createElement('div');
     indicator.className = 'toma-drop-indicator';
     return indicator;
 }
-
 function removeDropIndicator() {
     const existingIndicator = document.querySelector('.toma-drop-indicator');
     if (existingIndicator) {
         existingIndicator.remove();
     }
 }
+
+// --- Función de utilidad para convertir File a Base64 ---
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+}
+window.generarEscenaCompuesta = generarEscenaCompuesta;
