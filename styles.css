@@ -1139,7 +1139,7 @@ width: 15%;
     align-items: stretch; 
     overflow-x: auto; 
     overflow-y: hidden;
-    margin-top: 3%;
+    margin-top:0%;
     padding: 0px;
     gap: 10px; 
     background-color: #f0f0f0;
@@ -2547,9 +2547,12 @@ transform: translateX(-50%);
         canvas {position: fixed;
             background-color: #a7f0c800;
             border-radius: 8px;
-             width: 512px;
-            height: 512px; right: 15%; top: 50%;
-            transform:  translateY(-50%); 
+             width: auto;
+            height: 35%; left: 50%; top: 0%;
+            bottom: 65%;
+            aspect-ratio: 1 / 1;
+
+            transform:  translateX(-50%); 
             border: 1px solid #444444a9;
         }
         #status-message {
@@ -2577,9 +2580,9 @@ left: 10%;
 
 #generaciones-container {
     position: fixed;
-    width: 50%;
-    height: 80%;
-    top: 20%; background-color: #1d4fd800;
+    width: 100%;
+    height: 65%;
+    top: 35%; background-color: #1d4fd800;
     bottom: 0;
 left: 0%; right: 50%;     
     padding-top: 1.5rem; overflow-y: scroll;
@@ -2598,7 +2601,7 @@ left: 0%; right: 50%;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 1.5rem;
-    padding: 0 1rem;
+    padding-bottom: 8%;
 }
 
 .generacion-item {
@@ -2688,4 +2691,80 @@ left: 0%; right: 50%;
     cursor: not-allowed;
 }
 
+ 
 
+
+.generacion-delete-btn:hover {
+    background-color: #e53e3e; /* Rojo al pasar el ratón */
+    color: #fff;
+}
+
+ 
+
+
+
+/* --- AÑADIDO: Estilo para el botón de mejorar --- */
+.generacion-improve-btn {
+    position: absolute;
+    top: 5px;
+    left: 1%; /* Posicionado a la izquierda del de eliminar */
+    width: 30px;
+    height: 30px;
+    border: none;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+    border-radius: 50%;
+    font-size: 16px;
+    line-height: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.generacion-improve-btn:hover {
+    background-color: #3182ce; /* Azul al pasar el ratón */
+    color: #fff;
+}
+
+/* Estilos para el importador de JSON */
+.json-importer-container {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #444;
+}
+
+.json-importer-container h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+    color: #e0e0e0;
+}
+
+#json-input-area {
+    width: 100%;
+    height: 120px;
+    background-color: #2d3748;
+    color: #cbd5e0;
+    border: 1px solid #4a5568;
+    border-radius: 6px;
+    padding: 10px;
+    font-family: monospace;
+    resize: vertical;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+}
+
+#btn-process-json {
+    width: 100%;
+    padding: 10px;
+    background-color: #3182ce;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#btn-process-json:hover {
+    background-color: #2b6cb0;
+}

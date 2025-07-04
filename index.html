@@ -503,22 +503,27 @@
         <div class="control-panel">
             <textarea class="area-texto" id="user-prompt-input" placeholder="Ej: 'un hechicero de hielo en un bosque nevado', 'un caballero con armadura dorada frente a un castillo'"></textarea>
             <button id="btn-generate">Diseñar y Renderizar Escena</button>
-             <p id="status-message"></p>
+            
+            <div class="json-importer-container">
+                <h3>Importar desde JSON</h3>
+                <textarea id="json-input-area" placeholder="Pega aquí el JSON de uno o varios elementos..." class="area-texto"></textarea>
+                <div class="json-buttons-container">
+                    <button id="btn-process-json" class="control-button">Procesar JSON Pegado</button>
+                    <label for="json-file-input" class="control-button">Cargar Archivo JSON</label>
+                    <input type="file" id="json-file-input" accept=".json,application/json" style="display: none;">
+                </div>
+            </div>
+            <div id="render-container" style="display: none;">
+                <canvas id="render-canvas" width="512" height="512"></canvas>
+            </div>
+            
+            <p id="status-message"></p> 
             <button id="btn-save-generation" style="display: none;">Guardar en Generaciones</button>
         </div>
-
-        <div id="render-container" style="display: none;">
-            
-            <canvas id="render-canvas" width="512" height="512"></canvas>
-           
-        </div>
         
-        <!-- Nueva sección para las imágenes guardadas -->
         <div id="generaciones-container" style="display: none;">
-            <h3>Generaciones</h3>
             <div id="generaciones-grid">
-                <!-- Las imágenes guardadas se añadirán aquí dinámicamente -->
-            </div>
+                </div>
         </div>
     </div>
 </div>
@@ -1004,7 +1009,6 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 <script src="geminialfa.js"></script>
 <script src="geminivisual.js"></script>
 <script src="generador.js"></script>
-<script src="compositor-escenas.js"></script> <!-- Define generarEscenaCompuesta -->
 <script src="gestionEscenas.js"></script>  
 <script src="exportar.js"></script>
 <script src="exportarjuego.js"></script>
@@ -1039,7 +1043,7 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 <script type="module" src="escenas/editor-escenas-animacion.js"></script>
 <script type="module" src="escenas/character-creator.js"></script>
   
-<script src="main.js"></script>
+<script src="main.js" defer></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {

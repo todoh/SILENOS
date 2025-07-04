@@ -1,7 +1,17 @@
+// =================================================================
+// ARCHIVO CORREGIDO: datos/generador.js
+// Se ha restaurado la funcionalidad para procesar archivos JSON de dibujo,
+// manteniendo al mismo tiempo el generador principal basado en prompts.
+// =================================================================
+
+// --- Elementos del DOM y Event Listeners ---
 const generateButton = document.getElementById('btn-generate');
 const saveButton = document.getElementById('btn-save-generation');
 const promptInput = document.getElementById('user-prompt-input');
+const processJsonButton = document.getElementById('btn-process-json');
+const jsonFileInput = document.getElementById('json-file-input');
 
+// Listeners para la generación principal por prompt
 if (generateButton) {
     generateButton.addEventListener('click', handleGeneration);
 }
@@ -17,17 +27,162 @@ if (promptInput) {
     });
 }
 
+// --- INICIO: CÓDIGO RESTAURADO PARA IMPORTAR JSON ---
+// Listeners para la funcionalidad de importar JSON
+if (processJsonButton) {
+    processJsonButton.addEventListener('click', processJsonInput);
+}
+if (jsonFileInput) {
+    jsonFileInput.addEventListener('change', handleJsonFileSelect);
+}
+
+/**
+ * Maneja la selección de un archivo JSON y lo carga en el área de texto.
+ * @param {Event} event - El evento 'change' del input.
+ */
+function handleJsonFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const fileContent = e.target.result;
+        const jsonInputArea = document.getElementById('json-input-area');
+        if (jsonInputArea) {
+            jsonInputArea.value = fileContent;
+            processJsonInput(); // Procesa automáticamente el contenido
+        }
+    };
+    reader.readAsText(file);
+}
+
+/**
+ * Procesa el JSON que contiene instrucciones de dibujo (formas)
+ * y reconstruye las imágenes para añadirlas a la galería.
+ */
+function processJsonInput() {
+    const jsonInputArea = document.getElementById('json-input-area');
+    if (!jsonInputArea) return;
+
+    const jsonText = jsonInputArea.value;
+    if (!jsonText.trim()) {
+        showCustomAlert('El área de texto JSON está vacía.');
+        return;
+    }
+
+    try {
+        let data = JSON.parse(jsonText);
+        // Asegura que siempre trabajemos con un array
+        if (!Array.isArray(data)) {
+            data = [data];
+        }
+
+        let itemsAdded = 0;
+        data.forEach(itemData => {
+            // Verifica que el objeto tenga las propiedades necesarias
+            if (!itemData.nombre || !itemData.formas || !Array.isArray(itemData.formas)) {
+                console.warn('Saltando un elemento del JSON. Debe tener "nombre" y un array de "formas".', itemData);
+                return;
+            }
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 512;
+            tempCanvas.height = 512;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Dibuja las formas en el canvas temporal
+            itemData.formas.forEach(forma => {
+                dibujarForma(tempCtx, forma);
+            });
+
+            // Guarda la imagen generada en la galería
+            agregarImagenAGaleria(tempCanvas.toDataURL(), itemData.nombre);
+            itemsAdded++;
+        });
+
+        if (itemsAdded > 0) {
+            jsonInputArea.value = '';
+            showCustomAlert(`¡${itemsAdded} imágenes reconstruidas desde JSON y añadidas a la galería!`);
+        } else {
+            showCustomAlert('No se añadieron nuevos elementos. Revisa el formato del JSON.');
+        }
+
+    } catch (error) {
+        console.error('Error al procesar JSON:', error);
+        showCustomAlert('Error al procesar el JSON. Revisa el formato y la consola.');
+    }
+}
+
+/**
+ * Dibuja una forma simple en el canvas.
+ * Esta función es la que interpreta el formato de formas del JSON importado.
+ */
+function dibujarForma(ctx, forma) {
+    ctx.fillStyle = forma.color || '#333';
+    ctx.strokeStyle = forma.color || '#333';
+    ctx.lineWidth = 2;
+
+    ctx.save();
+    ctx.translate(forma.posición[0], forma.posición[1]);
+    ctx.rotate((forma.rotación || 0) * Math.PI / 180);
+
+    switch (forma.forma) {
+        case 'rectángulo':
+            ctx.fillRect(-forma.tamaño[0] / 2, -forma.tamaño[1] / 2, forma.tamaño[0], forma.tamaño[1]);
+            break;
+        case 'círculo':
+            ctx.beginPath();
+            ctx.arc(0, 0, forma.tamaño, 0, 2 * Math.PI);
+            ctx.fill();
+            break;
+    }
+    ctx.restore();
+}
+
+/**
+ * Añade una imagen y su prompt a la galería de generaciones.
+ */
+function agregarImagenAGaleria(imageUrl, prompt) {
+    const generacionesContainer = document.getElementById('generaciones-container');
+    const generacionesGrid = document.getElementById('generaciones-grid');
+    if (!generacionesGrid || !generacionesContainer) return;
+
+    generacionesContainer.style.display = 'block';
+
+    const itemContainer = document.createElement('div');
+    itemContainer.className = 'generacion-item';
+
+    const imgElement = document.createElement('img');
+    imgElement.src = imageUrl;
+
+    const infoContainer = document.createElement('div');
+    infoContainer.className = 'generacion-info';
+
+    const promptText = document.createElement('p');
+    promptText.className = 'generacion-prompt';
+    promptText.contentEditable = true;
+    promptText.textContent = prompt || 'Sin prompt';
+
+    const deleteButton = document.createElement('button');
+    deleteButton.className = 'generacion-delete-btn';
+    deleteButton.innerHTML = '&times;';
+    deleteButton.title = 'Eliminar esta imagen';
+    deleteButton.onclick = () => itemContainer.remove();
+
+    infoContainer.appendChild(promptText);
+    infoContainer.appendChild(deleteButton);
+    itemContainer.appendChild(imgElement);
+    itemContainer.appendChild(infoContainer);
+
+    generacionesGrid.prepend(itemContainer);
+}
+// --- FIN: CÓDIGO RESTAURADO PARA IMPORTAR JSON ---
+
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
-// --- NUEVO ---
-// Esta es la nueva función reutilizable que genera una imagen y devuelve su URL.
-// Puede ser llamada desde cualquier parte de la aplicación (como desde gestionEscenas.js).
 /**
  * Genera una imagen a partir de un prompt y devuelve su Data URL.
- * @param {string} prompt - La descripción de lo que se quiere generar.
- * @param {HTMLElement} [statusContainer=null] - Un elemento opcional para mostrar mensajes de estado.
- * @returns {Promise<string>} Una promesa que se resuelve con la Data URL de la imagen generada.
  */
 async function generarImagenParaToma(prompt, statusContainer = null) {
     const tempCanvas = document.createElement('canvas');
@@ -39,7 +194,7 @@ async function generarImagenParaToma(prompt, statusContainer = null) {
 
     const updateStatus = (message) => {
         if (statusContainer) {
-            statusContainer.innerHTML = message;
+            statusContainer.textContent = message;
         }
         console.log(message);
     };
@@ -56,7 +211,6 @@ async function generarImagenParaToma(prompt, statusContainer = null) {
 
         updateStatus('Construyendo entidad...');
         for (const task of scenePlan) {
-            // Pasamos el contenedor de estado a la función de ejecución
             await executeTask(task, prompt, allDrawnShapes, tempCtx, (msg) => updateStatus(msg));
         }
 
@@ -91,11 +245,9 @@ async function generarImagenParaToma(prompt, statusContainer = null) {
     } catch (error) {
         console.error("Error en el proceso de generación para la toma:", error);
         updateStatus(`Error: ${error.message}`);
-        throw error; // Relanzamos el error para que el llamador pueda manejarlo
+        throw error;
     }
 }
-// --- FIN DE LA NUEVA FUNCIÓN ---
-
 
 /**
  * Orchestrates the hierarchical generation process for the main UI.
@@ -122,12 +274,8 @@ async function handleGeneration() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     try {
-        // --- MODIFICADO ---
-        // La función principal ahora llama a la nueva función genérica.
-        // Pasa el prompt y el elemento de estado para mostrar el progreso.
         const imageUrl = await generarImagenParaToma(userPrompt, statusMessage);
         
-        // Dibuja la imagen resultante en el canvas principal
         const img = new Image();
         img.onload = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -156,7 +304,7 @@ async function executeTask(task, contextPrompt, allDrawnShapes, ctx, updateStatu
         for (const subTask of task.sub_tasks) {
              updateStatusCallback(`Dibujando: ${subTask.description}`);
              await executeLayer(subTask.description, contextPrompt, allDrawnShapes, ctx);
-             await delay(500); // Pausa reducida para acelerar la generación en tomas
+             await delay(500);
         }
     } else {
         await executeLayer(task.description, contextPrompt, allDrawnShapes, ctx);
@@ -180,54 +328,18 @@ async function executeLayer(layerDescription, contextPrompt, allDrawnShapes, ctx
 }
 
 /**
- * Saves the current canvas content to the Generations gallery with editable prompt and delete button.
+ * Saves the current canvas content to the Generations gallery.
  */
 function saveGeneration() {
     const canvas = document.getElementById('render-canvas');
-    const generacionesContainer = document.getElementById('generaciones-container');
-    const generacionesGrid = document.getElementById('generaciones-grid');
     const currentPrompt = promptInput.value;
-
-    if (!canvas || !generacionesGrid || !generacionesContainer) {
-        console.error('Elementos necesarios para guardar la generación no encontrados.');
-        showCustomAlert('Error al guardar. No se encontraron los elementos necesarios.');
-        return;
-    }
+    if (!canvas) return;
 
     try {
         const imageDataUrl = canvas.toDataURL('image/png');
-        const itemContainer = document.createElement('div');
-        itemContainer.className = 'generacion-item';
-        const imgElement = document.createElement('img');
-        imgElement.src = imageDataUrl;
-        const infoContainer = document.createElement('div');
-        infoContainer.className = 'generacion-info';
-        const promptText = document.createElement('p');
-        promptText.className = 'generacion-prompt';
-        promptText.contentEditable = true;
-        promptText.textContent = currentPrompt || 'Sin prompt';
-        const deleteButton = document.createElement('button');
-        deleteButton.className = 'generacion-delete-btn';
-        deleteButton.innerHTML = '&times;';
-        deleteButton.title = 'Eliminar esta imagen';
-        deleteButton.onclick = () => {
-            itemContainer.remove();
-            if (generacionesGrid.childElementCount === 0) {
-                generacionesContainer.style.display = 'none';
-            }
-        };
-
-        infoContainer.appendChild(promptText);
-        infoContainer.appendChild(deleteButton);
-        itemContainer.appendChild(imgElement);
-        itemContainer.appendChild(infoContainer);
-        generacionesGrid.appendChild(itemContainer);
-
-        if (generacionesContainer.style.display === 'none') {
-            generacionesContainer.style.display = 'block';
-        }
+        // Reutilizamos la función ya creada
+        agregarImagenAGaleria(imageDataUrl, currentPrompt);
         showCustomAlert('Imagen guardada en la galería de Generaciones.');
-
     } catch (error) {
         console.error("Error al guardar la imagen del canvas:", error);
         showCustomAlert(`Error al guardar la imagen: ${error.message}`);
@@ -323,14 +435,10 @@ async function callApiAndParseJson(prompt, maxRetries = 3) {
  * Performs the fetch call to the Google Gemini API.
  */
 async function callGeminiApiInternal(prompt) {
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-06-17:generateContent?key=${apiKey}`;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
     const payload = {
-        contents: [{
-            parts: [{
-                text: prompt
-            }]
-        }],
+        contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
             responseMimeType: "application/json",
             temperature: 0.7,
@@ -398,4 +506,3 @@ function showCustomAlert(message) {
         document.body.removeChild(modal);
     };
 }
- 
