@@ -451,9 +451,11 @@ function inicializarControlesDeFiltro() {
 
     const styleSheet = document.createElement("style");
     styleSheet.innerText = `
-        #filtro-datos-popup { display: none; position: absolute; background: #333; border: 1px solid #555; border-radius: 5px; padding: 10px; z-index: 10002; }
-        .filtro-item label, .filtro-item-control label { display: flex; align-items: center; color: white; padding: 5px; cursor: pointer; border-radius: 3px; font-size: 14px; }
-        .filtro-item label:hover { background-color: #444; }
+        #filtro-datos-popup { display: none; position: absolute;  left: 0;  background-color: transparent;
+backdrop-filter: blur(20px);
+background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 255, 255, 0.2)); border: 0px solid #555; border-radius: 5px; padding: 10px; z-index: 10002; }
+        .filtro-item label, .filtro-item-control label { display: flex; align-items: center; color: black; padding: 5px; cursor: pointer; border-radius: 3px; font-size: 14px; }
+        .filtro-item label:hover { background-color: #444; color: white;}
         .filtro-item input, .filtro-item-control input { margin-right: 10px; }
         .filtro-item-control { border-bottom: 1px solid #555; margin-bottom: 5px; padding-bottom: 5px; }
     `;
@@ -479,7 +481,7 @@ function inicializarControlesDeFiltro() {
             actualizarPopupFiltros();
             const rect = filtroBtn.getBoundingClientRect();
             popup.style.top = `${rect.bottom + window.scrollY}px`;
-            popup.style.left = `${rect.left + window.scrollX}px`;
+            popup.style.left = `0px`;
         }
     });
 
@@ -551,13 +553,13 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     etiquetaBtn.onclick = (e) => { e.stopPropagation(); mostrarMenuEtiquetas(etiquetaBtn); };
     
     Object.assign(etiquetaBtn.style, {
-        position: 'absolute', top: '8px', right: '8px', zIndex: '3', padding: '4px 8px',
-        fontSize: '12px', border: 'none', backgroundColor: 'rgba(0, 0, 0, 0.6)', color: 'white',
+        position: 'absolute', bottom: '8px',  right: '8px', zIndex: '3',  
+        fontSize: '12px', border: 'none', backgroundColor: 'rgba(0, 0, 0, 0.07)', color: 'white',
         borderRadius: '5px', cursor: 'pointer', lineHeight: '1.2', transition: 'background-color 0.2s',
-        maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center'
+        width: '46%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right'
     });
-    etiquetaBtn.onmouseover = () => { etiquetaBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.8)'; };
-    etiquetaBtn.onmouseout = () => { etiquetaBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.6)'; };
+    etiquetaBtn.onmouseover = () => { etiquetaBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.2)'; };
+    etiquetaBtn.onmouseout = () => { etiquetaBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.07)'; };
 
     contenedor.appendChild(etiquetaBtn);
 
@@ -578,13 +580,13 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     arcoBtn.onclick = (e) => { e.stopPropagation(); mostrarMenuArcos(arcoBtn); };
 
     Object.assign(arcoBtn.style, {
-        position: 'absolute', bottom: '8px', left: '8px', zIndex: '3', padding: '4px 8px',
-        fontSize: '12px', border: 'none', backgroundColor: 'rgba(0, 0, 0, 0.6)', color: 'white',
+        position: 'absolute', bottom: '8px', left: '8px', zIndex: '3',   
+        fontSize: '12px', border: 'none', backgroundColor: 'rgba(0, 0, 0, 0.07)', color: 'white',
         borderRadius: '5px', cursor: 'pointer', lineHeight: '1.2', transition: 'background-color 0.2s',
-        maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center'
+        width: '46%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right'
     });
-    arcoBtn.onmouseover = () => { arcoBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.8)'; };
-    arcoBtn.onmouseout = () => { arcoBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.6)'; };
+    arcoBtn.onmouseover = () => { arcoBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.2)'; };
+    arcoBtn.onmouseout = () => { arcoBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.07)'; };
 
     contenedor.appendChild(arcoBtn);
 

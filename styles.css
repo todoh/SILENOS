@@ -216,7 +216,7 @@ padding-left: 1% !important; padding-right: 1% !important; /* Añadido para marg
 body input, body textarea {
     -webkit-autofill: none; font-size: large; }
 
-h2 {background-color: black; 
+h2 {background-color: black; font: helvetica !important; 
     color:#ffffff; 
      padding: 1%;
     line-height: 1;
@@ -288,10 +288,10 @@ img {
 ul {list-style-type: none;padding: 0;}
 li { margin-bottom: 10px;}
 button {
-    background-color: #e9ecef; 
+    background-color: #ffffff7a; 
     color: #333; 
     padding: 12px 20px;
-    border: 1px solid #ced4da; 
+    border: 0px solid #ced4da; 
     border-radius: 5px;
     cursor: pointer;
     font-size:small;
@@ -304,12 +304,12 @@ button {
 .tons { width: 100%;}
 
 
-button:hover {background-color:#dee2e6;  transform: scale(1.02);}
+button:hover {background-color:#dee2e6a1;  transform: scale(1.02);}
 button:active {transform: scale(0.95);}
 .guardado {margin: 1%;}
 .pro3 {background-color: #000000; color:rgb(255, 0, 0); border:none; width: auto;} 
 
-.pro {background-color: #5a6268; color:white; border:none;
+.pro {background-color: #000000; color:white; border:none;
 z-index: 1000;
 height: fit-content;
 width: fit-content;
@@ -2568,8 +2568,8 @@ transform: translateX(-50%);
             background-color: #a7f0c800;
             border-radius: 8px;
              width: auto;
-            height: 35%; left: 50%; top: 0%;
-            bottom: 65%;
+            height: 35%; left: 50%; top: 15%;
+            bottom: 50%;
             aspect-ratio: 1 / 1;
 
             transform:  translateX(-50%); 
