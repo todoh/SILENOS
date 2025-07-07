@@ -214,7 +214,7 @@ padding-left: 1% !important; padding-right: 1% !important; /* Añadido para marg
 
 
 body input, body textarea {
-    -webkit-autofill: none;  }
+    -webkit-autofill: none; font-size: large; }
 
 h2 {background-color: black; 
     color:#ffffff; 
@@ -1141,7 +1141,7 @@ width: 15%;
     overflow-y: hidden;
     margin-top:0%;
     padding: 0px;
-    gap: 10px; 
+    gap: 5px; 
     background-color: #f0f0f0;
 }
 
@@ -1168,13 +1168,13 @@ width: 15%;
 }
 
 .toma-card {
-    min-width: 250px;
-    width: 250px;
+    
+    min-width: 550px;
     height: 100%; 
     display: flex;
     flex-direction: column;
- 
-    margin-left: 1.4%;
+ font-size: large;
+    margin-left: 0.7%;
     padding: 8px;
     background-color: #fff;
     border: 1px solid #ddd;
@@ -1201,8 +1201,10 @@ width: 15%;
 }
 
 .toma-imagen-area {
-    height: 140px; 
+    height: auto; 
     flex-shrink: 0; 
+
+    aspect-ratio: 16 / 9;
     position: relative;
     background-color: #f0f0f0;
     border-radius: 6px;
@@ -1228,6 +1230,7 @@ width: 15%;
     flex-direction: column;
     gap: 5px;
     height: 40%; 
+    font-size: large;
 }
 .toma-textos-area > textarea,
 .toma-textos-area > .toma-prompt-container {
@@ -1961,8 +1964,25 @@ height: 75dvh;
 }
 .area-texto { resize: none; width: 30dvw; }
  
-.control-panel { display: flex; flex-direction: row; gap: 10px; max-width: 600px; margin: 0 auto 30px auto; }
-  
+.control-panel2d { display: flex; flex-direction: row; gap: 10px; max-width: 600px; margin: 0 auto 30px auto; }
+   .control-panel2d {
+position: fixed;
+width: 70%;
+top: 10%;
+left: 10%;
+
+        }
+
+
+.control-panel3d { display: flex; flex-direction: row; gap: 10px; max-width: 600px; margin: 0 auto 30px auto; }
+   .control-panel3d {
+position: fixed;
+width: 70%;
+top: 10%;
+left: 10%;
+
+        }
+
 #pre-production-container { max-width: 600px; margin: 0 auto; background-color: #222; padding: 20px; border-radius: 8px; }
 #asset-list .asset-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #444; }
 #asset-list .asset-item:last-child { border-bottom: none; }
@@ -2562,13 +2582,7 @@ transform: translateX(-50%);
             min-height: 1.2em;
         }        
 
-        .control-panel {
-position: fixed;
-width: 70%;
-top: 10%;
-left: 10%;
-
-        }
+       
 
 
 /* --- Estilos para la Galería de Generaciones --- */
@@ -2621,8 +2635,8 @@ left: 0%; right: 50%;
 }
 
 .generacion-item img {
-    width: 100%;
-    height: auto;
+    width: 100%; /* Ancho fijo para las imágenes */
+    height:auto; /* Altura fija para las imágenes */
     aspect-ratio: 1 / 1;
     object-fit: cover;
     display: block;
@@ -2630,6 +2644,7 @@ left: 0%; right: 50%;
 }
 
 .generacion-info {
+     height: 80px;
     padding: 0.75rem;
     background-color: #1a202c; /* Fondo más oscuro para la info */
     position: relative;

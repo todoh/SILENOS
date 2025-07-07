@@ -32,6 +32,50 @@
                 box-shadow: 0 0 0 10px rgba(22, 163, 74, 0);
             }
         }
+
+        /* Estilos para el interruptor 2D/3D */
+        .image-mode-toggle {
+            display: flex;
+            background-color: #333;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px; /* Espacio debajo del interruptor */
+            width: fit-content;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            position: absolute; /* Posiciona el interruptor */
+            top: 10px; /* Ajusta la posición superior */
+            left: 10px; /* Ajusta la posición izquierda */
+            z-index: 10; /* Asegura que esté por encima de otros elementos */
+        }
+
+        .image-mode-toggle button {
+            padding: 10px 15px;
+            border: none;
+            background-color: transparent;
+            color: #bbb;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex-grow: 1;
+        }
+
+        .image-mode-toggle button.active {
+            background-color: #007bff; /* Color azul para el activo */
+            color: white;
+            font-weight: bold;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+        }
+
+        .image-mode-toggle button:hover:not(.active) {
+            background-color: #555;
+            color: white;
+        }
+
+        /* Asegura que los paneles de control tengan un posicionamiento relativo para el switch */
+        #imagenes .container {
+            position: relative;
+            padding-top: 60px; /* Espacio para el interruptor */
+        }
     </style>
 
     <link rel="stylesheet" href="escenas/styles.css">
@@ -441,7 +485,6 @@
     
     
 
-
 </div>
 
 <div id="animaciones" style="display: none;">
@@ -500,10 +543,17 @@
 
 <div id="imagenes" style="display: none;">
     <div class="container">
-        <div class="control-panel">
+        <!-- Interruptor 2D/3D -->
+        <div class="image-mode-toggle">
+            <button id="toggle-2d-btn" class="active">2D</button>
+            <button id="toggle-3d-btn">3D</button>
+        </div>
+
+        <!-- Panel de control 2D (existente) -->
+        <div class="control-panel" id="control-panel-2d">
             <textarea class="area-texto" id="user-prompt-input" placeholder="Ej: 'un hechicero de hielo en un bosque nevado', 'un caballero con armadura dorada frente a un castillo'"></textarea>
             <button id="btn-generate">Diseñar y Renderizar Escena</button>
-            
+            <button id="btn-save-generation" style="display: none;">Guardar en Generaciones</button>
             <div class="json-importer-container">
                 <h3>Importar desde JSON</h3>
                 <textarea id="json-input-area" placeholder="Pega aquí el JSON de uno o varios elementos..." class="area-texto"></textarea>
@@ -514,13 +564,44 @@
                 </div>
             </div>
             <div id="render-container" style="display: none;">
-                <canvas id="render-canvas" width="512" height="512"></canvas>
+                <canvas id="render-canvas" width="512" height="512"></canvas> <p id="status-message"></p> 
             </div>
             
-            <p id="status-message"></p> 
-            <button id="btn-save-generation" style="display: none;">Guardar en Generaciones</button>
+           
+            
         </div>
         
+
+
+
+        <!-- Nuevo Panel de control 3D -->
+        <div class="control-panel" id="control-panel-3d" style="display: none;">
+<div id="generador-3d-panel" class="generador-panel">
+            <h3>Generador 3D</h3>
+            <div class="prompt-section">
+                <textarea id="user-prompt-input-3d" placeholder="Describe la escena 3D que quieres crear... por ejemplo: 'un cohete rojo y blanco en el centro, y un pequeño planeta azul a su derecha'"></textarea>
+                <button id="btn-generate-3d" class="btn-icon" title="Generar Escena 3D">
+                   Generar 3D
+                     
+                </button>
+            </div>
+            <div id="render-container-3d" style="width: 100%; height: 400px; position: relative; border-radius: 8px; overflow: hidden;">
+                <canvas id="render-canvas-3d"></canvas>
+                <div id="status-message-3d" class="status-message">Esperando prompt...</div>
+             <button id="btn-save-generation-3d" class="btn-primary">Guardar Generación</button></div>
+            
+            <div class="actions-section">
+               
+            </div>
+        </div>
+
+
+         
+   
+   
+   
+        </div>
+
         <div id="generaciones-container" style="display: none;">
             <div id="generaciones-grid">
                 </div>
@@ -617,7 +698,6 @@
 </div>
  
 
-
 <div id="guion-literario">
     <div id="guion-toolbar">
         <!-- El botón para abrir el selector de guiones se mueve aquí -->
@@ -688,7 +768,7 @@
 <div id="capitulosh">
     <button id="selector-libro-btn" class="pro6" onclick="abrirSelectorDeLibro(event)">☰</button>
     
-    <div id="libro-activo-titulo">Selecciona un libro para empezar</div>
+    <div id="libro-activo-titulo"> </div>
     
     <button class="pro5" id="sumarpersonaje" onclick="nuevaEscena()">➕</button>
 
@@ -997,6 +1077,7 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 </script>
 
 <!-- <script src="escenas/geminivideo.js"></script> <!-- This was a duplicate load and has been removed -->
+
 <script src="escenas/generacion2d.js"></script>
 <script src="momentos.js"></script>
 <script src="editor-momento.js"></script> 
@@ -1009,6 +1090,10 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 <script src="geminialfa.js"></script>
 <script src="geminivisual.js"></script>
 <script src="generador.js"></script>
+<script src="generador3d.js"></script> <!-- Nuevo script para 3D -->
+
+<script src="compositor-escenas.js"></script> 
+
 <script src="gestionEscenas.js"></script>  
 <script src="exportar.js"></script>
 <script src="exportarjuego.js"></script>
@@ -1082,6 +1167,32 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
         asistentePopup.addEventListener('click', (event) => {
             event.stopPropagation();
         });
+
+        // Lógica del interruptor 2D/3D en la sección de imágenes
+        const toggle2dBtn = document.getElementById('toggle-2d-btn');
+        const toggle3dBtn = document.getElementById('toggle-3d-btn');
+        const controlPanel2d = document.getElementById('control-panel-2d');
+        const controlPanel3d = document.getElementById('control-panel-3d');
+
+        function toggleImageMode(mode) {
+            if (mode === '2d') {
+                toggle2dBtn.classList.add('active');
+                toggle3dBtn.classList.remove('active');
+                controlPanel2d.style.display = 'block'; // O 'flex' si es un flex container
+                controlPanel3d.style.display = 'none';
+            } else if (mode === '3d') {
+                toggle3dBtn.classList.add('active');
+                toggle2dBtn.classList.remove('active');
+                controlPanel3d.style.display = 'block'; // O 'flex'
+                controlPanel2d.style.display = 'none';
+            }
+        }
+
+        toggle2dBtn.addEventListener('click', () => toggleImageMode('2d'));
+        toggle3dBtn.addEventListener('click', () => toggleImageMode('3d'));
+
+        // Establecer el modo 2D como predeterminado al cargar la página
+        toggleImageMode('2d');
     });
 </script>
 

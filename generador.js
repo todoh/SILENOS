@@ -1,508 +1,495 @@
 // =================================================================
-// ARCHIVO CORREGIDO: datos/generador.js
-// Se ha restaurado la funcionalidad para procesar archivos JSON de dibujo,
-// manteniendo al mismo tiempo el generador principal basado en prompts.
+// ARCHIVO REFACTORIZADO: generador.js (Versión 3 - Plan y Ejecución)
+// =================================================================
+// OBJETIVOS DE LA REFACTORIZACIÓN:
+// 1. GENERACIÓN EN DOS PASOS (NUEVA LÓGICA):
+//    - PASO 1: Descomposición conceptual. Define qué componentes existen y cómo deben ensamblarse.
+//    - PASO 2: Ejecución geométrica. Traduce el plan en formas, posiciones y estilos visuales.
+// 2. RENDERIZADO MEJORADO: Se añade soporte para degradados lineales.
+// 3. ARQUITECTURA MODULAR: Lógica de API, Renderizado y Generación separada.
+// 4. MANTENIBILIDAD: Código más limpio, comentado y fácil de extender.
 // =================================================================
 
-// --- Elementos del DOM y Event Listeners ---
-const generateButton = document.getElementById('btn-generate');
-const saveButton = document.getElementById('btn-save-generation');
-const promptInput = document.getElementById('user-prompt-input');
-const processJsonButton = document.getElementById('btn-process-json');
-const jsonFileInput = document.getElementById('json-file-input');
+// -----------------------------------------------------------------
+// MÓDULO 1: CONFIGURACIÓN Y UTILIDADES
+// -----------------------------------------------------------------
 
-// Listeners para la generación principal por prompt
-if (generateButton) {
-    generateButton.addEventListener('click', handleGeneration);
-}
-if (saveButton) {
-    saveButton.addEventListener('click', saveGeneration);
-}
-if (promptInput) {
-    promptInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleGeneration();
-        }
-    });
-}
+const CANVAS_WIDTH = 512;
+const CANVAS_HEIGHT = 512;
 
-// --- INICIO: CÓDIGO RESTAURADO PARA IMPORTAR JSON ---
-// Listeners para la funcionalidad de importar JSON
-if (processJsonButton) {
-    processJsonButton.addEventListener('click', processJsonInput);
-}
-if (jsonFileInput) {
-    jsonFileInput.addEventListener('change', handleJsonFileSelect);
+// Variable para almacenar la última respuesta geométrica para el guardado.
+let lastGeometricData = null;
+
+/**
+ * Muestra una alerta personalizada no bloqueante.
+ * @param {string} message - El mensaje a mostrar.
+ */
+function showCustomAlert(message) {
+    const existingAlert = document.getElementById('custom-alert-modal');
+    if (existingAlert) existingAlert.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'custom-alert-modal';
+    modal.style.cssText = `position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background-color: #2c3e50; color: #ecf0f1; padding: 15px 25px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 1001; display: flex; align-items: center; gap: 15px; font-family: sans-serif;`;
+    modal.innerHTML = `<p style="margin: 0;">${message}</p><button style="padding: 5px 10px; background-color: #3498db; color: #fff; border: none; border-radius: 5px; cursor: pointer;">OK</button>`;
+    document.body.appendChild(modal);
+    modal.querySelector('button').onclick = () => modal.remove();
+    setTimeout(() => modal.remove(), 5000);
 }
 
 /**
- * Maneja la selección de un archivo JSON y lo carga en el área de texto.
- * @param {Event} event - El evento 'change' del input.
+ * Una simple promesa de retardo.
+ * @param {number} ms - Milisegundos a esperar.
  */
-function handleJsonFileSelect(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const fileContent = e.target.result;
-        const jsonInputArea = document.getElementById('json-input-area');
-        if (jsonInputArea) {
-            jsonInputArea.value = fileContent;
-            processJsonInput(); // Procesa automáticamente el contenido
-        }
-    };
-    reader.readAsText(file);
-}
-
-/**
- * Procesa el JSON que contiene instrucciones de dibujo (formas)
- * y reconstruye las imágenes para añadirlas a la galería.
- */
-function processJsonInput() {
-    const jsonInputArea = document.getElementById('json-input-area');
-    if (!jsonInputArea) return;
-
-    const jsonText = jsonInputArea.value;
-    if (!jsonText.trim()) {
-        showCustomAlert('El área de texto JSON está vacía.');
-        return;
-    }
-
-    try {
-        let data = JSON.parse(jsonText);
-        // Asegura que siempre trabajemos con un array
-        if (!Array.isArray(data)) {
-            data = [data];
-        }
-
-        let itemsAdded = 0;
-        data.forEach(itemData => {
-            // Verifica que el objeto tenga las propiedades necesarias
-            if (!itemData.nombre || !itemData.formas || !Array.isArray(itemData.formas)) {
-                console.warn('Saltando un elemento del JSON. Debe tener "nombre" y un array de "formas".', itemData);
-                return;
-            }
-
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = 512;
-            tempCanvas.height = 512;
-            const tempCtx = tempCanvas.getContext('2d');
-            
-            // Dibuja las formas en el canvas temporal
-            itemData.formas.forEach(forma => {
-                dibujarForma(tempCtx, forma);
-            });
-
-            // Guarda la imagen generada en la galería
-            agregarImagenAGaleria(tempCanvas.toDataURL(), itemData.nombre);
-            itemsAdded++;
-        });
-
-        if (itemsAdded > 0) {
-            jsonInputArea.value = '';
-            showCustomAlert(`¡${itemsAdded} imágenes reconstruidas desde JSON y añadidas a la galería!`);
-        } else {
-            showCustomAlert('No se añadieron nuevos elementos. Revisa el formato del JSON.');
-        }
-
-    } catch (error) {
-        console.error('Error al procesar JSON:', error);
-        showCustomAlert('Error al procesar el JSON. Revisa el formato y la consola.');
-    }
-}
-
-/**
- * Dibuja una forma simple en el canvas.
- * Esta función es la que interpreta el formato de formas del JSON importado.
- */
-function dibujarForma(ctx, forma) {
-    ctx.fillStyle = forma.color || '#333';
-    ctx.strokeStyle = forma.color || '#333';
-    ctx.lineWidth = 2;
-
-    ctx.save();
-    ctx.translate(forma.posición[0], forma.posición[1]);
-    ctx.rotate((forma.rotación || 0) * Math.PI / 180);
-
-    switch (forma.forma) {
-        case 'rectángulo':
-            ctx.fillRect(-forma.tamaño[0] / 2, -forma.tamaño[1] / 2, forma.tamaño[0], forma.tamaño[1]);
-            break;
-        case 'círculo':
-            ctx.beginPath();
-            ctx.arc(0, 0, forma.tamaño, 0, 2 * Math.PI);
-            ctx.fill();
-            break;
-    }
-    ctx.restore();
-}
-
-/**
- * Añade una imagen y su prompt a la galería de generaciones.
- */
-function agregarImagenAGaleria(imageUrl, prompt) {
-    const generacionesContainer = document.getElementById('generaciones-container');
-    const generacionesGrid = document.getElementById('generaciones-grid');
-    if (!generacionesGrid || !generacionesContainer) return;
-
-    generacionesContainer.style.display = 'block';
-
-    const itemContainer = document.createElement('div');
-    itemContainer.className = 'generacion-item';
-
-    const imgElement = document.createElement('img');
-    imgElement.src = imageUrl;
-
-    const infoContainer = document.createElement('div');
-    infoContainer.className = 'generacion-info';
-
-    const promptText = document.createElement('p');
-    promptText.className = 'generacion-prompt';
-    promptText.contentEditable = true;
-    promptText.textContent = prompt || 'Sin prompt';
-
-    const deleteButton = document.createElement('button');
-    deleteButton.className = 'generacion-delete-btn';
-    deleteButton.innerHTML = '&times;';
-    deleteButton.title = 'Eliminar esta imagen';
-    deleteButton.onclick = () => itemContainer.remove();
-
-    infoContainer.appendChild(promptText);
-    infoContainer.appendChild(deleteButton);
-    itemContainer.appendChild(imgElement);
-    itemContainer.appendChild(infoContainer);
-
-    generacionesGrid.prepend(itemContainer);
-}
-// --- FIN: CÓDIGO RESTAURADO PARA IMPORTAR JSON ---
-
-
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
-/**
- * Genera una imagen a partir de un prompt y devuelve su Data URL.
- */
-async function generarImagenParaToma(prompt, statusContainer = null) {
-    const tempCanvas = document.createElement('canvas');
-    const tempCtx = tempCanvas.getContext('2d');
-    tempCanvas.width = 512;
-    tempCanvas.height = 512;
 
-    const allDrawnShapes = [];
+// -----------------------------------------------------------------
+// MÓDULO 2: MANEJO DEL DOM Y EVENTOS
+// -----------------------------------------------------------------
 
-    const updateStatus = (message) => {
-        if (statusContainer) {
-            statusContainer.textContent = message;
-        }
-        console.log(message);
-    };
+const DOM = {
+    promptInput: document.getElementById('user-prompt-input'),
+    generateButton: document.getElementById('btn-generate'),
+    saveButton: document.getElementById('btn-save-generation'),
+    statusMessage: document.getElementById('status-message'),
+    canvas: document.getElementById('render-canvas'),
+    renderContainer: document.getElementById('render-container'),
+    jsonFileInput: document.getElementById('json-file-input'),
+    processJsonButton: document.getElementById('btn-process-json'),
+    jsonInputArea: document.getElementById('json-input-area'),
+};
 
-    try {
-        updateStatus('Creando plan de diseño...');
-        const planPrompt = createScenePlanPrompt(prompt);
-        const scenePlanJson = await callApiAndParseJson(planPrompt);
-        const scenePlan = scenePlanJson.scene_plan;
-
-        if (!Array.isArray(scenePlan) || scenePlan.length === 0) {
-            throw new Error("La IA no pudo planificar la entidad.");
-        }
-
-        updateStatus('Construyendo entidad...');
-        for (const task of scenePlan) {
-            await executeTask(task, prompt, allDrawnShapes, tempCtx, (msg) => updateStatus(msg));
-        }
-
-        if (allDrawnShapes.length > 0) {
-            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-            allDrawnShapes.forEach(comp => {
-                 if (comp.type === 'rect') { minX = Math.min(minX, comp.position.x); maxX = Math.max(maxX, comp.position.x + comp.size.width); minY = Math.min(minY, comp.position.y); maxY = Math.max(maxY, comp.position.y + comp.size.height); }
-                 else if (comp.type === 'circle') { minX = Math.min(minX, comp.position.x - comp.size.radius); maxX = Math.max(maxX, comp.position.x + comp.size.radius); minY = Math.min(minY, comp.position.y - comp.size.radius); maxY = Math.max(maxY, comp.position.y + comp.size.radius); }
-                 else if (comp.type === 'line') { minX = Math.min(minX, comp.start.x, comp.end.x); maxX = Math.max(maxX, comp.start.x, comp.end.x); minY = Math.min(minY, comp.start.y, comp.end.y); maxY = Math.max(maxY, comp.start.y, comp.end.y); }
-                 else if (comp.type === 'polygon' && comp.points) { comp.points.forEach(p => { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); }); }
-            });
-
-            const compositionWidth = maxX - minX;
-            const compositionHeight = maxY - minY;
-            let scaleFactor = Math.min(tempCanvas.width / compositionWidth, tempCanvas.height / compositionHeight) * 0.9;
-            const scaledWidth = compositionWidth * scaleFactor;
-            const scaledHeight = compositionHeight * scaleFactor;
-            const translateX = (tempCanvas.width - scaledWidth) / 2 - minX * scaleFactor;
-            const translateY = tempCanvas.height - scaledHeight - minY * scaleFactor - (tempCanvas.height * 0.05);
-
-            tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
-            tempCtx.save();
-            tempCtx.translate(translateX, translateY);
-            tempCtx.scale(scaleFactor, scaleFactor);
-            renderComponentGroup(allDrawnShapes, tempCtx);
-            tempCtx.restore();
-        }
-
-        updateStatus('¡Imagen completada!');
-        return tempCanvas.toDataURL('image/png');
-
-    } catch (error) {
-        console.error("Error en el proceso de generación para la toma:", error);
-        updateStatus(`Error: ${error.message}`);
-        throw error;
-    }
-}
-
-/**
- * Orchestrates the hierarchical generation process for the main UI.
- */
-async function handleGeneration() {
-    const userPrompt = promptInput.value;
-    if (!userPrompt) {
-        showCustomAlert("Por favor, describe la entidad que quieres crear.");
-        return;
-    }
-
-    console.log("Iniciando diseño de la entidad:", userPrompt);
-    const renderContainer = document.getElementById('render-container');
-    const statusMessage = document.getElementById('status-message');
-    const canvas = document.getElementById('render-canvas');
-    const ctx = canvas.getContext('2d');
-
-    renderContainer.style.display = 'block';
-    generateButton.disabled = true;
-    saveButton.style.display = 'none';
-    
-    canvas.width = 512;
-    canvas.height = 512;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    try {
-        const imageUrl = await generarImagenParaToma(userPrompt, statusMessage);
-        
-        const img = new Image();
-        img.onload = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0);
-            statusMessage.textContent = '¡Entidad completada!';
-            saveButton.style.display = 'inline-block';
-        };
-        img.src = imageUrl;
-
-    } catch (error) {
-        console.error("Error en el proceso de generación principal:", error);
-        statusMessage.textContent = `Error: ${error.message}`;
-    } finally {
-        generateButton.disabled = false;
-    }
-}
-
-/**
- * Executes a task from the plan, with delays between sub-tasks.
- */
-async function executeTask(task, contextPrompt, allDrawnShapes, ctx, updateStatusCallback) {
-    updateStatusCallback(`Ejecutando: ${task.description}`);
-    console.log(`--- Ejecutando Tarea: ${task.task_type} (${task.description}) ---`);
-    
-    if (task.task_type === "draw_character" && Array.isArray(task.sub_tasks)) {
-        for (const subTask of task.sub_tasks) {
-             updateStatusCallback(`Dibujando: ${subTask.description}`);
-             await executeLayer(subTask.description, contextPrompt, allDrawnShapes, ctx);
-             await delay(500);
-        }
-    } else {
-        await executeLayer(task.description, contextPrompt, allDrawnShapes, ctx);
-        await delay(500);
-    }
-}
-
-/**
- * Generates and renders a specific layer.
- */
-async function executeLayer(layerDescription, contextPrompt, allDrawnShapes, ctx) {
-    const layerPrompt = createLayerPrompt(layerDescription, contextPrompt, allDrawnShapes);
-    const newLayer = await callApiAndParseJson(layerPrompt);
-    
-    console.log(`Capa '${layerDescription}' recibida:`, newLayer);
-    
-    if (newLayer.components && Array.isArray(newLayer.components)) {
-        renderComponentGroup(newLayer.components, ctx);
-        allDrawnShapes.push(...newLayer.components);
-    }
-}
-
-/**
- * Saves the current canvas content to the Generations gallery.
- */
-function saveGeneration() {
-    const canvas = document.getElementById('render-canvas');
-    const currentPrompt = promptInput.value;
-    if (!canvas) return;
-
-    try {
-        const imageDataUrl = canvas.toDataURL('image/png');
-        // Reutilizamos la función ya creada
-        agregarImagenAGaleria(imageDataUrl, currentPrompt);
-        showCustomAlert('Imagen guardada en la galería de Generaciones.');
-    } catch (error) {
-        console.error("Error al guardar la imagen del canvas:", error);
-        showCustomAlert(`Error al guardar la imagen: ${error.message}`);
-    }
-}
-
-
-/**
- * PHASE 1: Asks the AI for a design plan.
- */
-function createScenePlanPrompt(userPrompt) {
-    return `
-        Tu tarea es actuar como un director de arte y descomponer una entidad 2D en un plan de construcción lógico.
-        La descripción es: "${userPrompt}".
-        El plan debe ser una secuencia de tareas para construir el objeto o personaje principal.
-        IMPORTANTE: El plan NO debe incluir una tarea para dibujar un fondo (como "draw_background"). El objetivo es generar solo el personaje/objeto principal sobre un fondo transparente.
-        El resultado debe ser un único objeto JSON.
-        Asegúrate de que el estilo general sea claro y definido, sin efectos de iluminación o sombreado complejos.
-        Ejemplo de estructura para "un hechicero":
-        { "scene_plan": [ { "task_type": "draw_character", "description": "el hechicero", "sub_tasks": [ { "step": "draw_base_body", "description": "la forma base del cuerpo del hechicero" }, { "step": "draw_clothing", "description": "la túnica y el sombrero del hechicero" }, { "step": "draw_accessories", "description": "el bastón mágico del hechicero" } ] } ] }
-    `;
-}
-
-/**
- * PHASE 2: Asks the AI to design a specific layer.
- */
-function createLayerPrompt(layerDescription, contextPrompt, existingShapes) {
-    const jsonStructure = `
-      { "components": [ { "part": "nombre de la pieza", "type": "rect" | "circle" | "line" | "polygon", "style": { "fillStyle": "#hex", "strokeStyle": "#hex", "lineWidth": number }, "position": {"x": number, "y": number}, "size": {"width": number, "height": number, "radius": number}, "start": {"x": number, "y": number}, "end": {"x": number, "y": number}, "points": [ {"x": number, "y": number}, {"x": number, "y": number}, ... ] } ] }
-    `;
-    const existingShapesJSON = JSON.stringify(existingShapes.slice(-15), null, 2);
-    return `
-        Estás diseñando una entidad 2D pieza por pieza sobre un lienzo transparente de 512x512. El concepto general es: "${contextPrompt}".
-        Los siguientes componentes ya han sido dibujados:
-        ${existingShapesJSON}
-        Tu tarea AHORA es diseñar la siguiente capa: "${layerDescription}".
-        Devuelve un objeto JSON con un array de formas ("components") para esta capa. 
-        ¡Usa "polygon" con múltiples puntos para crear formas detalladas y menos geométricas! Esto es clave para la calidad.
-        Las nuevas formas deben encajar lógica y visualmente con las piezas existentes.
-        Usa solo las formas "rect", "circle", "line" o "polygon". Sé muy estricto con la estructura JSON.
-        Utiliza colores planos y definidos, sin efectos de brillo o sombreado. Evita los degradados.
-        ESTRUCTURA JSON REQUERIDA:
-        ---
-        ${jsonStructure}
-        ---
-    `;
-}
-
-/**
- * Draws a group of components on the canvas.
- */
-function renderComponentGroup(components, ctx) {
-    if (!Array.isArray(components)) return;
-    components.forEach(comp => {
-        if (!comp || !comp.type) { console.warn("Componente inválido, omitido:", comp); return; }
-        const style = comp.style || {};
-        ctx.fillStyle = style.fillStyle || 'transparent';
-        ctx.strokeStyle = style.strokeStyle || '#000000';
-        ctx.lineWidth = style.lineWidth || 1;
-        ctx.beginPath();
-        switch (comp.type) {
-            case 'rect': if (comp.position && comp.size) { ctx.rect(comp.position.x, comp.position.y, comp.size.width, comp.size.height); } break;
-            case 'circle': if (comp.position && comp.size && comp.size.radius) { ctx.arc(comp.position.x, comp.position.y, comp.size.radius, 0, Math.PI * 2); } break;
-            case 'line': if (comp.start && comp.end) { ctx.moveTo(comp.start.x, comp.start.y); ctx.lineTo(comp.end.x, comp.end.y); } break;
-            case 'polygon': if (comp.points && comp.points.length > 1) { ctx.moveTo(comp.points[0].x, comp.points[0].y); for (let i = 1; i < comp.points.length; i++) { ctx.lineTo(comp.points[i].x, comp.points[i].y); } ctx.closePath(); } break;
-        }
-        if (comp.type === 'line') { if ((style.lineWidth || 0) > 0) ctx.stroke(); } else { if (style.fillStyle && style.fillStyle !== 'transparent') ctx.fill(); if (style.strokeStyle && (style.lineWidth || 0) > 0) ctx.stroke(); }
-    });
-}
-
-// --- API COMMUNICATION AND UTILITY FUNCTIONS ---
-
-/**
- * Calls the Gemini API, extracts JSON, and manages retries.
- */
-async function callApiAndParseJson(prompt, maxRetries = 3) {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            const rawResponse = await callGeminiApiInternal(prompt);
-            const parsedJson = extractJson(rawResponse);
-            return parsedJson;
-        } catch (error) {
-            console.error(`Attempt ${attempt} failed:`, error);
-            if (attempt === maxRetries) {
-                throw new Error("The API did not respond with valid JSON after several attempts.");
+function inicializarEventos() {
+    if (DOM.generateButton) DOM.generateButton.addEventListener('click', handleGeneration);
+    if (DOM.saveButton) DOM.saveButton.addEventListener('click', handleSaveCurrentCanvas);
+    if (DOM.promptInput) {
+        DOM.promptInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleGeneration();
             }
-            await delay(1000);
-        }
+        });
+    }
+    if (DOM.processJsonButton) DOM.processJsonButton.addEventListener('click', handleProcessJsonInput);
+    if (DOM.jsonFileInput) DOM.jsonFileInput.addEventListener('change', handleJsonFileSelect);
+    if (DOM.canvas) {
+        DOM.canvas.width = CANVAS_WIDTH;
+        DOM.canvas.height = CANVAS_HEIGHT;
     }
 }
 
-/**
- * Performs the fetch call to the Google Gemini API.
- */
-async function callGeminiApiInternal(prompt) {
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+function actualizarUI(generando, mensaje = '') {
+    if (DOM.statusMessage) DOM.statusMessage.textContent = mensaje;
+    if (DOM.generateButton) DOM.generateButton.disabled = generando;
+    if (DOM.saveButton) DOM.saveButton.style.display = !generando && lastGeometricData ? 'inline-block' : 'none';
+    if (DOM.renderContainer) DOM.renderContainer.style.display = 'block';
+    console.log(`[GENERADOR]: ${mensaje}`);
+}
+
+// -----------------------------------------------------------------
+// MÓDULO 3: COMUNICACIÓN CON LA API (GEMINI)
+// -----------------------------------------------------------------
+
+function extractJson(text) {
+    const match = text.match(/```json\s*([\s\S]*?)\s*```/);
+    const jsonString = match ? match[1] : text;
+    try {
+        return JSON.parse(jsonString);
+    } catch (error) {
+        console.error("Fallo al parsear JSON. String recibido:", jsonString);
+        throw new Error("La respuesta de la API no contenía un JSON válido.");
+    }
+}
+
+async function callApi(prompt, maxRetries = 3) {
     
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-06-17:generateContent?key=${apiKey}`;
+
     const payload = {
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
             responseMimeType: "application/json",
-            temperature: 0.7,
-            maxOutputTokens: 8192
+            temperature: 0.8,
+            maxOutputTokens: 8192,
         }
     };
 
-    const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-        const errorBody = await response.text();
-        console.error("API Error Body:", errorBody);
-        throw new Error(`Error en la API de Gemini: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    
-    if (!data.candidates || !data.candidates[0].content.parts[0].text) {
-         console.error("Unexpected API response:", data);
-         throw new Error("The API response does not have the expected format.");
-    }
-    
-    return data.candidates[0].content.parts[0].text;
-}
-
-/**
- * Extracts a JSON code block from the text returned by the API.
- */
-function extractJson(text) {
-    try {
-        return JSON.parse(text);
-    } catch (error) {
-        const match = text.match(/```json\s*([\s\S]*?)\s*```/);
-        const jsonString = match ? match[1] : text;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-            return JSON.parse(jsonString);
-        } catch (parseError) {
-            console.error("Failed to parse JSON:", parseError);
-            console.log("String that failed:", jsonString);
-            throw new Error("The received text is not valid JSON.");
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorBody = await response.text();
+                throw new Error(`Error en la API: ${response.statusText}. Cuerpo: ${errorBody}`);
+            }
+
+            const data = await response.json();
+            const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+            if (!rawText) throw new Error("La respuesta de la API no tiene el formato esperado.");
+            return extractJson(rawText);
+
+        } catch (error) {
+            console.error(`Intento ${attempt} de llamada a la API fallido:`, error.message);
+            if (attempt === maxRetries) throw error;
+            await delay(1000 * attempt);
         }
     }
 }
 
-/**
- * Displays a simple custom alert in the browser.
- */
-function showCustomAlert(message) {
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-        position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-        background-color: #333; color: #eee; padding: 15px 25px; border-radius: 8px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 1001;
-        text-align: center;
-        display: flex; align-items: center; gap: 15px;
-    `;
-    modal.innerHTML = `<p style="margin: 0;">${message}</p><button style="padding: 5px 10px; background-color: #555; color: #fff; border: 1px solid #666; border-radius: 5px; cursor: pointer;">OK</button>`;
-    document.body.appendChild(modal);
+// -----------------------------------------------------------------
+// MÓDULO 4: LÓGICA DE RENDERIZADO (CANVAS 2D)
+// -----------------------------------------------------------------
 
-    modal.querySelector('button').onclick = () => {
-        document.body.removeChild(modal);
-    };
+/**
+ * Dibuja un único componente en el canvas.
+ * Ahora soporta colores sólidos y degradados lineales.
+ * @param {CanvasRenderingContext2D} ctx - El contexto del canvas.
+ * @param {object} comp - El objeto componente a dibujar.
+ */
+function dibujarComponente(ctx, comp) {
+    if (!comp || !comp.forma || !comp.posición || !comp.estilo) return;
+    ctx.save();
+
+    const estilo = comp.estilo;
+    const relleno = estilo.relleno || {};
+    
+    ctx.globalAlpha = estilo.opacidad ?? 1;
+    ctx.strokeStyle = estilo.borde_color || 'transparent';
+    ctx.lineWidth = estilo.borde_grosor || 0;
+
+    // --- Configuración de Relleno (Sólido o Degradado) ---
+    if (relleno.tipo === 'solido') {
+        ctx.fillStyle = relleno.color || 'transparent';
+    } else if (relleno.tipo === 'degradado_lineal' && Array.isArray(relleno.colores) && relleno.colores.length >= 2) {
+        try {
+            // Las coordenadas del degradado son relativas al centro de la forma, que ahora está en (0,0) por el translate
+            const grad = ctx.createLinearGradient(relleno.inicio.x, relleno.inicio.y, relleno.fin.x, relleno.fin.y);
+            const step = 1 / (relleno.colores.length - 1);
+            relleno.colores.forEach((color, index) => {
+                grad.addColorStop(index * step, color);
+            });
+            ctx.fillStyle = grad;
+        } catch (e) {
+            console.error("Error al crear el degradado. Usando color sólido por defecto.", e);
+            ctx.fillStyle = relleno.colores[0] || 'transparent';
+        }
+    } else {
+        ctx.fillStyle = 'transparent';
+    }
+
+    ctx.translate(comp.posición[0], comp.posición[1]);
+    ctx.rotate((comp.rotación || 0) * Math.PI / 180);
+
+    // --- Dibujo de la Forma ---
+    ctx.beginPath();
+    switch (comp.forma) {
+        case 'rectángulo':
+            if (comp.tamaño?.ancho) ctx.rect(-comp.tamaño.ancho / 2, -comp.tamaño.alto / 2, comp.tamaño.ancho, comp.tamaño.alto);
+            break;
+        case 'círculo':
+            if (comp.tamaño?.radio) ctx.arc(0, 0, comp.tamaño.radio, 0, 2 * Math.PI);
+            break;
+        case 'poligono':
+            if (comp.puntos?.length > 1) {
+                ctx.moveTo(comp.puntos[0].x, comp.puntos[0].y);
+                for (let i = 1; i < comp.puntos.length; i++) ctx.lineTo(comp.puntos[i].x, comp.puntos[i].y);
+                ctx.closePath();
+            }
+            break;
+    }
+
+    if (ctx.fillStyle !== 'transparent') ctx.fill();
+    if (ctx.lineWidth > 0) ctx.stroke();
+    
+    ctx.restore();
 }
+
+
+function renderizarEscena(componentes, ctx) {
+    if (!Array.isArray(componentes) || componentes.length === 0) {
+        showCustomAlert("No se recibieron componentes para dibujar.");
+        return;
+    }
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    componentes.forEach(comp => {
+        if (!comp?.posición) return;
+        const pos = comp.posición;
+        let cMinX, cMaxX, cMinY, cMaxY;
+        const size = comp.tamaño || {};
+        switch (comp.forma) {
+            case 'rectángulo': cMinX = pos[0] - size.ancho / 2; cMaxX = pos[0] + size.ancho / 2; cMinY = pos[1] - size.alto / 2; cMaxY = pos[1] + size.alto / 2; break;
+            case 'círculo': cMinX = pos[0] - size.radio; cMaxX = pos[0] + size.radio; cMinY = pos[1] - size.radio; cMaxY = pos[1] + size.radio; break;
+            case 'poligono': const xs = comp.puntos.map(p => p.x); const ys = comp.puntos.map(p => p.y); cMinX = pos[0] + Math.min(...xs); cMaxX = pos[0] + Math.max(...xs); cMinY = pos[1] + Math.min(...ys); cMaxY = pos[1] + Math.max(...ys); break;
+            default: return;
+        }
+        minX = Math.min(minX, cMinX); maxX = Math.max(maxX, cMaxX); minY = Math.min(minY, cMinY); maxY = Math.max(maxY, cMaxY);
+    });
+    if (minX === Infinity) { showCustomAlert("Los componentes no tenían formas válidas."); return; }
+    const drawingWidth = maxX - minX;
+    const drawingHeight = maxY - minY;
+    const scale = Math.min(ctx.canvas.width / drawingWidth, ctx.canvas.height / drawingHeight) * 0.9;
+    const offsetX = (ctx.canvas.width - drawingWidth * scale) / 2 - minX * scale;
+    const offsetY = (ctx.canvas.height - drawingHeight * scale) / 2 - minY * scale;
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.save();
+    ctx.translate(offsetX, offsetY);
+    ctx.scale(scale, scale);
+    componentes.sort((a, b) => (a.estilo?.zIndex || 0) - (b.estilo?.zIndex || 0));
+    componentes.forEach(comp => dibujarComponente(ctx, comp));
+    ctx.restore();
+}
+
+// -----------------------------------------------------------------
+// MÓDULO 5: GESTIÓN DE DATOS Y GUARDADO
+// -----------------------------------------------------------------
+
+async function handleSaveCurrentCanvas() {
+    if (!DOM.canvas) return;
+    
+    const currentPrompt = DOM.promptInput.value;
+    const imageDataUrl = DOM.canvas.toDataURL('image/png');
+    
+    try {
+        if (typeof agregarPersonajeDesdeDatos === 'undefined' || typeof opcionesEtiqueta === 'undefined') {
+            throw new Error("Las funciones para guardar en 'Datos' no están disponibles.");
+        }
+        
+        const nombre = lastGeometricData?.nombre || "Sin Título";
+        const etiqueta = lastGeometricData?.etiqueta || 'objeto';
+
+        agregarPersonajeDesdeDatos({
+            nombre: nombre,
+            descripcion: `Copia guardada manualmente desde: "${currentPrompt}"`,
+            imagen: imageDataUrl,
+            etiqueta: etiqueta,
+            arco: 'sin_arco'
+        });
+        showCustomAlert(`Elemento guardado como "${nombre}" en Datos.`);
+
+    } catch (error) {
+        console.error("Error al guardar la generación:", error);
+        showCustomAlert(`Error al guardar: ${error.message}`);
+    }
+}
+
+function autoSaveData(conceptualData, geometricData) {
+    if (!DOM.canvas) return;
+    
+    try {
+        if (typeof agregarPersonajeDesdeDatos === 'undefined') {
+            throw new Error("La función 'agregarPersonajeDesdeDatos' no está disponible.");
+        }
+        
+        const imageDataUrl = DOM.canvas.toDataURL('image/png');
+        const nombre = conceptualData.nombre_modelo || "Modelo Generado";
+        const etiqueta = conceptualData.etiqueta || "objeto";
+        const descripcion = conceptualData.descripcion_general || `Generado desde: "${DOM.promptInput.value}"`;
+
+        agregarPersonajeDesdeDatos({
+            nombre: nombre,
+            descripcion: descripcion,
+            imagen: imageDataUrl,
+            etiqueta: etiqueta,
+            arco: 'sin_arco'
+        });
+        showCustomAlert(`Modelo "${nombre}" generado y guardado automáticamente.`);
+
+        lastGeometricData = { ...geometricData, nombre: nombre, etiqueta: etiqueta };
+
+    } catch(error) {
+        console.error("Error en el guardado automático:", error);
+        showCustomAlert(`Error en guardado automático: ${error.message}`);
+    }
+}
+
+// -----------------------------------------------------------------
+// MÓDULO 6: LÓGICA DE GENERACIÓN PRINCIPAL (2 PASOS)
+// -----------------------------------------------------------------
+
+/**
+ * PASO 1: Crea el prompt para la descomposición conceptual.
+ * @param {string} userPrompt - El prompt del usuario.
+ * @returns {string} El prompt para el Paso 1.
+ */
+function createConceptualPrompt(userPrompt) {
+    return `
+        Eres un arquitecto de escenas. Tu trabajo es desglosar una idea visual en sus elementos constituyentes y crear un plan de construcción.
+
+        PROMPT DEL USUARIO: "${userPrompt}"
+
+        INSTRUCCIONES:
+        1.  Define un "nombre_modelo" y una "etiqueta" para la escena general.
+        2.  Escribe una "descripcion_general" de la escena.
+        3.  Crea una "lista_componentes". Cada componente es un objeto con:
+            - "nombre_componente": Un identificador único (ej: "casco", "placa_pecho", "hoja_katana").
+            - "descripcion": Detalles sobre su apariencia, material y función.
+        4.  Crea un "plan_ensamblaje": Un texto detallado que explique cómo se deben posicionar y superponer los componentes de la lista para construir la escena final. Describe las relaciones espaciales (ej: "El 'casco' se coloca sobre la 'cabeza'. La 'visera' se superpone al 'casco' en la parte frontal").
+
+        RESPONDE ÚNICAMENTE con un objeto JSON con la siguiente estructura:
+        {
+          "nombre_modelo": "...",
+          "etiqueta": "...",
+          "descripcion_general": "...",
+          "lista_componentes": [
+            {
+              "nombre_componente": "...",
+              "descripcion": "..."
+            }
+          ],
+          "plan_ensamblaje": "..."
+        }
+    `;
+}
+
+/**
+ * PASO 2: Crea el prompt para la ejecución geométrica.
+ * @param {string} conceptualJsonString - El JSON resultante del Paso 1.
+ * @returns {string} El prompt para el Paso 2.
+ */
+function createGeometricPrompt(conceptualJsonString) {
+    return `
+        Eres un artista técnico y geómetra. Tu tarea es convertir un plan de ensamblaje y una lista de componentes en una estructura de datos visual y renderizable para un canvas 2D.
+
+        PLAN DE CONSTRUCCIÓN (en JSON):
+        ${conceptualJsonString}
+
+        INSTRUCCIONES:
+        1.  Lee el "plan_ensamblaje" y la "lista_componentes" para entender la estructura completa.
+        2.  Para CADA componente de la "lista_componentes", crea uno o más objetos geométricos.
+        3.  Asigna una forma geométrica a cada objeto: "círculo", "rectángulo", o "poligono" (para formas complejas como triángulos, hexágonos o formas orgánicas).
+        4.  Define la "posición" [x, y], "rotación" y "tamaño" para cada forma, siguiendo el "plan_ensamblaje" para asegurar que todo encaje correctamente. El canvas es de 512x512.
+        5.  Define el "estilo" para cada forma:
+            - "zIndex": ¡Esencial! Úsalo para controlar la superposición según el "plan_ensamblaje".
+            - "relleno": Puede ser de dos tipos:
+                - Sólido: { "tipo": "solido", "color": "#RRGGBB" }
+                - Degradado: { "tipo": "degradado_lineal", "colores": ["#...", "#..."], "inicio": {"x": val, "y": val}, "fin": {"x": val, "y": val} } (las coordenadas del degradado son relativas al centro de la forma).
+            - "borde_color" y "borde_grosor" (opcional).
+
+        RESPONDE ÚNICAMENTE con el objeto JSON final que contenga la clave "componentes".
+
+        EJEMPLO DETALLADO DE ALTA CALIDAD (para un "samurái en posición de combate"):
+        {
+          "componentes": [
+            {
+              "forma": "poligono", "posición": [250, 380], "puntos": [{"x": -40, "y": 0}, {"x": -20, "y": 60}, {"x": 20, "y": 60}, {"x": 40, "y": 0}],
+              "estilo": { "relleno": { "tipo": "solido", "color": "#333333" }, "zIndex": 1, "borde_color": "#1a1a1a", "borde_grosor": 2 }
+            },
+            {
+              "forma": "poligono", "posición": [260, 280], "puntos": [{"x": -50, "y": 0}, {"x": 50, "y": 0}, {"x": 40, "y": 100}, {"x": -40, "y": 100}],
+              "estilo": { "relleno": { "tipo": "solido", "color": "#8B0000" }, "zIndex": 2, "borde_color": "#5a0000", "borde_grosor": 2 }
+            },
+            {
+              "forma": "poligono", "posición": [260, 280], "puntos": [{"x": -45, "y": -10}, {"x": 45, "y": -10}, {"x": 60, "y": 20}, {"x": -60, "y": 20}],
+              "estilo": { "relleno": { "tipo": "solido", "color": "#4d4d4d" }, "zIndex": 3, "borde_color": "#262626", "borde_grosor": 2 }
+            },
+            {
+              "forma": "círculo", "posición": [260, 220], "tamaño": { "radio": 35 },
+              "estilo": { "relleno": { "tipo": "solido", "color": "#ffdbac" }, "zIndex": 4 }
+            },
+            {
+              "forma": "rectángulo", "posición": [350, 250], "tamaño": { "ancho": 10, "alto": 200 }, "rotación": -70,
+              "estilo": { "relleno": { "tipo": "degradado_lineal", "colores": ["#e0e0e0", "#a0a0a0"], "inicio": {"x": 0, "y": -100}, "fin": {"x": 0, "y": 100} }, "zIndex": 5, "borde_color": "#808080", "borde_grosor": 1 }
+            },
+            {
+              "forma": "rectángulo", "posición": [280, 295], "tamaño": { "ancho": 25, "alto": 15 }, "rotación": -70,
+              "estilo": { "relleno": { "tipo": "solido", "color": "#3b3b3b" }, "zIndex": 6 }
+            }
+          ]
+        }
+    `;
+}
+
+async function handleGeneration() {
+    const userPrompt = DOM.promptInput.value.trim();
+    if (!userPrompt) {
+        showCustomAlert("Por favor, describe la escena que quieres crear.");
+        return;
+    }
+
+    const ctx = DOM.canvas.getContext('2d');
+    lastGeometricData = null;
+    actualizarUI(true, 'Paso 1/2: Descomponiendo la idea en componentes...');
+
+    try {
+        const conceptualPrompt = createConceptualPrompt(userPrompt);
+        const conceptualData = await callApi(conceptualPrompt);
+
+        actualizarUI(true, 'Paso 2/2: Construyendo la geometría y aplicando estilos...');
+        await delay(100);
+
+        const geometricPrompt = createGeometricPrompt(JSON.stringify(conceptualData, null, 2));
+        const geometricData = await callApi(geometricPrompt);
+
+        if (!geometricData || !Array.isArray(geometricData.componentes)) {
+            throw new Error("La respuesta del paso 2 no generó un array de componentes válido.");
+        }
+        
+        actualizarUI(true, 'Renderizando la escena final...');
+        await delay(100);
+
+        renderizarEscena(geometricData.componentes, ctx);
+        autoSaveData(conceptualData, geometricData);
+        
+        actualizarUI(false, '¡Generación completada y guardada!');
+
+    } catch (error) {
+        console.error("Error en el proceso de generación principal:", error);
+        actualizarUI(false, `Error: ${error.message}`);
+        lastGeometricData = null;
+    }
+}
+
+// -----------------------------------------------------------------
+// MÓDULO 7: FUNCIONALIDAD DE IMPORTACIÓN DE JSON (Sin cambios)
+// -----------------------------------------------------------------
+
+function handleJsonFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        if (DOM.jsonInputArea) DOM.jsonInputArea.value = e.target.result;
+    };
+    reader.readAsText(file);
+}
+
+function handleProcessJsonInput() {
+    if (!DOM.jsonInputArea) return;
+    const jsonText = DOM.jsonInputArea.value;
+    if (!jsonText.trim()) {
+        showCustomAlert('El área de texto JSON está vacía.');
+        return;
+    }
+    try {
+        const data = JSON.parse(jsonText);
+        const items = Array.isArray(data) ? data : [data];
+        let itemsAdded = 0;
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = CANVAS_WIDTH;
+        tempCanvas.height = CANVAS_HEIGHT;
+        const tempCtx = tempCanvas.getContext('2d');
+        items.forEach(itemData => {
+            if (!itemData.nombre || !itemData.componentes) return;
+            renderizarEscena(itemData.componentes, tempCtx);
+            itemsAdded++;
+        });
+        if (itemsAdded > 0) {
+            DOM.jsonInputArea.value = '';
+            showCustomAlert(`¡${itemsAdded} imágenes reconstruidas desde JSON!`);
+        } else {
+            showCustomAlert('No se añadieron nuevos elementos válidos desde el JSON.');
+        }
+    } catch (error) {
+        console.error('Error al procesar JSON:', error);
+        showCustomAlert(`Error al procesar el JSON: ${error.message}`);
+    }
+}
+
+// --- INICIALIZACIÓN ---
+document.addEventListener('DOMContentLoaded', inicializarEventos);
