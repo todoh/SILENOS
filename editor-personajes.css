@@ -157,7 +157,7 @@
   width: 80vw;
   height: 80vh;
   background-color: rgba(0, 0, 0, 0);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(10px);
   border-radius: 15px;
   z-index: 10;
   display: flex;
