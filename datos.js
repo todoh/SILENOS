@@ -517,8 +517,9 @@ function obtenerArcosUnicos() {
     });
     return Array.from(arcos).sort((a, b) => a.localeCompare(b));
 }
+
 /**
- * Crea y añade un nuevo elemento de "Dato" al DOM, con la etiqueta y el arco visibles.
+ * Crea y añade un nuevo elemento de "Dato" al DOM, incluyendo todos los controles.
  * @param {object} personajeData - El objeto con los datos del personaje/dato.
  */
 function agregarPersonajeDesdeDatos(personajeData = {}) {
@@ -533,63 +534,31 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     const lista = document.getElementById('listapersonajes');
     if (!lista) return;
 
+    // --- Contenedor Principal ---
     const contenedor = document.createElement('div');
     contenedor.className = 'personaje';
 
+    // --- Botón de Etiqueta ---
     const etiquetaBtn = document.createElement('button');
     etiquetaBtn.className = 'change-tag-btn';
-
-    const opcionEtiquetaGuardada = opcionesEtiqueta.find(op => op.valor === etiquetaValor);
-    if (opcionEtiquetaGuardada) {
-        etiquetaBtn.innerHTML = opcionEtiquetaGuardada.emoji;
-        etiquetaBtn.title = `Etiqueta: ${opcionEtiquetaGuardada.titulo}`;
-        etiquetaBtn.dataset.etiqueta = opcionEtiquetaGuardada.valor;
-    } else {
-        etiquetaBtn.innerHTML = etiquetaValor;
-        etiquetaBtn.title = `Etiqueta: ${etiquetaValor}`;
-        etiquetaBtn.dataset.etiqueta = etiquetaValor;
-    }
-    
-    etiquetaBtn.onclick = (e) => { e.stopPropagation(); mostrarMenuEtiquetas(etiquetaBtn); };
-    
-    Object.assign(etiquetaBtn.style, {
-        position: 'absolute', bottom: '8px',  right: '8px', zIndex: '3',  
-        fontSize: '12px', border: 'none', backgroundColor: 'rgba(0, 0, 0, 0.07)', color: 'white',
-        borderRadius: '5px', cursor: 'pointer', lineHeight: '1.2', transition: 'background-color 0.2s',
-        width: '46%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right'
-    });
-    etiquetaBtn.onmouseover = () => { etiquetaBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.2)'; };
-    etiquetaBtn.onmouseout = () => { etiquetaBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.07)'; };
-
+    const opcionEtiqueta = opcionesEtiqueta.find(op => op.valor === etiquetaValor) || opcionesEtiqueta[0];
+    etiquetaBtn.innerHTML = opcionEtiqueta.emoji;
+    etiquetaBtn.title = `Etiqueta: ${opcionEtiqueta.titulo}`;
+    etiquetaBtn.dataset.etiqueta = etiquetaValor;
+    etiquetaBtn.onclick = () => mostrarMenuEtiquetas(etiquetaBtn);
     contenedor.appendChild(etiquetaBtn);
 
+    // --- Botón de Arco ---
     const arcoBtn = document.createElement('button');
-    arcoBtn.className = 'change-arc-btn'; 
-
-    const opcionArcoGuardado = opcionesArco.find(op => op.valor === arcoValor);
-    if (opcionArcoGuardado) {
-        arcoBtn.innerHTML = opcionArcoGuardado.emoji;
-        arcoBtn.title = `Arco: ${opcionArcoGuardado.titulo}`;
-        arcoBtn.dataset.arco = opcionArcoGuardado.valor;
-    } else {
-        arcoBtn.innerHTML = arcoValor;
-        arcoBtn.title = `Arco: ${arcoValor}`;
-        arcoBtn.dataset.arco = arcoValor;
-    }
-
-    arcoBtn.onclick = (e) => { e.stopPropagation(); mostrarMenuArcos(arcoBtn); };
-
-    Object.assign(arcoBtn.style, {
-        position: 'absolute', bottom: '8px', left: '8px', zIndex: '3',   
-        fontSize: '12px', border: 'none', backgroundColor: 'rgba(0, 0, 0, 0.07)', color: 'white',
-        borderRadius: '5px', cursor: 'pointer', lineHeight: '1.2', transition: 'background-color 0.2s',
-        width: '46%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right'
-    });
-    arcoBtn.onmouseover = () => { arcoBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.2)'; };
-    arcoBtn.onmouseout = () => { arcoBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.07)'; };
-
+    arcoBtn.className = 'change-arc-btn';
+    const opcionArco = opcionesArco.find(op => op.valor === arcoValor) || opcionesArco[0];
+    arcoBtn.innerHTML = opcionArco.emoji;
+    arcoBtn.title = `Arco: ${opcionArco.titulo}`;
+    arcoBtn.dataset.arco = arcoValor;
+    arcoBtn.onclick = () => mostrarMenuArcos(arcoBtn);
     contenedor.appendChild(arcoBtn);
 
+    // --- Visual Principal (la tarjeta clickeable) ---
     const visual = document.createElement('div');
     visual.className = 'personaje-visual';
     
@@ -597,48 +566,96 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     const descripcionPreview = document.createElement('div');
     descripcionPreview.className = 'personaje-descripcion-preview';
     
-    const actualizarVisual = (nuevaImagenSrc, nuevaDescripcion) => {
-        img.src = nuevaImagenSrc || '';
-        descripcionPreview.textContent = nuevaDescripcion;
-        img.classList.toggle('hidden', !img.src || img.src.endsWith('/'));
-    };
-    
-    img.onerror = () => { img.classList.add('hidden'); };
-    img.onload = () => { img.classList.toggle('hidden', !img.src || img.src.endsWith('/')); }
-    
     visual.appendChild(img);
     visual.appendChild(descripcionPreview);
     contenedor.appendChild(visual);
 
+    // --- Input del Nombre ---
     const cajaNombre = document.createElement('input');
     cajaNombre.type = 'text';
     cajaNombre.className = 'nombreh';
     cajaNombre.value = nombre;
-    cajaNombre.placeholder = 'Nombre';
-    cajaNombre.addEventListener('change', () => {
-        actualizarVistaDatos();
+    cajaNombre.addEventListener('input', () => {
+        // Podrías añadir lógica de guardado automático aquí si quieres
     });
     contenedor.appendChild(cajaNombre);
 
+    // --- Overlay de Edición ---
     const overlay = document.createElement('div');
     overlay.className = 'personaje-edit-overlay';
+    
     const editControls = document.createElement('div');
     editControls.className = 'edit-controls';
+    
+    // Contenedor para la imagen de previsualización
+    const previewContainer = document.createElement('div');
+    previewContainer.className = 'edit-preview-container';
+    const previewImage = document.createElement('img');
+    previewImage.className = 'edit-preview-image';
+    previewContainer.appendChild(previewImage);
+    editControls.appendChild(previewContainer);
+
+    // Contenedor para los controles de texto y botones
+    const textControlsContainer = document.createElement('div');
+    textControlsContainer.className = 'edit-text-controls';
+    
     const cajaTexto = document.createElement('textarea');
     cajaTexto.value = descripcion;
     cajaTexto.placeholder = 'Descripción...';
-    cajaTexto.addEventListener('input', () => {
-        actualizarVisual(img.src, cajaTexto.value);
-    });
-    editControls.appendChild(cajaTexto);
-
+    
     const buttonsWrapper = document.createElement('div');
     buttonsWrapper.className = 'edit-buttons-wrapper';
 
+    // Botón de Cargar Imagen
     const botonCargar = document.createElement('button');
     botonCargar.className = 'edit-btn change-image-btn';
     botonCargar.innerHTML = '📷';
     botonCargar.title = 'Cambiar Imagen';
+    buttonsWrapper.appendChild(botonCargar);
+
+    // Botón de Eliminar
+    const botonEliminar = document.createElement('button');
+    botonEliminar.className = 'edit-btn delete-btn';
+    botonEliminar.innerHTML = '🗑️';
+    botonEliminar.title = 'Eliminar Dato';
+    botonEliminar.onclick = () => {
+        if (confirm('¿Estás seguro de que quieres eliminar este dato?')) {
+            contenedor.remove();
+            actualizarVistaDatos();
+        }
+    };
+    buttonsWrapper.appendChild(botonEliminar);
+    
+    textControlsContainer.appendChild(cajaTexto);
+    textControlsContainer.appendChild(buttonsWrapper);
+    editControls.appendChild(textControlsContainer);
+    overlay.appendChild(editControls);
+    contenedor.appendChild(overlay);
+
+    lista.appendChild(contenedor);
+    
+    // Función para actualizar la imagen principal y la descripción
+    const actualizarVisual = (nuevaImagenSrc, nuevaDescripcion) => {
+        img.src = nuevaImagenSrc || '';
+        descripcionPreview.textContent = nuevaDescripcion;
+        img.classList.toggle('hidden', !nuevaImagenSrc || nuevaImagenSrc.endsWith('/'));
+
+        // Actualizar también la imagen del overlay
+        if (previewImage) {
+            if (nuevaImagenSrc && !nuevaImagenSrc.endsWith('/')) {
+                previewImage.src = nuevaImagenSrc;
+                previewImage.style.display = 'block';
+            } else {
+                previewImage.style.display = 'none';
+            }
+        }
+    };
+
+    // Listeners y actualización inicial
+    cajaTexto.addEventListener('input', () => {
+        actualizarVisual(img.src, cajaTexto.value);
+    });
+    
     botonCargar.onclick = () => {
         const inputFile = document.createElement('input');
         inputFile.type = 'file';
@@ -651,24 +668,6 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
         };
         inputFile.click();
     };
-    buttonsWrapper.appendChild(botonCargar);
-
-    const botonEliminar = document.createElement('button');
-    botonEliminar.className = 'edit-btn delete-btn';
-    botonEliminar.innerHTML = '🗑️';
-    botonEliminar.title = 'Eliminar Dato';
-    botonEliminar.onclick = () => {
-        if (confirm(`¿Estás seguro de que quieres eliminar "${cajaNombre.value || 'este dato'}"?`)) {
-            contenedor.remove();
-        }
-    };
-    buttonsWrapper.appendChild(botonEliminar);
-
-    editControls.appendChild(buttonsWrapper);
-    overlay.appendChild(editControls);
-    contenedor.appendChild(overlay);
-
-    lista.appendChild(contenedor);
     
     actualizarVisual(imagen, descripcion);
 }
@@ -678,31 +677,60 @@ function agregarPersonaje() {
     reinicializarFiltrosYActualizarVista();
 }
 
-
 function inicializarInteraccionPersonajes() {
     const listaPersonajesEl = document.getElementById('listapersonajes');
     if (!listaPersonajesEl) return;
 
     listaPersonajesEl.addEventListener('click', (e) => {
+        // Ignorar clics en los botones de etiqueta/arco para que sus menús funcionen
+        if (e.target.closest('.change-tag-btn') || e.target.closest('.change-arc-btn')) {
+            return; 
+        }
+
         const visualClicked = e.target.closest('.personaje-visual');
         if (visualClicked) {
             const personajeActual = visualClicked.closest('.personaje');
             if (!personajeActual) return;
+            
             const personajeActivo = document.querySelector('.personaje.editing');
             if (personajeActivo && personajeActivo !== personajeActual) {
                 personajeActivo.classList.remove('editing');
             }
+            
             personajeActual.classList.toggle('editing');
+
+            // Actualizar la imagen en el overlay cuando se abre
+            if (personajeActual.classList.contains('editing')) {
+                const visualImgSrc = visualClicked.querySelector('img')?.src;
+                const overlay = personajeActual.querySelector('.personaje-edit-overlay');
+                const previewImg = overlay.querySelector('.edit-preview-image');
+
+                if (previewImg && visualImgSrc && !visualImgSrc.endsWith('/')) {
+                    previewImg.src = visualImgSrc;
+                    previewImg.style.display = 'block';
+                } else if (previewImg) {
+                    previewImg.style.display = 'none';
+                }
+            }
         }
     });
 
     document.addEventListener('click', (e) => {
         const personajeActivo = document.querySelector('.personaje.editing');
-        if (personajeActivo && !e.target.closest('.personaje.editing') && !e.target.closest('.input-etiqueta-personalizada')) {
+        const menuActivo = document.querySelector('.menu-etiquetas');
+        
+        // Cerrar el overlay si se hace clic fuera de él o de un menú
+        if (personajeActivo && !e.target.closest('.personaje.editing') && !e.target.closest('.menu-etiquetas') && !e.target.closest('.input-etiqueta-personalizada')) {
              personajeActivo.classList.remove('editing');
+        }
+
+        // Cerrar los menús si se hace clic fuera
+        if (menuActivo && !e.target.closest('.menu-etiquetas') && !e.target.closest('.change-tag-btn') && !e.target.closest('.change-arc-btn')) {
+            menuActivo.remove();
         }
     }, true);
 }
+
 
 document.addEventListener('DOMContentLoaded', () => {
     inicializarInteraccionPersonajes();

@@ -547,7 +547,8 @@ function createGeometricPrompt(conceptualJsonString) {
 
         INSTRUCCIONES:
         0. ESTAS CONSTRUYENDO UN SOLO OBJETO/ENTIDAD/CONCEPTO VISUAL ETC 
-        ASI QUE TODAS LAS PARTES QUE VAS A CREAR DEBEN DE ESTAR UNIDAS COHERENTEMENTE PARA QUE SEAN UNA UNICA ENTIDAD SIN FONDO NI ESCENARIO NI ELEMENTOS EXTRAS.
+        ASI QUE TODAS LAS PARTES QUE VAS A CREAR DEBEN DE ESTAR UNIDAS COHERENTEMENTE lado con lado 
+        PARA QUE SEAN UNA UNICA ENTIDAD SIN FONDO NI ESCENARIO NI ELEMENTOS EXTRAS.
         1.  Traduce TODAS las descripciones de posición a datos numéricos concretos dentro de un objeto "transform":
             - "posición": [x, y] (coordenadas del centro del objeto relativas a su padre).
             - "rotación": ángulo en grados.
@@ -565,9 +566,10 @@ function createGeometricPrompt(conceptualJsonString) {
         Un "ojo" con posición [0, 0] se centrará en su grupo "cabeza", no en el centro del canvas. 
         Construye el modelo desde su centro hacia afuera, pieza por pieza, como si ensamblaras un rompecabezas.
         Los componentes como ropas, armas o accesorios deben tener una posición relativa a su grupo padre, 
-        no al canvas asegurandose de encagar con su la pieza correspondiente para coherencias. 
-        La Ropa de un personaje debe estar centrada en su cuerpo. La espada debe estar centrada en la mano del personaje.
-         El pelo debe estar centrado en la cabeza del personaje, y los sombreros o accesorios de la cabeza deben estar centrados en la cabeza del personaje.
+        asegurandose de encagar con su la pieza correspondiente para estar conectada con lo que se va a dibujar. 
+        Asegurate de que cosas como La Ropa de un personaje debe de estar centrada en su cuerpo. La espada debe estar centrada en la mano del personaje etc...
+         El pelo debe estar centrado en la cabeza del personaje, y los sombreros o accesorios de la cabeza deben estar centrados en la cabeza del personaje, 
+         la cabeza y el cuello deben estar unidos con el cuerpo del personaje.
         6.  El canvas de destino es de 512x512. Distribuye la escena de forma centrada y equilibrada. Sin fondo o con fondo transparente.
         7. Asegurate de que todos los componentes estan unidos entre si FORMAN UNA UNICA ENTIDAD.
         RESPONDE ÚNICAMENTE con el objeto JSON final y completo, versión "2.0.0".

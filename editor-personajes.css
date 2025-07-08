@@ -3,16 +3,15 @@
 /* --- Contenedor principal para la lista de datos --- */
 #listapersonajes {
     display: grid;
-    /* Columnas responsivas: se ajustan al ancho, con un mínimo de 180px */
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
     grid-auto-rows: auto;
-    gap: 50px 25px; /* Aumentado el espacio vertical para el nombre */
+    gap: 50px 25px;
     padding: 25px;
     padding-bottom: 17%;
     height: 100%;
     overflow-y: auto;
     box-sizing: border-box;
-    width: 100%; /* Asegura que la cuadrícula ocupe todo el ancho */
+    width: 100%;
 }
 
 /* --- Contenedor base para cada tarjeta de dato/personaje --- */
@@ -21,13 +20,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* La tarjeta ahora es perfectamente cuadrada */
     aspect-ratio: 1 / 1; 
-
-
-
     background-color: transparent;
- 
     border: none;
     user-select: none;
 }
@@ -37,21 +31,20 @@
     position: relative;
     width: 100%;
     height: 100%;
-        background-color: transparent;
-backdrop-filter: blur(20px);
-background-image: linear-gradient(120deg, rgba(255, 255, 255, 0.2),  rgba(255, 255, 255, 0.2));
+    background-color: transparent;
+    backdrop-filter: blur(0px);
+    background-image: linear-gradient(120deg, rgba(255, 255, 255, 0.2),  rgba(255, 255, 255, 0.2));
     border-radius: 15px;
     cursor: pointer;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0; /* Eliminamos el padding para que la imagen ocupe todo */
+    padding: 0;
     box-sizing: border-box;
 }
-
 .personaje-visual:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
@@ -63,17 +56,10 @@ background-image: linear-gradient(120deg, rgba(255, 255, 255, 0.2),  rgba(255, 2
 }
 
 /* --- La imagen dentro del cuadrado visual --- */
-/* --- La imagen dentro del cuadrado visual --- */
 .personaje-visual img {
-    /* REGLAS CORREGIDAS PARA LA SOLUCIÓN */
-  
-    width: 100%; /* Asegura que la imagen ocupe todo el ancho del cuadrado */
-    height: 100%; /* Asegura que la imagen ocupe todo el alto del cuadrado */
-    object-fit: max-content; 
-    /* 'cover' asegura que la imagen rellene el espacio, conservando la proporción y recortando el exceso. */
- /* Cambiado a max-content para que la imagen no se recorte */
-    
-    /* El resto de tus estilos están correctos */
+    width: 100%;
+    height: 100%;
+    object-fit: cover; 
     position: absolute;
     top: 0; right: 0;
     left: 0; bottom: 0;
@@ -81,9 +67,7 @@ background-image: linear-gradient(120deg, rgba(255, 255, 255, 0.2),  rgba(255, 2
     transition: opacity 0.3s ease;
     z-index: 2;
     padding: 0; 
-   
 }
-
 
 .personaje-visual img[src=""], .personaje-visual img.hidden {
     opacity: 0;
@@ -98,17 +82,18 @@ background-image: linear-gradient(120deg, rgba(255, 255, 255, 0.2),  rgba(255, 2
     text-align: center;
     overflow: hidden;
     z-index: 1;
-    padding: 10px; /* Le damos padding al texto en su lugar */
+    padding: 10px;
 }
 
 .dark-theme .personaje-descripcion-preview {
-    color: #bbb;   opacity: 0;
+    color: #bbb;
+    opacity: 0;
 }
 
 /* --- El nombre del personaje debajo de la tarjeta --- */
 .nombreh {
     position: absolute;
-    bottom: -40px; /* Ajustado para estar debajo del cuadrado */
+    bottom: -40px;
     width: 100%;
     padding: 8px 5px;
     background-color: rgba(0, 0, 0, 0);
@@ -127,63 +112,80 @@ background-image: linear-gradient(120deg, rgba(255, 255, 255, 0.2),  rgba(255, 2
     color: #e0e0e0;
 }
 
+/* --- NUEVO/MODIFICADO: Botones de Etiqueta y Arco sobre la tarjeta --- */
+.change-tag-btn, .change-arc-btn {
+    position: absolute;
+    bottom: 8px;
+    width: 32px;
+    height: 32px;
+    background-color: rgba(0, 0, 0, 0);
+    color: white;
+    border: 0px solid rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 5; /* Por encima del visual */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.change-tag-btn:hover, .change-arc-btn:hover {
+    transform: scale(1.1);
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.change-tag-btn {
+    left: 8px;
+}
+
+.change-arc-btn {
+    right: 8px;
+}
+
+
 /* ========================================= */
 /* --- MODO DE EDICIÓN Y SUS CONTROLES --- */
 /* ========================================= */
 
-/* --- ESTADO BASE DEL OVERLAY (OCULTO) --- */
 .personaje-edit-overlay {
-  
-  /* Posicionamiento y centrado */
   position: fixed;
-  top: 50%; /* 50% de la altura del viewport */
-  left: 50%; /* 50% del ancho del viewport */
-  
-  /* El truco para el centrado perfecto:
-     Mueve el elemento hacia arriba un 50% de SU PROPIA altura
-     y hacia la izquierda un 50% de SU PROPIO ancho. */
+  top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%) scale(0.9);
-
-  /* Dimensiones y Estilos */
-  width: 80dvw;
- height: 80dvh;
+  width: 80vw;
+  height: 80vh;
   background-color: rgba(0, 0, 0, 0);
   backdrop-filter: blur(4px);
   border-radius: 15px;
   z-index: 10;
-  
-  /* Contenido interno centrado (si lo tienes) */
   display: flex;
   justify-content: center;
   align-items: center;
-
-  /* Estado inicial para la transición */
   opacity: 0;
   pointer-events: none;
-  
-  /* Transición suave para las propiedades que cambian */
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-/* --- ESTADO ACTIVO (VISIBLE) CUANDO SE AÑADE LA CLASE 'editing' --- */
 .personaje.editing .personaje-edit-overlay {
   opacity: 1;
   pointer-events: auto;
-  
-  /* Mantenemos el 'translate' y cambiamos solo el 'scale' */
   transform: translate(-50%, -50%) scale(1);
 }
 
 .edit-controls {
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    flex-direction: row;
+    align-items: stretch;
     width: 100%;
     height: 100%;
-    gap: 0px;
-    transform: scale(0.8) translateY(20px);
+    gap: 20px;
+    transform: scale(0.95) translateY(10px);
     opacity: 0;
     transition: opacity 0.25s ease 0.1s, transform 0.25s ease 0.1s;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 .personaje.editing .edit-controls {
@@ -191,28 +193,52 @@ background-image: linear-gradient(120deg, rgba(255, 255, 255, 0.2),  rgba(255, 2
     opacity: 1;
 }
 
-.edit-controls textarea {
-    width: 100%;
-    flex-grow: 1;
-   
-       background-color: transparent;
-backdrop-filter: blur(20px);
-background-image: linear-gradient(120deg, rgba(255, 255, 255, 0.8),  rgba(255, 255, 255, 0.8));
-
-    color: #333;
-    border: 0px solid #cccccc00;
-    border-radius: 8px;
-    padding: 0px;
-    box-sizing: border-box;
-    resize: none;
-    padding: 4%;   font-size: x-large;
+/* Contenedor para la imagen de previsualización */
+.edit-preview-container {
+    flex: 1 1 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0,0,0,0.1);
+    border-radius: 12px;
+    overflow: hidden;
 }
 
-.dark-theme .edit-controls textarea {
-    background-color: #3a3a3aea;
- 
+.edit-preview-image {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: none;
+}
+
+/* Contenedor para la descripción y los botones */
+.edit-text-controls {
+    flex: 1 1 50%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.edit-text-controls textarea {
+    width: 100%;
+    flex-grow: 1;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 15px;
+    box-sizing: border-box;
+    resize: none;
+    font-size: 1.1em;
+    line-height: 1.6;
+}
+
+.dark-theme .edit-text-controls textarea {
+    background-color: #3a3a3a;
     color: #e0e0e0;
-  
+    border-color: #555;
 }
 
 .edit-buttons-wrapper {
@@ -227,7 +253,7 @@ background-image: linear-gradient(120deg, rgba(255, 255, 255, 0.8),  rgba(255, 2
     height: 45px;
     border-radius: 50%;
     border: 2px solid white;
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(0, 0, 0, 0.5);
     color: white;
     font-size: 20px;
     display: flex;
@@ -242,10 +268,10 @@ background-image: linear-gradient(120deg, rgba(255, 255, 255, 0.8),  rgba(255, 2
     background-color: rgba(0, 123, 255, 0.8);
 }
 
-/* Estilo específico para el botón de eliminar */
 .edit-btn.delete-btn:hover {
-    background-color: #E53935; /* Rojo al pasar el ratón */
+    background-color: #E53935;
 }
+
 
 /* ========================================= */
 /* --- MENÚ DE SELECCIÓN DE ETIQUETAS --- */
