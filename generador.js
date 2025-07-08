@@ -114,7 +114,7 @@ async function callApi(prompt, maxRetries = 3) {
         generationConfig: {
             responseMimeType: "application/json",
             temperature: 0.7, // Ligeramente reducido para mayor consistencia en la estructura
-            maxOutputTokens: 24192,
+            maxOutputTokens: 8192,
         }
     };
 
@@ -480,8 +480,8 @@ function createConceptualPrompt(userPrompt) {
         5.  Dentro de los grupos, describe los nodos de formas ("círculo", "rectángulo", "poligono").
         6.  Para cada nodo, escribe una "descripcion" detallada de su apariencia, material, textura y su POSICIÓN RELATIVA a su padre o a otros elementos. Ej: "La guarda de la katana se sitúa en la base de la hoja".
         7.  **IMPORTANTE**: Si detectas que estás creando un personaje antropomórfico, utiliza una estructura corporal básica como punto de partida. 
-        Define nodos para "cabeza", "cuello",  "pecho", "cadera_cintura", "brazo izquierdo", "brazo derecho", "antebrazo izquierdo", "antebrazo derecho", 
-        "mano izquierdo", "mano derecho", "muslo izquierdo", "muslo derecho", "pie izquierdo", "pie derecho".
+        Define nodos para "cabeza", "cuello",  "pecho", "barriga_abdomen", "cadera_cintura",   "brazo izquierdo", "brazo derecho", "antebrazo izquierdo", "antebrazo derecho", 
+        "muñeca izquierdo", "muñeca derecho", "mano izquierdo", "mano derecho", "muslo izquierdo", "muslo derecho", "tobillo izquierdo", "tobillo derecho", "pie izquierdo", "pie derecho".
         Para la "cabeza", incluye sub-componentes para los rasgos faciales: "pelo", "ceja izquierda", "ceja derecha", "ojo izquierdo", "ojo derecho", "nariz", "labios o boca", y si aplica, "pelo facial o maquillaje".
         Luego, construye sobre esta base la ropa, los accesorios, los detalles y realiza los ajustes de posición, 
         tamaño y proporción necesarios para respetar la anatomía básica.
@@ -562,14 +562,12 @@ function createGeometricPrompt(conceptualJsonString) {
             - "effects": Un array para efectos. Por ahora, soporta { "type": "dropShadow", "color": "rgba(...)", "blur": num, "offsetX": num, "offsetY": num }.
             - "blendMode": (opcional) Modos como "overlay", "multiply", etc.
         5.  Mantén la estructura jerárquica, las definiciones ("definitions") y las referencias ("ref") del plan original.
-        Los componentes internos deben posicionarse siempre de forma RELATIVA a su grupo padre, no al canvas. 
-        Un "ojo" con posición [0, 0] se centrará en su grupo "cabeza", no en el centro del canvas. 
-        Construye el modelo desde su centro hacia afuera, pieza por pieza, como si ensamblaras un rompecabezas.
-        Los componentes como ropas, armas o accesorios deben tener una posición relativa a su grupo padre, 
-        asegurandose de encagar con su la pieza correspondiente para estar conectada con lo que se va a dibujar. 
-        Asegurate de que cosas como La Ropa de un personaje debe de estar centrada en su cuerpo. La espada debe estar centrada en la mano del personaje etc...
-         El pelo debe estar centrado en la cabeza del personaje, y los sombreros o accesorios de la cabeza deben estar centrados en la cabeza del personaje, 
-         la cabeza y el cuello deben estar unidos con el cuerpo del personaje.
+        Los componentes internos deben posicionarse siempre de forma RELATIVA a su grupo padre. ¡Esto es CRÍTICO para que el cuerpo esté conectado! Por ejemplo, para unir una 'cabeza' sobre un 'cuello', y el 'cuello' sobre un 'torso':
+        - Si el 'torso' es un rectángulo de alto 100, su centro está en [0,0] y su borde superior en [0, -50] (porque el origen está en el centro).
+        - Si el 'cuello' es un rectángulo de alto 20, su centro está en [0,0] y su borde inferior en [0, 10].
+        - Para que el cuello se asiente sobre el torso, la 'posición' del grupo del cuello debe ser [0, -60] (posición del borde superior del torso + mitad de la altura del cuello = -50 + (-10)).
+        - Del mismo modo, para poner la cabeza sobre el cuello, debes calcular su posición para que sus bordes se toquen.
+        ¡DEBES realizar este tipo de cálculo para TODAS las conexiones anatómicas! No dejes espacios vacíos entre cabeza, cuello, torso, brazos y piernas. Trata el modelo como un objeto físico y sólido donde las partes se tocan y encajan perfectamente.
         6.  El canvas de destino es de 512x512. Distribuye la escena de forma centrada y equilibrada. Sin fondo o con fondo transparente.
         7. Asegurate de que todos los componentes estan unidos entre si FORMAN UNA UNICA ENTIDAD.
         RESPONDE ÚNICAMENTE con el objeto JSON final y completo, versión "2.0.0".
@@ -615,6 +613,7 @@ function createGeometricPrompt(conceptualJsonString) {
         }
     `;
 }
+
 
 
 async function handleGeneration() {
@@ -725,6 +724,53 @@ function handleProcessJsonInput() {
         lastGeneratedSceneData = null;
     }
 }
+
+
+// =================================================================
+// INICIO: CÓDIGO AÑADIDO
+// MÓDULO 8: FUNCIÓN DE AYUDA PARA GENERACIÓN EXTERNA
+// =================================================================
+
+/**
+ * Genera una imagen a partir de un prompt y devuelve su Data URL sin afectar la UI principal.
+ * Esta función es llamada desde otros módulos como el editor de datos.
+ * @param {string} userPrompt - El prompt para generar la imagen.
+ * @returns {Promise<string>} La URL de datos (Base64) de la imagen generada.
+ */
+async function generarImagenDesdePrompt(userPrompt) {
+    if (!userPrompt) {
+        throw new Error("El prompt de usuario no puede estar vacío.");
+    }
+    console.log(`[Generador Externo] Iniciando generación para: "${userPrompt}"`);
+
+    // 1. Crear un canvas temporal fuera de pantalla para renderizar.
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = CANVAS_WIDTH;
+    tempCanvas.height = CANVAS_HEIGHT;
+    const ctx = tempCanvas.getContext('2d');
+
+    // 2. Reutilizar la lógica de generación en dos pasos
+    const conceptualPrompt = createConceptualPrompt(userPrompt);
+    const conceptualData = await callApi(conceptualPrompt);
+
+    const geometricPrompt = createGeometricPrompt(JSON.stringify(conceptualData, null, 2));
+    const finalSceneData = await callApi(geometricPrompt);
+
+    if (!finalSceneData || finalSceneData.version !== "2.0.0") {
+        throw new Error("La respuesta de la IA no generó un JSON v2.0.0 válido.");
+    }
+
+    // 3. Renderizar la escena en el canvas temporal
+    renderizarEscena(finalSceneData, ctx);
+    
+    console.log("[Generador Externo] Generación completada. Devolviendo Data URL.");
+    // 4. Devolver la imagen como una cadena Base64
+    return tempCanvas.toDataURL('image/png');
+}
+// =================================================================
+// FIN: CÓDIGO AÑADIDO
+// =================================================================
+
 
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', inicializarEventos);

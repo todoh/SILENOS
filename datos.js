@@ -451,10 +451,11 @@ function inicializarControlesDeFiltro() {
 
     const styleSheet = document.createElement("style");
     styleSheet.innerText = `
-        #filtro-datos-popup { display: none; position: absolute;  left: 0;  background-color: transparent;
+        #filtro-datos-popup { display: none; position: fixed; top: 0;  left: 0;  background-color: transparent;
 backdrop-filter: blur(20px);
-background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 255, 255, 0.2)); border: 0px solid #555; border-radius: 5px; padding: 10px; z-index: 10002; }
-        .filtro-item label, .filtro-item-control label { display: flex; align-items: center; color: black; padding: 5px; cursor: pointer; border-radius: 3px; font-size: 14px; }
+background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3), 
+ rgba(255, 255, 255, 0.2)); border: 0px solid #555; border-radius: 5px; padding: 0px; z-index: 10002; }
+        .filtro-item label, .filtro-item-control label { display: flex; align-items: center; color: black; padding: 0px; cursor: pointer; border-radius: 3px; font-size: 14px; }
         .filtro-item label:hover { background-color: #444; color: white;}
         .filtro-item input, .filtro-item-control input { margin-right: 10px; }
         .filtro-item-control { border-bottom: 1px solid #555; margin-bottom: 5px; padding-bottom: 5px; }
@@ -613,6 +614,18 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     botonCargar.title = 'Cambiar Imagen';
     buttonsWrapper.appendChild(botonCargar);
 
+    // =======================================================
+    // INICIO: CÓDIGO AÑADIDO PARA EL BOTÓN DE GENERACIÓN IA
+    // =======================================================
+    const botonGenerarIA = document.createElement('button');
+    botonGenerarIA.className = 'edit-btn generate-ai-btn';
+    botonGenerarIA.innerHTML = '✨';
+    botonGenerarIA.title = 'Generar Imagen con IA';
+    buttonsWrapper.appendChild(botonGenerarIA);
+    // =======================================================
+    // FIN: CÓDIGO AÑADIDO
+    // =======================================================
+
     // Botón de Eliminar
     const botonEliminar = document.createElement('button');
     botonEliminar.className = 'edit-btn delete-btn';
@@ -650,6 +663,49 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
             }
         }
     };
+
+    // =======================================================
+    // INICIO: CÓDIGO AÑADIDO PARA LA LÓGICA DEL BOTÓN IA
+    // =======================================================
+    botonGenerarIA.onclick = async () => {
+        const descripcionPrompt = cajaTexto.value.trim();
+        if (!descripcionPrompt) {
+            alert("Por favor, escribe una descripción para que la IA pueda generar una imagen.");
+            return;
+        }
+
+        if (typeof generarImagenDesdePrompt !== 'function') {
+            alert("Error: La función de generación de imágenes no está disponible.");
+            console.error("La función `generarImagenDesdePrompt` no se encontró. Asegúrate de que `generador.js` esté cargado y actualizado.");
+            return;
+        }
+
+        // Mostrar estado de carga
+        botonGenerarIA.innerHTML = '⚙️';
+        botonGenerarIA.disabled = true;
+        botonCargar.disabled = true;
+        botonEliminar.disabled = true;
+
+        try {
+            // Llamar a la función del generador y esperar la imagen
+            const imageDataUrl = await generarImagenDesdePrompt(descripcionPrompt);
+            // Actualizar la UI del dato con la nueva imagen
+            actualizarVisual(imageDataUrl, cajaTexto.value);
+        } catch (error) {
+            alert(`Ocurrió un error al generar la imagen: ${error.message}`);
+            console.error("Error en la generación de imagen desde el editor de datos:", error);
+        } finally {
+            // Restaurar el botón
+            botonGenerarIA.innerHTML = '✨';
+            botonGenerarIA.disabled = false;
+            botonCargar.disabled = false;
+            botonEliminar.disabled = false;
+        }
+    };
+    // =======================================================
+    // FIN: CÓDIGO AÑADIDO
+    // =======================================================
+
 
     // Listeners y actualización inicial
     cajaTexto.addEventListener('input', () => {
