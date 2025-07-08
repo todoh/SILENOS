@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Silenos Versión 1.1.9</title>
+<title>Silenos Versión 1.1.10</title>
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="styles2.css">
 <link rel="stylesheet" href="clarooscuro.css">
@@ -11,7 +11,8 @@
 <link rel="stylesheet" href="editor-momento.css">
 <link rel="stylesheet" href="galeria.css">
 <link rel="stylesheet" href="biblioteca.css">
- 
+ <link rel="stylesheet" href="editormapa.css">
+
     
 <style>
         body {
@@ -95,7 +96,7 @@
 <script src="https://apis.google.com/js/api.js" async defer></script>
 <script src="https://accounts.google.com/gsi/client" onload="gapiLoaded()" async defer></script>
 
-<meta property="og:title" content="SILENOS Versión 1.1.9" />
+<meta property="og:title" content="SILENOS Versión 1.1.10" />
 <meta property="og:description" content="Editor de Historia con Inteligencia Artificial" />
 <meta property="og:url" content="https://todoh.github.io/SILENOS" />
 <meta property="og:image" content="https://raw.githubusercontent.com/todoh/SILENOS/refs/heads/main/silenos.png" />
@@ -180,10 +181,12 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
 
 </head>
 <body>
+ 
+
 
 <div id="silenos" >
     <div id="opciones" >
-        <h2 id="titulo-proyecto" style="display: none;" contenteditable="true" placeholder="Escribe el título del proyecto">Silenos Versión 1.1.8</h2>
+        <h2 id="titulo-proyecto" style="display: none;" contenteditable="true" placeholder="Escribe el título del proyecto">Silenos Versión 1.1.10</h2>
         <div id="menu" >
          
         </div>
@@ -201,11 +204,12 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
             <button class="tons" onclick="abrir('guion-literario');">Guión</button>
             <button class="tons" onclick="cerrartodo(), abrir('capitulosh');">Libro</button>
             <button class="tons" onclick="cerrartodo(), abrir('escenah');">Storyboard</button>
-            <button class="tons" onclick="cerrartodo(), abrir('imagenes');">Imagenes</button>
+            <button class="tons" onclick="cerrartodo(), abrir('imagenes');" style="display: none;" >Imagenes</button>
             <button class="tons" onclick="cerrartodo(), abrir('animaciones');">Animaciones</button>
 
             <button class="tons" id="pelicula" onclick="cerrartodo(), abrir('galeria');" style="display: none;" >Pelicula</button>
             <button class="tons" onclick="cerrartodo(), abrir('momentos');">Videojuego</button>
+                <button class="tons" onclick="cerrartodo(), abrir('juego');">Juego</button>
             <button class="tons" id="biblioteca-btn" style="display: none;" onclick="cerrartodo(), abrir('biblioteca');">📚 Biblioteca</button>
             <button class="pro" onclick="abrirModalConfig()">⚙️ Ajustes </button>
      
@@ -557,9 +561,7 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
 
         <!-- Panel de control 2D (existente) -->
         <div class="control-panel" id="control-panel-2d">
-            <textarea class="area-texto" id="user-prompt-input" placeholder="Ej: 'un hechicero de hielo en un bosque nevado', 'un caballero con armadura dorada frente a un castillo'"></textarea>
-            <button id="btn-generate">Diseñar y Renderizar Escena</button>
-            <button id="btn-save-generation" style="display: none;">Guardar en Generaciones</button>
+          
             <div class="json-importer-container">
                 <h3>Importar desde JSON</h3>
                 <textarea id="json-input-area" placeholder="Pega aquí el JSON de uno o varios elementos..." class="area-texto"></textarea>
@@ -569,9 +571,7 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
                     <input type="file" id="json-file-input" accept=".json,application/json" style="display: none;">
                 </div>
             </div>
-            <div id="render-container" style="display: none;">
-                <canvas id="render-canvas" width="512" height="512"></canvas> <p id="status-message"></p> 
-            </div>
+ 
             
            
             
@@ -669,8 +669,52 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
 
 
 </div>
-<!-- INICIO DE LA SECCIÓN DE VISTA GENERAL -->
 
+<div id="juego" style="display: none; width: 100%; height: 100%;">
+    <div id="editor-container">
+        <header id="main-header">
+            <h1>Editor de Mundos</h1>
+            <div id="main-controls">
+                <div id="zoom-controls">
+                    <button id="zoom-out-button" class="zoom-btn">-</button>
+                    <button id="zoom-in-button" class="zoom-btn">+</button>
+                </div>
+                <button id="preview-button">🚀 Previsualizar</button>
+                <button id="save-button">💾 Guardar en Navegador</button>
+            </div>
+        </header>
+        <main id="main-content">
+            <aside id="side-panel">
+                <div id="texture-palette" class="palette">
+                    <h2>Texturas de Terreno</h2>
+                </div>
+                <div id="entity-palette" class="palette">
+                    <h2>Entidades</h2>
+                </div>
+                 <div id="info-box" class="palette">
+                    <h2>Información</h2>
+                    <p>Clic en una textura para pintar el terreno.</p>
+                    <p>Clic en una entidad y luego en un chunk para editarlo.</p>
+                </div>
+            </aside>
+            <div id="map-grid-container">
+                <div id="map-grid"></div>
+            </div>
+        </main>
+    </div>
+    <div id="preview-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <span class="modal-close-button">&times;</span>
+            <h3>Previsualización del Mundo 3D</h3>
+            <div id="game-container"></div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<!-- INICIO DE LA SECCIÓN DE VISTA GENERAL -->
  <div id="vistageneral" >
 
 
@@ -936,13 +980,17 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 </div>
  
 <div id="principio">
+    <video autoplay muted loop id="video-fondo">
+        <source src="video.mp4" type="video/mp4">
+        Tu navegador no soporta videos HTML5.
+    </video>
     <div id="titulo-esfera-container"> 
         <div id="titulo1">
             <div>
                 <span>SILEN</span><span class="os-red">OS</span>
             </div>
             <div class="version-text">
-                versión 1.1.9
+                versión 1.1.10
             </div>
         </div>
         <div id="esfera">
@@ -1030,7 +1078,42 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
             </div>
         </div>
     </div>
-    
+    <div id="modal-imagenes" class="modal-content" style="display: none;">
+    <div class=" ">
+        <button class="modal-close-btn-fullscreen" onclick="cerrarModalImagenes()">&times;</button>
+        <div class="container">
+            <div class="image-mode-toggle" style="display: none;">
+                <button id="toggle-2d-btn" class="active">2D</button>
+                <button id="toggle-3d-btn">3D</button>
+            </div>
+            <div class="control-panel" id="control-panel-2d">
+                 <textarea class="area-texto" id="user-prompt-input" placeholder="Ej: 'un hechicero de hielo en un bosque nevado', 'un caballero con armadura dorada frente a un castillo'"></textarea>
+                <button id="btn-generate">Diseñar y Renderizar Escena</button>
+                <button id="btn-save-generation" style="display: none;">Guardar en Generaciones</button>
+                <div class="json-importer-container">
+                    <h3>Importar desde JSON</h3>
+                    <textarea id="json-input-area" placeholder="Pega aquí el JSON de uno o varios elementos..." class="area-texto"></textarea>
+                    <div class="json-buttons-container">
+                        <button id="btn-process-json" class="control-button">Procesar JSON Pegado</button>
+                        <label for="json-file-input" class="control-button">Cargar Archivo JSON</label>
+                        <input type="file" id="json-file-input" accept=".json,application/json" style="display: none;">
+                    </div>
+                </div>
+
+        
+
+                <div id="render-container" style="display: none;">
+                    <canvas id="render-canvas" width="512" height="512"></canvas> <p id="status-message"></p> 
+                </div>
+            </div>
+            <div class="control-panel" id="control-panel-3d" style="display: none;">
+                 </div>
+            <div id="generaciones-container" style="display: none;">
+                <div id="generaciones-grid"></div>
+            </div>
+        </div>
+    </div>
+</div>
     <!-- ================== -->
     <!-- MODAL CREADOR DE PERSONAJES -->
     <!-- ================== -->
@@ -1108,7 +1191,11 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 <script src="editor-personajes-body.js"></script>
 <script src="editor-personajes-main.js"></script>
 <script type="module" src="animacion2d.js"></script>
+<script type="module" src="juego_main.js"></script>
 
+
+
+<button id="open-imagenes-modal-btn" class="" title="Abrir Galería de Imágenes" onclick="abrirModalImagenes()" style="display: none;">🖼️</button>
 <button id="contextual-action-btn" title="Acción contextual" style="display: none;">✨</button>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

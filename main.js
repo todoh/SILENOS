@@ -29,7 +29,14 @@ window.onload = function() {
     // Ahora que el DOM está cargado, es seguro asignar valores a las variables que dependen de él.
     titulo2 = document.getElementById("titulo-proyecto").innerText;
     chatDiv = document.getElementById("chat");
-
+const videoFondo = document.getElementById('video-fondo');
+    if (videoFondo) {
+        // Ajusta este valor:
+        // 1.0 es la velocidad normal.
+        // 0.5 es la mitad de la velocidad (más lento).
+        // 0.75 es un 25% más lento.
+        videoFondo.playbackRate = 0.55; 
+    }
     document.getElementById("titulo-proyecto").addEventListener("input", function() {
         titulo2 = document.getElementById("titulo-proyecto").innerText;
     });
@@ -66,15 +73,16 @@ function cerrartodo() {
     document.getElementById('escena-vista').style.display = 'none';
     document.getElementById('capitulosh').style.display = 'none';
     document.getElementById('escenah').style.display = 'none';
-        document.getElementById('animaciones').style.display = 'none';
-                document.getElementById('imagenes').style.display = 'none';
-
+    document.getElementById('animaciones').style.display = 'none';
+    document.getElementById('imagenes').style.display = 'none';
+    document.getElementById('modal-imagenes').style.display = 'none';
     document.getElementById('biblioteca').style.display = 'none';
     document.getElementById('guion-literario').style.display = 'none';
     document.getElementById('momentos').style.display = 'none';
     document.getElementById('galeria').style.display = 'none';
-        document.getElementById('vistageneral').style.display = 'none';
- 
+    document.getElementById('vistageneral').style.display = 'none';
+    document.getElementById('juego').style.display = 'none';
+
 
 
 }
@@ -146,7 +154,7 @@ function reiniciarEstadoApp() {
     indiceCapituloActivo = -1;
 
     // Resetear UI
-    document.getElementById("titulo-proyecto").innerText = "Silenos Versión 1.1.8";
+    document.getElementById("titulo-proyecto").innerText = "Silenos Versión 1.1.10";
     document.getElementById("listapersonajes").innerHTML = "";
     document.getElementById("lista-capitulos").innerHTML = "";
     document.getElementById("momentos-lienzo").innerHTML = "";
@@ -293,14 +301,18 @@ function reiniciar() {
  */
 function actualizarBotonContextual() {
     const btn = document.getElementById('contextual-action-btn');
+    const btn2 = document.getElementById('open-imagenes-modal-btn');
     if (!btn) return;
-
+   if (!btn2) return;
     // Clonar y reemplazar para limpiar listeners antiguos
     const newBtn = btn.cloneNode(true);
     btn.parentNode.replaceChild(newBtn, btn);
+    const newBtn2 = btn2.cloneNode(true);
+    btn2.parentNode.replaceChild(newBtn2, btn2);
 
     if (typeof apiKey === 'undefined' || !apiKey || !apiKey.trim()) {
         newBtn.style.display = 'none';
+          newBtn2.style.display = 'none';
         return;
     }
 
@@ -315,11 +327,15 @@ function actualizarBotonContextual() {
 
     if (idSeccionActiva) {
         newBtn.innerHTML = '✨';
+        newBtn2.innerHTML = '🖼️';
         newBtn.style.display = 'flex';
-
+        newBtn2.style.display = 'none';
         if (idSeccionActiva === 'personajes') {
             newBtn.title = 'Analizar o importar datos con IA';
             newBtn.onclick = abrirModalAIDatos;
+            newBtn2.title = 'Generar Imágenes con IA';
+            newBtn2.onclick = abrirModalImagenes;
+             newBtn2.style.display = 'flex';
         } else if (idSeccionActiva === 'momentos') {
             newBtn.title = 'Generar Aventura Interactiva con IA';
             newBtn.onclick = abrirModalMomentosIA;
@@ -338,6 +354,7 @@ function actualizarBotonContextual() {
         }
     } else {
         newBtn.style.display = 'none';
+         newBtn2.style.display = 'none';
     }
 }
 
@@ -641,7 +658,25 @@ function cerrarModalAIDatos() {
         overlay.onclick = null;
     }
 }
+function abrirModalImagenes() {
+    const overlay = document.getElementById('modal-overlay');
+    const modal = document.getElementById('modal-imagenes');
+    if (overlay) overlay.style.display = 'block';
+    if (modal) modal.style.display = 'flex';
+    if (overlay) {
+        overlay.onclick = cerrarModalImagenes;
+    }
+}
 
+function cerrarModalImagenes() {
+    const overlay = document.getElementById('modal-overlay');
+    const modal = document.getElementById('modal-imagenes');
+    if (overlay) overlay.style.display = 'none';
+    if (modal) modal.style.display = 'none';
+    if (overlay) {
+        overlay.onclick = null;
+    }
+}
 function cargarGuionesEnDropdown(selectElement) {
     if (!selectElement) {
         console.error("No se proporcionó un elemento <select> a cargarGuionesEnDropdown.");
@@ -1105,3 +1140,5 @@ function confirmarSeleccionYProcesar() {
     cerrarModalSeleccionLibro();
     abrir('capitulosh');
 }
+
+ 

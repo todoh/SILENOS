@@ -13,7 +13,7 @@
 }
 
 #principio {
-    background-color: black;
+    background-color: rgba(0, 0, 0, 0);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -91,15 +91,15 @@
 
 .os-red {
     color: #E53935;
-    font-weight: 500;    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    font-weight: 500;    box-shadow: 0 4px 12px rgba(0, 0, 0, 0);
 }
 
 .version-text {
-    font-size: 0.2em;
+    font-size: 0.35em;
     font-weight: 400;
     text-transform: lowercase;
     letter-spacing: 1.5px;
-    color: #c0c0c0;
+    color: #ffffff;
     text-shadow: none;
 }
 

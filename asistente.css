@@ -170,6 +170,7 @@
     #principio {
         /* #principio está encima y se le añade una transición de opacidad */
         transition: opacity 1.5s ease-out;
+    
     }
     /* ▲▲▲ FIN DE LA CORRECCIÓN ▲▲▲ */
 

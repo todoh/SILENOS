@@ -114,7 +114,7 @@ async function callApi(prompt, maxRetries = 3) {
         generationConfig: {
             responseMimeType: "application/json",
             temperature: 0.7, // Ligeramente reducido para mayor consistencia en la estructura
-            maxOutputTokens: 8192,
+            maxOutputTokens: 24192,
         }
     };
 
@@ -445,8 +445,10 @@ function autoSaveData(sceneData) {
 
 function createConceptualPrompt(userPrompt) {
     return `
-        Eres un director de arte y arquitecto de escenas digitales. Tu trabajo es desglosar una idea visual en una estructura jerárqu'ca (un "scene graph") para representar lo que
-        se te pida en el prompt sin fondo o con fondo transparente ya que lo que vas a generar se usará en todos los medios digitales multimedia disponibles (como 2D, 3D, VR, AR, libros, animacion, videojuegos etc...).
+        Eres un director de arte y arquitecto de elementos reales usando como erramienta CSS. 
+        Tu trabajo es desglosar una idea visual en una estructura jerárquica (un "scene graph") para representar lo que
+        se te pida en el prompt sin fondo o con fondo transparente ya que lo que vas a generar se usará en todos los medios digitales multimedia disponibles 
+        (como 2D, 3D, VR, AR, libros, animacion, videojuegos etc...).
 
         PROMPT DEL USUARIO: "${userPrompt}"
 
@@ -465,17 +467,16 @@ function createConceptualPrompt(userPrompt) {
     { emoji: '🏞️', valor: 'elemento_geográfico', titulo: 'Elemento Geográfico' },
     { emoji: '💭', valor: 'concepto', titulo: 'Concepto' },
     { emoji: '📝', valor: 'nota', titulo: 'Nota' },
-    { emoji: '👁️‍🗨️', valor: 'visual', titulo: 'Visual' } ), y "arco" (elige uno:   { emoji: '⚪', valor: 'sin_arco', titulo: 'Base' },
-    { emoji: 'Ⅰ', valor: '1º', titulo: 'Primero' },
-    { emoji: 'ⅠⅠ', valor: '2º', titulo: 'Segundo' },
-    { emoji: 'ⅠⅠⅠ', valor: '3º', titulo: 'Tercero' },
+    { emoji: '👁️‍🗨️', valor: 'visual', titulo: 'Visual' } ), 
+     
+    y "arco" (elige uno:  
     { emoji: '🎮', valor: 'videojuego', titulo: 'Videojuego' },
     { emoji: '🎬', valor: 'planteamiento', titulo: 'Planteamiento' },
-    { emoji: '👁️', valor: 'visuales', titulo: 'Visuales' },
-    { emoji: '✒️', valor: 'personalizar', titulo: 'Personalizar' }).
-        2.  Piensa en componentes reutilizables. Si hay elementos que se repiten (ej: una rueda, una espada), defínelos en la sección "definitions". Cada definición tiene un nombre clave (ej: "katana_base").
+    { emoji: '👁️', valor: 'visuales', titulo: 'Visuales' }).
+        2.  Piensa en componentes reutilizables. Si hay elementos que se repiten (ej: una rueda, una espada), defínelos en la sección "definitions". 
+        Cada definición tiene un nombre clave (ej: "katana_base").
         3.  Diseña la "scene" principal. Esta contiene una lista de "children" (nodos raíz).
-        4.  Estructura la escena usando nodos de tipo "group" para agrupar elementos lógicos (ej: "cabeza_grupo", "brazo_derecho"). Los grupos pueden contener otros grupos.
+        4.  Estructura la escena para representar la entidad, objetos etc... usando nodos de tipo "group" para agrupar elementos lógicos (ej: "cabeza_grupo", "brazo_derecho"). Los grupos pueden contener otros grupos.
         5.  Dentro de los grupos, describe los nodos de formas ("círculo", "rectángulo", "poligono").
         6.  Para cada nodo, escribe una "descripcion" detallada de su apariencia, material, textura y su POSICIÓN RELATIVA a su padre o a otros elementos. Ej: "La guarda de la katana se sitúa en la base de la hoja".
         7.  **IMPORTANTE**: Si detectas que estás creando un personaje antropomórfico, utiliza una estructura corporal básica como punto de partida. 
@@ -545,6 +546,8 @@ function createGeometricPrompt(conceptualJsonString) {
         ${conceptualJsonString}
 
         INSTRUCCIONES:
+        0. ESTAS CONSTRUYENDO UN SOLO OBJETO/ENTIDAD/CONCEPTO VISUAL ETC 
+        ASI QUE TODAS LAS PARTES QUE VAS A CREAR DEBEN DE ESTAR UNIDAS COHERENTEMENTE PARA QUE SEAN UNA UNICA ENTIDAD SIN FONDO NI ESCENARIO NI ELEMENTOS EXTRAS.
         1.  Traduce TODAS las descripciones de posición a datos numéricos concretos dentro de un objeto "transform":
             - "posición": [x, y] (coordenadas del centro del objeto relativas a su padre).
             - "rotación": ángulo en grados.
@@ -561,11 +564,12 @@ function createGeometricPrompt(conceptualJsonString) {
         Los componentes internos deben posicionarse siempre de forma RELATIVA a su grupo padre, no al canvas. 
         Un "ojo" con posición [0, 0] se centrará en su grupo "cabeza", no en el centro del canvas. 
         Construye el modelo desde su centro hacia afuera, pieza por pieza, como si ensamblaras un rompecabezas.
-        Los componentes como ropas, armas o accesorios deben tener una posición relativa a su grupo padre, no al canvas. 
-        La Ropa de un personaje debe estar centrada en su torso, no en el canvas. La espada debe estar centrada en la mano del personaje, no en el canvas.
+        Los componentes como ropas, armas o accesorios deben tener una posición relativa a su grupo padre, 
+        no al canvas asegurandose de encagar con su la pieza correspondiente para coherencias. 
+        La Ropa de un personaje debe estar centrada en su cuerpo. La espada debe estar centrada en la mano del personaje.
          El pelo debe estar centrado en la cabeza del personaje, y los sombreros o accesorios de la cabeza deben estar centrados en la cabeza del personaje.
         6.  El canvas de destino es de 512x512. Distribuye la escena de forma centrada y equilibrada. Sin fondo o con fondo transparente.
-
+        7. Asegurate de que todos los componentes estan unidos entre si FORMAN UNA UNICA ENTIDAD.
         RESPONDE ÚNICAMENTE con el objeto JSON final y completo, versión "2.0.0".
 
         EJEMPLO DETALLADO DE ALTA CALIDAD (para un "samurái"):
@@ -574,7 +578,7 @@ function createGeometricPrompt(conceptualJsonString) {
           "nombre": "Samurái Ancestral Dinámico",
           "descripcion": "Una representación gráfica avanzada...",
           "etiqueta": "🧍 Personaje",
-          "arco": "Leyendas del Acero",
+          "arco": "Base",
           "definitions": {
             "katana": {
               "type": "group",
