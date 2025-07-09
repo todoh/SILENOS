@@ -105,7 +105,7 @@ function extractJson(text) {
     }
 }
 
-async function callApi(prompt, maxRetries = 3) {
+async function callApi(prompt, maxRetries = 1) {
     // NOTA: La clave de la API debe estar definida en el ámbito global donde se ejecuta este script.
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-06-17:generateContent?key=${apiKey}`;
 
@@ -114,7 +114,7 @@ async function callApi(prompt, maxRetries = 3) {
         generationConfig: {
             responseMimeType: "application/json",
             temperature: 0.7, // Ligeramente reducido para mayor consistencia en la estructura
-            maxOutputTokens: 8192,
+            maxOutputTokens: 16192,
         }
     };
 
