@@ -726,7 +726,7 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
         
     
         <button id="analizar-datos-btn" class="pro5" >
-            Analizar Datos del Proyecto
+            Analizar Datos
         </button>
     </div>
 
@@ -741,8 +741,8 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
 
     
 <div id="vistageneral-secciones" >
-    <button class="" onclick=" document.getElementById('informe-container').style.display = 'flex', document.getElementById('biblioteca').style.display = 'none'; " >📜 Informe</button>
-    <button class="" onclick=" document.getElementById('informe-container').style.display = 'none', abrir('biblioteca'), document.getElementById('vistageneral').style.display = 'flex';  " >🖼️ Galería de imágenes</button>
+    <button class="pro6" onclick=" document.getElementById('informe-container').style.display = 'flex', document.getElementById('biblioteca').style.display = 'none'; " >📜</button>
+    <button class="pro7" onclick=" document.getElementById('informe-container').style.display = 'none', abrir('biblioteca'), document.getElementById('vistageneral').style.display = 'flex';  " >🖼️</button>
 
 </div>
 </div>
@@ -803,8 +803,9 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
 <div id="modos" ></div></div>
 
 <div id="escenah">
+    <button id="crear-escena-btn" class="pro6" onclick="abrirSelectorDeLibro(event)">+ Escena</button>
     <div class="escena-toolbar">
-        <button id="crear-escena-btn" class="pro" >Nueva Escena</button>
+         
         <select id="escenas-dropdown"></select>
         <input type="text" id="escena-nombre-input" placeholder="Nombre de la Escena...">
         <button id="agregar-toma-btn" class="escena2 pro5 "  >➕</button>
@@ -957,6 +958,14 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
     <button class="modal-close-button" onclick="cerrarModalExportar()">&times;</button>
 
     <div class="export-option">
+        <h4>Exportar Libro a HTML</h4>
+        <p>Selecciona un libro de la lista para exportar todos sus capítulos y frames a un único archivo HTML.</p>
+        <div class="export-controls">
+            <select id="libro-export-select" class="modal-select"></select>
+            <button class="modal-button" onclick="exportarLibroSeleccionado()">Exportar Libro HTML</button>
+        </div>
+    </div>
+    <hr> <div class="export-option">
         <h4>Exportar Guion</h4>
         <p>Exporta los capítulos y sus frames a un archivo HTML simple.</p>
         <button class="modal-button" onclick="generarHTML()">Exportar Guion HTML</button>
@@ -964,11 +973,11 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
    <div class="export-option">
         <h4>Exportar Storyboard de Tomas</h4>
         <p>Exporta las escenas de storyboard (imágenes y texto) a un archivo HTML.</p>
-
          <div class="export-controls">
              <select id="tomas-export-select" class="modal-select"></select>
              <button class="modal-button" onclick="generarHTMLTomas()">Exportar Tomas HTML</button>
-        </div>    </div>
+        </div>
+    </div>
     <div class="export-option">
         <h4>Exportar Videojuego</h4>
         <p>Exporta los momentos como una experiencia interactiva.</p>
@@ -976,6 +985,8 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
         <button class="modal-button" onclick="iniciarExportacionJuego()">Exportar Videojuego HTML</button>
     </div>
 </div>
+
+
  <button id="asistente-btn" title="Asistente IA"  style="display: none;" >S</button>
 </div>
  
@@ -1157,6 +1168,16 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
     <input type="file" id="reemplazar-input" accept="image/*" style="display: none;">
 </div>
 
+<div id="progress-bar-container" class="status-indicator">
+    <span id="progress-bar-label">Procesando...</span>
+    <div class="progress-bar-background">
+        <div id="progress-bar-fill"></div>
+    </div>
+    <span id="progress-bar-percentage">0%</span>
+</div>
+
+
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <!-- SCRIPTS MOVED HERE, INSIDE THE BODY TAG -->
@@ -1200,6 +1221,7 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="geminiasistente.js"></script>
+<script src="animaciones.js"></script>
 
 <script type="importmap">
     {

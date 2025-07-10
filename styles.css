@@ -92,10 +92,29 @@ font-size: x-large !important;
 padding: 2px !important;
 margin: 0px !important;
 padding-left: 1% !important; padding-right: 1% !important; /* Añadido para margen horizontal */
-
-
-
 } 
+
+.dark-theme .pro7 {
+    background-color: #313131; /* Un azul oscuro para botones pro */
+    color: white;
+}
+
+.pro7 {background-color: #e9ecef!important; color: #333 !important; border:none !important;
+z-index: 1000!important;
+height: fit-content!important;
+width: fit-content!important;
+position: fixed !important;
+top: 7% !important;
+left: 3% !important;
+transform: translateX(-50%) !important;
+font-size: x-large !important;
+padding: 2px !important;
+margin: 0px !important;
+padding-left: 1% !important; padding-right: 1% !important; /* Añadido para margen horizontal */
+}
+
+
+
 .dark-theme .imput { /* Input de nombre de escena */
     background-color: #333;
     color: #e0e0e0;
@@ -662,34 +681,40 @@ line-height: 1.5;}
     margin: 0%;
     margin-right: 1%;width: 8dvw; }
 
-    .ideframeh { padding: 1%; position: relative;
+.ideframeh { padding: 1%; position: absolute;
     width: auto;z-index: 10000 !important;
-    margin: 0; left: -5%; top: 75%;
-    margin-right: 1%;}
+     margin: 2%; left: 0%; bottom: 0%;
+    }
+.ideframeh2 { padding: 1%; position: absolute;
+    width: auto;z-index: 10000 !important;
+    margin: 2%; left: 5%; bottom: 0%;
+    }
+
+
 .frameh textarea {
-    width: 85%; position: absolute;
+    width: 55%; position: absolute;
 font-size: normal;
-   top: 5%; bottom: 1%;    left: 15%;
-    padding: 2%;
+   top: 5%; bottom: 1%;    left: 23%;
+  
     border-radius: 5px; 
     border: 0px solid #ccc;
-    resize: none;    box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+    resize: none;     
     font-family: Arial, sans-serif;}
     .frameh input[type="file"] {
    opacity: 0;
 }
-.custom-label {
+.custom-label { position: absolute;
     z-index: 100;
     background-color: transparent; 
     color: #555; 
-    padding: 5px;
+    padding: 0px;
     cursor: pointer;
     display: flex;
     border-radius: 5px;
     height: 8%;
-    top: 13%;
-width: 13%;
-left: 0%;
+   left: 12%; bottom:13%;
+ 
+ 
 position: absolute;
 }
 .custom-label:hover {
@@ -697,7 +722,7 @@ position: absolute;
 }
 .frameh img {max-width: 15%; position: absolute;
     max-height: 90%;
-    left:0%;
+    left:5%;
     top: 5%;
   padding: 0%;
     border-radius: 5px; margin-top: 0% !important;
@@ -705,14 +730,14 @@ position: absolute;
     
 }
 .frameh { 
-    height:250px;
+    height:350px;
  
- width: 90%;
+ width: 100%;
     position: relative;
     display: flex;
  left: 0%; 
  background-color: transparent;  
-       
+        
     text-align: center;      flex-shrink: 0;}
 
     .framehtxt {padding-left: 5%;   gap: 5%;}
@@ -753,8 +778,8 @@ position: absolute;
  .detalle {
 position: relative;
 top: 0%;
-height: 9%;
-left: 0%;
+height: 10%;
+left: 15%;
 width: 60%;
 background-color: transparent;
 justify-content: center;
@@ -817,9 +842,9 @@ top: 1%;left: 2%;}
 }
 
 #contenido-capitulo-activo {
-    left: 5%;
+    left: 0%;
     top: 0%;
-    width: 90%; 
+    width: 100%; 
     height: 100%;
     display: flex; 
     position: absolute;
@@ -1361,7 +1386,7 @@ width: 15%;
 }
 
 .contenido-guion-editor {
-    width:82%; height: 86.5%;
+    width:80%; height: 86.5%;
     flex-grow: 1;
    left: 0%; top: 5%;
     border: 0px solid #ccc;
@@ -1373,7 +1398,7 @@ width: 15%;
     background: rgba(255, 255, 255, 0);
  position: absolute;
     text-align: left; 
-    padding: 4%;
+    padding: 10%;
 }
 
 .dark-theme .contenido-guion-editor {
@@ -1853,7 +1878,7 @@ transform: translateY(-50%);
    background-color: #ffffff00;
     border: 0px solid #ccc;
     border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+ 
     display: flex;
     flex-direction: column;
     z-index: 1000;
@@ -2889,6 +2914,9 @@ border-radius: 5px; padding: 0px; z-index: 10002; }
  
 
         #lista-guiones-popup-local { display: none; position: fixed;  left: 0; top: 0%;  background-color: transparent;
-backdrop-filter: blur(20px);
+backdrop-filter: blur(20px); overflow: scroll; overflow-x: hidden;  margin-top: 5dvh; height: 90dvh; width: auto; 
 background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 255, 255, 0.2)); 
 border: 0px solid #555; border-radius: 5px; padding: 0px; z-index: 10002; }
+
+
+.nom {display: none;}

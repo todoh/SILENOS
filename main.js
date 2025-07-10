@@ -124,7 +124,7 @@ function abrir(escena) {
         } else {
             const informeContainer = document.getElementById('informe-container');
             if (informeContainer && informeContainer.innerHTML.trim() === '') {
-                 informeContainer.innerHTML = '<p style="text-align: center; margin-top: 2rem;">Haz clic en "Analizar Datos del Proyecto" para generar un nuevo informe.</p>';
+                 informeContainer.innerHTML = '<p style="text-align: center; margin-top: 2rem;"> </p>';
             }
         }
     }
@@ -708,40 +708,48 @@ function cargarGuionesEnDropdown(selectElement) {
 
 // main.js
 
+// En main.js, REEMPLAZA tu función abrirModalExportar por esta:
 function abrirModalExportar() {
     const overlay = document.getElementById('modal-overlay');
     const modal = document.getElementById('modal-exportar');
-    if (overlay) overlay.style.display = 'block';
-    if (modal) modal.style.display = 'flex';
-    if (overlay) {
-        overlay.onclick = function() {
-            cerrarModalExportar();
-        }
-    }
-    
+    if (!overlay || !modal) return;
+
+    overlay.style.display = 'block';
+    modal.style.display = 'flex';
+    overlay.onclick = cerrarModalExportar;
+
     // --- LÓGICA CONSOLIDADA PARA POBLAR TODOS LOS SELECTORES ---
 
-    // Poblar el selector de momentos para el videojuego
-    if (typeof poblarSelectorMomentoInicial === 'function') {
-        poblarSelectorMomentoInicial();
-    } else {
-        console.error("La función para poblar el selector de momentos (poblarSelectorMomentoInicial) no está disponible.");
+    // 1. Poblar el NUEVO selector de libros para exportar
+    const selectLibroExport = document.getElementById('libro-export-select');
+    if (selectLibroExport) {
+        selectLibroExport.innerHTML = '';
+        if (typeof libros !== 'undefined' && libros.length > 0) {
+            libros.forEach(libro => {
+                const option = document.createElement('option');
+                option.value = libro.id;
+                option.textContent = libro.titulo;
+                selectLibroExport.appendChild(option);
+            });
+        } else {
+            selectLibroExport.innerHTML = '<option disabled>No hay libros para exportar</option>';
+        }
     }
 
-    // Poblar el selector de escenas de tomas
+    // 2. Poblar el selector de momentos para el videojuego
+    if (typeof poblarSelectorMomentoInicial === 'function') {
+        poblarSelectorMomentoInicial();
+    }
+
+    // 3. Poblar el selector de escenas de tomas
     const selectEscenasTomas = document.getElementById('tomas-export-select');
     if (selectEscenasTomas) {
-        selectEscenasTomas.innerHTML = ''; // Limpiar opciones anteriores
-        selectEscenasTomas.disabled = false;
-
+        selectEscenasTomas.innerHTML = '';
         if (typeof storyScenes !== 'undefined' && storyScenes.length > 0) {
-            // Opción para exportar todas las escenas
             const todasOption = document.createElement('option');
             todasOption.value = 'all';
             todasOption.textContent = 'Todas las Escenas';
             selectEscenasTomas.appendChild(todasOption);
-
-            // Añadir cada escena individualmente
             storyScenes.forEach(escena => {
                 const option = document.createElement('option');
                 option.value = escena.id;
@@ -749,14 +757,195 @@ function abrirModalExportar() {
                 selectEscenasTomas.appendChild(option);
             });
         } else {
-            const option = document.createElement('option');
-            option.value = '';
-            option.textContent = 'No hay escenas de tomas';
-            option.disabled = true;
-            selectEscenasTomas.appendChild(option);
+            selectEscenasTomas.innerHTML = '<option disabled>No hay escenas de tomas</option>';
         }
     }
 }
+
+ 
+
+function exportarLibroSeleccionado() {
+    const select = document.getElementById('libro-export-select');
+    if (!select || !select.value) {
+        alert("No se ha seleccionado ningún libro para exportar.");
+        return;
+    }
+
+    const libroId = select.value;
+    const libro = libros.find(l => l.id === libroId);
+    if (!libro) {
+        alert("El libro seleccionado no se encontró.");
+        return;
+    }
+
+    const capitulosDelLibro = Object.values(escenas).filter(cap => cap.libroId === libroId);
+
+    // --- 1. Construir el contenido principal y la lista del menú al mismo tiempo ---
+    let contenidoPrincipalHtml = '';
+    let listaMenuHtml = '';
+
+    if (capitulosDelLibro.length > 0) {
+        capitulosDelLibro.forEach((capitulo, index) => {
+            const idCapitulo = `capitulo-${index}`;
+            const tituloCapitulo = capitulo.texto || `Capítulo ${index + 1}`;
+
+            // Añadir el capítulo al contenido principal
+            contenidoPrincipalHtml += `<div id="${idCapitulo}">
+                <h2>${tituloCapitulo}</h2>`;
+            
+            if (capitulo.frames && capitulo.frames.length > 0) {
+                capitulo.frames.forEach((frame, frameIndex) => {
+                    contenidoPrincipalHtml += `<div class="frame">
+                 
+                        <p>${frame.texto.replace(/\n/g, '<br>')}</p>`;
+                    if (frame.imagen) {
+                        contenidoPrincipalHtml += `<img src="${frame.imagen}" alt="Imagen del Frame ${frameIndex + 1}">`;
+                    }
+                    contenidoPrincipalHtml += `</div>`;
+                });
+            } else {
+                contenidoPrincipalHtml += `<p><em>Este capítulo no tiene frames.</em></p>`;
+            }
+            contenidoPrincipalHtml += `</div>`;
+
+            // Añadir el enlace del capítulo a la lista del menú
+            listaMenuHtml += `<li><a href="#${idCapitulo}">${tituloCapitulo}</a></li>`;
+        });
+    } else {
+        contenidoPrincipalHtml = `<p><em>Este libro no tiene capítulos.</em></p>`;
+    }
+
+
+    // --- 2. Ensamblar el documento HTML final con Estilos y JavaScript ---
+    const contenidoHtml = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>${libro.titulo}</title>
+            <style>
+                /* Estilos Generales */
+                body { font-family: sans-serif; line-height: 1.6; margin: 0; padding: 20px; background-color: #fdfdfd; scroll-behavior: smooth; }
+                .container { max-width: 800px; margin: auto; padding: 0 20px; }
+                h1 { color: #2c3e50; text-align: center; }
+                h2 { color:rgb(0, 0, 0); border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; margin-top: 40px; }
+                h3 { color: #7f8c8d; }
+                .frame { margin: 20px 0; padding-left: 15px; border-left: 3px solid #bdc3c7; }
+                .frame img { max-width: 100%; height: auto; border-radius: 4px; margin-top: 10px; }
+                p { white-space: pre-wrap; }
+
+                /* Estilos del Menú de Navegación */
+                #menu-btn {
+                    position: fixed;
+                    top: 15px;
+                    left: 15px;
+                    z-index: 1001;
+                    background-color:rgb(0, 0, 0);
+                    color: white;
+                    border: none;
+                    border-radius: 50%;
+                    width: 50px;
+                    height: 50px;
+                    font-size: 24px;
+                    cursor: pointer;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                    transition: background-color 0.3s;
+                }
+                #menu-btn:hover { background-color:rgb(252, 18, 18); }
+                
+                #menu-navegacion {
+                    position: fixed;
+                    top: 0;
+                    left: -300px; /* Oculto por defecto */
+                    width: 280px;
+                    height: 100%;
+                    background-color: #fff;
+                    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+                    transition: left 0.3s ease-in-out;
+                    z-index: 1000;
+                    overflow-y: auto;
+                }
+                #menu-navegacion.visible { left: 0; }
+                
+                #menu-navegacion h3 {
+                    padding: 20px;
+                    margin: 0;
+                    background-color: #ecf0f1;
+                    color:rgb(0, 0, 0);
+                }
+
+                #menu-navegacion ul { list-style: none; padding: 10px 0; margin: 0; }
+                #menu-navegacion li a {
+                    display: block;
+                    padding: 12px 20px;
+                    color:rgb(0, 0, 0);
+                    text-decoration: none;
+                    transition: background-color 0.2s;
+                }
+                #menu-navegacion li a:hover { background-color: #ecf0f1; }
+            </style>
+        </head>
+        <body>
+            <button id="menu-btn">☰</button>
+
+            <nav id="menu-navegacion">
+                <h3>${libro.titulo}</h3>
+                <ul>
+                    ${listaMenuHtml}
+                </ul>
+            </nav>
+
+            <div class="container">
+                <h1>${libro.titulo}</h1>
+                ${contenidoPrincipalHtml}
+            </div>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const menuBtn = document.getElementById('menu-btn');
+                    const menuNav = document.getElementById('menu-navegacion');
+                    const menuLinks = menuNav.querySelectorAll('a');
+
+                    // Abrir/cerrar menú con el botón
+                    menuBtn.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        menuNav.classList.toggle('visible');
+                    });
+
+                    // Cerrar menú al hacer clic en un enlace
+                    menuLinks.forEach(link => {
+                        link.addEventListener('click', () => {
+                            menuNav.classList.remove('visible');
+                        });
+                    });
+
+                    // Cerrar menú al hacer clic fuera de él
+                    document.addEventListener('click', (event) => {
+                        if (menuNav.classList.contains('visible') && !menuNav.contains(event.target)) {
+                            menuNav.classList.remove('visible');
+                        }
+                    });
+                });
+            </script>
+        </body>
+        </html>`;
+
+    // --- 3. Crear y descargar el archivo ---
+    const blob = new Blob([contenidoHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${libro.titulo.replace(/ /g, '_')}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    cerrarModalExportar();
+}
+
+
 
 function cerrarModalExportar() {
     const overlay = document.getElementById('modal-overlay');
@@ -1142,3 +1331,15 @@ function confirmarSeleccionYProcesar() {
 }
 
  
+/**
+ * Cierra un elemento modal específico por su ID.
+ * @param {string} modalId - El ID del modal que se va a cerrar.
+ */
+function cerrarModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+    } else {
+        console.warn(`Se intentó cerrar el modal con ID "${modalId}", pero no se encontró.`);
+    }
+}

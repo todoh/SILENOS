@@ -31,11 +31,13 @@ function recolectarYAgruparDatos() {
             datosAgrupados[nombreCategoria] = [];
         }
 
-        datosAgrupados[nombreCategoria].push({ nombre, descripcion });
+        datosAgrupados[nombreCategoria].push({
+            nombre: nombre,
+            descripcion: descripcion
+        });
     }
     return datosAgrupados;
 }
-
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -117,34 +119,74 @@ async function llamarIAConFeedback(prompt, etapaDescriptiva, esJsonEsperado = tr
         throw error;
     }
 }
+function lanzarGeneracionHistoria() {
+    const idea = document.getElementById('gemini1-modal').value;
+    const escenas = document.getElementById('cantidadescenas-modal').value;
+    const frames = document.getElementById('cantidadeframes-modal').value;
+    const usarDatos = document.getElementById('incluir-datos-ia-modal').checked;
 
+    document.getElementById('gemini1').value = idea;
+    document.getElementById('cantidadescenas').value = escenas;
+    document.getElementById('cantidadeframes').value = frames;
+    document.getElementById('incluir-datos-ia').checked = usarDatos;
+
+    cerrarModal('generador-ia-modal');
+
+    // --- INICIO DE LA CORRECCIÓN ---
+    // 1. Preparamos la vista en la sección del guion
+    if (typeof prepararVistaParaGeneracionIA === 'function') {
+        prepararVistaParaGeneracionIA();
+    } else {
+        console.error("La función prepararVistaParaGeneracionIA no está definida en guion.js");
+        alert("Error: No se puede iniciar la generación del guion.");
+        return; 
+    }
+
+    // 2. Iniciamos el gestor de progreso global
+    if (typeof progressBarManager !== 'undefined') {
+        progressBarManager.start("Generando Guion", () => {
+             // Esta función se ejecuta si se hace clic en la barra de progreso
+            if(typeof abrirGuion === 'function') abrirGuion();
+        });
+    }
+    
+    // 3. Lanzamos la generación
+    // Usamos un pequeño timeout para asegurar que la UI se actualice antes del proceso pesado
+    setTimeout(() => {
+        enviarTextoConInstrucciones(idea, escenas, frames, usarDatos);
+    }, 100);
+    // --- FIN DE LA CORRECCIÓN ---
+}
+
+// Reemplaza esta función en geminialfa.js
 
 async function enviarTextoConInstrucciones() {
     actualizarParametrosIA();
-
     const geminichat = document.getElementById("gemini1").value;
+
     if (!geminichat.trim()) {
         alert("Por favor, escribe la idea para tu historia.");
         return;
     }
 
-    if(typeof progressBarManager !== 'undefined') progressBarManager.start('Iniciando proceso de IA...');
-    
-    // Resetear variables globales
-    planteamientoGeneralGlobal = "";
-    resumenPorEscenasGlobal = [];
-    tituloHistoriaGlobal = "";
-    ultimaHistoriaGeneradaJson = { titulo_historia: "", historia: [] };
+    // 1. Prepara la UI y la barra de progreso
+    if (typeof prepararVistaParaGeneracionIA !== 'function' || typeof progressBarManager === 'undefined') {
+        alert("Error: Las funciones de UI (guion.js) o la barra de progreso (animaciones.js) no están cargadas.");
+        return;
+    }
+    prepararVistaParaGeneracionIA();
+    progressBarManager.start('Iniciando proceso de IA...');
+
+    // Resetear variables
+    let historiaContenidoHTML = ""; // Acumulador para el contenido final
+    ultimaHistoriaGeneradaJson = { historia: [] };
 
     const incluirDatos = document.getElementById('incluir-datos-ia').checked;
     let contextoDeDatos = "";
-
     if (incluirDatos) {
-        // La lógica para filtrar por arcos es compleja, la simplificamos por ahora para asegurar la funcionalidad
-        // principal, basándonos en el código que funcionaba.
         const datosAgrupados = recolectarYAgruparDatos();
         if (Object.keys(datosAgrupados).length > 0) {
-            contextoDeDatos += "Aquí tienes una lista de Datos Fundamentales que DEBEN ser incluidos y desarrollados en la historia. Intégralos de forma natural y coherente:\n\n";
+            contextoDeDatos += "Aquí tienes una lista de Datos Fundamentales que DEBEN ser incluidos y desarrollados en la historia:\n\n";
             for (const categoria in datosAgrupados) {
                 contextoDeDatos += `**Categoría: ${categoria}**\n`;
                 datosAgrupados[categoria].forEach(dato => {
@@ -156,167 +198,99 @@ async function enviarTextoConInstrucciones() {
     }
 
     try {
+        // --- PASO 1: Título y Planteamiento General ---
+        progressBarManager.set(10, 'Generando título y planteamiento...');
         const promptPaso1 = `
             ${contextoDeDatos}
-            **Idea Inicial del Usuario:**
-            "${geminichat}"
-
-            **Tarea Principal:**
-            Tu objetivo es estructurar una historia completa. Sigue estos pasos:
-
-            1.  **Genera un Título Creativo:** Crea un título para la historia.
-            2.  **Escribe un Planteamiento General:** Basado en la idea del usuario y OBLIGATORIAMENTE en los "Datos Fundamentales" (si se proporcionaron), escribe un resumen general y detallado de la historia.
-
-            **Formato de Respuesta OBLIGATORIO:**
-            Responde ÚNICAMENTE con un objeto JSON válido. No incluyas explicaciones ni texto fuera del JSON.
-            {
-              "titulo_historia_sugerido": "El título que generaste",
-              "planteamiento_general_historia": "El texto extenso del planteamiento general."
-            }`;
+            **Idea Inicial:** "${geminichat}"
+            **Tarea:** Genera un título creativo y un resumen general detallado de la historia.
+            **Formato JSON OBLIGATORIO:** {"titulo_historia_sugerido": "string", "planteamiento_general_historia": "string"}`;
         
-        if(typeof progressBarManager !== 'undefined') progressBarManager.set(10, 'Generando título y planteamiento...');
+        const respuestaPaso1 = await llamarIAConFeedback(promptPaso1, "Paso 1: Título y Planteamiento");
+        const tituloHistoriaGlobal = respuestaPaso1.titulo_historia_sugerido || "Historia Sin Título (IA)";
+        const planteamientoGeneralGlobal = respuestaPaso1.planteamiento_general_historia || "No se generó planteamiento.";
         
-        const respuestaPaso1 = await llamarIAConFeedback(promptPaso1, "Paso 1: Planteamiento General y Título");
-        tituloHistoriaGlobal = respuestaPaso1.titulo_historia_sugerido || "Historia Sin Título (IA)";
-        planteamientoGeneralGlobal = respuestaPaso1.planteamiento_general_historia || "No se generó planteamiento general.";
         ultimaHistoriaGeneradaJson.titulo_historia = tituloHistoriaGlobal;
 
+        // Visualización en tiempo real
+        let chunkHTML = `<h1>${tituloHistoriaGlobal}</h1><div class="guion-ia-general"><h2>Planteamiento General</h2><p>${planteamientoGeneralGlobal.replace(/\n/g, "<br>")}</p></div>`;
+        historiaContenidoHTML += chunkHTML;
+        actualizarContenidoGuionEnProgreso(chunkHTML);
         await sleep(500);
 
-        if (window.cantidaddeescenas <= 0) throw new Error("La cantidad de capítulos debe ser mayor a cero.");
-        
+        // --- PASO 2: Resúmenes por Capítulos ---
+        progressBarManager.set(25, 'Dividiendo la historia en capítulos...');
         const promptPaso2 = `
-            Título de la Historia: ${tituloHistoriaGlobal}
-            Planteamiento General: ${planteamientoGeneralGlobal}
+            Título: ${tituloHistoriaGlobal}
+            Planteamiento: ${planteamientoGeneralGlobal}
+            **Tarea:** Divide el planteamiento en ${window.cantidaddeescenas} resúmenes de capítulo.
+            **Formato JSON OBLIGATORIO:** {"resumen_por_escenas": [{"resumen_escena": "string"}]}`;
 
-            **Tarea:**
-            Divide el "Planteamiento General" en exactamente ${window.cantidaddeescenas} resúmenes de capítulo. Cada resumen debe describir qué sucede en esa parte de la historia.
+        const respuestaPaso2 = await llamarIAConFeedback(promptPaso2, `Paso 2: Resúmenes de Capítulos`);
+        const resumenPorEscenasGlobal = respuestaPaso2.resumen_por_escenas || [];
 
-            **Formato de Respuesta OBLIGATORIO:**
-            Responde ÚNICAMENTE con un objeto JSON válido.
-            {
-              "resumen_por_escenas": [
-                { "resumen_escena": "Resumen del Capítulo 1." }
-              ]
-            }
-            Asegúrate de que haya exactamente ${window.cantidaddeescenas} objetos en el array.`;
+        // Visualización en tiempo real
+        chunkHTML = `<div class="guion-ia-general"><h2>Planteamiento por Capítulos</h2><ul>`;
+        resumenPorEscenasGlobal.forEach((res, idx) => {
+            chunkHTML += `<li><strong>Capítulo ${idx + 1}:</strong> ${res.resumen_escena || ""}</li>`;
+        });
+        chunkHTML += `</ul></div>`;
+        historiaContenidoHTML += chunkHTML;
+        actualizarContenidoGuionEnProgreso(chunkHTML);
+        await sleep(500);
 
-        if(typeof progressBarManager !== 'undefined') progressBarManager.set(25, 'Dividiendo la historia en capítulos...');
-        
-        const respuestaPaso2 = await llamarIAConFeedback(promptPaso2, `Paso 2: Dividir en ${window.cantidaddeescenas} Capítulos`);
-        if (!respuestaPaso2.resumen_por_escenas || !Array.isArray(respuestaPaso2.resumen_por_escenas)) {
-            throw new Error("La IA no devolvió los resúmenes de capítulos en el formato esperado.");
-        }
-        resumenPorEscenasGlobal = respuestaPaso2.resumen_por_escenas;
-
-        if (window.cantidadframes <= 0) throw new Error("La cantidad de frames por capítulo debe ser mayor a cero.");
+        // --- PASO 3: Desarrollo de cada Capítulo ---
         let contextoEscenaAnteriorSerializado = "";
-
         for (let i = 0; i < resumenPorEscenasGlobal.length; i++) {
-            if (i > 0) await sleep(500);
-            
             const progress = 30 + (60 * (i / resumenPorEscenasGlobal.length));
-            if(typeof progressBarManager !== 'undefined') progressBarManager.set(progress, `Desarrollando capítulo ${i + 1} de ${resumenPorEscenasGlobal.length}...`);
-
-            const resumenEscenaActualTexto = resumenPorEscenasGlobal[i].resumen_escena;
-            const promptPaso3 = `
-                Título Global: ${tituloHistoriaGlobal}
-                Planteamiento General: ${planteamientoGeneralGlobal}
-                Resumen del Capítulo Actual (Capítulo ${i + 1}): ${resumenEscenaActualTexto}
-                ${contextoEscenaAnteriorSerializado ? `Contenido del Capítulo Anterior (Capítulo ${i}):\n${contextoEscenaAnteriorSerializado}` : ""}
-
-                **Tarea:**
-                1. Desarrolla en detalle el Capítulo ${i + 1}.
-                2. Divide este desarrollo en exactamente ${window.cantidadframes} frames o escenas.
-                3. Genera un título descriptivo para este Capítulo ${i + 1}.
-
-                **Formato de Respuesta OBLIGATORIO:**
-                Responde ÚNICAMENTE con un objeto JSON válido.
-                {
-                  "titulo_escena_desarrollada": "Título descriptivo para el Capítulo ${i + 1}",
-                  "frames_desarrollados": [
-                    { "contenido_frame": "Texto detallado del primer frame." }
-                  ]
-                }`;
+            progressBarManager.set(progress, `Desarrollando capítulo ${i + 1}...`);
             
-            // Lógica de reintento
-            let respuestaPaso3Escena;
-            let exitoEscena = false;
-            let reintentosEscena = 0;
-            const maxReintentosEscena = 3;
-
-            while (!exitoEscena && reintentosEscena < maxReintentosEscena) {
-                try {
-                    respuestaPaso3Escena = await llamarIAConFeedback(promptPaso3, `Paso 3: Desarrollando capítulo ${i + 1}/${resumenPorEscenasGlobal.length}`);
-                    if (!respuestaPaso3Escena.titulo_escena_desarrollada || !respuestaPaso3Escena.frames_desarrollados || !Array.isArray(respuestaPaso3Escena.frames_desarrollados)) {
-                        throw new Error(`Formato JSON inválido para el capítulo ${i+1}.`);
-                    }
-                    exitoEscena = true;
-                } catch (error) {
-                    reintentosEscena++;
-                    console.error(`Intento ${reintentosEscena} fallido para el capítulo ${i + 1}:`, error);
-                    if (reintentosEscena >= maxReintentosEscena) {
-                        throw new Error(`No se pudo generar el capítulo ${i + 1} después de ${maxReintentosEscena} intentos.`);
-                    }
-                    await sleep(1500);
-                }
-            }
-
+            const promptPaso3 = `
+                Título: ${tituloHistoriaGlobal}
+                Resumen del Capítulo ${i + 1}: ${resumenPorEscenasGlobal[i].resumen_escena}
+                ${contextoEscenaAnteriorSerializado ? `Contenido del Capítulo Anterior:\n${contextoEscenaAnteriorSerializado}` : ""}
+                **Tarea:** Desarrolla el capítulo ${i + 1}, divídelo en ${window.cantidadframes} frames y dale un título.
+                **Formato JSON OBLIGATORIO:** {"titulo_escena_desarrollada": "string", "frames_desarrollados": [{"contenido_frame": "string"}]}`;
+            
+            const respuestaPaso3Escena = await llamarIAConFeedback(promptPaso3, `Paso 3: Capítulo ${i + 1}`);
+            
             const escenaProcesada = {
                 titulo_escena: respuestaPaso3Escena.titulo_escena_desarrollada,
-                frames: respuestaPaso3Escena.frames_desarrollados.map(f => ({ contenido: f.contenido_frame || "" })),
-                generadoPorIA: true
+                frames: respuestaPaso3Escena.frames_desarrollados.map(f => ({ contenido: f.contenido_frame || "" }))
             };
             ultimaHistoriaGeneradaJson.historia.push(escenaProcesada);
-            contextoEscenaAnteriorSerializado = JSON.stringify(respuestaPaso3Escena, null, 2); 
-        } 
-
-        if(typeof progressBarManager !== 'undefined') progressBarManager.set(95, 'Guardando en la sección de Guion...');
-        
-        // El resto de la lógica para guardar el guion y mostrarlo no necesita cambios.
-        if (typeof agregarCapituloYMostrar === 'function') {
-            agregarCapituloYMostrar(); 
-            if (indiceCapituloActivo >= 0 && guionLiterarioData[indiceCapituloActivo]) {
-                guionLiterarioData[indiceCapituloActivo].titulo = tituloHistoriaGlobal || "Guion de Historia IA";
-                guionLiterarioData[indiceCapituloActivo].generadoPorIA = true;
-                
-                let contenidoGuion = `<h1>${tituloHistoriaGlobal}</h1>
-                <div class="guion-ia-general"><h2>Planteamiento General</h2><p>${planteamientoGeneralGlobal.replace(/\n/g, "<br>")}</p></div>`;
-
-                if (resumenPorEscenasGlobal && resumenPorEscenasGlobal.length > 0) {
-                    contenidoGuion += `<div class="guion-ia-general"><h2>Planteamiento por Capítulos</h2><ul>`;
-                    resumenPorEscenasGlobal.forEach((res, idx) => {
-                        contenidoGuion += `<li><strong>Capítulo ${idx + 1}:</strong> ${res.resumen_escena || ""}</li>`;
-                    });
-                    contenidoGuion += `</ul></div>`;
-                }
-
-                ultimaHistoriaGeneradaJson.historia.forEach((escena, idx) => {
-                    contenidoGuion += `<div class="guion-ia-escena"><h3>${escena.titulo_escena || `Capítulo ${idx + 1}`}</h3>`;
-                    escena.frames.forEach((frame, frameIdx) => {
-                        contenidoGuion += `<div class="guion-ia-frame"><h4>Frame ${frameIdx + 1}</h4><p>${(frame.contenido || "").replace(/\n/g, "<br>")}</p></div>`;
-                    });
-                    contenidoGuion += `</div>`;
-                });
-
-                guionLiterarioData[indiceCapituloActivo].contenido = contenidoGuion;
-                mostrarCapituloSeleccionado(indiceCapituloActivo); 
-            }
+            
+            // Visualización en tiempo real
+            chunkHTML = `<div class="guion-ia-escena"><h3>${escenaProcesada.titulo_escena || `Capítulo ${i + 1}`}</h3>`;
+            escenaProcesada.frames.forEach((frame, frameIdx) => {
+                chunkHTML += `<div class="guion-ia-frame"><h4>Frame ${frameIdx + 1}</h4><p>${(frame.contenido || "").replace(/\n/g, "<br>")}</p></div>`;
+            });
+            chunkHTML += `</div>`;
+            historiaContenidoHTML += chunkHTML;
+            actualizarContenidoGuionEnProgreso(chunkHTML);
+            
+            contextoEscenaAnteriorSerializado = JSON.stringify(respuestaPaso3Escena, null, 2);
+            await sleep(500);
         }
-        
-        if(typeof progressBarManager !== 'undefined') progressBarManager.finish("¡Proceso completado!");
-        await sleep(500);
 
-        alert("¡Proceso completado! El texto ha sido generado y guardado. Serás redirigido a la sección 'Guion' para ver el resultado.");
+        // --- FINALIZACIÓN ---
+        progressBarManager.set(95, 'Finalizando y guardando...');
         
-        if(typeof abrirGuion === 'function') abrirGuion();
-        if(typeof actualizarBotonContextual === 'function') actualizarBotonContextual();
+        // Llama a la función de finalización de guion.js
+        finalizarGeneracionGuion(tituloHistoriaGlobal, historiaContenidoHTML);
+        
+        progressBarManager.finish("¡Proceso completado!");
+        alert("¡Proceso completado! El guion se ha generado en su sección.");
+        if (typeof abrirGuion === 'function') abrirGuion();
 
     } catch (error) {
-        console.error("Error general en enviarTextoConInstrucciones:", error);
-        if(typeof progressBarManager !== 'undefined') progressBarManager.error(`Error: ${error.message}`);
-        alert(`Se produjo un error durante la generación: ${error.message}`);
-        ultimaHistoriaGeneradaJson = null; 
+        console.error("Error en enviarTextoConInstrucciones:", error);
+        progressBarManager.error(`Error: ${error.message}`);
+        alert(`Se produjo un error: ${error.message}`);
+        // Limpia el guion en progreso en caso de error
+        if (typeof finalizarGeneracionGuion === 'function') {
+            finalizarGeneracionGuion("Error de Generación", `<p>Ocurrió un error: ${error.message}</p>`);
+        }
     }
 }
 
@@ -331,6 +305,33 @@ function lanzarGeneracionHistoria() {
     document.getElementById('cantidadeframes').value = frames;
     document.getElementById('incluir-datos-ia').checked = usarDatos;
 
-    cerrarModalIAHerramientas();
-    enviarTextoConInstrucciones();
+    // NOTA: El error "no se encontró el modal generador-ia-modal" ocurre aquí.
+    // Asegúrate de que el ID del modal en tu archivo HTML es exactamente "generador-ia-modal".
+    if (typeof cerrarModal === 'function') {
+        cerrarModal('generador-ia-modal');
+    }
+
+    // --- INICIO DE LA CORRECCIÓN ---
+    // 1. Preparamos la vista en la sección del guion llamando a la función correcta.
+    if (typeof prepararVistaParaGeneracionIA === 'function') {
+        prepararVistaParaGeneracionIA();
+    } else {
+        console.error("La función prepararVistaParaGeneracionIA no está definida en guion.js");
+        alert("Error: No se puede iniciar la generación del guion.");
+        return; 
+    }
+
+    // 2. Iniciamos el gestor de progreso global
+    if (typeof progressBarManager !== 'undefined') {
+        progressBarManager.start("Generando Guion", () => {
+             // Esta función se ejecuta si se hace clic en la barra de progreso
+            if(typeof abrirGuion === 'function') abrirGuion();
+        });
+    }
+    
+    // 3. Lanzamos la generación
+    setTimeout(() => {
+        enviarTextoConInstrucciones(idea, escenas, frames, usarDatos);
+    }, 100);
+    // --- FIN DE LA CORRECCIÓN ---
 }

@@ -58,7 +58,7 @@ function eliminarFrame(frameIndex, escenaId) {
 function crearBotonEliminarFrame(frameIndex, escenaId) {
     let eliminarFrameBtn = document.createElement("button");
     eliminarFrameBtn.textContent = "❌";
-    eliminarFrameBtn.className = "ideframeh";
+    eliminarFrameBtn.className = "ideframeh2";
     eliminarFrameBtn.onclick = (event) => {
         event.stopPropagation();
         eliminarFrame(frameIndex, escenaId);

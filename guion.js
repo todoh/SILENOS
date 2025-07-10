@@ -2,6 +2,94 @@
 // GESTIÓN DEL GUIÓN LITERARIO
 // ===================================
 
+// Variable global para rastrear el índice del guion que se está generando
+let indiceGuionEnProgreso = -1;
+
+/**
+ * Prepara la interfaz para la generación de un nuevo guion por IA.
+ * Crea un capítulo temporal "Guion en proceso...", lo muestra en pantalla
+ * y devuelve su índice para que pueda ser actualizado.
+ * @returns {number} El índice del capítulo recién creado.
+ */
+function prepararVistaParaGeneracionIA() {
+    const capituloExistente = guionLiterarioData.findIndex(cap => cap.enProgreso);
+    if (capituloExistente !== -1) {
+        guionLiterarioData.splice(capituloExistente, 1);
+    }
+
+    const nuevoCapitulo = { 
+        titulo: "Guion en proceso...", 
+        contenido: "<p>Iniciando conexión con la IA... Por favor, espera.</p>",
+        generadoPorIA: true,
+        enProgreso: true 
+    };
+
+    guionLiterarioData.push(nuevoCapitulo);
+    guionLiterarioData.sort((a, b) => a.titulo.localeCompare(b.titulo));
+    
+    indiceGuionEnProgreso = guionLiterarioData.findIndex(cap => cap === nuevoCapitulo);
+    indiceCapituloActivo = indiceGuionEnProgreso;
+
+    if (typeof abrirGuion === 'function') {
+        abrirGuion();
+    } else {
+        console.error("La función abrirGuion() no está disponible.");
+    }
+    
+    return indiceGuionEnProgreso;
+}
+
+/**
+ * Actualiza el contenido del capítulo que está siendo generado por la IA.
+ * Esta función se llama repetidamente desde el proceso de IA.
+ * @param {string} nuevoContenidoHTML - El nuevo fragmento de HTML para añadir al guion.
+ */
+function actualizarContenidoGuionEnProgreso(nuevoContenidoHTML) {
+    if (indiceGuionEnProgreso === -1 || !guionLiterarioData[indiceGuionEnProgreso]) return;
+
+    const capitulo = guionLiterarioData[indiceGuionEnProgreso];
+
+    // La primera vez reemplaza el contenido, las siguientes veces añade al final.
+    if (capitulo.contenido.includes("Iniciando conexión con la IA")) {
+        capitulo.contenido = nuevoContenidoHTML;
+    } else {
+        capitulo.contenido += nuevoContenidoHTML;
+    }
+
+    if (indiceCapituloActivo === indiceGuionEnProgreso) {
+        const contenidoDiv = document.getElementById('contenido-capitulo-activo');
+        if (contenidoDiv && contenidoDiv.querySelector('.contenido-guion-editor')) {
+            contenidoDiv.querySelector('.contenido-guion-editor').innerHTML = capitulo.contenido;
+            // Scroll hacia el final para ver el nuevo contenido
+            contenidoDiv.scrollTop = contenidoDiv.scrollHeight;
+        }
+    }
+}
+
+/**
+ * Finaliza el proceso de generación, actualizando el título y contenido final del capítulo.
+ * @param {string} tituloFinal - El título definitivo para el guion.
+ * @param {string} contenidoFinalHTML - El contenido HTML completo y final.
+ */
+function finalizarGeneracionGuion(tituloFinal, contenidoFinalHTML) {
+    if (indiceGuionEnProgreso === -1 || !guionLiterarioData[indiceGuionEnProgreso]) return;
+
+    const capitulo = guionLiterarioData[indiceGuionEnProgreso];
+    capitulo.titulo = tituloFinal;
+    capitulo.contenido = contenidoFinalHTML;
+    delete capitulo.enProgreso;
+
+    indiceGuionEnProgreso = -1;
+
+    guionLiterarioData.sort((a, b) => a.titulo.localeCompare(b.titulo));
+    indiceCapituloActivo = guionLiterarioData.findIndex(cap => cap.titulo === tituloFinal);
+    
+    // Renderiza todo de nuevo para reflejar el estado final
+    renderizarGuion();
+    mostrarCapituloSeleccionado(indiceCapituloActivo);
+}
+
+
 function abrirGuion() {
     cerrartodo();
     document.getElementById('guion-literario').style.display = 'flex';
@@ -90,11 +178,12 @@ function mostrarCapituloSeleccionado(index) {
     
     contenidoDiv.appendChild(inputTitulo);
 
-    if (capitulo.generadoPorIA) {
+    // No mostrar botones de generación si el guion está "en progreso"
+    if (capitulo.generadoPorIA && !capitulo.enProgreso) {
         if (hanSidoFramesGenerados(capitulo.titulo)) {
             const botonGenerarTomas = document.createElement('button');
             botonGenerarTomas.textContent = 'Generar Tomas Visuales';
-            botonGenerarTomas.className = 'pro generar-tomas-btn';
+            botonGenerarTomas.className = 'pro generar-tomas-btn nom';
             botonGenerarTomas.title = 'Genera el storyboard visual a partir de los frames ya creados.';
             botonGenerarTomas.onclick = () => {
                 if (typeof iniciarGeneracionDeTomas === 'function') {
@@ -105,16 +194,10 @@ function mostrarCapituloSeleccionado(index) {
             };
             toolbar.appendChild(botonGenerarTomas);
         } else {
-            // =======================================================================
-            // INICIO DE LA MODIFICACIÓN
-            // =======================================================================
             const botonGenerarFrames = document.createElement('button');
             botonGenerarFrames.textContent = 'Generar Frames de la Historia';
-            botonGenerarFrames.className = 'pro generar-frames-btn';
+            botonGenerarFrames.className = 'pro generar-frames-btn nom';
             botonGenerarFrames.title = 'Rellena los capítulos con los frames detallados por la IA.';
-            
-            // Ahora llama a la función que abre el modal de selección de libro.
-            // Esta función está en main.js y ya la tienes implementada.
             botonGenerarFrames.onclick = () => {
                 if (typeof abrirModalSeleccionLibroParaFrames === 'function') {
                     abrirModalSeleccionLibroParaFrames();
@@ -123,18 +206,16 @@ function mostrarCapituloSeleccionado(index) {
                 }
             };
             toolbar.appendChild(botonGenerarFrames);
-            // =======================================================================
-            // FIN DE LA MODIFICACIÓN
-            // =======================================================================
         }
     }
 
     const editorContenido = document.createElement('div');
     editorContenido.className = 'contenido-guion-editor';
-    editorContenido.contentEditable = true;
+    // El contenido es editable solo si no es de la IA o si ya ha terminado.
+    editorContenido.contentEditable = !capitulo.generadoPorIA;
     editorContenido.innerHTML = capitulo.contenido; 
     editorContenido.oninput = function() {
-        if (indiceCapituloActivo !== -1) {
+        if (indiceCapituloActivo !== -1 && !guionLiterarioData[indiceCapituloActivo].generadoPorIA) {
             guionLiterarioData[indiceCapituloActivo].contenido = this.innerHTML;
         }
     };
@@ -191,6 +272,11 @@ function renderizarGuion() {
         const tituloElement = document.createElement('div');
         tituloElement.className = 'titulo-capitulo-indice-texto';
         tituloElement.textContent = capitulo.titulo || "Capítulo sin título";
+        
+        // Añadir un estilo visual para el capítulo en progreso
+        if (capitulo.enProgreso) {
+            tituloElement.classList.add('en-progreso');
+        }
 
         if (index === indiceCapituloActivo) {
             tituloContainer.classList.add('activo-container');
