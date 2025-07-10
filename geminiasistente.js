@@ -343,7 +343,7 @@ function renderizarSeccionNubePersonajes(data, personajesOriginales) {
         y: Math.random() * canvas.height, 
         vx: 0, 
         vy: 0, 
-        radius: 3 + n.relevancia * 1.9 // <-- Radio ajustado para nodos más pequeños
+        radius: 5 + n.relevancia * 3.9 // <-- Radio ajustado para nodos más pequeños
     }));
     
     // La función de simulación no necesita cambios
@@ -410,7 +410,7 @@ function renderizarSeccionNubePersonajes(data, personajesOriginales) {
             // Dibuja el círculo relleno, que ahora tendrá la sombra aplicada.
             ctx.beginPath();
             ctx.arc(nodo.x, nodo.y, nodo.radius, 0, 2 * Math.PI);
-            ctx.fillStyle = personajeOriginal?.color || '#3498db';
+            ctx.fillStyle = personajeOriginal?.color || '#ffababff';
             ctx.fill();
 
             // Se resetea la sombra para que no afecte al borde ni al texto.
@@ -425,7 +425,7 @@ function renderizarSeccionNubePersonajes(data, personajesOriginales) {
             ctx.stroke();
 
             ctx.fillStyle = '#000';
-            ctx.font = '12px Arial';
+            ctx.font = '18px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(nodo.id, nodo.x, nodo.y);

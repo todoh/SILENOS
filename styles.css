@@ -853,12 +853,12 @@ top: 1%;left: 2%;}
 }
 
 .titulo-capitulo-indice-container {
-    height: 90%;
-    top: 5%;
+    height: 100%;
+    top: 0%;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 8px;
+  
     border-bottom: 1px solid #eee;
     background-color: #fff;
     margin-bottom: 0px;
@@ -916,9 +916,10 @@ top: 1%;left: 2%;}
 }
 
 #guion-literario h2 {
+    font-weight: bold;
     width: auto; 
-    background-color: #333;
-    color: white;
+    background-color: transparent;
+    color: rgb(0, 0, 0);
     padding: 12px;
     margin-bottom: 10px; 
     margin-left: 0;
@@ -1387,8 +1388,8 @@ width: 15%;
 
 .contenido-guion-editor {
     width:80%; height: 86.5%;
-    flex-grow: 1;
-   left: 0%; top: 5%;
+    flex-grow: 1; right: 10%;
+   left: 10%; top: 5%;
     border: 0px solid #ccc;
     border-radius: 3px;
     overflow-y: auto;
@@ -1398,8 +1399,8 @@ width: 15%;
     background: rgba(255, 255, 255, 0);
  position: absolute;
     text-align: left; 
-    padding: 10%;
-}
+   padding-right: 10%;
+}    
 
 .dark-theme .contenido-guion-editor {
     background-color: #333;
@@ -1415,12 +1416,12 @@ width: 15%;
 }
 
 .guion-ia-general {
-    background-color: #f0f8ff;
-    border: 1px solid #cce0ff;
+    background-color: #ffffff;
+    border: 1px solid #ffffff;
 }
 
 .guion-ia-escena {
-    background-color: #fafafa;
+    background-color: #ffffff;
     border: 1px solid #e8e8e8;
 }
 
@@ -1925,11 +1926,13 @@ transform: translateY(-50%);
 
 
 #character-cloud-canvas {
-width: 100%;
+width: 80dvw !important;
 height: 75dvh;
- 
-
-
+margin-right: 0dvw;
+margin-left: 0dvw;
+top: 0%;
+position: relative;
+display: flex;
 
 }
 

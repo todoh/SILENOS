@@ -253,6 +253,98 @@ function renderEscenasUI() {
                         // Llamamos a la nueva función del compositor
                         const imageUrl = await generarEscenaCompuesta(prompt, statusDiv);
                         
+videoBtn.onclick = async () => {
+    const prompt = toma.guionTecnico;
+    if (!prompt || !prompt.trim()) {
+        alert('El Guion Técnico (Prompt) de la toma está vacío. Escribe una descripción para poder generar la imagen.');
+        return;
+    }
+
+    // NUEVA LÓGICA: Buscar en 'datos' primero
+    try {
+        // Asumimos que tienes una función que busca en tu directorio "datos".
+        // Esta es una implementación de ejemplo, tendrás que adaptarla.
+        const imagenExistente = await buscarImagenEnDatos(prompt);
+
+        if (imagenExistente) {
+            // Si la imagen existe, la usamos directamente
+            console.log("Componiendo escena desde archivo existente en 'datos'.");
+            toma.imagen = imagenExistente;
+            // Actualiza la UI para mostrar la imagen encontrada
+            const imagenPreview = tomaContainer.querySelector('.toma-imagen-preview');
+            if(imagenPreview) {
+                imagenPreview.src = imagenExistente;
+                imagenPreview.style.display = 'block';
+                const placeholder = imagenArea.querySelector('.imagen-placeholder');
+                if(placeholder) placeholder.style.display = 'none';
+            }
+        } else {
+            // Si no existe, procedemos a generar con la IA
+            console.log("No se encontraron datos. Generando nueva imagen con IA.");
+            if (typeof generarEscenaCompuesta !== 'function') {
+                alert('Error: La función para componer escenas no está disponible.');
+                return;
+            }
+
+            const statusDiv = document.createElement('div');
+            statusDiv.className = 'toma-loading-overlay';
+            statusDiv.innerHTML = '<div class="loading-spinner-toma"></div><p>Iniciando composición...</p>';
+            imagenArea.appendChild(statusDiv);
+            
+            try {
+                // Llamamos a la función del compositor
+                const imageUrl = await generarEscenaCompuesta(prompt, statusDiv);
+                
+                // Guardamos y mostramos la imagen
+                toma.imagen = imageUrl;
+                const imagenPreview = tomaContainer.querySelector('.toma-imagen-preview');
+                 if(imagenPreview) {
+                    imagenPreview.src = imageUrl;
+                    imagenPreview.style.display = 'block';
+                    const placeholder = imagenArea.querySelector('.imagen-placeholder');
+                    if(placeholder) placeholder.style.display = 'none';
+                }
+
+            } catch (error) {
+                console.error("Error al componer la escena para la toma:", error);
+                statusDiv.innerHTML = `<p style="color: red; font-size: 0.8em;">Error</p>`;
+                setTimeout(() => statusDiv.remove(), 5000);
+            } finally {
+                if(statusDiv.parentElement) {
+                   statusDiv.remove();
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Error en el proceso de composición de la escena:", error);
+        alert("Ocurrió un error al procesar la toma.");
+    }
+};
+
+/**
+ * Función de ejemplo para buscar una imagen en tu directorio "datos".
+ * Debes implementar la lógica real según cómo gestiones tus archivos.
+ * @param {string} prompt El texto a buscar.
+ * @returns {Promise<string|null>} La URL de la imagen si se encuentra, o null.
+ */
+async function buscarImagenEnDatos(prompt) {
+    // Esta es una implementación simulada.
+    // En un caso real, aquí harías una petición a tu servidor o
+    // buscarías en un índice de archivos locales.
+    console.log(`Buscando en 'datos' una imagen para el prompt: "${prompt}"`);
+    
+    // Ejemplo: si tienes un objeto global con los datos cargados
+    if (window.datosGuardados && window.datosGuardados[prompt]) {
+        return window.datosGuardados[prompt].url;
+    }
+    
+    // Simula una búsqueda que no encuentra nada
+    return null;
+}
+
+
+
+
                         // Guardamos y mostramos la imagen
                         toma.imagen = imageUrl;
                         imagenPreview.src = imageUrl;
