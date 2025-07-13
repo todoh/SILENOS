@@ -1,0 +1,297 @@
+[
+  {
+    "version": "2.0.0",
+    "nombre": "Samurái Guardián del Crepúsculo",
+    "descripcion": "Un samurái veterano, ataviado con una armadura de láminas de cuero y metal oscuro, en una postura vigilante. Su mirada refleja la sabiduría de innumerables batallas.",
+    "etiqueta": "personaje",
+    "arco": "Leyendas del Acero",
+    "definitions": {
+      "katana_completa": {
+        "type": "group",
+        "descripcion": "Una katana tradicional japonesa, con una hoja de acero al carbono forjada a mano, una tsuba (guarda) de hierro ornamentada y un tsuka (mango) envuelto en piel de raya y seda.",
+        "children": [
+          {
+            "id": "katana_hoja",
+            "type": "poligono",
+            "descripcion": "Hoja larga y elegantemente curvada, con un hamon (línea de temple) visible y un brillo metálico pulido.",
+            "transform": { "posición": [0, -120], "rotación": 0, "escala": [1, 1] },
+            "puntos": [
+              {"x": -4, "y": 110}, {"x": 4, "y": 110}, {"x": 5, "y": -100}, 
+              {"x": 2, "y": -120}, {"x": -2, "y": -120}, {"x": -5, "y": -100}
+            ],
+            "style": {
+              "zIndex": 151,
+              "fill": {
+                "type": "degradado_lineal",
+                "colores": ["#EAEAEA", "#D0D0D0", "#B0B0B0"],
+                "inicio": {"x": -5, "y": 0},
+                "fin": {"x": 5, "y": 0}
+              },
+              "stroke": { "color": "#606060", "width": 0.5 }
+            }
+          },
+          {
+            "id": "katana_guarda_tsuba",
+            "type": "círculo",
+            "descripcion": "Guarda circular de hierro oscuro, con grabados de un dragón.",
+            "transform": { "posición": [0, 15], "rotación": 0, "escala": [1, 1] },
+            "tamaño": { "radio": 18 },
+            "style": {
+              "zIndex": 152,
+              "fill": { "type": "solido", "color": "#2C2C2C" },
+              "stroke": { "color": "#1A1A1A", "width": 2 }
+            }
+          },
+          {
+            "id": "katana_mango_tsuka",
+            "type": "rectángulo",
+            "descripcion": "Mango envuelto en seda azul oscuro sobre piel de raya blanca.",
+            "transform": { "posición": [0, 50], "rotación": 0, "escala": [1, 1] },
+            "tamaño": { "ancho": 12, "alto": 70 },
+            "style": {
+              "zIndex": 150,
+              "fill": { "type": "solido", "color": "#1E2A4F" },
+              "stroke": { "color": "#101828", "width": 1 }
+            }
+          }
+        ]
+      }
+    },
+    "scene": {
+      "config": {
+        "backgroundColor": "transparent"
+      },
+      "children": [
+        {
+          "id": "samurai_cuerpo_completo",
+          "type": "group",
+          "descripcion": "El cuerpo completo del samurái, incluyendo la estructura anatómica y la armadura.",
+          "transform": { "posición": [256, 256], "rotación": 0, "escala": [1, 1] },
+          "children": [
+            {
+              "id": "pierna_izquierda_grupo",
+              "type": "group",
+              "transform": { "posición": [-35, 120], "rotación": 5 },
+              "children": [
+                {
+                  "id": "muslo_izquierdo", "type": "rectángulo", "transform": {"posición": [0, 0]},
+                  "tamaño": {"ancho": 40, "alto": 90},
+                  "style": {"zIndex": 10, "fill": {"type": "solido", "color": "#3D352A"}}
+                },
+                {
+                  "id": "haidate_izquierdo", "type": "poligono", "transform": {"posición": [0, -10]},
+                  "puntos": [{"x": -25, "y": -40}, {"x": 25, "y": -40}, {"x": 22, "y": 50}, {"x": -22, "y": 50}],
+                  "style": {"zIndex": 15, "fill": {"type": "solido", "color": "#301C10"}, "stroke": {"color": "#8B4513", "width": 2}}
+                },
+                {
+                  "id": "rodilla_izquierda", "type": "círculo", "transform": {"posición": [0, 45]},
+                  "tamaño": {"radio": 22},
+                  "style": {"zIndex": 12, "fill": {"type": "solido", "color": "#2A241E"}}
+                },
+                {
+                  "id": "espinilla_izquierda", "type": "rectángulo", "transform": {"posición": [0, 95]},
+                  "tamaño": {"ancho": 35, "alto": 80},
+                  "style": {"zIndex": 10, "fill": {"type": "solido", "color": "#3D352A"}}
+                },
+                {
+                  "id": "suneate_izquierdo", "type": "rectángulo", "transform": {"posición": [0, 95]},
+                  "tamaño": {"ancho": 38, "alto": 80},
+                  "style": {"zIndex": 16, "fill": {"type": "solido", "color": "#25150C"}, "stroke": {"color": "#8B4513", "width": 1}}
+                },
+                {
+                  "id": "pie_izquierdo", "type": "poligono", "transform": {"posición": [0, 180]},
+                  "puntos": [{"x": -20, "y": -10}, {"x": 25, "y": -15}, {"x": 20, "y": 15}, {"x": -25, "y": 15}],
+                  "style": {"zIndex": 11, "fill": {"type": "solido", "color": "#1A1A1A"}}
+                }
+              ]
+            },
+            {
+              "id": "pierna_derecha_grupo",
+              "type": "group",
+              "transform": { "posición": [35, 120], "rotación": -5 },
+              "children": [
+                {
+                  "id": "muslo_derecho", "type": "rectángulo", "transform": {"posición": [0, 0]},
+                  "tamaño": {"ancho": 40, "alto": 90},
+                  "style": {"zIndex": 10, "fill": {"type": "solido", "color": "#3D352A"}}
+                },
+                {
+                  "id": "haidate_derecho", "type": "poligono", "transform": {"posición": [0, -10]},
+                  "puntos": [{"x": -25, "y": -40}, {"x": 25, "y": -40}, {"x": 22, "y": 50}, {"x": -22, "y": 50}],
+                  "style": {"zIndex": 15, "fill": {"type": "solido", "color": "#301C10"}, "stroke": {"color": "#8B4513", "width": 2}}
+                },
+                {
+                  "id": "rodilla_derecha", "type": "círculo", "transform": {"posición": [0, 45]},
+                  "tamaño": {"radio": 22},
+                  "style": {"zIndex": 12, "fill": {"type": "solido", "color": "#2A241E"}}
+                },
+                {
+                  "id": "espinilla_derecha", "type": "rectángulo", "transform": {"posición": [0, 95]},
+                  "tamaño": {"ancho": 35, "alto": 80},
+                  "style": {"zIndex": 10, "fill": {"type": "solido", "color": "#3D352A"}}
+                },
+                {
+                  "id": "suneate_derecho", "type": "rectángulo", "transform": {"posición": [0, 95]},
+                  "tamaño": {"ancho": 38, "alto": 80},
+                  "style": {"zIndex": 16, "fill": {"type": "solido", "color": "#25150C"}, "stroke": {"color": "#8B4513", "width": 1}}
+                },
+                {
+                  "id": "pie_derecho", "type": "poligono", "transform": {"posición": [0, 180]},
+                  "puntos": [{"x": -25, "y": -15}, {"x": 20, "y": -10}, {"x": 25, "y": 15}, {"x": -20, "y": 15}],
+                  "style": {"zIndex": 11, "fill": {"type": "solido", "color": "#1A1A1A"}}
+                }
+              ]
+            },
+            {
+              "id": "torso_y_cabeza_grupo",
+              "type": "group",
+              "transform": {"posición": [0, 0]},
+              "children": [
+                {
+                  "id": "cadera",
+                  "type": "rectángulo",
+                  "transform": { "posición": [0, 60] },
+                  "tamaño": { "ancho": 80, "alto": 30 },
+                  "style": { "zIndex": 20, "fill": { "type": "solido", "color": "#3D352A" } }
+                },
+                {
+                  "id": "torso_do_maru",
+                  "type": "poligono",
+                  "descripcion": "La pieza central de la armadura (Do-maru) que cubre el pecho y el abdomen, hecha de placas de metal lacado en negro unidas por cordones de seda azul.",
+                  "transform": { "posición": [0, 0] },
+                  "puntos": [
+                    {"x": -50, "y": -50}, {"x": 50, "y": -50},
+                    {"x": 45, "y": 55}, {"x": -45, "y": 55}
+                  ],
+                  "style": {
+                    "zIndex": 25,
+                    "fill": {
+                      "type": "radialGradient",
+                      "colores": ["#2D2D2D", "#1A1A1A", "#050505"],
+                      "centro_inicio": {"x": 0, "y": -20}, "radio_inicio": 10,
+                      "centro_fin": {"x": 0, "y": 0}, "radio_fin": 100
+                    },
+                    "stroke": { "color": "#503828", "width": 2 }
+                  }
+                },
+                {
+                  "id": "cuello_garganta",
+                  "type": "rectángulo",
+                  "transform": { "posición": [0, -55] },
+                  "tamaño": { "ancho": 25, "alto": 15 },
+                  "style": { "zIndex": 22, "fill": { "type": "solido", "color": "#3D352A" } }
+                },
+                {
+                  "id": "cabeza_grupo",
+                  "type": "group",
+                  "transform": { "posición": [0, -110] },
+                  "children": [
+                    {
+                      "id": "craneo_base", "type": "círculo", "transform": {"posición": [0, 0]},
+                      "tamaño": {"radio": 40},
+                      "style": {"zIndex": 30, "fill": {"type": "solido", "color": "#F0DBC0"}}
+                    },
+                    {
+                      "id": "casco_kabuto", "type": "poligono", "transform": {"posición": [0, -15]},
+                      "puntos": [
+                        {"x": 0, "y": -45}, {"x": 45, "y": -20}, {"x": 42, "y": 10},
+                        {"x": -42, "y": 10}, {"x": -45, "y": -20}
+                      ],
+                      "style": { "zIndex": 40, "fill": {"type": "solido", "color": "#2C2C2C"}, "stroke": {"color": "#1A1A1A", "width": 3} }
+                    },
+                    {
+                      "id": "ojo_izquierdo", "type": "poligono", "transform": {"posición": [-15, -5]},
+                      "puntos": [{"x": -7, "y": 0}, {"x": 7, "y": 0}, {"x": 5, "y": 3}, {"x": -5, "y": 3}],
+                      "style": {"zIndex": 35, "fill": {"type": "solido", "color": "#201510"}}
+                    },
+                    {
+                      "id": "ojo_derecho", "type": "poligono", "transform": {"posición": [15, -5]},
+                      "puntos": [{"x": -7, "y": 0}, {"x": 7, "y": 0}, {"x": 5, "y": 3}, {"x": -5, "y": 3}],
+                      "style": {"zIndex": 35, "fill": {"type": "solido", "color": "#201510"}}
+                    },
+                    {
+                      "id": "nariz", "type": "poligono", "transform": {"posición": [0, 10]},
+                      "puntos": [{"x": 0, "y": -5}, {"x": 4, "y": 5}, {"x": -4, "y": 5}],
+                      "style": {"zIndex": 36, "fill": {"type": "solido", "color": "#D4B89C"}}
+                    },
+                    {
+                      "id": "boca", "type": "rectángulo", "transform": {"posición": [0, 25]},
+                      "tamaño": {"ancho": 20, "alto": 2},
+                      "style": {"zIndex": 35, "fill": {"type": "solido", "color": "#6B4226"}}
+                    },
+                    {
+                      "id": "bigote", "type": "poligono", "transform": {"posición": [0, 20]},
+                      "puntos": [{"x": -15, "y": 0}, {"x": 15, "y": 0}, {"x": 12, "y": 4}, {"x": -12, "y": 4}],
+                      "style": {"zIndex": 37, "fill": {"type": "solido", "color": "#1A1A1A"}}
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "brazo_derecho_grupo",
+              "type": "group",
+              "transform": { "posición": [65, -20], "rotación": 25 },
+              "children": [
+                 {
+                  "id": "hombro_sode_derecho", "type": "poligono", "transform": {"posición": [0, -30]},
+                  "puntos": [{"x": -30, "y": -20}, {"x": 30, "y": -20}, {"x": 25, "y": 25}, {"x": -25, "y": 25}],
+                  "style": {"zIndex": 28, "fill": {"type": "solido", "color": "#301C10"}, "stroke": {"color": "#8B4513", "width": 2}}
+                },
+                {
+                  "id": "brazo_superior_derecho", "type": "rectángulo", "transform": {"posición": [0, 0]},
+                  "tamaño": {"ancho": 30, "alto": 70},
+                  "style": {"zIndex": 23, "fill": {"type": "solido", "color": "#3D352A"}}
+                },
+                {
+                  "id": "antebrazo_kote_derecho", "type": "rectángulo", "transform": {"posición": [0, 55]},
+                  "tamaño": {"ancho": 34, "alto": 60},
+                  "style": {"zIndex": 26, "fill": {"type": "solido", "color": "#25150C"}, "stroke": {"color": "#8B4513", "width": 1}}
+                },
+                {
+                  "id": "mano_derecha", "type": "círculo", "transform": {"posición": [0, 95]},
+                  "tamaño": {"radio": 18},
+                  "style": {"zIndex": 27, "fill": {"type": "solido", "color": "#F0DBC0"}}
+                }
+              ]
+            },
+            {
+              "id": "brazo_izquierdo_grupo",
+              "type": "group",
+              "transform": { "posición": [-65, -20], "rotación": -25 },
+              "children": [
+                {
+                  "id": "hombro_sode_izquierdo", "type": "poligono", "transform": {"posición": [0, -30]},
+                  "puntos": [{"x": -30, "y": -20}, {"x": 30, "y": -20}, {"x": 25, "y": 25}, {"x": -25, "y": 25}],
+                  "style": {"zIndex": 28, "fill": {"type": "solido", "color": "#301C10"}, "stroke": {"color": "#8B4513", "width": 2}}
+                },
+                {
+                  "id": "brazo_superior_izquierdo", "type": "rectángulo", "transform": {"posición": [0, 0]},
+                  "tamaño": {"ancho": 30, "alto": 70},
+                  "style": {"zIndex": 23, "fill": {"type": "solido", "color": "#3D352A"}}
+                },
+                {
+                  "id": "antebrazo_kote_izquierdo", "type": "rectángulo", "transform": {"posición": [0, 55]},
+                  "tamaño": {"ancho": 34, "alto": 60},
+                  "style": {"zIndex": 26, "fill": {"type": "solido", "color": "#25150C"}, "stroke": {"color": "#8B4513", "width": 1}}
+                },
+                {
+                  "id": "mano_izquierda", "type": "círculo", "transform": {"posición": [0, 95]},
+                  "tamaño": {"radio": 18},
+                  "style": {"zIndex": 27, "fill": {"type": "solido", "color": "#F0DBC0"}}
+                }
+              ]
+            },
+            {
+              "id": "katana_envainada",
+              "ref": "katana_completa",
+              "descripcion": "La katana del samurái, envainada y sujeta a su cadera izquierda.",
+              "transform": { "posición": [-60, 80], "rotación": 100, "escala": [0.9, 0.9] },
+              "style": { "zIndex": 24 }
+            }
+          ]
+        }
+      ]
+    }
+  }
+]
