@@ -42,23 +42,23 @@ document.addEventListener('DOMContentLoaded', () => {
     let animationLoopId = null,
         currentActionIndex = 0;
     let threeScene, threeCamera, threeRenderer, textureLoader;
-  
+
 
     // Objeto NUEVO para gestionar el estado y los objetivos de la cámara
     let cameraState = {
         isMoving: false,
         isZooming: false,
         isFollowing: false,
-            isOrbiting: false, // <-- NUEVO
+        isOrbiting: false, // <-- NUEVO
         followTarget: null,
         orbitTarget: null, // <-- NUEVO: El nombre del sprite a orbitar
-        orbitRadius: 30,   // <-- NUEVO: Distancia de la órbita
-        orbitAngle: 0,     // <-- NUEVO: Ángulo actual en la órbita
+        orbitRadius: 30, // <-- NUEVO: Distancia de la órbita
+        orbitAngle: 0, // <-- NUEVO: Ángulo actual en la órbita
         orbitSpeed: 0.005, // <-- NUEVO: Velocidad de la órbita
         followOffset: new THREE.Vector3(0, 7, 20), // Distancia a la que seguir al objetivo
         targetPosition: new THREE.Vector3(0, 15, 35), // A donde se debe mover la cámara
-        targetLookAt: new THREE.Vector3(0, 0, 0),     // Hacia donde debe mirar
-        targetZoom: 1.0,                              // Nivel de zoom objetivo
+        targetLookAt: new THREE.Vector3(0, 0, 0), // Hacia donde debe mirar
+        targetZoom: 1.0, // Nivel de zoom objetivo
         moveSpeed: 0.02, // Velocidad de interpolación (lerp)
         zoomSpeed: 0.02
     };
@@ -156,10 +156,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-async function traducirGuionNaturalATecnico(guionUsuario) {
+    async function traducirGuionNaturalATecnico(guionUsuario) {
         console.log("Paso 1: Traduciendo guion del usuario a lenguaje técnico...");
         const listaAccionesDisponibles = [
-            "entrar", "salir", "moverse_hacia", "hablar", "saltar", "girar", "temblar", "parpadear", 
+            "entrar", "salir", "moverse_hacia", "hablar", "saltar", "girar", "temblar", "parpadear",
             "agrandarse", "encogerse", "desvanecerse", "aparecer_gradualmente", "mirar_a", "esperar",
             "camara_mover_a", "camara_hacer_zoom", "camara_seguir_elemento", "camara_mirar_a", "camara_girar_en_torno_a"
         ].join(', ');
@@ -199,15 +199,24 @@ async function traducirGuionNaturalATecnico(guionUsuario) {
         try {
             const response = await fetch(API_URL_BASE + apiKey, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }] })
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        role: "user",
+                        parts: [{
+                            text: prompt
+                        }]
+                    }]
+                })
             });
 
             if (!response.ok) throw new Error(`Error de la API en la traducción: ${response.status}`);
             const result = await response.json();
             const guionTecnico = result.candidates[0].content.parts[0].text;
             if (!guionTecnico) throw new Error("La IA no devolvió un guion técnico.");
-            
+
             console.log("Guion Técnico Generado:", guionTecnico);
             scriptInput.value = guionTecnico; // Opcional: mostrar al usuario el guion técnico
             return guionTecnico;
@@ -234,11 +243,13 @@ async function traducirGuionNaturalATecnico(guionUsuario) {
         1.  **Escenario 3D:** Define 'textura_suelo' y 'momento_del_dia'.
         2.  **Elementos:** Identifica todos los personajes y objetos. Mapea los que existan en mi biblioteca y requiere los que no.
         3.  **Acciones:** Genera la secuencia de 'acciones' para los elementos Y PARA LA CÁMARA.`;
-        
-        const schema = { /* ... (tu schema completo va aquí, sin cambios) ... */ };
+
+        const schema = {
+            /* ... (tu schema completo va aquí, sin cambios) ... */ };
 
         try {
-            const response = await fetch(API_URL_BASE + apiKey, { /* ... (tu llamada a la API sin cambios) ... */ });
+            const response = await fetch(API_URL_BASE + apiKey, {
+                /* ... (tu llamada a la API sin cambios) ... */ });
             // ... (resto de la lógica de la función sin cambios) ...
             const result = await response.json();
             const parsed = JSON.parse(result.candidates[0].content.parts[0].text || '{}');
@@ -248,7 +259,7 @@ async function traducirGuionNaturalATecnico(guionUsuario) {
             throw error;
         }
     }
-    
+
     // ===================================================================
     // --- FUNCIÓN ORQUESTADORA PRINCIPAL ---
     // ===================================================================
@@ -270,13 +281,16 @@ async function traducirGuionNaturalATecnico(guionUsuario) {
         try {
             // PASO 1
             const guionTecnico = await traducirGuionNaturalATecnico(guionUsuario);
-            
+
             // PASO 2
             const parsed = await analizarGuionTecnico(guionTecnico);
-            
+
             console.log("Respuesta de la API (3D):", parsed);
 
-            const { escenario, acciones = [] } = parsed;
+            const {
+                escenario,
+                acciones = []
+            } = parsed;
             const elementos_mapeados = Array.isArray(parsed.elementos_mapeados) ? parsed.elementos_mapeados : [];
             const elementos_requeridos = Array.isArray(parsed.elementos_requeridos) ? parsed.elementos_requeridos : [];
 
@@ -284,12 +298,17 @@ async function traducirGuionNaturalATecnico(guionUsuario) {
             requiredElements = elementos_requeridos;
 
             if (escenario && escenario.textura_suelo && savedImages[escenario.textura_suelo]) {
-                loadedImages['textura_suelo'] = { dataUrl: savedImages[escenario.textura_suelo], momento_del_dia: escenario.momento_del_dia };
+                loadedImages['textura_suelo'] = {
+                    dataUrl: savedImages[escenario.textura_suelo],
+                    momento_del_dia: escenario.momento_del_dia
+                };
             }
-            
+
             elementos_mapeados.forEach(el => {
                 if (el && el.mapeo && savedImages[el.mapeo]) {
-                    loadedImages[el.nombre] = { dataUrl: savedImages[el.mapeo] };
+                    loadedImages[el.nombre] = {
+                        dataUrl: savedImages[el.mapeo]
+                    };
                 }
             });
 
@@ -306,25 +325,23 @@ async function traducirGuionNaturalATecnico(guionUsuario) {
 
 
     // --- V. LÓGICA DE ANÁLISIS (ADAPTADA PARA 3D) ---
-    // EN: datos/animacion2d.js
+    async function handleAnalyzeScript() {
+        const scriptText = scriptInput.value.trim();
+        if (!scriptText) {
+            showError("Por favor, escribe un guion.");
+            return;
+        }
+        if (typeof apiKey === 'undefined' || !apiKey) {
+            showError("La API Key de Google no está configurada.");
+            return;
+        }
 
-async function handleAnalyzeScript() {
-    const scriptText = scriptInput.value.trim();
-    if (!scriptText) {
-        showError("Por favor, escribe un guion.");
-        return;
-    }
-    if (typeof apiKey === 'undefined' || !apiKey) {
-        showError("La API Key de Google no está configurada.");
-        return;
-    }
+        hideError();
+        setAnalyzeLoading(true);
+        resetUI();
 
-    hideError();
-    setAnalyzeLoading(true);
-    resetUI();
-
-    // El prompt y el schema no necesitan cambios para esta corrección
-    const prompt = `Actúa como un director de animación 3D experto. Analiza el guion y genera un JSON para controlar una escena en Three.js.
+        // El prompt y el schema no necesitan cambios para esta corrección
+        const prompt = `Actúa como un director de animación 3D experto. Analiza el guion y genera un JSON para controlar una escena en Three.js.
     
     MI BIBLIOTECA DE IMÁGENES (claves exactas):
     ${Object.keys(savedImages).join(', ')}
@@ -348,126 +365,195 @@ async function handleAnalyzeScript() {
                 -   'seguir_elemento': La cámara seguirá a un 'objetivo'.
                 -   'mirar_a': Apunta la cámara hacia un 'objetivo'...
                 -   'girar_en_torno_a': Orbita la cámara alrededor de un 'objetivo' a una 'distancia' específica.`;
-        
-    const schema = {
-        type: "OBJECT",
-        properties: {
-            escenario: {
-                type: "OBJECT",
-                properties: { textura_suelo: { type: "STRING" }, momento_del_dia: { type: "STRING", enum: Object.keys(skyColors) } },
-                required: ["textura_suelo", "momento_del_dia"]
-            },
-            elementos_mapeados: {
-                type: "ARRAY",
-                items: {
-                    type: "OBJECT",
-                    properties: { nombre: { type: "STRING" }, mapeo: { type: "STRING" } },
-                    required: ["nombre", "mapeo"]
-                }
-            },
-            elementos_requeridos: {
-                type: "ARRAY",
-                items: {
-                    type: "OBJECT",
-                    properties: { nombre: { type: "STRING" }, tipo: { type: "STRING" }, tamaño: { type: "STRING" } },
-                    required: ["nombre", "tipo"]
-                }
-            },
-            acciones: {
-                type: "ARRAY",
-                items: {
+
+        const schema = {
+            type: "OBJECT",
+            properties: {
+                escenario: {
                     type: "OBJECT",
                     properties: {
-                        elemento: { type: "STRING", description: "El nombre del elemento o la palabra clave 'camara'." },
-                        accion: { type: "STRING", enum: [
-                            "entrar", "salir", "moverse_hacia", "hablar", "saltar", "girar", "temblar", "parpadear", 
-                            "agrandarse", "encogerse", "desvanecerse", "aparecer_gradualmente", "mirar_a", "esperar",
-                            "camara_mover_a", "camara_hacer_zoom", "camara_seguir_elemento", "camara_mirar_a", "camara_girar_en_torno_a"
-                        ]},
-                        objetivo: { type: "STRING" },
-                        dialogo: { type: "STRING" },
-                        posicion: {
-                            type: "OBJECT",
-                            properties: { x: { type: "NUMBER" }, y: { type: "NUMBER" }, z: { type: "NUMBER" } }
+                        textura_suelo: {
+                            type: "STRING"
                         },
-                        nivel_zoom: { type: "NUMBER", description: "Nivel de zoom. 1.0 es normal." },
-                        // El campo "distancia" AHORA ESTÁ DENTRO de "properties", que es el lugar correcto.
-                        distancia: { type: "NUMBER", description: "Distancia (radio) para la órbita de la cámara." }
+                        momento_del_dia: {
+                            type: "STRING",
+                            enum: Object.keys(skyColors)
+                        }
                     },
-                    required: ["elemento", "accion"]
+                    required: ["textura_suelo", "momento_del_dia"]
+                },
+                elementos_mapeados: {
+                    type: "ARRAY",
+                    items: {
+                        type: "OBJECT",
+                        properties: {
+                            nombre: {
+                                type: "STRING"
+                            },
+                            mapeo: {
+                                type: "STRING"
+                            }
+                        },
+                        required: ["nombre", "mapeo"]
+                    }
+                },
+                elementos_requeridos: {
+                    type: "ARRAY",
+                    items: {
+                        type: "OBJECT",
+                        properties: {
+                            nombre: {
+                                type: "STRING"
+                            },
+                            tipo: {
+                                type: "STRING"
+                            },
+                            tamaño: {
+                                type: "STRING"
+                            }
+                        },
+                        required: ["nombre", "tipo"]
+                    }
+                },
+                acciones: {
+                    type: "ARRAY",
+                    items: {
+                        type: "OBJECT",
+                        properties: {
+                            elemento: {
+                                type: "STRING",
+                                description: "El nombre del elemento o la palabra clave 'camara'."
+                            },
+                            accion: {
+                                type: "STRING",
+                                enum: [
+                                    "entrar", "salir", "moverse_hacia", "hablar", "saltar", "girar", "temblar", "parpadear",
+                                    "agrandarse", "encogerse", "desvanecerse", "aparecer_gradualmente", "mirar_a", "esperar",
+                                    "camara_mover_a", "camara_hacer_zoom", "camara_seguir_elemento", "camara_mirar_a", "camara_girar_en_torno_a"
+                                ]
+                            },
+                            objetivo: {
+                                type: "STRING"
+                            },
+                            dialogo: {
+                                type: "STRING"
+                            },
+                            posicion: {
+                                type: "OBJECT",
+                                properties: {
+                                    x: {
+                                        type: "NUMBER"
+                                    },
+                                    y: {
+                                        type: "NUMBER"
+                                    },
+                                    z: {
+                                        type: "NUMBER"
+                                    }
+                                }
+                            },
+                            nivel_zoom: {
+                                type: "NUMBER",
+                                description: "Nivel de zoom. 1.0 es normal."
+                            },
+                            // El campo "distancia" AHORA ESTÁ DENTRO de "properties", que es el lugar correcto.
+                            distancia: {
+                                type: "NUMBER",
+                                description: "Distancia (radio) para la órbita de la cámara."
+                            }
+                        },
+                        required: ["elemento", "accion"]
+                    }
                 }
-            }
-        },
-        required: ["escenario", "acciones"]
-    };
+            },
+            required: ["escenario", "acciones"]
+        };
 
-    try {
-        const response = await fetch(API_URL_BASE + apiKey, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ role: "user", parts: [{ text: prompt }] }],
-                generationConfig: { responseMimeType: "application/json", responseSchema: schema }
-            })
-        });
+        try {
+            const response = await fetch(API_URL_BASE + apiKey, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        role: "user",
+                        parts: [{
+                            text: prompt
+                        }]
+                    }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: schema
+                    }
+                })
+            });
 
-        if (!response.ok) {
-            let errorDetails = `Código de estado: ${response.status}.`;
-            try {
-                const errorData = await response.json();
-                if (errorData && errorData.error && errorData.error.message) {
-                    errorDetails += ` Detalles: ${errorData.error.message}`;
+            if (!response.ok) {
+                let errorDetails = `Código de estado: ${response.status}.`;
+                try {
+                    const errorData = await response.json();
+                    if (errorData && errorData.error && errorData.error.message) {
+                        errorDetails += ` Detalles: ${errorData.error.message}`;
+                    }
+                } catch (e) {
+                    errorDetails += ` No se pudo obtener más información del cuerpo del error.`;
                 }
-            } catch (e) {
-                errorDetails += ` No se pudo obtener más información del cuerpo del error.`;
+                throw new Error(`Error de la API. ${errorDetails}`);
             }
-            throw new Error(`Error de la API. ${errorDetails}`);
-        }
 
-        const result = await response.json();
+            const result = await response.json();
 
-        if (!result.candidates || !result.candidates[0].content || !result.candidates[0].content.parts || !result.candidates[0].content.parts[0].text) {
-            console.error("Respuesta inesperada de la API:", result);
-            throw new Error("La API devolvió una respuesta con un formato inesperado.");
-        }
-
-        const parsed = JSON.parse(result.candidates[0].content.parts[0].text);
-
-        console.log("Respuesta de la API (3D):", parsed);
-
-        // ===== INICIO DE LA CORRECCIÓN CLAVE =====
-        
-        // Extraemos las propiedades de forma segura
-        const { escenario, acciones = [] } = parsed;
-        
-        // Nos aseguramos de que 'elementos_mapeados' y 'elementos_requeridos' sean siempre arrays
-        const elementos_mapeados = Array.isArray(parsed.elementos_mapeados) ? parsed.elementos_mapeados : [];
-        const elementos_requeridos = Array.isArray(parsed.elementos_requeridos) ? parsed.elementos_requeridos : [];
-
-        animationSequence = acciones;
-        requiredElements = elementos_requeridos;
-
-        // ===== FIN DE LA CORRECCIÓN CLAVE =====
-
-        if (escenario && escenario.textura_suelo && savedImages[escenario.textura_suelo]) {
-            loadedImages['textura_suelo'] = { dataUrl: savedImages[escenario.textura_suelo], momento_del_dia: escenario.momento_del_dia };
-        }
-        
-        // Ahora, esta línea ya no dará error porque nos hemos asegurado de que 'elementos_mapeados' es un array.
-        elementos_mapeados.forEach(el => {
-            if (el && el.mapeo && savedImages[el.mapeo]) {
-                loadedImages[el.nombre] = { dataUrl: savedImages[el.mapeo] };
+            if (!result.candidates || !result.candidates[0].content || !result.candidates[0].content.parts || !result.candidates[0].content.parts[0].text) {
+                console.error("Respuesta inesperada de la API:", result);
+                throw new Error("La API devolvió una respuesta con un formato inesperado.");
             }
-        });
 
-        displayElementLoaders(elementos_mapeados, escenario);
-    } catch (error) {
-        console.error("Error detallado en handleAnalyzeScript:", error);
-        showError(`Error al analizar: ${error.message}`);
-    } finally {
-        setAnalyzeLoading(false);
+            const parsed = JSON.parse(result.candidates[0].content.parts[0].text);
+
+            console.log("Respuesta de la API (3D):", parsed);
+
+            // ===== INICIO DE LA CORRECCIÓN CLAVE =====
+
+            // Extraemos las propiedades de forma segura
+            const {
+                escenario,
+                acciones = []
+            } = parsed;
+
+            // Nos aseguramos de que 'elementos_mapeados' y 'elementos_requeridos' sean siempre arrays
+            const elementos_mapeados = Array.isArray(parsed.elementos_mapeados) ? parsed.elementos_mapeados : [];
+            const elementos_requeridos = Array.isArray(parsed.elementos_requeridos) ? parsed.elementos_requeridos : [];
+
+            animationSequence = acciones;
+            requiredElements = elementos_requeridos;
+
+            // ===== FIN DE LA CORRECCIÓN CLAVE =====
+
+            if (escenario && escenario.textura_suelo && savedImages[escenario.textura_suelo]) {
+                loadedImages['textura_suelo'] = {
+                    dataUrl: savedImages[escenario.textura_suelo],
+                    momento_del_dia: escenario.momento_del_dia
+                };
+            }
+
+            // Ahora, esta línea ya no dará error porque nos hemos asegurado de que 'elementos_mapeados' es un array.
+            elementos_mapeados.forEach(el => {
+                if (el && el.mapeo && savedImages[el.mapeo]) {
+                    loadedImages[el.nombre] = {
+                        dataUrl: savedImages[el.mapeo]
+                    };
+                }
+            });
+
+            displayElementLoaders(elementos_mapeados, escenario);
+        } catch (error) {
+            console.error("Error detallado en handleAnalyzeScript:", error);
+            showError(`Error al analizar: ${error.message}`);
+        } finally {
+            setAnalyzeLoading(false);
+        }
     }
-}
 
 
     // --- VI. FUNCIONES DE CARGA Y VISUALIZACIÓN ---
@@ -511,7 +597,9 @@ async function handleAnalyzeScript() {
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (e) => {
-            loadedImages[event.target.dataset.elementName] = { dataUrl: e.target.result };
+            loadedImages[event.target.dataset.elementName] = {
+                dataUrl: e.target.result
+            };
             event.target.previousElementSibling.textContent += ' ✔️';
             if (requiredElements.every(el => loadedImages[el.nombre])) {
                 renderButton.disabled = false;
@@ -540,12 +628,18 @@ async function handleAnalyzeScript() {
         threeScene.add(dirLight);
 
         const groundGeo = new THREE.PlaneGeometry(200, 200);
-        const groundMat = new THREE.MeshStandardMaterial({ map: groundTex, side: THREE.DoubleSide });
+        const groundMat = new THREE.MeshStandardMaterial({
+            map: groundTex,
+            side: THREE.DoubleSide
+        });
         const groundPlane = new THREE.Mesh(groundGeo, groundMat);
         groundPlane.rotation.x = -Math.PI / 2;
         threeScene.add(groundPlane);
 
-        threeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        threeRenderer = new THREE.WebGLRenderer({
+            antialias: true,
+            alpha: true
+        });
         threeRenderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
         threeContainer.innerHTML = '';
         threeContainer.appendChild(threeRenderer.domElement);
@@ -558,10 +652,19 @@ async function handleAnalyzeScript() {
         loadedTextures.forEach((el, i) => {
             if (!el.texture) return;
 
-            const material = new THREE.SpriteMaterial({ map: el.texture, transparent: true });
+            const material = new THREE.SpriteMaterial({
+                map: el.texture,
+                transparent: true
+            });
             const sprite = new THREE.Sprite(material);
 
-            const sizes = { 'muy grande': 20, 'grande': 15, 'mediano': 10, 'pequeño': 5, 'muy pequeño': 2.5 };
+            const sizes = {
+                'muy grande': 20,
+                'grande': 15,
+                'mediano': 10,
+                'pequeño': 5,
+                'muy pequeño': 2.5
+            };
             const baseHeight = sizes[el.tamaño] || 10;
             const aspectRatio = el.texture.image.width / el.texture.image.height;
             sprite.scale.set(baseHeight * aspectRatio, baseHeight, 1);
@@ -604,7 +707,11 @@ async function handleAnalyzeScript() {
                 const elData = (requiredElements.find(e => e.nombre === name) || {});
                 return new Promise(res => {
                     textureLoader.load(data.dataUrl,
-                        (texture) => res({ name, texture, ...elData }),
+                        (texture) => res({
+                            name,
+                            texture,
+                            ...elData
+                        }),
                         undefined,
                         () => res(null)
                     );
@@ -621,23 +728,23 @@ async function handleAnalyzeScript() {
             initThreeScene(loadedImages.textura_suelo.momento_del_dia, groundTexture);
             initializeActorSprites(loadedTextures);
 
-   cameraState = {
-        isMoving: false,
-        isZooming: false,
-        isFollowing: false,
-            isOrbiting: false, // <-- NUEVO
-        followTarget: null,
-        orbitTarget: null, // <-- NUEVO: El nombre del sprite a orbitar
-        orbitRadius: 30,   // <-- NUEVO: Distancia de la órbita
-        orbitAngle: 0,     // <-- NUEVO: Ángulo actual en la órbita
-        orbitSpeed: 0.005, // <-- NUEVO: Velocidad de la órbita
-        followOffset: new THREE.Vector3(0, 7, 20), // Distancia a la que seguir al objetivo
-        targetPosition: new THREE.Vector3(0, 15, 35), // A donde se debe mover la cámara
-        targetLookAt: new THREE.Vector3(0, 0, 0),     // Hacia donde debe mirar
-        targetZoom: 1.0,                              // Nivel de zoom objetivo
-        moveSpeed: 0.02, // Velocidad de interpolación (lerp)
-        zoomSpeed: 0.02
-    };
+            cameraState = {
+                isMoving: false,
+                isZooming: false,
+                isFollowing: false,
+                isOrbiting: false, // <-- NUEVO
+                followTarget: null,
+                orbitTarget: null, // <-- NUEVO: El nombre del sprite a orbitar
+                orbitRadius: 30, // <-- NUEVO: Distancia de la órbita
+                orbitAngle: 0, // <-- NUEVO: Ángulo actual en la órbita
+                orbitSpeed: 0.005, // <-- NUEVO: Velocidad de la órbita
+                followOffset: new THREE.Vector3(0, 7, 20), // Distancia a la que seguir al objetivo
+                targetPosition: new THREE.Vector3(0, 15, 35), // A donde se debe mover la cámara
+                targetLookAt: new THREE.Vector3(0, 0, 0), // Hacia donde debe mirar
+                targetZoom: 1.0, // Nivel de zoom objetivo
+                moveSpeed: 0.02, // Velocidad de interpolación (lerp)
+                zoomSpeed: 0.02
+            };
 
             startAnimation();
             if (renderButton) renderButton.classList.remove('pulse-animation');
@@ -646,82 +753,83 @@ async function handleAnalyzeScript() {
             console.error("Error de carga de textura:", err);
         });
     }
-function updateCameraState() {
-    if (!threeCamera) return;
-if (cameraState.isOrbiting && cameraState.orbitTarget && elementStates[cameraState.orbitTarget]) {
-        const targetSprite = elementStates[cameraState.orbitTarget].sprite;
-        
-        // Incrementamos el ángulo para girar
-        cameraState.orbitAngle += cameraState.orbitSpeed;
-        
-        // Calculamos la nueva posición en un círculo alrededor del objetivo
-        const camX = targetSprite.position.x + cameraState.orbitRadius * Math.cos(cameraState.orbitAngle);
-        const camZ = targetSprite.position.z + cameraState.orbitRadius * Math.sin(cameraState.orbitAngle);
-        // Mantenemos la altura de la cámara, puedes ajustarla si quieres
-        const camY = threeCamera.position.y; 
-        
-        threeCamera.position.set(camX, camY, camZ);
-        
-        // La cámara siempre debe mirar al centro de la órbita (el objetivo)
-        cameraState.targetLookAt.copy(targetSprite.position);
+
+    function updateCameraState() {
+        if (!threeCamera) return;
+        if (cameraState.isOrbiting && cameraState.orbitTarget && elementStates[cameraState.orbitTarget]) {
+            const targetSprite = elementStates[cameraState.orbitTarget].sprite;
+
+            // Incrementamos el ángulo para girar
+            cameraState.orbitAngle += cameraState.orbitSpeed;
+
+            // Calculamos la nueva posición en un círculo alrededor del objetivo
+            const camX = targetSprite.position.x + cameraState.orbitRadius * Math.cos(cameraState.orbitAngle);
+            const camZ = targetSprite.position.z + cameraState.orbitRadius * Math.sin(cameraState.orbitAngle);
+            // Mantenemos la altura de la cámara, puedes ajustarla si quieres
+            const camY = threeCamera.position.y;
+
+            threeCamera.position.set(camX, camY, camZ);
+
+            // La cámara siempre debe mirar al centro de la órbita (el objetivo)
+            cameraState.targetLookAt.copy(targetSprite.position);
 
 
-    // 1. Lógica de seguimiento
-   } else   if (cameraState.isFollowing && cameraState.followTarget && elementStates[cameraState.followTarget]) {
-        const targetSprite = elementStates[cameraState.followTarget].sprite;
-        // La cámara se posiciona relativa al objetivo, con un desfase (offset)
-        cameraState.targetPosition.copy(targetSprite.position).add(cameraState.followOffset);
-        // La cámara siempre mira al objetivo que está siguiendo
-        cameraState.targetLookAt.copy(targetSprite.position);
-    }
-    
-    // 2. Interpolar posición (movimiento suave)
-    if (!threeCamera.position.equals(cameraState.targetPosition)) {
-        threeCamera.position.lerp(cameraState.targetPosition, cameraState.moveSpeed);
-        if (threeCamera.position.distanceTo(cameraState.targetPosition) < 0.1) {
-            threeCamera.position.copy(cameraState.targetPosition);
-            cameraState.isMoving = false;
+            // 1. Lógica de seguimiento
+        } else if (cameraState.isFollowing && cameraState.followTarget && elementStates[cameraState.followTarget]) {
+            const targetSprite = elementStates[cameraState.followTarget].sprite;
+            // La cámara se posiciona relativa al objetivo, con un desfase (offset)
+            cameraState.targetPosition.copy(targetSprite.position).add(cameraState.followOffset);
+            // La cámara siempre mira al objetivo que está siguiendo
+            cameraState.targetLookAt.copy(targetSprite.position);
         }
-    }
 
-    // 3. Interpolar zoom
-    if (Math.abs(threeCamera.zoom - cameraState.targetZoom) > 0.01) {
-        threeCamera.zoom = THREE.MathUtils.lerp(threeCamera.zoom, cameraState.targetZoom, cameraState.zoomSpeed);
-        threeCamera.updateProjectionMatrix(); // ¡Esencial al cambiar el zoom!
-    } else if (cameraState.isZooming) {
-        threeCamera.zoom = cameraState.targetZoom;
-        threeCamera.updateProjectionMatrix();
-        cameraState.isZooming = false;
-    }
-
-    // 4. Actualizar el punto de mira de la cámara
-    threeCamera.lookAt(cameraState.targetLookAt);
-}
-    // --- VIII. BUCLE DE ANIMACIÓN Y LÓGICA 3D ---
-   function startAnimation() {
-    currentActionIndex = 0;
-    if (animationLoopId) cancelAnimationFrame(animationLoopId);
-
-    const animate = () => {
-        animationLoopId = requestAnimationFrame(animate);
-        
-        updateSpriteStates(); // Actualiza los personajes
-        updateCameraState();  // NUEVO: Actualiza la cámara
-        
-        threeRenderer.render(threeScene, threeCamera);
-
-        if (isActionComplete()) {
-            currentActionIndex++;
-            if (currentActionIndex >= animationSequence.length) {
-                // ... (lógica de fin de animación)
-                return;
+        // 2. Interpolar posición (movimiento suave)
+        if (!threeCamera.position.equals(cameraState.targetPosition)) {
+            threeCamera.position.lerp(cameraState.targetPosition, cameraState.moveSpeed);
+            if (threeCamera.position.distanceTo(cameraState.targetPosition) < 0.1) {
+                threeCamera.position.copy(cameraState.targetPosition);
+                cameraState.isMoving = false;
             }
-            processNextAction();
         }
-    };
-    processNextAction();
-    animate();
-}
+
+        // 3. Interpolar zoom
+        if (Math.abs(threeCamera.zoom - cameraState.targetZoom) > 0.01) {
+            threeCamera.zoom = THREE.MathUtils.lerp(threeCamera.zoom, cameraState.targetZoom, cameraState.zoomSpeed);
+            threeCamera.updateProjectionMatrix(); // ¡Esencial al cambiar el zoom!
+        } else if (cameraState.isZooming) {
+            threeCamera.zoom = cameraState.targetZoom;
+            threeCamera.updateProjectionMatrix();
+            cameraState.isZooming = false;
+        }
+
+        // 4. Actualizar el punto de mira de la cámara
+        threeCamera.lookAt(cameraState.targetLookAt);
+    }
+    // --- VIII. BUCLE DE ANIMACIÓN Y LÓGICA 3D ---
+    function startAnimation() {
+        currentActionIndex = 0;
+        if (animationLoopId) cancelAnimationFrame(animationLoopId);
+
+        const animate = () => {
+            animationLoopId = requestAnimationFrame(animate);
+
+            updateSpriteStates(); // Actualiza los personajes
+            updateCameraState(); // NUEVO: Actualiza la cámara
+
+            threeRenderer.render(threeScene, threeCamera);
+
+            if (isActionComplete()) {
+                currentActionIndex++;
+                if (currentActionIndex >= animationSequence.length) {
+                    // ... (lógica de fin de animación)
+                    return;
+                }
+                processNextAction();
+            }
+        };
+        processNextAction();
+        animate();
+    }
 
     function updateSpriteStates() {
         for (const name in elementStates) {
@@ -755,56 +863,56 @@ if (cameraState.isOrbiting && cameraState.orbitTarget && elementStates[cameraSta
         if (currentActionIndex >= animationSequence.length) return;
         const action = animationSequence[currentActionIndex];
 
- // --- Lógica para la cámara ---
-    if (action.elemento === 'camara') {
-        cameraState.isFollowing = false; // Detenemos el seguimiento si llega una nueva acción de cámara
-        
-        switch(action.accion) {
-            case 'camara_mover_a':
-                if (action.posicion) {
-                    cameraState.targetPosition.set(action.posicion.x, action.posicion.y, action.posicion.z);
-                    cameraState.isMoving = true;
-                }
-                break;
-            case 'camara_hacer_zoom':
-                if (action.nivel_zoom !== undefined) {
-                    cameraState.targetZoom = action.nivel_zoom;
-                    cameraState.isZooming = true;
-                }
-                break;
-            case 'camara_mirar_a':
-                if (action.objetivo && elementStates[action.objetivo]) {
-                    const targetSprite = elementStates[action.objetivo].sprite;
-                    cameraState.targetLookAt.copy(targetSprite.position);
-                } else if (action.posicion) {
-                    cameraState.targetLookAt.set(action.posicion.x, action.posicion.y, action.posicion.z);
-                }
-                break;
-            case 'camara_seguir_elemento':
-                 if (action.objetivo && elementStates[action.objetivo]) {
-                    cameraState.isFollowing = true;
-                    cameraState.followTarget = action.objetivo;
-                 }
-                break;
-         case 'camara_girar_en_torno_a':
-                if (action.objetivo && elementStates[action.objetivo]) {
-                    cameraState.isOrbiting = true;
-                    cameraState.orbitTarget = action.objetivo;
-                    // Usa la distancia del guion, o un valor por defecto si no se especifica
-                    cameraState.orbitRadius = action.distancia || 30;
-                }
-                break;
-            // =====================================
+        // --- Lógica para la cámara ---
+        if (action.elemento === 'camara') {
+            cameraState.isFollowing = false; // Detenemos el seguimiento si llega una nueva acción de cámara
+
+            switch (action.accion) {
+                case 'camara_mover_a':
+                    if (action.posicion) {
+                        cameraState.targetPosition.set(action.posicion.x, action.posicion.y, action.posicion.z);
+                        cameraState.isMoving = true;
+                    }
+                    break;
+                case 'camara_hacer_zoom':
+                    if (action.nivel_zoom !== undefined) {
+                        cameraState.targetZoom = action.nivel_zoom;
+                        cameraState.isZooming = true;
+                    }
+                    break;
+                case 'camara_mirar_a':
+                    if (action.objetivo && elementStates[action.objetivo]) {
+                        const targetSprite = elementStates[action.objetivo].sprite;
+                        cameraState.targetLookAt.copy(targetSprite.position);
+                    } else if (action.posicion) {
+                        cameraState.targetLookAt.set(action.posicion.x, action.posicion.y, action.posicion.z);
+                    }
+                    break;
+                case 'camara_seguir_elemento':
+                    if (action.objetivo && elementStates[action.objetivo]) {
+                        cameraState.isFollowing = true;
+                        cameraState.followTarget = action.objetivo;
+                    }
+                    break;
+                case 'camara_girar_en_torno_a':
+                    if (action.objetivo && elementStates[action.objetivo]) {
+                        cameraState.isOrbiting = true;
+                        cameraState.orbitTarget = action.objetivo;
+                        // Usa la distancia del guion, o un valor por defecto si no se especifica
+                        cameraState.orbitRadius = action.distancia || 30;
+                    }
+                    break;
+                    // =====================================
+            }
+            // MODIFICADO: Salimos temprano para CUALQUIER acción de cámara
+            currentActionIndex++;
+            processNextAction();
+            return;
+
+
+
+
         }
-        // MODIFICADO: Salimos temprano para CUALQUIER acción de cámara
-        currentActionIndex++;
-        processNextAction();
-        return;
-
-
-        
-        
-    }
 
 
         const actorState = elementStates[action.elemento];
@@ -820,7 +928,11 @@ if (cameraState.isOrbiting && cameraState.orbitTarget && elementStates[cameraSta
             case 'entrar':
             case 'salir':
                 if (action.posicion) {
-                    const { x, y, z } = action.posicion;
+                    const {
+                        x,
+                        y,
+                        z
+                    } = action.posicion;
                     const baseHeight = actorState.sprite.scale.y;
                     actorState.targetPosition.set(x, y !== undefined ? y : baseHeight / 2, z);
                 } else if (action.objetivo && elementStates[action.objetivo]) {
@@ -858,26 +970,26 @@ if (cameraState.isOrbiting && cameraState.orbitTarget && elementStates[cameraSta
     }
 
 
-function isActionComplete() {
-    if (currentActionIndex >= animationSequence.length) return true;
-    const action = animationSequence[currentActionIndex];
+    function isActionComplete() {
+        if (currentActionIndex >= animationSequence.length) return true;
+        const action = animationSequence[currentActionIndex];
 
-    // MODIFICADO: Las acciones de cámara ya no bloquean el flujo.
-    // La función processNextAction() ya las maneja para que no se queden "activas".
-    // Por lo tanto, podemos eliminar la lógica específica de la cámara de aquí.
+        // MODIFICADO: Las acciones de cámara ya no bloquean el flujo.
+        // La función processNextAction() ya las maneja para que no se queden "activas".
+        // Por lo tanto, podemos eliminar la lógica específica de la cámara de aquí.
 
-    const actorState = elementStates[action.elemento];
-    // Si la acción es para un elemento que no existe (o para la cámara, que ya fue procesada),
-    // consideramos la acción completada para no bloquear la secuencia.
-    if (!actorState) return true;
+        const actorState = elementStates[action.elemento];
+        // Si la acción es para un elemento que no existe (o para la cámara, que ya fue procesada),
+        // consideramos la acción completada para no bloquear la secuencia.
+        if (!actorState) return true;
 
-    // ... (el resto de la lógica para 'moverse_hacia', 'saltar', etc. no cambia)
-    if (['moverse_hacia', 'entrar', 'salir'].includes(action.accion)) {
-        return actorState.sprite.position.distanceTo(actorState.targetPosition) < 0.1;
+        // ... (el resto de la lógica para 'moverse_hacia', 'saltar', etc. no cambia)
+        if (['moverse_hacia', 'entrar', 'salir'].includes(action.accion)) {
+            return actorState.sprite.position.distanceTo(actorState.targetPosition) < 0.1;
+        }
+        // ...
+        return true;
     }
-    // ...
-    return true;
-}
 
     function resizeAllCanvas() {
         const rect = canvasContainer.getBoundingClientRect();
@@ -890,3 +1002,4 @@ function isActionComplete() {
         }
     }
 });
+// NOTA: Se ha eliminado una llave de cierre '}' extra que causaba un error de sintaxis.
