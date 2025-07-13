@@ -3,36 +3,34 @@
 // ===================================
 
 function nuevaEscena() {
-    // AÑADIDO: Comprobar si hay un libro activo antes de crear un capítulo
+    // 1. Comprobar si hay un libro activo antes de crear un capítulo
     if (!libroActivoId) {
         alert("Por favor, selecciona o crea un libro usando el botón '📚 Seleccionar Libro' antes de añadir un capítulo.");
         return;
     }
 
-    ultimoId++;
-    let id = String(ultimoId).padStart(3, '0');
-    while (escenas[id]) {
-        ultimoId++;
-        id = String(ultimoId).padStart(3, '0');
-    }
-    
-    // MODIFICADO: Añadir la propiedad libroId al crear la escena/capítulo
+    // ¡SOLUCIÓN DEFINITIVA!
+    // Se elimina la dependencia del contador 'ultimoId'.
+    // Ahora se genera un ID único usando el timestamp actual, lo que es
+    // mucho más robusto y evita cualquier posibilidad de conflicto o bucle infinito.
+    const id = `${libroActivoId}-capitulo-${Date.now()}`;
+
+    // Contar capítulos existentes para el libro actual para dar un buen nombre por defecto.
+    const numCapitulosActuales = Object.values(escenas).filter(e => e.libroId === libroActivoId).length;
+
+    // Crear el nuevo objeto de escena
     escenas[id] = {
         tipo: "generica",
-        texto: "", // El usuario le pondrá nombre
+        texto: `Capítulo ${numCapitulosActuales + 1}`, // Nombre por defecto mejorado
         imagen: "",
         opciones: [],
         botones: [],
         frames: [],
         generadoPorIA: false,
-        libroId: libroActivoId // <-- LÍNEA AÑADIDA
+        libroId: libroActivoId // Asegura la asociación con el libro correcto
     };
 
-    if (typeof(Storage) !== "undefined") {
-        localStorage.setItem("escenas", JSON.stringify(escenas));
-    } else {
-        console.error("localStorage no está disponible en este navegador.");
-    }
+    guardarCambios();
     actualizarLista();
 }
 
@@ -69,52 +67,42 @@ function crearBotonEliminarFrame(frameIndex, escenaId) {
 function editarEscena(escenaId) {
     if (!escenas[escenaId]) return;
     console.log("Editando escena:", escenaId);
-    // Lógica para abrir la vista de edición de escena si es necesario.
-    // Por ahora, el clic principal está en los elementos internos.
 }
 
 function actualizarLista() {
     let lista = document.getElementById("lista-capitulos");
+    if (!lista) return;
     lista.innerHTML = "";
 
     const tituloContainer = document.getElementById('libro-activo-titulo');
 
-    // Si no hay un libro seleccionado, mostrar un mensaje y salir.
     if (!libroActivoId) {
         if (tituloContainer) tituloContainer.textContent = "Selecciona un libro para empezar";
         lista.innerHTML = '<p class="mensaje-placeholder">Usa el botón "📚 Seleccionar Libro" para empezar.</p>';
         return;
     }
 
-    // MODIFICADO: Filtrar las escenas para mostrar solo las del libro activo
     let escenasDelLibroActivo = Object.keys(escenas).filter(id => escenas[id].libroId === libroActivoId);
 
-    // Ordenar las escenas/capítulos
     escenasDelLibroActivo.sort();
 
     if (escenasDelLibroActivo.length === 0) {
         lista.innerHTML = '<p class="mensaje-placeholder">Este libro está vacío. Haz clic en el botón "+" para añadir tu primer capítulo.</p>';
     }
 
-    // El resto de la función es casi igual, pero itera sobre la lista filtrada
     escenasDelLibroActivo.forEach(id => {
-        // El código para crear cada tarjeta de capítulo (div.escena, inputs, botones, etc.)
-        // permanece exactamente igual que antes. Solo lo pegas aquí.
-        
         let div = document.createElement("div");
         div.className = "escena";
-        // ... (resto de tu código para crear la tarjeta del capítulo) ...
-         div.setAttribute("data-id", id);
+        div.setAttribute("data-id", id);
         div.onclick = () => editarEscena(id);
 
         let detallediv = document.createElement("div");
         detallediv.className = "detalle";
         let inputNombre = document.createElement("input");
         inputNombre.className = "imput";
-        inputNombre.value = escenas[id].texto || `Capítulo ${id}`; // Texto por defecto
+        inputNombre.value = escenas[id].texto || `Capítulo`;
         inputNombre.placeholder = "Nombre del Capítulo";
         
-        // Asignar el nombre al objeto escena cuando el usuario lo cambia
         inputNombre.onchange = (event) => {
             escenas[id].texto = event.target.value;
             guardarCambios(); 
@@ -144,7 +132,6 @@ function actualizarLista() {
         div.appendChild(detallediv);
 
         let contenedorFrames = document.createElement("div");
-        // ... y así sucesivamente hasta el final del bucle.
         
         (escenas[id].frames || []).forEach((frame, index) => {
             let frameDiv = document.createElement("div");
@@ -155,8 +142,7 @@ function actualizarLista() {
             frameDiv.appendChild(textSpan);
             frameDiv.draggable = true;
 
-            // ... (Toda la lógica de drag-and-drop y creación de frames) ...
-             frameDiv.ondragstart = (event) => {
+            frameDiv.ondragstart = (event) => {
                 draggedFrameIndex = index;
                 draggedFrameEscenaId = id;
                 event.dataTransfer.setData("text/plain", JSON.stringify({ index, escenaId: id }));
@@ -197,14 +183,14 @@ function actualizarLista() {
                 guardarCambios();
                 actualizarLista();
             };
-             let inputTexto = document.createElement("textarea");
+            let inputTexto = document.createElement("textarea");
             inputTexto.value = frame.texto || "";
             inputTexto.placeholder = "Escribe el texto aquí";
             inputTexto.oninput = (event) => {
                 frame.texto = event.target.value;
                 guardarCambios();
             };
-             let inputImagen = document.createElement("input");
+            let inputImagen = document.createElement("input");
             inputImagen.type = "file";
             inputImagen.accept = "image/*, video/mp4, video/webm, image/gif";
             inputImagen.style.display = 'none';
@@ -224,7 +210,7 @@ function actualizarLista() {
                     }
                 }
             };
-             let imagenPreview = document.createElement("img");
+            let imagenPreview = document.createElement("img");
             imagenPreview.style.width = "100%";
             imagenPreview.style.height = "auto";
             imagenPreview.style.marginTop = "10px";
@@ -232,7 +218,7 @@ function actualizarLista() {
             if (frame.imagen) {
                 imagenPreview.src = frame.imagen;
             }
-             let label = document.createElement("label");
+            let label = document.createElement("label");
             label.htmlFor = `fileInput-${id}-${index}`;
             label.className = "custom-label";
             label.textContent = "📷";
@@ -245,32 +231,21 @@ function actualizarLista() {
                 event.stopPropagation();
                 agregarFrame(id, index);
             };
-             frameDiv.appendChild(inputTexto);
+            frameDiv.appendChild(inputTexto);
             frameDiv.appendChild(label);
             frameDiv.appendChild(imagenPreview);
             frameDiv.appendChild(agregarFrameBtn);
             frameDiv.appendChild(crearBotonEliminarFrame(index, id));
 
-
             contenedorFrames.appendChild(frameDiv);
         });
          div.appendChild(contenedorFrames);
-
 
         lista.appendChild(div);
     });
 }   
 
-// AÑADE ESTA FUNCIÓN COMPLETA EN EL ARCHIVO datos/escenas.js
-
-/**
- * Crea múltiples escenas (capítulos) de forma automática y las asocia al libro activo.
- * @param {string} nombreBase - El nombre base para los nuevos capítulos.
- * @param {number} numEscenas - El número de capítulos a crear.
- * @param {number} numFrames - El número de frames vacíos a crear en cada capítulo.
- */
 function crearEscenasAutomaticamente(nombreBase, numEscenas, numFrames) {
-    // 1. Comprobación crucial: Asegurarse de que hay un libro activo.
     if (!libroActivoId) {
         alert("Error interno: Se intentó crear capítulos sin un libro activo seleccionado.");
         return;
@@ -281,13 +256,10 @@ function crearEscenasAutomaticamente(nombreBase, numEscenas, numFrames) {
         return;
     }
 
-    // 2. Lógica para crear las escenas en un bucle.
     for (let i = 1; i <= numEscenas; i++) {
-        ultimoId++;
-            const id = `${libroActivoId}-${nombreBase} ${String(ultimoId).padStart(3, '0')}`;
+        // Se mantiene la lógica de ID único para robustez
+        const id = `${libroActivoId}-${nombreBase}-${Date.now() + i}`;
 
-
-        // Comprobar si ya existe para evitar sobreescribir.
         if (escenas[id]) {
             console.warn(`La escena con ID ${id} ya existía. Se omitió la creación.`);
             continue;
@@ -298,35 +270,34 @@ function crearEscenasAutomaticamente(nombreBase, numEscenas, numFrames) {
             framesIniciales.push({ texto: "", imagen: "" });
         }
 
-        // 3. LA CORRECCIÓN CLAVE: Asignar el 'libroId' al crear la escena.
         escenas[id] = {
             tipo: "generica",
-            texto: id, // El nombre se refinará más tarde
+            texto: `${nombreBase} ${i}`,
             imagen: "",
             opciones: [],
             botones: [],
             frames: framesIniciales,
             generadoPorIA: true,
-            libroId: libroActivoId // <--- ¡AQUÍ ESTÁ LA MAGIA!
+            libroId: libroActivoId
         };
     }
 
     console.log(`${numEscenas} escenas creadas con el nombre base "${nombreBase}" y asociadas al libro ID: ${libroActivoId}.`);
     
-    // 4. Se guarda y se actualiza la lista para que los cambios sean visibles.
     guardarCambios();
     actualizarLista();
 }
+
 function reiniciarContadorEscenas() {
     ultimoId = 0;
     console.log("Contador de escenas (ultimoId) reiniciado a 0.");
 }
+
 function guardarCambios() {
     if (typeof(Storage) !== "undefined") {
         try {
             const cleanEscenas = JSON.parse(JSON.stringify(escenas));
             localStorage.setItem("escenas", JSON.stringify(cleanEscenas));
-            console.log("Cambios guardados en localStorage.");
         } catch (error) {
             console.error("Error al guardar cambios en localStorage:", error);
         }

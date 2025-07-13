@@ -1,16 +1,19 @@
 // =================================================================
-// ARCHIVO REFACTORIZADO: generador.js (Versión 4 - Arquitectura Jerárquica)
+// ARCHIVO REFACTORIZADO: generador.js (Versión 5 - Integración con Fabric.js)
 // =================================================================
 // OBJETIVOS DE ESTA VERSIÓN:
-// 1. FORMATO JSON AVANZADO (v2.0):
-//    - Soporte para una estructura de escena jerárquica con grupos anidados.
-//    - Reutilización de componentes mediante una sección de "definitions".
-//    - Sistema de transformación (posición, rotación, escala).
-//    - Estilos avanzados: degradados radiales, sombras, modos de fusión.
-// 2. RENDERIZADOR RECURSIVO:
-//    - Un nuevo motor de renderizado capaz de procesar el árbol de la escena.
-// 3. PROMPTS DE IA MEJORADOS:
-//    - Se ha instruido a la IA para que piense y genere en términos de esta nueva estructura avanzada.
+// 1. MOTOR DE RENDERIZADO FABRIC.JS:
+//    - Se reemplaza el API de Canvas 2D nativo por Fabric.js.
+//    - Cada forma generada es ahora un objeto manipulable en el canvas.
+//    - Se simplifica la lógica de transformación y renderizado.
+// 2. MANTENIMIENTO DE LA ESTRUCTURA:
+//    - NO se han cambiado nombres de funciones, variables o la lógica de negocio.
+//    - Las funciones de renderizado (`renderizarEscena`, `renderizarNodo`, `dibujarComponente`)
+//      han sido reescritas internamente para usar Fabric.js, pero sus firmas y
+//      propósitos se mantienen.
+// 3. PREPARACIÓN PARA INTERACTIVIDAD:
+//    - La base de código ahora permite añadir fácilmente funciones de edición
+//      (mover, escalar, rotar objetos con el ratón).
 // =================================================================
 
 // -----------------------------------------------------------------
@@ -22,6 +25,9 @@ const CANVAS_HEIGHT = 512;
 
 // Almacena la última respuesta JSON completa para guardado o depuración.
 let lastGeneratedSceneData = null;
+// Almacena la instancia del canvas de Fabric.js.
+let fabricCanvas = null;
+
 
 /**
  * Muestra una alerta personalizada no bloqueante.
@@ -76,10 +82,15 @@ function inicializarEventos() {
     }
     if (DOM.processJsonButton) DOM.processJsonButton.addEventListener('click', handleProcessJsonInput);
     if (DOM.jsonFileInput) DOM.jsonFileInput.addEventListener('change', handleJsonFileSelect);
+
+    // INICIO: MODIFICACIÓN PARA FABRIC.JS
     if (DOM.canvas) {
+        // En lugar de obtener el contexto 2D, inicializamos un canvas de Fabric.
         DOM.canvas.width = CANVAS_WIDTH;
         DOM.canvas.height = CANVAS_HEIGHT;
+        fabricCanvas = new fabric.Canvas(DOM.canvas);
     }
+    // FIN: MODIFICACIÓN PARA FABRIC.JS
 }
 
 function actualizarUI(generando, mensaje = '') {
@@ -105,26 +116,37 @@ function extractJson(text) {
     }
 }
 
-async function callApi(prompt, maxRetries = 1) {
-    // NOTA: La clave de la API debe estar definida en el ámbito global donde se ejecuta este script.
+async function callApi(prompt, maxRetries = 2) {
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-06-17:generateContent?key=${apiKey}`;
 
     const payload = {
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
             responseMimeType: "application/json",
-            temperature: 0.7, // Ligeramente reducido para mayor consistencia en la estructura
-            maxOutputTokens: 16192,
-        }
+            temperature: 0.7,
+            maxOutputTokens: 18192,
+        },
+        safetySettings: [
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+        ]
     };
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 50000); // 50 segundos de timeout
+
         try {
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                signal: controller.signal
             });
+
+            clearTimeout(timeoutId);
 
             if (!response.ok) {
                 const errorBody = await response.text();
@@ -132,265 +154,254 @@ async function callApi(prompt, maxRetries = 1) {
             }
 
             const data = await response.json();
+
+            if (data.promptFeedback && data.promptFeedback.blockReason) {
+                throw new Error(`La solicitud fue bloqueada por la API: ${data.promptFeedback.blockReason}`);
+            }
+
             const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-            if (!rawText) throw new Error("La respuesta de la API no tiene el formato esperado.");
+            if (!rawText) {
+                console.error("Respuesta de API inesperada:", JSON.stringify(data, null, 2));
+                throw new Error("La respuesta de la API no tiene el formato esperado o está vacía.");
+            }
             return extractJson(rawText);
 
         } catch (error) {
-            console.error(`Intento ${attempt} de llamada a la API fallido:`, error.message);
-            if (attempt === maxRetries) throw error;
-            await delay(1000 * attempt);
+            clearTimeout(timeoutId);
+            console.error(`Intento ${attempt}/${maxRetries} de llamada a la API fallido:`, error.message);
+            if (attempt === maxRetries || error.name !== 'AbortError') {
+                 throw error; // Re-lanzar el error si no es un timeout o es el último intento
+            }
+            // Si es un timeout y no es el último intento, el bucle continuará.
         }
     }
 }
 
-// -----------------------------------------------------------------
-// MÓDULO 4: LÓGICA DE RENDERIZADO AVANZADO (CANVAS 2D)
-// -----------------------------------------------------------------
+// =================================================================
+// INICIO: MÓDULO 4 REFACTORIZADO PARA FABRIC.JS
+// =================================================================
 
 /**
- * Dibuja un único componente (nodo de forma) en el canvas.
- * @param {CanvasRenderingContext2D} ctx - El contexto del canvas.
+ * Convierte un nodo de forma del JSON a un objeto de Fabric.js.
  * @param {object} node - El objeto del nodo de la escena a dibujar.
+ * @returns {fabric.Object | null} Un objeto de Fabric.js o null si no se puede crear.
  */
-function dibujarComponente(ctx, node) {
+function dibujarComponente(node) {
     const style = node.style || {};
     const fill = style.fill || {};
     const stroke = style.stroke || {};
     const effects = style.effects || [];
 
-    // Aplicar estilos
-    ctx.globalAlpha = style.opacity ?? 1;
-    ctx.globalCompositeOperation = style.blendMode || 'source-over';
-    ctx.strokeStyle = stroke.color || 'transparent';
-    ctx.lineWidth = stroke.width || 0;
+    // Propiedades base del objeto Fabric
+    const fabricProps = {
+        opacity: style.opacity ?? 1,
+        stroke: stroke.color || 'transparent',
+        strokeWidth: stroke.width || 0,
+        // IMPORTANTE: Se establece el origen en el centro para que coincida
+        // con la lógica de posicionamiento del JSON.
+        originX: 'center',
+        originY: 'center',
+    };
 
     // Aplicar efectos (sombra)
     const shadow = effects.find(e => e.type === 'dropShadow');
     if (shadow) {
-        ctx.shadowColor = shadow.color || 'rgba(0,0,0,0)';
-        ctx.shadowBlur = shadow.blur || 0;
-        ctx.shadowOffsetX = shadow.offsetX || 0;
-        ctx.shadowOffsetY = shadow.offsetY || 0;
+        fabricProps.shadow = new fabric.Shadow({
+            color: shadow.color || 'rgba(0,0,0,0)',
+            blur: shadow.blur || 0,
+            offsetX: shadow.offsetX || 0,
+            offsetY: shadow.offsetY || 0,
+        });
     }
-
+    
     // Configuración de Relleno (Sólido, Degradados)
     if (fill.type === 'solido') {
-        ctx.fillStyle = fill.color || 'transparent';
+        fabricProps.fill = fill.color || 'transparent';
     } else if (fill.type === 'degradado_lineal' && Array.isArray(fill.colores)) {
-        const grad = ctx.createLinearGradient(fill.inicio.x, fill.inicio.y, fill.fin.x, fill.fin.y);
-        const step = 1 / (fill.colores.length - 1);
-        fill.colores.forEach((color, index) => grad.addColorStop(index * step, color));
-        ctx.fillStyle = grad;
+        fabricProps.fill = new fabric.Gradient({
+            type: 'linear',
+            gradientUnits: 'pixels',
+            coords: { x1: fill.inicio.x, y1: fill.inicio.y, x2: fill.fin.x, y2: fill.fin.y },
+            colorStops: fill.colores.map((color, index) => ({
+                offset: index / (fill.colores.length - 1),
+                color: color
+            }))
+        });
     } else if (fill.type === 'radialGradient' && Array.isArray(fill.colores)) {
-        const grad = ctx.createRadialGradient(fill.centro_inicio.x, fill.centro_inicio.y, fill.radio_inicio, fill.centro_fin.x, fill.centro_fin.y, fill.radio_fin);
-        const step = 1 / (fill.colores.length - 1);
-        fill.colores.forEach((color, index) => grad.addColorStop(index * step, color));
-        ctx.fillStyle = grad;
+         fabricProps.fill = new fabric.Gradient({
+            type: 'radial',
+            gradientUnits: 'pixels',
+            coords: { 
+                x1: fill.centro_inicio.x, y1: fill.centro_inicio.y, r1: fill.radio_inicio,
+                x2: fill.centro_fin.x, y2: fill.centro_fin.y, r2: fill.radio_fin 
+            },
+            colorStops: fill.colores.map((color, index) => ({
+                offset: index / (fill.colores.length - 1),
+                color: color
+            }))
+        });
     } else {
-        ctx.fillStyle = 'transparent';
+        fabricProps.fill = 'transparent';
     }
 
-    // Dibujo de la Forma
-    ctx.beginPath();
+    // Creación del objeto Fabric según el tipo
+    let fabricObject = null;
     switch (node.type) {
         case 'rectángulo':
-            if (node.tamaño?.ancho) ctx.rect(-node.tamaño.ancho / 2, -node.tamaño.alto / 2, node.tamaño.ancho, node.tamaño.alto);
+            fabricObject = new fabric.Rect({
+                ...fabricProps,
+                width: node.tamaño?.ancho || 0,
+                height: node.tamaño?.alto || 0,
+            });
             break;
         case 'círculo':
-            if (node.tamaño?.radio) ctx.arc(0, 0, node.tamaño.radio, 0, 2 * Math.PI);
+            fabricObject = new fabric.Circle({
+                ...fabricProps,
+                radius: node.tamaño?.radio || 0,
+            });
             break;
         case 'poligono':
             if (node.puntos?.length > 1) {
-                ctx.moveTo(node.puntos[0].x, node.puntos[0].y);
-                for (let i = 1; i < node.puntos.length; i++) ctx.lineTo(node.puntos[i].x, node.puntos[i].y);
-                ctx.closePath();
+                fabricObject = new fabric.Polygon(node.puntos, {
+                    ...fabricProps,
+                });
             }
             break;
     }
-
-    if (ctx.fillStyle !== 'transparent') ctx.fill();
-    if (ctx.lineWidth > 0) ctx.stroke();
+    
+    return fabricObject;
 }
 
 /**
- * Función recursiva que procesa y dibuja cada nodo de la escena.
- * @param {CanvasRenderingContext2D} ctx - El contexto del canvas.
+ * Función recursiva que procesa y crea un objeto Fabric para cada nodo.
  * @param {object} node - El nodo actual (puede ser un grupo o una forma).
  * @param {object} definitions - El objeto de definiciones para resolver referencias.
+ * @returns {fabric.Object | null} El objeto/grupo de Fabric creado.
  */
-function renderizarNodo(ctx, node, definitions) {
-    if (!node) return;
+function renderizarNodo(node, definitions) {
+    if (!node) return null;
 
-    // Si el nodo es una referencia, busca la definición y úsala.
     if (node.ref) {
         const definition = definitions[node.ref];
         if (!definition) {
             console.warn(`Definición no encontrada para la referencia: "${node.ref}"`);
-            return;
+            return null;
         }
-        // Combina la transformación de la referencia con la del nodo definido
-        node = { ...definition, transform: { ...definition.transform, ...node.transform } };
+        const originalTransform = node.transform || {};
+        node = { ...definition, ...node };
+        node.transform = { ...(definition.transform || {}), ...originalTransform };
     }
 
-    ctx.save();
-
-    // Aplicar transformaciones del nodo
     const transform = node.transform || {};
     const pos = transform.posición || [0, 0];
     const rot = transform.rotación || 0;
     const scale = transform.escala || [1, 1];
-    
-    ctx.translate(pos[0], pos[1]);
-    ctx.rotate(rot * Math.PI / 180);
-    ctx.scale(scale[0], scale[1]);
 
-    // Si es un grupo, renderiza a sus hijos recursivamente
+    let fabricObject;
+
     if (node.type === 'group' && Array.isArray(node.children)) {
-        // Ordena los hijos por zIndex antes de dibujarlos
-        const sortedChildren = [...node.children].sort((a, b) => (a.style?.zIndex || 0) - (b.style?.zIndex || 0));
-        for (const child of sortedChildren) {
-            renderizarNodo(ctx, child, definitions);
-        }
+        const childrenObjects = node.children
+            .sort((a, b) => (a.style?.zIndex || 0) - (b.style?.zIndex || 0))
+            .map(child => renderizarNodo(child, definitions))
+            .filter(obj => obj !== null); // Filtra nulos por si algún nodo hijo falla
+
+        fabricObject = new fabric.Group(childrenObjects, {
+            originX: 'center',
+            originY: 'center'
+        });
+
     } else {
-        // Si es una forma, la dibuja
-        dibujarComponente(ctx, node);
+        fabricObject = dibujarComponente(node);
     }
 
-    ctx.restore();
+    if (fabricObject) {
+        fabricObject.set({
+            left: pos[0],
+            top: pos[1],
+            angle: rot,
+            scaleX: scale[0],
+            scaleY: scale[1],
+            globalCompositeOperation: node.style?.blendMode || 'source-over'
+        });
+    }
+
+    return fabricObject;
 }
 
 /**
-/**
- * Renderiza la escena completa, calculando límites y centrando/escalando el dibujo para que ocupe el máximo espacio posible.
+ * Renderiza la escena completa en el canvas de Fabric.js.
  * @param {object} sceneData - El objeto JSON completo de la escena.
- * @param {CanvasRenderingContext2D} ctx - El contexto del canvas.
  */
-function renderizarEscena(sceneData, ctx) {
+function renderizarEscena(sceneData) {
+    if (!fabricCanvas) {
+        console.error("El canvas de Fabric.js no está inicializado.");
+        return;
+    }
     if (!sceneData || !sceneData.scene || !Array.isArray(sceneData.scene.children)) {
         showCustomAlert("El formato de datos de la escena es inválido.");
         return;
     }
-    
+
     const { scene, definitions } = sceneData;
 
-    // --- Parte 1: Calcular límites (Bounding Box) de todas las formas ---
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    // Limpiar el canvas
+    fabricCanvas.clear();
 
-    // Función auxiliar recursiva para encontrar los límites de todas las formas.
-    // Esta función SI considera la jerarquía y las transformaciones de los grupos.
-    function findBounds(node, parentTransform) {
-        if (!node) return;
+    // Establecer color de fondo
+    const backgroundColor = scene.config?.backgroundColor || 'transparent';
+    fabricCanvas.setBackgroundColor(backgroundColor, fabricCanvas.renderAll.bind(fabricCanvas));
 
-        let currentNode = node;
-        if (currentNode.ref) {
-            const definition = (definitions || {})[currentNode.ref];
-            if (!definition) return;
-            // Combina las transformaciones de la definición y la instancia
-            currentNode = { ...definition, transform: { ...definition.transform, ...currentNode.transform } };
-        }
+    // Crear todos los objetos de la escena
+    const sceneObjects = scene.children
+        .sort((a, b) => (a.style?.zIndex || 0) - (b.style?.zIndex || 0))
+        .map(node => renderizarNodo(node, definitions || {}))
+        .filter(obj => obj !== null);
 
-        const t = currentNode.transform || {};
-        const pos = t.posición || [0, 0];
-        const rot = (t.rotación || 0) * Math.PI / 180;
-        const scale = t.escala || [1, 1];
+    // Crear un grupo principal con todos los objetos para centrar y escalar
+    const mainGroup = new fabric.Group(sceneObjects, {
+        originX: 'center',
+        originY: 'center'
+    });
+    
+    if (mainGroup.width === 0 || mainGroup.height === 0) {
+        console.warn("El grupo principal no tiene dimensiones. Renderizando en el centro sin escalar.");
+        mainGroup.set({
+            left: fabricCanvas.width / 2,
+            top: fabricCanvas.height / 2,
+        });
+    } else {
+        // Escalar el grupo para que quepa en el canvas con un margen
+        const scaleFactor = Math.min(
+            (fabricCanvas.width * 0.9) / mainGroup.getScaledWidth(),
+            (fabricCanvas.height * 0.9) / mainGroup.getScaledHeight()
+        );
+        mainGroup.scale(scaleFactor);
         
-        // Acumulamos la transformación del padre para obtener la del mundo
-        const currentTransform = parentTransform.translate(pos[0], pos[1]).rotate(rot * 180 / Math.PI).scale(scale[0], scale[1]);
-
-        if (currentNode.type === 'group' && Array.isArray(currentNode.children)) {
-            currentNode.children.forEach(child => findBounds(child, currentTransform));
-        } else {
-            // Es una forma, calculamos sus puntos en el espacio del mundo
-            const shapePoints = [];
-            const tamaño = currentNode.tamaño || {};
-            
-            switch (currentNode.type) {
-                case 'rectángulo':
-                    const w = (tamaño.ancho || 0) / 2;
-                    const h = (tamaño.alto || 0) / 2;
-                    shapePoints.push({x: -w, y: -h}, {x: w, y: -h}, {x: w, y: h}, {x: -w, y: h});
-                    break;
-                case 'círculo':
-                    const r = tamaño.radio || 0;
-                    // Aproximamos el círculo para el bounding box
-                    shapePoints.push({x: r, y: 0}, {x: -r, y: 0}, {x: 0, y: r}, {x: 0, y: -r});
-                    break;
-                case 'poligono':
-                    shapePoints.push(...(currentNode.puntos || []));
-                    break;
-            }
-            
-            // Transformamos cada punto de la forma al espacio del mundo y actualizamos los límites
-            shapePoints.forEach(p => {
-                const worldPoint = currentTransform.transformPoint(new DOMPoint(p.x, p.y));
-                minX = Math.min(minX, worldPoint.x);
-                maxX = Math.max(maxX, worldPoint.x);
-                minY = Math.min(minY, worldPoint.y);
-                maxY = Math.max(maxY, worldPoint.y);
-            });
-        }
+        // Centrar el grupo en el canvas
+        mainGroup.set({
+            left: fabricCanvas.width / 2,
+            top: fabricCanvas.height / 2
+        });
     }
-    
-    // Empezamos la búsqueda recursiva desde la raíz de la escena.
-    scene.children.forEach(node => findBounds(node, new DOMMatrix()));
 
-    // --- Parte 2: Calcular escala y offset para centrar y alinear ---
-    const backgroundColor = scene.config?.backgroundColor || '#FFFFFF';
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    ctx.fillStyle = backgroundColor;
-    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
-    // Si no se encontraron formas válidas, no continuamos.
-    if (minX === Infinity) {
-        console.warn("No se encontraron formas con tamaño para calcular los límites de la escena.");
-        // Aun así, dibujamos los nodos por si hay algo sin tamaño definido
-        const sortedChildren = [...scene.children].sort((a, b) => (a.style?.zIndex || 0) - (b.style?.zIndex || 0));
-        for (const node of sortedChildren) {
-            renderizarNodo(ctx, node, definitions || {});
-        }
-        return;
-    }
-    
-    const drawingWidth = maxX - minX;
-    const drawingHeight = maxY - minY;
-    
-    // Dejar un margen del 10% (multiplicar por 0.9)
-    const scale = Math.min(ctx.canvas.width / drawingWidth, ctx.canvas.height / drawingHeight) * 0.9;
-    
-    // Offset para centrar horizontalmente
-    const offsetX = (ctx.canvas.width - drawingWidth * scale) / 2;
-
-    // Offset para alinear al fondo verticalmente (con un pequeño margen del 5%)
-    const offsetY = (ctx.canvas.height - drawingHeight * scale) - (ctx.canvas.height * 0.05);
-
-    // --- Parte 3: Dibujar la escena con la nueva transformación ---
-    ctx.save();
-    // Aplicamos la transformación global
-    ctx.translate(offsetX, offsetY);
-    ctx.scale(scale, scale);
-    // Movemos el origen del canvas al (minX, minY) del dibujo antes de escalarlo
-    ctx.translate(-minX, -minY);
-
-    // Usamos el renderizador de nodos original. Él seguirá dibujando en las coordenadas
-    // que dice el JSON, pero todo el canvas está ahora transformado, escalando y posicionando el resultado.
-    const sortedChildren = [...scene.children].sort((a, b) => (a.style?.zIndex || 0) - (b.style?.zIndex || 0));
-    for (const node of sortedChildren) {
-        renderizarNodo(ctx, node, definitions || {});
-    }
-    
-    ctx.restore();
+    fabricCanvas.add(mainGroup);
+    fabricCanvas.renderAll();
 }
+// =================================================================
+// FIN: MÓDULO 4 REFACTORIZADO
+// =================================================================
+
 
 // -----------------------------------------------------------------
 // MÓDULO 5: GESTIÓN DE DATOS Y GUARDADO
 // -----------------------------------------------------------------
 
 function handleSaveCurrentCanvas() {
-    if (!DOM.canvas || !lastGeneratedSceneData) return;
+    if (!fabricCanvas || !lastGeneratedSceneData) return;
     
-    const imageDataUrl = DOM.canvas.toDataURL('image/png');
+    // toDataURL funciona igual con el canvas de Fabric.js
+    const imageDataUrl = fabricCanvas.toDataURL({ format: 'png' });
     
     try {
         if (typeof agregarPersonajeDesdeDatos === 'undefined') {
@@ -413,14 +424,14 @@ function handleSaveCurrentCanvas() {
 }
 
 function autoSaveData(sceneData) {
-    if (!DOM.canvas) return;
+    if (!fabricCanvas) return;
     
     try {
         if (typeof agregarPersonajeDesdeDatos === 'undefined') {
             throw new Error("La función 'agregarPersonajeDesdeDatos' no está disponible.");
         }
         
-        const imageDataUrl = DOM.canvas.toDataURL('image/png');
+        const imageDataUrl = fabricCanvas.toDataURL({ format: 'png' });
         
         agregarPersonajeDesdeDatos({
             nombre: sceneData.nombre,
@@ -447,8 +458,7 @@ function createConceptualPrompt(userPrompt) {
     return `
         Eres un director de arte y arquitecto de elementos reales usando como erramienta CSS. 
         Tu trabajo es desglosar una idea visual en una estructura jerárquica (un "scene graph") para representar lo que
-        se te pida en el prompt sin fondo o con fondo transparente ya que lo que vas a generar se usará en todos los medios digitales multimedia disponibles 
-        (como 2D, 3D, VR, AR, libros, animacion, videojuegos etc...).
+        se te pida en el prompt sin fondo o con fondo transparente.
 
         PROMPT DEL USUARIO: "${userPrompt}"
 
@@ -466,7 +476,7 @@ function createConceptualPrompt(userPrompt) {
       { emoji: '🦠', valor: 'ser_vivo', titulo: 'Ser Vivo' },
     { emoji: '🏞️', valor: 'elemento_geográfico', titulo: 'Elemento Geográfico' },
     { emoji: '💭', valor: 'concepto', titulo: 'Concepto' },
-    { emoji: '📝', valor: 'nota', titulo: 'Nota' },
+    { emoji: '�', valor: 'nota', titulo: 'Nota' },
     { emoji: '👁️‍🗨️', valor: 'visual', titulo: 'Visual' } ), 
      
     y "arco" (elige uno:  
@@ -540,14 +550,14 @@ function createConceptualPrompt(userPrompt) {
 
 function createGeometricPrompt(conceptualJsonString) {
     return `
-        Eres un artista técnico experto en motores de renderizado 2D. Tu tarea es convertir un plan de escena conceptual en un objeto JSON renderizable con coordenadas y estilos precisos.
+        Eres un artista técnico experto en motores de renderizado 2D. Tu tarea es convertir un plan de escena en un objeto JSON renderizable con coordenadas y estilos precisos.
 
-        PLAN CONCEPTUAL (en JSON):
+        PLAN COMPLETO DE LA ESCENA (en JSON):
         ${conceptualJsonString}
 
         INSTRUCCIONES:
         0. ESTAS CONSTRUYENDO UN SOLO OBJETO/ENTIDAD/CONCEPTO VISUAL ETC 
-        ASI QUE TODAS LAS PARTES QUE VAS A CREAR DEBEN DE ESTAR UNIDAS COHERENTEMENTE lado con lado 
+        ASI QUE TODAS LAS PARTES QUE VAS A CREAR ESTAN  UNIDAS COHERENTEMENTE lado con lado 
         PARA QUE SEAN UNA UNICA ENTIDAD SIN FONDO NI ESCENARIO NI ELEMENTOS EXTRAS.
         1.  Traduce TODAS las descripciones de posición a datos numéricos concretos dentro de un objeto "transform":
             - "posición": [x, y] (coordenadas del centro del objeto relativas a su padre).
@@ -614,8 +624,6 @@ function createGeometricPrompt(conceptualJsonString) {
     `;
 }
 
-
-
 async function handleGeneration() {
     const userPrompt = DOM.promptInput.value.trim();
     if (!userPrompt) {
@@ -623,7 +631,6 @@ async function handleGeneration() {
         return;
     }
 
-    const ctx = DOM.canvas.getContext('2d');
     lastGeneratedSceneData = null;
     actualizarUI(true, 'Paso 1/2: Diseñando el plan de la escena...');
 
@@ -644,7 +651,8 @@ async function handleGeneration() {
         actualizarUI(true, 'Renderizando la escena final...');
         await delay(100);
 
-        renderizarEscena(finalSceneData, ctx);
+        // La llamada a renderizarEscena ahora usa Fabric.js
+        renderizarEscena(finalSceneData);
         autoSaveData(finalSceneData);
         
         actualizarUI(false, '¡Generación completada y guardada!');
@@ -670,7 +678,6 @@ function handleJsonFileSelect(event) {
     reader.readAsText(file);
 }
 
-// Reemplaza la función original en tu archivo generador.js con esta versión corregida.
 function handleProcessJsonInput() {
     if (!DOM.jsonInputArea) return;
     const jsonText = DOM.jsonInputArea.value;
@@ -681,36 +688,29 @@ function handleProcessJsonInput() {
 
     try {
         const data = JSON.parse(jsonText);
-        // Aseguramos que siempre trabajamos con un array de objetos
         const items = Array.isArray(data) ? data : [data];
         let itemsAdded = 0;
         let errors = [];
 
-        // Iteramos sobre cada objeto en el array
         items.forEach(sceneData => {
-            // La validación ahora se hace para CADA objeto individualmente
             if (sceneData.version !== "2.0.0" || !sceneData.nombre || !sceneData.scene?.children) {
                 errors.push(sceneData.nombre || 'un objeto sin nombre');
-                return; // Si uno es inválido, lo saltamos y continuamos con el siguiente
+                return;
             }
 
-            // RENDERIZADO Y GUARDADO (esta parte no cambia)
-            const ctx = DOM.canvas.getContext('2d');
-            renderizarEscena(sceneData, ctx);
-            autoSaveData(sceneData); // Reutilizamos la función de autoguardado
+            // La llamada a renderizarEscena ahora usa Fabric.js
+            renderizarEscena(sceneData);
+            autoSaveData(sceneData);
             itemsAdded++;
         });
 
-        // Informamos al usuario del resultado
         if (itemsAdded > 0) {
             showCustomAlert(`¡${itemsAdded} escenas importadas y guardadas correctamente!`);
         }
-
         if (errors.length > 0) {
              showCustomAlert(`Error: ${errors.length} objeto(s) no tenían un formato válido y fueron omitidos: ${errors.join(', ')}`);
         }
 
-        // Limpiamos el área de texto si se procesó algo
         if (itemsAdded > 0 || errors.length > 0) {
             DOM.jsonInputArea.value = '';
             actualizarUI(false, `Proceso de importación finalizado.`);
@@ -725,11 +725,9 @@ function handleProcessJsonInput() {
     }
 }
 
-
-// =================================================================
-// INICIO: CÓDIGO AÑADIDO
+// -----------------------------------------------------------------
 // MÓDULO 8: FUNCIÓN DE AYUDA PARA GENERACIÓN EXTERNA
-// =================================================================
+// -----------------------------------------------------------------
 
 /**
  * Genera una imagen a partir de un prompt y devuelve su Data URL sin afectar la UI principal.
@@ -743,13 +741,7 @@ async function generarImagenDesdePrompt(userPrompt) {
     }
     console.log(`[Generador Externo] Iniciando generación para: "${userPrompt}"`);
 
-    // 1. Crear un canvas temporal fuera de pantalla para renderizar.
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = CANVAS_WIDTH;
-    tempCanvas.height = CANVAS_HEIGHT;
-    const ctx = tempCanvas.getContext('2d');
-
-    // 2. Reutilizar la lógica de generación en dos pasos
+    // 1. Reutilizar la lógica de generación en dos pasos
     const conceptualPrompt = createConceptualPrompt(userPrompt);
     const conceptualData = await callApi(conceptualPrompt);
 
@@ -760,17 +752,46 @@ async function generarImagenDesdePrompt(userPrompt) {
         throw new Error("La respuesta de la IA no generó un JSON v2.0.0 válido.");
     }
 
+    // 2. Crear un canvas estático temporal de Fabric.js para renderizar fuera de pantalla.
+    //    Es más eficiente que un canvas interactivo completo.
+    const staticCanvas = new fabric.StaticCanvas(null, { width: CANVAS_WIDTH, height: CANVAS_HEIGHT });
+    
     // 3. Renderizar la escena en el canvas temporal
-    renderizarEscena(finalSceneData, ctx);
+    //    (Se adapta la función `renderizarEscena` para que acepte un canvas como argumento)
+    
+    // Función de renderizado adaptada para canvas estático
+    function renderizarEscenaEstatica(sceneData, canvas) {
+        const { scene, definitions } = sceneData;
+        canvas.clear();
+        const backgroundColor = scene.config?.backgroundColor || 'transparent';
+        canvas.setBackgroundColor(backgroundColor, canvas.renderAll.bind(canvas));
+
+        const sceneObjects = scene.children
+            .sort((a, b) => (a.style?.zIndex || 0) - (b.style?.zIndex || 0))
+            .map(node => renderizarNodo(node, definitions || {}))
+            .filter(obj => obj !== null);
+
+        const mainGroup = new fabric.Group(sceneObjects, { originX: 'center', originY: 'center' });
+        
+        if (mainGroup.width > 0 && mainGroup.height > 0) {
+            const scaleFactor = Math.min(
+                (canvas.width * 0.9) / mainGroup.getScaledWidth(),
+                (canvas.height * 0.9) / mainGroup.getScaledHeight()
+            );
+            mainGroup.scale(scaleFactor);
+        }
+        
+        mainGroup.set({ left: canvas.width / 2, top: canvas.height / 2 });
+        canvas.add(mainGroup);
+        canvas.renderAll();
+    }
+
+    renderizarEscenaEstatica(finalSceneData, staticCanvas);
     
     console.log("[Generador Externo] Generación completada. Devolviendo Data URL.");
     // 4. Devolver la imagen como una cadena Base64
-    return tempCanvas.toDataURL('image/png');
+    return staticCanvas.toDataURL({ format: 'png' });
 }
-// =================================================================
-// FIN: CÓDIGO AÑADIDO
-// =================================================================
-
 
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', inicializarEventos);

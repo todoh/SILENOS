@@ -12,7 +12,6 @@ function initEscenas() {
     document.getElementById('agregar-toma-btn')?.addEventListener('click', () => agregarToma());
     document.getElementById('escenas-dropdown')?.addEventListener('change', seleccionarEscenaDesdeDropdown);
     document.getElementById('escena-nombre-input')?.addEventListener('input', cambiarNombreEscena);
-    // Listener para el botón de generación secuencial
     document.getElementById('generargraficos')?.addEventListener('click', generarGraficosSecuencialmente);
     
     const timelineDiv = document.getElementById('tomas-timeline');
@@ -110,6 +109,8 @@ function cambiarNombreEscena(event) {
     }
 }
 
+ 
+
 /**
  * Dibuja y actualiza la interfaz de usuario de la sección de escenas.
  */
@@ -174,7 +175,6 @@ function renderEscenasUI() {
                 if (toma.imagen) {
                     imagenPreview.src = toma.imagen;
                 } else {
-                    // Placeholder o estilo para cuando no hay imagen
                     imagenPreview.style.display = 'none'; 
                     imagenArea.innerHTML += '<span class="imagen-placeholder">🖼️</span>';
                 }
@@ -193,7 +193,7 @@ function renderEscenasUI() {
                     if (file) {
                         try {
                             toma.imagen = await fileToBase64(file);
-                            renderEscenasUI(); // Re-render para mostrar la nueva imagen
+                            renderEscenasUI();
                         } catch (error) {
                             console.error("Error al procesar la imagen:", error);
                         }
@@ -230,137 +230,14 @@ function renderEscenasUI() {
 
                 const videoBtn = document.createElement('button');
                 videoBtn.className = 'toma-video-btn';
-                videoBtn.innerHTML = '🎬'; // Icono de claqueta
-                videoBtn.title = 'Componer Escena 3D para esta Toma';
-                videoBtn.onclick = async () => {
-                    const prompt = toma.guionTecnico;
-                    if (!prompt || !prompt.trim()) {
-                        alert('El Guion Técnico (Prompt) de la toma está vacío. Escribe una descripción para poder generar la imagen.');
-                        return;
-                    }
-                    
-                    if (typeof generarEscenaCompuesta !== 'function') {
-                        alert('Error: La función para componer escenas no está disponible. Asegúrate de que compositor-escenas.js está cargado.');
-                        return;
-                    }
-
-                    const statusDiv = document.createElement('div');
-                    statusDiv.className = 'toma-loading-overlay';
-                    statusDiv.innerHTML = '<div class="loading-spinner-toma"></div><p>Iniciando composición...</p>';
-                    imagenArea.appendChild(statusDiv);
-                    
-                    try {
-                        // Llamamos a la nueva función del compositor
-                        const imageUrl = await generarEscenaCompuesta(prompt, statusDiv);
-                        
-videoBtn.onclick = async () => {
-    const prompt = toma.guionTecnico;
-    if (!prompt || !prompt.trim()) {
-        alert('El Guion Técnico (Prompt) de la toma está vacío. Escribe una descripción para poder generar la imagen.');
-        return;
-    }
-
-    // NUEVA LÓGICA: Buscar en 'datos' primero
-    try {
-        // Asumimos que tienes una función que busca en tu directorio "datos".
-        // Esta es una implementación de ejemplo, tendrás que adaptarla.
-        const imagenExistente = await buscarImagenEnDatos(prompt);
-
-        if (imagenExistente) {
-            // Si la imagen existe, la usamos directamente
-            console.log("Componiendo escena desde archivo existente en 'datos'.");
-            toma.imagen = imagenExistente;
-            // Actualiza la UI para mostrar la imagen encontrada
-            const imagenPreview = tomaContainer.querySelector('.toma-imagen-preview');
-            if(imagenPreview) {
-                imagenPreview.src = imagenExistente;
-                imagenPreview.style.display = 'block';
-                const placeholder = imagenArea.querySelector('.imagen-placeholder');
-                if(placeholder) placeholder.style.display = 'none';
-            }
-        } else {
-            // Si no existe, procedemos a generar con la IA
-            console.log("No se encontraron datos. Generando nueva imagen con IA.");
-            if (typeof generarEscenaCompuesta !== 'function') {
-                alert('Error: La función para componer escenas no está disponible.');
-                return;
-            }
-
-            const statusDiv = document.createElement('div');
-            statusDiv.className = 'toma-loading-overlay';
-            statusDiv.innerHTML = '<div class="loading-spinner-toma"></div><p>Iniciando composición...</p>';
-            imagenArea.appendChild(statusDiv);
-            
-            try {
-                // Llamamos a la función del compositor
-                const imageUrl = await generarEscenaCompuesta(prompt, statusDiv);
+                videoBtn.innerHTML = '🎬';
+                videoBtn.title = 'Generar Escena';
                 
-                // Guardamos y mostramos la imagen
-                toma.imagen = imageUrl;
-                const imagenPreview = tomaContainer.querySelector('.toma-imagen-preview');
-                 if(imagenPreview) {
-                    imagenPreview.src = imageUrl;
-                    imagenPreview.style.display = 'block';
-                    const placeholder = imagenArea.querySelector('.imagen-placeholder');
-                    if(placeholder) placeholder.style.display = 'none';
-                }
-
-            } catch (error) {
-                console.error("Error al componer la escena para la toma:", error);
-                statusDiv.innerHTML = `<p style="color: red; font-size: 0.8em;">Error</p>`;
-                setTimeout(() => statusDiv.remove(), 5000);
-            } finally {
-                if(statusDiv.parentElement) {
-                   statusDiv.remove();
-                }
-            }
-        }
-    } catch (error) {
-        console.error("Error en el proceso de composición de la escena:", error);
-        alert("Ocurrió un error al procesar la toma.");
-    }
-};
-
-/**
- * Función de ejemplo para buscar una imagen en tu directorio "datos".
- * Debes implementar la lógica real según cómo gestiones tus archivos.
- * @param {string} prompt El texto a buscar.
- * @returns {Promise<string|null>} La URL de la imagen si se encuentra, o null.
- */
-async function buscarImagenEnDatos(prompt) {
-    // Esta es una implementación simulada.
-    // En un caso real, aquí harías una petición a tu servidor o
-    // buscarías en un índice de archivos locales.
-    console.log(`Buscando en 'datos' una imagen para el prompt: "${prompt}"`);
-    
-    // Ejemplo: si tienes un objeto global con los datos cargados
-    if (window.datosGuardados && window.datosGuardados[prompt]) {
-        return window.datosGuardados[prompt].url;
-    }
-    
-    // Simula una búsqueda que no encuentra nada
-    return null;
-}
-
-
-
-
-                        // Guardamos y mostramos la imagen
-                        toma.imagen = imageUrl;
-                        imagenPreview.src = imageUrl;
-                        imagenPreview.style.display = 'block';
-
-                        const placeholder = imagenArea.querySelector('.imagen-placeholder');
-                        if(placeholder) placeholder.style.display = 'none';
-
-                    } catch (error) {
-                        console.error("Error al componer la escena para la toma:", error);
-                        statusDiv.innerHTML = `<p style="color: red; font-size: 0.8em;">Error</p>`;
-                        setTimeout(() => statusDiv.remove(), 5000);
-                    } finally {
-                        if(statusDiv.parentElement) {
-                           statusDiv.remove();
-                        }
+                videoBtn.onclick = () => {
+                    if (typeof iniciarGeneracionDeToma === 'function') {
+                        iniciarGeneracionDeToma(toma, tomaContainer);
+                    } else {
+                        alert('Error: La función principal para generar tomas (iniciarGeneracionDeToma) no está disponible.');
                     }
                 };
 
@@ -376,7 +253,7 @@ async function buscarImagenEnDatos(prompt) {
                 timelineDiv.appendChild(tomaContainer);
             });
         } else {
-             timelineDiv.innerHTML = '<p class="mensaje-placeholder">Esta escena no tiene tomas. ¡Añade una con el botón de la barra superior!</p>';
+             timelineDiv.innerHTML = '<p class="mensaje-placeholder"> </p>';
         }
 
     } else {
@@ -384,18 +261,19 @@ async function buscarImagenEnDatos(prompt) {
         nombreInput.value = 'Crea o selecciona una escena';
         nombreInput.disabled = true;
         document.getElementById('agregar-toma-btn').disabled = true;
-        timelineDiv.innerHTML = '<p class="mensaje-placeholder">No hay escenas. Crea una para empezar.</p>';
+        timelineDiv.innerHTML = '<p class="mensaje-placeholder"> </p>';
     }
 
     timelineDiv.scrollLeft = scrollLeft;
 }
+
 
 /**
  * Genera secuencialmente las imágenes para todas las tomas de la escena activa.
  */
 async function generarGraficosSecuencialmente() {
     const boton = document.getElementById('generargraficos');
-    if (!boton || boton.disabled) return; // Evitar ejecuciones múltiples
+    if (!boton || boton.disabled) return;
 
     const originalButtonText = boton.textContent;
     boton.disabled = true;
@@ -410,11 +288,10 @@ async function generarGraficosSecuencialmente() {
         return;
     }
 
-    // Añade un estilo para resaltar la toma en proceso
     const style = document.createElement('style');
     style.id = 'toma-procesando-style-secuencial';
     style.textContent = `
-        .toma-procesando-secuencial {
+        .toma-procesando-secuencial .toma-imagen-area {
             outline: 3px solid #0d6efd;
             box-shadow: 0 0 15px rgba(13, 110, 253, 0.7);
             transition: outline 0.3s ease, box-shadow 0.3s ease;
@@ -422,78 +299,63 @@ async function generarGraficosSecuencialmente() {
     `;
     document.head.appendChild(style);
 
-    for (let i = 0; i < escenaActiva.tomas.length; i++) {
-        const toma = escenaActiva.tomas[i];
+    for (const toma of escenaActiva.tomas) {
         const tomaContainer = document.querySelector(`.toma-card[data-toma-id="${toma.id}"]`);
-
-        if (!tomaContainer) {
-            console.warn(`No se encontró el elemento DOM para la toma ${toma.id}. Saltando.`);
-            continue;
-        }
+        if (!tomaContainer) continue;
 
         const prompt = toma.guionTecnico;
-        if (!prompt || !prompt.trim()) {
-            console.warn(`La toma ${toma.id} tiene un prompt (Guion Técnico) vacío. Saltando.`);
-            continue;
-        }
-
-        if (typeof generarEscenaCompuesta !== 'function') {
-            alert('Error: La función para componer escenas (generarEscenaCompuesta) no está disponible.');
-            break; 
-        }
-
-        const imagenArea = tomaContainer.querySelector('.toma-imagen-area');
-        const imagenPreview = tomaContainer.querySelector('.toma-imagen-preview');
-
-        if (!imagenArea || !imagenPreview) {
-            console.warn(`No se encontraron los elementos de imagen para la toma ${toma.id}. Saltando.`);
+        if (!prompt || !prompt.trim() || toma.imagen) {
+            console.log(`Saltando toma ${toma.id} por falta de prompt o por tener ya una imagen.`);
             continue;
         }
         
-        console.log(`Procesando toma ${i + 1}/${escenaActiva.tomas.length}...`);
         tomaContainer.classList.add('toma-procesando-secuencial');
-        tomaContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        tomaContainer.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
 
-        const statusDiv = document.createElement('div');
-        statusDiv.className = 'toma-loading-overlay';
-        statusDiv.innerHTML = '<div class="loading-spinner-toma"></div><p>Iniciando composición...</p>';
-        imagenArea.appendChild(statusDiv);
+        const imagenArea = tomaContainer.querySelector('.toma-imagen-area');
+        const statusDiv = mostrarEstado(imagenArea, 'Iniciando...');
+        const statusUpdater = (mensaje, esError = false) => actualizarEstado(statusDiv, mensaje, esError);
 
         try {
-            const imageUrl = await generarEscenaCompuesta(prompt, statusDiv);
+            if (typeof generarYComponerToma !== 'function') {
+                throw new Error('La función núcleo (generarYComponerToma) no está disponible.');
+            }
+            
+            const imageUrl = await generarYComponerToma(prompt, statusUpdater);
             
             toma.imagen = imageUrl;
-            imagenPreview.src = imageUrl;
-            imagenPreview.style.display = 'block';
-
-            const placeholder = imagenArea.querySelector('.imagen-placeholder');
-            if(placeholder) placeholder.style.display = 'none';
+            const imagenPreview = tomaContainer.querySelector('.toma-imagen-preview');
+            const placeholder = tomaContainer.querySelector('.imagen-placeholder');
+            
+            if (imagenPreview) {
+                imagenPreview.src = imageUrl;
+                imagenPreview.style.display = 'block';
+            }
+            if (placeholder) {
+                placeholder.style.display = 'none';
+            }
 
         } catch (error) {
             console.error(`Error al componer la escena para la toma ${toma.id}:`, error);
-            statusDiv.innerHTML = `<p style="color: red; font-size: 0.8em;">Error</p>`;
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            statusUpdater(`Error: ${error.message}`, true);
+            await new Promise(resolve => setTimeout(resolve, 5000));
         } finally {
-            if(statusDiv.parentElement) {
+            if (statusDiv && statusDiv.parentElement) {
                statusDiv.remove();
             }
             tomaContainer.classList.remove('toma-procesando-secuencial');
         }
 
-        if (i < escenaActiva.tomas.length - 1) {
-            console.log("Esperando 4 segundos...");
-            await new Promise(resolve => setTimeout(resolve, 4000));
-        }
+        await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
-    console.log("Generación secuencial completada.");
     document.getElementById('toma-procesando-style-secuencial')?.remove();
     boton.disabled = false;
     boton.textContent = originalButtonText;
+    alert("Generación de gráficos de la escena completada.");
 }
 
-
-// --- FUNCIONES DE DRAG AND DROP (sin cambios) ---
+// --- FUNCIONES DE DRAG AND DROP ---
 function handleDragStart(e) {
     draggedTomaId = e.target.closest('.toma-card').dataset.tomaId;
     e.dataTransfer.effectAllowed = 'move';
@@ -592,6 +454,28 @@ function removeDropIndicator() {
     }
 }
 
+/**
+ * Función de ejemplo para buscar una imagen en tu directorio "datos".
+ * Debes implementar la lógica real según cómo gestiones tus archivos.
+ * @param {string} prompt El texto a buscar.
+ * @returns {Promise<string|null>} La URL de la imagen si se encuentra, o null.
+ */
+
+
+async function buscarImagenEnDatos(prompt) {
+    // Esta es una implementación simulada.
+    // En un caso real, aquí harías una petición a tu servidor o
+    // buscarías en un índice de archivos locales.
+    console.log(`Buscando en 'datos' una imagen para el prompt: "${prompt}"`);
+    
+    // Ejemplo: si tienes un objeto global con los datos cargados
+    if (window.datosGuardados && window.datosGuardados[prompt]) {
+        return window.datosGuardados[prompt].url;
+    }
+    
+    // Simula una búsqueda que no encuentra nada
+    return null;
+}
 // --- Función de utilidad para convertir File a Base64 ---
 function fileToBase64(file) {
     return new Promise((resolve, reject) => {
