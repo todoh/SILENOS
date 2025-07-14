@@ -1399,19 +1399,19 @@ width: 15%;
 
 .contenido-guion-editor {
     width:80%; height: 86.5%;
-    flex-grow: 1; right: 10%;
-   left: 10%; top: 5%;
-    border: 0px solid #ccc;
+    flex-grow: 1;
+   left: 0%; top: 5%;
+  
     border-radius: 3px;
     overflow-y: auto;
     font-family: Arial, sans-serif;
     font-size: 1em;
     line-height: 1.5;
 
-    background: rgba(255, 255, 255, 0);
+    background: transparent;
  position: absolute;
     text-align: left; 
-   padding-right: 10%;
+   padding-right: 10%;padding-left: 10%;
 }    
 
 .dark-theme .contenido-guion-editor {
@@ -1421,10 +1421,10 @@ width: 15%;
 }
 
 .guion-ia-general, .guion-ia-escena {
-    padding: 15px;
+    padding: 15px; 
     margin: 15px 0;
     border-radius: 5px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      box-shadow: 0 15px 45px rgba(0, 0, 0, 0.1);
 }
 
 .guion-ia-general {
@@ -2548,7 +2548,7 @@ transform: translateX(-50%);
             background-color: #ffffff00;
             border-radius: 8px;
              width: auto;
-            height: 200px; left: 50%; top: 15%;
+            height: 200px; left: 50% !important; top: 15%;
             bottom: 50%;
             aspect-ratio: 1 / 1;
 
@@ -2936,8 +2936,6 @@ border: 0px solid #555; border-radius: 5px; padding: 0px; z-index: 10002; }
 
 .nom {display: none;}
 
-#upper-canvas {
+ 
 
-left: 0%;
-
-}
+ 

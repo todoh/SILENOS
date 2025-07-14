@@ -66,6 +66,9 @@ async function empaquetarDatosDelProyecto() {
         const descripcion = personajeNode.querySelector("textarea")?.value || "";
         const imagenSrc = personajeNode.querySelector("img")?.src || "";
         
+        // --- NUEVO: Leer el contenido SVG desde el dataset ---
+        const svgContent = personajeNode.dataset.svgContent || "";
+
         const etiquetaEl = personajeNode.querySelector(".change-tag-btn");
         const arcoEl = personajeNode.querySelector(".change-arc-btn");
         
@@ -75,7 +78,8 @@ async function empaquetarDatosDelProyecto() {
         if (!nombre && !descripcion && !imagenSrc) return null;
         const imagenComprimida = await _compressImageForSave(imagenSrc);
         
-        return { nombre, descripcion, imagen: imagenComprimida, etiqueta, arco };
+        // --- NUEVO: Añadir svgContent al objeto guardado ---
+        return { nombre, descripcion, imagen: imagenComprimida, svgContent, etiqueta, arco };
     });
 
     const promesasEscenasStory = Promise.all((storyScenes || []).map(async (escena) => {
