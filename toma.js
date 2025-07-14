@@ -150,17 +150,25 @@ async function generarElementosNecesarios(elementosAGenerar, statusUpdater) {
         }
         statusUpdater(`Generando ${i + 1}/${elementosAGenerar.length}: "${elemento.nombre}"...`);
         try {
-            const imageUrl = await generarImagenDesdePrompt(elemento.prompt_generacion);
+            // Esta función devuelve un objeto: { imagen: 'data:url...', svgContent: '...' }
+            const resultadoGeneracion = await generarImagenDesdePrompt(elemento.prompt_generacion);
+
+            // ▼▼▼ LA CORRECCIÓN ESTÁ AQUÍ ▼▼▼
+            // Nos aseguramos de acceder a la propiedad .imagen del objeto devuelto.
+            const imageUrl = resultadoGeneracion.imagen; 
+            
             const nuevoDato = {
                 nombre: elemento.nombre,
                 descripcion: elemento.descripcion || `Generado para la toma actual.`,
-                imagen: imageUrl,
+                imagen: imageUrl, // Usamos la URL extraída, no el objeto completo.
                 etiqueta: elemento.etiqueta || 'visual',
                 arco: elemento.arco || 'sin_arco'
             };
+            // ▲▲▲ FIN DE LA CORRECCIÓN ▲▲▲
             
             if (typeof agregarPersonajeDesdeDatos === 'function') {
-                agregarPersonajeDesdeDatos(nuevoDato);
+                // Aquí también pasamos el contenido SVG si existe, para guardarlo en el "Dato".
+                agregarPersonajeDesdeDatos({ ...nuevoDato, svgContent: resultadoGeneracion.svgContent });
                 if (typeof reinicializarFiltrosYActualizarVista === 'function') {
                     reinicializarFiltrosYActualizarVista();
                 }
