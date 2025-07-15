@@ -620,6 +620,56 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     botonGenerarIA.title = 'Generar Imagen con IA';
     buttonsWrapper.appendChild(botonGenerarIA);
     
+// --- INICIO: CÓDIGO A AÑADIR ---
+// Pega este bloque después de la línea: buttonsWrapper.appendChild(botonGenerarIA);
+
+const botonSuperRealista = document.createElement('button');
+botonSuperRealista.className = 'edit-btn'; // Reutiliza el estilo de los otros botones.
+botonSuperRealista.innerHTML = '💎';
+botonSuperRealista.title = 'Generar Imagen Superrealista con IA Avanzada';
+
+botonSuperRealista.onclick = async () => {
+    const userPrompt = cajaTexto.value.trim();
+    if (!userPrompt) {
+        alert("Por favor, escribe una descripción detallada en la caja de texto para generar la imagen superrealista.");
+        return;
+    }
+
+    if (typeof generarImagenSuperrealistaDesdePrompt !== 'function') {
+        alert("Error: La función 'generarImagenSuperrealistaDesdePrompt' del archivo generador.js no está disponible.");
+        return;
+    }
+
+    // Deshabilitar botones para evitar clics múltiples durante la generación
+    const botones = buttonsWrapper.querySelectorAll('.edit-btn');
+    botones.forEach(b => b.disabled = true);
+    botonSuperRealista.innerHTML = '⚙️';
+
+    try {
+        // Llama a tu función asíncrona y espera el resultado
+        const resultado = await generarImagenSuperrealistaDesdePrompt(userPrompt);
+        
+        // Actualiza la tarjeta con la nueva imagen y el SVG
+        actualizarVisual(resultado.imagen, userPrompt);
+        contenedor.dataset.svgContent = resultado.svgContent;
+
+    } catch (error) {
+        console.error("Error al generar la imagen superrealista:", error);
+        alert(`Ocurrió un error: ${error.message}`);
+    } finally {
+        // Vuelve a habilitar los botones y restaura el icono
+        botones.forEach(b => b.disabled = false);
+        botonSuperRealista.innerHTML = '💎';
+    }
+};
+
+buttonsWrapper.appendChild(botonSuperRealista);
+
+// --- FIN: CÓDIGO A AÑADIR ---
+
+
+
+
     const botonMejorarIA = document.createElement('button');
     botonMejorarIA.className = 'edit-btn improve-ai-btn';
     botonMejorarIA.innerHTML = '📈';

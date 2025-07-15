@@ -1,15 +1,12 @@
 // =================================================================
-// ARCHIVO REFACTORIZADO: generador.js (Versión 8 - Mejora Iterativa)
+// ARCHIVO REFACTORIZADO: generador.js (Versión 9 - Corrección de funciones)
 // =================================================================
 // OBJETIVOS DE ESTA VERSIÓN:
-// 1. MEJORA ITERATIVA DE SVG:
-//    - Se añade la función `mejorarImagenDesdeSVG` que permite enviar un SVG
-//      existente a la IA para que lo refine y detalle.
-//    - Se crea un nuevo prompt (`createImprovementPrompt`) específico para esta tarea.
-// 2. RETORNO DE DATOS UNIFICADO:
-//    - Todas las funciones de generación (`generarImagenDesdePrompt` y
-//      `mejorarImagenDesdeSVG`) ahora devuelven un objeto `{ imagen, svgContent }`
-//      para mantener la consistencia.
+// 1. CORRECCIÓN DE ERROR: Se añaden las definiciones de las funciones
+//    `createEnrichmentPrompt`, `createStructuralSvgPrompt`, y
+//    `createSuperRealisticPrompt` que faltaban y causaban el error.
+// 2. MANTENIMIENTO DE ESTRUCTURA: Se conserva la lógica existente
+//    y solo se añade el código necesario para la funcionalidad del botón '💎'.
 // =================================================================
 
 // -----------------------------------------------------------------
@@ -113,7 +110,6 @@ function createUnifiedPrompt(userPrompt) {
     `;
 }
 
-// --- INICIO: NUEVO PROMPT PARA MEJORAR SVG ---
 function createImprovementPrompt(svgContent, userPrompt) {
     return `
         Eres un diseñador gráfico experto en la mejora y refinamiento de arte vectorial. Tu tarea es tomar un SVG existente y mejorarlo basándote en una descripción.
@@ -135,10 +131,107 @@ function createImprovementPrompt(svgContent, userPrompt) {
         5.  Tu respuesta DEBE SER ÚNICAMENTE el código del NUEVO SVG mejorado, comenzando con "<svg" y terminando con "</svg>". No incluyas explicaciones, comentarios, ni bloques de código markdown.
     `;
 }
-// --- FIN: NUEVO PROMPT PARA MEJORAR SVG ---
+
+// --- INICIO: FUNCIONES AÑADIDAS PARA CORREGIR EL ERROR ---
+
+/**
+ * Crea un prompt para que la IA enriquezca una descripción simple.
+ * @param {string} userPrompt - La descripción inicial del usuario.
+ * @returns {string} El prompt para la IA.
+ */
+function createEnrichmentPrompt(userPrompt) {
+    return `
+     Eres un asistente de diseño conceptual y gráfico. Tu tarea es analizar un prompt, extraer su información semántica y generar una representación visual en formato SVG.
+
+        PROMPT DEL USUARIO: "${userPrompt}"
+
+        INSTRUCCIONES:
+        1.  Analiza el prompt y define los siguientes metadatos:
+            - "nombre": Un nombre corto y descriptivo para el elemento (máx. 5 palabras).
+            - "descripcion": Una descripción detallada de lo que representa la imagen.
+            - "etiqueta": Clasifica el elemento. Elige UNA de las siguientes opciones: 'personaje', 'ubicacion', 'evento', 'objeto', 'atuendo', 'edificio', 'transporte', 'animal', 'planta', 'ser_vivo', 'elemento_geografico', 'concepto', 'visual', 'indeterminado'.
+            - "arco": Asigna un arco temático. Elige UNO: 'videojuego', 'planteamiento', 'visuales'.
+        2.  Crea una imagen vectorial de alta calidad que represente el prompt.
+        3.  El código de esta imagen debe estar en formato SVG, dentro de una propiedad llamada "svgContent".
+        4.  El SVG debe tener un viewBox="0 0 512 512", xmlns="http://www.w3.org/2000/svg", y fondo transparente. Usa estilos ricos (colores, degradados, filtros) y organiza los elementos en grupos (<g>) con IDs.
+        5.  COHERENCIA ESTRUCTURAL (¡MUY IMPORTANTE!): Todos los elementos que dibujes deben formar una ÚNICA entidad visual coherente. Si dibujas un personaje, la cabeza debe estar conectada al cuello, el cuello al torso, los brazos al torso, etc. No dejes partes flotando en el espacio. Trata el sujeto como un objeto físico y sólido donde todas sus partes encajan y se tocan.
+        6.  La composición general debe estar centrada y bien equilibrada dentro del viewBox.
+        7.  Tu respuesta DEBE SER ÚNICAMENTE un objeto JSON válido que contenga todos los campos mencionados. No incluyas explicaciones ni markdown.
+
+        EJEMPLO DE SALIDA PARA EL PROMPT "un veloz zorro naranja en un bosque":
+        {
+          "nombre": "Zorro Naranja Veloz",
+          "descripcion": "Un zorro de color naranja brillante, capturado en pleno movimiento mientras corre a través de un estilizado bosque de tonos verdes y marrones.",
+          "etiqueta": "animal",
+          "arco": "visuales",
+          "svgContent": "<svg viewBox=\\"0 0 512 512\\" xmlns=\\"http://www.w3.org/2000/svg\\"><g id=\\"zorro\\"><path d='...' fill='#E67E22'/><path d='...' fill='#FFFFFF'/></g></svg>"
+        }
+    `;
+}
+
+/**
+ * Crea un prompt para generar un SVG estructural básico.
+ * @param {string} structuralSvg -
+ * @param {string} richDescription - La descripción detallada generada en el paso anterior.
+ * @returns {string} El prompt para la IA.
+ */
+function createStructuralSvgPrompt(svgContent, userPrompt) {
+    return `
+        Eres un diseñador gráfico experto en la mejora y refinamiento de arte vectorial. Tu tarea es tomar un SVG existente y mejorarlo basándote en una descripción.
+
+        SVG ACTUAL:
+        \`\`\`svg
+        ${svgContent}
+        \`\`\`
+
+        INSTRUCCIONES DE MEJORA: "${userPrompt}"
+
+        TAREAS A REALIZAR:
+        1.  Analiza el SVG actual y la instrucción de mejora.
+        2.  NO cambies el concepto fundamental del SVG, a menos que las instrucciones de mejora lo requieran. Tu objetivo es refinarlo, no reemplazarlo.
+        2.5 Si es necesario, ajusta el tamaño del SVG para que se ajuste al viewBox="0 0 512 512" y mantén un fondo transparente.
+        2.6 Incorpora elementos nuevos o cambia de lugar los que fueran necesarios para mejorar la composición.
+        3.  Añade más detalles, tanto formas como texturas , mejora los colores, aplica degradados más sutiles, añade texturas o patrones si es apropiado, y mejora las sombras y luces.
+        4.  Asegúrate de que la coherencia estructural se mantenga o mejore. Todas las partes deben seguir conectadas.
+        5.  Tu respuesta DEBE SER ÚNICAMENTE el código del NUEVO SVG mejorado, comenzando con "<svg" y terminando con "</svg>". No incluyas explicaciones, comentarios, ni bloques de código markdown.
+    `;
+}
+
+/**
+ * Crea un prompt para refinar un SVG básico a un estilo superrealista.
+ * @param {string} structuralSvg - El SVG básico del paso anterior.
+ * @param {string} richDescription - La descripción detallada.
+ * @returns {string} El prompt para la IA.
+ */
+function createSuperRealisticPrompt(svgContent, userPrompt) {
+    return `
+     Eres un diseñador gráfico experto en la mejora y refinamiento de arte vectorial. 
+     Tu tarea es tomar un SVG existente y mejorarlo basándote en una descripción para hacerlo superrealista.
+     Corrige el SVG para que sea más detallado, con la posición de los elementos correcta y con un estilo superrealista con posiciones y proporciones correctas.
+
+        SVG ACTUAL:
+        \`\`\`svg
+        ${svgContent}
+        \`\`\`
+
+        INSTRUCCIONES DE MEJORA: "${userPrompt}"
+
+        TAREAS A REALIZAR:
+        1.  Analiza el SVG actual y la instrucción de mejora.
+        2.  NO cambies el concepto fundamental del SVG, a menos que las instrucciones de mejora lo requieran. Tu objetivo es refinarlo, no reemplazarlo.
+        2.5 Si es necesario, ajusta el tamaño del SVG para que se ajuste al viewBox="0 0 512 512" y mantén un fondo transparente.
+        2.6 Incorpora elementos nuevos o cambia de lugar los que fueran necesarios para mejorar la composición.
+        3.  Añade más detalles, tanto formas como texturas , mejora los colores, aplica degradados más sutiles, añade texturas o patrones si es apropiado, y mejora las sombras y luces.
+        4.  Asegúrate de que la coherencia estructural se mantenga o mejore. Todas las partes deben seguir conectadas.
+        5.  Tu respuesta DEBE SER ÚNICAMENTE el código del NUEVO SVG mejorado, comenzando con "<svg" y terminando con "</svg>". No incluyas explicaciones, comentarios, ni bloques de código markdown.
+    `;
+}
+
+// --- FIN: FUNCIONES AÑADIDAS ---
 
 
 async function callApiForGeneratedJson(prompt, expectJson = true) {
+    // Asumimos que 'apiKey' está disponible en el scope global
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
     const payload = {
@@ -183,6 +276,7 @@ async function callApiForGeneratedJson(prompt, expectJson = true) {
             throw new Error("La respuesta de la API no contenía un JSON válido.");
         }
     } else {
+        // Limpia el texto si viene con markdown para SVG
         return rawText.replace(/```svg\n?/, '').replace(/```$/, '');
     }
 }
@@ -318,7 +412,6 @@ async function generarImagenDesdePrompt(userPrompt) {
     return { imagen: pngDataUrl, svgContent: svgContent };
 }
 
-// --- INICIO: NUEVA FUNCIÓN PARA MEJORAR SVG ---
 async function mejorarImagenDesdeSVG(svgExistente, userPrompt) {
     if (!svgExistente) {
         throw new Error("No se proporcionó un SVG existente para mejorar.");
@@ -336,7 +429,6 @@ async function mejorarImagenDesdeSVG(svgExistente, userPrompt) {
 
     return { imagen: pngDataUrl, svgContent: svgMejorado };
 }
-// --- FIN: NUEVA FUNCIÓN PARA MEJORAR SVG ---
 
 async function generarImagenSuperrealistaDesdePrompt(userPrompt) {
     if (!userPrompt) {
@@ -370,10 +462,6 @@ async function generarImagenSuperrealistaDesdePrompt(userPrompt) {
     console.log("[Generador Superrealista] Proceso completado.");
     return { imagen: pngDataUrl, svgContent: finalSvg };
 }
-// --- FIN: NUEVA FUNCIÓN DE GENERACIÓN SUPERREALISTA ---
-
-
-
 
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', inicializarEventos);
