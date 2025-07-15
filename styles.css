@@ -2544,17 +2544,7 @@ transform: translateX(-50%);
             text-align: center;
         }
         
-        canvas {position: relative ; display: block;
-            background-color: #ffffff00;
-            border-radius: 8px;
-             width: auto;
-            height: 200px; left: 50% !important; top: 15%;
-            bottom: 50%;
-            aspect-ratio: 1 / 1;
-
-            transform:  translateX(-50%); 
-            border: 1px solid #444444a9;
-        }
+     
         #status-message {
             position: fixed;
             font-style: italic;
@@ -2938,4 +2928,69 @@ border: 0px solid #555; border-radius: 5px; padding: 0px; z-index: 10002; }
 
  
 
- 
+    .animation-container {
+            display: flex;
+            flex-direction: column;
+            width: 1280px;
+          
+            height: 720px;
+           
+        }
+   canvas {position: relative ; display: block;
+            background-color: #ffffff00;
+            border-radius: 8px;
+             width: auto;
+            height: 200px; left: 50% !important; top: 15%;
+            bottom: 50%;
+             
+
+            transform:  translateX(-50%); 
+            border: 1px solid #444444a9;
+        }
+
+  .canvas-container {
+height: 720px !important ;
+width: 1280px!important ;
+           
+
+  }
+    #animation-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; height: 720px !important ;
+width: 1280px!important ;
+        }
+  
+  .upper-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; height: 720px !important ;
+width: 1280px!important ;
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+  
+  .canvas-wrapper {height: 720px;
+            flex-grow: 1;
+            aspect-ratio: 16 / 9;
+            background-color: #000;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        #animation-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }

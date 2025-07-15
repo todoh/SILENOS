@@ -82,6 +82,7 @@ function cerrartodo() {
     document.getElementById('galeria').style.display = 'none';
     document.getElementById('vistageneral').style.display = 'none';
     document.getElementById('juego').style.display = 'none';
+    document.getElementById('animacionsvg').style.display = 'none';
 
 
 

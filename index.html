@@ -204,6 +204,10 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
             <button class="tons" onclick="abrir('guion-literario');">Guión</button>
             <button class="tons" onclick="cerrartodo(), abrir('capitulosh');">Libro</button>
             <button class="tons" onclick="cerrartodo(), abrir('escenah');">Storyboard</button>
+            <button class="tons" onclick="cerrartodo(), abrir('animacionsvg');">🎬 Animación</button>
+
+ 
+
             <button class="tons" onclick="cerrartodo(), abrir('imagenes');" style="display: none;" >Imagenes</button>
             <button class="tons" onclick="cerrartodo(), abrir('animaciones');"  style="display: none;">Animaciones</button>
 
@@ -876,6 +880,29 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
 
 
 
+<div id ="animacionsvg" class="nom" >
+
+    <div class="animation-container">
+        <div class="main-content">
+            <div class="canvas-wrapper">
+                <canvas id="animation-canvas"></canvas>
+            </div>
+            <div class="controls-panel">
+                <h3>Control de Animación</h3>
+                <textarea id="animation-prompt" placeholder="Describe la escena que quieres animar. Por ejemplo: 'Un samurai aparece desde la izquierda y desenfunda su katana. La cámara hace un zoom lento a su rostro.'"></textarea>
+                <div class="button-group">
+                    <button id="generate-animation-btn">✨ Generar Animación</button>
+                    <button id="play-pause-btn" disabled>▶️ Reproducir</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+</div>
+
+
 <div id="modal-ia-herramientas" class="modal-content">
     <button class="modal-close-button" onclick="cerrarModalIAHerramientas()">&times;</button>
     <h3>Herramientas de Creación con IA</h3>
@@ -1245,6 +1272,8 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
 
 <script src="toma.js"></script>
+<script src="animacionsvg.js"></script>
+
 
 <script src="main.js" defer></script>
 

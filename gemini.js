@@ -1,4 +1,4 @@
-let apiKey = ""; // Reemplaza con tu clave real o asegúrate que se carga desde otro sitio.
+let apiKey = localStorage.getItem('silenosGoogleApiKey') || ""; // Intenta cargar la clave al inicio
 
 // Es importante que 'apiKey' y 'ultimaHistoriaGeneradaJson' sean accesibles por este script.
 // Si 'ultimaHistoriaGeneradaJson' se define en 'geminialfa.js', asegúrate que 'geminialfa.js' se carga antes o que la variable es global.
@@ -16,7 +16,7 @@ async function enviartexto() {
         document.getElementById("user-input").value = "";
     }
     try {
-        const response = await fetch("[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=)" + apiKey, {
+        const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=" + apiKey, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ contents: [{ parts: [{ text: userInput }] }] })
@@ -34,16 +34,27 @@ async function enviartexto() {
     }
 }
 
-if (document.getElementById("apiKeyDisplay") && apiKey !== "TU_API_KEY_AQUI") {
-    document.getElementById("apiKeyDisplay").textContent = apiKey;
+// Actualiza la visualización de la API key al cargar la página
+if (document.getElementById("apiKeyDisplay")) {
+    document.getElementById("apiKeyDisplay").textContent = apiKey ? "Definida" : "[No definida]";
 }
+
+if(document.getElementById('apiInput')){
+    document.getElementById('apiInput').value = apiKey;
+}
+
 
 function updateApiKey() {
     const newKey = document.getElementById("apiInput").value;
     if (newKey.trim() !== "") {
         apiKey = newKey;
+        
+        // --- LÍNEA AÑADIDA ---
+        // Guarda la clave en localStorage para que otras ventanas puedan acceder a ella.
+       // localStorage.setItem('silenosGoogleApiKey', newKey);
+        
         if (document.getElementById("apiKeyDisplay")) {
-            document.getElementById("apiKeyDisplay").textContent = apiKey;
+            document.getElementById("apiKeyDisplay").textContent = "Definida";
         }
         alert("API Key actualizada correctamente.");
     } else {

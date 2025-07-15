@@ -523,6 +523,10 @@ function obtenerArcosUnicos() {
  * Crea y añade un nuevo elemento de "Dato" al DOM, incluyendo todos los controles.
  * @param {object} personajeData - El objeto con los datos del personaje/dato.
  */
+/**
+ * Crea y añade un nuevo elemento de "Dato" al DOM, incluyendo todos los controles.
+ * @param {object} personajeData - El objeto con los datos del personaje/dato.
+ */
 function agregarPersonajeDesdeDatos(personajeData = {}) {
     const { 
         nombre = '', 
@@ -620,55 +624,40 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     botonGenerarIA.title = 'Generar Imagen con IA';
     buttonsWrapper.appendChild(botonGenerarIA);
     
-// --- INICIO: CÓDIGO A AÑADIR ---
-// Pega este bloque después de la línea: buttonsWrapper.appendChild(botonGenerarIA);
-
-const botonSuperRealista = document.createElement('button');
-botonSuperRealista.className = 'edit-btn'; // Reutiliza el estilo de los otros botones.
-botonSuperRealista.innerHTML = '💎';
-botonSuperRealista.title = 'Generar Imagen Superrealista con IA Avanzada';
-
-botonSuperRealista.onclick = async () => {
-    const userPrompt = cajaTexto.value.trim();
-    if (!userPrompt) {
-        alert("Por favor, escribe una descripción detallada en la caja de texto para generar la imagen superrealista.");
-        return;
-    }
-
-    if (typeof generarImagenSuperrealistaDesdePrompt !== 'function') {
-        alert("Error: La función 'generarImagenSuperrealistaDesdePrompt' del archivo generador.js no está disponible.");
-        return;
-    }
-
-    // Deshabilitar botones para evitar clics múltiples durante la generación
-    const botones = buttonsWrapper.querySelectorAll('.edit-btn');
-    botones.forEach(b => b.disabled = true);
-    botonSuperRealista.innerHTML = '⚙️';
-
-    try {
-        // Llama a tu función asíncrona y espera el resultado
-        const resultado = await generarImagenSuperrealistaDesdePrompt(userPrompt);
-        
-        // Actualiza la tarjeta con la nueva imagen y el SVG
-        actualizarVisual(resultado.imagen, userPrompt);
-        contenedor.dataset.svgContent = resultado.svgContent;
-
-    } catch (error) {
-        console.error("Error al generar la imagen superrealista:", error);
-        alert(`Ocurrió un error: ${error.message}`);
-    } finally {
-        // Vuelve a habilitar los botones y restaura el icono
-        botones.forEach(b => b.disabled = false);
-        botonSuperRealista.innerHTML = '💎';
-    }
-};
-
-buttonsWrapper.appendChild(botonSuperRealista);
-
-// --- FIN: CÓDIGO A AÑADIR ---
-
-
-
+    const botonSuperRealista = document.createElement('button');
+    botonSuperRealista.className = 'edit-btn';
+    botonSuperRealista.innerHTML = '💎';
+    botonSuperRealista.title = 'Generar Imagen Superrealista con IA Avanzada';
+    
+    botonSuperRealista.onclick = async () => {
+        const userPrompt = cajaTexto.value.trim();
+        if (!userPrompt) {
+            alert("Por favor, escribe una descripción detallada en la caja de texto para generar la imagen superrealista.");
+            return;
+        }
+    
+        if (typeof generarImagenSuperrealistaDesdePrompt !== 'function') {
+            alert("Error: La función 'generarImagenSuperrealistaDesdePrompt' del archivo generador.js no está disponible.");
+            return;
+        }
+    
+        const botones = buttonsWrapper.querySelectorAll('.edit-btn');
+        botones.forEach(b => b.disabled = true);
+        botonSuperRealista.innerHTML = '⚙️';
+    
+        try {
+            const resultado = await generarImagenSuperrealistaDesdePrompt(userPrompt);
+            actualizarVisual(resultado.imagen, userPrompt);
+            contenedor.dataset.svgContent = resultado.svgContent;
+        } catch (error) {
+            console.error("Error al generar la imagen superrealista:", error);
+            alert(`Ocurrió un error: ${error.message}`);
+        } finally {
+            botones.forEach(b => b.disabled = false);
+            botonSuperRealista.innerHTML = '💎';
+        }
+    };
+    buttonsWrapper.appendChild(botonSuperRealista);
 
     const botonMejorarIA = document.createElement('button');
     botonMejorarIA.className = 'edit-btn improve-ai-btn';
@@ -829,7 +818,6 @@ buttonsWrapper.appendChild(botonSuperRealista);
     botonGuardarSVG.onclick = () => {
         if (!fabricEditorCanvas) return;
 
-        // --- INICIO DE LA CORRECCIÓN ---
         const objects = fabricEditorCanvas.getObjects();
         if (objects.length === 0) {
             fabricEditorCanvas.dispose();
@@ -847,7 +835,6 @@ buttonsWrapper.appendChild(botonSuperRealista);
 
         const nuevaImagenSrc = group.toDataURL({ format: 'png' });
         actualizarVisual(nuevaImagenSrc, cajaTexto.value);
-        // --- FIN DE LA CORRECCIÓN ---
 
         fabricEditorCanvas.dispose();
         fabricEditorCanvas = null;
@@ -875,8 +862,48 @@ buttonsWrapper.appendChild(botonSuperRealista);
         inputFile.click();
     };
     
-    actualizarVisual(imagen, descripcion);
+    // --- INICIO DE LA LÓGICA FINAL ---
+    // Determina la fuente de la imagen inicial.
+    // Si hay una URL de imagen, se usa.
+    // Si no hay URL pero hay SVG, se renderiza el SVG a una imagen usando Fabric.js
+    // para asegurar que se centre y escale igual que en el modo de edición.
+    if (svgContent && !imagen) {
+        if (typeof fabric !== 'undefined') {
+            // Se crea un canvas temporal y oculto para renderizar el SVG.
+            const tempCanvasEl = document.createElement('canvas');
+            const tempFabricCanvas = new fabric.Canvas(tempCanvasEl, { width: 150, height: 150 }); // Tamaño de previsualización
+
+            fabric.loadSVGFromString(svgContent, (objects, options) => {
+                const group = fabric.util.groupSVGElements(objects, options);
+                
+                // Se escala y centra el grupo de elementos SVG en el canvas temporal.
+                group.scaleToWidth(tempFabricCanvas.width * 0.9);
+                group.scaleToHeight(tempFabricCanvas.height * 0.9);
+                tempFabricCanvas.add(group);
+                group.center();
+                
+                // Se renderiza el canvas y se obtiene la imagen como un Data URL.
+                tempFabricCanvas.renderAll();
+                const dataUrl = tempFabricCanvas.toDataURL({ format: 'png' });
+                
+                // Se actualizan los elementos visuales con la nueva imagen.
+                actualizarVisual(dataUrl, descripcion);
+
+                // Se limpia el canvas temporal para liberar memoria.
+                tempFabricCanvas.dispose();
+            });
+        } else {
+            // Si Fabric.js no está disponible, se usa el método de fallback.
+            const fallbackSrc = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgContent);
+            actualizarVisual(fallbackSrc, descripcion);
+        }
+    } else {
+        // Si hay una URL de imagen, se usa directamente.
+        actualizarVisual(imagen, descripcion);
+    }
+    // --- FIN DE LA LÓGICA FINAL ---
 }
+
 
 function agregarPersonaje() {
     agregarPersonajeDesdeDatos();
@@ -955,85 +982,108 @@ async function procesarEntradaConIA() {
     chatDiv.innerHTML += `<p><strong>Tú:</strong> ${textoUsuario}</p><p><strong>Silenos:</strong> Analizando entrada...</p>`;
     chatDiv.scrollTop = chatDiv.scrollHeight;
 
+    // --- INICIO DE LA LÓGICA CORREGIDA ---
     try {
+        // 1. Intenta procesar el texto como JSON directamente.
         if (textoUsuario.startsWith('[') || textoUsuario.startsWith('{')) {
-            chatDiv.innerHTML += `<p><strong>Info:</strong> Se ha detectado una estructura tipo JSON. Se intentará formatear.</p>`;
-            const promptCorreccion = `Rol: Eres un asistente experto en formateo de datos. Tarea: Convierte la siguiente cadena de texto en un array JSON válido que siga la estructura: { "nombre": "string", "descripcion": "string", "etiqueta": "string (personaje, ubicacion, objeto, etc.)", "imagen": "" }. Sintetiza toda la información en el campo "descripcion". Responde ÚNICAMENTE con el array JSON. Texto a convertir: --- ${textoUsuario} ---`;
-            const respuestaCorregida = await llamarIAConFeedback(promptCorreccion, "Formateando JSON");
-            if (Array.isArray(respuestaCorregida) && respuestaCorregida.length > 0) {
-                respuestaCorregida.forEach(dato => agregarPersonajeDesdeDatos(dato));
-                alert(`La IA formateó y añadió ${respuestaCorregida.length} dato(s).`);
-            } else {
-                throw new Error("La IA no pudo formatear el JSON a la estructura esperada.");
-            }
-        } else {
-            const promptCategorias = `
-                Analiza el siguiente texto de una historia: "${textoUsuario}".
-                Tu ÚNICA tarea es extraer los nombres de las entidades clave y clasificarlas. NO escribas un ensayo ni análisis.
-                Identifica las categorías de datos más importantes y relevantes (ej: Personajes Principales, Personajes Secundarios, Lugares Clave, Objetos, Facciones, etc.).
-
-                **Instrucción crucial**: Responde ÚNICAMENTE con un objeto JSON. No añadas texto introductorio, explicaciones, ni marcadores de código. La estructura debe ser:
-                {
-                  "categorias_identificadas": ["Categoría 1", "Categoría 2", "Categoría 3"]
-                }
-
-                Si el texto es demasiado corto o ambiguo para extraer categorías, devuelve un JSON con un array vacío, así:
-                {
-                  "categorias_identificadas": []
-                }
-            `;
-            
-            let respuestaCategorias;
             try {
-                respuestaCategorias = await llamarIAConFeedback(promptCategorias, "Identificando categorías");
-            } catch (error) {
-                throw new Error("La IA respondió en un formato inesperado. Por favor, intenta ser más descriptivo en tu idea. Error original: " + error.message);
-            }
-            
-            const categorias = respuestaCategorias.categorias_identificadas;
-            if (!categorias || !Array.isArray(categorias) || categorias.length === 0) {
-                throw new Error("La IA no pudo identificar categorías relevantes en el texto. Intenta ser más específico.");
-            }
-            
-            chatDiv.innerHTML += `<p><strong>Silenos:</strong> Categorías encontradas: ${categorias.join(', ')}. Extrayendo detalles...</p>`;
-            chatDiv.scrollTop = chatDiv.scrollHeight;
-
-            let totalDatosImportados = 0;
-            for (const categoria of categorias) {
-                const etiquetaSugerida = categoria.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-                const promptDetalles = `
-                    Para la obra "${textoUsuario}", genera una lista de elementos que pertenecen a la categoría "${categoria}".
-                    Para cada elemento, proporciona una descripción detallada.
-                    Responde ÚNICAMENTE con un objeto JSON válido en formato de array. Cada objeto debe tener: {"nombre": "...", "descripcion": "...", "etiqueta": "${etiquetaSugerida}", "imagen": ""}`;
-
-                const respuestaDetalles = await llamarIAConFeedback(promptDetalles, `Extrayendo detalles de "${categoria}"`);
+                const datosJson = JSON.parse(textoUsuario);
+                const datosArray = Array.isArray(datosJson) ? datosJson : [datosJson];
                 
-                if (Array.isArray(respuestaDetalles) && respuestaDetalles.length > 0) {
-                    let importadosCategoria = 0;
-                    respuestaDetalles.forEach(dato => {
-                        if (dato.nombre && dato.descripcion) {
-                            agregarPersonajeDesdeDatos(dato);
-                            importadosCategoria++;
-                        }
-                    });
-                    totalDatosImportados += importadosCategoria;
-                    chatDiv.innerHTML += `<p><strong>Éxito:</strong> Se agregaron ${importadosCategoria} datos de la categoría "${categoria}".</p>`;
-                }
-            }
-            
-            if (totalDatosImportados > 0) {
-                alert(`¡Proceso completado! Se importaron un total de ${totalDatosImportados} datos detallados.`);
+                datosArray.forEach(dato => agregarPersonajeDesdeDatos(dato));
+                
+                alert(`¡Éxito! Se importaron ${datosArray.length} dato(s) desde el JSON.`);
+                reinicializarFiltrosYActualizarVista();
                 document.getElementById('ia-datos-area').value = '';
-            } else {
-                alert("El proceso finalizó, pero no se pudo importar ningún dato. Revisa el chat para más información.");
+                if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
+                return; // Termina la ejecución si el JSON es válido.
+
+            } catch (jsonError) {
+                // Si falla el parseo, no hace nada y deja que continúe el flujo hacia la IA.
+                chatDiv.innerHTML += `<p><strong>Info:</strong> El texto parece JSON pero no es válido. Intentando corregir con IA...</p>`;
             }
         }
+
+        // 2. Si no es un JSON válido o es texto plano, usa la IA.
+        // La lógica original para llamar a la IA se mantiene como fallback.
+        const promptCategorias = `
+            Analiza el siguiente texto de una historia: "${textoUsuario}".
+            Tu ÚNICA tarea es extraer los nombres de las entidades clave y clasificarlas. NO escribas un ensayo ni análisis.
+            Identifica las categorías de datos más importantes y relevantes (ej: Personajes Principales, Personajes Secundarios, Lugares Clave, Objetos, Facciones, etc.).
+
+            **Instrucción crucial**: Responde ÚNICAMENTE con un objeto JSON. No añadas texto introductorio, explicaciones, ni marcadores de código. La estructura debe ser:
+            {
+              "categorias_identificadas": ["Categoría 1", "Categoría 2", "Categoría 3"]
+            }
+
+            Si el texto es demasiado corto o ambiguo para extraer categorías, devuelve un JSON con un array vacío, así:
+            {
+              "categorias_identificadas": []
+            }
+        `;
+        
+        let respuestaCategorias;
+        try {
+            respuestaCategorias = await llamarIAConFeedback(promptCategorias, "Identificando categorías");
+        } catch (error) {
+            throw new Error("La IA respondió en un formato inesperado. Por favor, intenta ser más descriptivo en tu idea. Error original: " + error.message);
+        }
+        
+        const categorias = respuestaCategorias.categorias_identificadas;
+        if (!categorias || !Array.isArray(categorias) || categorias.length === 0) {
+            throw new Error("La IA no pudo identificar categorías relevantes en el texto. Intenta ser más específico.");
+        }
+        
+        chatDiv.innerHTML += `<p><strong>Silenos:</strong> Categorías encontradas: ${categorias.join(', ')}. Extrayendo detalles...</p>`;
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+
+        let totalDatosImportados = 0;
+        for (const categoria of categorias) {
+            const etiquetaSugerida = categoria.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+            
+            const promptDetalles = `
+                Para la obra "${textoUsuario}", genera una lista de elementos que pertenecen a la categoría "${categoria}".
+                Para cada elemento, proporciona una descripción detallada.
+                Responde ÚNICAMENTE con un objeto JSON válido en formato de array. Cada objeto debe tener la siguiente estructura completa: 
+                {
+                    "nombre": "...", 
+                    "descripcion": "...", 
+                    "etiqueta": "${etiquetaSugerida}", 
+                    "arco": "sin_arco", 
+                    "imagen": "",
+                    "svgContent": ""
+                }`;
+
+            const respuestaDetalles = await llamarIAConFeedback(promptDetalles, `Extrayendo detalles de "${categoria}"`);
+            
+            if (Array.isArray(respuestaDetalles) && respuestaDetalles.length > 0) {
+                let importadosCategoria = 0;
+                respuestaDetalles.forEach(dato => {
+                    if (dato.nombre && dato.descripcion) {
+                        agregarPersonajeDesdeDatos(dato);
+                        importadosCategoria++;
+                    }
+                });
+                totalDatosImportados += importadosCategoria;
+                chatDiv.innerHTML += `<p><strong>Éxito:</strong> Se agregaron ${importadosCategoria} datos de la categoría "${categoria}".</p>`;
+            }
+        }
+        
+        if (totalDatosImportados > 0) {
+            alert(`¡Proceso completado! Se importaron un total de ${totalDatosImportados} datos detallados.`);
+            document.getElementById('ia-datos-area').value = '';
+            reinicializarFiltrosYActualizarVista();
+        } else {
+            alert("El proceso finalizó, pero no se pudo importar ningún dato. Revisa el chat para más información.");
+        }
+
     } catch (error) {
         alert("Ocurrió un error al procesar la solicitud: " + error.message);
         console.error("Error en procesarEntradaConIA:", error);
     } finally {
         if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
     }
+    // --- FIN DE LA LÓGICA CORREGIDA ---
 }
 
 function agregarBotonEliminarAPersonajes() {
