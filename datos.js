@@ -523,10 +523,6 @@ function obtenerArcosUnicos() {
  * Crea y añade un nuevo elemento de "Dato" al DOM, incluyendo todos los controles.
  * @param {object} personajeData - El objeto con los datos del personaje/dato.
  */
-/**
- * Crea y añade un nuevo elemento de "Dato" al DOM, incluyendo todos los controles.
- * @param {object} personajeData - El objeto con los datos del personaje/dato.
- */
 function agregarPersonajeDesdeDatos(personajeData = {}) {
     const { 
         nombre = '', 
@@ -862,48 +858,17 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
         inputFile.click();
     };
     
-    // --- INICIO DE LA LÓGICA FINAL ---
-    // Determina la fuente de la imagen inicial.
-    // Si hay una URL de imagen, se usa.
-    // Si no hay URL pero hay SVG, se renderiza el SVG a una imagen usando Fabric.js
-    // para asegurar que se centre y escale igual que en el modo de edición.
-    if (svgContent && !imagen) {
-        if (typeof fabric !== 'undefined') {
-            // Se crea un canvas temporal y oculto para renderizar el SVG.
-            const tempCanvasEl = document.createElement('canvas');
-            const tempFabricCanvas = new fabric.Canvas(tempCanvasEl, { width: 150, height: 150 }); // Tamaño de previsualización
-
-            fabric.loadSVGFromString(svgContent, (objects, options) => {
-                const group = fabric.util.groupSVGElements(objects, options);
-                
-                // Se escala y centra el grupo de elementos SVG en el canvas temporal.
-                group.scaleToWidth(tempFabricCanvas.width * 0.9);
-                group.scaleToHeight(tempFabricCanvas.height * 0.9);
-                tempFabricCanvas.add(group);
-                group.center();
-                
-                // Se renderiza el canvas y se obtiene la imagen como un Data URL.
-                tempFabricCanvas.renderAll();
-                const dataUrl = tempFabricCanvas.toDataURL({ format: 'png' });
-                
-                // Se actualizan los elementos visuales con la nueva imagen.
-                actualizarVisual(dataUrl, descripcion);
-
-                // Se limpia el canvas temporal para liberar memoria.
-                tempFabricCanvas.dispose();
-            });
-        } else {
-            // Si Fabric.js no está disponible, se usa el método de fallback.
-            const fallbackSrc = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgContent);
-            actualizarVisual(fallbackSrc, descripcion);
-        }
-    } else {
-        // Si hay una URL de imagen, se usa directamente.
-        actualizarVisual(imagen, descripcion);
+    // --- INICIO DE LA LÓGICA CORREGIDA ---
+    // Determina la fuente de la imagen inicial. Prioriza la URL de la imagen, 
+    // pero si no existe y hay contenido SVG, lo convierte a un Data URI.
+    let imagenInicialSrc = imagen;
+    if (svgContent && !imagenInicialSrc) {
+        // Convierte el string SVG a un Data URI para que pueda ser usado en el src de una imagen.
+        imagenInicialSrc = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgContent)));
     }
-    // --- FIN DE LA LÓGICA FINAL ---
+    actualizarVisual(imagenInicialSrc, descripcion);
+    // --- FIN DE LA LÓGICA CORREGIDA ---
 }
-
 
 function agregarPersonaje() {
     agregarPersonajeDesdeDatos();
