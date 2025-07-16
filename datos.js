@@ -655,9 +655,44 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     };
     buttonsWrapper.appendChild(botonSuperRealista);
 
+    const botonHiperUltra = document.createElement('button');
+    botonHiperUltra.className = 'edit-btn';
+    botonHiperUltra.innerHTML = '😍';
+    botonHiperUltra.title = 'Generar Imagen con HIPER-ULTRA IA';
+    
+    botonHiperUltra.onclick = async () => {
+        const userPrompt = cajaTexto.value.trim();
+        if (!userPrompt) {
+            alert("Por favor, escribe una descripción detallada para la generación HIPER-ULTRA.");
+            return;
+        }
+    
+        if (typeof generarImagenHiperUltraDesdePrompt !== 'function') {
+            alert("Error: La función 'generarImagenHiperUltraDesdePrompt' del archivo generador.js no está disponible.");
+            return;
+        }
+    
+        const botones = buttonsWrapper.querySelectorAll('.edit-btn');
+        botones.forEach(b => b.disabled = true);
+        botonHiperUltra.innerHTML = '⚙️';
+    
+        try {
+            const resultado = await generarImagenHiperUltraDesdePrompt(userPrompt);
+            actualizarVisual(resultado.imagen, userPrompt);
+            contenedor.dataset.svgContent = resultado.svgContent;
+        } catch (error) {
+            console.error("Error en la generación HIPER-ULTRA:", error);
+            alert(`Ocurrió un error en la generación HIPER-ULTRA: ${error.message}`);
+        } finally {
+            botones.forEach(b => b.disabled = false);
+            botonHiperUltra.innerHTML = '😍';
+        }
+    };
+    buttonsWrapper.appendChild(botonHiperUltra);
+
     const botonMejorarIA = document.createElement('button');
     botonMejorarIA.className = 'edit-btn improve-ai-btn';
-    botonMejorarIA.innerHTML = '📈';
+    botonMejorarIA.innerHTML = '�';
     botonMejorarIA.title = 'Mejorar Imagen con IA';
     buttonsWrapper.appendChild(botonMejorarIA);
 
@@ -745,38 +780,7 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     };
     
     botonMejorarIA.onclick = async () => {
-        const svgActual = contenedor.dataset.svgContent;
-        const descripcionPrompt = cajaTexto.value.trim();
-
-        if (!svgActual) {
-            alert("No hay una imagen SVG existente para mejorar. Primero, genera una imagen con '✨'.");
-            return;
-        }
-
-        if (typeof mejorarImagenDesdeSVG !== 'function') {
-            alert("Error: La función para mejorar imágenes no está disponible.");
-            return;
-        }
-
-        botonMejorarIA.innerHTML = '⚙️';
-        botonGenerarIA.disabled = true;
-        botonMejorarIA.disabled = true;
-        botonCargar.disabled = true;
-        botonEliminar.disabled = true;
-
-        try {
-            const { imagen, svgContent: svgMejorado } = await mejorarImagenDesdeSVG(svgActual, descripcionPrompt);
-            actualizarVisual(imagen, cajaTexto.value);
-            contenedor.dataset.svgContent = svgMejorado;
-        } catch (error) {
-            alert(`Ocurrió un error al mejorar la imagen: ${error.message}`);
-        } finally {
-            botonMejorarIA.innerHTML = '📈';
-            botonGenerarIA.disabled = false;
-            botonMejorarIA.disabled = false;
-            botonCargar.disabled = false;
-            botonEliminar.disabled = false;
-        }
+           mostrarModalMejora(contenedor);
     };
 
     botonEditarSVG.onclick = () => {
@@ -858,28 +862,57 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
         inputFile.click();
     };
     
-    // --- INICIO DE LA LÓGICA CORREGIDA ---
-    // Determina la fuente de la imagen inicial. Prioriza la URL de la imagen, 
-    // pero si no existe y hay contenido SVG, lo convierte a un Data URI.
-    let imagenInicialSrc = imagen;
-    if (svgContent && !imagenInicialSrc) {
-        // Convierte el string SVG a un Data URI para que pueda ser usado en el src de una imagen.
-        imagenInicialSrc = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgContent)));
+    if (svgContent && !imagen) {
+        if (typeof fabric !== 'undefined') {
+            const tempCanvasEl = document.createElement('canvas');
+            const tempFabricCanvas = new fabric.Canvas(tempCanvasEl, { width: 150, height: 150 });
+
+            fabric.loadSVGFromString(svgContent, (objects, options) => {
+                const group = fabric.util.groupSVGElements(objects, options);
+                
+                group.scaleToWidth(tempFabricCanvas.width * 0.9);
+                group.scaleToHeight(tempFabricCanvas.height * 0.9);
+                tempFabricCanvas.add(group);
+                group.center();
+                
+                tempFabricCanvas.renderAll();
+                const dataUrl = tempFabricCanvas.toDataURL({ format: 'png' });
+                
+                actualizarVisual(dataUrl, descripcion);
+
+                tempFabricCanvas.dispose();
+            });
+        } else {
+            const fallbackSrc = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgContent);
+            actualizarVisual(fallbackSrc, descripcion);
+        }
+    } else {
+        actualizarVisual(imagen, descripcion);
     }
-    actualizarVisual(imagenInicialSrc, descripcion);
-    // --- FIN DE LA LÓGICA CORREGIDA ---
 }
+
 
 function agregarPersonaje() {
     agregarPersonajeDesdeDatos();
     reinicializarFiltrosYActualizarVista();
 }
 
+// =========================================================================
+// INICIALIZACIÓN Y MANEJO DE INTERACCIÓN PRINCIPAL
+// =========================================================================
+
+/**
+ * --- FUNCIÓN CORREGIDA ---
+ * Inicializa los listeners para abrir y cerrar la vista de edición de un dato.
+ * Previene los errores de referencia y de nodo no encontrado.
+ */
 function inicializarInteraccionPersonajes() {
     const listaPersonajesEl = document.getElementById('listapersonajes');
     if (!listaPersonajesEl) return;
 
+    // Listener para ABRIR el editor al hacer clic en un visual.
     listaPersonajesEl.addEventListener('click', (e) => {
+        // Ignora los clics en los botones de etiqueta/arco para no interferir con sus menús.
         if (e.target.closest('.change-tag-btn') || e.target.closest('.change-arc-btn')) {
             return; 
         }
@@ -889,13 +922,16 @@ function inicializarInteraccionPersonajes() {
             const personajeActual = visualClicked.closest('.personaje');
             if (!personajeActual) return;
             
-            const personajeActivo = document.querySelector('.personaje.editing');
-            if (personajeActivo && personajeActivo !== personajeActual) {
-                personajeActivo.classList.remove('editing');
+            // Cierra cualquier otro editor que esté abierto antes de abrir uno nuevo.
+            const otroPersonajeActivo = document.querySelector('.personaje.editing');
+            if (otroPersonajeActivo && otroPersonajeActivo !== personajeActual) {
+                otroPersonajeActivo.classList.remove('editing');
             }
             
+            // Alterna la clase 'editing' en el dato clickeado.
             personajeActual.classList.toggle('editing');
 
+            // Si el editor se acaba de abrir, actualiza la imagen de previsualización.
             if (personajeActual.classList.contains('editing')) {
                 const visualImgSrc = visualClicked.querySelector('img')?.src;
                 const overlay = personajeActual.querySelector('.personaje-edit-overlay');
@@ -911,15 +947,27 @@ function inicializarInteraccionPersonajes() {
         }
     });
 
+    // Listener global para CERRAR el editor al hacer clic FUERA de él.
     document.addEventListener('click', (e) => {
         const personajeActivo = document.querySelector('.personaje.editing');
         const menuActivo = document.querySelector('.menu-etiquetas');
-        
-        if (personajeActivo && !e.target.closest('.personaje.editing') && !e.target.closest('.menu-etiquetas') && !e.target.closest('.input-etiqueta-personalizada')) {
-             personajeActivo.classList.remove('editing');
+
+        // Cierra el editor si el clic fue fuera del dato activo, sus menús o el modal de mejora.
+        if (personajeActivo &&
+            !e.target.closest('.personaje.editing') &&
+            !e.target.closest('.menu-etiquetas') &&
+            !e.target.closest('.input-etiqueta-personalizada') &&
+            !e.target.closest('#improve-modal-overlay')) { // <-- Corrección clave
+                
+            personajeActivo.classList.remove('editing');
         }
 
-        if (menuActivo && !e.target.closest('.menu-etiquetas') && !e.target.closest('.change-tag-btn') && !e.target.closest('.change-arc-btn')) {
+        // Cierra los menús de etiquetas/arcos si el clic fue fuera de ellos.
+        if (menuActivo && 
+            !e.target.closest('.menu-etiquetas') && 
+            !e.target.closest('.change-tag-btn') && 
+            !e.target.closest('.change-arc-btn')) {
+                
             menuActivo.remove();
         }
     }, true);
@@ -933,7 +981,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // =========================================================================
-// OTRAS FUNCIONES (IA, etc.)
+// FUNCIONES DE IA Y MODALES
 // =========================================================================
 
 async function procesarEntradaConIA() {
@@ -947,9 +995,7 @@ async function procesarEntradaConIA() {
     chatDiv.innerHTML += `<p><strong>Tú:</strong> ${textoUsuario}</p><p><strong>Silenos:</strong> Analizando entrada...</p>`;
     chatDiv.scrollTop = chatDiv.scrollHeight;
 
-    // --- INICIO DE LA LÓGICA CORREGIDA ---
     try {
-        // 1. Intenta procesar el texto como JSON directamente.
         if (textoUsuario.startsWith('[') || textoUsuario.startsWith('{')) {
             try {
                 const datosJson = JSON.parse(textoUsuario);
@@ -961,16 +1007,13 @@ async function procesarEntradaConIA() {
                 reinicializarFiltrosYActualizarVista();
                 document.getElementById('ia-datos-area').value = '';
                 if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
-                return; // Termina la ejecución si el JSON es válido.
+                return;
 
             } catch (jsonError) {
-                // Si falla el parseo, no hace nada y deja que continúe el flujo hacia la IA.
                 chatDiv.innerHTML += `<p><strong>Info:</strong> El texto parece JSON pero no es válido. Intentando corregir con IA...</p>`;
             }
         }
 
-        // 2. Si no es un JSON válido o es texto plano, usa la IA.
-        // La lógica original para llamar a la IA se mantiene como fallback.
         const promptCategorias = `
             Analiza el siguiente texto de una historia: "${textoUsuario}".
             Tu ÚNICA tarea es extraer los nombres de las entidades clave y clasificarlas. NO escribas un ensayo ni análisis.
@@ -1048,7 +1091,157 @@ async function procesarEntradaConIA() {
     } finally {
         if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
     }
-    // --- FIN DE LA LÓGICA CORREGIDA ---
+}
+
+/**
+ * --- FUNCIÓN CORREGIDA ---
+ * Muestra un modal para que el usuario introduzca un prompt personalizado
+ * y mejore el SVG de un personaje. Ya no causa el error de referencia.
+ * @param {HTMLElement} personajeDIV - El elemento contenedor del personaje.
+ */
+function mostrarModalMejora(personajeDIV) {
+    const svgContent = personajeDIV.dataset.svgContent;
+    const nombrePersonaje = personajeDIV.querySelector("input.nombreh")?.value || 'este personaje';
+
+    const botonGenerarIA = personajeDIV.querySelector('.generate-ai-btn');
+    const botonMejorarIA = personajeDIV.querySelector('.improve-ai-btn');
+    const botonCargar = personajeDIV.querySelector('.change-image-btn');
+    const botonEliminar = personajeDIV.querySelector('.delete-btn');
+
+    if (!svgContent) {
+        alert("No se encontró contenido SVG para mejorar en este dato.");
+        return;
+    }
+    if (typeof mejorarImagenDesdeSVG !== 'function') {
+        alert("Error: La función 'mejorarImagenDesdeSVG' no está disponible.");
+        return;
+    }
+
+    if (document.getElementById('improve-modal-overlay')) return;
+
+    const modalOverlay = document.createElement('div');
+    modalOverlay.id = 'improve-modal-overlay';
+    modalOverlay.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-color: rgba(0, 0, 0, 0);
+        display: flex; justify-content: center; align-items: center;
+        z-index: 2000; transform: translateX(10%);
+    `;
+
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+        position: relative; background-color: #fff; padding: 30px;
+        border-radius: 12px; width: 90%; max-width: 500px;
+        display: flex; flex-direction: column;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.17); font-family: sans-serif;
+    `;
+    modalContent.addEventListener('click', (event) => event.stopPropagation());
+
+    const modalTitle = document.createElement('h1');
+    modalTitle.textContent = `Mejorar imagen de ${nombrePersonaje}`;
+    modalTitle.style.cssText = 'margin-top: 0; margin-bottom: 20px; color: #333;';
+
+    const closeModal = () => {
+        if (modalOverlay.parentNode) {
+            modalOverlay.parentNode.removeChild(modalOverlay);
+        }
+    };
+
+    const closeButton = document.createElement('span');
+    closeButton.textContent = '×';
+    closeButton.onclick = closeModal;
+    closeButton.style.cssText = `
+        position: absolute; top: 10px; right: 15px; font-size: 30px;
+        font-weight: bold; cursor: pointer; color: #888;`;
+    
+    const promptTextarea = document.createElement('textarea');
+    promptTextarea.placeholder = 'Describe cómo quieres mejorar la imagen... (ej: "un estilo más realista", "colores de ciencia ficción", "que parezca un boceto a lápiz")';
+    promptTextarea.style.cssText = `
+        width: 100%; min-height: 100px; margin-bottom: 20px;
+        padding: 10px; border: 1px solid #ccc; border-radius: 5px;
+        font-size: 16px; resize: vertical; box-sizing: border-box;`;
+
+    const improveButton = document.createElement('button');
+    improveButton.textContent = 'Mejorar con IA';
+    improveButton.style.cssText = `
+        padding: 12px 20px; border: none; border-radius: 5px;
+        background-color: #007bff; color: white; font-size: 16px;
+        cursor: pointer; font-weight: bold; transition: background-color 0.2s;`;
+    improveButton.onmouseover = () => improveButton.style.backgroundColor = '#0056b3';
+    improveButton.onmouseout = () => improveButton.style.backgroundColor = '#007bff';
+
+    improveButton.onclick = async () => {
+        const prompt = promptTextarea.value.trim();
+        if (!prompt) {
+            alert("Por favor, escribe un prompt para la mejora.");
+            return;
+        }
+
+        improveButton.textContent = 'Mejorando...';
+        improveButton.disabled = true;
+        
+        if (botonMejorarIA) botonMejorarIA.innerHTML = '⚙️';
+        if (botonGenerarIA) botonGenerarIA.disabled = true;
+        if (botonMejorarIA) botonMejorarIA.disabled = true;
+        if (botonCargar) botonCargar.disabled = true;
+        if (botonEliminar) botonEliminar.disabled = true;
+
+        try {
+            const { imagen, svgContent: svgMejorado } = await mejorarImagenDesdeSVG(svgContent, prompt);
+            
+            // --- INICIO DE LA CORRECCIÓN ---
+            // Lógica replicada de la función inaccesible 'actualizarVisual'
+            const img = personajeDIV.querySelector('.personaje-visual img');
+            const descripcionPreview = personajeDIV.querySelector('.personaje-descripcion-preview');
+            const previewImageInOverlay = personajeDIV.querySelector('.personaje-edit-overlay .edit-preview-image');
+            const nuevaDescripcion = personajeDIV.querySelector("textarea").value;
+
+            if (img) {
+                img.src = imagen || '';
+                img.classList.toggle('hidden', !imagen || imagen.endsWith('/'));
+            }
+            if (descripcionPreview) {
+                descripcionPreview.textContent = nuevaDescripcion;
+            }
+            if (previewImageInOverlay) {
+                if (imagen && !imagen.endsWith('/')) {
+                    previewImageInOverlay.src = imagen;
+                    previewImageInOverlay.style.display = 'block';
+                } else {
+                    previewImageInOverlay.style.display = 'none';
+                }
+            }
+            // --- FIN DE LA CORRECCIÓN ---
+
+            personajeDIV.dataset.svgContent = svgMejorado;
+            console.log("Mejora completada con éxito.");
+
+        } catch (error) {
+            console.error("Error durante la mejora con IA:", error);
+            alert(`Ocurrió un error al intentar mejorar la imagen: ${error.message}`);
+        } finally {
+            if (botonMejorarIA) botonMejorarIA.innerHTML = '📈';
+            if (botonGenerarIA) botonGenerarIA.disabled = false;
+            if (botonMejorarIA) botonMejorarIA.disabled = false;
+            if (botonCargar) botonCargar.disabled = false;
+            if (botonEliminar) botonEliminar.disabled = false;
+            closeModal();
+        }
+    };
+
+    modalContent.appendChild(closeButton);
+    modalContent.appendChild(modalTitle);
+    modalContent.appendChild(promptTextarea);
+    modalContent.appendChild(improveButton);
+    modalOverlay.appendChild(modalContent);
+    document.body.appendChild(modalOverlay);
+
+    promptTextarea.focus();
+    modalOverlay.addEventListener('click', (event) => {
+        if (event.target === modalOverlay) {
+            closeModal();
+        }
+    });
 }
 
 function agregarBotonEliminarAPersonajes() {
@@ -1068,23 +1261,25 @@ function agregarBotonEliminarAPersonajes() {
     });
 }
 
-
 document.addEventListener('DOMContentLoaded', () => {
     const selectorBtn = document.getElementById('selector-guion-btn-local');
     const popup = document.getElementById('lista-guiones-popup-local');
     if (selectorBtn && popup) {
         function popularListaGuiones() {
             popup.innerHTML = '';
-            guionLiterarioData.forEach((capitulo, index) => {
-                const item = document.createElement('button');
-                item.className = 'guion-popup-item-local';
-                item.textContent = capitulo.titulo;
-                item.onclick = () => {
-                    mostrarCapituloSeleccionado(index);
-                    popup.style.display = 'none';
-                };
-                popup.appendChild(item);
-            });
+            // guionLiterarioData is not defined here, assuming it's global from another file
+            if (typeof guionLiterarioData !== 'undefined') {
+                guionLiterarioData.forEach((capitulo, index) => {
+                    const item = document.createElement('button');
+                    item.className = 'guion-popup-item-local';
+                    item.textContent = capitulo.titulo;
+                    item.onclick = () => {
+                        mostrarCapituloSeleccionado(index);
+                        popup.style.display = 'none';
+                    };
+                    popup.appendChild(item);
+                });
+            }
         }
         selectorBtn.addEventListener('click', (event) => {
             event.stopPropagation();
