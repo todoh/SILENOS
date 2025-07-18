@@ -86,7 +86,7 @@ async function llamarIAConFeedback(prompt, etapaDescriptiva, esJsonEsperado = tr
             throw new Error("La API Key de Gemini no está definida. Configúrala en la sección de Ajustes.");
         }
 
-        const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey, {
+        const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-06-17:generateContent?key=" + apiKey, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })

@@ -303,8 +303,8 @@ function reiniciar() {
 function actualizarBotonContextual() {
     const btn = document.getElementById('contextual-action-btn');
     const btn2 = document.getElementById('open-imagenes-modal-btn');
-    if (!btn) return;
-   if (!btn2) return;
+    if (!btn || !btn2) return;
+
     // Clonar y reemplazar para limpiar listeners antiguos
     const newBtn = btn.cloneNode(true);
     btn.parentNode.replaceChild(newBtn, btn);
@@ -313,12 +313,12 @@ function actualizarBotonContextual() {
 
     if (typeof apiKey === 'undefined' || !apiKey || !apiKey.trim()) {
         newBtn.style.display = 'none';
-          newBtn2.style.display = 'none';
+        newBtn2.style.display = 'none';
         return;
     }
 
     const seccionesVisibles = [
-        'personajes', 'momentos', 'capitulosh', 'escenah', 'guion-literario'
+        'personajes', 'momentos', 'capitulosh', 'escenah', 'guion-literario', 'animacionessvg' // <-- AÑADIDO
     ];
 
     const idSeccionActiva = seccionesVisibles.find(id => {
@@ -331,33 +331,36 @@ function actualizarBotonContextual() {
         newBtn2.innerHTML = '🖼️';
         newBtn.style.display = 'flex';
         newBtn2.style.display = 'none';
+        
         if (idSeccionActiva === 'personajes') {
             newBtn.title = 'Analizar o importar datos con IA';
             newBtn.onclick = abrirModalAIDatos;
             newBtn2.title = 'Generar Imágenes con IA';
             newBtn2.onclick = abrirModalImagenes;
-             newBtn2.style.display = 'flex';
+            newBtn2.style.display = 'flex';
         } else if (idSeccionActiva === 'momentos') {
             newBtn.title = 'Generar Aventura Interactiva con IA';
             newBtn.onclick = abrirModalMomentosIA;
         } else if (idSeccionActiva === 'capitulosh') {
             newBtn.title = 'Generar Frames con IA desde un Guion';
             newBtn.onclick = abrirModalSeleccionLibroParaFrames;
+        } else if (idSeccionActiva === 'animacionessvg') { // <-- NUEVA CONDICIÓN
+            newBtn.title = 'Generar Animaciones SVG con IA';
+            newBtn.onclick = abrirModalAnimacionesIA;
         } else if (idSeccionActiva === 'escenah') {
-            // --- LÓGICA CORRECTA PARA STORYBOARD ---
             newBtn.innerHTML = '🎬';
             newBtn.title = 'Generar Storyboard desde Libro';
             newBtn.onclick = abrirModalGenerarStoryboardDesdeLibro;
-            // --- FIN LÓGICA CORRECTA ---
         } else {
             newBtn.title = 'Abrir Herramientas de IA';
             newBtn.onclick = abrirModalIAHerramientas;
         }
     } else {
         newBtn.style.display = 'none';
-         newBtn2.style.display = 'none';
+        newBtn2.style.display = 'none';
     }
 }
+
 
 
 /**
