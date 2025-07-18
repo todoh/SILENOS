@@ -287,6 +287,8 @@
     flex-direction: column;
     box-shadow: 0 4px 15px rgba(0,0,0,0.15);
     padding: 5px;
+    height: 250px;
+    overflow-y: scroll;
 }
 
 .dark-theme .menu-etiquetas {

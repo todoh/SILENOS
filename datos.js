@@ -9,11 +9,12 @@ const opcionesEtiqueta = [
     { emoji: '🗓️', valor: 'evento', titulo: 'Evento' },
     { emoji: '🛠️', valor: 'objeto', titulo: 'Objeto' },
     { emoji: '👕', valor: 'atuendo', titulo: 'Atuendo' },
-     { emoji: '🏡', valor: 'edificio', titulo: 'Edificio' },
+    { emoji: '🏡', valor: 'edificio', titulo: 'Edificio' },
+    { emoji: '🍱', valor: 'atuendo', titulo: 'Comida' },
     { emoji: '🚗', valor: 'transporte', titulo: 'Transporte' },
     { emoji: '🐾', valor: 'animal', titulo: 'Animal' },
-     { emoji: '🌱', valor: 'planta', titulo: 'Planta' },
-      { emoji: '🦠', valor: 'ser_vivo', titulo: 'Ser Vivo' },
+    { emoji: '🌱', valor: 'planta', titulo: 'Planta' },
+    { emoji: '🦠', valor: 'ser_vivo', titulo: 'Ser Vivo' },
     { emoji: '🏞️', valor: 'elemento_geográfico', titulo: 'Elemento Geográfico' },
     { emoji: '💭', valor: 'concepto', titulo: 'Concepto' },
     { emoji: '📝', valor: 'nota', titulo: 'Nota' },
@@ -692,7 +693,7 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
 
     const botonMejorarIA = document.createElement('button');
     botonMejorarIA.className = 'edit-btn improve-ai-btn';
-    botonMejorarIA.innerHTML = '�';
+    botonMejorarIA.innerHTML = '📈';
     botonMejorarIA.title = 'Mejorar Imagen con IA';
     buttonsWrapper.appendChild(botonMejorarIA);
 
