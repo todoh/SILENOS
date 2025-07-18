@@ -558,6 +558,16 @@ margin: 0%; z-index:   1000 ;}
     display: none;
     align-items: flex-start;
 }
+ #animacionessvg {
+    background-color: transparent;
+    width: 99%;
+    margin: 0%;
+    position: absolute; left: 1%;
+    top: 3%;
+    height: 97%;
+    display: none;
+    align-items: flex-start;
+}
 
  #biblioteca {
     background-color: transparent;
@@ -3006,3 +3016,12 @@ width: 1280px!important ;
             height: 100%;
             display: block;
         }
+
+
+
+
+        
+
+
+
+        

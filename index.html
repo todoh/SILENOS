@@ -11,7 +11,8 @@
 <link rel="stylesheet" href="editor-momento.css">
 <link rel="stylesheet" href="galeria.css">
 <link rel="stylesheet" href="biblioteca.css">
- 
+
+<link rel="stylesheet" href="animacionessvg.css">
 
     
 <style>
@@ -204,15 +205,15 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
             <button class="tons" onclick="abrir('guion-literario');">Guión</button>
             <button class="tons" onclick="cerrartodo(), abrir('capitulosh');">Libro</button>
             <button class="tons" onclick="cerrartodo(), abrir('escenah');">Storyboard</button>
-            <button class="tons" onclick="cerrartodo(), abrir('animacionsvg');">🎬 Animación</button>
+            <button class="tons" onclick="cerrartodo(), abrir('animacionsvg');"style="display: none;">🎬 Animación</button>
 
- 
+   <button class="tons" onclick="cerrartodo(), abrir('animacionessvg');">🎬 Animación SVG</button>
 
             <button class="tons" onclick="cerrartodo(), abrir('imagenes');" style="display: none;" >Imagenes</button>
-            <button class="tons" onclick="cerrartodo(), abrir('animaciones');"  ">Animaciones</button>
+            <button class="tons" onclick="cerrartodo(), abrir('animaciones');"  style="display: none;"">Animaciones</button>
 
             <button class="tons" id="pelicula" onclick="cerrartodo(), abrir('galeria');" style="display: none;" >Pelicula</button>
-            <button class="tons" onclick="cerrartodo(), abrir('momentos');"  style="display: none;">Videojuego</button>
+            <button class="tons" onclick="cerrartodo(), abrir('momentos');"   >Videojuego</button>
                 <button class="tons" onclick="cerrartodo(), abrir('juego');"  style="display: none;">Juego</button>
             <button class="tons" id="biblioteca-btn" style="display: none;" onclick="cerrartodo(), abrir('biblioteca');">📚 Biblioteca</button>
             <button class="pro" onclick="abrirModalConfig()">⚙️ Ajustes </button>
@@ -237,12 +238,12 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
     <!-- ================== -->
     <div id="timeline-panel">
         <div id="timeline-controls">
-            <button id="play-btn" class="btn-base w-auto">▶️</button>
+            <button id="play-btn222" class="btn-base w-auto">▶️</button>
             <button id="pause-btn" class="btn-base w-auto">⏸️</button>
             <button id="reset-btn" class="btn-base w-auto">⏪</button>
             <button id="start-realtime-record-btn" class="btn-base btn-danger">🔴</button>
             <button id="stop-realtime-record-btn" class="btn-base btn-danger" style="display: none;">⬛</button>
-            <button id="export-btn" class="btn-base btn-secondary">📸</button>
+            <button id="export-btn222" class="btn-base btn-secondary">📸</button>
             <span id="timeline-time-display">0.00s</span> </div>
         <div id="timeline-scrubber-area">
             <div id="timeline-ruler">
@@ -674,6 +675,127 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
 
 </div>
 
+<div id="animacionessvg3"  style="display: none;">
+    <header>
+        <div>
+            <button id="import-img-btn-3d">Importar Imagen</button>
+            <button id="import-dato-img-btn-3d">Importar de Dato</button>
+            <input type="file" id="import-input-3d" class="hidden" accept="image/*">
+            
+            <div class="control-group">
+                <label for="ground-texture-input">Textura Suelo:</label>
+                <input type="file" id="ground-texture-input" accept="image/*">
+            </div>
+            <div class="control-group">
+                <label for="sky-texture-input">Textura Cielo:</label>
+                <input type="file" id="sky-texture-input" accept="image/*">
+            </div>
+            
+            <div id="selection-actions">
+                <button id="delete-btn-3d">Eliminar</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div id="canvas-container-3d" style="width: 100%; height: 100%; position: relative;">
+            </div>
+    </main>
+
+    <footer>
+       </footer>
+</div>
+
+
+
+
+<div id="animacionessvg"  >
+    <div id="toast"></div>
+
+    <div id="keyframe-menu">
+        <div>
+            <div>
+                <label for="easing-select">Movimiento:</label>
+                <select id="easing-select">
+                    <option value="linear">Lineal</option>
+                    <option value="steps">Pasos Suaves</option>
+                    <option value="ease-in-out">Suave</option>
+                </select>
+            </div>
+            <button id="delete-keyframe-btn">Eliminar Keyframe</button>
+        </div>
+    </div>
+
+<header>
+    <div>
+        <button id="import-svg-btn">Importar SVG</button>
+        <button id="import-img-btn">Importar Imagen</button>
+        <button id="import-dato-img-btn">Importar Imagen de Dato</button>
+        <input type="file" id="import-input" class="hidden">
+        <button id="add-rect-btn">Añadir Rectángulo</button>
+        <button id="add-circle-btn">Añadir Círculo</button>
+        <div class="color-picker-container">
+            <label for="color-picker">Color:</label>
+            <input type="color" id="color-picker" value="#3b82f6">
+        </div>
+        <div id="selection-actions">
+            <button id="flip-h-btn" title="Voltear Horizontal">↔</button>
+            <button id="flip-v-btn" title="Voltear Vertical">↕</button>
+            <button id="delete-btn">Eliminar</button>
+        </div>
+    </div>
+</header>
+
+    <main>
+        <aside id="layer-panel">
+        
+            <div id="layer-list"></div>
+        </aside>
+
+        <div id="canvas-container">
+            <svg id="svg-canvas" width="100%" height="100%">
+                <g id="shapes-container"></g>
+                <g id="transform-controls">
+                    <rect id="transform-box-outline"></rect>
+                    <g id="transform-handles">
+                        <rect class="handle resize-handle" data-handle="top-left" width="10" height="10"></rect>
+                        <rect class="handle resize-handle" data-handle="top-middle" width="10" height="10"></rect>
+                        <rect class="handle resize-handle" data-handle="top-right" width="10" height="10"></rect>
+                        <rect class="handle resize-handle" data-handle="middle-left" width="10" height="10"></rect>
+                        <rect class="handle resize-handle" data-handle="middle-right" width="10" height="10"></rect>
+                        <rect class="handle resize-handle" data-handle="bottom-left" width="10" height="10"></rect>
+                        <rect class="handle resize-handle" data-handle="bottom-middle" width="10" height="10"></rect>
+                        <rect class="handle resize-handle" data-handle="bottom-right" width="10" height="10"></rect>
+                        <line id="rotation-line"></line>
+                        <circle id="rotation-handle" class="handle" r="7"></circle>
+                    </g>
+                </g>
+            </svg>
+        </div>
+    </main>
+
+    <footer>
+        <div>
+            <div class="controls-group">
+                <button id="play-btn">Play</button>
+                <button id="set-keyframe-btn">Fijar Keyframe</button>
+            </div>
+            <div class="timeline-controls-group">
+                <span id="time-label">0.0s</span>
+                <input type="range" id="timeline-slider" min="0" max="5000" value="0">
+            </div>
+            <div class="duration-controls-group">
+                <label for="duration-input">Duración (s):</label>
+                <input type="number" id="duration-input" value="5" min="1">
+            </div>
+            <button id="export-btn3">Exportar SVG</button>
+        </div>
+    </footer>
+</div>
+
+
+
+
 <div id="juego" style="display: none; width: 100%; height: 100%;">
     <div id="editor-container">
         <header id="main-header">
@@ -882,7 +1004,7 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
 
 
 
-<div id ="animacionsvg" class="nom" >
+<div id ="animacionsvg2" class="nom" >
 
     <div class="animation-container">
         <div class="main-content">
@@ -1011,6 +1133,8 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
         <h4>Exportar Videojuego</h4>
         <p>Exporta los momentos como una experiencia interactiva.</p>
         <select id="momento-inicial-id" class="modal-select"></select>
+        <button id="exportar-juego-3d-btn">Exportar Juego 3D</button>
+
         <button class="modal-button" onclick="iniciarExportacionJuego()">Exportar Videojuego HTML</button>
     </div>
 </div>
@@ -1275,9 +1399,17 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 
 <script src="toma.js"></script>
 <script src="animacionsvg.js"></script>
+<script src="exportarjuego3d.js"></script>
 
+
+<script src="animacionessvg.js"></script>
+<script src="animacion3d.js"></script>
 
 <script src="main.js" defer></script>
+
+
+
+
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {

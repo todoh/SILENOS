@@ -1,7 +1,7 @@
 // ===================================
 // ARCHIVO PRINCIPAL - INICIALIZACIÓN Y GLOBALES
 // ===================================
-
+document.getElementById('exportar-juego-3d-btn').addEventListener('click', generarJuego3D);
 // --- VARIABLES GLOBALES ---
 // Se declaran las variables aquí, pero las que dependen del DOM se asignarán más tarde.
 let guionLiterarioData = [];
@@ -83,7 +83,7 @@ function cerrartodo() {
     document.getElementById('vistageneral').style.display = 'none';
     document.getElementById('juego').style.display = 'none';
     document.getElementById('animacionsvg').style.display = 'none';
-
+  document.getElementById('animacionessvg').style.display = 'none';
 
 
 }

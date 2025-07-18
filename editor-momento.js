@@ -1,232 +1,320 @@
 /**
- * =====================================
- * GESTOR DEL PANEL DE EDICIÓN FLOTANTE
- * Versión Robusta y Depurada
- * =====================================
+ * ================================================================
+ * GESTOR DEL PANEL DE EDICIÓN FLOTANTE (VERSIÓN 3D)
+ * Permite definir el entorno 3D y las entidades (sprites) de cada momento.
+ * ================================================================
  */
 
-// Variables globales para el módulo del panel
 let panelState = {
     nodoActual: null,
     panelElement: null,
     tituloInput: null,
     descripcionInput: null,
-    dropZone: null,
-    fileInput: null,
-    imagenPreview: null,
+    // Contenedores para la nueva UI 3D
+    entornoContainer: null,
+    entidadesContainer: null, 
     accionesContainer: null,
     agregarAccionBtn: null,
 };
 
 /**
  * Inicializa el panel de edición, obteniendo referencias a sus elementos y añadiendo listeners.
- * Se ejecuta una vez cuando el DOM está completamente cargado.
  */
 function inicializarPanelEdicion() {
-    console.log('[EditorMomento] Intentando inicializar...');
+    console.log('[EditorMomento-3D] Inicializando...');
     
-    const s = panelState; // Alias para brevedad
+    const s = panelState;
     s.panelElement = document.getElementById('panel-edicion-momento');
-    
-    // Si el panel no existe en el HTML, no continuamos.
     if (!s.panelElement) {
-        console.error('[EditorMomento] ERROR CRÍTICO: El elemento #panel-edicion-momento no se encontró en el DOM.');
+        console.error('[EditorMomento-3D] ERROR CRÍTICO: #panel-edicion-momento no se encontró.');
         return;
     }
 
-    // Búsqueda de todos los elementos internos del panel
+    // --- Reemplazar el contenido del panel con la nueva estructura 3D ---
+    s.panelElement.innerHTML = `
+        <div class="panel-header">
+            <h3>Editar Momento 3D</h3>
+            <button id="panel-edicion-cerrar-btn" class="panel-cerrar-btn">×</button>
+        </div>
+        <div class="panel-contenido">
+            <label>Título:</label>
+            <input type="text" id="panel-editor-titulo" placeholder="Título del momento...">
+            
+            <label>Descripción Narrativa:</label>
+            <textarea id="panel-editor-descripcion" rows="4" placeholder="Describe lo que sucede en este momento..."></textarea>
+            
+            <hr>
+
+            <h4><i class="fas fa-cube"></i> Editor de Entorno</h4>
+            <div id="panel-entorno-container">
+                <!-- Los campos del entorno se generarán aquí -->
+            </div>
+            
+            <hr>
+
+            <h4><i class="fas fa-users"></i> Gestor de Entidades (Sprites)</h4>
+            <div id="panel-entidades-container">
+                <!-- Las entidades se listarán aquí -->
+            </div>
+            <button id="panel-boton-agregar-entidad" class="btn-accion-agregar"><i class="fas fa-plus"></i> Añadir Entidad</button>
+
+            <hr>
+
+            <h4><i class="fas fa-directions"></i> Acciones (Decisiones)</h4>
+            <div id="panel-acciones-container">
+                <!-- Las acciones se listarán aquí -->
+            </div>
+            <button id="panel-boton-agregar-accion" class="btn-accion-agregar"><i class="fas fa-plus"></i> Añadir Acción</button>
+        </div>
+    `;
+
+    // Búsqueda de todos los elementos internos del nuevo panel
     s.tituloInput = document.getElementById('panel-editor-titulo');
     s.descripcionInput = document.getElementById('panel-editor-descripcion');
-    s.dropZone = document.getElementById('panel-editor-drop-zone');
-    s.fileInput = document.getElementById('panel-editor-file-input');
-    s.imagenPreview = document.getElementById('panel-editor-imagen-preview');
+    s.entornoContainer = document.getElementById('panel-entorno-container');
+    s.entidadesContainer = document.getElementById('panel-entidades-container');
     s.accionesContainer = document.getElementById('panel-acciones-container');
     s.agregarAccionBtn = document.getElementById('panel-boton-agregar-accion');
+    const agregarEntidadBtn = document.getElementById('panel-boton-agregar-entidad');
     const cerrarBtn = document.getElementById('panel-edicion-cerrar-btn');
 
-    // Verificación de que los elementos cruciales existen
-    if (!s.accionesContainer || !s.agregarAccionBtn) {
-         console.error('[EditorMomento] ERROR: No se encontró #panel-acciones-container o #panel-boton-agregar-accion. Asegúrate de que el HTML es correcto.');
-         return;
-    }
-    console.log('[EditorMomento] Todos los elementos del panel fueron encontrados.');
-
-    // --- Asignación de Listeners ---
+    // Asignación de Listeners
     cerrarBtn?.addEventListener('click', ocultarPanelEdicion);
     s.tituloInput?.addEventListener('input', actualizarDatosNodo);
     s.descripcionInput?.addEventListener('input', actualizarDatosNodo);
-
-    // Listeners para la imagen (arrastrar y soltar, seleccionar)
-    s.dropZone?.addEventListener('click', () => s.fileInput.click());
-    s.dropZone?.addEventListener('dragover', (e) => e.preventDefault());
-    s.dropZone?.addEventListener('drop', manejarSeleccionArchivo);
-    s.fileInput?.addEventListener('change', manejarSeleccionArchivo);
-
-    // Listener para el botón de añadir acción
-    s.agregarAccionBtn.addEventListener('click', () => {
-        console.log('[EditorMomento] Botón "Añadir Acción" pulsado.');
-        agregarNuevaAccionAPanel();
-    });
+    s.agregarAccionBtn.addEventListener('click', () => agregarNuevaAccionAPanel());
+    agregarEntidadBtn.addEventListener('click', () => agregarNuevaEntidadAPanel());
     
-    console.log('[EditorMomento] Inicialización completada con éxito.');
+    console.log('[EditorMomento-3D] Inicialización completada.');
 }
 
 /**
- * Muestra y puebla el panel de edición con los datos de un nodo.
+ * Muestra y puebla el panel de edición con los datos 3D de un nodo.
  * @param {HTMLElement} nodo - El elemento del nodo del momento a editar.
  */
 function mostrarPanelEdicion(nodo) {
-    if (!panelState.panelElement) {
-        console.error("[EditorMomento] El panel no está inicializado. No se puede mostrar.");
-        return;
-    }
-    console.log(`[EditorMomento] Mostrando panel para el nodo: ${nodo.id}`);
+    if (!panelState.panelElement) return;
     panelState.nodoActual = nodo;
     const s = panelState;
 
-    // Poblar los campos con los datos del nodo
     s.tituloInput.value = nodo.querySelector('.momento-titulo').textContent;
     s.descripcionInput.value = nodo.dataset.descripcion || '';
     
-    const imagenSrc = nodo.querySelector('.momento-imagen')?.src;
-    if (imagenSrc && !imagenSrc.endsWith('/null') && !imagenSrc.includes('undefined')) {
-        s.imagenPreview.src = imagenSrc;
-        s.imagenPreview.style.display = 'block';
-    } else {
-        s.imagenPreview.src = '';
-        s.imagenPreview.style.display = 'none';
-    }
+    // Poblar los datos 3D
+    const entornoData = JSON.parse(nodo.dataset.entorno || '{}');
+    const entidadesData = JSON.parse(nodo.dataset.entidades || '[]');
+    poblarEntornoPanel(entornoData);
+    poblarEntidadesPanel(entidadesData);
 
-    // Poblar las acciones existentes
-    poblarAccionesPanel(JSON.parse(nodo.dataset.acciones || '[]'));
+    // Poblar las acciones
+    const accionesData = JSON.parse(nodo.dataset.acciones || '[]');
+    poblarAccionesPanel(accionesData);
 
     s.panelElement.classList.add('visible');
 }
 
 /**
- * Oculta el panel de edición y deselecciona el nodo.
+ * Oculta el panel de edición.
  */
 function ocultarPanelEdicion() {
-    if (panelState.panelElement) {
-        panelState.panelElement.classList.remove('visible');
-    }
-    if (panelState.nodoActual) {
-        panelState.nodoActual.classList.remove('momento-seleccionado');
-    }
+    if (panelState.panelElement) panelState.panelElement.classList.remove('visible');
+    if (panelState.nodoActual) panelState.nodoActual.classList.remove('momento-seleccionado');
     panelState.nodoActual = null;
-    
-    if (window.previsualizacionActiva) {
-        dibujarConexiones();
-    }
+    if (window.previsualizacionActiva) dibujarConexiones();
 }
 
 /**
- * Actualiza los datos del nodo en el DOM en tiempo real cuando se edita en el panel.
+ * Actualiza TODOS los datos del nodo (incluyendo 3D) en el DOM en tiempo real.
  */
 function actualizarDatosNodo() {
     if (!panelState.nodoActual) return;
     const nodo = panelState.nodoActual;
     const s = panelState;
 
-    // Actualizar título y descripción
+    // Título y Descripción
     nodo.querySelector('.momento-titulo').textContent = s.tituloInput.value;
     nodo.dataset.descripcion = s.descripcionInput.value;
 
-    // Actualizar imagen
-    const imagenNodo = nodo.querySelector('.momento-imagen');
-    if (s.imagenPreview.src && s.imagenPreview.style.display === 'block') {
-        imagenNodo.src = s.imagenPreview.src;
-        imagenNodo.style.display = 'block';
-        nodo.classList.add('con-imagen');
-    } else {
-        imagenNodo.src = '';
-        imagenNodo.style.display = 'none';
-        nodo.classList.remove('con-imagen');
-    }
-    
-    // Recoger y guardar todas las acciones actuales
+    // Guardar datos del Entorno
+    const entornoData = {
+        texturaSuelo: document.getElementById('entorno-suelo-select')?.value || '',
+        colorCielo: document.getElementById('entorno-cielo-input')?.value || '#87ceeb',
+    };
+    nodo.dataset.entorno = JSON.stringify(entornoData);
+
+    // Guardar datos de las Entidades
+    const entidadesData = Array.from(s.entidadesContainer.querySelectorAll('.entidad-item')).map(item => {
+        return {
+            recurso: item.querySelector('.entidad-recurso-select').value,
+            pos: [
+                parseFloat(item.querySelector('.pos-x').value) || 0,
+                parseFloat(item.querySelector('.pos-y').value) || 0,
+                parseFloat(item.querySelector('.pos-z').value) || 0,
+            ],
+            escala: parseFloat(item.querySelector('.entidad-escala').value) || 1,
+        };
+    }).filter(e => e.recurso);
+    nodo.dataset.entidades = JSON.stringify(entidadesData);
+
+    // Guardar datos de las Acciones
     const accionesData = Array.from(s.accionesContainer.querySelectorAll('.accion-item')).map(item => ({
         textoBoton: item.querySelector('input[type="text"]').value,
         idDestino: item.querySelector('select.accion-destino-select').value
     })).filter(a => a.textoBoton && a.idDestino);
-    
     nodo.dataset.acciones = JSON.stringify(accionesData);
 
-    if (window.previsualizacionActiva) {
-        dibujarConexiones();
-    }
+    if (window.previsualizacionActiva) dibujarConexiones();
 }
 
-/**
- * Maneja la selección de un archivo de imagen (drop o change).
- * @param {Event} e - El evento.
- */
-async function manejarSeleccionArchivo(e) {
-    e.preventDefault();
-    const files = e.dataTransfer ? e.dataTransfer.files : e.target.files;
-    if (files.length > 0 && files[0].type.startsWith('image/')) {
-        panelState.imagenPreview.src = await fileToBase64(files[0]);
-        panelState.imagenPreview.style.display = 'block';
-        actualizarDatosNodo(); // Guardar el cambio
+// --- FUNCIONES PARA POBLAR EL PANEL ---
+
+function poblarEntornoPanel(data = {}) {
+    const container = panelState.entornoContainer;
+    container.innerHTML = `
+        <div class="panel-campo">
+            <label>Textura Suelo:</label>
+            <select id="entorno-suelo-select">
+                <option value="">-- Sin Textura --</option>
+            </select>
+        </div>
+        <div class="panel-campo">
+            <label>Color Cielo:</label>
+            <input type="color" id="entorno-cielo-input" value="${data.colorCielo || '#87ceeb'}">
+        </div>
+    `;
+
+    const selectSuelo = container.querySelector('#entorno-suelo-select');
+    
+    const datosContainer = document.getElementById('datos-container'); 
+    if (datosContainer) {
+        const datosItems = datosContainer.querySelectorAll('.dato-card');
+        datosItems.forEach(item => {
+            const nombreEl = item.querySelector('.dato-nombre');
+            // CORRECCIÓN: Buscar la imagen dentro del elemento .personaje-visual
+            const imgEl = item.querySelector('.personaje-visual img');
+            
+            if (nombreEl && imgEl && imgEl.src) {
+                const nombre = nombreEl.textContent.trim();
+                const option = document.createElement('option');
+                option.value = nombre;
+                option.textContent = nombre;
+                selectSuelo.appendChild(option);
+            }
+        });
+    } else {
+        console.warn("No se encontró el contenedor de datos ('#datos-container') para poblar las texturas.");
     }
+
+    // Establecer el valor guardado
+    selectSuelo.value = data.texturaSuelo || '';
+
+    container.querySelectorAll('input, select').forEach(input => input.addEventListener('input', actualizarDatosNodo));
 }
 
-/**
- * Rellena el contenedor de acciones en el panel con los datos guardados.
- * @param {Array} acciones - Array de objetos de acción.
- */
-function poblarAccionesPanel(acciones) {
-    const s = panelState;
-    s.accionesContainer.innerHTML = '';
-    if (acciones && acciones.length > 0) {
-        acciones.forEach((accion, index) => {
-            const accionDiv = crearElementoAccionPanel(index + 1, accion.textoBoton, accion.idDestino);
-            s.accionesContainer.appendChild(accionDiv);
+function poblarEntidadesPanel(entidades = []) {
+    const container = panelState.entidadesContainer;
+    container.innerHTML = '';
+    if (entidades.length > 0) {
+        entidades.forEach(entidad => {
+            container.appendChild(crearElementoEntidadPanel(entidad));
         });
     }
-    console.log(`[EditorMomento] Se poblaron ${acciones.length} acciones.`);
 }
 
-/**
- * Añade un nuevo campo de acción vacío al panel.
- */
-function agregarNuevaAccionAPanel() {
-    const s = panelState;
-    if (!s.nodoActual) {
-        alert("Primero selecciona un momento para añadirle una acción.");
-        return;
+function poblarAccionesPanel(acciones = []) {
+    const container = panelState.accionesContainer;
+    container.innerHTML = '';
+    if (acciones.length > 0) {
+        acciones.forEach(accion => {
+            container.appendChild(crearElementoAccionPanel(accion));
+        });
     }
-    if (s.accionesContainer.children.length >= 5) {
-        alert("Se puede añadir un máximo de 5 acciones por momento.");
-        return;
-    }
-    const nuevoNumero = s.accionesContainer.children.length + 1;
-    const nuevoElementoAccion = crearElementoAccionPanel(nuevoNumero);
-    s.accionesContainer.appendChild(nuevoElementoAccion);
 }
 
-/**
- * Crea el HTML para una fila de acción (input, select, botón borrar).
- * @returns {HTMLElement} El elemento de la acción creado.
- */
-function crearElementoAccionPanel(numero, textoBoton = '', idDestino = '') {
-    const accionDiv = document.createElement('div');
-    accionDiv.className = 'accion-item';
+// --- FUNCIONES PARA CREAR ELEMENTOS DE UI ---
+
+function agregarNuevaEntidadAPanel() {
+    if (!panelState.nodoActual) return;
+    const nuevoElemento = crearElementoEntidadPanel();
+    panelState.entidadesContainer.appendChild(nuevoElemento);
+}
+
+function crearElementoEntidadPanel(data = { recurso: '', pos: [0, 0, 0], escala: 1 }) {
+    const div = document.createElement('div');
+    div.className = 'entidad-item item-panel';
     
-    // Input para el texto del botón
+    const selectRecurso = document.createElement('select');
+    selectRecurso.className = 'entidad-recurso-select';
+    selectRecurso.innerHTML = '<option value="">-- Seleccionar Recurso --</option>';
+    
+    const datosContainer = document.getElementById('datos-container');
+    if (datosContainer) {
+        const datosItems = datosContainer.querySelectorAll('.dato-card');
+        datosItems.forEach(item => {
+            const nombreEl = item.querySelector('.dato-nombre');
+            // CORRECCIÓN: Buscar la imagen dentro del elemento .personaje-visual
+            const imgEl = item.querySelector('.personaje-visual img');
+            
+            if (nombreEl && imgEl && imgEl.src) {
+                const nombre = nombreEl.textContent.trim();
+                const option = document.createElement('option');
+                option.value = nombre;
+                option.textContent = nombre;
+                selectRecurso.appendChild(option);
+            }
+        });
+    } else {
+        console.warn("No se encontró el contenedor de datos ('#datos-container') para poblar los recursos.");
+    }
+
+    selectRecurso.value = data.recurso;
+
+    // Inputs para Posición y Escala
+    const posContainer = document.createElement('div');
+    posContainer.className = 'pos-container';
+    posContainer.innerHTML = `
+        <input type="number" class="pos-x" value="${data.pos[0]}" title="Posición X">
+        <input type="number" class="pos-y" value="${data.pos[1]}" title="Posición Y">
+        <input type="number" class="pos-z" value="${data.pos[2]}" title="Posición Z">
+    `;
+    const escalaInput = document.createElement('input');
+    escalaInput.type = 'number';
+    escalaInput.className = 'entidad-escala';
+    escalaInput.value = data.escala;
+    escalaInput.step = 0.1;
+    escalaInput.title = 'Escala';
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'delete-item-btn';
+    deleteBtn.innerHTML = '×';
+    deleteBtn.onclick = () => {
+        div.remove();
+        actualizarDatosNodo();
+    };
+
+    div.append(selectRecurso, posContainer, escalaInput, deleteBtn);
+    div.querySelectorAll('input, select').forEach(el => el.addEventListener('input', actualizarDatosNodo));
+    return div;
+}
+
+function agregarNuevaAccionAPanel() {
+    if (!panelState.nodoActual) return;
+    const nuevoElemento = crearElementoAccionPanel();
+    panelState.accionesContainer.appendChild(nuevoElemento);
+}
+
+function crearElementoAccionPanel(data = { textoBoton: '', idDestino: '' }) {
+    const div = document.createElement('div');
+    div.className = 'accion-item item-panel';
+
     const textoInput = document.createElement('input');
     textoInput.type = 'text';
-    textoInput.placeholder = `Texto del botón ${numero}`;
-    textoInput.value = textoBoton;
-    textoInput.addEventListener('input', actualizarDatosNodo);
-    
-    // Select para el destino
+    textoInput.placeholder = 'Texto del botón...';
+    textoInput.value = data.textoBoton;
+
     const selectDestino = document.createElement('select');
     selectDestino.className = 'accion-destino-select';
-    selectDestino.innerHTML = '<option value="">Seleccionar destino...</option>';
-    selectDestino.addEventListener('change', actualizarDatosNodo);
-
-    // Poblar select con todos los demás nodos
+    selectDestino.innerHTML = '<option value="">-- Seleccionar Destino --</option>';
     document.querySelectorAll('#momentos-lienzo .momento-nodo').forEach(nodo => {
         if (nodo.id !== panelState.nodoActual.id) {
             const option = document.createElement('option');
@@ -235,33 +323,19 @@ function crearElementoAccionPanel(numero, textoBoton = '', idDestino = '') {
             selectDestino.appendChild(option);
         }
     });
-    selectDestino.value = idDestino;
-    
-    // Botón para eliminar la acción
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'delete-accion-btn';
-    deleteBtn.textContent = '×';
-    deleteBtn.title = 'Eliminar esta acción';
-    deleteBtn.onclick = () => {
-        accionDiv.remove();
-        actualizarDatosNodo(); // Guardar el cambio
-    };
-    
-    accionDiv.append(textoInput, selectDestino, deleteBtn);
-    return accionDiv;
-}
+    selectDestino.value = data.idDestino;
 
-/**
- * Convierte un objeto File a una cadena Base64.
- * @returns {Promise<string>}
- */
-function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-    });
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'delete-item-btn';
+    deleteBtn.innerHTML = '×';
+    deleteBtn.onclick = () => {
+        div.remove();
+        actualizarDatosNodo();
+    };
+
+    div.append(textoInput, selectDestino, deleteBtn);
+    div.querySelectorAll('input, select').forEach(el => el.addEventListener('input', actualizarDatosNodo));
+    return div;
 }
 
 // Inicializar el módulo cuando el DOM esté listo

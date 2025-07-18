@@ -96,32 +96,37 @@ function seleccionarMomentoParaEdicion(nodo) {
 
 /**
  * Hace que un elemento sea arrastrable y expande el lienzo si es necesario.
+ *//**
+ * CORRECCIÓN FINAL: Usa 'transform' para un arrastre fluido y sin saltos.
+ * Actualiza 'left' y 'top' solo al final del arrastre.
  */
 function makeDraggable(element) {
     let isDragging = false;
-    let initialX, initialY, initialLeft, initialTop;
+    let initialX, initialY;
+    // Guardamos la posición original al inicio del arrastre
+    let startLeft, startTop;
     const lienzo = document.getElementById('momentos-lienzo');
 
     const onMouseDown = (e) => {
-        // MODIFICADO: No iniciar arrastre si se hace clic en el botón de editar.
-        if (e.target.isContentEditable || e.target.closest('.btn-eliminar, .marcador-inicio')) return;
-        
-        // Si se hace clic en el botón de editar, se selecciona, no se arrastra.
-        if (e.target.closest('.btn-editar')) {
-            seleccionarMomentoParaEdicion(element);
+        if (e.target.isContentEditable || e.target.closest('.btn-eliminar, .marcador-inicio, .btn-editar')) {
+            if (e.target.closest('.btn-editar')) {
+                seleccionarMomentoParaEdicion(element);
+            }
             return;
         }
 
-        // Si se hace clic en cualquier otra parte del nodo, se selecciona Y se prepara para arrastrar.
         seleccionarMomentoParaEdicion(element);
         
         e.preventDefault();
         isDragging = true;
         element.style.cursor = 'grabbing';
-        element.style.zIndex = 1001; 
+        element.style.zIndex = 1001;
+        // Quita cualquier transición que pueda interferir con el arrastre
+        element.style.transition = 'none'; 
 
-        initialLeft = element.offsetLeft;
-        initialTop = element.offsetTop;
+        // Posiciones al comenzar
+        startLeft = element.offsetLeft;
+        startTop = element.offsetTop;
         initialX = e.pageX / canvasState.scale;
         initialY = e.pageY / canvasState.scale;
 
@@ -137,10 +142,14 @@ function makeDraggable(element) {
         const dx = currentX - initialX;
         const dy = currentY - initialY;
         
-        let newLeft = Math.max(0, initialLeft + dx);
-        let newTop = Math.max(0, initialTop + dy);
+        // ¡CAMBIO CLAVE! Usamos transform para mover el elemento visualmente.
+        // Esto es mucho más fluido y no afecta al layout de la página en tiempo real.
+        element.style.transform = `translate(${dx}px, ${dy}px)`;
 
-        // --- Lógica de Expansión del Lienzo ---
+        // (La lógica de expansión del lienzo se deja como estaba,
+        // pero se basa en la posición teórica, no en la visual)
+        let newLeft = Math.max(0, startLeft + dx);
+        let newTop = Math.max(0, startTop + dy);
         let lienzoWidth = lienzo.offsetWidth;
         let lienzoHeight = lienzo.offsetHeight;
 
@@ -150,20 +159,38 @@ function makeDraggable(element) {
         if (newTop + element.offsetHeight + EXPANSION_MARGIN > lienzoHeight) {
             lienzo.style.height = `${lienzoHeight + EXPANSION_AMOUNT}px`;
         }
+    };
+
+    const onMouseUp = (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        element.style.cursor = 'grab';
+        element.style.zIndex = 1;
+        // Limpiamos la transformación y la transición
+        element.style.transform = '';
+        element.style.transition = '';
+
+        // ¡CAMBIO CLAVE! Ahora calculamos y asignamos la posición final
+        // a 'left' y 'top' una sola vez.
+        const finalX = e.pageX / canvasState.scale;
+        const finalY = e.pageY / canvasState.scale;
+        const dx = finalX - initialX;
+        const dy = finalY - initialY;
+
+        let newLeft = Math.max(0, startLeft + dx);
+        let newTop = Math.max(0, startTop + dy);
 
         element.style.left = `${newLeft}px`;
         element.style.top = `${newTop}px`;
         element.dataset.x = newLeft;
         element.dataset.y = newTop;
 
-        if (previsualizacionActiva) dibujarConexiones();
-    };
-
-    const onMouseUp = () => {
-        isDragging = false;
-        element.style.cursor = 'grab';
-        element.style.zIndex = 1;
         document.removeEventListener('mousemove', onMouseMove);
+
+        // Las conexiones se redibujan al final, como debe ser.
+        if (previsualizacionActiva) {
+            dibujarConexiones();
+        }
     };
 
     element.addEventListener('mousedown', onMouseDown);
@@ -415,12 +442,14 @@ function crearNodoEnLienzo(datos) {
     nuevoNodo.className = 'momento-nodo';
     nuevoNodo.id = datos.id;
     
-    // Se mantiene el botón de "Editar" en el nodo, pero ahora funciona para seleccionar.
+    // La apariencia del nodo en el editor sigue siendo simple.
+    // La complejidad está en los datos que almacena.
     nuevoNodo.innerHTML = `
         <span class="marcador-inicio" title="Marcar como inicio de la historia">🚩</span>
         <p contenteditable="false" class="momento-titulo">${datos.titulo || 'Sin Título'}</p>
         <div class="momento-contenido">
-             <img class="momento-imagen" src="" style="display: none;">
+             <i class="fas fa-cube fa-2x" style="color: #ccc;"></i>
+             <p style="font-size: 10px; color: #888;">Escena 3D</p>
         </div>
         <div class="momento-botones">
             <button class="momento-btn btn-editar">Editar</button>
@@ -428,35 +457,30 @@ function crearNodoEnLienzo(datos) {
         </div>
     `;
 
+    // Posición en el lienzo 2D
     nuevoNodo.style.left = `${datos.x || 0}px`;
     nuevoNodo.style.top = `${datos.y || 0}px`;
     nuevoNodo.dataset.x = datos.x || 0;
     nuevoNodo.dataset.y = datos.y || 0;
     
+    // --- DATOS CLAVE PARA 3D ---
     nuevoNodo.dataset.descripcion = datos.descripcion || "";
-    nuevoNodo.dataset.acciones = JSON.stringify(datos.acciones || "[]");
-
-    const imagenNodo = nuevoNodo.querySelector('.momento-imagen');
-    if (datos.imagen) {
-        imagenNodo.src = datos.imagen;
-        imagenNodo.style.display = 'block';
-        nuevoNodo.classList.add('con-imagen');
-    }
+    nuevoNodo.dataset.acciones = JSON.stringify(datos.acciones || []);
+    // Inicializa los nuevos datasets para la escena 3D
+    nuevoNodo.dataset.entorno = datos.entorno ? JSON.stringify(datos.entorno) : '{}';
+    nuevoNodo.dataset.entidades = datos.entidades ? JSON.stringify(datos.entidades) : '[]';
 
     lienzo.appendChild(nuevoNodo);
 
+    // Listeners (sin cambios)
     nuevoNodo.querySelector('.marcador-inicio').onclick = (e) => { e.stopPropagation(); marcarComoInicio(nuevoNodo.id); };
-    
-    // El botón de editar ahora selecciona el nodo
     nuevoNodo.querySelector('.btn-editar').onclick = (e) => { 
-        e.stopPropagation(); // Evita que el mousedown del draggable se active
+        e.stopPropagation();
         seleccionarMomentoParaEdicion(nuevoNodo); 
     };
-    
     nuevoNodo.querySelector('.btn-eliminar').onclick = (e) => {
         e.stopPropagation();
         if (confirm('¿Eliminar este momento?')) {
-            // Si el nodo a eliminar es el que se está editando, oculta el panel
             if (nuevoNodo.classList.contains('momento-seleccionado')) {
                 ocultarPanelEdicion();
             }
@@ -465,7 +489,7 @@ function crearNodoEnLienzo(datos) {
         }
     };
     
-    makeDraggable(nuevoNodo);
+    makeDraggable(nuevoNodo); // makeDraggable no necesita cambios
     return nuevoNodo;
 }
 
