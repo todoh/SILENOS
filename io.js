@@ -61,24 +61,32 @@ async function empaquetarDatosDelProyecto() {
         return { ...capitulo, id, frames: framesProcesados };
     });
 
+    // --- LÓGICA DE GUARDADO DE PERSONAJES (MODIFICADA) ---
     const promesasPersonajes = Array.from(listapersonajes).map(async (personajeNode) => {
         const nombre = personajeNode.querySelector("input.nombreh")?.value || "";
         const descripcion = personajeNode.querySelector("textarea")?.value || "";
-        const imagenSrc = personajeNode.querySelector("img")?.src || "";
-        
-        // --- NUEVO: Leer el contenido SVG desde el dataset ---
         const svgContent = personajeNode.dataset.svgContent || "";
-
+        
         const etiquetaEl = personajeNode.querySelector(".change-tag-btn");
         const arcoEl = personajeNode.querySelector(".change-arc-btn");
         
         const etiqueta = etiquetaEl ? etiquetaEl.dataset.etiqueta : 'indeterminado';
         const arco = arcoEl ? arcoEl.dataset.arco : 'sin_arco';
         
-        if (!nombre && !descripcion && !imagenSrc) return null;
-        const imagenComprimida = await _compressImageForSave(imagenSrc);
+        let imagenComprimida = "";
+
+        // Si no hay SVG, entonces sí procesamos y guardamos la imagen del tag <img>.
+        if (!svgContent) {
+            const imagenSrc = personajeNode.querySelector("img")?.src || "";
+            if (imagenSrc) {
+                imagenComprimida = await _compressImageForSave(imagenSrc);
+            }
+        }
         
-        // --- NUEVO: Añadir svgContent al objeto guardado ---
+        // Si no hay nombre, descripción, imagen ni svg, no guardamos el dato.
+        if (!nombre && !descripcion && !imagenComprimida && !svgContent) return null;
+
+        // Devolvemos el objeto. Si hay svgContent, imagenComprimida será "", ahorrando espacio.
         return { nombre, descripcion, imagen: imagenComprimida, svgContent, etiqueta, arco };
     });
 
@@ -102,20 +110,18 @@ async function empaquetarDatosDelProyecto() {
         };
     });
     
-    // INICIO: GUARDAR IMÁGENES DE LA GALERÍA DEL COMPOSITOR
     const generacionesItems = document.querySelectorAll('#generaciones-container .generacion-item');
     const promesasGeneraciones = Array.from(generacionesItems).map(async (item) => {
         const img = item.querySelector('img');
         const prompt = item.querySelector('.generacion-prompt');
         if (img && img.src && prompt && img.src.startsWith('data:image')) {
             return {
-                src: img.src, // El src ya es base64
+                src: img.src,
                 prompt: prompt.textContent
             };
         }
         return null;
     });
-    // FIN: GUARDAR IMÁGENES DE LA GALERÍA DEL COMPOSITOR
 
     const processedChapters = (await Promise.all(promesasCapitulos)).sort((a,b) => a.id.localeCompare(b.id));
     const processedCharacters = (await Promise.all(promesasPersonajes)).filter(Boolean);

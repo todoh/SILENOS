@@ -864,16 +864,36 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
         inputFile.click();
     };
     
-    if (svgContent && !imagen) {
-        if (typeof fabric !== 'undefined') {
-            const tempCanvasEl = document.createElement('canvas');
-            const tempFabricCanvas = new fabric.Canvas(tempCanvasEl, { width: 150, height: 150 });
+if (svgContent && !imagen) {
+    if (typeof fabric !== 'undefined') {
+        const tempCanvasEl = document.createElement('canvas');
+        const tempFabricCanvas = new fabric.Canvas(tempCanvasEl, { width: 750, height: 750 });
 
-            fabric.loadSVGFromString(svgContent, (objects, options) => {
-                const group = fabric.util.groupSVGElements(objects, options);
-                
-                group.scaleToWidth(tempFabricCanvas.width * 0.9);
-                group.scaleToHeight(tempFabricCanvas.height * 0.9);
+        fabric.loadSVGFromString(svgContent, (objects, options) => {
+            if (!objects || objects.length === 0) {
+                console.warn("El SVG a cargar está vacío o no se pudo interpretar.", svgContent.substring(0,100));
+                tempFabricCanvas.dispose();
+                return;
+            }
+
+            const group = fabric.util.groupSVGElements(objects, options);
+
+            // --- INICIO DE LA CORRECCIÓN ---
+            // 1. Calcular el factor de escala correcto para que quepa sin deformarse.
+            //    Usamos un 90% del tamaño del canvas para dejar un pequeño margen.
+            const scaleFactor = Math.min(
+                (tempFabricCanvas.width * 0.9) / group.width,
+                (tempFabricCanvas.height * 0.9) / group.height
+            );
+
+            // 2. Aplicar la escala y centrar el objeto.
+            group.scale(scaleFactor);
+            group.set({
+                left: tempFabricCanvas.width / 2,
+                top: tempFabricCanvas.height / 2,
+                originX: 'center',
+                originY: 'center'
+            });
                 tempFabricCanvas.add(group);
                 group.center();
                 
