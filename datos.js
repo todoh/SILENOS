@@ -690,7 +690,7 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
             botonHiperUltra.innerHTML = '😍';
         }
     };
-    buttonsWrapper.appendChild(botonHiperUltra);
+ //   buttonsWrapper.appendChild(botonHiperUltra);
 
     const botonMejorarIA = document.createElement('button');
     botonMejorarIA.className = 'edit-btn improve-ai-btn';
@@ -856,9 +856,32 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
         inputFile.accept = 'image/*, video/mp4, video/webm, image/gif';
         inputFile.onchange = async (event) => {
             if (event.target.files && event.target.files[0]) {
-                const nuevaImagen = await fileToBase64(event.target.files[0]);
-                actualizarVisual(nuevaImagen, cajaTexto.value);
-                delete contenedor.dataset.svgContent;
+                const file = event.target.files[0];
+
+                // --- INICIO DE LA MODIFICACIÓN ---
+
+                // Comprobar si el archivo es un SVG
+                if (file.type === 'image/svg+xml') {
+                    const reader = new FileReader();
+                    reader.readAsText(file);
+                    reader.onload = (e) => {
+                        const svgText = e.target.result;
+                        // Guardar el contenido del SVG en el dataset
+                        contenedor.dataset.svgContent = svgText; 
+                        
+                        // Crear un Data URL para poder mostrarlo en la etiqueta <img>
+                        const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgText);
+                        actualizarVisual(dataUrl, cajaTexto.value);
+                    };
+                    reader.onerror = (e) => console.error("Error al leer el archivo SVG:", e);
+                } else {
+                    // Si no es SVG, usar la lógica existente para convertir a Base64
+                    const nuevaImagen = await fileToBase64(file);
+                    actualizarVisual(nuevaImagen, cajaTexto.value);
+                    // Y asegurarse de que no haya contenido SVG obsoleto
+                    delete contenedor.dataset.svgContent; 
+                }
+                // --- FIN DE LA MODIFICACIÓN ---
             }
         };
         inputFile.click();

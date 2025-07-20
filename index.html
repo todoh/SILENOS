@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="biblioteca.css">
 
 <link rel="stylesheet" href="animacionessvg.css">
+<link rel="stylesheet" href="rpgmaker.css">
 
     
 <style>
@@ -207,14 +208,18 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
             <button class="tons" onclick="cerrartodo(), abrir('escenah');">Storyboard</button>
             <button class="tons" onclick="cerrartodo(), abrir('animacionsvg');"style="display: none;">🎬 Animación</button>
 
-   <button class="tons" onclick="cerrartodo(), abrir('animacionessvg');">🎬 Animación SVG</button>
+   
 
             <button class="tons" onclick="cerrartodo(), abrir('imagenes');" style="display: none;" >Imagenes</button>
             <button class="tons" onclick="cerrartodo(), abrir('animaciones');"  style="display: none;"">Animaciones</button>
 
             <button class="tons" id="pelicula" onclick="cerrartodo(), abrir('galeria');" style="display: none;" >Pelicula</button>
             <button class="tons" onclick="cerrartodo(), abrir('momentos');"   >Videojuego</button>
-                <button class="tons" onclick="cerrartodo(), abrir('juego');"  style="display: none;">Juego</button>
+            <button class="tons" onclick="cerrartodo(), abrir('juego');"  style="display: none;">Juego</button>
+
+            <button class="tons" onclick="cerrartodo(), abrir('rpgmaker');">RPG Maker</button>
+            <button class="tons" onclick="cerrartodo(), abrir('animacionessvg');">🎬 Animación SVG</button>
+
             <button class="tons" id="biblioteca-btn" style="display: none;" onclick="cerrartodo(), abrir('biblioteca');">📚 Biblioteca</button>
             <button class="pro" onclick="abrirModalConfig()">⚙️ Ajustes </button>
      
@@ -227,6 +232,72 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
 </div>
 
 <div id="google-auth-container"></div>
+
+<div id="rpgmaker">
+    <!-- Controles de Partida y Exportación -->
+    <div id="game-controls">
+        <button id="start-game-btn">▶ Iniciar Partida</button>
+        <button id="stop-game-btn" style="display: none;">■ Detener Partida</button>
+        <button id="export-game-btn">📥 Exportar Juego</button>
+    </div>
+
+    <div id="editor-container">
+        <!-- Columna de Herramientas y Assets -->
+        <div id="tools-column">
+            <h2>Herramientas</h2>
+
+            <!-- Selector de Modo -->
+            <div id="mode-selector">
+                <button id="mode-texture-btn" class="active">Pintar Suelo</button>
+                <button id="mode-sprite-btn">Colocar Sprite</button>
+                <button id="mode-start-pos-btn">Marcar Inicio 🚩</button>
+            </div>
+
+            <!-- Assets -->
+            <div id="asset-importer">
+                <h3>Assets Disponibles</h3>
+                <button id="import-assets-btn">Cargar Personajes</button>
+                <div id="asset-list">
+                    <!-- Las imágenes importadas aparecerán aquí -->
+                </div>
+            </div>
+            
+            <!-- Preview Unificado -->
+            <div id="unified-preview">
+                <h3>Asset Seleccionado</h3>
+                <div id="selected-asset-preview" class="texture-preview"></div>
+                <small>Click: Textura | Alt+Click: Sprite</small>
+            </div>
+
+            <!-- Selector de Skin del Jugador -->
+             <div id="player-skin-selector">
+                <h3>Skin del Jugador</h3>
+                <div id="player-skin-preview" class="texture-preview"></div>
+                <small>Shift+Click en un asset para elegir skin.</small>
+            </div>
+        </div>
+
+        <!-- Columna del Editor de Mapa 2D -->
+        <div id="map-editor-column">
+            <h2>Editor de Mapa (Vista Superior)</h2>
+            <canvas id="map-canvas" width="640" height="640"></canvas>
+        </div>
+
+        <!-- Columna del Canvas 3D -->
+        <div id="scene-column">
+            <h2>Vista 3D</h2>
+            <div id="three-canvas-container">
+                <!-- El canvas de Three.js se insertará aquí -->
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
 <div id="galeria" style="display: none;">
   
     
@@ -1377,6 +1448,8 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
 
 <script src="animacionessvg.js"></script>
 <script src="animacionessvggemini.js"></script>
+<script src="rpgmaker.js"></script>
+<script src="rpgmaker3d.js"></script>
 
 <script src="main.js" defer></script>
 

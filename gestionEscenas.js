@@ -8,7 +8,7 @@ let draggedTomaId = null; // Variable global para el ID de la toma arrastrada
  * Inicializa los listeners y la UI para la sección de escenas.
  */
 function initEscenas() {
-    document.getElementById('crear-escena-btn')?.addEventListener('click', crearNuevaEscena);
+    document.getElementById('crear-escena-btn')?.addEventListener('click', crearNuevaEscena2);
     document.getElementById('agregar-toma-btn')?.addEventListener('click', () => agregarToma());
     document.getElementById('escenas-dropdown')?.addEventListener('change', seleccionarEscenaDesdeDropdown);
     document.getElementById('escena-nombre-input')?.addEventListener('input', cambiarNombreEscena);
@@ -27,7 +27,7 @@ function initEscenas() {
 /**
  * Crea una nueva escena, la añade al array global y refresca la UI.
  */
-function crearNuevaEscena() {
+function crearNuevaEscena2() {
     const newId = 'escena_' + Date.now();
     const nuevaEscena = {
         id: newId,
