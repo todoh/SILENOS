@@ -735,6 +735,24 @@ async function generarImagenDesdePrompt(userPrompt) {
     return { imagen: pngDataUrl, svgContent: svgContent };
 }
 
+  
+
+/**
+ * Busca y extrae el primer bloque de código SVG de un texto.
+ * @param {string} textoCompleto - La respuesta completa de la API.
+ * @returns {string|null} El código SVG o null si no se encuentra.
+ */
+function extraerBloqueSVG(textoCompleto) {
+    if (typeof textoCompleto !== 'string') return null;
+    const regex = /<svg[\s\S]*?<\/svg>/;
+    const match = textoCompleto.match(regex);
+    return match ? match[0] : null;
+}
+
+ 
+ 
+
+//gemini-2.5-flash-lite-preview-06-17
 
 async function mejorarImagenDesdeSVG(svgExistente, userPrompt, modelo = 'gemini-2.5-flash') {
     if (!svgExistente) {
@@ -865,3 +883,124 @@ async function callGenerativeApi(prompt, model = 'gemini-2.5-flash', expectJson 
 
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', inicializarEventos);
+
+
+
+ 
+// =======================================================================
+// SOLUCIÓN DEFINITIVA (V.6) - ADAPTADA A LA ESTRUCTURA DE DATOS.JS
+// Este código está diseñado para funcionar con la forma en que
+// 'actualizarListaPersonajes' construye el DOM.
+// =======================================================================
+
+/**
+ * FUNCIÓN #1 DE 2: Itera sobre los personajes y actualiza el DOM.
+ * Utiliza el selector correcto ('.personaje-visual') y guarda el SVG
+ * en el atributo 'data-svg-content' del mismo div.
+ */
+/**
+ * Itera sobre los personajes, genera las imágenes faltantes y las inserta
+ * en el DOM, guardando el código SVG en el atributo 'data-svg-content'.
+ */
+ 
+
+// EN: generador.js - REEMPLAZA TU FUNCIÓN ACTUAL CON ESTA
+
+async function generarImagenesFaltantes() {
+    console.log("Iniciando generación de imágenes faltantes...");
+
+    const listaPersonajes = document.querySelector('#personajes #listapersonajes');
+    if (!listaPersonajes) return;
+
+    const personajes = listaPersonajes.querySelectorAll('.personaje');
+    if (personajes.length === 0) return;
+    
+    console.log(`Encontrados ${personajes.length} personajes para revisar.`);
+    const delay = ms => new Promise(res => setTimeout(res, ms));
+
+    for (const personaje of personajes) {
+        const imgElement = personaje.querySelector('img');
+        const necesitaImagen = !imgElement || !imgElement.getAttribute('src');
+
+        // --- INICIO DE LA CORRECCIÓN ---
+        // Se leen los datos de las fuentes correctas y siempre visibles.
+        
+        // 1. Obtener el texto del nombre desde su <input>.
+        const nombreTexto = personaje.querySelector('.nombreh')?.value.trim() || '';
+        
+        // 2. Obtener el texto de la descripción desde el atributo de datos.
+        const descripcionTexto = personaje.dataset.descripcion?.trim() || '';
+
+        // 3. Unir ambos textos para crear el prompt.
+        const userPrompt = `${nombreTexto} ${descripcionTexto}`.trim();
+        
+        // --- FIN DE LA CORRECCIÓN ---
+
+        if (necesitaImagen && !personaje.querySelector('svg') && userPrompt) {
+            console.log(`Generando imagen para: "${userPrompt}"`);
+            const zonaVisual = personaje.querySelector('.personaje-visual');
+            
+            try {
+                if (!zonaVisual) {
+                    console.error(`Error de Estructura: No se encontró '.personaje-visual' para "${userPrompt}".`);
+                    continue; 
+                }
+                
+                zonaVisual.innerHTML = '<div class="spinner"></div>';
+                
+                const resultado = await generarImagenParaDatos(userPrompt);
+
+                if (resultado && resultado.pngUrl && resultado.svgCode) {
+                    zonaVisual.innerHTML = `<img src="${resultado.pngUrl}" alt="Imagen generada para ${userPrompt}">`;
+                    zonaVisual.setAttribute('data-svg-content', resultado.svgCode);
+                    console.log(`Imagen para "${userPrompt}" generada y aplicada con éxito.`);
+                } else {
+                    throw new Error("El proceso de generación no devolvió un resultado completo.");
+                }
+            } catch (error) {
+                console.error(`[FALLO COMPLETO] Proceso para "${userPrompt}" abortado:`, error);
+                if (zonaVisual) zonaVisual.innerHTML = '<p style="color: red; text-align: center;">Error</p>';
+            } finally {
+                console.log('Esperando 8 segundos antes de la siguiente generación...');
+                await delay(8000); 
+            }
+        }
+    }
+}
+
+/**
+ * FUNCIÓN #2 DE 2: Orquesta todo el proceso de IA y devuelve un objeto con los resultados.
+ * @param {string} userPrompt - El nombre del personaje a generar.
+ * @returns {Promise<{pngUrl: string, svgCode: string}|null>} Un objeto con la URL del PNG y el código del SVG, o null si falla.
+ */
+async function generarImagenParaDatos(userPrompt) {
+    try { console.log("paso1");
+        // PASO 1: Generar SVG base.
+        const promptInicial = `Crea un SVG de "${userPrompt}". Responde solo con el código SVG.`;
+        const respuestaSvgInicial = await callGenerativeApi(promptInicial, 'gemini-2.5-flash-lite-preview-06-17', false);
+        const svgInicial = extraerBloqueSVG(respuestaSvgInicial);
+        if (!svgInicial) throw new Error("La IA no generó un SVG base.");
+
+        // PASO 2: Mejorar SVG. 
+        console.log("paso2");
+        const promptMejora = `Refina este SVG para que sea más realista, añade detalles y texturas: \`\`\`xml\n${svgInicial}\n\`\`\` Responde solo con el nuevo código SVG.`;
+        const respuestaSvgMejorado = await callGenerativeApi(promptMejora, 'gemini-2.5-flash-lite-preview-06-17', false);
+        const svgFinal = extraerBloqueSVG(respuestaSvgMejorado);
+        if (!svgFinal) throw new Error("La IA no generó una mejora del SVG.");
+
+        // PASO 3: Convertir a PNG.
+        console.log("paso3");
+        const pngDataUrl = await svgToPngDataURL(svgFinal);
+        if (!pngDataUrl) throw new Error("La conversión de SVG a PNG falló.");
+
+        // DEVOLUCIÓN DEL OBJETO COMPLETO CON LOS DOS DATOS NECESARIOS.
+        return { 
+            pngUrl: pngDataUrl, 
+            svgCode: svgFinal 
+        };
+
+    } catch (error) {
+        console.error(`[ERROR EN GENERACIÓN] El proceso para "${userPrompt}" falló. Causa:`, error);
+        return null;
+    }
+}

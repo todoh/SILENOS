@@ -106,6 +106,22 @@ padding: 2px !important;
 margin: 0px !important;
 padding-left: 1% !important; padding-right: 1% !important; /* Añadido para margen horizontal */
 } 
+
+.pro17 {background-color: #e9ecef!important; color: #333 !important; border:none !important;
+z-index: 1000!important;
+height: fit-content!important;
+width: fit-content!important;
+position: fixed !important;
+top: 13% !important;
+left: 3% !important;
+transform: translateX(-50%) !important;
+font-size: x-large !important;
+padding: 2px !important;
+margin: 0px !important;
+padding-left: 1% !important; padding-right: 1% !important; /* Añadido para margen horizontal */
+} 
+
+
 .dark-theme .pro7 {
     background-color: #313131; /* Un azul oscuro para botones pro */
     color: white;

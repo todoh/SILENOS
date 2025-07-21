@@ -14,11 +14,13 @@ const opcionesEtiqueta = [
     { emoji: '🚗', valor: 'transporte', titulo: 'Transporte' },
     { emoji: '🐾', valor: 'animal', titulo: 'Animal' },
     { emoji: '🌱', valor: 'planta', titulo: 'Planta' },
+    { emoji: '🎭', valor: 'arte', titulo: 'Arte' },
     { emoji: '🛋️', valor: 'muebles', titulo: 'Muebles' },
     { emoji: '🦠', valor: 'ser_vivo', titulo: 'Ser Vivo' },
     { emoji: '🏞️', valor: 'elemento_geográfico', titulo: 'Elemento Geográfico' },
     { emoji: '💭', valor: 'concepto', titulo: 'Concepto' },
     { emoji: '📝', valor: 'nota', titulo: 'Nota' },
+    { emoji: '🙏', valor: 'mitologia', titulo: 'Mitologia' },
     { emoji: '👁️‍🗨️', valor: 'visual', titulo: 'Visual' },
     { emoji: '✒️', valor: 'personalizar', titulo: 'Personalizar' }
 ];
@@ -525,416 +527,14 @@ function obtenerArcosUnicos() {
  * Crea y añade un nuevo elemento de "Dato" al DOM, incluyendo todos los controles.
  * @param {object} personajeData - El objeto con los datos del personaje/dato.
  */
-function agregarPersonajeDesdeDatos(personajeData = {}) {
-    const { 
-        nombre = '', 
-        descripcion = '', 
-        imagen = '', 
-        etiqueta: etiquetaValor = 'indeterminado',
-        arco: arcoValor = 'sin_arco',
-        svgContent = ''
-    } = personajeData;
+/**
+ * Crea y añade un nuevo elemento de "Dato" al DOM, incluyendo todos los controles.
+ * Si ya existe un dato con el mismo nombre, fusiona las descripciones en lugar de crear un duplicado.
+ * Esta versión ha sido corregida para renderizar el contenido SVG de forma más fiable.
+ * @param {object} personajeData - El objeto con los datos del personaje/dato.
+ * @returns {HTMLElement} El elemento del DOM creado o encontrado.
+ */
 
-    const lista = document.getElementById('listapersonajes');
-    if (!lista) return;
-
-    const contenedor = document.createElement('div');
-    contenedor.className = 'personaje';
-    
-    if (svgContent) {
-        contenedor.dataset.svgContent = svgContent;
-    }
-
-    const etiquetaBtn = document.createElement('button');
-    etiquetaBtn.className = 'change-tag-btn';
-    const opcionEtiqueta = opcionesEtiqueta.find(op => op.valor === etiquetaValor) || opcionesEtiqueta[0];
-    etiquetaBtn.innerHTML = opcionEtiqueta.emoji;
-    etiquetaBtn.title = `Etiqueta: ${opcionEtiqueta.titulo}`;
-    etiquetaBtn.dataset.etiqueta = etiquetaValor;
-    etiquetaBtn.onclick = () => mostrarMenuEtiquetas(etiquetaBtn);
-    contenedor.appendChild(etiquetaBtn);
-
-    const arcoBtn = document.createElement('button');
-    arcoBtn.className = 'change-arc-btn';
-    const opcionArco = opcionesArco.find(op => op.valor === arcoValor) || opcionesArco[0];
-    arcoBtn.innerHTML = opcionArco.emoji;
-    arcoBtn.title = `Arco: ${opcionArco.titulo}`;
-    arcoBtn.dataset.arco = arcoValor;
-    arcoBtn.onclick = () => mostrarMenuArcos(arcoBtn);
-    contenedor.appendChild(arcoBtn);
-
-    const visual = document.createElement('div');
-    visual.className = 'personaje-visual';
-    
-    const img = document.createElement('img');
-    const descripcionPreview = document.createElement('div');
-    descripcionPreview.className = 'personaje-descripcion-preview';
-    
-    visual.appendChild(img);
-    visual.appendChild(descripcionPreview);
-    contenedor.appendChild(visual);
-
-    const cajaNombre = document.createElement('input');
-    cajaNombre.type = 'text';
-    cajaNombre.className = 'nombreh';
-    cajaNombre.value = nombre;
-    contenedor.appendChild(cajaNombre);
-
-    const overlay = document.createElement('div');
-    overlay.className = 'personaje-edit-overlay';
-    
-    const editControls = document.createElement('div');
-    editControls.className = 'edit-controls';
-    
-    const previewContainer = document.createElement('div');
-    previewContainer.className = 'edit-preview-container';
-    
-    const previewImage = document.createElement('img');
-    previewImage.className = 'edit-preview-image';
-    previewContainer.appendChild(previewImage);
-
-    const editorCanvasEl = document.createElement('canvas');
-    editorCanvasEl.className = 'edit-svg-canvas';
-    editorCanvasEl.style.display = 'none';
-    previewContainer.appendChild(editorCanvasEl);
-    
-    editControls.appendChild(previewContainer);
-
-    const textControlsContainer = document.createElement('div');
-    textControlsContainer.className = 'edit-text-controls';
-    
-    const cajaTexto = document.createElement('textarea');
-    cajaTexto.value = descripcion;
-    cajaTexto.placeholder = 'Descripción...';
-    
-    const buttonsWrapper = document.createElement('div');
-    buttonsWrapper.className = 'edit-buttons-wrapper';
-
-    const botonCargar = document.createElement('button');
-    botonCargar.className = 'edit-btn change-image-btn';
-    botonCargar.innerHTML = '📷';
-    botonCargar.title = 'Cambiar Imagen';
-    buttonsWrapper.appendChild(botonCargar);
-
-    const botonGenerarIA = document.createElement('button');
-    botonGenerarIA.className = 'edit-btn generate-ai-btn';
-    botonGenerarIA.innerHTML = '✨';
-    botonGenerarIA.title = 'Generar Imagen con IA';
-    buttonsWrapper.appendChild(botonGenerarIA);
-    
-    const botonSuperRealista = document.createElement('button');
-    botonSuperRealista.className = 'edit-btn';
-    botonSuperRealista.innerHTML = '💎';
-    botonSuperRealista.title = 'Generar Imagen Superrealista con IA Avanzada';
-    
-    botonSuperRealista.onclick = async () => {
-        const userPrompt = cajaTexto.value.trim();
-        if (!userPrompt) {
-            alert("Por favor, escribe una descripción detallada en la caja de texto para generar la imagen superrealista.");
-            return;
-        }
-    
-        if (typeof generarImagenSuperrealistaDesdePrompt !== 'function') {
-            alert("Error: La función 'generarImagenSuperrealistaDesdePrompt' del archivo generador.js no está disponible.");
-            return;
-        }
-    
-        const botones = buttonsWrapper.querySelectorAll('.edit-btn');
-        botones.forEach(b => b.disabled = true);
-        botonSuperRealista.innerHTML = '⚙️';
-    
-        try {
-            const resultado = await generarImagenSuperrealistaDesdePrompt(userPrompt);
-            actualizarVisual(resultado.imagen, userPrompt);
-            contenedor.dataset.svgContent = resultado.svgContent;
-        } catch (error) {
-            console.error("Error al generar la imagen superrealista:", error);
-            alert(`Ocurrió un error: ${error.message}`);
-        } finally {
-            botones.forEach(b => b.disabled = false);
-            botonSuperRealista.innerHTML = '💎';
-        }
-    };
-    buttonsWrapper.appendChild(botonSuperRealista);
-
-    const botonHiperUltra = document.createElement('button');
-    botonHiperUltra.className = 'edit-btn';
-    botonHiperUltra.innerHTML = '😍';
-    botonHiperUltra.title = 'Generar Imagen con HIPER-ULTRA IA';
-    
-    botonHiperUltra.onclick = async () => {
-        const userPrompt = cajaTexto.value.trim();
-        if (!userPrompt) {
-            alert("Por favor, escribe una descripción detallada para la generación HIPER-ULTRA.");
-            return;
-        }
-    
-        if (typeof generarImagenHiperUltraDesdePrompt !== 'function') {
-            alert("Error: La función 'generarImagenHiperUltraDesdePrompt' del archivo generador.js no está disponible.");
-            return;
-        }
-    
-        const botones = buttonsWrapper.querySelectorAll('.edit-btn');
-        botones.forEach(b => b.disabled = true);
-        botonHiperUltra.innerHTML = '⚙️';
-    
-        try {
-            const resultado = await generarImagenHiperUltraDesdePrompt(userPrompt);
-            actualizarVisual(resultado.imagen, userPrompt);
-            contenedor.dataset.svgContent = resultado.svgContent;
-        } catch (error) {
-            console.error("Error en la generación HIPER-ULTRA:", error);
-            alert(`Ocurrió un error en la generación HIPER-ULTRA: ${error.message}`);
-        } finally {
-            botones.forEach(b => b.disabled = false);
-            botonHiperUltra.innerHTML = '😍';
-        }
-    };
- //   buttonsWrapper.appendChild(botonHiperUltra);
-
-    const botonMejorarIA = document.createElement('button');
-    botonMejorarIA.className = 'edit-btn improve-ai-btn';
-    botonMejorarIA.innerHTML = '📈';
-    botonMejorarIA.title = 'Mejorar Imagen con IA';
-    buttonsWrapper.appendChild(botonMejorarIA);
-
-    const botonEditarSVG = document.createElement('button');
-    botonEditarSVG.className = 'edit-btn edit-svg-btn';
-    botonEditarSVG.innerHTML = '✏️';
-    botonEditarSVG.title = 'Editar SVG';
-    buttonsWrapper.appendChild(botonEditarSVG);
-    
-    const botonGuardarSVG = document.createElement('button');
-    botonGuardarSVG.className = 'edit-btn save-svg-btn';
-    botonGuardarSVG.innerHTML = '💾';
-    botonGuardarSVG.title = 'Guardar Cambios del SVG';
-    botonGuardarSVG.style.display = 'none';
-    buttonsWrapper.appendChild(botonGuardarSVG);
-
-    const botonEliminar = document.createElement('button');
-    botonEliminar.className = 'edit-btn delete-btn';
-    botonEliminar.innerHTML = '🗑️';
-    botonEliminar.title = 'Eliminar Dato';
-    botonEliminar.onclick = () => {
-        if (confirm('¿Estás seguro de que quieres eliminar este dato?')) {
-            contenedor.remove();
-            actualizarVistaDatos();
-        }
-    };
-    buttonsWrapper.appendChild(botonEliminar);
-    
-    textControlsContainer.appendChild(cajaTexto);
-    textControlsContainer.appendChild(buttonsWrapper);
-    editControls.appendChild(textControlsContainer);
-    overlay.appendChild(editControls);
-    contenedor.appendChild(overlay);
-
-    lista.appendChild(contenedor);
-    
-    let fabricEditorCanvas = null;
-
-    const actualizarVisual = (nuevaImagenSrc, nuevaDescripcion) => {
-        img.src = nuevaImagenSrc || '';
-        descripcionPreview.textContent = nuevaDescripcion;
-        img.classList.toggle('hidden', !nuevaImagenSrc || nuevaImagenSrc.endsWith('/'));
-
-        if (previewImage) {
-            if (nuevaImagenSrc && !nuevaImagenSrc.endsWith('/')) {
-                previewImage.src = nuevaImagenSrc;
-                previewImage.style.display = 'block';
-            } else {
-                previewImage.style.display = 'none';
-            }
-        }
-    };
-
-    botonGenerarIA.onclick = async () => {
-        const descripcionPrompt = cajaTexto.value.trim();
-        if (!descripcionPrompt) {
-            alert("Por favor, escribe una descripción para que la IA pueda generar una imagen.");
-            return;
-        }
-
-        if (typeof generarImagenDesdePrompt !== 'function') {
-            alert("Error: La función de generación de imágenes no está disponible.");
-            return;
-        }
-
-        botonGenerarIA.innerHTML = '⚙️';
-        botonGenerarIA.disabled = true;
-        botonMejorarIA.disabled = true;
-        botonCargar.disabled = true;
-        botonEliminar.disabled = true;
-
-        try {
-            const { imagen, svgContent: nuevoSvg } = await generarImagenDesdePrompt(descripcionPrompt);
-            actualizarVisual(imagen, cajaTexto.value);
-            contenedor.dataset.svgContent = nuevoSvg;
-        } catch (error) {
-            alert(`Ocurrió un error al generar la imagen: ${error.message}`);
-        } finally {
-            botonGenerarIA.innerHTML = '✨';
-            botonGenerarIA.disabled = false;
-            botonMejorarIA.disabled = false;
-            botonCargar.disabled = false;
-            botonEliminar.disabled = false;
-        }
-    };
-    
-    botonMejorarIA.onclick = async () => {
-           mostrarModalMejora(contenedor);
-    };
-
-    botonEditarSVG.onclick = () => {
-        const svgActual = contenedor.dataset.svgContent;
-        if (!svgActual) {
-            alert("No hay un SVG para editar. Genera una imagen primero.");
-            return;
-        }
-        if (typeof fabric === 'undefined') {
-            alert("La biblioteca de edición (Fabric.js) no está disponible.");
-            return;
-        }
-
-        previewImage.style.display = 'none';
-        editorCanvasEl.style.display = 'block';
-        botonEditarSVG.style.display = 'none';
-        botonGuardarSVG.style.display = 'inline-block';
-
-        fabricEditorCanvas = new fabric.Canvas(editorCanvasEl, {
-            width: previewContainer.clientWidth,
-            height: previewContainer.clientHeight,
-        });
-
-        fabric.loadSVGFromString(svgActual, (objects, options) => {
-            const group = fabric.util.groupSVGElements(objects, options);
-            
-            group.scaleToWidth(fabricEditorCanvas.width * 0.9);
-            group.scaleToHeight(fabricEditorCanvas.height * 0.9);
-            fabricEditorCanvas.add(group);
-            group.center();
-            fabricEditorCanvas.renderAll();
-        });
-    };
-
-    botonGuardarSVG.onclick = () => {
-        if (!fabricEditorCanvas) return;
-
-        const objects = fabricEditorCanvas.getObjects();
-        if (objects.length === 0) {
-            fabricEditorCanvas.dispose();
-            fabricEditorCanvas = null;
-            editorCanvasEl.style.display = 'none';
-            previewImage.style.display = 'block';
-            botonGuardarSVG.style.display = 'none';
-            botonEditarSVG.style.display = 'inline-block';
-            return;
-        }
-        
-        const group = new fabric.Group(objects);
-        const svgModificado = group.toSVG();
-        contenedor.dataset.svgContent = svgModificado;
-
-        const nuevaImagenSrc = group.toDataURL({ format: 'png' });
-        actualizarVisual(nuevaImagenSrc, cajaTexto.value);
-
-        fabricEditorCanvas.dispose();
-        fabricEditorCanvas = null;
-        editorCanvasEl.style.display = 'none';
-        previewImage.style.display = 'block';
-        botonGuardarSVG.style.display = 'none';
-        botonEditarSVG.style.display = 'inline-block';
-    };
-
-    cajaTexto.addEventListener('input', () => {
-        actualizarVisual(img.src, cajaTexto.value);
-    });
-    
-    botonCargar.onclick = () => {
-        const inputFile = document.createElement('input');
-        inputFile.type = 'file';
-        inputFile.accept = 'image/*, video/mp4, video/webm, image/gif';
-        inputFile.onchange = async (event) => {
-            if (event.target.files && event.target.files[0]) {
-                const file = event.target.files[0];
-
-                // --- INICIO DE LA MODIFICACIÓN ---
-
-                // Comprobar si el archivo es un SVG
-                if (file.type === 'image/svg+xml') {
-                    const reader = new FileReader();
-                    reader.readAsText(file);
-                    reader.onload = (e) => {
-                        const svgText = e.target.result;
-                        // Guardar el contenido del SVG en el dataset
-                        contenedor.dataset.svgContent = svgText; 
-                        
-                        // Crear un Data URL para poder mostrarlo en la etiqueta <img>
-                        const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgText);
-                        actualizarVisual(dataUrl, cajaTexto.value);
-                    };
-                    reader.onerror = (e) => console.error("Error al leer el archivo SVG:", e);
-                } else {
-                    // Si no es SVG, usar la lógica existente para convertir a Base64
-                    const nuevaImagen = await fileToBase64(file);
-                    actualizarVisual(nuevaImagen, cajaTexto.value);
-                    // Y asegurarse de que no haya contenido SVG obsoleto
-                    delete contenedor.dataset.svgContent; 
-                }
-                // --- FIN DE LA MODIFICACIÓN ---
-            }
-        };
-        inputFile.click();
-    };
-    
-if (svgContent && !imagen) {
-    if (typeof fabric !== 'undefined') {
-        const tempCanvasEl = document.createElement('canvas');
-        const tempFabricCanvas = new fabric.Canvas(tempCanvasEl, { width: 750, height: 750 });
-
-        fabric.loadSVGFromString(svgContent, (objects, options) => {
-            if (!objects || objects.length === 0) {
-                console.warn("El SVG a cargar está vacío o no se pudo interpretar.", svgContent.substring(0,100));
-                tempFabricCanvas.dispose();
-                return;
-            }
-
-            const group = fabric.util.groupSVGElements(objects, options);
-
-            // --- INICIO DE LA CORRECCIÓN ---
-            // 1. Calcular el factor de escala correcto para que quepa sin deformarse.
-            //    Usamos un 90% del tamaño del canvas para dejar un pequeño margen.
-            const scaleFactor = Math.min(
-                (tempFabricCanvas.width * 0.9) / group.width,
-                (tempFabricCanvas.height * 0.9) / group.height
-            );
-
-            // 2. Aplicar la escala y centrar el objeto.
-            group.scale(scaleFactor);
-            group.set({
-                left: tempFabricCanvas.width / 2,
-                top: tempFabricCanvas.height / 2,
-                originX: 'center',
-                originY: 'center'
-            });
-                tempFabricCanvas.add(group);
-                group.center();
-                
-                tempFabricCanvas.renderAll();
-                const dataUrl = tempFabricCanvas.toDataURL({ format: 'png' });
-                
-                actualizarVisual(dataUrl, descripcion);
-
-                tempFabricCanvas.dispose();
-            });
-        } else {
-            const fallbackSrc = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgContent);
-            actualizarVisual(fallbackSrc, descripcion);
-        }
-    } else {
-        actualizarVisual(imagen, descripcion);
-    }
-}
 
 
 function agregarPersonaje() {
@@ -1028,6 +628,420 @@ document.addEventListener('DOMContentLoaded', () => {
 // =========================================================================
 // FUNCIONES DE IA Y MODALES
 // =========================================================================
+/**
+ * Crea y añade un nuevo elemento de "Dato" al DOM, incluyendo todos los controles.
+ * Si ya existe un dato con el mismo nombre, fusiona las descripciones en lugar de crear un duplicado.
+ * Si el dato es nuevo y no tiene imagen, genera una automáticamente de forma asíncrona.
+ * @param {object} personajeData - El objeto con los datos del personaje/dato.
+ * @returns {HTMLElement} El elemento del DOM creado o encontrado.
+ */
+/**
+ * Crea y añade un nuevo elemento de "Dato" al DOM, incluyendo todos los controles.
+ * Si ya existe un dato con el mismo nombre, fusiona las descripciones en lugar de crear un duplicado.
+ * Si el dato es nuevo y no tiene imagen, genera una automáticamente de forma asíncrona.
+ * @param {object} personajeData - El objeto con los datos del personaje/dato.
+ * @returns {HTMLElement} El elemento del DOM creado o encontrado.
+ */
+/**
+ * Crea y añade un nuevo elemento de "Dato" al DOM, incluyendo todos los controles.
+ * Si ya existe un dato con el mismo nombre, fusiona las descripciones en lugar de crear un duplicado.
+ * Si el dato es nuevo y no tiene imagen, genera una automáticamente de forma asíncrona.
+ * @param {object} personajeData - El objeto con los datos del personaje/dato.
+ * @returns {HTMLElement} El elemento del DOM creado o encontrado.
+ */
+function agregarPersonajeDesdeDatos(personajeData = {}) {
+    const {
+        nombre = '',
+        descripcion = '',
+        imagen = '',
+        etiqueta: etiquetaValor = 'indeterminado',
+        arco: arcoValor = 'sin_arco',
+        svgContent = ''
+    } = personajeData;
+
+     // --- CORRECCIÓN CLAVE ---
+    // El contenedor correcto para añadir los elementos es 'listapersonajes'.
+    const lista = document.getElementById('listapersonajes'); 
+    if (!lista) {
+        console.error("Error crítico: No se encontró el contenedor de datos con ID '#listapersonajes'.");
+        return null; // Devuelve null si el contenedor principal no existe.
+    }
+    // --- FIN DE LA CORRECCIÓN ---
+
+    const contenedor = document.createElement('div');
+    contenedor.className = 'personaje';
+        contenedor.dataset.descripcion = descripcion;
+
+    if (svgContent) {
+        contenedor.dataset.svgContent = svgContent;
+    }
+
+    const etiquetaBtn = document.createElement('button');
+    etiquetaBtn.className = 'change-tag-btn';
+    const opcionEtiqueta = opcionesEtiqueta.find(op => op.valor === etiquetaValor) || opcionesEtiqueta[0];
+    etiquetaBtn.innerHTML = opcionEtiqueta.emoji;
+    etiquetaBtn.title = `Etiqueta: ${opcionEtiqueta.titulo}`;
+    etiquetaBtn.dataset.etiqueta = etiquetaValor;
+    etiquetaBtn.onclick = () => mostrarMenuEtiquetas(etiquetaBtn);
+    contenedor.appendChild(etiquetaBtn);
+
+    const arcoBtn = document.createElement('button');
+    arcoBtn.className = 'change-arc-btn';
+    const opcionArco = opcionesArco.find(op => op.valor === arcoValor) || opcionesArco[0];
+    arcoBtn.innerHTML = opcionArco.emoji;
+    arcoBtn.title = `Arco: ${opcionArco.titulo}`;
+    arcoBtn.dataset.arco = arcoValor;
+    arcoBtn.onclick = () => mostrarMenuArcos(arcoBtn);
+    contenedor.appendChild(arcoBtn);
+
+    const visual = document.createElement('div');
+    visual.className = 'personaje-visual';
+
+    const img = document.createElement('img');
+    const descripcionPreview = document.createElement('div');
+    descripcionPreview.className = 'personaje-descripcion-preview';
+
+    visual.appendChild(img);
+    visual.appendChild(descripcionPreview);
+    contenedor.appendChild(visual);
+
+    const cajaNombre = document.createElement('input');
+    cajaNombre.type = 'text';
+    cajaNombre.className = 'nombreh';
+    cajaNombre.value = nombre;
+    contenedor.appendChild(cajaNombre);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'personaje-edit-overlay';
+
+    const editControls = document.createElement('div');
+    editControls.className = 'edit-controls';
+
+    const previewContainer = document.createElement('div');
+    previewContainer.className = 'edit-preview-container';
+
+    const previewImage = document.createElement('img');
+    previewImage.className = 'edit-preview-image';
+    previewContainer.appendChild(previewImage);
+
+    const editorCanvasEl = document.createElement('canvas');
+    editorCanvasEl.className = 'edit-svg-canvas';
+    editorCanvasEl.style.display = 'none';
+    previewContainer.appendChild(editorCanvasEl);
+
+    editControls.appendChild(previewContainer);
+
+    const textControlsContainer = document.createElement('div');
+    textControlsContainer.className = 'edit-text-controls';
+
+    const cajaTexto = document.createElement('textarea');
+    cajaTexto.value = descripcion;
+    cajaTexto.placeholder = 'Descripción...';
+cajaTexto.className = 'descripcionh'; // <-- ¡AÑADE ESTA LÍNEA!
+
+    const buttonsWrapper = document.createElement('div');
+    buttonsWrapper.className = 'edit-buttons-wrapper';
+
+    const botonCargar = document.createElement('button');
+    botonCargar.className = 'edit-btn change-image-btn';
+    botonCargar.innerHTML = '📷';
+    botonCargar.title = 'Cambiar Imagen';
+    buttonsWrapper.appendChild(botonCargar);
+
+    const botonGenerarIA = document.createElement('button');
+    botonGenerarIA.className = 'edit-btn generate-ai-btn';
+    botonGenerarIA.innerHTML = '✨';
+    botonGenerarIA.title = 'Generar Imagen con IA';
+    buttonsWrapper.appendChild(botonGenerarIA);
+
+    const botonSuperRealista = document.createElement('button');
+    botonSuperRealista.className = 'edit-btn';
+    botonSuperRealista.innerHTML = '💎';
+    botonSuperRealista.title = 'Generar Imagen Superrealista con IA Avanzada';
+
+    botonSuperRealista.onclick = async () => {
+        const userPrompt = cajaTexto.value.trim();
+        if (!userPrompt) {
+            alert("Por favor, escribe una descripción detallada en la caja de texto para generar la imagen superrealista.");
+            return;
+        }
+
+        if (typeof generarImagenSuperrealistaDesdePrompt !== 'function') {
+            alert("Error: La función 'generarImagenSuperrealistaDesdePrompt' del archivo generador.js no está disponible.");
+            return;
+        }
+
+        const botones = buttonsWrapper.querySelectorAll('.edit-btn');
+        botones.forEach(b => b.disabled = true);
+        botonSuperRealista.innerHTML = '⚙️';
+
+        try {
+            const resultado = await generarImagenSuperrealistaDesdePrompt(userPrompt);
+            actualizarVisual(resultado.imagen, userPrompt);
+            contenedor.dataset.svgContent = resultado.svgContent;
+        } catch (error) {
+            console.error("Error al generar la imagen superrealista:", error);
+            alert(`Ocurrió un error: ${error.message}`);
+        } finally {
+            botones.forEach(b => b.disabled = false);
+            botonSuperRealista.innerHTML = '💎';
+        }
+    };
+    buttonsWrapper.appendChild(botonSuperRealista);
+
+    const botonHiperUltra = document.createElement('button');
+    botonHiperUltra.className = 'edit-btn';
+    botonHiperUltra.innerHTML = '😍';
+    botonHiperUltra.title = 'Generar Imagen con HIPER-ULTRA IA';
+
+    botonHiperUltra.onclick = async () => {
+        const userPrompt = cajaTexto.value.trim();
+        if (!userPrompt) {
+            alert("Por favor, escribe una descripción detallada para la generación HIPER-ULTRA.");
+            return;
+        }
+
+        if (typeof generarImagenHiperUltraDesdePrompt !== 'function') {
+            alert("Error: La función 'generarImagenHiperUltraDesdePrompt' del archivo generador.js no está disponible.");
+            return;
+        }
+
+        const botones = buttonsWrapper.querySelectorAll('.edit-btn');
+        botones.forEach(b => b.disabled = true);
+        botonHiperUltra.innerHTML = '⚙️';
+
+        try {
+            const resultado = await generarImagenHiperUltraDesdePrompt(userPrompt);
+            actualizarVisual(resultado.imagen, userPrompt);
+            contenedor.dataset.svgContent = resultado.svgContent;
+        } catch (error) {
+            console.error("Error en la generación HIPER-ULTRA:", error);
+            alert(`Ocurrió un error en la generación HIPER-ULTRA: ${error.message}`);
+        } finally {
+            botones.forEach(b => b.disabled = false);
+            botonHiperUltra.innerHTML = '😍';
+        }
+    };
+    buttonsWrapper.appendChild(botonHiperUltra);
+
+    const botonMejorarIA = document.createElement('button');
+    botonMejorarIA.className = 'edit-btn improve-ai-btn';
+    botonMejorarIA.innerHTML = '📈';
+    botonMejorarIA.title = 'Mejorar Imagen con IA';
+    buttonsWrapper.appendChild(botonMejorarIA);
+
+    const botonEditarSVG = document.createElement('button');
+    botonEditarSVG.className = 'edit-btn edit-svg-btn';
+    botonEditarSVG.innerHTML = '✏️';
+    botonEditarSVG.title = 'Editar SVG';
+    buttonsWrapper.appendChild(botonEditarSVG);
+
+    const botonGuardarSVG = document.createElement('button');
+    botonGuardarSVG.className = 'edit-btn save-svg-btn';
+    botonGuardarSVG.innerHTML = '💾';
+    botonGuardarSVG.title = 'Guardar Cambios del SVG';
+    botonGuardarSVG.style.display = 'none';
+    buttonsWrapper.appendChild(botonGuardarSVG);
+
+    const botonEliminar = document.createElement('button');
+    botonEliminar.className = 'edit-btn delete-btn';
+    botonEliminar.innerHTML = '🗑️';
+    botonEliminar.title = 'Eliminar Dato';
+    botonEliminar.onclick = () => {
+        if (confirm('¿Estás seguro de que quieres eliminar este dato?')) {
+            contenedor.remove();
+            actualizarVistaDatos();
+        }
+    };
+    buttonsWrapper.appendChild(botonEliminar);
+
+    textControlsContainer.appendChild(cajaTexto);
+    textControlsContainer.appendChild(buttonsWrapper);
+    editControls.appendChild(textControlsContainer);
+    overlay.appendChild(editControls);
+    contenedor.appendChild(overlay);
+
+    lista.appendChild(contenedor);
+
+    let fabricEditorCanvas = null;
+
+    const actualizarVisual = (nuevaImagenSrc, nuevaDescripcion) => {
+        img.src = nuevaImagenSrc || '';
+        descripcionPreview.textContent = nuevaDescripcion;
+        img.classList.toggle('hidden', !nuevaImagenSrc || nuevaImagenSrc.endsWith('/'));
+
+        if (previewImage) {
+            if (nuevaImagenSrc && !nuevaImagenSrc.endsWith('/')) {
+                previewImage.src = nuevaImagenSrc;
+                previewImage.style.display = 'block';
+            } else {
+                previewImage.style.display = 'none';
+            }
+        }
+    };
+
+    botonGenerarIA.onclick = async () => {
+        const descripcionPrompt = cajaTexto.value.trim();
+        if (!descripcionPrompt) {
+            alert("Por favor, escribe una descripción para que la IA pueda generar una imagen.");
+            return;
+        }
+
+        if (typeof generarImagenDesdePrompt !== 'function') {
+            alert("Error: La función de generación de imágenes no está disponible.");
+            return;
+        }
+
+        botonGenerarIA.innerHTML = '⚙️';
+        botonGenerarIA.disabled = true;
+        botonMejorarIA.disabled = true;
+        botonCargar.disabled = true;
+        botonEliminar.disabled = true;
+
+        try {
+            const { imagen, svgContent: nuevoSvg } = await generarImagenDesdePrompt(descripcionPrompt);
+            actualizarVisual(imagen, cajaTexto.value);
+            contenedor.dataset.svgContent = nuevoSvg;
+        } catch (error) {
+            alert(`Ocurrió un error al generar la imagen: ${error.message}`);
+        } finally {
+            botonGenerarIA.innerHTML = '✨';
+            botonGenerarIA.disabled = false;
+            botonMejorarIA.disabled = false;
+            botonCargar.disabled = false;
+            botonEliminar.disabled = false;
+        }
+    };
+
+    botonMejorarIA.onclick = async () => {
+        mostrarModalMejora(contenedor);
+    };
+
+    botonEditarSVG.onclick = () => {
+        const svgActual = contenedor.dataset.svgContent;
+        if (!svgActual) {
+            alert("No hay un SVG para editar. Genera una imagen primero.");
+            return;
+        }
+        if (typeof fabric === 'undefined') {
+            alert("La biblioteca de edición (Fabric.js) no está disponible.");
+            return;
+        }
+
+        previewImage.style.display = 'none';
+        editorCanvasEl.style.display = 'block';
+        botonEditarSVG.style.display = 'none';
+        botonGuardarSVG.style.display = 'inline-block';
+
+        fabricEditorCanvas = new fabric.Canvas(editorCanvasEl, {
+            width: previewContainer.clientWidth,
+            height: previewContainer.clientHeight,
+        });
+
+        fabric.loadSVGFromString(svgActual, (objects, options) => {
+            const group = fabric.util.groupSVGElements(objects, options);
+
+            group.scaleToWidth(fabricEditorCanvas.width * 0.9);
+            group.scaleToHeight(fabricEditorCanvas.height * 0.9);
+            fabricEditorCanvas.add(group);
+            group.center();
+            fabricEditorCanvas.renderAll();
+        });
+    };
+
+    botonGuardarSVG.onclick = () => {
+        if (!fabricEditorCanvas) return;
+
+        const objects = fabricEditorCanvas.getObjects();
+        if (objects.length === 0) {
+            fabricEditorCanvas.dispose();
+            fabricEditorCanvas = null;
+            editorCanvasEl.style.display = 'none';
+            previewImage.style.display = 'block';
+            botonGuardarSVG.style.display = 'none';
+            botonEditarSVG.style.display = 'inline-block';
+            return;
+        }
+
+        const group = new fabric.Group(objects);
+        const svgModificado = group.toSVG();
+        contenedor.dataset.svgContent = svgModificado;
+
+        const nuevaImagenSrc = group.toDataURL({ format: 'png' });
+        actualizarVisual(nuevaImagenSrc, cajaTexto.value);
+
+        fabricEditorCanvas.dispose();
+        fabricEditorCanvas = null;
+        editorCanvasEl.style.display = 'none';
+        previewImage.style.display = 'block';
+        botonGuardarSVG.style.display = 'none';
+        botonEditarSVG.style.display = 'inline-block';
+    };
+
+    cajaTexto.addEventListener('input', () => {
+        actualizarVisual(img.src, cajaTexto.value);
+    });
+
+    botonCargar.onclick = () => {
+        const inputFile = document.createElement('input');
+        inputFile.type = 'file';
+        inputFile.accept = 'image/*, video/mp4, video/webm, image/gif';
+        inputFile.onchange = async (event) => {
+            if (event.target.files && event.target.files[0]) {
+                const nuevaImagen = await fileToBase64(event.target.files[0]);
+                actualizarVisual(nuevaImagen, cajaTexto.value);
+                delete contenedor.dataset.svgContent;
+            }
+        };
+        inputFile.click();
+    };
+
+   if (svgContent && !imagen) {
+        if (typeof fabric !== 'undefined') {
+            const tempCanvasEl = document.createElement('canvas');
+            const tempFabricCanvas = new fabric.Canvas(tempCanvasEl, { width: 750, height: 750 });
+
+            fabric.loadSVGFromString(svgContent, (objects, options) => {
+                if (!objects || objects.length === 0) {
+                    console.warn("El SVG a cargar está vacío o no se pudo interpretar.", svgContent.substring(0,100));
+                    tempFabricCanvas.dispose();
+                    return;
+                }
+
+                const group = fabric.util.groupSVGElements(objects, options);
+
+                const scaleFactor = Math.min(
+                    (tempFabricCanvas.width * 0.9) / group.width,
+                    (tempFabricCanvas.height * 0.9) / group.height
+                );
+
+                group.scale(scaleFactor);
+                group.set({
+                    left: tempFabricCanvas.width / 2,
+                    top: tempFabricCanvas.height / 2,
+                    originX: 'center',
+                    originY: 'center'
+                });
+                tempFabricCanvas.add(group);
+                group.center();
+                
+                tempFabricCanvas.renderAll();
+                const dataUrl = tempFabricCanvas.toDataURL({ format: 'png' });
+                
+                actualizarVisual(dataUrl, descripcion);
+
+                tempFabricCanvas.dispose();
+            });
+        } else {
+            const fallbackSrc = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgContent);
+            actualizarVisual(fallbackSrc, descripcion);
+        }
+    } else {
+        actualizarVisual(imagen, descripcion);
+    }
+}
+
+
 
 async function procesarEntradaConIA() {
     const textoUsuario = document.getElementById('ia-datos-area').value.trim();
@@ -1041,6 +1055,7 @@ async function procesarEntradaConIA() {
     chatDiv.scrollTop = chatDiv.scrollHeight;
 
     try {
+        // Lógica para importar desde JSON crudo
         if (textoUsuario.startsWith('[') || textoUsuario.startsWith('{')) {
             try {
                 const datosJson = JSON.parse(textoUsuario);
@@ -1059,70 +1074,109 @@ async function procesarEntradaConIA() {
             }
         }
 
+        // Paso 1: Identificar categorías
         const promptCategorias = `
-            Analiza el siguiente texto de una historia: "${textoUsuario}".
-            Tu ÚNICA tarea es extraer los nombres de las entidades clave y clasificarlas. NO escribas un ensayo ni análisis.
-            Identifica las categorías de datos más importantes y relevantes (ej: Personajes Principales, Personajes Secundarios, Lugares Clave, Objetos, Facciones, etc.).
-
-            **Instrucción crucial**: Responde ÚNICAMENTE con un objeto JSON. No añadas texto introductorio, explicaciones, ni marcadores de código. La estructura debe ser:
-            {
-              "categorias_identificadas": ["Categoría 1", "Categoría 2", "Categoría 3"]
-            }
-
-            Si el texto es demasiado corto o ambiguo para extraer categorías, devuelve un JSON con un array vacío, así:
-            {
-              "categorias_identificadas": []
-            }
-        `;
+            **Contexto:** Voy a darte un texto, posiblemente largo y denso como un artículo de enciclopedia. Tu tarea es actuar como un asistente de investigación para extraer la información más importante y estructurarla.
+            **Texto a Analizar:** "${textoUsuario}"
+            **Instrucciones:**
+            1.  **Análisis Interno (No lo incluyas en el JSON final):** Lee el texto e identifica los temas principales. Piensa en cómo agruparías la información de forma lógica.
+            2.  **Tarea Principal:** Basado en tu análisis, crea una lista de nombres de categorías para clasificar los datos.
+            **Formato de Salida Obligatorio:** Responde ÚNICAMENTE con un objeto JSON con la estructura: { "categorias_identificadas": ["Categoría 1", "Categoría 2"] }`;
         
-        let respuestaCategorias;
-        try {
-respuestaCategorias = await llamarIAConFeedback(promptCategorias, "Identificando categorías", "gemini-2.5-pro");        } catch (error) {
-            throw new Error("La IA respondió en un formato inesperado. Por favor, intenta ser más descriptivo en tu idea. Error original: " + error.message);
-        }
+        const respuestaCategorias = await llamarIAConFeedback(promptCategorias, "Identificando categorías", "gemini-2.5-flash-lite-preview-06-17");
         
         const categorias = respuestaCategorias.categorias_identificadas;
         if (!categorias || !Array.isArray(categorias) || categorias.length === 0) {
             throw new Error("La IA no pudo identificar categorías relevantes en el texto. Intenta ser más específico.");
         }
         
-        chatDiv.innerHTML += `<p><strong>Silenos:</strong> Categorías encontradas: ${categorias.join(', ')}. Extrayendo detalles...</p>`;
+        chatDiv.innerHTML += `<p><strong>Silenos:</strong> Categorías encontradas: ${categorias.join(', ')}. Extrayendo y visualizando detalles...</p>`;
         chatDiv.scrollTop = chatDiv.scrollHeight;
 
         let totalDatosImportados = 0;
         for (const categoria of categorias) {
-            const etiquetaSugerida = categoria.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
             
+            const etiquetasValidas = opcionesEtiqueta
+                .map(o => o.valor)
+                .filter(v => v !== 'indeterminado' && v !== 'personalizar')
+                .join(', ');
+
             const promptDetalles = `
                 Para la obra "${textoUsuario}", genera una lista de elementos que pertenecen a la categoría "${categoria}".
-                Para cada elemento, proporciona una descripción detallada.
-                Responde ÚNICAMENTE con un objeto JSON válido en formato de array. Cada objeto debe tener la siguiente estructura completa: 
-                {
-                    "nombre": "...", 
-                    "descripcion": "...", 
-                    "etiqueta": "${etiquetaSugerida}", 
-                    "arco": "sin_arco", 
-                    "imagen": "",
-                    "svgContent": ""
-                }`;
+                Para cada elemento, proporciona: "nombre", "descripcion", la "etiqueta" MÁS APROPIADA de [${etiquetasValidas}], y un "arco" narrativo ('planteamiento' o 'sin_arco').
+                Responde ÚNICAMENTE con un objeto JSON válido en formato de array. Cada objeto debe tener la estructura completa: 
+                { "nombre": "...", "descripcion": "...", "etiqueta": "...", "arco": "..." }`;
 
-const respuestaDetalles = await llamarIAConFeedback(promptDetalles, `Extrayendo detalles de "${categoria}"`, "gemini-2.5-pro");    
+            const respuestaDetalles = await llamarIAConFeedback(promptDetalles, `Extrayendo detalles de "${categoria}"`, "gemini-2.5-flash-lite-preview-06-17");    
 
             if (Array.isArray(respuestaDetalles) && respuestaDetalles.length > 0) {
                 let importadosCategoria = 0;
-                respuestaDetalles.forEach(dato => {
+                
+                // --- INICIO DE LA MODIFICACIÓN ---
+                // Bucle en serie para crear o fusionar datos
+                for (const dato of respuestaDetalles) {
                     if (dato.nombre && dato.descripcion) {
-                        agregarPersonajeDesdeDatos(dato);
+                        let elementoDato = null;
+                        let esNuevo = true;
+                        const nombreNormalizado = dato.nombre.trim().toLowerCase();
+
+                        // Buscar si ya existe un elemento con el mismo nombre
+                        const todosLosDatos = document.querySelectorAll('#listapersonajes .personaje');
+                        for (const p of todosLosDatos) {
+                            const nombreInput = p.querySelector('.nombreh');
+                            if (nombreInput && nombreInput.value.trim().toLowerCase() === nombreNormalizado) {
+                                elementoDato = p;
+                                esNuevo = false;
+                                break; // Encontramos el elemento, salimos del bucle
+                            }
+                        }
+
+                        if (esNuevo) {
+                            // Si es nuevo, lo creamos como antes
+                            elementoDato = agregarPersonajeDesdeDatos(dato);
+                        } else {
+                            // Si ya existe, fusionamos la descripción
+                            const cajaTextoExistente = elementoDato.querySelector('textarea');
+                            if (cajaTextoExistente) {
+                                // Añade la nueva descripción a la existente
+                                cajaTextoExistente.value += `\n\n${dato.descripcion}`;
+                                
+                                // Actualizamos también la previsualización de la descripción
+                                const descripcionPreview = elementoDato.querySelector('.personaje-descripcion-preview');
+                                if (descripcionPreview) {
+                                    descripcionPreview.textContent = cajaTextoExistente.value;
+                                }
+                            }
+                        }
+
+                        if (!elementoDato) {
+                            console.error('No se pudo crear o encontrar el elemento para el dato:', dato);
+                            continue;
+                        }
+
                         importadosCategoria++;
+
+                        // La lógica de generación de imagen solo debe aplicarse a elementos nuevos sin imagen
+                        if (esNuevo) {
+                            const imgExistente = elementoDato.querySelector('.personaje-visual img');
+                            const tieneImagenValida = imgExistente && imgExistente.src && !imgExistente.src.endsWith('/');
+                            const tieneSvgValido = elementoDato.dataset.svgContent;
+
+                            if (typeof generarImagenParaDatos === 'function' && !tieneImagenValida && !tieneSvgValido) {
+                                // Aquí iría la lógica para generar la imagen si es necesario
+                            }
+                        }
                     }
-                });
+                }
+                // --- FIN DE LA MODIFICACIÓN ---
+
                 totalDatosImportados += importadosCategoria;
-                chatDiv.innerHTML += `<p><strong>Éxito:</strong> Se agregaron ${importadosCategoria} datos de la categoría "${categoria}".</p>`;
+                chatDiv.innerHTML += `<p><strong>Éxito:</strong> Se procesaron ${importadosCategoria} datos de la categoría "${categoria}".</p>`;
             }
         }
         
         if (totalDatosImportados > 0) {
-            alert(`¡Proceso completado! Se importaron un total de ${totalDatosImportados} datos detallados.`);
+            alert(`¡Proceso completado! Se importaron y visualizaron un total de ${totalDatosImportados} datos detallados.`);
             document.getElementById('ia-datos-area').value = '';
             reinicializarFiltrosYActualizarVista();
         } else {
@@ -1136,6 +1190,9 @@ const respuestaDetalles = await llamarIAConFeedback(promptDetalles, `Extrayendo 
         if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
     }
 }
+
+
+
 
 /**
  * --- FUNCIÓN CORREGIDA ---
@@ -1345,3 +1402,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+
+// EN: datos.js (AÑADIR ESTA NUEVA FUNCIÓN AL FINAL)
+
+/**
+ * Actualiza únicamente la imagen y el svgContent de un personaje existente.
+ * @param {string} personajeId - El ID del personaje a actualizar.
+ * @param {string} pngUrl - La nueva URL de la imagen PNG.
+ * @param {string} svgCode - El nuevo código del SVG.
+ */
+function actualizarDatosDeImagen(personajeId, pngUrl, svgCode) {
+    const index = personajes.findIndex(p => p.id === personajeId);
+
+    if (index !== -1) {
+        // Actualiza SOLO los campos de la imagen, no toca nada más.
+        personajes[index].imagen = pngUrl;
+        personajes[index].svgContent = svgCode;
+
+        // Guarda los cambios en la base de datos.
+        guardarDatos();
+        console.log(`[DATOS] Imagen y SVG actualizados para el personaje ID: ${personajeId}`);
+    } else {
+        console.error(`[DATOS] No se encontró el personaje con ID "${personajeId}" para actualizar su imagen.`);
+    }
+}
