@@ -1077,8 +1077,7 @@ async function procesarEntradaConIA() {
         
         let respuestaCategorias;
         try {
-            respuestaCategorias = await llamarIAConFeedback(promptCategorias, "Identificando categorías");
-        } catch (error) {
+respuestaCategorias = await llamarIAConFeedback(promptCategorias, "Identificando categorías", "gemini-2.5-flash");        } catch (error) {
             throw new Error("La IA respondió en un formato inesperado. Por favor, intenta ser más descriptivo en tu idea. Error original: " + error.message);
         }
         
