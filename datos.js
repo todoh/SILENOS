@@ -1077,7 +1077,7 @@ async function procesarEntradaConIA() {
         
         let respuestaCategorias;
         try {
-respuestaCategorias = await llamarIAConFeedback(promptCategorias, "Identificando categorías", "gemini-2.5-flash");        } catch (error) {
+respuestaCategorias = await llamarIAConFeedback(promptCategorias, "Identificando categorías", "gemini-2.5-pro");        } catch (error) {
             throw new Error("La IA respondió en un formato inesperado. Por favor, intenta ser más descriptivo en tu idea. Error original: " + error.message);
         }
         
@@ -1106,8 +1106,8 @@ respuestaCategorias = await llamarIAConFeedback(promptCategorias, "Identificando
                     "svgContent": ""
                 }`;
 
-            const respuestaDetalles = await llamarIAConFeedback(promptDetalles, `Extrayendo detalles de "${categoria}"`);
-            
+const respuestaDetalles = await llamarIAConFeedback(promptDetalles, `Extrayendo detalles de "${categoria}"`, "gemini-2.5-pro");    
+
             if (Array.isArray(respuestaDetalles) && respuestaDetalles.length > 0) {
                 let importadosCategoria = 0;
                 respuestaDetalles.forEach(dato => {
