@@ -1204,7 +1204,7 @@ async function removeGreenScreen(imagePart) {
 
                 // Si el píxel es predominantemente verde (verde > 200) y poco rojo/azul (r y b < 50), lo eliminamos.
                 // Puedes ajustar estos valores si es necesario.
-                if (green > 198 && red < 49 && blue < 49) {
+                if (green > 200 && red < 50 && blue < 50) {
                     data[i + 3] = 0; // Se hace totalmente transparente
                 }
             }
