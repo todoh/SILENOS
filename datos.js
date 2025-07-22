@@ -670,7 +670,8 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
 
     const contenedor = document.createElement('div');
     contenedor.className = 'personaje';
-        contenedor.dataset.descripcion = descripcion;
+       
+    contenedor.dataset.descripcion = personajeData.descripcion || '';
 
     if (svgContent) {
         contenedor.dataset.svgContent = svgContent;
@@ -789,11 +790,50 @@ cajaTexto.className = 'descripcionh'; // <-- ¡AÑADE ESTA LÍNEA!
     };
     buttonsWrapper.appendChild(botonSuperRealista);
 
-    const botonHiperUltra = document.createElement('button');
+
+const botonrapido = document.createElement('button');
+    botonrapido.className = 'edit-btn';
+    botonrapido.innerHTML = '⚡';
+    botonrapido.title = 'Generar Imagen rapido con IA Avanzada';
+
+    botonrapido.onclick = async () => {
+        const userPrompt = cajaTexto.value.trim();
+        if (!userPrompt) {
+            alert("Por favor, escribe una descripción detallada en la caja de texto para generar la imagen superrealista.");
+            return;
+        }
+
+        if (typeof ultras2 !== 'function') {
+            alert("Error: La función 'ultras' del archivo generador.js no está disponible.");
+            return;
+        }
+
+        const botones = buttonsWrapper.querySelectorAll('.edit-btn');
+        botones.forEach(b => b.disabled = true);
+        botonrapido.innerHTML = '⚙️';
+
+        try {
+            const resultado = await ultras2(userPrompt);
+            actualizarVisual(resultado.imagen, userPrompt);
+            contenedor.dataset.svgContent = resultado.svgContent;
+        } catch (error) {
+            console.error("Error al generar la imagen rapido:", error);
+            alert(`Ocurrió un error: ${error.message}`);
+        } finally {
+            botones.forEach(b => b.disabled = false);
+            botonrapido.innerHTML = '⚡';
+        }
+    };
+    buttonsWrapper.appendChild(botonrapido);
+
+
+
+       const botonHiperUltra = document.createElement('button');
     botonHiperUltra.className = 'edit-btn';
     botonHiperUltra.innerHTML = '😍';
     botonHiperUltra.title = 'Generar Imagen con HIPER-ULTRA IA';
 
+    // --- INICIO DE LA CORRECCIÓN ---
     botonHiperUltra.onclick = async () => {
         const userPrompt = cajaTexto.value.trim();
         if (!userPrompt) {
@@ -801,8 +841,8 @@ cajaTexto.className = 'descripcionh'; // <-- ¡AÑADE ESTA LÍNEA!
             return;
         }
 
-        if (typeof generarImagenHiperUltraDesdePrompt !== 'function') {
-            alert("Error: La función 'generarImagenHiperUltraDesdePrompt' del archivo generador.js no está disponible.");
+        if (typeof ultras !== 'function') {
+            alert("Error: La función 'ultras' del archivo generador.js no está disponible.");
             return;
         }
 
@@ -811,17 +851,31 @@ cajaTexto.className = 'descripcionh'; // <-- ¡AÑADE ESTA LÍNEA!
         botonHiperUltra.innerHTML = '⚙️';
 
         try {
-            const resultado = await generarImagenHiperUltraDesdePrompt(userPrompt);
-            actualizarVisual(resultado.imagen, userPrompt);
-            contenedor.dataset.svgContent = resultado.svgContent;
+            // 1. Llama a la función 'ultras' para obtener la nueva imagen.
+            const resultado = await ultras(userPrompt);
+
+            // 2. Si la generación fue exitosa, actualiza la interfaz.
+            if (resultado && resultado.imagen) {
+                // Llama a la función local 'actualizarVisual' para mostrar la nueva imagen.
+                actualizarVisual(resultado.imagen, cajaTexto.value);
+                
+                // 3. ¡LA CLAVE! Elimina el contenido SVG para que al guardar se use la imagen PNG.
+                delete contenedor.dataset.svgContent; 
+            } else if (resultado && resultado.error) {
+                // Muestra un error si la generación falló.
+                throw new Error(resultado.error);
+            }
+
         } catch (error) {
             console.error("Error en la generación HIPER-ULTRA:", error);
             alert(`Ocurrió un error en la generación HIPER-ULTRA: ${error.message}`);
         } finally {
+            // 4. Rehabilita los botones.
             botones.forEach(b => b.disabled = false);
             botonHiperUltra.innerHTML = '😍';
         }
     };
+    // --- FIN DE LA CORRECCIÓN ---
     buttonsWrapper.appendChild(botonHiperUltra);
 
     const botonMejorarIA = document.createElement('button');
