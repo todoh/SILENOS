@@ -1036,7 +1036,7 @@ async function ultras(userPrompt) { // O puedes llamarla generarImagenConGuardad
         "parts": [
             // Parte 1: Tu instrucción en texto. Es opcional pero muy recomendable.
             {
-                "text": "Genera una nueva imagen BASANDOTE EN el promt: " + userPrompt + ". La imagen debe ser fotorrealista usando la siguiente imagen una referencia solo si vas a crear personajes antropomorficos, (solo ten en cuenta proporciones realistas y cuerpo entero sin fondo, modifica todo lo demás). Si no es un ser antropomorfico, no tengas en cuenta la imagen de referencia para NADA. Si es una persona o personaje antropomorfico; HAZLO DE CUERPO ENTERO (DE PIES A CABEZA) Y CON EL FONDO COLOR CHROMA VERDE Lime / #00ff00 / #0f0 código de color hex PURO. Si es un objeto, artefacto, animal, planta, vehiculo, ropa, comida, cualquier cosa que sea un elemento aislado mostrable sobre fondo blanco, CREALO sobre FONDO COLOR VERDE Lime / #00ff00 / #0f0 código de color hex PURO "
+                "text": "Genera una nueva imagen BASANDOTE EN el promt: " + userPrompt + ". La imagen debe ser fotorrealista usando la siguiente imagen una referencia solo si vas a crear personajes antropomorficos, (solo ten en cuenta proporciones realistas y cuerpo entero sin fondo, modifica todo lo demás). Si no es un ser antropomorfico, no tengas en cuenta la imagen de referencia para NADA. Si es una persona o personaje antropomorfico; HAZLO DE CUERPO ENTERO (DE PIES (o calzado) A CABEZA) Y CON EL FONDO COLOR CHROMA VERDE Lime / #00ff00 / #0f0 código de color hex PURO. Si es un objeto, artefacto, animal, planta, vehiculo, ropa, comida, cualquier cosa que sea un elemento aislado mostrable sobre fondo blanco, CREALO sobre FONDO COLOR VERDE Lime / #00ff00 / #0f0 código de color hex PURO "
             },
             
             // Parte 2: La imagen. Aquí es donde pegas tu cadena Base64.
@@ -1171,10 +1171,10 @@ async function ultras2(userPrompt) {
 
 
 /**
- * Toma un 'imagePart' con fondo verde y devuelve uno nuevo con transparencia.
- * Esta versión es más tolerante a las variaciones del color verde.
+ * Toma un 'imagePart' con fondo verde, lo hace transparente y recorta el espacio vacío.
+ * Esta versión es tolerante a las variaciones del color verde y elimina los bordes transparentes.
  * @param {object} imagePart El objeto de imagen original.
- * @returns {Promise<object>} El objeto de imagen procesado.
+ * @returns {Promise<object>} El objeto de imagen procesado y recortado.
  */
 async function removeGreenScreen(imagePart) {
     if (!imagePart?.inlineData?.data) {
@@ -1183,34 +1183,84 @@ async function removeGreenScreen(imagePart) {
 
     return new Promise((resolve, reject) => {
         const img = new Image();
-        // Novedad: Necesario para evitar problemas de seguridad del canvas en algunos navegadores
+        // Necesario para evitar problemas de seguridad del canvas en algunos navegadores
         img.crossOrigin = "Anonymous";
 
         img.onload = () => {
+            // --- PASO 1: Eliminar el fondo verde ---
             const canvas = document.createElement('canvas');
             canvas.width = img.width;
             canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true }); // Optimización para getImageData
             ctx.drawImage(img, 0, 0);
 
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const data = imageData.data;
+            let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let data = imageData.data;
 
-            // ✅ Novedad: Hacemos la detección del verde más flexible
+            // Hacemos la detección del verde más flexible
             for (let i = 0; i < data.length; i += 4) {
                 const red = data[i];
                 const green = data[i + 1];
                 const blue = data[i + 2];
 
-                // Si el píxel es predominantemente verde (verde > 200) y poco rojo/azul (r y b < 50), lo eliminamos.
-                // Puedes ajustar estos valores si es necesario.
-                if (green > 200 && red < 50 && blue < 50) {
-                    data[i + 3] = 0; // Se hace totalmente transparente
+                // Si el píxel es predominantemente verde, lo hacemos transparente
+                if (green > 120 && green > red && green > blue) {
+                    data[i + 3] = 0; // Canal Alfa a 0 (totalmente transparente)
                 }
             }
             ctx.putImageData(imageData, 0, 0);
 
-            const newBase64Url = canvas.toDataURL('image/png');
+            // --- PASO 2: Recortar el espacio transparente (autocrop) ---
+            
+            // Volvemos a leer los datos por si acaso, aunque ya los tenemos
+            imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            data = imageData.data;
+
+            let minX = canvas.width, minY = canvas.height, maxX = -1, maxY = -1;
+
+            // Buscamos los límites del contenido no transparente
+            for (let y = 0; y < canvas.height; y++) {
+                for (let x = 0; x < canvas.width; x++) {
+                    const alpha = data[(y * canvas.width + x) * 4 + 3];
+                    if (alpha > 0) { // Si el píxel no es transparente
+                        minX = Math.min(minX, x);
+                        minY = Math.min(minY, y);
+                        maxX = Math.max(maxX, x);
+                        maxY = Math.max(maxY, y);
+                    }
+                }
+            }
+
+            // Si la imagen está completamente vacía, devolvemos una imagen transparente de 1x1
+            if (maxX === -1) {
+                resolve({
+                    inlineData: {
+                        mimeType: 'image/png',
+                        data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+                    }
+                });
+                return;
+            }
+
+            const cropWidth = maxX - minX + 1;
+            const cropHeight = maxY - minY + 1;
+
+            // Creamos un nuevo canvas con las dimensiones del recorte
+            const cropCanvas = document.createElement('canvas');
+            cropCanvas.width = cropWidth;
+            cropCanvas.height = cropHeight;
+            const cropCtx = cropCanvas.getContext('2d');
+
+            // Dibujamos solo la porción recortada de la imagen en el nuevo canvas
+            cropCtx.drawImage(canvas,
+                minX, minY,       // Coordenadas de inicio del recorte en el canvas original
+                cropWidth, cropHeight, // Tamaño del área a recortar
+                0, 0,             // Coordenadas de destino en el nuevo canvas
+                cropWidth, cropHeight  // Tamaño del dibujo en el nuevo canvas
+            );
+
+            // Obtenemos la imagen final como Base64
+            const newBase64Url = cropCanvas.toDataURL('image/png');
             const newBase64Data = newBase64Url.split(',')[1];
 
             resolve({
@@ -1220,6 +1270,7 @@ async function removeGreenScreen(imagePart) {
                 }
             });
         };
+
         img.onerror = (err) => reject(new Error("Error al cargar la imagen Base64 para procesarla. Detalles: " + err));
         img.src = `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
     });
