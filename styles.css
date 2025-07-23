@@ -1,3 +1,5 @@
+
+
 /* --- ESTILOS EXISTENTES --- */
 html {
     scroll-behavior: smooth;
@@ -55,17 +57,15 @@ html {
 }
 
 
-.dark-theme .pro5 {
-    background-color: #00529B; /* Un azul oscuro para botones pro */
-    color: white;
-}
+ 
 
-.pro5 {background-color: #5a6268!important; color:white!important; border:none !important;
+.pro5 {background-color:transparent!important; color:rgb(0, 0, 0)!important; border:none !important;
 z-index: 1000!important;
 height: fit-content!important;
 width: fit-content!important;
 position: fixed !important;
-bottom: 2% !important;
+bottom: 2% !important;  transition: transform 0.3s ease;
+
 left: 50% !important;
 transform: translateX(-50%) !important;
 font-size: x-large !important;
@@ -80,24 +80,26 @@ margin: 0px !important;
     color: white;
 }
 
-.pro6 {background-color: #e9ecef!important; color: #333 !important; border:none !important;
+.pro6 {background-color:transparent !important; color: #000000 !important; border:none !important;
 z-index: 1000!important;
 height: fit-content!important;
 width: fit-content!important;
 position: fixed !important;
 top: 2% !important;
-left: 3% !important;
+left: 3% !important;  transition: transform 0.3s ease;
+
 transform: translateX(-50%) !important;
 font-size: x-large !important;
 padding: 2px !important;
 margin: 0px !important;
 padding-left: 1% !important; padding-right: 1% !important; /* Añadido para margen horizontal */
 } 
-.pro16 {background-color: #e9ecef!important; color: #333 !important; border:none !important;
+.pro16 {background-color: transparent !important; color: #000000 !important; border:none !important;
 z-index: 1000!important;
 height: fit-content!important;
 width: fit-content!important;
-position: fixed !important;
+position: fixed !important;  transition: transform 0.3s ease;
+
 top: 7% !important;
 left: 3% !important;
 transform: translateX(-50%) !important;
@@ -107,27 +109,29 @@ margin: 0px !important;
 padding-left: 1% !important; padding-right: 1% !important; /* Añadido para margen horizontal */
 } 
 
-.pro17 {background-color: #e9ecef!important; color: #333 !important; border:none !important;
+.pro17 {background-color: transparent !important; color: #000000 !important; border:none !important;
 z-index: 1000!important;
 height: fit-content!important;
 width: fit-content!important;
 position: fixed !important;
-top: 13% !important;
+top: 12% !important;
 left: 3% !important;
 transform: translateX(-50%) !important;
 font-size: x-large !important;
 padding: 2px !important;
-margin: 0px !important;
+margin: 0px !important;   transition: transform 0.3s ease;
+
 padding-left: 1% !important; padding-right: 1% !important; /* Añadido para margen horizontal */
 } 
+ .pro6:hover  {transform: translateX(-50%) scale(1.2) !important;}
+ .pro7:hover  {transform: translateX(-50%) scale(1.2) !important;}
+ .pro5:hover {transform: translateX(-50%) scale(1.2) !important;}
 
+ .pro17:hover  {transform: translateX(-50%) scale(1.2) !important;}
+ .pro16:hover {transform: translateX(-50%) scale(1.2) !important;}
+ 
 
-.dark-theme .pro7 {
-    background-color: #313131; /* Un azul oscuro para botones pro */
-    color: white;
-}
-
-.pro7 {background-color: #e9ecef!important; color: #333 !important; border:none !important;
+.pro7 {background-color: transparent!important; color: #333 !important; border:none !important;
 z-index: 1000!important;
 height: fit-content!important;
 width: fit-content!important;
@@ -136,7 +140,8 @@ top: 7% !important;
 left: 3% !important;
 transform: translateX(-50%) !important;
 font-size: x-large !important;
-padding: 2px !important;
+padding: 2px !important;  transition: transform 0.3s ease;
+
 margin: 0px !important;
 padding-left: 1% !important; padding-right: 1% !important; /* Añadido para margen horizontal */
 }
@@ -998,13 +1003,15 @@ top: 1%;left: 2%;}
 }
 
 #contenido-capitulo-activo input[type="text"] {
-    width: 85%; 
-    height: 5%;
+    width: 80%; 
+    left: 10%; position: relative;
+    height: 7%;
     margin-bottom: 0px; /* Ajustado */
-    padding-left: 5%;
+   
     border: 0px solid #ccc;
     border-radius: 3px;
-    font-size: 1.2em;
+    font-size: 1.4em;
+    justify-items: center; 
     font-weight: bold;
 }
 
@@ -1436,27 +1443,25 @@ width: 15%;
 }
 
 .contenido-guion-editor {
-    width:80%; height: 86.5%;
+    width:50%; height: auto;
     flex-grow: 1;
-   left: 0%; top: 5%;
-  
+   left: 10%; top: 2%;
+  bottom: 2%;
     border-radius: 3px;
     overflow-y: auto;
     font-family: Arial, sans-serif;
     font-size: 1em;
     line-height: 1.5;
-
+margin: 5%;
     background: transparent;
  position: absolute;
     text-align: left; 
-   padding-right: 10%;padding-left: 10%;
+   padding: 10%;
+   padding-top: 2%;
+
 }    
 
-.dark-theme .contenido-guion-editor {
-    background-color: #333;
-    color: #e0e0e0;
-    border-color: #555;
-}
+ 
 
 .guion-ia-general, .guion-ia-escena {
     padding: 15px; 
@@ -1787,9 +1792,9 @@ transform: translateY(-50%);
     width: 60px;
     height: 60px;
 
-    color: white;
+    color: rgba(255, 255, 255, 0);
     border-radius: 50%;
-   
+   background-color: transparent !important;
     z-index: 9999;
 
 }
@@ -2946,7 +2951,7 @@ left: 0%; right: 50%;
     height: auto;
     z-index: -100; /* Lo posiciona detrás de todo el contenido. */
     background-size: cover; /* Asegura que cubra todo el espacio sin deformarse. */
-    filter: brightness(0.7); /* (Opcional) Oscurece un poco el video para que el texto encima sea más legible. */
+    filter: brightness(0.85); /* (Opcional) Oscurece un poco el video para que el texto encima sea más legible. */
 }
 
 #selector-libro-popup { display: none; position: fixed;  left: 0; top: 0%; background-color: transparent;
@@ -3068,4 +3073,10 @@ width: 1280px!important ;
 #rpgmaker {display: none;}
 
 
-        
+*:focus-visible {
+  /* Quita el borde por defecto */
+  outline: none;
+  
+  /* Y añade una "sombra-halo" como indicador de foco */
+ 
+}
