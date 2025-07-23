@@ -112,6 +112,17 @@ function reconstruirJsonDesdeGuionHTML(guionObject) {
  */
 // Reemplaza esta función en datos/gemini.js
 
+/**
+ * Desarrolla los frames de un guion utilizando la función reutilizable callGenerativeApi.
+ * Muestra un mensaje de "pensando" en el chat antes de cada llamada a la IA.
+ *
+ * @param {string} guionSeleccionadoTitulo - Título del guion seleccionado en el modal.
+ */
+/**
+ * Desarrolla los frames de un guion utilizando la función reutilizable callGenerativeApi.
+ * Esta versión es más robusta gracias a la nueva lógica de reintentos y limpieza de JSON.
+ * @param {string} guionSeleccionadoTitulo - Título del guion seleccionado en el modal.
+ */
 async function desarrollarFramesDesdeGeminimente(guionSeleccionadoTitulo) {
     const guionObjeto = guionLiterarioData.find(g => g.titulo === guionSeleccionadoTitulo);
     if (!guionObjeto) {
@@ -122,7 +133,7 @@ async function desarrollarFramesDesdeGeminimente(guionSeleccionadoTitulo) {
     const datosHistoria = reconstruirJsonDesdeGuionHTML(guionObjeto);
 
     if (!datosHistoria || !datosHistoria.historia || datosHistoria.historia.length === 0) {
-        alert("El guion seleccionado no contiene una estructura de historia válida o no se pudo procesar. No se pueden generar los frames.");
+        alert("El guion seleccionado no contiene una estructura de historia válida o no se pudo procesar.");
         if (typeof chatDiv !== 'undefined') {
             chatDiv.innerHTML += "<p><strong>Error:</strong> El guion seleccionado no tiene un formato procesable.</p>";
         }
@@ -142,148 +153,117 @@ async function desarrollarFramesDesdeGeminimente(guionSeleccionadoTitulo) {
             crearEscenasAutomaticamente(nombreBaseReal, escenasACrearReal, 0);
         } else {
             alert("Error: La función crearEscenasAutomaticamente no está disponible.");
-            if (typeof chatDiv !== 'undefined') chatDiv.innerHTML += "<p><strong>Error Crítico:</strong> La función `crearEscenasAutomaticamente` no se encontró.</p>";
             return;
         }
 
-      const idsEscenasCreadasEnPrincipal = Object.keys(escenas)
-    .filter(id => id.startsWith(`${libroActivoId}-${nombreBaseReal}`))
-    .sort();
+        const idsEscenasCreadasEnPrincipal = Object.keys(escenas)
+            .filter(id => id.startsWith(`${libroActivoId}-${nombreBaseReal}`))
+            .sort();
 
         for (let i = 0; i < idsEscenasCreadasEnPrincipal.length; i++) {
             const idEscenaPrincipal = idsEscenasCreadasEnPrincipal[i];
             const escenaOriginalData = datosHistoria.historia[i];
 
-            if (!escenaOriginalData) {
-                if (typeof chatDiv !== 'undefined') chatDiv.innerHTML += `<p><strong>Info:</strong> No hay más datos en el guion para la escena ${i+1} ('${idEscenaPrincipal}').</p>`;
-                continue;
-            }
+            if (!escenaOriginalData) continue;
 
             if (escenas[idEscenaPrincipal]) {
                 escenas[idEscenaPrincipal].texto = `${nombreBaseReal} ${String(i + 1).padStart(3, '0')} - ${escenaOriginalData.titulo_escena}`;
+                escenas[idEscenaPrincipal].frames = []; // Limpiamos frames existentes
             } else {
-                if (typeof chatDiv !== 'undefined') chatDiv.innerHTML += `<p><strong>Error Interno:</strong> La escena con ID '${idEscenaPrincipal}' no se encontró en la estructura 'escenas' de Silenos.</p>`;
                 continue;
             }
-
+            
             if (typeof chatDiv !== 'undefined') {
                 chatDiv.innerHTML += `<p><strong>Procesando Escena:</strong> "${escenas[idEscenaPrincipal].texto}"</p>`;
                 chatDiv.scrollTop = chatDiv.scrollHeight;
             }
 
             if (!escenaOriginalData.frames || escenaOriginalData.frames.length === 0) {
-                if (typeof chatDiv !== 'undefined') chatDiv.innerHTML += `<p><strong>Info:</strong> La escena "${escenaOriginalData.titulo_escena}" no tenía frames en el plan original. Se deja vacía.</p>`;
-                if (escenas[idEscenaPrincipal] && !escenas[idEscenaPrincipal].frames) {
-                    escenas[idEscenaPrincipal].frames = [];
-                }
+                 if (typeof chatDiv !== 'undefined') chatDiv.innerHTML += `<p><strong>Info:</strong> La escena "${escenaOriginalData.titulo_escena}" no tenía frames. Se deja vacía.</p>`;
                 continue;
             }
-            
-            // =========================================================================================
-            //  AÑADIDO: Limpiamos los frames que 'crearEscenasAutomaticamente' pudo haber creado
-            //  para evitar duplicados antes de añadir los desarrollados.
-            // =========================================================================================
-             if (escenas[idEscenaPrincipal]) {
-                escenas[idEscenaPrincipal].frames = [];
-             }
-
 
             for (let j = 0; j < escenaOriginalData.frames.length; j++) {
                 const frameOriginalData = escenaOriginalData.frames[j];
-
-                if (typeof chatDiv !== 'undefined') {
-                    chatDiv.innerHTML += `<p><strong>Enviando a IA:</strong> Desarrollar punto clave ${j+1} de la escena ("${escenaOriginalData.titulo_escena}")...</p>`;
-                    chatDiv.scrollTop = chatDiv.scrollHeight;
-                }
-
                 const promptDesarrollo = `
 Contexto General de la Historia: ${datosHistoria.titulo_historia || 'N/A'}
-Escena Actual (del plan original): "${escenaOriginalData.titulo_escena || `Escena ${i+1}`}"
-Contenido del Frame Original a Desarrollar: "${frameOriginalData.contenido || 'Sin contenido inicial'}"
-
+Capítulo Actual (del plan original): "${escenaOriginalData.titulo_escena || `Escena ${i+1}`}"
+Contenido del capitulo Original a Desarrollar: "${frameOriginalData.contenido || 'Sin contenido inicial'}"
 Tarea:
-1. Desarrolla y expande el "Contenido del Frame Original a Desarrollar" de manera coherente y detallada, manteniendo el estilo y tono de la historia.
-2. Una vez desarrollado, divide el contenido que has generado en una secuencia lógica de puntos clave o sub-frames. Tú decides el número de sub-frames necesarios para presentar la información de forma clara y secuencial.
-3. Responde ÚNICAMENTE con un objeto JSON válido. No incluyas ningún texto explicativo, introductorio, ni marcadores de código como \`\`\`json antes o después del JSON.
+1. Desarrolla y expande el "Contenido del capitulo Original a Desarrollar" de manera coherente y detallada.
+2. Una vez desarrollado, divide el contenido que has generado en una secuencia lógica de puntos clave o sub-capitulos.
+3. Responde ÚNICAMENTE con un objeto JSON válido. No incluyas ningún texto explicativo ni marcadores como \`\`\`json o cualquiero otro.
 La estructura exacta del JSON debe ser:
 {
   "nuevos_frames_desarrollados": [
-    { "texto_sub_frame": "Texto completo del primer sub-frame desarrollado." },
-    { "texto_sub_frame": "Texto completo del segundo sub-frame desarrollado." }
+    { "texto_sub_frame": "Texto completo del primer sub-capitulo desarrollado." },
+    { "texto_sub_frame": "Texto completo del segundo sub-capitulo desarrollado." }
   ]
 }`;
+                
+                // --- INICIO DE LA LÓGICA DE REINTENTOS POR FRAME ---
+                const maxFrameRetries = 4;
+                let frameGeneratedSuccessfully = false;
 
-                let replyText = "";
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-06-17:generateContent?key=${apiKey}`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: promptDesarrollo }] }] })
-                    });
-
-                    if (!response.ok) {
-                        const errorBody = await response.text();
-                        throw new Error(`Error de la API: ${response.status} ${response.statusText}. Cuerpo: ${errorBody}`);
-                    }
-
-                    const data = await response.json();
-                    replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-                    if (!replyText) throw new Error("La respuesta de la IA estaba vacía o no tenía la estructura esperada.");
-
-                    let textoJsonLimpio = replyText;
-                    const match = textoJsonLimpio.match(/```json\s*([\s\S]*?)\s*```/);
-                    if (match && match[1]) {
-                        textoJsonLimpio = match[1];
-                    } else {
-                        const inicioJson = textoJsonLimpio.indexOf('{');
-                        const finJson = textoJsonLimpio.lastIndexOf('}');
-                        if (inicioJson !== -1 && finJson !== -1 && finJson > inicioJson) {
-                            textoJsonLimpio = textoJsonLimpio.substring(inicioJson, finJson + 1);
+                for (let attempt = 1; attempt <= maxFrameRetries; attempt++) {
+                    let respuestaBrutaParaDebug = "";
+                    try {
+                        if (typeof chatDiv !== 'undefined') {
+                            chatDiv.innerHTML += `<p><strong>Enviando a IA (Intento ${attempt}/${maxFrameRetries} 🧠):</strong> Desarrollando punto clave ${j+1} de la escena ("${escenaOriginalData.titulo_escena}")...</p>`;
+                            chatDiv.scrollTop = chatDiv.scrollHeight;
                         }
-                    }
 
-                    const respuestaJson = JSON.parse(textoJsonLimpio);
-                    const nuevosFrames = respuestaJson.nuevos_frames_desarrollados;
+                        // Usamos la robusta función callGenerativeApi
+                        const respuestaJson = await callGenerativeApi(promptDesarrollo, 'gemini-2.5-flash-lite', true);
+                        
+                        respuestaBrutaParaDebug = JSON.stringify(respuestaJson, null, 2);
+                        const nuevosFrames = respuestaJson.nuevos_frames_desarrollados;
 
-                    if (!nuevosFrames || !Array.isArray(nuevosFrames)) {
-                        throw new Error("El JSON de la IA no tiene la estructura esperada (falta 'nuevos_frames_desarrollados' o no es un array).");
-                    }
+                        if (!nuevosFrames || !Array.isArray(nuevosFrames)) {
+                            throw new Error("El JSON de la IA no tiene la estructura esperada (falta 'nuevos_frames_desarrollados').");
+                        }
 
-                    if (typeof chatDiv !== 'undefined') {
-                        chatDiv.innerHTML += `<p><strong>IA Respondió:</strong> Se generaron ${nuevosFrames.length} nuevos frames detallados para el punto clave ${j+1}.</p>`;
-                    }
+                        if (typeof chatDiv !== 'undefined') {
+                            chatDiv.innerHTML += `<p><strong>IA Respondió Correctamente:</strong> Se generaron ${nuevosFrames.length} nuevos frames detallados.</p>`;
+                        }
 
-                    nuevosFrames.forEach(subFrame => {
-                        if (subFrame && typeof subFrame.texto_sub_frame === 'string') {
-                            const nuevoFrameSilenos = { texto: subFrame.texto_sub_frame, imagen: "" };
-                            escenas[idEscenaPrincipal].frames.push(nuevoFrameSilenos);
+                        nuevosFrames.forEach(subFrame => {
+                            if (subFrame && typeof subFrame.texto_sub_frame === 'string') {
+                                escenas[idEscenaPrincipal].frames.push({ texto: subFrame.texto_sub_frame, imagen: "" });
+                            }
+                        });
+                        
+                        frameGeneratedSuccessfully = true;
+                        break; // ¡Éxito! Salimos del bucle de reintentos.
+
+                    } catch (error) {
+                        if (typeof chatDiv !== 'undefined') {
+                            chatDiv.innerHTML += `<p><strong>Fallo en Intento ${attempt}/${maxFrameRetries}:</strong> ${error.message}</p><p><strong>Respuesta recibida:</strong><pre>${respuestaBrutaParaDebug.substring(0, 300)}...</pre></p>`;
+                            chatDiv.scrollTop = chatDiv.scrollHeight;
+                        }
+                        
+                        if (attempt === maxFrameRetries) {
+                            // Si es el último intento, registramos el error definitivo.
+                            if (typeof chatDiv !== 'undefined') {
+                                chatDiv.innerHTML += `<p><strong>Error Definitivo de IA (Punto Clave ${j+1}):</strong> No se pudo generar el frame después de ${maxFrameRetries} intentos.</p>`;
+                            }
+                            escenas[idEscenaPrincipal].frames.push({ texto: `(Error al generar este frame. Mensaje: ${error.message})`, imagen: "" });
                         } else {
-                            if (typeof chatDiv !== 'undefined') chatDiv.innerHTML += `<p><strong>Advertencia:</strong> Un sub-frame recibido de la IA no tenía el formato esperado y fue omitido.</p>`;
+                            // Esperamos un poco antes del siguiente reintento
+                            await new Promise(resolve => setTimeout(resolve, 2000));
                         }
-                    });
-
-                } catch (error) {
-                    if (typeof chatDiv !== 'undefined') {
-                        chatDiv.innerHTML += `<p><strong>Error de IA (Punto Clave ${j+1}):</strong> ${error.message}</p><p><strong>Respuesta recibida:</strong><pre>${replyText.substring(0, 200)}...</pre></p>`;
-                        chatDiv.scrollTop = chatDiv.scrollHeight;
                     }
-                    const frameDeError = { texto: `(Error al generar este frame. Mensaje: ${error.message})`, imagen: "" };
-                    escenas[idEscenaPrincipal].frames.push(frameDeError);
                 }
+                // --- FIN DE LA LÓGICA DE REINTENTOS POR FRAME ---
 
-                // Actualizar la UI después de procesar cada punto clave
-                if (typeof actualizarLista === 'function') {
-                    actualizarLista();
-                }
-                await sleep(1000);
+                if (typeof actualizarLista === 'function') actualizarLista();
+                // La pausa de 8 segundos se ejecuta después de procesar un punto clave (con éxito o tras fallar todos los reintentos)
+                await new Promise(resolve => setTimeout(resolve, 8000));
             }
         }
     } finally {
-        // Este bloque se ejecutará siempre, haya o no errores.
         if (typeof guardarCambios === 'function') guardarCambios();
         if (typeof actualizarLista === 'function') actualizarLista();
-
         alert(`Proceso de desarrollo de frames completado.`);
         if (typeof chatDiv !== 'undefined') {
             chatDiv.innerHTML += `<p><strong>Proceso Completado:</strong> El desarrollo de la historia ha finalizado.</p>`;
@@ -291,6 +271,8 @@ La estructura exacta del JSON debe ser:
         }
     }
 }
+
+
 
 /**
  * NUEVA FUNCIÓN AUXILIAR (CORREGIDA Y ACTIVADA)

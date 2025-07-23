@@ -830,8 +830,24 @@ async function generarImagenSuperrealistaDesdePrompt(userPrompt, modelConfig = {
 }
 
 async function callGenerativeApi(prompt, model = 'gemini-2.5-flash', expectJson = true) {
-    // Asumimos que 'apiKey' está disponible en el scope global
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    // --- INICIO DE LA MODIFICACIÓN PARA STREAMING ---
+
+    // Por convención, la función buscará este elemento para mostrar el efecto "thinking".
+    // Debes asegurarte de que este elemento exista en tu HTML si quieres ver el efecto.
+    const streamingTargetId = 'ia-streaming-output';
+    const outputElement = document.getElementById(streamingTargetId);
+
+    // El efecto de escritura solo se mostrará si no esperamos un JSON y si el elemento existe.
+    const showThinkingEffect = !expectJson && outputElement;
+
+    // Si vamos a mostrar el efecto, limpiamos el contenido previo del contenedor.
+    if (showThinkingEffect) {
+        outputElement.innerHTML = '';
+    }
+
+    // Usamos el endpoint de streaming de la API.
+    // La variable 'apiKey' debe estar disponible en el scope global.
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${apiKey}&alt=sse`;
 
     const payload = {
         contents: [{ parts: [{ text: prompt }] }],
@@ -844,6 +860,8 @@ async function callGenerativeApi(prompt, model = 'gemini-2.5-flash', expectJson 
         ]
     };
 
+    // Si se espera un JSON, lo especificamos en la configuración.
+    // El efecto visual no se activará, pero seguiremos usando el stream para obtener la respuesta.
     if (expectJson) {
         payload.generationConfig.responseMimeType = "application/json";
     }
@@ -859,23 +877,65 @@ async function callGenerativeApi(prompt, model = 'gemini-2.5-flash', expectJson 
         throw new Error(`Error en la API (${model}): ${response.statusText}. Cuerpo: ${errorBody}`);
     }
 
-    const data = await response.json();
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullRawText = ''; // Variable para acumular la respuesta completa.
 
-    if (!rawText) {
-        console.error("Respuesta de API inesperada:", JSON.stringify(data, null, 2));
+    // Leemos el stream hasta que se complete.
+    while (true) {
+        const { value, done } = await reader.read();
+        if (done) {
+            break; // Se terminó el stream.
+        }
+
+        const chunkText = decoder.decode(value);
+        const lines = chunkText.split('\n');
+
+        for (const line of lines) {
+            if (line.startsWith('data: ')) {
+                const jsonString = line.substring(6).trim();
+                if (!jsonString) continue;
+
+                try {
+                    const data = JSON.parse(jsonString);
+                    const newText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                    if (newText) {
+                        // Acumulamos el texto para el resultado final.
+                        fullRawText += newText;
+
+                        // Si el efecto está activado, actualizamos el DOM.
+                        if (showThinkingEffect) {
+                            // Reemplazamos saltos de línea por <br> para una correcta visualización en HTML.
+                            outputElement.innerHTML += newText.replace(/\n/g, '<br>');
+                        }
+                    }
+                } catch (error) {
+                    console.warn("Fallo al parsear un chunk del stream (ignorado):", jsonString);
+                }
+            }
+        }
+    }
+
+    // --- FIN DE LA MODIFICACIÓN PARA STREAMING ---
+
+    // A partir de aquí, la lógica es la misma que la original, pero usando 'fullRawText'.
+    if (!fullRawText) {
+        console.error("Respuesta de API inesperada (stream vacío):", fullRawText);
         throw new Error("La IA no devolvió contenido en la respuesta.");
     }
-    
+
     if (expectJson) {
         try {
-            return JSON.parse(rawText);
+            // Devolvemos el JSON parseado.
+            return JSON.parse(fullRawText);
         } catch (error) {
-            console.error("Fallo al parsear JSON. String recibido:", rawText);
+            console.error("Fallo al parsear JSON. String recibido:", fullRawText);
             throw new Error(`La respuesta de la API para el modelo ${model} no contenía un JSON válido.`);
         }
     } else {
-        return rawText.replace(/```svg\n?/, '').replace(/```$/, '');
+        // Devolvemos el texto limpio, igual que en la función original.
+        return fullRawText.replace(/```svg\n?/, '').replace(/```$/, '');
     }
 }
 
@@ -1137,7 +1197,7 @@ async function ultras2(userPrompt) {
     const promptInicial = `Crea un SVG simple de un "${userPrompt}". Responde únicamente con el código SVG, sin explicaciones ni otros textos.`;
     
     // Se asume que callGenerativeApi devuelve texto plano cuando el último parámetro es 'false'.
-    const respuestaSvgInicial = await callGenerativeApi(promptInicial, 'gemini-2.5-flash-lite-preview-06-17', false);
+    const respuestaSvgInicial = await callGenerativeApi(promptInicial, 'gemini-2.5-flash-lite', false);
     const svgInicial = extraerBloqueSVG(respuestaSvgInicial);
 
     if (!svgInicial) {
@@ -1150,7 +1210,7 @@ async function ultras2(userPrompt) {
     console.log("[Generador SVG Refinado] PASO 2: Refinando el SVG...");
     const promptMejora = `Refina y mejora el siguiente código SVG para que sea más detallado, realista y visualmente atractivo. Añade texturas, sombras sutiles y líneas orgánicas. Responde únicamente con el nuevo código SVG completo y mejorado:\n\`\`\`xml\n${svgInicial}\n\`\`\``;
     
-    const respuestaSvgMejorado = await callGenerativeApi(promptMejora, 'gemini-2.5-flash-lite-preview-06-17', false);
+    const respuestaSvgMejorado = await callGenerativeApi(promptMejora, 'gemini-2.5-flash-lite', false);
     const svgFinal = extraerBloqueSVG(respuestaSvgMejorado);
 
     if (!svgFinal) {
