@@ -119,12 +119,13 @@
     }
 
     #asistente-titulo-input {
+        justify-content: center;
         position: absolute;
-        top: -15%;
+        top: 5%;
         left: 50%; 
-        width: 90%;
+        width: 50%;
         padding: 10px 15px;
-    height: 3%;
+    height: 4%;
         font-size: 100%;
         background-color: #2c2c2c;
         color: white;
@@ -199,6 +200,7 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
 <button id="asistente-btn" title="Asistente IA">S</button>
 <div id="asistente-popup">
     <div id="asistente-menu">
+         <button class="pro" onclick="cerrartodo(), abrir('proyecto');">🏗️ Proyecto</button>
   <button class="tons"  onclick="cerrartodo(), abrir('vistageneral');"style="display: none;">Vista General</button>
    <button class="tons"  onclick="cerrartodo(), gridear('personajes');">Datos</button>
              
@@ -226,7 +228,7 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
         <button class="pro" onclick="guardarJSON()">💾 Guardar</button>
         <input type="file" id="file-load" accept="application/json" onchange="cargarJSON(event)" style="display: none;">
         <button class="pro" onclick="document.getElementById('file-load').click()">🗂️ Cargar</button>
-       <button class="pro" onclick="abrirModalExportar()">💽 Exportar</button>
+       <button class="pro" onclick="abrirModalExportar()" style="display: none;">💽 Exportar</button>
         <button class="pro" id="theme-toggle-button" onclick="toggleTheme()">🌙 Tema</button>
     </div>
 </div>
@@ -882,6 +884,12 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
     </div>
 </div>
 
+<div id="proyecto" style="display: none;" >
+ <input type="text" id="asistente-titulo-input" placeholder="Título del proyecto" value="Silenos Versión 1.1.10" >
+
+
+
+</div>
 
 
 
@@ -923,7 +931,7 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
     <div id="guion-toolbar">
         <!-- El botón para abrir el selector de guiones se mueve aquí -->
         <button class="pro6" id="selector-guion-btn-local">☰</button>
-        <button class="pro5" id="sumar-capitulo-guion" onclick="agregarCapituloYMostrar()">➕</button>
+        <button class="pro5" id="sumar-capitulo-guion" onclick="agregarCapituloYMostrar()">+</button>
     </div>
     <div id="guion-layout">
         <!-- El índice lateral se elimina de la vista, pero el div se puede mantener para compatibilidad -->
@@ -992,7 +1000,7 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
     
     <div id="libro-activo-titulo"> </div>
     
-    <button class="pro5" id="sumarpersonaje" onclick="nuevaEscena()">➕</button>
+    <button class="pro5" id="sumarpersonaje" onclick="nuevaEscena()">+</button>
 
     <div id="capitulos">
         <div id="lista-capitulos"></div>
@@ -1027,7 +1035,7 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
     <button class="pro17"  onclick="generarImagenesFaltantes()" style="display: none;" >🖼️✨</button>
     <div class="herramientas" ></div>
     <div id="datos-botones-superiores">
-        <button class="pro5" id="sumarpersonaje" onclick="agregarPersonaje()">➕</button>
+        <button class="pro5" id="sumarpersonaje" onclick="agregarPersonaje()">+</button>
 
 
     </div>
@@ -1119,7 +1127,7 @@ background-image: linear-gradient(120deg, rgba(192, 192, 192, 0.3),  rgba(255, 2
 
 <div id="lugares" class="modal-content">
     <button class="modal-close-button" onclick="cerrarModalConfig()">&times;</button>
-        <input type="text" id="asistente-titulo-input" placeholder="Título del proyecto">
+       
 
     <p>Para utilizar la inteligencia artificial de Silenos necesita:</p>
     <p>Una API KEY de GOOGLE, puede obtenerla aquí:</p>
@@ -1206,8 +1214,8 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
             </div>
         </div>
         <div id="esfera">
-           <button class="pro3" onclick="iniciarAnimacionSalida(), cerrartodo(), abrir('personajes'); ">Nuevo</button>
-            <button class="pro3" onclick="document.getElementById('file-load').click(); iniciarAnimacionSalida();">Cargar</button>
+           <button class="pro3" onclick="iniciarAnimacionSalida(), cerrartodo(), abrir('proyecto'); ">Nuevo</button>
+            <button class="pro3" onclick="iniciarAnimacionSalida(), cerrartodo(), abrir('proyecto');document.getElementById('file-load').click();">Cargar</button>
         </div>
     </div>
 </div>
@@ -1521,6 +1529,9 @@ Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
         // Establecer el modo 2D como predeterminado al cargar la página
         toggleImageMode('2d');
     });
+
+ 
+
 </script>
 
 
