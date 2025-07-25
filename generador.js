@@ -1288,6 +1288,178 @@ async function ultrascorregir(userPrompt) { // Nombre corregido a 'ultras' para 
     }
 }
 
+/**
+ * Orquesta la generación de una portada usando IA para un libro específico.
+ * Ahora crea un modal para recopilar detalles y los usa para generar la portada.
+ * @param {object} libro - El objeto libro al que se le asignará la portada.
+ */
+async function generarPortadaConIA(libro) {
+    // --- 1. CREACIÓN Y GESTIÓN DEL MODAL ---
+    // Usamos una promesa para esperar la entrada del usuario desde el modal.
+    const obtenerDatosDelModal = new Promise((resolve, reject) => {
+         
+
+        const overlay = document.createElement('div');
+        overlay.className = 'ia-modal-overlay';
+
+        const modal = document.createElement('div');
+        modal.className = 'ia-modal-content';
+        modal.innerHTML = `
+            <h3>Generar Portada con IA</h3>
+            <p>Describe los elementos para crear la portada de "${libro.titulo}".</p>
+            <form id="ia-portada-form">
+                <label for="ia-titulo">Título del Libro:</label>
+                <input type="text" id="ia-titulo" value="${libro.titulo}" required>
+
+                <label for="ia-prompt-visual">Descripción Visual (Prompt):</label>
+                <textarea id="ia-prompt-visual" rows="4" placeholder="Ej: Un astronauta solitario mirando una nebulosa de colores..." required></textarea>
+
+                <label for="ia-autores">Autor(es):</label>
+                <input type="text" id="ia-autores" placeholder="Ej: C.S. Lewis">
+
+                <label for="ia-editorial">Editorial:</label>
+                <input type="text" id="ia-editorial" placeholder="Ej: Planeta">
+
+                <div class="ia-modal-buttons">
+                    <button type="button" class="btn-cancelar">Cancelar</button>
+                    <button type="submit" class="btn-generar">Generar</button>
+                </div>
+            </form>
+        `;
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        const form = modal.querySelector('#ia-portada-form');
+        const btnCancel = modal.querySelector('.btn-cancelar');
+
+        const closeModal = () => document.body.removeChild(overlay);
+
+        form.onsubmit = (e) => {
+            e.preventDefault();
+            const datos = {
+                titulo: form.querySelector('#ia-titulo').value,
+                promptVisual: form.querySelector('#ia-prompt-visual').value,
+                autores: form.querySelector('#ia-autores').value,
+                editorial: form.querySelector('#ia-editorial').value,
+            };
+            closeModal();
+            resolve(datos);
+        };
+
+        btnCancel.onclick = () => {
+            closeModal();
+            reject(new Error("Generación cancelada por el usuario."));
+        };
+        overlay.onclick = (e) => {
+             if (e.target === overlay) {
+                closeModal();
+                reject(new Error("Generación cancelada por el usuario."));
+             }
+        };
+    });
+
+    let datosPortada;
+    try {
+        // Espera a que el usuario llene y envíe el formulario del modal.
+        datosPortada = await obtenerDatosDelModal;
+    } catch (error) {
+        console.log(error.message);
+        return; // Termina la función si el usuario cancela.
+    }
+    
+    // --- 2. LLAMADA A LA API CON LOS DATOS DEL MODAL ---
+    
+    alert("Generando portada con IA... Esto puede tardar un momento. Por favor, espera.");
+
+    if (typeof apiKey === 'undefined' || !apiKey) {
+        alert("Error de configuración: La 'apiKey' global no está definida.");
+        return;
+    }
+
+    const MODEL_NAME = 'gemini-2.0-flash-preview-image-generation';
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`;
+
+    // ==================== INICIO DE LA CORRECCIÓN ====================
+    // Nuevo prompt de texto que utiliza los datos del modal.
+    const promptFinal = `Crea una portada de libro artística y profesional.
+    - Título del libro (debe ser visible): "${datosPortada.titulo}"
+    - Descripción visual de la portada: "${datosPortada.promptVisual}"
+    - Nombre del autor (si se proporciona, debe ser visible): "${datosPortada.autores}"
+    - Editorial (si se proporciona, inclúyelo discretamente): "${datosPortada.editorial}"
+    El diseño debe ser coherente, de alta calidad y adecuado para una portada de libro. El título y el autor deben estar bien integrados en la composición.`;
+
+    const payload = {
+        "contents": [{
+            "parts": [
+                { "text": promptFinal },
+                { "inlineData": { "mimeType": "image/png", "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" } }
+            ]
+        }],
+        "generationConfig": {
+            "responseModalities": ["TEXT", "IMAGE"]
+        },
+        // ===================== FIN DE LA CORRECCIÓN ======================
+        "safetySettings": [
+            { "category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE" },
+            { "category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE" },
+            { "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE" },
+            { "category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE" }
+        ]
+    };
+
+    const maxRetries = 3;
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            console.log(`Enviando petición para portada (Intento ${attempt}/${maxRetries})...`);
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const responseData = await response.json();
+
+            if (!response.ok) {
+                throw new Error(responseData.error?.message || "Error desconocido de la API.");
+            }
+
+            const imagePart = responseData.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+
+            if (imagePart?.inlineData?.data) {
+                let imageToUse = imagePart;
+                try {
+                    if (typeof removeGreenScreen === 'function') {
+                        imageToUse = await removeGreenScreen(imagePart);
+                    }
+                } catch (error) {
+                    console.error("Falló el procesamiento de la imagen, se usará la original:", error);
+                }
+
+                const pngDataUrl = `data:${imageToUse.inlineData.mimeType};base64,${imageToUse.inlineData.data}`;
+                libro.portadaUrl = pngDataUrl;
+                renderizarVisorDeLibros();
+                console.log(`Portada generada y asignada al libro "${libro.titulo}".`);
+                return;
+
+            } else {
+                const textResponse = responseData.candidates?.[0]?.content?.parts?.[0]?.text || "No se encontró contenido de imagen.";
+                throw new Error(`La API no devolvió una imagen. Respuesta: ${textResponse}`);
+            }
+
+        } catch (error) {
+            lastError = error;
+            console.error(`Intento ${attempt} fallido:`, error);
+            if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+    }
+
+    alert(`No se pudo generar la portada. Error: ${lastError?.message || "Error desconocido."}`);
+}
+
+
 
 
 async function ultras2(userPrompt) {

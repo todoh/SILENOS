@@ -330,14 +330,16 @@ function renderizarVisorDeLibros() {
 
         // ==================== INICIO DEL CAMBIO ====================
         // Se añade el botón de IA solo si la variable 'apiKey' tiene valor.
-         if (typeof apiKey !== 'undefined' && apiKey) {
+           if (typeof apiKey !== 'undefined' && apiKey) {
             const btnIA = document.createElement('button');
             btnIA.textContent = 'IA 🧠';
             btnIA.className = 'btn-ia';
-            btnIA.title = 'Usar funciones de IA para este libro';
+            btnIA.title = 'Generar portada con IA para este libro'; // Título más descriptivo
             btnIA.onclick = (event) => {
                 event.stopPropagation();
-                abrirModalIA(libro); 
+                // ANTES: abrirModalIA(libro); 
+                // AHORA:
+                generarPortadaConIA(libro); // <-- ¡ESTE ES EL CAMBIO PRINCIPAL!
             };
             botonesContainer.appendChild(btnIA);
         }
