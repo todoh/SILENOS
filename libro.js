@@ -216,18 +216,15 @@ function renderizarVisorDeLibros() {
 
     visorContainer.innerHTML = ''; // Limpia el contenedor antes de renderizar
 
-    // Muestra un mensaje si no hay libros
     if (!libros || libros.length === 0) {
         visorContainer.innerHTML = '<p id="sin-libros-mensaje" class="sin-libros-mensaje"></p>';
         return;
     }
 
-    // Itera sobre cada libro y crea su tarjeta
     libros.forEach(libro => {
         const libroCard = document.createElement('div');
         libroCard.className = 'libro-card';
 
-        // --- Portada del Libro ---
         const portada = document.createElement('div');
         portada.className = 'libro-portada';
         if (libro.portadaUrl) {
@@ -235,15 +232,9 @@ function renderizarVisorDeLibros() {
         }
         portada.onclick = () => {
             seleccionarLibro(libro.id);
-            console.log(`Libro "${libro.titulo}" seleccionado. Abriendo vista...`);
-            if (typeof abrir === 'function') {
-                abrir('capitulosh');
-            } else {
-                console.warn("La función 'abrir(seccion)' no está definida.");
-            }
+            if (typeof abrir === 'function') abrir('capitulosh');
         };
 
-        // --- Título del Libro (Editable) ---
         const titulo = document.createElement('p');
         titulo.className = 'libro-titulo';
         titulo.textContent = libro.titulo;
@@ -258,9 +249,7 @@ function renderizarVisorDeLibros() {
                 const nuevoTitulo = inputEdicion.value.trim();
                 if (nuevoTitulo && nuevoTitulo !== libro.titulo) {
                     libro.titulo = nuevoTitulo;
-                    if (libro.id === libroActivoId) {
-                        seleccionarLibro(libro.id);
-                    }
+                    if (libro.id === libroActivoId) seleccionarLibro(libro.id);
                 }
                 renderizarVisorDeLibros(); 
             };
@@ -276,13 +265,12 @@ function renderizarVisorDeLibros() {
             inputEdicion.select();
         };
 
-        // --- Contenedor de Botones ---
         const botonesContainer = document.createElement('div');
         botonesContainer.className = 'libro-botones';
 
-        // Botón para Cargar Portada
         const btnCargarPortada = document.createElement('button');
         btnCargarPortada.textContent = '📷';
+        btnCargarPortada.title = 'Cargar portada';
         btnCargarPortada.onclick = (event) => {
             event.stopPropagation();
             const inputArchivo = document.createElement('input');
@@ -301,18 +289,18 @@ function renderizarVisorDeLibros() {
             inputArchivo.click();
         };
 
-        // Botón de Exportar (con menú desplegable)
         const btnExportar = document.createElement('button');
         btnExportar.textContent = '📤';
+        btnExportar.title = 'Exportar libro';
         btnExportar.onclick = (event) => {
             event.stopPropagation();
             mostrarMenuExportar(event, libro);
         };
 
-        // Botón para Eliminar
         const btnEliminar = document.createElement('button');
         btnEliminar.textContent = '❌';
         btnEliminar.className = 'btn-eliminar';
+        btnEliminar.title = 'Eliminar libro';
         btnEliminar.onclick = (event) => {
             event.stopPropagation();
             if (confirm(`¿Seguro que quieres eliminar el libro "${libro.titulo}"?`)) {
@@ -323,28 +311,35 @@ function renderizarVisorDeLibros() {
                 }
             }
         };
-
-        // --- Ensambla los elementos en la tarjeta ---
-        botonesContainer.appendChild(btnCargarPortada);
-        botonesContainer.appendChild(btnExportar);
-
+        
         // ==================== INICIO DEL CAMBIO ====================
-        // Se añade el botón de IA solo si la variable 'apiKey' tiene valor.
-           if (typeof apiKey !== 'undefined' && apiKey) {
+        // Botón para visualizar el libro en un modal
+        const btnVisualizar = document.createElement('button');
+        btnVisualizar.textContent = '👁️'; // O el texto "Visualizar"
+        btnVisualizar.title = 'Visualizar libro';
+        btnVisualizar.className = 'btn-visualizar';
+        btnVisualizar.onclick = (event) => {
+            event.stopPropagation();
+            abrirModalVisualizador(libro); // Llamada a la nueva función
+        };
+        // ===================== FIN DEL CAMBIO ======================
+
+        botonesContainer.appendChild(btnCargarPortada);
+        
+        if (typeof apiKey !== 'undefined' && apiKey) {
             const btnIA = document.createElement('button');
             btnIA.textContent = 'IA 🧠';
             btnIA.className = 'btn-ia';
-            btnIA.title = 'Generar portada con IA para este libro'; // Título más descriptivo
+            btnIA.title = 'Generar portada con IA';
             btnIA.onclick = (event) => {
                 event.stopPropagation();
-                // ANTES: abrirModalIA(libro); 
-                // AHORA:
-                generarPortadaConIA(libro); // <-- ¡ESTE ES EL CAMBIO PRINCIPAL!
+                generarPortadaConIA(libro);
             };
             botonesContainer.appendChild(btnIA);
         }
-        // ===================== FIN DEL CAMBIO ======================
-
+        
+        botonesContainer.appendChild(btnVisualizar); // Añadimos el nuevo botón
+        botonesContainer.appendChild(btnExportar);
         botonesContainer.appendChild(btnEliminar);
 
         libroCard.appendChild(portada);
@@ -354,6 +349,7 @@ function renderizarVisorDeLibros() {
         visorContainer.appendChild(libroCard);
     });
 }
+
 
 /**
  * Muestra un menú contextual para seleccionar el formato de exportación.
@@ -892,4 +888,136 @@ function renderizarVisorDeLibro2() {
 
         visorContainer.appendChild(libroCard);
     });
+}
+
+/**
+ * Abre un modal para previsualizar un libro de forma interactiva.
+ * Muestra la portada y permite navegar por las páginas (frames) con
+ * las flechas del teclado o haciendo clic en los laterales.
+ * @param {object} libro - El libro que se va to previsualizar.
+ */
+function abrirModalVisualizador(libro) {
+    // --- 1. Preparar el contenido del libro en un array de páginas ---
+    const paginas = [];
+    const capitulosDelLibro = Object.values(escenas).filter(cap => cap.libroId === libro.id);
+
+    // La primera página es siempre la portada
+    paginas.push({
+        tipo: 'portada',
+        url: libro.portadaUrl,
+        titulo: libro.titulo
+    });
+
+    // Añadir cada frame de cada capítulo como una página
+    capitulosDelLibro.forEach(capitulo => {
+        if (capitulo.frames && capitulo.frames.length > 0) {
+            capitulo.frames.forEach(frame => {
+                paginas.push({
+                    tipo: 'frame',
+                    texto: frame.texto,
+                    imagen: frame.imagen
+                });
+            });
+        }
+    });
+
+    let paginaActual = 0;
+
+    // --- 2. Crear los elementos del Modal dinámicamente ---
+    const overlay = document.createElement('div');
+    overlay.className = 'visualizador-overlay';
+
+    const modal = document.createElement('div');
+    modal.className = 'visualizador-modal';
+    modal.innerHTML = `
+        <div class="visualizador-contenido">
+            <!-- El contenido de la página se insertará aquí -->
+        </div>
+        <div class="visualizador-nav nav-izq">‹</div>
+        <div class="visualizador-nav nav-der">›</div>
+        <div class="visualizador-contador"></div>
+        <div class="visualizador-cerrar">&times;</div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // --- 3. Lógica para mostrar páginas y navegar ---
+    const contenidoDiv = modal.querySelector('.visualizador-contenido');
+    const contadorDiv = modal.querySelector('.visualizador-contador');
+    const navIzq = modal.querySelector('.nav-izq');
+    const navDer = modal.querySelector('.nav-der');
+    const btnCerrar = modal.querySelector('.visualizador-cerrar');
+
+
+    function mostrarPagina(indice) {
+        const pagina = paginas[indice];
+        contenidoDiv.innerHTML = ''; // Limpiar contenido anterior
+
+        if (pagina.tipo === 'portada') {
+            contenidoDiv.style.backgroundImage = pagina.url ? `url('${pagina.url}')` : 'none';
+            contenidoDiv.style.backgroundColor = pagina.url ? '#000' : '#f0f0f0';
+            contenidoDiv.innerHTML = pagina.url ? '' : `<div class="portada-placeholder"><h2>${pagina.titulo}</h2><p>(Sin portada)</p></div>`;
+        } else if (pagina.tipo === 'frame') {
+            contenidoDiv.style.backgroundImage = 'none';
+            contenidoDiv.style.backgroundColor = '#fff';
+            let frameHtml = `<div class="frame-texto">${pagina.texto.replace(/\n/g, '<br>')}</div>`;
+            if (pagina.imagen) {
+                frameHtml += `<div class="frame-imagen"><img src="${pagina.imagen}" alt="Imagen de frame"></div>`;
+            }
+            contenidoDiv.innerHTML = frameHtml;
+        }
+
+        // Actualizar contador y visibilidad de flechas
+        contadorDiv.textContent = `${indice + 1} / ${paginas.length}`;
+        navIzq.style.display = indice === 0 ? 'none' : 'flex';
+        navDer.style.display = indice === paginas.length - 1 ? 'none' : 'flex';
+    }
+
+    function paginaSiguiente() {
+        if (paginaActual < paginas.length - 1) {
+            paginaActual++;
+            mostrarPagina(paginaActual);
+        }
+    }
+
+    function paginaAnterior() {
+        if (paginaActual > 0) {
+            paginaActual--;
+            mostrarPagina(paginaActual);
+        }
+    }
+
+    function cerrarModal() {
+        document.body.removeChild(overlay);
+        // Limpiar listeners para evitar fugas de memoria
+        document.removeEventListener('keydown', manejarTeclado);
+    }
+
+    // --- 4. Añadir Event Listeners ---
+    navDer.onclick = paginaSiguiente;
+    navIzq.onclick = paginaAnterior;
+    btnCerrar.onclick = cerrarModal;
+
+    // Cerrar al hacer clic en el fondo oscuro
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            cerrarModal();
+        }
+    });
+
+    // Navegación con teclado
+    const manejarTeclado = (e) => {
+        if (e.key === 'ArrowRight') {
+            paginaSiguiente();
+        } else if (e.key === 'ArrowLeft') {
+            paginaAnterior();
+        } else if (e.key === 'Escape') {
+            cerrarModal();
+        }
+    };
+    document.addEventListener('keydown', manejarTeclado);
+
+    // Mostrar la primera página (la portada)
+    mostrarPagina(paginaActual);
 }

@@ -313,3 +313,133 @@ overflow-x: hidden; ;
         .ia-modal-buttons button { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;}
         .ia-modal-buttons .btn-generar { background-color: #007bff; color: white; }
         .ia-modal-buttons .btn-cancelar { background-color: #6c757d; color: white; }
+
+
+/* --- Estilos para el Modal Visualizador --- */
+.visualizador-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px);
+}
+
+.visualizador-modal {
+    position: relative;
+    /* ==================== INICIO DEL CAMBIO ==================== */
+    width: auto; /* Hacemos el ancho flexible */
+    height: 90%; /* La altura será el 90% de la ventana */
+    max-width: 90vw; /* No más ancho que el 90% de la ventana */
+    max-height: 85vh; /* No más alto que el 85% de la ventana */
+    aspect-ratio: 2 / 3; /* Proporción de libro (ancho / alto) */
+    /* ===================== FIN DEL CAMBIO ====================== */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.visualizador-contenido {
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    border-radius: 5px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    box-sizing: border-box;
+    /* Estilos para la portada */
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    color: #333;
+    font-family: serif;
+}
+
+.portada-placeholder {
+    text-align: center;
+    color: #888;
+}
+
+.frame-texto {
+    font-size: 1.2em;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    max-height: 80%;
+    overflow-y: auto;
+}
+
+.frame-imagen {
+    margin-top: 20px;
+    max-height: 40%;
+}
+.frame-imagen img {
+    max-width: 100%;
+    max-height: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+
+.visualizador-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 80px;
+    background-color: rgba(0, 0, 0, 0.3);
+    color: white;
+    font-size: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s;
+}
+.visualizador-nav:hover {
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+/* ==================== INICIO DEL CAMBIO ==================== */
+.nav-izq { left: -60px; border-radius: 5px; } /* Ajustado para el nuevo layout */
+.nav-der { right: -60px; border-radius: 5px; } /* Ajustado para el nuevo layout */
+/* ===================== FIN DEL CAMBIO ====================== */
+
+
+.visualizador-contador {
+    position: absolute;
+    bottom: -30px; /* Posicionado debajo del libro */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 15px;
+    font-size: 14px;
+}
+
+.visualizador-cerrar {
+    position: absolute;
+    top: -15px; /* Posicionado encima del libro */
+    right: -15px; /* Posicionado encima del libro */
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    font-size: 25px;
+    color: black;
+    background-color: white;
+    border-radius: 50%;
+    cursor: pointer;
+    text-shadow: none;
+}
