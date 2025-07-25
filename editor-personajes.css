@@ -221,7 +221,7 @@
     gap: 15px;
 }
 
-.edit-text-controls textarea {
+.descripcionh {
     width: 100%;
     flex-grow: 1;
     background-color: rgba(255, 255, 255, 0.9);
@@ -233,7 +233,30 @@
     resize: none;
     font-size: 1.1em;
     line-height: 1.6;
+    top: 0%;
+    bottom: 41%;
+    height: auto;
+    position: relative;
 }
+
+.prompt-visualh {
+    width: 100%;
+    flex-grow: 1;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 15px;
+    box-sizing: border-box;
+    resize: none;
+    font-size: 1.1em;
+    line-height: 1.6;
+     top: 0%;
+    bottom: 0%;
+    height: auto;
+    position: relative;
+}
+
 
 .dark-theme .edit-text-controls textarea {
     background-color: #3a3a3a;

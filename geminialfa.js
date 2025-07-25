@@ -15,8 +15,9 @@ function recolectarYAgruparDatos() {
 
     for (const nodoDato of contenedorDatos.children) {
         const nombre = nodoDato.querySelector("input.nombreh")?.value.trim() || "";
-        const descripcion = nodoDato.querySelector("textarea")?.value.trim() || "";
-        
+     //   const descripcion = nodoDato.querySelector("textarea")?.value.trim() || "";
+        const descripcion = nodoDato.querySelector("textarea.descripcionh")?.value.trim() || "";
+
         const etiquetaEl = nodoDato.querySelector(".change-tag-btn"); 
         const etiqueta = etiquetaEl ? etiquetaEl.dataset.etiqueta : 'indeterminado';
 

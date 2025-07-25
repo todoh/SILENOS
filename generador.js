@@ -1072,7 +1072,9 @@ async function generarImagenParaDatos(userPrompt) {
  * @returns {Promise<{imagen: string, svgContent: null, error: string|null}>}
  * Un objeto con la imagen en formato Data URL PNG.
  */
-async function ultras(userPrompt) { // O puedes llamarla generarImagenConGuardado
+
+ 
+async function ultras(userPrompt) { // Renombrada para coincidir con el código que la llama
     if (!userPrompt || userPrompt.trim() === '') {
         const errorMsg = "The user prompt cannot be empty.";
         console.error(errorMsg);
@@ -1081,7 +1083,6 @@ async function ultras(userPrompt) { // O puedes llamarla generarImagenConGuardad
 
     console.log(`[Generador con Guardado] Iniciando para: "${userPrompt}"`);
 
-    // Nos aseguramos de que la clave de la API esté disponible.
     if (typeof apiKey === 'undefined') {
         const errorMsg = "The global 'apiKey' variable is not defined.";
         console.error(errorMsg);
@@ -1091,12 +1092,12 @@ async function ultras(userPrompt) { // O puedes llamarla generarImagenConGuardad
     const MODEL_NAME = 'gemini-2.0-flash-preview-image-generation';
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`;
 
-   const payload = {
-    "contents": [{
+    const payload = {
+      "contents": [{
         "parts": [
             // Parte 1: Tu instrucción en texto. Es opcional pero muy recomendable.
             {
-                "text": "Genera una nueva imagen BASANDOTE EN el promt: " + userPrompt + ". La imagen debe ser fotorrealista usando la siguiente imagen una referencia solo si vas a crear personajes antropomorficos, (solo ten en cuenta proporciones realistas y cuerpo entero sin fondo, modifica todo lo demás). Si no es un ser antropomorfico, no tengas en cuenta la imagen de referencia para NADA. Si es una persona o personaje antropomorfico; HAZLO DE CUERPO ENTERO (DE PIES (o calzado) A CABEZA) Y CON EL FONDO COLOR CHROMA VERDE Lime / #00ff00 / #0f0 código de color hex PURO. Si es un objeto, artefacto, animal, planta, vehiculo, ropa, comida, cualquier cosa que sea un elemento aislado mostrable sobre fondo blanco, CREALO sobre FONDO COLOR VERDE Lime / #00ff00 / #0f0 código de color hex PURO "
+                "text": "Genera una nueva imagen BASANDOTE EN el promt: " + userPrompt + ". Si vas a crear personajes antropomorficos usa la imagen de referencia solo para las proporciones realistas adaptandolo al genero y edad del personaje, ajusta la pose para ilustrar la esencia del personaje. Si no es un ser antropomorfico, no tengas en cuenta la imagen de referencia para NADA. Los personajes antropomorficos; HAZLO DE CUERPO ENTERO (desde el calzado o los pies hasta la cabeza) CON EL FONDO COLOR CHROMA VERDE Lime / #00ff00 / #0f0 código de color hex PURO. Si es un objeto, artefacto, animal, planta, vehiculo, ropa, comida, personaje, cualquier cosa que sea un elemento aislado, CREALO sobre FONDO COLOR VERDE Lime / #00ff00 / #0f0 código de color hex PURO "
             },
             
             // Parte 2: La imagen. Aquí es donde pegas tu cadena Base64.
@@ -1108,16 +1109,130 @@ async function ultras(userPrompt) { // O puedes llamarla generarImagenConGuardad
             }
         ]
     }],
-    "generationConfig": {
-        "responseModalities": ["TEXT", "IMAGE"]
-    },
-    "safetySettings": [
-        { "category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE" },
-        { "category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE" },
-        { "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE" },
-        { "category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE" }
-    ]
-};
+        "generationConfig": {
+            "responseModalities": ["TEXT", "IMAGE"]
+        },
+        "safetySettings": [
+            { "category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE" },
+            { "category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE" },
+            { "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE" },
+            { "category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE" }
+        ]
+    };
+
+    // --- MEJORA: Lógica de Reintentos ---
+    const maxRetries = 3;
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            console.log(`[Generador con Guardado] Enviando petición (Intento ${attempt}/${maxRetries})...`);
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const responseData = await response.json();
+
+            if (!response.ok) {
+                const errorMessage = responseData.error?.message || "Unknown API error.";
+                console.error(`API Error Response (Intento ${attempt}):`, response.status, responseData);
+                throw new Error(`API Error: ${errorMessage}`);
+            }
+
+            console.log(`[Generador con Guardado] Respuesta de API recibida (Intento ${attempt}).`);
+
+            const imagePart = responseData.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+
+            if (imagePart && imagePart.inlineData && imagePart.inlineData.data) {
+                let imageToUse = imagePart;
+
+                try {
+                    console.log("🖼️ Procesando imagen para quitar fondo verde...");
+                    imageToUse = await removeGreenScreen(imagePart);
+                    console.log("✅ ¡Imagen procesada con transparencia!");
+                } catch (error) {
+                    console.error("Fallo el procesamiento de la imagen, se usará la original:", error);
+                }
+
+                const base64ImageData = imageToUse.inlineData.data;
+                const mimeType = imageToUse.inlineData.mimeType;
+                const pngDataUrl = `data:${mimeType};base64,${base64ImageData}`;
+
+                console.log("[Generador] Imagen extraída con éxito. Devolviendo resultado.");
+
+                // Si tenemos éxito, devolvemos el resultado y salimos de la función.
+                return { imagen: pngDataUrl, svgContent: null, error: null };
+
+            } else {
+                const textResponse = responseData.candidates?.[0]?.content?.parts?.[0]?.text || "No se encontró contenido de imagen en la respuesta.";
+                throw new Error(`La API no devolvió una imagen. Respuesta de texto: ${textResponse}`);
+            }
+
+        } catch (error) {
+            lastError = error;
+            console.error(`[Generador con Guardado] El intento ${attempt} ha fallado:`, error);
+            
+            // Si no es el último intento, esperamos antes de reintentar.
+            if (attempt < maxRetries) {
+                console.log("Esperando 2 segundos antes de reintentar...");
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+        }
+    }
+
+    // Si el bucle termina, significa que todos los intentos fallaron.
+    console.error("[Generador con Guardado] Todos los intentos de generación han fallado.");
+    return { imagen: null, svgContent: null, error: lastError ? lastError.message : "Error desconocido tras múltiples intentos." };
+}
+async function ultrascorregir(userPrompt) { // Nombre corregido a 'ultras' para coincidir con el código que la llama
+    if (!userPrompt || userPrompt.trim() === '') {
+        const errorMsg = "The user prompt cannot be empty.";
+        console.error(errorMsg);
+        return { imagen: null, svgContent: null, error: errorMsg };
+    }
+
+    console.log(`[Generador con Guardado] Iniciando para: "${userPrompt}"`);
+
+    if (typeof apiKey === 'undefined') {
+        const errorMsg = "The global 'apiKey' variable is not defined.";
+        console.error(errorMsg);
+        return { imagen: null, svgContent: null, error: errorMsg };
+    }
+
+    const MODEL_NAME = 'gemini-2.0-flash-preview-image-generation'; // Modelo actualizado a uno más reciente y versátil
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`;
+
+    // --- CAMBIO 1: Payload simplificado ---
+    // El prompt es ahora una descripción directa, y se ha eliminado la parte 'inlineData' vacía.
+    const payload = {
+        "contents": [{
+        "parts": [
+            // Parte 1: Tu instrucción en texto. Es opcional pero muy recomendable.
+            {
+                "text": "Genera una nueva imagen BASANDOTE EN el promt: " + userPrompt + ". Si vas a crear personajes antropomorficos usa la imagen de referencia solo para la pose del personaje. Si no es un ser antropomorfico, no tengas en cuenta la imagen de referencia para NADA. Los personajes antropomorficos; HAZLO DE CUERPO ENTERO (desde el calzado o los pies hasta la cabeza) CON EL FONDO COLOR CHROMA VERDE Lime / #00ff00 / #0f0 código de color hex PURO. Si es un objeto, artefacto, animal, planta, vehiculo, ropa, comida, personaje, cualquier cosa que sea un elemento aislado, CREALO sobre FONDO COLOR VERDE Lime / #00ff00 / #0f0 código de color hex PURO"
+            },
+            
+            // Parte 2: La imagen. Aquí es donde pegas tu cadena Base64.
+            {
+                "inlineData": {
+                    "mimeType": "image/png", // ¡Importante! Cambia esto a "image/jpeg" o el formato correcto de tu imagen.
+                    "data": "" // <-- REEMPLAZA ESTO CON TU CADENA BASE64 COMPLETA
+                }
+            }
+        ]
+    }],
+        "generationConfig": {
+            "responseMimeType": "application/json", // Pedimos JSON para que la respuesta sea estructurada
+        },
+        "safetySettings": [
+            { "category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE" },
+            { "category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE" },
+            { "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE" },
+            { "category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE" }
+        ]
+    };
 
     try {
         console.log("[Generador con Guardado] Enviando petición a la API de Gemini...");
@@ -1137,52 +1252,41 @@ async function ultras(userPrompt) { // O puedes llamarla generarImagenConGuardad
 
         console.log("[Generador con Guardado] Respuesta de API recibida.");
 
+        // Se busca la parte de la respuesta que contiene la imagen
         const imagePart = responseData.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
 
- 
-
-
         if (imagePart && imagePart.inlineData && imagePart.inlineData.data) {
-    let imageToUse = imagePart; // Empezamos con la imagen original
+            let imageToUse = imagePart;
 
-    // Novedad: Intentamos procesar la imagen para quitar el fondo verde
-    try {
-        console.log("🖼️ Procesando imagen para quitar fondo verde...");
-        // "await" pausa el código aquí hasta que la imagen se procese
-        imageToUse = await removeGreenScreen(imagePart); 
-        console.log("✅ ¡Imagen procesada con transparencia!");
-    } catch (error) {
-        console.error("Fallo el procesamiento de la imagen, se usará la original:", error);
-        // Si hay un error, 'imageToUse' seguirá siendo la imagen original
-    }
+            try {
+                console.log("🖼️ Procesando imagen para quitar fondo verde...");
+                imageToUse = await removeGreenScreen(imagePart);
+                console.log("✅ ¡Imagen procesada con transparencia!");
+            } catch (error) {
+                console.error("Fallo el procesamiento de la imagen, se usará la original:", error);
+            }
 
-    // Novedad: Usamos la imagen resultante (procesada o la original si falló)
-    const base64ImageData = imageToUse.inlineData.data;
-    const mimeType = imageToUse.inlineData.mimeType;
-    const pngDataUrl = `data:${mimeType};base64,${base64ImageData}`;
+            const base64ImageData = imageToUse.inlineData.data;
+            const mimeType = imageToUse.inlineData.mimeType;
+            const pngDataUrl = `data:${mimeType};base64,${base64ImageData}`;
 
-    console.log("[Generador] Imagen extraída. Procediendo a guardar y actualizar visualmente.");
+            console.log("[Generador] Imagen extraída. Devolviendo resultado.");
 
-    if (typeof actualizarVisual === 'function') {
-        actualizarVisual(pngDataUrl, userPrompt);
-        console.log("[Generador] La función 'actualizarVisual' ha sido llamada con éxito.");
-    } else {
-        console.error("Error crítico: La función 'actualizarVisual' no fue encontrada.");
-    }
+            // --- CAMBIO 2: La función ahora solo devuelve el resultado ---
+            // Se ha eliminado la llamada directa a 'actualizarVisual'.
+            return { imagen: pngDataUrl, svgContent: null, error: null };
 
-    return { imagen: pngDataUrl, svgContent: null, error: null };
-
-} else {
-    const textResponse = responseData.candidates?.[0]?.content?.parts?.[0]?.text || "No se encontró contenido de imagen en la respuesta.";
-    throw new Error(`La API no devolvió una imagen. Respuesta de texto: ${textResponse}`);
-}
+        } else {
+            // Si la API no devuelve imagen, se captura la respuesta de texto para depuración.
+            const textResponse = responseData.candidates?.[0]?.content?.parts?.[0]?.text || "No se encontró contenido de imagen en la respuesta.";
+            throw new Error(`La API no devolvió una imagen. Respuesta de texto: ${textResponse}`);
+        }
 
     } catch (error) {
         console.error(`[Generador con Guardado] El proceso ha fallado:`, error);
         return { imagen: null, svgContent: null, error: error.message };
     }
 }
-
 
 
 
@@ -1230,10 +1334,11 @@ async function ultras2(userPrompt) {
 
 
 
+
+
 /**
- * Toma un 'imagePart' con fondo verde, lo hace transparente y recorta el espacio vacío.
- * Esta versión es tolerante a las variaciones del color verde y elimina los bordes transparentes.
- * @param {object} imagePart El objeto de imagen original.
+ * Detecta un fondo verde croma, lo elimina, neutraliza el "spill" de color en los bordes y recorta.
+ * @param {object} imagePart El objeto de imagen original (formato Gemini).
  * @returns {Promise<object>} El objeto de imagen procesado y recortado.
  */
 async function removeGreenScreen(imagePart) {
@@ -1243,46 +1348,99 @@ async function removeGreenScreen(imagePart) {
 
     return new Promise((resolve, reject) => {
         const img = new Image();
-        // Necesario para evitar problemas de seguridad del canvas en algunos navegadores
         img.crossOrigin = "Anonymous";
 
         img.onload = () => {
-            // --- PASO 1: Eliminar el fondo verde ---
             const canvas = document.createElement('canvas');
             canvas.width = img.width;
             canvas.height = img.height;
-            const ctx = canvas.getContext('2d', { willReadFrequently: true }); // Optimización para getImageData
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
             ctx.drawImage(img, 0, 0);
 
+            // --- PASO 1: Detectar el color del fondo (solo verdes croma) ---
             let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             let data = imageData.data;
+            const greenColorCounts = new Map();
+            const borderSize = 10;
 
-            // Hacemos la detección del verde más flexible
-            for (let i = 0; i < data.length; i += 4) {
-                const red = data[i];
-                const green = data[i + 1];
-                const blue = data[i + 2];
+            for (let y = 0; y < canvas.height; y++) {
+                for (let x = 0; x < canvas.width; x++) {
+                    // Solo analizamos los píxeles de los bordes
+                    if (x < borderSize || x >= canvas.width - borderSize || y < borderSize || y >= canvas.height - borderSize) {
+                        const index = (y * canvas.width + x) * 4;
+                        const r = data[index];
+                        const g = data[index + 1];
+                        const b = data[index + 2];
 
-                // Si el píxel es predominantemente verde, lo hacemos transparente
-                if (green > 120 && green > red && green > blue) {
-                    data[i + 3] = 0; // Canal Alfa a 0 (totalmente transparente)
+                        // ¡FILTRO MEJORADO! Solo contamos los píxeles que son claramente "verde croma".
+                        // Esto evita que se seleccionen fondos de otros colores (blanco, azul, etc.).
+                        if (g > r * 1.3 && g > b * 1.3 && g > 90) {
+                            const key = `${r},${g},${b}`;
+                            greenColorCounts.set(key, (greenColorCounts.get(key) || 0) + 1);
+                        }
+                    }
                 }
             }
+
+            let dominantColorKey = '';
+            let maxCount = 0;
+            // Buscamos el verde más común entre los que pasaron el filtro
+            for (const [key, count] of greenColorCounts.entries()) {
+                if (count > maxCount) {
+                    maxCount = count;
+                    dominantColorKey = key;
+                }
+            }
+            
+            if (!dominantColorKey) {
+                return reject(new Error("No se pudo detectar un color verde croma dominante en los bordes."));
+            }
+
+            const [chromaR, chromaG, chromaB] = dominantColorKey.split(',').map(Number);
+
+            // --- PASO 2: Eliminar el fondo con un borde suave (tolerancia dual) ---
+            const hardTolerance = 35;
+            const softTolerance = 70;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const distance = Math.sqrt(
+                    Math.pow(data[i] - chromaR, 2) +
+                    Math.pow(data[i + 1] - chromaG, 2) +
+                    Math.pow(data[i + 2] - chromaB, 2)
+                );
+
+                if (distance < hardTolerance) {
+                    data[i + 3] = 0;
+                } else if (distance < softTolerance) {
+                    const ratio = (distance - hardTolerance) / (softTolerance - hardTolerance);
+                    data[i + 3] = Math.floor(data[i + 3] * ratio);
+                }
+            }
+            
+            // --- PASO 3: Limpieza de Bordes (De-spill) ---
+            // Neutraliza el "halo" verdoso que queda en los bordes.
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                const a = data[i + 3];
+
+                // Si el píxel es visible y tiene un tinte verdoso...
+                if (a > 0 && g > r && g > b) {
+                    // Reduce la intensidad del verde, ajustándolo al promedio de rojo y azul.
+                    const newGreen = (r + b) / 2;
+                    data[i + 1] = newGreen;
+                }
+            }
+
             ctx.putImageData(imageData, 0, 0);
 
-            // --- PASO 2: Recortar el espacio transparente (autocrop) ---
-            
-            // Volvemos a leer los datos por si acaso, aunque ya los tenemos
-            imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            data = imageData.data;
-
+            // --- PASO 4: Recortar el espacio transparente (autocrop) ---
             let minX = canvas.width, minY = canvas.height, maxX = -1, maxY = -1;
-
-            // Buscamos los límites del contenido no transparente
             for (let y = 0; y < canvas.height; y++) {
                 for (let x = 0; x < canvas.width; x++) {
                     const alpha = data[(y * canvas.width + x) * 4 + 3];
-                    if (alpha > 0) { // Si el píxel no es transparente
+                    if (alpha > 0) {
                         minX = Math.min(minX, x);
                         minY = Math.min(minY, y);
                         maxX = Math.max(maxX, x);
@@ -1291,35 +1449,19 @@ async function removeGreenScreen(imagePart) {
                 }
             }
 
-            // Si la imagen está completamente vacía, devolvemos una imagen transparente de 1x1
             if (maxX === -1) {
-                resolve({
-                    inlineData: {
-                        mimeType: 'image/png',
-                        data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
-                    }
-                });
+                resolve({ inlineData: { mimeType: 'image/png', data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=' }});
                 return;
             }
 
             const cropWidth = maxX - minX + 1;
             const cropHeight = maxY - minY + 1;
-
-            // Creamos un nuevo canvas con las dimensiones del recorte
             const cropCanvas = document.createElement('canvas');
             cropCanvas.width = cropWidth;
             cropCanvas.height = cropHeight;
             const cropCtx = cropCanvas.getContext('2d');
-
-            // Dibujamos solo la porción recortada de la imagen en el nuevo canvas
-            cropCtx.drawImage(canvas,
-                minX, minY,       // Coordenadas de inicio del recorte en el canvas original
-                cropWidth, cropHeight, // Tamaño del área a recortar
-                0, 0,             // Coordenadas de destino en el nuevo canvas
-                cropWidth, cropHeight  // Tamaño del dibujo en el nuevo canvas
-            );
-
-            // Obtenemos la imagen final como Base64
+            cropCtx.drawImage(canvas, minX, minY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+            
             const newBase64Url = cropCanvas.toDataURL('image/png');
             const newBase64Data = newBase64Url.split(',')[1];
 
@@ -1331,7 +1473,7 @@ async function removeGreenScreen(imagePart) {
             });
         };
 
-        img.onerror = (err) => reject(new Error("Error al cargar la imagen Base64 para procesarla. Detalles: " + err));
+        img.onerror = (err) => reject(new Error("Error al cargar la imagen Base64 para procesarla. Detalles: " + err.message));
         img.src = `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
     });
 }

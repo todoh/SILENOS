@@ -650,18 +650,20 @@ document.addEventListener('DOMContentLoaded', () => {
  * @returns {HTMLElement} El elemento del DOM creado o encontrado.
  */
 function agregarPersonajeDesdeDatos(personajeData = {}) {
+    // --- MODIFICACIÓN 1: Añadido "promptVisual" a la desestructuración ---
     const {
         nombre = '',
         descripcion = '',
+        promptVisual = '',
         imagen = '',
         etiqueta: etiquetaValor = 'indeterminado',
         arco: arcoValor = 'sin_arco',
         svgContent = ''
     } = personajeData;
 
-     // --- CORRECCIÓN CLAVE ---
+    // --- CORRECCIÓN CLAVE ---
     // El contenedor correcto para añadir los elementos es 'listapersonajes'.
-    const lista = document.getElementById('listapersonajes'); 
+    const lista = document.getElementById('listapersonajes');
     if (!lista) {
         console.error("Error crítico: No se encontró el contenedor de datos con ID '#listapersonajes'.");
         return null; // Devuelve null si el contenedor principal no existe.
@@ -670,7 +672,7 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
 
     const contenedor = document.createElement('div');
     contenedor.className = 'personaje';
-       
+
     contenedor.dataset.descripcion = personajeData.descripcion || '';
 
     if (svgContent) {
@@ -738,7 +740,13 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     const cajaTexto = document.createElement('textarea');
     cajaTexto.value = descripcion;
     cajaTexto.placeholder = 'Descripción...';
-cajaTexto.className = 'descripcionh'; // <-- ¡AÑADE ESTA LÍNEA!
+    cajaTexto.className = 'descripcionh'; // <-- ¡AÑADE ESTA LÍNEA!
+
+    // --- MODIFICACIÓN 2: Creación del textarea para el prompt visual ---
+    const cajaPromptVisual = document.createElement('textarea');
+    cajaPromptVisual.value = promptVisual;
+    cajaPromptVisual.placeholder = 'Prompt Visual...';
+    cajaPromptVisual.className = 'prompt-visualh';
 
     const buttonsWrapper = document.createElement('div');
     buttonsWrapper.className = 'edit-buttons-wrapper';
@@ -761,7 +769,7 @@ cajaTexto.className = 'descripcionh'; // <-- ¡AÑADE ESTA LÍNEA!
     botonSuperRealista.title = 'Generar Imagen Superrealista con IA Avanzada';
 
     botonSuperRealista.onclick = async () => {
-        const userPrompt = cajaTexto.value.trim();
+          const userPrompt = cajaPromptVisual.value.trim();
         if (!userPrompt) {
             alert("Por favor, escribe una descripción detallada en la caja de texto para generar la imagen superrealista.");
             return;
@@ -791,13 +799,13 @@ cajaTexto.className = 'descripcionh'; // <-- ¡AÑADE ESTA LÍNEA!
     buttonsWrapper.appendChild(botonSuperRealista);
 
 
-const botonrapido = document.createElement('button');
+    const botonrapido = document.createElement('button');
     botonrapido.className = 'edit-btn';
     botonrapido.innerHTML = '⚡';
     botonrapido.title = 'Generar Imagen rapido con IA Avanzada';
 
     botonrapido.onclick = async () => {
-        const userPrompt = cajaTexto.value.trim();
+          const userPrompt = cajaPromptVisual.value.trim();
         if (!userPrompt) {
             alert("Por favor, escribe una descripción detallada en la caja de texto para generar la imagen superrealista.");
             return;
@@ -828,14 +836,14 @@ const botonrapido = document.createElement('button');
 
 
 
-       const botonHiperUltra = document.createElement('button');
+    const botonHiperUltra = document.createElement('button');
     botonHiperUltra.className = 'edit-btn';
     botonHiperUltra.innerHTML = '😍';
     botonHiperUltra.title = 'Generar Imagen con HIPER-ULTRA IA';
 
     // --- INICIO DE LA CORRECCIÓN ---
     botonHiperUltra.onclick = async () => {
-        const userPrompt = cajaTexto.value.trim();
+          const userPrompt = cajaPromptVisual.value.trim();
         if (!userPrompt) {
             alert("Por favor, escribe una descripción detallada para la generación HIPER-ULTRA.");
             return;
@@ -858,9 +866,9 @@ const botonrapido = document.createElement('button');
             if (resultado && resultado.imagen) {
                 // Llama a la función local 'actualizarVisual' para mostrar la nueva imagen.
                 actualizarVisual(resultado.imagen, cajaTexto.value);
-                
+
                 // 3. ¡LA CLAVE! Elimina el contenido SVG para que al guardar se use la imagen PNG.
-                delete contenedor.dataset.svgContent; 
+                delete contenedor.dataset.svgContent;
             } else if (resultado && resultado.error) {
                 // Muestra un error si la generación falló.
                 throw new Error(resultado.error);
@@ -872,7 +880,7 @@ const botonrapido = document.createElement('button');
         } finally {
             // 4. Rehabilita los botones.
             botones.forEach(b => b.disabled = false);
-            botonHiperUltra.innerHTML = '😍';
+            botonHiperUltra.innerHTML = '�';
         }
     };
     // --- FIN DE LA CORRECCIÓN ---
@@ -910,6 +918,8 @@ const botonrapido = document.createElement('button');
     buttonsWrapper.appendChild(botonEliminar);
 
     textControlsContainer.appendChild(cajaTexto);
+    // --- MODIFICACIÓN 3: Añadido del nuevo textarea al DOM ---
+    textControlsContainer.appendChild(cajaPromptVisual);
     textControlsContainer.appendChild(buttonsWrapper);
     editControls.appendChild(textControlsContainer);
     overlay.appendChild(editControls);
@@ -935,7 +945,8 @@ const botonrapido = document.createElement('button');
     };
 
     botonGenerarIA.onclick = async () => {
-        const descripcionPrompt = cajaTexto.value.trim();
+          const descripcionPrompt = cajaPromptVisual.value.trim();
+        
         if (!descripcionPrompt) {
             alert("Por favor, escribe una descripción para que la IA pueda generar una imagen.");
             return;
@@ -953,7 +964,10 @@ const botonrapido = document.createElement('button');
         botonEliminar.disabled = true;
 
         try {
-            const { imagen, svgContent: nuevoSvg } = await generarImagenDesdePrompt(descripcionPrompt);
+            const {
+                imagen,
+                svgContent: nuevoSvg
+            } = await generarImagenDesdePrompt(descripcionPrompt);
             actualizarVisual(imagen, cajaTexto.value);
             contenedor.dataset.svgContent = nuevoSvg;
         } catch (error) {
@@ -1021,7 +1035,9 @@ const botonrapido = document.createElement('button');
         const svgModificado = group.toSVG();
         contenedor.dataset.svgContent = svgModificado;
 
-        const nuevaImagenSrc = group.toDataURL({ format: 'png' });
+        const nuevaImagenSrc = group.toDataURL({
+            format: 'png'
+        });
         actualizarVisual(nuevaImagenSrc, cajaTexto.value);
 
         fabricEditorCanvas.dispose();
@@ -1050,14 +1066,17 @@ const botonrapido = document.createElement('button');
         inputFile.click();
     };
 
-   if (svgContent && !imagen) {
+    if (svgContent && !imagen) {
         if (typeof fabric !== 'undefined') {
             const tempCanvasEl = document.createElement('canvas');
-            const tempFabricCanvas = new fabric.Canvas(tempCanvasEl, { width: 750, height: 750 });
+            const tempFabricCanvas = new fabric.Canvas(tempCanvasEl, {
+                width: 750,
+                height: 750
+            });
 
             fabric.loadSVGFromString(svgContent, (objects, options) => {
                 if (!objects || objects.length === 0) {
-                    console.warn("El SVG a cargar está vacío o no se pudo interpretar.", svgContent.substring(0,100));
+                    console.warn("El SVG a cargar está vacío o no se pudo interpretar.", svgContent.substring(0, 100));
                     tempFabricCanvas.dispose();
                     return;
                 }
@@ -1078,10 +1097,12 @@ const botonrapido = document.createElement('button');
                 });
                 tempFabricCanvas.add(group);
                 group.center();
-                
+
                 tempFabricCanvas.renderAll();
-                const dataUrl = tempFabricCanvas.toDataURL({ format: 'png' });
-                
+                const dataUrl = tempFabricCanvas.toDataURL({
+                    format: 'png'
+                });
+
                 actualizarVisual(dataUrl, descripcion);
 
                 tempFabricCanvas.dispose();
