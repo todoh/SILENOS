@@ -92,3 +92,203 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
+ #libroscreados {
+    background-color: transparent;
+    width: 80%;
+    margin: 0%;
+    position: fixed; left:10%;
+    top: 16%; 
+   z-index: 5;
+padding: 0% ;
+    height: 73%;
+    display: flex; overflow-y: hidden;
+    overflow-x: scroll;
+ gap: 0px;
+    align-items: flex-start;
+}
+ 
+/* Estilo para la "tarjeta" individual de cada libro */
+.libro-card {
+    display: flex;
+    flex-direction: column; /* Apila los elementos internos (portada, título, botones) verticalmente */
+    align-items: center; /* Centra los elementos horizontalmente */
+    width: auto; /* Ancho fijo para cada tarjeta de libro */
+    height: 93%; position: relative; 
+    aspect-ratio: 9 / 18; margin-top: 2%;margin-bottom: 8%; margin-left: 2%; margin-right: 2%;
+    padding:0px;
+    border: 0px solid #ccc;
+    border-radius: 8px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease-in-out;
+}
+
+.libro-card:hover {
+    transform: translateY(-10px); /* Pequeño efecto al pasar el ratón por encima */
+}
+
+/* Placeholder para la portada del libro */
+.libro-portada {
+    width: 90%;
+    height: auto;
+    aspect-ratio: 15 / 23;;
+    background-color: #e0e0e0; /* Color gris para el placeholder */
+    border: 1px dashed #a0a0a0;
+    margin-bottom: 12px; /* Espacio entre la portada y el título */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #a0a0a0;
+    font-size: 12px; background-size: cover;
+
+  /* Centra la imagen dentro del contenedor */
+  background-position: center;
+
+  /* Evita que la imagen se repita si es más pequeña que el contenedor */
+  background-repeat: no-repeat;
+}
+
+ 
+
+
+.libro-portada::before {
+    content: ''; /* Texto para el placeholder */
+}
+
+/* Estilo para el título del libro */
+.libro-titulo {
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    margin: 0 0 12px 0; /* Sin margen superior, espacio inferior */
+    word-break: break-word; /* Evita que títulos largos rompan el layout */
+}
+
+/* Contenedor para los botones */
+.libro-botones {
+    display: flex;
+    gap: 4px; /* Espacio entre los botones */
+}
+
+/* Mensaje que se muestra cuando no hay libros */
+.sin-libros-mensaje {
+    width: 100%;
+    text-align: center;
+    color: #666;
+}
+
+ #proyecto {
+    background-color: transparent;
+    width:100%;
+    margin: 0%;
+    position: absolute; left: 0%;
+    top: 0%;
+padding: 0% ;
+    height: 100%;
+    display: none;
+    align-items: flex-start;
+}
+ 
+
+/* Estilos para el menú de exportación */
+.export-menu-container {
+     
+    position: absolute;
+    z-index: 100;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+transform: translateY(-100%);
+
+}
+
+.export-menu-container button {
+    background: none;
+    border: none;
+    padding: 10px 15px;
+    text-align: left;
+    width: 100%;
+    cursor: pointer;
+}
+
+.export-menu-container button:hover {
+    background-color: #f0f0f0;
+}
+
+/* 1. CONTENEDOR PRINCIPAL Y POSICIONAMIENTO */
+/* Fija el elemento en la esquina inferior izquierda con el z-index correcto */
+.language-selector-css {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 8888888;
+}
+
+/* 2. EL BOTÓN */
+.lang-button-css {
+background-color: #000000;
+  color: rgb(255, 255, 255);
+  padding: 10px 15px;
+  border: none;
+  border-radius: 100%;
+  cursor: pointer;
+  font-family: sans-serif;
+  font-size: 16px;
+  width: auto; /* Ancho fijo para consistencia */
+  transition:   transform 0.3s;
+}
+
+.lang-button-css:hover {
+  transform: scale(1.1);
+}
+
+
+/* 3. LA LISTA DESPLEGABLE */
+.lang-menu-css {
+  /* Oculta por defecto */
+  visibility: hidden;
+  opacity: 0; align-items: start;
+  justify-content: start;
+   display: flex; flex-direction: column;
+  /* Posicionamiento y estilos */
+  position: absolute;
+  bottom: 100%;      /* Coloca la lista ENCIMA del botón */
+  left: 0;
+  margin: 0 0 5px 0; /* Espacio de 5px entre botón y lista */
+  padding: 0;
+  height: 50dvh;
+overflow-y: scroll;
+overflow-x: hidden; ;
+  list-style: none;
+  background-color: white;
+  border-radius: 5px;
+  box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
+  width:150px; /* La lista ocupa el mismo ancho que el botón */
+  transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+}
+
+/* 4. LA MAGIA PARA MOSTRAR LA LISTA */
+/* Cuando el usuario hace hover sobre el contenedor, la lista se muestra. */
+.language-selector-css:hover .lang-menu-css {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* 5. LOS ELEMENTOS Y ENLACES DE LA LISTA */
+.lang-menu-css li a {width: 100%;
+  display: flex;
+  align-items: left;
+  padding: 10px 15px;
+  color: #333;
+  text-decoration: none;
+  font-family: sans-serif;
+  transition: background-color 0.2s;
+}
+
+/* Efecto hover para los enlaces */
+.lang-menu-css li a:hover {
+  background-color: #f2f2f2;
+}

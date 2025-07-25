@@ -86,7 +86,7 @@ height: fit-content!important;
 width: fit-content!important;
 position: fixed !important;
 top: 2% !important;
-left: 3% !important;  transition: transform 0.3s ease;
+left: 2% !important;  transition: transform 0.3s ease;
 
 transform: translateX(-50%) !important;
 font-size: xx-large !important;
@@ -101,7 +101,7 @@ width: fit-content!important;
 position: fixed !important;  transition: transform 0.3s ease;
 
 top: 7% !important;
-left: 3% !important;
+left: 2% !important;
 transform: translateX(-50%) !important;
 font-size: xx-large !important;
 padding: 2px !important;
@@ -115,7 +115,22 @@ height: fit-content!important;
 width: fit-content!important;
 position: fixed !important;
 top: 12% !important;
-left: 3% !important;
+left: 2% !important;
+transform: translateX(-50%) !important;
+font-size: xx-large !important;
+padding: 2px !important;
+margin: 0px !important;   transition: transform 0.3s ease;
+
+padding-left: 1% !important; padding-right: 1% !important; /* Añadido para margen horizontal */
+} 
+
+.pro18 {background-color: transparent !important; color: #000000 !important; border:none !important;
+z-index: 1000!important;
+height: fit-content!important;
+width: fit-content!important;
+position: fixed !important;
+top: 17% !important;
+left: 2% !important;
 transform: translateX(-50%) !important;
 font-size: xx-large !important;
 padding: 2px !important;
@@ -129,6 +144,7 @@ padding-left: 1% !important; padding-right: 1% !important; /* Añadido para marg
 
  .pro17:hover  {transform: translateX(-50%) scale(1.3) !important;}
  .pro16:hover {transform: translateX(-50%) scale(1.3) !important;}
+ .pro18:hover {transform: translateX(-50%) scale(1.3) !important;}
  
 
 .pro7 {background-color: transparent!important; color: #333 !important; border:none !important;
@@ -399,17 +415,6 @@ height: 6%;
 background-color: #ffffff00;
 width: 100%; flex-direction: row;}
 
-#capitulosh, #escenah {
-    background-color: transparent;
-    position: absolute;
-    top: 0%;
-    left: 0%;
-    right: 0%;
-    bottom: 0%;
-    display: none; width: 100%; height: 100%;
-  
-    padding: 0%;
-}
 
 #ia {   background-color: #77777700;
     width: 99%;
@@ -611,28 +616,22 @@ padding: 5% ;
     height: 97%;
     display: none;
     align-items: flex-start;
-   
 }
 
 
-
-
-
-.escena {    border: 0px solid #8a8a8a; margin: 5px 0; margin-bottom: 1%;
- margin-right: 0%;  margin-left: 0%;   box-shadow: 0 2px 5px rgba(0,0,0,0.1);  
-    border-radius: 0%;    background-color: transparent;
-     
+.escena {    
+border: 0px solid #8a8a8a; margin: 5px 0; margin-bottom: 1%;
+margin-right: 0%;  margin-left: 0%;   box-shadow: 0 2px 5px rgba(0,0,0,0.1);  
+border-radius: 0%;    background-color: transparent; 
 padding-left: 1%; 
-    cursor: default;
-    padding: 0px;
-    
-    margin: 15px 5px;
-  
-        overflow-y: hidden !important;    
-    
-    height: auto;
-    overflow: hidden !important; /* Importante para que el borde redondeado funcione bien */
+cursor: default;
+padding: 0px;
+margin: 15px 5px;
+overflow-y: hidden !important;    
+height: auto;
+overflow: hidden !important; /* Importante para que el borde redondeado funcione bien */
 }
+
 #drop-zone { position: absolute;
 border: 2px dashed #ccc; padding: 20px; 
 display: flex; bottom: 3%;
@@ -657,6 +656,21 @@ left: 52%;
 right: 5%;
 height: auto;
 top: 55%;}
+
+#capitulosh, #escenah {
+    background-color: transparent;
+    position: absolute;
+    top: 0%;
+    left: 0%;
+    right: 0%;
+    bottom: 0%;
+    display: none; width: 100%; height: 100%;
+  
+    padding: 0%;
+}
+
+
+
 #capitulos, #escenass {position: absolute;
  bottom: 0%;
 width: 100%; left:0%;

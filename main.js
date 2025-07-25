@@ -79,7 +79,6 @@ function cerrartodo() {
     document.getElementById('biblioteca').style.display = 'none';
     document.getElementById('guion-literario').style.display = 'none';
     document.getElementById('momentos').style.display = 'none';
-    document.getElementById('galeria').style.display = 'none';
     document.getElementById('vistageneral').style.display = 'none';
     document.getElementById('juego').style.display = 'none';
     document.getElementById('animacionsvg').style.display = 'none';
@@ -137,6 +136,9 @@ function abrir(escena) {
         renderizarGaleria(todasLasImagenes);
     }
 
+    if (escena === 'proyecto') {
+        renderizarVisorDeLibros();
+    }
    // Llamamos a la función una sola vez, pasándole el nombre de la escena activa.
    actualizarBotonContextual(escena); 
 }
@@ -1149,7 +1151,7 @@ function renderizarSelectorDeLibro() {
     crearLibroBtn.className = 'guion-popup-item-local crear-libro-btn-popup';
     crearLibroBtn.innerHTML = '➕ Crear Nuevo Libro';
     crearLibroBtn.onclick = () => crearNuevoLibro();
-    popup.appendChild(crearLibroBtn);
+   // popup.appendChild(crearLibroBtn);
 
     if (libros.length > 0) {
         popup.appendChild(document.createElement('hr'));
@@ -1224,17 +1226,7 @@ function guardarNuevoNombreLibro(inputElement, libroId) {
 }
 
 
-function crearNuevoLibro() {
-    const titulo = prompt("Nombre del nuevo libro:", `Libro ${libros.length + 1}`);
-    if (titulo) {
-        const nuevoLibro = {
-            id: `libro_${Date.now()}`,
-            titulo: titulo
-        };
-        libros.push(nuevoLibro);
-        seleccionarLibro(nuevoLibro.id); 
-    }
-}
+ 
 
 function seleccionarLibro(id) {
     libroActivoId = id;
@@ -1309,7 +1301,7 @@ function cerrarModalSeleccionLibro() {
     }
     libroDestinoSeleccionadoId = null; 
 }
-
+ 
 function confirmarSeleccionYProcesar() {
     const guionSeleccionado = document.getElementById('guion-origen-select').value;
 

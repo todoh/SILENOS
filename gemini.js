@@ -36,7 +36,7 @@ async function enviartexto() {
 
 // Actualiza la visualización de la API key al cargar la página
 if (document.getElementById("apiKeyDisplay")) {
-    document.getElementById("apiKeyDisplay").textContent = apiKey ? "Definida" : "[No definida]";
+    document.getElementById("apiKeyDisplay").textContent = apiKey ? "Definida" : "[🔴]";
 }
 
 if(document.getElementById('apiInput')){
@@ -54,7 +54,7 @@ function updateApiKey() {
        // localStorage.setItem('silenosGoogleApiKey', newKey);
         
         if (document.getElementById("apiKeyDisplay")) {
-            document.getElementById("apiKeyDisplay").textContent = "Definida";
+            document.getElementById("apiKeyDisplay").textContent = "🟢";
         }
         alert("API Key actualizada correctamente.");
     } else {

@@ -50,29 +50,44 @@ let _compressImageForSave = (imagenSrc) => {
 
 
 async function empaquetarDatosDelProyecto() {
+
+    if (typeof guardarEscenaActual === 'function') {
+        guardarEscenaActual();
+    }
+
+
+
     // Esta función empaqueta todo en un objeto JSON.
     console.log("Empaquetando datos del proyecto...");
     const listapersonajes = document.getElementById("listapersonajes").children;
     const promesasCapitulos = Object.keys(escenas).map(async (id) => {
         const capitulo = escenas[id];
         const framesProcesados = await Promise.all(
-            (capitulo.frames || []).map(async (frame) => ({ ...frame, imagen: await _compressImageForSave(frame.imagen || "") }))
+            (capitulo.frames || []).map(async (frame) => ({ ...frame,
+                imagen: await _compressImageForSave(frame.imagen || "")
+            }))
         );
-        return { ...capitulo, id, frames: framesProcesados };
+        return { ...capitulo,
+            id,
+            frames: framesProcesados
+        };
     });
 
     // --- LÓGICA DE GUARDADO DE PERSONAJES (MODIFICADA) ---
     const promesasPersonajes = Array.from(listapersonajes).map(async (personajeNode) => {
         const nombre = personajeNode.querySelector("input.nombreh")?.value || "";
-        const descripcion = personajeNode.querySelector("textarea")?.value || "";
+        // Se especifica la clase para evitar ambigüedad entre los dos textareas
+        const descripcion = personajeNode.querySelector("textarea.descripcionh")?.value || "";
+        // Se añade la lectura del nuevo campo promptVisual
+        const promptVisual = personajeNode.querySelector("textarea.prompt-visualh")?.value || "";
         const svgContent = personajeNode.dataset.svgContent || "";
-        
+
         const etiquetaEl = personajeNode.querySelector(".change-tag-btn");
         const arcoEl = personajeNode.querySelector(".change-arc-btn");
-        
+
         const etiqueta = etiquetaEl ? etiquetaEl.dataset.etiqueta : 'indeterminado';
         const arco = arcoEl ? arcoEl.dataset.arco : 'sin_arco';
-        
+
         let imagenComprimida = "";
 
         // Si no hay SVG, entonces sí procesamos y guardamos la imagen del tag <img>.
@@ -82,19 +97,31 @@ async function empaquetarDatosDelProyecto() {
                 imagenComprimida = await _compressImageForSave(imagenSrc);
             }
         }
-        
-        // Si no hay nombre, descripción, imagen ni svg, no guardamos el dato.
-        if (!nombre && !descripcion && !imagenComprimida && !svgContent) return null;
 
-        // Devolvemos el objeto. Si hay svgContent, imagenComprimida será "", ahorrando espacio.
-        return { nombre, descripcion, imagen: imagenComprimida, svgContent, etiqueta, arco };
+        // Si no hay nombre, descripción, imagen ni svg, no guardamos el dato.
+        if (!nombre && !descripcion && !promptVisual && !imagenComprimida && !svgContent) return null;
+
+        // Devolvemos el objeto incluyendo el nuevo campo promptVisual.
+        return {
+            nombre,
+            descripcion,
+            promptVisual,
+            imagen: imagenComprimida,
+            svgContent,
+            etiqueta,
+            arco
+        };
     });
 
     const promesasEscenasStory = Promise.all((storyScenes || []).map(async (escena) => {
-         const tomasProcesadas = await Promise.all(
-            (escena.tomas || []).map(async (toma) => ({ ...toma, imagen: await _compressImageForSave(toma.imagen || "") }))
-         );
-         return { ...escena, tomas: tomasProcesadas };
+        const tomasProcesadas = await Promise.all(
+            (escena.tomas || []).map(async (toma) => ({ ...toma,
+                imagen: await _compressImageForSave(toma.imagen || "")
+            }))
+        );
+        return { ...escena,
+            tomas: tomasProcesadas
+        };
     }));
     const nodosMomento = document.querySelectorAll('#momentos-lienzo .momento-nodo');
     const promesasMomentos = Array.from(nodosMomento).map(async (nodo) => {
@@ -109,7 +136,7 @@ async function empaquetarDatosDelProyecto() {
             acciones: JSON.parse(nodo.dataset.acciones || '[]')
         };
     });
-    
+
     const generacionesItems = document.querySelectorAll('#generaciones-container .generacion-item');
     const promesasGeneraciones = Array.from(generacionesItems).map(async (item) => {
         const img = item.querySelector('img');
@@ -123,12 +150,12 @@ async function empaquetarDatosDelProyecto() {
         return null;
     });
 
-    const processedChapters = (await Promise.all(promesasCapitulos)).sort((a,b) => a.id.localeCompare(b.id));
+    const processedChapters = (await Promise.all(promesasCapitulos)).sort((a, b) => a.id.localeCompare(b.id));
     const processedCharacters = (await Promise.all(promesasPersonajes)).filter(Boolean);
     const processedStoryScenes = await promesasEscenasStory;
     const processedMomentos = await Promise.all(promesasMomentos);
     const processedGeneraciones = (await Promise.all(promesasGeneraciones)).filter(Boolean);
-    
+
     console.log(`[IO] Empaquetando ${processedGeneraciones.length} imágenes de la galería.`);
 
     return {
@@ -141,8 +168,13 @@ async function empaquetarDatosDelProyecto() {
         guionLiterario: guionLiterarioData,
         apiKeyGemini: typeof apiKey !== 'undefined' ? apiKey : '',
         informeGeneral: typeof ultimoInformeGenerado !== 'undefined' ? ultimoInformeGenerado : null,
-        libros: typeof libros !== 'undefined' ? libros : []
+        libros: typeof libros !== 'undefined' ? libros : [],
+        animacionesSvg: typeof window.escenasSvg !== 'undefined' ? window.escenasSvg : []
+
     };
+
+
+
 }
 
 
@@ -155,7 +187,9 @@ async function buscarArchivoEnDrive() {
     console.log("Buscando archivo de proyecto en Google Drive...");
 
     const response = await fetch(`https://www.googleapis.com/drive/v3/files?q=name='${PROJECT_FILENAME}' and trashed=false&spaces=drive&fields=files(id,name)`, {
-        headers: { 'Authorization': `Bearer ${gapi_access_token}` }
+        headers: {
+            'Authorization': `Bearer ${gapi_access_token}`
+        }
     });
 
     if (!response.ok) {
@@ -185,20 +219,24 @@ async function guardarProyectoEnDrive() {
         return;
     }
 
-    if(typeof progressBarManager !== 'undefined') {
+    if (typeof progressBarManager !== 'undefined') {
         progressBarManager.start('Guardando en Drive...');
     }
 
     const projectData = await empaquetarDatosDelProyecto();
-    const projectDataBlob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+    const projectDataBlob = new Blob([JSON.stringify(projectData, null, 2)], {
+        type: 'application/json'
+    });
 
     const metadata = {
         'name': PROJECT_FILENAME,
         'mimeType': 'application/json',
     };
-    
+
     const formData = new FormData();
-    formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    formData.append('metadata', new Blob([JSON.stringify(metadata)], {
+        type: 'application/json'
+    }));
     formData.append('file', projectDataBlob);
 
     let url = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
@@ -212,7 +250,9 @@ async function guardarProyectoEnDrive() {
     try {
         const response = await fetch(url, {
             method: method,
-            headers: { 'Authorization': `Bearer ${gapi_access_token}` },
+            headers: {
+                'Authorization': `Bearer ${gapi_access_token}`
+            },
             body: formData
         });
 
@@ -224,13 +264,13 @@ async function guardarProyectoEnDrive() {
         projectFileId = data.id;
         console.log("Proyecto guardado con éxito. ID del archivo:", projectFileId);
 
-        if(typeof progressBarManager !== 'undefined') {
+        if (typeof progressBarManager !== 'undefined') {
             progressBarManager.finish();
         }
 
     } catch (error) {
         console.error(error);
-        if(typeof progressBarManager !== 'undefined') {
+        if (typeof progressBarManager !== 'undefined') {
             progressBarManager.error('Fallo al guardar');
         }
     }
@@ -258,7 +298,9 @@ async function cargarProyectoDesdeDrive() {
     console.log(`Cargando datos desde el archivo de Drive ID: ${projectFileId}`);
     try {
         const response = await fetch(`https://www.googleapis.com/drive/v3/files/${projectFileId}?alt=media`, {
-            headers: { 'Authorization': `Bearer ${gapi_access_token}` }
+            headers: {
+                'Authorization': `Bearer ${gapi_access_token}`
+            }
         });
 
         if (!response.ok) {
@@ -284,7 +326,7 @@ async function cargarProyectoDesdeDrive() {
  * Carga un objeto de datos en el estado de la aplicación.
  */
 function cargarDatosEnLaApp(data) {
-    if(typeof reiniciarEstadoApp === 'function') reiniciarEstadoApp();
+    if (typeof reiniciarEstadoApp === 'function') reiniciarEstadoApp();
 
     if (data.titulo) {
         document.getElementById("titulo-proyecto").innerText = data.titulo;
@@ -294,7 +336,8 @@ function cargarDatosEnLaApp(data) {
         data.capitulos.forEach(capitulo => {
             const capituloId = capitulo.id;
             if (capituloId) {
-                escenas[capituloId] = { ...capitulo };
+                escenas[capituloId] = { ...capitulo
+                };
                 delete escenas[capituloId].id;
             }
         });
@@ -310,11 +353,11 @@ function cargarDatosEnLaApp(data) {
     }
 
     migrarEscenasSinLibro();
-    
+
     if (libros.length > 0) {
         seleccionarLibro(libros[0].id);
     }
-    
+
     if (typeof actualizarLista === 'function') actualizarLista();
 
     if (data.personajes && Array.isArray(data.personajes)) {
@@ -333,30 +376,31 @@ function cargarDatosEnLaApp(data) {
     }
 
     if (data.apiKeyGemini && typeof data.apiKeyGemini === 'string') {
-        if(typeof updateApiKey === 'function') {
-             const tempInput = document.createElement('input');
-             tempInput.value = data.apiKeyGemini;
-             const originalInput = document.getElementById('apiInput');
-             if(originalInput) originalInput.value = data.apiKeyGemini;
-             updateApiKey();
-             console.log("API Key de Gemini cargada.");
+        if (typeof updateApiKey === 'function') {
+            const tempInput = document.createElement('input');
+            tempInput.value = data.apiKeyGemini;
+            const originalInput = document.getElementById('apiInput');
+            if (originalInput) originalInput.value = data.apiKeyGemini;
+            updateApiKey();
+            console.log("API Key de Gemini cargada.");
         }
+        
     }
 
     if (data.momentos && Array.isArray(data.momentos)) {
-         data.momentos.forEach(momento => {
+        data.momentos.forEach(momento => {
             if (typeof crearMomentoEnLienzoDesdeDatos === 'function') {
                 crearMomentoEnLienzoDesdeDatos(momento);
             }
         });
-        if(typeof redrawAllConnections === 'function') {
-           setTimeout(redrawAllConnections, 100); 
+        if (typeof redrawAllConnections === 'function') {
+            setTimeout(redrawAllConnections, 100);
         }
     }
-     
+
     if (data.escenas && Array.isArray(data.escenas)) {
         storyScenes = data.escenas;
-        if(typeof renderEscenasUI === 'function') renderEscenasUI();
+        if (typeof renderEscenasUI === 'function') renderEscenasUI();
     }
 
     if (data.informeGeneral) {
@@ -371,7 +415,7 @@ function cargarDatosEnLaApp(data) {
         }
         console.log("Estructura de Libros cargada.");
     }
-    
+
     // INICIO: CARGAR IMÁGENES DE LA GALERÍA DEL COMPOSITOR (MÉTODO AUTOSUFICIENTE)
     const generaciones = data.generacionesCompositor;
 
@@ -417,7 +461,7 @@ function cargarDatosEnLaApp(data) {
             infoContainer.appendChild(deleteButton);
             itemContainer.appendChild(imgElement);
             itemContainer.appendChild(infoContainer);
-            
+
             generacionesGrid.prepend(itemContainer);
         };
 
@@ -429,9 +473,9 @@ function cargarDatosEnLaApp(data) {
 
         // Invertimos el array para que `prepend` mantenga el orden visual original.
         const reversedGeneraciones = [...generaciones].reverse();
-        
+
         reversedGeneraciones.forEach((gen, index) => {
-             if (gen.src && gen.prompt) {
+            if (gen.src && gen.prompt) {
                 console.log(`[IO] Reconstruyendo item ${index + 1}: ${gen.prompt}`);
                 reconstruirItemDeGaleria(gen.src, gen.prompt);
             }
@@ -443,9 +487,26 @@ function cargarDatosEnLaApp(data) {
         }
     }
     // FIN: CARGAR IMÁGENES DE LA GALERÍA DEL COMPOSITOR
+    if (data.animacionesSvg && Array.isArray(data.animacionesSvg)) {
+        console.log(`[IO] Cargando ${data.animacionesSvg.length} animaciones SVG.`);
+        // Comprueba si el script de animaciones SVG está cargado y sus funciones disponibles
+        if (typeof window.escenasSvg !== 'undefined') {
+            window.escenasSvg = data.animacionesSvg;
 
+            // Si hay escenas cargadas, actualiza la interfaz del editor de animación
+            if (window.escenasSvg.length > 0) {
+                if (typeof cargarEscena === 'function') {
+                    // Usamos un pequeño retardo para asegurar que la UI esté lista
+                    setTimeout(() => cargarEscena(0), 100);
+                }
+            } else if (typeof renderizarListaDeEscenas === 'function') {
+                // Si no hay escenas, al menos actualizamos la lista (que estará vacía)
+                setTimeout(renderizarListaDeEscenas, 100);
+            }
+        }
+    }
     console.log("Datos del proyecto cargados en la aplicación.");
-
+renderizarVisorDeLibros();
     if (typeof flexear === 'function') flexear('silenos');
 }
 
@@ -460,7 +521,9 @@ async function guardarJSON() {
     console.log("Guardando el proyecto en formato JSON local...");
     try {
         const data = await empaquetarDatosDelProyecto();
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+        const blob = new Blob([JSON.stringify(data, null, 2)], {
+            type: "application/json"
+        });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
         a.download = `${data.titulo.replace(/\s+/g, '_')}.json`;
@@ -492,6 +555,7 @@ function cargarJSON(event) {
         cargarDatosEnLaApp(data);
     };
     reader.readAsText(file);
+    renderizarVisorDeLibros();
 }
 
 
