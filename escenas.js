@@ -120,7 +120,7 @@ function actualizarLista() {
             }
         };
         let frameBtn = document.createElement("button");
-        frameBtn.textContent = "➕ 🖼️";
+        frameBtn.textContent = "+ 🖼️";
         frameBtn.className = "ideframe";
         frameBtn.onclick = (event) => {
             event.stopPropagation();
@@ -231,8 +231,22 @@ function actualizarLista() {
                 event.stopPropagation();
                 agregarFrame(id, index);
             };
+
+            // --- INICIO DE LA MODIFICACIÓN: Botón para generar imagen con IA ---
+            let generarImagenBtn = document.createElement("button");
+            generarImagenBtn.textContent = "✨";
+            generarImagenBtn.title = "Generar Imagen con IA";
+            generarImagenBtn.className = "ideframeh3"; // Reutiliza una clase existente para un estilo similar
+            generarImagenBtn.onclick = (event) => {
+                event.stopPropagation();
+                // Llama a la nueva función de generación
+                generarImagenParaFrameConIA(id, index);
+            };
+            // --- FIN DE LA MODIFICACIÓN ---
+
             frameDiv.appendChild(inputTexto);
             frameDiv.appendChild(label);
+            frameDiv.appendChild(generarImagenBtn); // Añade el nuevo botón al frame
             frameDiv.appendChild(imagenPreview);
             frameDiv.appendChild(agregarFrameBtn);
             frameDiv.appendChild(crearBotonEliminarFrame(index, id));
@@ -243,7 +257,8 @@ function actualizarLista() {
 
         lista.appendChild(div);
     });
-}   
+}
+ 
 
 function crearEscenasAutomaticamente(nombreBase, numEscenas, numFrames) {
     if (!libroActivoId) {
@@ -314,3 +329,51 @@ function fileToBase64(file) {
         reader.readAsDataURL(file);
     });
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+
+  const overlay = document.getElementById('image-preview-overlay');
+  const enlargedImg = document.getElementById('enlarged-img');
+  const closeBtn = overlay.querySelector('.close-btn');
+
+  function closePreview() {
+    overlay.classList.remove('visible');
+  }
+
+  document.addEventListener('click', (event) => {
+    
+    // --- THIS IS THE CORRECTED PART ---
+    // First, find the closest parent div with the class 'frameh'
+    const targetFrameDiv = event.target.closest('div.frameh');
+    
+    if (targetFrameDiv) {
+      // If we found the div, now find the image inside it
+      const imageInside = targetFrameDiv.querySelector('img');
+      
+      if (imageInside) {
+        // If an image exists, open the preview with its source
+        event.preventDefault();
+        enlargedImg.src = imageInside.src;
+        overlay.classList.add('visible');
+      }
+    }
+  });
+
+  // If you click on the overlay (the dark background), it closes
+  overlay.addEventListener('click', (event) => {
+    if (event.target === overlay) {
+      closePreview();
+    }
+  });
+  
+  // If you click the close button, it also closes
+  closeBtn.addEventListener('click', closePreview);
+
+  // You can also close the preview by pressing the 'Escape' key
+  document.addEventListener('keydown', (event) => {
+    if (event.key === "Escape" && overlay.classList.contains('visible')) {
+      closePreview();
+    }
+  });
+
+});

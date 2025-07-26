@@ -4,24 +4,53 @@ let ultimaHistoriaGeneradaJson = null;
 let planteamientoGeneralGlobal = "";
 let resumenPorEscenasGlobal = [];
 let tituloHistoriaGlobal = "";
-
+let arcosFiltrados = new Set();
 /**
- * Recolecta y agrupa los datos de la sección "Datos" por su etiqueta.
+ * Lee los checkboxes del modal y guarda los valores seleccionados
+ * en la variable global 'arcosFiltrados'.
  */
+function actualizarArcosSeleccionados() {
+    const checkboxesMarcados = document.querySelectorAll('.ia-arc-filter-checkbox:checked');
+    // Creamos un nuevo Set con los valores de los checkboxes marcados
+    arcosFiltrados = new Set(Array.from(checkboxesMarcados).map(cb => cb.value));
+    
+    console.log("Arcos seleccionados para el filtro:", arcosFiltrados); // Útil para depurar
+}
+ 
 function recolectarYAgruparDatos() {
+    // Ya no se consultan los checkboxes aquí. Se usa la variable global 'arcosFiltrados'.
+    // Si el set de filtros está vacío, es mejor devolver un objeto vacío para evitar procesar todo.
+    if (!arcosFiltrados || arcosFiltrados.size === 0) {
+        console.warn("Filtro de arcos vacío. No se recolectaron datos para la IA.");
+        return {};
+    }
+
     const datosAgrupados = {};
     const contenedorDatos = document.getElementById("listapersonajes");
     if (!contenedorDatos) return datosAgrupados;
 
     for (const nodoDato of contenedorDatos.children) {
         const nombre = nodoDato.querySelector("input.nombreh")?.value.trim() || "";
-        const descripcion = nodoDato.querySelector("textarea.descripcionh")?.value.trim() || "";
-        const etiquetaEl = nodoDato.querySelector(".change-tag-btn");
-        const etiqueta = etiquetaEl ? etiquetaEl.dataset.etiqueta : 'indeterminado';
-
-        if (etiqueta === 'indeterminado' || !nombre) {
-            continue;
+        if (!nombre) {
+            continue; // Siempre omitir datos sin nombre.
         }
+
+        const descripcion = nodoDato.querySelector("textarea")?.value.trim() || "";
+        
+        // --- CORRECCIÓN 1: Obtener el ARCO del dato ---
+        // El filtro se aplica sobre el arco, no sobre la etiqueta.
+        const arcoEl = nodoDato.querySelector(".change-arc-btn");
+        const arco = arcoEl ? arcoEl.dataset.arco : 'sin_arco'; // Asignar un arco por defecto
+
+        // --- CORRECCIÓN 2: Usar la variable global y comprobar el ARCO ---
+        // Se comprueba si el 'arco' de este dato está en el set 'arcosFiltrados'.
+        if (!arcosFiltrados.has(arco)) {
+            continue; // Si el arco no está en el filtro, se salta este dato.
+        }
+
+        // Se mantiene la etiqueta para usarla como nombre de la categoría en el resultado.
+        const etiquetaEl = nodoDato.querySelector(".change-tag-btn"); 
+        const etiqueta = etiquetaEl ? etiquetaEl.dataset.etiqueta : 'indeterminado';
 
         const nombreCategoria = etiqueta.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
@@ -172,6 +201,7 @@ function cosineSimilarity(vecA, vecB) {
 
 
 function lanzarGeneracionHistoria() {
+     actualizarArcosSeleccionados();
     const idea = document.getElementById('gemini1-modal').value;
     const escenas = document.getElementById('cantidadescenas-modal').value;
     const frames = document.getElementById('cantidadeframes-modal').value;
@@ -180,7 +210,8 @@ function lanzarGeneracionHistoria() {
     document.getElementById('cantidadescenas').value = escenas;
     document.getElementById('cantidadeframes').value = frames;
     document.getElementById('incluir-datos-ia').checked = usarDatos;
-    cerrarModal('generador-ia-modal');
+    cerrarModal('modal-ia-herramientas'); 
+     cerrarModal('modal-overlay'); 
     if (typeof prepararVistaParaGeneracionIA === 'function') {
         prepararVistaParaGeneracionIA();
     } else {

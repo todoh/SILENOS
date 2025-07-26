@@ -443,3 +443,70 @@ overflow-x: hidden; ;
     cursor: pointer;
     text-shadow: none;
 }
+
+
+@font-face {
+  font-family: 'motriles'; /* Este será el nombre que usarás en tu CSS */
+  src: url('Semplicita.otf') format('otf') /* Reemplaza 'mi-fuente.woff2' con el nombre de tu archivo */
+    ;
+  font-weight: normal; /* O el peso de la fuente (bold, light, 400, 700, etc.) */
+  font-style: normal;  /* O el estilo de la fuente (italic, oblique) */
+  /* Puedes añadir también font-display: swap; para mejorar la carga */
+}
+
+
+/* Estilo para el contenedor oscuro que cubre la pantalla */
+.image-overlay {
+  display: none; /* Oculto por defecto */
+  position: fixed; /* Posición fija para cubrir toda la ventana */
+  z-index: 1000; /* Asegurarse de que esté por encima de todo */
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0); /* Fondo negro semitransparente */
+  justify-content: center; /* Centrar horizontalmente */
+  align-items: center; /* Centrar verticalmente */
+}
+
+/* Clase para mostrar el overlay */
+.image-overlay.visible {
+  display: flex; /* Cambiar a flex para centrar el contenido */
+}
+
+/* Estilo para la imagen ampliada */
+.enlarged-image-content {
+  max-width: 85%;
+  max-height: 85%;
+  object-fit: contain; /* Asegura que la imagen se vea completa sin deformarse */
+  border-radius: 5px;
+  animation: zoomIn 0.3s ease-in-out;
+}
+
+/* Botón para cerrar (opcional, pero recomendado) */
+.close-btn {
+  position: absolute;
+  top: 20px;
+  right: 35px;
+  color: #f1f1f1;
+  font-size: 40px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.close-btn:hover {
+  color: #bbb;
+}
+
+/* Animación de zoom para la imagen */
+@keyframes zoomIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

@@ -1459,6 +1459,144 @@ async function generarPortadaConIA(libro) {
     alert(`No se pudo generar la portada. Error: ${lastError?.message || "Error desconocido."}`);
 }
 
+/**
+ * Genera una imagen utilizando un flujo avanzado de IA de dos pasos:
+ * 1. Analiza el texto del frame para identificar personajes existentes.
+ * 2. Combina los prompts visuales de los personajes con el texto del frame para generar una imagen contextual.
+ * @param {string} escenaId - El ID de la escena que contiene el frame.
+ * @param {number} frameIndex - El índice del frame dentro de la escena.
+ */
+async function generarImagenParaFrameConIA(escenaId, frameIndex) {
+    const frame = escenas[escenaId]?.frames?.[frameIndex];
+    if (!frame || !frame.texto.trim()) {
+        alert("Por favor, escribe un texto en el frame antes de generar una imagen.");
+        return;
+    }
+
+    const userPrompt = frame.texto.trim();
+    alert("Analizando la escena y generando imagen con IA... Esto puede tardar un momento.");
+
+    if (typeof apiKey === 'undefined' || !apiKey) {
+        alert("Error de configuración: La 'apiKey' global no está definida.");
+        return;
+    }
+
+    let promptFinal = `Crea una ilustración SIN TEXTO para la siguiente escena: "${userPrompt}". El aspecto debe ser de  16/9 estar en formato panoramico horizontal y ser de alta calidad. 
+    EVITA USAR EL TEXTO DE LA ESCENA EN LA IMAGEN.`;
+
+    try {
+        // --- FASE 1: ANÁLISIS DE PERSONAJES EN LA ESCENA ---
+
+        // 1. Indexar todos los datos de personajes disponibles
+        const datosIndexados = [];
+        document.querySelectorAll('#listapersonajes .personaje').forEach(p => {
+            const nombre = p.querySelector('.nombreh')?.value.trim();
+            const descripcion = p.querySelector('.descripcionh')?.value.trim();
+            const promptVisual = p.querySelector('.prompt-visualh')?.value.trim();
+            if (nombre) {
+                datosIndexados.push({ nombre, descripcion, promptVisual });
+            }
+        });
+
+        // 2. Si hay datos para analizar, pedir a la IA que los identifique en el texto
+        if (datosIndexados.length > 0) {
+            console.log("Datos indexados para análisis:", datosIndexados);
+            const contextoPersonajes = datosIndexados.map(p => `- ${p.nombre}: ${p.descripcion}`).join('\n');
+
+            const promptAnalisis = `
+                **Contexto:** Tienes una lista de personajes y sus descripciones:
+                ${contextoPersonajes}
+
+                **Tarea:** Lee el siguiente texto de una escena y devuelve ÚNICAMENTE un objeto JSON con una clave "personajes_en_escena" que contenga un array con los NOMBRES EXACTOS de los personajes de la lista que aparecen en el texto. Si no aparece ninguno, devuelve un array vacío.
+
+                **Texto de la escena:** "${userPrompt}"
+            `;
+
+            // Llamada a la IA de texto para el análisis
+            const respuestaAnalisis = await llamarIAConFeedback(promptAnalisis, "Identificando personajes...", 'gemini-2.0-flash', true);
+            
+            if (respuestaAnalisis && Array.isArray(respuestaAnalisis.personajes_en_escena)) {
+                const nombresPersonajes = respuestaAnalisis.personajes_en_escena;
+                console.log("Personajes identificados por la IA:", nombresPersonajes);
+
+                // 3. Construir un prompt visual combinado
+                const promptsVisuales = nombresPersonajes
+                    .map(nombre => datosIndexados.find(p => p.nombre === nombre)?.promptVisual)
+                    .filter(Boolean) // Filtra por si algún prompt visual está vacío
+                    .join('. ');
+
+                if (promptsVisuales) {
+                    promptFinal += `\n\n**Construye visualmente los personajes y escenas usando estos prompts si esque coinciden:** ${promptsVisuales}`;
+                    console.log("Prompt final enriquecido:", promptFinal);
+                }
+            }
+        }
+
+        // --- FASE 2: GENERACIÓN DE IMAGEN CON EL PROMPT FINAL ---
+        const MODEL_NAME = 'gemini-2.0-flash-preview-image-generation';
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`;
+
+        const payload = {
+            "contents": [{
+                "parts": [
+                    { "text": promptFinal },
+                    { "inlineData": { "mimeType": "image/png", "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" } }
+                ]
+            }],
+            "generationConfig": { "responseModalities": ["TEXT", "IMAGE"] },
+            "safetySettings": [
+                { "category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE" },
+                { "category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE" },
+                { "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE" },
+                { "category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE" }
+            ]
+        };
+
+        const maxRetries = 3;
+        let lastError = null;
+
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                console.log(`Enviando petición para imagen de frame (Intento ${attempt}/${maxRetries})...`);
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const responseData = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(responseData.error?.message || "Error desconocido de la API.");
+                }
+
+                const imagePart = responseData.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+
+                if (imagePart?.inlineData?.data) {
+                    const pngDataUrl = `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
+                    frame.imagen = pngDataUrl;
+                    guardarCambios();
+                    actualizarLista();
+                    console.log(`Imagen generada y asignada al frame ${frameIndex} de la escena "${escenaId}".`);
+                    return; // Éxito
+                } else {
+                    const textResponse = responseData.candidates?.[0]?.content?.parts?.[0]?.text || "No se encontró contenido de imagen.";
+                    throw new Error(`La API no devolvió una imagen. Respuesta: ${textResponse}`);
+                }
+            } catch (error) {
+                lastError = error;
+                console.error(`Intento ${attempt} fallido:`, error);
+                if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+        }
+        // Si el bucle termina, todos los intentos fallaron
+        throw lastError || new Error("Error desconocido tras múltiples intentos.");
+
+    } catch (error) {
+        alert(`No se pudo generar la imagen. Error: ${error.message || "Error desconocido."}`);
+        console.error("Error en generarImagenParaFrameConIA:", error);
+    }
+}
 
 
 

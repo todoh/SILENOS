@@ -747,7 +747,10 @@ line-height: 1.5;}
     width: auto;z-index: 10000 !important;
     margin: 2%; left: 5%; bottom: 0%;
     }
-
+.ideframeh3 { padding: 1%; position: absolute;
+    width: auto;z-index: 10000 !important;
+    margin: 2%; left: 5%; bottom: 14%;
+    }
 
 .frameh textarea {
     width: 55%; position: absolute;

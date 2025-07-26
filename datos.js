@@ -892,7 +892,7 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     // Botones que se mantienen fuera del menú
     const botonCargar = document.createElement('button');
     botonCargar.className = 'edit-btn change-image-btn';
-    botonCargar.innerHTML = '�';
+    botonCargar.innerHTML = '📷';
     botonCargar.title = 'Cambiar Imagen';
     buttonsWrapper.appendChild(botonCargar);
 
@@ -1186,7 +1186,9 @@ async function procesarEntradaConIA() {
             **Instrucciones Adicionales:**
             - Si la solicitud es EXTRAER, basa tu respuesta únicamente en el texto original proporcionado por el usuario.
             - Si es GENERAR, sé creativo y produce contenido original que se ajuste a la petición.
-            - Para CADA dato generado, proporciona: "nombre", "descripcion" (detallada, para el embedding), "promptVisual" (una descripción para generar una imagen), y la "etiqueta" MÁS APROPIADA de [${etiquetasValidas}].
+            - Para CADA dato generado, proporciona: "nombre", "descripcion" (detallada, para el embedding), 
+            "promptVisual" (una descripción para generar una imagen detalla y repetible de ese dato), (si es una persona, detalla con exactitud su morfologia, TODOS los rasgos de su cara y su vestimenta), 
+            y la "etiqueta" MÁS APROPIADA de [${etiquetasValidas}].
 
             **Formato de Salida Obligatorio:** Responde ÚNICAMENTE con un objeto JSON válido que sea un array de datos. Cada objeto en el array debe tener la estructura completa: 
             { "nombre": "...", "descripcion": "...", "promptVisual": "...", "etiqueta": "..." }

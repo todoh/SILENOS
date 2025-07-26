@@ -36,7 +36,7 @@ crossorigin="anonymous"></script>
 <script src="https://apis.google.com/js/api.js" async defer></script>s
 <script src="https://accounts.google.com/gsi/client" onload="gapiLoaded()" async defer></script>
 -->
-<meta property="og:title" content="SILENOS Versión 1.1.10" />
+<meta property="og:title" content="SILENOS Versión 1.1.11" />
 <meta property="og:description" content="Editor de Historia con Inteligencia Artificial" />
 <meta property="og:url" content="https://todoh.github.io/SILENOS" />
 <meta property="og:image" content="https://raw.githubusercontent.com/todoh/SILENOS/refs/heads/main/silenos.png" />
@@ -66,7 +66,11 @@ crossorigin="anonymous"></script>
             <button id="bguion" class="tons" onclick="abrir('guion-literario');">Guión</button>
             <button id="blibros" class="tons" onclick="cerrartodo(), abrir('capitulosh');">Libro</button>
 
-    
+    <button id="bajustes" class="pro" onclick="abrirModalConfig()">⚙️ Configuración</button>
+        <button class="pro" id="bguardarjson" class="pro" onclick="guardarJSON()">💾 Guardar</button>
+        <input   type="file" id="file-load" accept="application/json" onchange="cargarJSON(event)" style="display: none;">
+        <button class="pro" id="bcargarjson" class="pro" onclick="document.getElementById('file-load').click()">🗂️ Cargar</button>        
+        <button class="pro" id="btema" class="pro" id="theme-toggle-button" onclick="toggleTheme()">🌙 Tema</button>
 
 
             <button class="tons"  onclick="cerrartodo(), abrir('vistageneral') ;"style="display: none;">Vista General</button>
@@ -462,11 +466,7 @@ crossorigin="anonymous"></script>
 </div>
 
 <div id="proyecto" style="display: none;" >
-<button id="bajustes" class="pro6" onclick="abrirModalConfig()">⚙️</button>
-        <button class="pro16" id="bguardarjson" class="pro" onclick="guardarJSON()">💾</button>
-        <input   type="file" id="file-load" accept="application/json" onchange="cargarJSON(event)" style="display: none;">
-        <button class="pro17" id="bcargarjson" class="pro" onclick="document.getElementById('file-load').click()">🗂️</button>        
-        <button class="pro18" id="btema" class="pro" id="theme-toggle-button" onclick="toggleTheme()">🌙</button>
+
 
 
  <input type="text" id="asistente-titulo-input" placeholder="Título del proyecto" value="Silenos Versión 1.1.11" >
@@ -1001,6 +1001,12 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
     </div>
     <span id="progress-bar-percentage">0%</span>
 </div>
+
+<div id="image-preview-overlay" class="image-overlay">
+  <span class="close-btn">&times;</span>
+  <img id="enlarged-img" class="enlarged-image-content">
+</div>
+
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
