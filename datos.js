@@ -85,9 +85,12 @@ function mostrarMenuEtiquetas(botonEtiqueta) {
 
     document.body.appendChild(menu);
     const rect = botonEtiqueta.getBoundingClientRect();
-    menu.style.top = `${rect.bottom + window.scrollY + 5}px`;
-    menu.style.left = `${rect.left + window.scrollX}px`;
 
+// --- CAMBIO CLAVE: Posicionar el menú arriba del botón ---
+        menu.style.left = `${rect.left + window.scrollX}px`;
+        menu.style.top = `${rect.top + window.scrollY - menu.offsetHeight - 5}px`; // Calcula la posición para que aparezca arriba
+
+    
     const cerrarMenuHandler = (e) => {
         if (!menu.contains(e.target)) {
             menu.remove();
@@ -628,29 +631,15 @@ document.addEventListener('DOMContentLoaded', () => {
 // =========================================================================
 // FUNCIONES DE IA Y MODALES
 // =========================================================================
-/**
- * Crea y añade un nuevo elemento de "Dato" al DOM, incluyendo todos los controles.
- * Si ya existe un dato con el mismo nombre, fusiona las descripciones en lugar de crear un duplicado.
- * Si el dato es nuevo y no tiene imagen, genera una automáticamente de forma asíncrona.
+ 
+ /**
+ * Crea y añade un nuevo elemento de "Dato" al DOM, incluyendo todos los controles, 
+ * la funcionalidad completa de los botones y el guardado del embedding.
  * @param {object} personajeData - El objeto con los datos del personaje/dato.
- * @returns {HTMLElement} El elemento del DOM creado o encontrado.
- */
-/**
- * Crea y añade un nuevo elemento de "Dato" al DOM, incluyendo todos los controles.
- * Si ya existe un dato con el mismo nombre, fusiona las descripciones en lugar de crear un duplicado.
- * Si el dato es nuevo y no tiene imagen, genera una automáticamente de forma asíncrona.
- * @param {object} personajeData - El objeto con los datos del personaje/dato.
- * @returns {HTMLElement} El elemento del DOM creado o encontrado.
- */
-/**
- * Crea y añade un nuevo elemento de "Dato" al DOM, incluyendo todos los controles.
- * Si ya existe un dato con el mismo nombre, fusiona las descripciones en lugar de crear un duplicado.
- * Si el dato es nuevo y no tiene imagen, genera una automáticamente de forma asíncrona.
- * @param {object} personajeData - El objeto con los datos del personaje/dato.
- * @returns {HTMLElement} El elemento del DOM creado o encontrado.
+ * @returns {HTMLElement|null} El elemento del DOM creado o null si falla.
  */
 function agregarPersonajeDesdeDatos(personajeData = {}) {
-    // --- MODIFICACIÓN 1: Añadido "promptVisual" a la desestructuración ---
+    // --- Desestructuración completa con los nuevos campos ---
     const {
         nombre = '',
         descripcion = '',
@@ -658,27 +647,27 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
         imagen = '',
         etiqueta: etiquetaValor = 'indeterminado',
         arco: arcoValor = 'sin_arco',
-        svgContent = ''
+        svgContent = '',
+        embedding = [] // Valor por defecto es un array vacío
     } = personajeData;
 
-    // --- CORRECCIÓN CLAVE ---
-    // El contenedor correcto para añadir los elementos es 'listapersonajes'.
     const lista = document.getElementById('listapersonajes');
     if (!lista) {
         console.error("Error crítico: No se encontró el contenedor de datos con ID '#listapersonajes'.");
-        return null; // Devuelve null si el contenedor principal no existe.
+        return null;
     }
-    // --- FIN DE LA CORRECCIÓN ---
 
     const contenedor = document.createElement('div');
     contenedor.className = 'personaje';
 
+    // --- Guardado de datos clave en el dataset del elemento ---
+    contenedor.dataset.embedding = JSON.stringify(embedding);
     contenedor.dataset.descripcion = personajeData.descripcion || '';
-
     if (svgContent) {
         contenedor.dataset.svgContent = svgContent;
     }
 
+    // --- Creación de Botones de Etiqueta y Arco ---
     const etiquetaBtn = document.createElement('button');
     etiquetaBtn.className = 'change-tag-btn';
     const opcionEtiqueta = opcionesEtiqueta.find(op => op.valor === etiquetaValor) || opcionesEtiqueta[0];
@@ -690,100 +679,119 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
 
     const arcoBtn = document.createElement('button');
     arcoBtn.className = 'change-arc-btn';
-    const opcionArco = opcionesArco.find(op => op.valor === arcoValor) || opcionesArco[0];
-    arcoBtn.innerHTML = opcionArco.emoji;
-    arcoBtn.title = `Arco: ${opcionArco.titulo}`;
-    arcoBtn.dataset.arco = arcoValor;
+    arcoBtn.dataset.arco = arcoValor; // Asignar el valor del arco al dataset
+
+    // --- INICIO DE LA CORRECCIÓN ---
+    // Comprobar si el arco es uno de los predefinidos
+    const opcionArco = opcionesArco.find(op => op.valor === arcoValor);
+
+    if (opcionArco) {
+        // Si es un arco predefinido, usar su emoji y título
+        arcoBtn.innerHTML = opcionArco.emoji;
+        arcoBtn.title = `Arco: ${opcionArco.titulo}`;
+    } else {
+        // Si no se encuentra, es un arco personalizado. Mostrar el texto.
+        arcoBtn.innerHTML = arcoValor;
+        arcoBtn.title = `Arco: ${arcoValor}`;
+    }
+    // --- FIN DE LA CORRECCIÓN ---
+
     arcoBtn.onclick = () => mostrarMenuArcos(arcoBtn);
     contenedor.appendChild(arcoBtn);
 
+
+    // --- Creación de la parte Visual (preview) ---
     const visual = document.createElement('div');
     visual.className = 'personaje-visual';
-
     const img = document.createElement('img');
     const descripcionPreview = document.createElement('div');
     descripcionPreview.className = 'personaje-descripcion-preview';
-
     visual.appendChild(img);
     visual.appendChild(descripcionPreview);
     contenedor.appendChild(visual);
 
+    // --- Input para el nombre ---
     const cajaNombre = document.createElement('input');
     cajaNombre.type = 'text';
     cajaNombre.className = 'nombreh';
     cajaNombre.value = nombre;
     contenedor.appendChild(cajaNombre);
 
+    // --- Overlay de Edición ---
     const overlay = document.createElement('div');
     overlay.className = 'personaje-edit-overlay';
-
     const editControls = document.createElement('div');
     editControls.className = 'edit-controls';
 
+    // Contenedor de la imagen de previsualización en el editor
     const previewContainer = document.createElement('div');
     previewContainer.className = 'edit-preview-container';
-
     const previewImage = document.createElement('img');
     previewImage.className = 'edit-preview-image';
     previewContainer.appendChild(previewImage);
-
     const editorCanvasEl = document.createElement('canvas');
     editorCanvasEl.className = 'edit-svg-canvas';
     editorCanvasEl.style.display = 'none';
     previewContainer.appendChild(editorCanvasEl);
-
     editControls.appendChild(previewContainer);
 
+    // Contenedor para los campos de texto y botones
     const textControlsContainer = document.createElement('div');
     textControlsContainer.className = 'edit-text-controls';
 
     const cajaTexto = document.createElement('textarea');
     cajaTexto.value = descripcion;
     cajaTexto.placeholder = 'Descripción...';
-    cajaTexto.className = 'descripcionh'; // <-- ¡AÑADE ESTA LÍNEA!
+    cajaTexto.className = 'descripcionh';
 
-    // --- MODIFICACIÓN 2: Creación del textarea para el prompt visual ---
     const cajaPromptVisual = document.createElement('textarea');
     cajaPromptVisual.value = promptVisual;
     cajaPromptVisual.placeholder = 'Prompt Visual...';
     cajaPromptVisual.className = 'prompt-visualh';
 
+    // --- Wrapper para todos los botones de acción ---
     const buttonsWrapper = document.createElement('div');
     buttonsWrapper.className = 'edit-buttons-wrapper';
 
-    const botonCargar = document.createElement('button');
-    botonCargar.className = 'edit-btn change-image-btn';
-    botonCargar.innerHTML = '📷';
-    botonCargar.title = 'Cambiar Imagen';
-    buttonsWrapper.appendChild(botonCargar);
+    // --- INICIO DE LA MODIFICACIÓN: Lógica de botones unificada ---
 
-    const botonGenerarIA = document.createElement('button');
-    botonGenerarIA.className = 'edit-btn generate-ai-btn';
-    botonGenerarIA.innerHTML = '✨';
-    botonGenerarIA.title = 'Generar Imagen con IA';
-    buttonsWrapper.appendChild(botonGenerarIA);
+    // Se definen las acciones de los botones como funciones internas
+    const generarVectorialNormal = async () => {
+        const descripcionPrompt = cajaPromptVisual.value.trim();
+        if (!descripcionPrompt) {
+            alert("Por favor, escribe una descripción en el 'Prompt Visual' para que la IA pueda generar una imagen.");
+            return;
+        }
+        if (typeof generarImagenDesdePrompt !== 'function') {
+            alert("Error: La función de generación de imágenes no está disponible.");
+            return;
+        }
+        botonAccionesImagen.innerHTML = '⚙️';
+        botonAccionesImagen.disabled = true;
+        try {
+            const { imagen, svgContent: nuevoSvg } = await generarImagenDesdePrompt(descripcionPrompt);
+            actualizarVisual(imagen, cajaTexto.value);
+            contenedor.dataset.svgContent = nuevoSvg;
+        } catch (error) {
+            alert(`Ocurrió un error al generar la imagen: ${error.message}`);
+        } finally {
+            botonAccionesImagen.innerHTML = '✨';
+            botonAccionesImagen.disabled = false;
+        }
+    };
 
-    const botonSuperRealista = document.createElement('button');
-    botonSuperRealista.className = 'edit-btn';
-    botonSuperRealista.innerHTML = '💎';
-    botonSuperRealista.title = 'Generar Imagen Superrealista con IA Avanzada';
-
-    botonSuperRealista.onclick = async () => {
-          const userPrompt = cajaPromptVisual.value.trim();
+    const generarVectorialPro = async () => {
+        const userPrompt = cajaPromptVisual.value.trim();
         if (!userPrompt) {
-            alert("Por favor, escribe una descripción detallada en la caja de texto para generar la imagen superrealista.");
+            alert("Por favor, escribe una descripción detallada en el 'Prompt Visual' para generar la imagen superrealista.");
             return;
         }
-
         if (typeof generarImagenSuperrealistaDesdePrompt !== 'function') {
-            alert("Error: La función 'generarImagenSuperrealistaDesdePrompt' del archivo generador.js no está disponible.");
+            alert("Error: La función 'generarImagenSuperrealistaDesdePrompt' no está disponible.");
             return;
         }
-
-        const botones = buttonsWrapper.querySelectorAll('.edit-btn');
-        botones.forEach(b => b.disabled = true);
-        botonSuperRealista.innerHTML = '⚙️';
-
+        botonAccionesImagen.innerHTML = '⚙️';
+        botonAccionesImagen.disabled = true;
         try {
             const resultado = await generarImagenSuperrealistaDesdePrompt(userPrompt);
             actualizarVisual(resultado.imagen, userPrompt);
@@ -792,34 +800,23 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
             console.error("Error al generar la imagen superrealista:", error);
             alert(`Ocurrió un error: ${error.message}`);
         } finally {
-            botones.forEach(b => b.disabled = false);
-            botonSuperRealista.innerHTML = '💎';
+            botonAccionesImagen.innerHTML = '✨';
+            botonAccionesImagen.disabled = false;
         }
     };
-    buttonsWrapper.appendChild(botonSuperRealista);
 
-
-    const botonrapido = document.createElement('button');
-    botonrapido.className = 'edit-btn';
-    botonrapido.innerHTML = '⚡';
-    botonrapido.title = 'Generar Imagen rapido con IA Avanzada';
-
-    botonrapido.onclick = async () => {
-          const userPrompt = cajaPromptVisual.value.trim();
+    const generarVectorialRapida = async () => {
+        const userPrompt = cajaPromptVisual.value.trim();
         if (!userPrompt) {
-            alert("Por favor, escribe una descripción detallada en la caja de texto para generar la imagen superrealista.");
+            alert("Por favor, escribe una descripción detallada en el 'Prompt Visual' para generar la imagen.");
             return;
         }
-
         if (typeof ultras2 !== 'function') {
-            alert("Error: La función 'ultras' del archivo generador.js no está disponible.");
+            alert("Error: La función 'ultras2' no está disponible.");
             return;
         }
-
-        const botones = buttonsWrapper.querySelectorAll('.edit-btn');
-        botones.forEach(b => b.disabled = true);
-        botonrapido.innerHTML = '⚙️';
-
+        botonAccionesImagen.innerHTML = '⚙️';
+        botonAccionesImagen.disabled = true;
         try {
             const resultado = await ultras2(userPrompt);
             actualizarVisual(resultado.imagen, userPrompt);
@@ -828,76 +825,128 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
             console.error("Error al generar la imagen rapido:", error);
             alert(`Ocurrió un error: ${error.message}`);
         } finally {
-            botones.forEach(b => b.disabled = false);
-            botonrapido.innerHTML = '⚡';
+            botonAccionesImagen.innerHTML = '✨';
+            botonAccionesImagen.disabled = false;
         }
     };
-    buttonsWrapper.appendChild(botonrapido);
 
-
-
-    const botonHiperUltra = document.createElement('button');
-    botonHiperUltra.className = 'edit-btn';
-    botonHiperUltra.innerHTML = '😍';
-    botonHiperUltra.title = 'Generar Imagen con HIPER-ULTRA IA';
-
-    // --- INICIO DE LA CORRECCIÓN ---
-    botonHiperUltra.onclick = async () => {
-          const userPrompt = cajaPromptVisual.value.trim();
+    const generarRealista = async () => {
+        const userPrompt = cajaPromptVisual.value.trim();
         if (!userPrompt) {
-            alert("Por favor, escribe una descripción detallada para la generación HIPER-ULTRA.");
+            alert("Por favor, escribe una descripción detallada en el 'Prompt Visual' para la generación HIPER-ULTRA.");
             return;
         }
-
         if (typeof ultras !== 'function') {
-            alert("Error: La función 'ultras' del archivo generador.js no está disponible.");
+            alert("Error: La función 'ultras' no está disponible.");
             return;
         }
-
-        const botones = buttonsWrapper.querySelectorAll('.edit-btn');
-        botones.forEach(b => b.disabled = true);
-        botonHiperUltra.innerHTML = '⚙️';
-
+        botonAccionesImagen.innerHTML = '⚙️';
+        botonAccionesImagen.disabled = true;
         try {
-            // 1. Llama a la función 'ultras' para obtener la nueva imagen.
             const resultado = await ultras(userPrompt);
-
-            // 2. Si la generación fue exitosa, actualiza la interfaz.
             if (resultado && resultado.imagen) {
-                // Llama a la función local 'actualizarVisual' para mostrar la nueva imagen.
                 actualizarVisual(resultado.imagen, cajaTexto.value);
-
-                // 3. ¡LA CLAVE! Elimina el contenido SVG para que al guardar se use la imagen PNG.
                 delete contenedor.dataset.svgContent;
             } else if (resultado && resultado.error) {
-                // Muestra un error si la generación falló.
                 throw new Error(resultado.error);
             }
-
         } catch (error) {
             console.error("Error en la generación HIPER-ULTRA:", error);
             alert(`Ocurrió un error en la generación HIPER-ULTRA: ${error.message}`);
         } finally {
-            // 4. Rehabilita los botones.
-            botones.forEach(b => b.disabled = false);
-            botonHiperUltra.innerHTML = '�';
+            botonAccionesImagen.innerHTML = '✨';
+            botonAccionesImagen.disabled = false;
         }
     };
-    // --- FIN DE LA CORRECCIÓN ---
-    buttonsWrapper.appendChild(botonHiperUltra);
 
-    const botonMejorarIA = document.createElement('button');
-    botonMejorarIA.className = 'edit-btn improve-ai-btn';
-    botonMejorarIA.innerHTML = '📈';
-    botonMejorarIA.title = 'Mejorar Imagen con IA';
-    buttonsWrapper.appendChild(botonMejorarIA);
+    const mejorarSVG = () => mostrarModalMejora(contenedor);
 
-    const botonEditarSVG = document.createElement('button');
-    botonEditarSVG.className = 'edit-btn edit-svg-btn';
-    botonEditarSVG.innerHTML = '✏️';
-    botonEditarSVG.title = 'Editar SVG';
-    buttonsWrapper.appendChild(botonEditarSVG);
+    const editarSVG = () => {
+        const svgActual = contenedor.dataset.svgContent;
+        if (!svgActual) {
+            alert("No hay un SVG para editar. Genera una imagen primero.");
+            return;
+        }
+        if (typeof fabric === 'undefined') {
+            alert("La biblioteca de edición (Fabric.js) no está disponible.");
+            return;
+        }
+        previewImage.style.display = 'none';
+        editorCanvasEl.style.display = 'block';
+        botonAccionesImagen.style.display = 'none';
+        botonGuardarSVG.style.display = 'inline-block';
+        fabricEditorCanvas = new fabric.Canvas(editorCanvasEl, {
+            width: previewContainer.clientWidth,
+            height: previewContainer.clientHeight,
+        });
+        fabric.loadSVGFromString(svgActual, (objects, options) => {
+            const group = fabric.util.groupSVGElements(objects, options);
+            group.scaleToWidth(fabricEditorCanvas.width * 0.9);
+            group.scaleToHeight(fabricEditorCanvas.height * 0.9);
+            fabricEditorCanvas.add(group);
+            group.center();
+            fabricEditorCanvas.renderAll();
+        });
+    };
 
+    // Botones que se mantienen fuera del menú
+    const botonCargar = document.createElement('button');
+    botonCargar.className = 'edit-btn change-image-btn';
+    botonCargar.innerHTML = '�';
+    botonCargar.title = 'Cambiar Imagen';
+    buttonsWrapper.appendChild(botonCargar);
+
+    // Botón principal que despliega el menú
+    const botonAccionesImagen = document.createElement('button');
+    botonAccionesImagen.className = 'edit-btn';
+    botonAccionesImagen.innerHTML = '✨';
+    botonAccionesImagen.title = 'Generar o Editar Imagen';
+    buttonsWrapper.appendChild(botonAccionesImagen);
+
+    botonAccionesImagen.onclick = () => {
+        const menuExistente = document.querySelector('.menu-acciones-imagen');
+        if (menuExistente) menuExistente.remove();
+
+        const menu = document.createElement('div');
+        menu.className = 'menu-etiquetas'; // Reutilizamos el estilo de los otros menús
+
+        const opcionesMenu = [
+            { texto: 'Vectorial Rápida', emoji: '⚡', action: generarVectorialRapida },
+            { texto: 'Vectorial Normal', emoji: '✨', action: generarVectorialNormal },
+            { texto: 'Vectorial Pro', emoji: '💎', action: generarVectorialPro },
+            { texto: 'Realista', emoji: '😍', action: generarRealista },
+            { texto: 'Mejorar SVG', emoji: '📈', action: mejorarSVG },
+            { texto: 'Editar SVG', emoji: '✏️', action: editarSVG }
+        ];
+
+        opcionesMenu.forEach(op => {
+            const item = document.createElement('div');
+            item.className = 'item-menu-etiqueta';
+            item.innerHTML = `${op.emoji} ${op.texto}`;
+            item.onclick = (e) => {
+                e.stopPropagation();
+                op.action();
+                menu.remove();
+            };
+            menu.appendChild(item);
+        });
+
+        document.body.appendChild(menu);
+        const rect = botonAccionesImagen.getBoundingClientRect();
+        menu.style.bottom = `50%`;
+        menu.style.transform = 'translateY(50%)';
+        menu.style.left = `${rect.left + window.scrollX}px`;
+
+        const cerrarMenuHandler = (e) => {
+            if (!menu.contains(e.target)) {
+                menu.remove();
+                document.removeEventListener('click', cerrarMenuHandler, true);
+            }
+        };
+        setTimeout(() => document.addEventListener('click', cerrarMenuHandler, true), 100);
+    };
+
+    // Botón para guardar SVG, inicialmente oculto
     const botonGuardarSVG = document.createElement('button');
     botonGuardarSVG.className = 'edit-btn save-svg-btn';
     botonGuardarSVG.innerHTML = '💾';
@@ -905,28 +954,25 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     botonGuardarSVG.style.display = 'none';
     buttonsWrapper.appendChild(botonGuardarSVG);
 
+    // Botón de eliminar, se mantiene fuera del menú
     const botonEliminar = document.createElement('button');
     botonEliminar.className = 'edit-btn delete-btn';
-    botonEliminar.innerHTML = '🗑️';
+    botonEliminar.innerHTML = '❌';
     botonEliminar.title = 'Eliminar Dato';
-    botonEliminar.onclick = () => {
-        if (confirm('¿Estás seguro de que quieres eliminar este dato?')) {
-            contenedor.remove();
-            actualizarVistaDatos();
-        }
-    };
     buttonsWrapper.appendChild(botonEliminar);
 
+    // --- FIN DE LA MODIFICACIÓN ---
+
+    // Añadir elementos al DOM
     textControlsContainer.appendChild(cajaTexto);
-    // --- MODIFICACIÓN 3: Añadido del nuevo textarea al DOM ---
     textControlsContainer.appendChild(cajaPromptVisual);
     textControlsContainer.appendChild(buttonsWrapper);
     editControls.appendChild(textControlsContainer);
     overlay.appendChild(editControls);
     contenedor.appendChild(overlay);
-
     lista.appendChild(contenedor);
 
+    // --- LÓGICA INTERNA Y LISTENERS (FUNCIONALIDAD RESTAURADA) ---
     let fabricEditorCanvas = null;
 
     const actualizarVisual = (nuevaImagenSrc, nuevaDescripcion) => {
@@ -944,110 +990,28 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
         }
     };
 
-    botonGenerarIA.onclick = async () => {
-          const descripcionPrompt = cajaPromptVisual.value.trim();
-        
-        if (!descripcionPrompt) {
-            alert("Por favor, escribe una descripción para que la IA pueda generar una imagen.");
-            return;
-        }
-
-        if (typeof generarImagenDesdePrompt !== 'function') {
-            alert("Error: La función de generación de imágenes no está disponible.");
-            return;
-        }
-
-        botonGenerarIA.innerHTML = '⚙️';
-        botonGenerarIA.disabled = true;
-        botonMejorarIA.disabled = true;
-        botonCargar.disabled = true;
-        botonEliminar.disabled = true;
-
-        try {
-            const {
-                imagen,
-                svgContent: nuevoSvg
-            } = await generarImagenDesdePrompt(descripcionPrompt);
-            actualizarVisual(imagen, cajaTexto.value);
-            contenedor.dataset.svgContent = nuevoSvg;
-        } catch (error) {
-            alert(`Ocurrió un error al generar la imagen: ${error.message}`);
-        } finally {
-            botonGenerarIA.innerHTML = '✨';
-            botonGenerarIA.disabled = false;
-            botonMejorarIA.disabled = false;
-            botonCargar.disabled = false;
-            botonEliminar.disabled = false;
-        }
-    };
-
-    botonMejorarIA.onclick = async () => {
-        mostrarModalMejora(contenedor);
-    };
-
-    botonEditarSVG.onclick = () => {
-        const svgActual = contenedor.dataset.svgContent;
-        if (!svgActual) {
-            alert("No hay un SVG para editar. Genera una imagen primero.");
-            return;
-        }
-        if (typeof fabric === 'undefined') {
-            alert("La biblioteca de edición (Fabric.js) no está disponible.");
-            return;
-        }
-
-        previewImage.style.display = 'none';
-        editorCanvasEl.style.display = 'block';
-        botonEditarSVG.style.display = 'none';
-        botonGuardarSVG.style.display = 'inline-block';
-
-        fabricEditorCanvas = new fabric.Canvas(editorCanvasEl, {
-            width: previewContainer.clientWidth,
-            height: previewContainer.clientHeight,
-        });
-
-        fabric.loadSVGFromString(svgActual, (objects, options) => {
-            const group = fabric.util.groupSVGElements(objects, options);
-
-            group.scaleToWidth(fabricEditorCanvas.width * 0.9);
-            group.scaleToHeight(fabricEditorCanvas.height * 0.9);
-            fabricEditorCanvas.add(group);
-            group.center();
-            fabricEditorCanvas.renderAll();
-        });
-    };
-
+    // La lógica de los botones ya está definida arriba y se asigna en el menú
+    
     botonGuardarSVG.onclick = () => {
         if (!fabricEditorCanvas) return;
-
-        const objects = fabricEditorCanvas.getObjects();
-        if (objects.length === 0) {
-            fabricEditorCanvas.dispose();
-            fabricEditorCanvas = null;
-            editorCanvasEl.style.display = 'none';
-            previewImage.style.display = 'block';
-            botonGuardarSVG.style.display = 'none';
-            botonEditarSVG.style.display = 'inline-block';
-            return;
-        }
-
-        const group = new fabric.Group(objects);
-        const svgModificado = group.toSVG();
-        contenedor.dataset.svgContent = svgModificado;
-
-        const nuevaImagenSrc = group.toDataURL({
-            format: 'png'
-        });
-        actualizarVisual(nuevaImagenSrc, cajaTexto.value);
-
+        const group = new fabric.Group(fabricEditorCanvas.getObjects());
+        contenedor.dataset.svgContent = group.toSVG();
+        actualizarVisual(group.toDataURL({ format: 'png' }), cajaTexto.value);
         fabricEditorCanvas.dispose();
         fabricEditorCanvas = null;
         editorCanvasEl.style.display = 'none';
         previewImage.style.display = 'block';
         botonGuardarSVG.style.display = 'none';
-        botonEditarSVG.style.display = 'inline-block';
+        botonAccionesImagen.style.display = 'inline-block';
     };
 
+    botonEliminar.onclick = () => {
+        if (confirm('¿Estás seguro de que quieres eliminar este dato?')) {
+            contenedor.remove();
+            actualizarVistaDatos();
+        }
+    };
+    
     cajaTexto.addEventListener('input', () => {
         actualizarVisual(img.src, cajaTexto.value);
     });
@@ -1066,59 +1030,413 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
         inputFile.click();
     };
 
+    // --- Renderizado Inicial de la Imagen ---
     if (svgContent && !imagen) {
         if (typeof fabric !== 'undefined') {
             const tempCanvasEl = document.createElement('canvas');
-            const tempFabricCanvas = new fabric.Canvas(tempCanvasEl, {
-                width: 750,
-                height: 750
-            });
-
+            const tempFabricCanvas = new fabric.Canvas(tempCanvasEl, { width: 750, height: 750 });
             fabric.loadSVGFromString(svgContent, (objects, options) => {
                 if (!objects || objects.length === 0) {
-                    console.warn("El SVG a cargar está vacío o no se pudo interpretar.", svgContent.substring(0, 100));
                     tempFabricCanvas.dispose();
                     return;
                 }
-
                 const group = fabric.util.groupSVGElements(objects, options);
-
-                const scaleFactor = Math.min(
-                    (tempFabricCanvas.width * 0.9) / group.width,
-                    (tempFabricCanvas.height * 0.9) / group.height
-                );
-
-                group.scale(scaleFactor);
-                group.set({
-                    left: tempFabricCanvas.width / 2,
-                    top: tempFabricCanvas.height / 2,
-                    originX: 'center',
-                    originY: 'center'
-                });
-                tempFabricCanvas.add(group);
-                group.center();
-
-                tempFabricCanvas.renderAll();
-                const dataUrl = tempFabricCanvas.toDataURL({
-                    format: 'png'
-                });
-
-                actualizarVisual(dataUrl, descripcion);
-
+                const scaleFactor = Math.min((tempFabricCanvas.width * 0.9) / group.width, (tempFabricCanvas.height * 0.9) / group.height);
+                group.scale(scaleFactor).center();
+                tempFabricCanvas.add(group).renderAll();
+                actualizarVisual(tempFabricCanvas.toDataURL({ format: 'png' }), descripcion);
                 tempFabricCanvas.dispose();
             });
         } else {
-            const fallbackSrc = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgContent);
-            actualizarVisual(fallbackSrc, descripcion);
+            actualizarVisual('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgContent), descripcion);
         }
     } else {
         actualizarVisual(imagen, descripcion);
+    }
+
+    return contenedor;
+}
+
+
+/**
+ * Inicializa el modal de IA una sola vez, poblando el selector de arcos.
+ * Es importante que la variable 'opcionesArco' esté disponible globalmente.
+ */
+function inicializarModalIA() {
+    const select = document.getElementById('ia-arco-select');
+    // Se asegura de que el selector exista y no tenga opciones para no duplicarlas.
+    if (select && select.options.length === 0) {
+        if (typeof opcionesArco !== 'undefined') {
+            opcionesArco.forEach(opcion => {
+                const optionEl = document.createElement('option');
+                optionEl.value = opcion.valor;
+                optionEl.textContent = `${opcion.emoji} ${opcion.titulo}`;
+                select.appendChild(optionEl);
+            });
+        } else {
+            console.error("Error: La variable 'opcionesArco' no está definida. El selector de arcos no se puede poblar.");
+        }
+    }
+}
+
+// Se ejecuta la inicialización cuando el contenido del DOM está completamente cargado.
+document.addEventListener('DOMContentLoaded', inicializarModalIA);
+
+
+/**
+ * Muestra u oculta el campo de texto para el arco personalizado
+ * basado en la selección del dropdown.
+ * @param {HTMLSelectElement} selectElement - El elemento select que cambió.
+ */
+function toggleCustomArcoInput(selectElement) {
+    const customInput = document.getElementById('ia-arco-custom');
+    if (selectElement.value === 'personalizar') {
+        customInput.style.display = 'block';
+        customInput.focus();
+    } else {
+        customInput.style.display = 'none';
+    }
+}
+
+/**
+ * Abre el modal de la IA y se asegura de que el selector de arcos
+ * esté reseteado a su estado por defecto.
+ */
+function abrirModalAIDatos() {
+    // Asume que tienes un overlay con id 'modal-ia-datos-overlay' que contiene tu modal.
+    const modalOverlay = document.getElementById('modal-ia-datos-overlay');
+    const select = document.getElementById('ia-arco-select');
+    const customInput = document.getElementById('ia-arco-custom');
+    
+    // Resetea los controles a su estado inicial cada vez que se abre el modal.
+    if (select) select.value = 'sin_arco'; // 'sin_arco' es el valor para 'Base'
+    if (customInput) {
+        customInput.style.display = 'none';
+        customInput.value = '';
+    }
+
+    if (modalOverlay) modalOverlay.style.display = 'flex';
+}
+
+
+/**
+ * Procesa la entrada del usuario utilizando un flujo de IA de múltiples pasos,
+ * asignando los datos generados al arco narrativo seleccionado en el modal.
+ */
+async function procesarEntradaConIA() {
+    // --- NUEVO: Obtener el arco seleccionado del modal ---
+    const arcoSelect = document.getElementById('ia-arco-select');
+    const arcoCustomInput = document.getElementById('ia-arco-custom');
+    let arcoSeleccionado = 'sin_arco'; // Valor por defecto
+
+    if (arcoSelect) {
+        if (arcoSelect.value === 'personalizar' && arcoCustomInput) {
+            // Si se elige 'personalizar', usa el valor del input, o el por defecto si está vacío.
+            arcoSeleccionado = arcoCustomInput.value.trim() || 'sin_arco';
+        } else {
+            arcoSeleccionado = arcoSelect.value;
+        }
+    }
+    // --- FIN DE LA MODIFICACIÓN ---
+
+    const textoUsuario = document.getElementById('ia-datos-area').value.trim();
+    if (!textoUsuario) {
+        alert("Por favor, introduce algún texto o instrucción para que la IA trabaje.");
+        return;
+    }
+    cerrarModalAIDatos();
+    const chatDiv = window.chatDiv || document.getElementById('chat');
+    chatDiv.innerHTML += `<p><strong>Tú:</strong> ${textoUsuario}</p><p><strong>Silenos:</strong> Entendido. Analizando tu petición...</p>`;
+    chatDiv.scrollTop = chatDiv.scrollHeight;
+
+    try {
+        // --- PASO 1: Determinar la intención del usuario ---
+        const promptRouter = `
+            Analiza la siguiente petición del usuario y clasifícala en una de estas tres categorías:
+            1. "EXTRAER": El usuario ha pegado un texto largo y quiere que extraigas información estructurada de él.
+            2. "GENERAR_TEMA": El usuario quiere que generes un conjunto de datos sobre un tema, idea u obra. (Ej: "Crea personajes para una historia de detectives").
+            3. "GENERAR_CONCRETO": El usuario pide crear uno o más elementos muy específicos. (Ej: "Crea un objeto mágico llamado 'La Gema del Ocaso'").
+
+            **Petición del usuario:** "${textoUsuario}"
+
+            Responde ÚNICAMENTE con un objeto JSON con la siguiente estructura:
+            { "intencion": "EXTRAER" | "GENERAR_TEMA" | "GENERAR_CONCRETO", "peticion_resumida": "Un resumen de lo que hay que hacer." }
+        `;
+
+        const respuestaRouter = await llamarIAConFeedback(promptRouter, "Interpretando tu solicitud...", "gemini-2.0-flash-lite");
+        const { intencion, peticion_resumida } = respuestaRouter;
+
+        if (!intencion || !peticion_resumida) {
+            throw new Error("La IA no pudo entender la intención de tu petición. Intenta ser más claro.");
+        }
+        
+        chatDiv.innerHTML += `<p><strong>Silenos:</strong> Intención detectada: ${intencion}. Manos a la obra...</p>`;
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+
+        // --- PASO 2: Generar los datos textuales ---
+        const etiquetasValidas = opcionesEtiqueta
+            .map(o => o.valor)
+            .filter(v => v !== 'indeterminado' && v !== 'personalizar')
+            .join(', ');
+
+        const promptGeneracionDatos = `
+            **Tarea Principal:** Basado en la siguiente solicitud, genera una lista de datos estructurados.
+            **Solicitud:** "${peticion_resumida}"
+            
+            **Instrucciones Adicionales:**
+            - Si la solicitud es EXTRAER, basa tu respuesta únicamente en el texto original proporcionado por el usuario.
+            - Si es GENERAR, sé creativo y produce contenido original que se ajuste a la petición.
+            - Para CADA dato generado, proporciona: "nombre", "descripcion" (detallada, para el embedding), "promptVisual" (una descripción para generar una imagen), y la "etiqueta" MÁS APROPIADA de [${etiquetasValidas}].
+
+            **Formato de Salida Obligatorio:** Responde ÚNICAMENTE con un objeto JSON válido que sea un array de datos. Cada objeto en el array debe tener la estructura completa: 
+            { "nombre": "...", "descripcion": "...", "promptVisual": "...", "etiqueta": "..." }
+        `;
+
+        const datosTextuales = await llamarIAConFeedback(promptGeneracionDatos, "Generando información...", "gemini-2.5-flash-lite");
+
+        if (!Array.isArray(datosTextuales) || datosTextuales.length === 0) {
+             throw new Error("La IA no devolvió datos estructurados. La respuesta puede estar en el chat.");
+        }
+        
+        chatDiv.innerHTML += `<p><strong>Silenos:</strong> Se han generado ${datosTextuales.length} perfiles de datos. Creando embeddings para el arco '${arcoSeleccionado}'...</p>`;
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+
+        // --- PASO 3: Generar embeddings y crear los elementos en el DOM ---
+        let totalCreados = 0;
+        for (const dato of datosTextuales) {
+            if (!dato.nombre || !dato.descripcion) continue;
+
+            try {
+                const embeddingVector = await generarEmbedding(dato.descripcion);
+
+                // --- PASO 3b: Crear el elemento con toda la información ---
+                const datosCompletos = {
+                    ...dato,
+                    arco: arcoSeleccionado, // Usar el arco seleccionado del modal
+                    embedding: embeddingVector || []
+                };
+
+                agregarPersonajeDesdeDatos(datosCompletos);
+                totalCreados++;
+
+            } catch (embeddingError) {
+                console.error(`Error al generar embedding para "${dato.nombre}":`, embeddingError);
+                chatDiv.innerHTML += `<p><strong>Aviso:</strong> No se pudo crear el embedding para "${dato.nombre}". Se creó el dato sin él.</p>`;
+                agregarPersonajeDesdeDatos({ ...dato, arco: arcoSeleccionado, embedding: [] });
+                totalCreados++;
+            }
+        }
+        
+        if (totalCreados > 0) {
+            alert(`¡Proceso completado! Se crearon ${totalCreados} datos nuevos en el arco '${arcoSeleccionado}'.`);
+            document.getElementById('ia-datos-area').value = '';
+            reinicializarFiltrosYActualizarVista();
+        } else {
+            alert("El proceso finalizó, pero no se pudo crear ningún dato. Revisa el chat para más información.");
+        }
+
+    } catch (error) {
+        alert("Ocurrió un error al procesar la solicitud con la IA: " + error.message);
+        console.error("Error en procesarEntradaConIA:", error);
+        chatDiv.innerHTML += `<p><strong>Error:</strong> ${error.message}</p>`;
+    } finally {
+        if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
     }
 }
 
 
 
+
+/**
+ * Inicializa el modal de IA una sola vez, poblando el selector de arcos.
+ * Es importante que la variable 'opcionesArco' esté disponible globalmente.
+ */
+function inicializarModalIA() {
+    const select = document.getElementById('ia-arco-select');
+    // Se asegura de que el selector exista y no tenga opciones para no duplicarlas.
+    if (select && select.options.length === 0) {
+        if (typeof opcionesArco !== 'undefined') {
+            opcionesArco.forEach(opcion => {
+                const optionEl = document.createElement('option');
+                optionEl.value = opcion.valor;
+                optionEl.textContent = `${opcion.emoji} ${opcion.titulo}`;
+                select.appendChild(optionEl);
+            });
+        } else {
+            console.error("Error: La variable 'opcionesArco' no está definida. El selector de arcos no se puede poblar.");
+        }
+    }
+}
+
+// Se ejecuta la inicialización cuando el contenido del DOM está completamente cargado.
+document.addEventListener('DOMContentLoaded', inicializarModalIA);
+
+
+/**
+ * Muestra u oculta el campo de texto para el arco personalizado
+ * basado en la selección del dropdown.
+ * @param {HTMLSelectElement} selectElement - El elemento select que cambió.
+ */
+function toggleCustomArcoInput(selectElement) {
+    const customInput = document.getElementById('ia-arco-custom');
+    if (selectElement.value === 'personalizar') {
+        customInput.style.display = 'block';
+        customInput.focus();
+    } else {
+        customInput.style.display = 'none';
+    }
+}
+
+/**
+ * Abre el modal de la IA y se asegura de que el selector de arcos
+ * esté reseteado a su estado por defecto.
+ */
+function abrirModalAIDatos() {
+    // Asume que tienes un overlay con id 'modal-ia-datos-overlay' que contiene tu modal.
+    const modalOverlay = document.getElementById('modal-ia-datos-overlay');
+    const select = document.getElementById('ia-arco-select');
+    const customInput = document.getElementById('ia-arco-custom');
+    
+    // Resetea los controles a su estado inicial cada vez que se abre el modal.
+    if (select) select.value = 'sin_arco'; // 'sin_arco' es el valor para 'Base'
+    if (customInput) {
+        customInput.style.display = 'none';
+        customInput.value = '';
+    }
+
+    if (modalOverlay) modalOverlay.style.display = 'flex';
+}
+
+
+/**
+ * Procesa la entrada del usuario utilizando un flujo de IA de múltiples pasos,
+ * asignando los datos generados al arco narrativo seleccionado en el modal.
+ */
 async function procesarEntradaConIA() {
+    // --- NUEVO: Obtener el arco seleccionado del modal ---
+    const arcoSelect = document.getElementById('ia-arco-select');
+    const arcoCustomInput = document.getElementById('ia-arco-custom');
+    let arcoSeleccionado = 'sin_arco'; // Valor por defecto
+
+    if (arcoSelect) {
+        if (arcoSelect.value === 'personalizar' && arcoCustomInput) {
+            // Si se elige 'personalizar', usa el valor del input, o el por defecto si está vacío.
+            arcoSeleccionado = arcoCustomInput.value.trim() || 'sin_arco';
+        } else {
+            arcoSeleccionado = arcoSelect.value;
+        }
+    }
+    // --- FIN DE LA MODIFICACIÓN ---
+
+    const textoUsuario = document.getElementById('ia-datos-area').value.trim();
+    if (!textoUsuario) {
+        alert("Por favor, introduce algún texto o instrucción para que la IA trabaje.");
+        return;
+    }
+    cerrarModalAIDatos();
+    const chatDiv = window.chatDiv || document.getElementById('chat');
+    chatDiv.innerHTML += `<p><strong>Tú:</strong> ${textoUsuario}</p><p><strong>Silenos:</strong> Entendido. Analizando tu petición...</p>`;
+    chatDiv.scrollTop = chatDiv.scrollHeight;
+
+    try {
+        // --- PASO 1: Determinar la intención del usuario ---
+        const promptRouter = `
+            Analiza la siguiente petición del usuario y clasifícala en una de estas tres categorías:
+            1. "EXTRAER": El usuario ha pegado un texto largo y quiere que extraigas información estructurada de él.
+            2. "GENERAR_TEMA": El usuario quiere que generes un conjunto de datos sobre un tema, idea u obra. (Ej: "Crea personajes para una historia de detectives").
+            3. "GENERAR_CONCRETO": El usuario pide crear uno o más elementos muy específicos. (Ej: "Crea un objeto mágico llamado 'La Gema del Ocaso'").
+
+            **Petición del usuario:** "${textoUsuario}"
+
+            Responde ÚNICAMENTE con un objeto JSON con la siguiente estructura:
+            { "intencion": "EXTRAER" | "GENERAR_TEMA" | "GENERAR_CONCRETO", "peticion_resumida": "Un resumen de lo que hay que hacer." }
+        `;
+
+        const respuestaRouter = await llamarIAConFeedback(promptRouter, "Interpretando tu solicitud...", "gemini-2.0-flash-lite");
+        const { intencion, peticion_resumida } = respuestaRouter;
+
+        if (!intencion || !peticion_resumida) {
+            throw new Error("La IA no pudo entender la intención de tu petición. Intenta ser más claro.");
+        }
+        
+        chatDiv.innerHTML += `<p><strong>Silenos:</strong> Intención detectada: ${intencion}. Manos a la obra...</p>`;
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+
+        // --- PASO 2: Generar los datos textuales ---
+        const etiquetasValidas = opcionesEtiqueta
+            .map(o => o.valor)
+            .filter(v => v !== 'indeterminado' && v !== 'personalizar')
+            .join(', ');
+
+        const promptGeneracionDatos = `
+            **Tarea Principal:** Basado en la siguiente solicitud, genera una lista de datos estructurados.
+            **Solicitud:** "${peticion_resumida}"
+            
+            **Instrucciones Adicionales:**
+            - Si la solicitud es EXTRAER, basa tu respuesta únicamente en el texto original proporcionado por el usuario.
+            - Si es GENERAR, sé creativo y produce contenido original que se ajuste a la petición.
+            - Para CADA dato generado, proporciona: "nombre", "descripcion" (detallada, para el embedding), "promptVisual" (una descripción para generar una imagen), y la "etiqueta" MÁS APROPIADA de [${etiquetasValidas}].
+
+            **Formato de Salida Obligatorio:** Responde ÚNICAMENTE con un objeto JSON válido que sea un array de datos. Cada objeto en el array debe tener la estructura completa: 
+            { "nombre": "...", "descripcion": "...", "promptVisual": "...", "etiqueta": "..." }
+        `;
+
+        const datosTextuales = await llamarIAConFeedback(promptGeneracionDatos, "Generando información...", "gemini-2.5-flash-lite");
+
+        if (!Array.isArray(datosTextuales) || datosTextuales.length === 0) {
+             throw new Error("La IA no devolvió datos estructurados. La respuesta puede estar en el chat.");
+        }
+        
+        chatDiv.innerHTML += `<p><strong>Silenos:</strong> Se han generado ${datosTextuales.length} perfiles de datos. Creando embeddings para el arco '${arcoSeleccionado}'...</p>`;
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+
+        // --- PASO 3: Generar embeddings y crear los elementos en el DOM ---
+        let totalCreados = 0;
+        for (const dato of datosTextuales) {
+            if (!dato.nombre || !dato.descripcion) continue;
+
+            try {
+                const embeddingVector = await generarEmbedding(dato.descripcion);
+
+                // --- PASO 3b: Crear el elemento con toda la información ---
+                const datosCompletos = {
+                    ...dato,
+                    arco: arcoSeleccionado, // Usar el arco seleccionado del modal
+                    embedding: embeddingVector || []
+                };
+
+                agregarPersonajeDesdeDatos(datosCompletos);
+                totalCreados++;
+
+            } catch (embeddingError) {
+                console.error(`Error al generar embedding para "${dato.nombre}":`, embeddingError);
+                chatDiv.innerHTML += `<p><strong>Aviso:</strong> No se pudo crear el embedding para "${dato.nombre}". Se creó el dato sin él.</p>`;
+                agregarPersonajeDesdeDatos({ ...dato, arco: arcoSeleccionado, embedding: [] });
+                totalCreados++;
+            }
+        }
+        
+        if (totalCreados > 0) {
+            alert(`¡Proceso completado! Se crearon ${totalCreados} datos nuevos en el arco '${arcoSeleccionado}'.`);
+            document.getElementById('ia-datos-area').value = '';
+            reinicializarFiltrosYActualizarVista();
+        } else {
+            alert("El proceso finalizó, pero no se pudo crear ningún dato. Revisa el chat para más información.");
+        }
+
+    } catch (error) {
+        alert("Ocurrió un error al procesar la solicitud con la IA: " + error.message);
+        console.error("Error en procesarEntradaConIA:", error);
+        chatDiv.innerHTML += `<p><strong>Error:</strong> ${error.message}</p>`;
+    } finally {
+        if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
+    }
+}
+
+
+
+
+async function procesarEntradaConIACOPIASEGURIDADS() {
     const textoUsuario = document.getElementById('ia-datos-area').value.trim();
     if (!textoUsuario) {
         alert("Por favor, introduce algún texto para analizar.");
@@ -1265,9 +1583,6 @@ async function procesarEntradaConIA() {
         if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
     }
 }
-
-
-
 
 /**
  * --- FUNCIÓN CORREGIDA ---

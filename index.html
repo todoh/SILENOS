@@ -757,13 +757,22 @@
 <div id="modal-ia-datos" class="modal-content">
     <button class="modal-close-button" onclick="cerrarModalAIDatos()">&times;</button>
     <h3>Añadir Datos con Inteligencia Artificial</h3>
-    <p>Pega aquí el nombre de una obra (ej: "Star Wars"), una lista de ideas, o un JSON para que la IA los procese y añada como datos estructurados.</p>
+    <p>Pega aquí el nombre de una obra (ej: "Star Wars"), una lista de ideas, o un texto para que la IA los procese y añada como datos estructurados.</p>
     <textarea id="ia-datos-area" placeholder='Ejemplo 1: El Señor de los Anillos
 
-Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el reino de Camelot.
+Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el reino de Camelot.'></textarea>
 
-Ejemplo 3: [{"nombre": "Dato 1", "descripcion": "..."}]'></textarea>
-    <button class="modal-button" onclick="procesarEntradaConIA()">✨ Analizar y Agregar Datos</button>
+    <!-- INICIO: Elementos añadidos para seleccionar el arco -->
+    <div class="ia-arco-selector" style="margin-top: 15px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <label for="ia-arco-select" style="font-weight: bold; color: #333;">Asignar al Arco:</label>
+        <select id="ia-arco-select" onchange="toggleCustomArcoInput(this)" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; background-color: white; flex-grow: 1;">
+            <!-- Las opciones se llenarán dinámicamente con JavaScript -->
+        </select>
+        <input type="text" id="ia-arco-custom" placeholder="Nombre del arco personalizado" style="display:none; padding: 8px; border-radius: 5px; border: 1px solid #ccc; flex-grow: 1;">
+    </div>
+    <!-- FIN: Elementos añadidos -->
+
+    <button class="modal-button" onclick="procesarEntradaConIA()" style="margin-top: 20px; width: 100%;">✨ Analizar y Agregar Datos</button>
 </div>
 
 <div id="modal-exportar" class="modal-content">
