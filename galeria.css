@@ -129,11 +129,11 @@ padding: 0% ;
 
 /* Placeholder para la portada del libro */
 .libro-portada {
-    width: 90%;
+    width: 100%;
     height: auto;
     aspect-ratio: 15 / 23;;
-    background-color: #e0e0e0; /* Color gris para el placeholder */
-    border: 1px dashed #a0a0a0;
+    background-color: #e0e0e000; /* Color gris para el placeholder */
+    border: 0px dashed #a0a0a0;
     margin-bottom: 12px; /* Espacio entre la portada y el título */
     display: flex;
     align-items: center;
@@ -148,7 +148,13 @@ padding: 0% ;
   background-repeat: no-repeat;
 }
 
- 
+ .libro-portada img {
+    max-width: 100%;
+    max-height: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
 
 
 .libro-portada::before {

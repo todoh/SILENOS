@@ -1387,7 +1387,10 @@ async function generarPortadaConIA(libro) {
     - Descripción visual de la portada: "${datosPortada.promptVisual}"
     - Nombre del autor (si se proporciona, debe ser visible): "${datosPortada.autores}"
     - Editorial (si se proporciona, inclúyelo discretamente): "${datosPortada.editorial}"
-    El diseño debe ser coherente, de alta calidad y adecuado para una portada de libro. El título y el autor deben estar bien integrados en la composición.`;
+    El diseño debe ser coherente, de alta calidad y adecuado para una portada de libro. 
+    En formato vertical panoramico 9/16. 
+    El título y el autor y la editorial deben estar bien integrados en la composición. 
+    No incluyas el texto del promptVisual en la portada usalo solo para inspirarte y guiarte. `;
 
     const payload = {
         "contents": [{

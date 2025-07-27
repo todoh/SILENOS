@@ -58,9 +58,14 @@ function recolectarYAgruparDatos() {
             datosAgrupados[nombreCategoria] = [];
         }
 
+            // Se lee el embedding que está guardado en el dataset del elemento del DOM.
+        const embedding = nodoDato.dataset.embedding || '[]';
+        
+        // Se añade el embedding al objeto que se recolecta.
         datosAgrupados[nombreCategoria].push({
             nombre: nombre,
-            descripcion: descripcion
+            descripcion: descripcion,
+            embedding: embedding 
         });
     }
     return datosAgrupados;
@@ -231,6 +236,7 @@ function lanzarGeneracionHistoria() {
 
 
 async function enviarTextoConInstrucciones() {
+ 
     actualizarParametrosIA();
     const geminichat = document.getElementById("gemini1").value;
 
@@ -250,25 +256,46 @@ async function enviarTextoConInstrucciones() {
     ultimaHistoriaGeneradaJson = { historia: [] };
 
     const incluirDatos = document.getElementById('incluir-datos-ia').checked;
-    let datosConEmbeddings = []; 
+    let datosConEmbeddings = [];
 
     try {
         if (incluirDatos) {
+           
             progressBarManager.set(5, 'Procesando y vectorizando datos...');
             const datosAgrupados = recolectarYAgruparDatos();
+            
             if (Object.keys(datosAgrupados).length > 0) {
-                let datosParaEmbeber = [];
+                const datosProcesados = [];
                 for (const categoria in datosAgrupados) {
-                    datosAgrupados[categoria].forEach(dato => {
+                    for (const dato of datosAgrupados[categoria]) {
                         const textoCompleto = `Categoría: ${categoria}, Nombre: ${dato.nombre}, Descripción: ${dato.descripcion}`;
-                        datosParaEmbeber.push({ original: textoCompleto });
-                    });
+                        let embeddingVector = null;
+
+                        if (dato.embedding && typeof dato.embedding === 'string' && dato.embedding.length > 2) {
+                            try {
+                                embeddingVector = JSON.parse(dato.embedding);
+                                if (!Array.isArray(embeddingVector) || embeddingVector.length === 0) {
+                                    embeddingVector = null;
+                                }
+                            } catch (e) {
+                                console.warn(`Fallo al parsear embedding para "${dato.nombre}". Se regenerará.`, e);
+                                embeddingVector = null;
+                            }
+                        }
+
+                        if (embeddingVector === null) {
+                            await sleep(200); 
+                            
+                            embeddingVector = await generarEmbedding(textoCompleto);
+                            console.log(`Embedding generado para "${dato.nombre}"`, embeddingVector);
+                        }
+                        datosProcesados.push({
+                            original: textoCompleto,
+                            embedding: embeddingVector
+                        });
+                    }
                 }
-                await Promise.all(datosParaEmbeber.map(async (dato) => {
-                    dato.embedding = await generarEmbedding(dato.original);
-                }));
-                datosConEmbeddings = datosParaEmbeber;
-                console.log("Embeddings generados para todos los datos.", datosConEmbeddings);
+                datosConEmbeddings = datosProcesados;
             }
         }
 
@@ -278,19 +305,18 @@ async function enviarTextoConInstrucciones() {
         if (incluirDatos && datosConEmbeddings.length > 0) {
             contextoInicialDatos += "**Instrucción Maestra OBLIGATORIA:** La historia que vas a crear DEBE basarse fundamentalmente en los siguientes datos. Los personajes listados DEBEN ser los protagonistas. La trama DEBE ocurrir en las ubicaciones mencionadas y girar en torno a los eventos descritos.\n\n**DATOS FUNDAMENTALES:**\n";
             datosConEmbeddings.forEach(dato => {
-                 contextoInicialDatos += `- ${dato.original}\n`;
+                contextoInicialDatos += `- ${dato.original}\n`;
             });
             contextoInicialDatos += "\n";
         }
 
-        // CAMBIO 1: Instrucción de idioma explícita en el primer prompt.
         const promptPaso1 = `
             ${contextoInicialDatos}
             **Idea Inicial del Usuario:** "${geminichat}"
             
-            **Instrucción de Idioma OBLIGATORIA:** Tu respuesta COMPLETA debe estar en el mismo idioma que la "Idea Inicial del Usuario". Si la idea está en árabe, toda tu respuesta (título y planteamiento) DEBE ser en árabe.
+            **Instrucción de Idioma OBLIGATORIA:** Tu respuesta COMPLETA debe estar en el mismo idioma que la "Idea Inicial del Usuario".
             
-            **Tarea:** Usando la Idea Inicial como inspiración, genera un título creativo y un resumen general detallado de la historia. Asegúrate de que los personajes y lugares de los DATOS FUNDAMENTALES sean los elementos centrales y protagonistas de tu propuesta. No inventes protagonistas nuevos si ya se han proporcionado.
+            **Tarea:** Usando la Idea Inicial como inspiración, genera un título creativo y un resumen general detallado de la historia. Asegúrate de que los personajes y lugares de los DATOS FUNDAMENTALES sean los elementos centrales.
             **Formato JSON OBLIGATORIO:** {"titulo_historia_sugerido": "string", "planteamiento_general_historia": "string"}`;
 
         const respuestaPaso1 = await llamarIAConFeedback(promptPaso1, "Paso 1: Título y Planteamiento", 'gemini-2.5-pro');
@@ -304,9 +330,8 @@ async function enviarTextoConInstrucciones() {
         await sleep(500);
 
         progressBarManager.set(25, 'Dividiendo la historia en capítulos...');
-        // CAMBIO 2: Instrucción de idioma en el segundo prompt.
         const promptPaso2 = `
-            **Instrucción de Idioma OBLIGATORIA:** Tu respuesta COMPLETA debe estar en el mismo idioma que el Título y el Planteamiento. Si están en árabe, la respuesta DEBE ser en árabe.
+            **Instrucción de Idioma OBLIGATORIA:** Tu respuesta COMPLETA debe estar en el mismo idioma que el Título y el Planteamiento.
 
             Título: ${tituloHistoriaGlobal}
             Planteamiento: ${planteamientoGeneralGlobal}
@@ -328,8 +353,7 @@ async function enviarTextoConInstrucciones() {
         let contextoEscenaAnteriorSerializado = "";
         for (let i = 0; i < resumenPorEscenasGlobal.length; i++) {
             const progress = 30 + (60 * (i / resumenPorEscenasGlobal.length));
-            progressBarManager.set(progress, `Analizando y desarrollando capítulo ${i + 1}...`);
-
+            
             let contextoRelevante = "";
             if (datosConEmbeddings.length > 0) {
                 const resumenEscena = resumenPorEscenasGlobal[i].resumen_escena;
@@ -342,17 +366,16 @@ async function enviarTextoConInstrucciones() {
                 const datosMasRelevantes = datosConEmbeddings.sort((a, b) => b.similitud - a.similitud).slice(0, 3);
                 
                 contextoRelevante = "**Instrucciones Obligatorias para este capítulo:**\n" +
-                                   "1. **Protagonistas y Ubicación:** La historia DEBE centrarse en los personajes y lugares descritos a continuación. No inventes nuevos protagonistas.\n" +
-                                   "2. **Eventos:** El desarrollo del capítulo DEBE girar en torno a los eventos mencionados.\n\n" +
-                                   "**Datos de Alta Relevancia para este capítulo:**\n";
+                                    "1. **Protagonistas y Ubicación:** La historia DEBE centrarse en los personajes y lugares descritos a continuación.\n" +
+                                    "2. **Eventos:** El desarrollo del capítulo DEBE girar en torno a los eventos mencionados.\n\n" +
+                                    "**Datos de Alta Relevancia para este capítulo:**\n";
                 datosMasRelevantes.forEach(dato => {
                     contextoRelevante += `- ${dato.original}\n`;
                 });
             }
 
-            // CAMBIO 3: Instrucción de idioma en el prompt del bucle principal.
             const promptPaso3 = `
-                **Instrucción de Idioma OBLIGATORIA:** Tu respuesta COMPLETA debe estar en el mismo idioma que el Título General. Si está en árabe, la respuesta DEBE ser en árabe.
+                **Instrucción de Idioma OBLIGATORIA:** Tu respuesta COMPLETA debe estar en el mismo idioma que el Título General.
 
                 Título General: ${tituloHistoriaGlobal}
                 Planteamiento General de la Historia: ${planteamientoGeneralGlobal}
@@ -361,13 +384,47 @@ async function enviarTextoConInstrucciones() {
                 
                 ${contextoRelevante}
 
-                **Tarea Principal:** Desarrolla el capítulo ${i + 1} siguiendo ESTRICTAMENTE las instrucciones y datos proporcionados. La narrativa debe ser coherente con el planteamiento general y el resumen del capítulo. Divídelo en ${window.cantidadframes} frames y dale un título al capítulo.
+                **Tarea Principal:** Desarrolla el capítulo ${i + 1} siguiendo ESTRICTAMENTE las instrucciones y datos proporcionados. Divídelo en ${window.cantidadframes} frames y dale un título al capítulo.
                 **Formato JSON OBLIGATORIO:** {"titulo_escena_desarrollada": "string", "frames_desarrollados": [{"contenido_frame": "string"}]}`;
             
-            const respuestaPaso3Escena = await llamarIAConFeedback(promptPaso3, `Paso 3: Capítulo ${i + 1}`, 'gemini-2.5-flash');
-            
+            // --- INICIO DE LA CORRECCIÓN ROBUSTA ---
+            let respuestaPaso3Escena = null;
+            let respuestaValida = false;
+            let intentosPaso3 = 0;
+            const maxIntentosPaso3 = 5; // Máximo de reintentos para este paso crítico
+
+            while (!respuestaValida && intentosPaso3 < maxIntentosPaso3) {
+                intentosPaso3++;
+                progressBarManager.set(progress, `Desarrollando capítulo ${i + 1} (Intento ${intentosPaso3})...`);
+                
+                const respuestaCruda = await llamarIAConFeedback(promptPaso3, `Paso 3: Capítulo ${i + 1} (Intento ${intentosPaso3})`, 'gemini-2.5-flash');
+
+                // Validación estricta: la respuesta debe existir y tener un array de frames.
+                if (respuestaCruda && Array.isArray(respuestaCruda.frames_desarrollados)) {
+                    respuestaPaso3Escena = respuestaCruda;
+                    respuestaValida = true;
+                    if (window.chatDiv && intentosPaso3 > 1) {
+                        window.chatDiv.innerHTML += `<p><strong>Silenos informa:</strong> La estructura del Capítulo ${i + 1} fue validada con éxito en el intento ${intentosPaso3}.</p>`;
+                        window.chatDiv.scrollTop = window.chatDiv.scrollHeight;
+                    }
+                } else {
+                    console.error(`Intento ${intentosPaso3}/${maxIntentosPaso3} para Capítulo ${i + 1} devolvió una estructura inválida.`, respuestaCruda);
+                    if (window.chatDiv) {
+                        window.chatDiv.innerHTML += `<p><strong>Aviso de Silenos:</strong> La respuesta para el Capítulo ${i + 1} tiene una estructura incorrecta. Reintentando... (Intento ${intentosPaso3})</p>`;
+                        window.chatDiv.scrollTop = window.chatDiv.scrollHeight;
+                    }
+                    await sleep(1500); // Esperamos un poco más antes de reintentar.
+                }
+            }
+
+            if (!respuestaValida) {
+                throw new Error(`No se pudo obtener una respuesta válida para el Capítulo ${i + 1} después de ${maxIntentosPaso3} intentos.`);
+            }
+            // --- FIN DE LA CORRECCIÓN ROBUSTA ---
+
             const escenaProcesada = {
                 titulo_escena: respuestaPaso3Escena.titulo_escena_desarrollada,
+                // Usamos el array ya validado.
                 frames: respuestaPaso3Escena.frames_desarrollados.map(f => ({ contenido: f.contenido_frame || "" }))
             };
             ultimaHistoriaGeneradaJson.historia.push(escenaProcesada);
@@ -378,6 +435,7 @@ async function enviarTextoConInstrucciones() {
             });
             chunkHTML += `</div>`;
             historiaContenidoHTML += chunkHTML;
+            console.log(chunkHTML);
             actualizarContenidoGuionEnProgreso(chunkHTML);
             
             contextoEscenaAnteriorSerializado = JSON.stringify(respuestaPaso3Escena, null, 2);
@@ -399,3 +457,4 @@ async function enviarTextoConInstrucciones() {
         }
     }
 }
+

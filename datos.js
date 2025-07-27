@@ -661,7 +661,12 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     contenedor.className = 'personaje';
 
     // --- Guardado de datos clave en el dataset del elemento ---
+    // --- INICIO DE LA CORRECCIÓN ---
+    // Al cargar, 'embedding' es un array. Lo convertimos a un string JSON
+    // para que se guarde correctamente en el atributo data- del DOM.
     contenedor.dataset.embedding = JSON.stringify(embedding);
+    // --- FIN DE LA CORRECCIÓN ---
+    
     contenedor.dataset.descripcion = personajeData.descripcion || '';
     if (svgContent) {
         contenedor.dataset.svgContent = svgContent;
@@ -681,8 +686,6 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     arcoBtn.className = 'change-arc-btn';
     arcoBtn.dataset.arco = arcoValor; // Asignar el valor del arco al dataset
 
-    // --- INICIO DE LA CORRECCIÓN ---
-    // Comprobar si el arco es uno de los predefinidos
     const opcionArco = opcionesArco.find(op => op.valor === arcoValor);
 
     if (opcionArco) {
@@ -694,7 +697,6 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
         arcoBtn.innerHTML = arcoValor;
         arcoBtn.title = `Arco: ${arcoValor}`;
     }
-    // --- FIN DE LA CORRECCIÓN ---
 
     arcoBtn.onclick = () => mostrarMenuArcos(arcoBtn);
     contenedor.appendChild(arcoBtn);
@@ -752,8 +754,6 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     // --- Wrapper para todos los botones de acción ---
     const buttonsWrapper = document.createElement('div');
     buttonsWrapper.className = 'edit-buttons-wrapper';
-
-    // --- INICIO DE LA MODIFICACIÓN: Lógica de botones unificada ---
 
     // Se definen las acciones de los botones como funciones internas
     const generarVectorialNormal = async () => {
@@ -961,8 +961,6 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     botonEliminar.title = 'Eliminar Dato';
     buttonsWrapper.appendChild(botonEliminar);
 
-    // --- FIN DE LA MODIFICACIÓN ---
-
     // Añadir elementos al DOM
     textControlsContainer.appendChild(cajaTexto);
     textControlsContainer.appendChild(cajaPromptVisual);
@@ -989,8 +987,6 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
             }
         }
     };
-
-    // La lógica de los botones ya está definida arriba y se asigna en el menú
     
     botonGuardarSVG.onclick = () => {
         if (!fabricEditorCanvas) return;
@@ -1124,103 +1120,86 @@ function abrirModalAIDatos() {
  * asignando los datos generados al arco narrativo seleccionado en el modal.
  */
 async function procesarEntradaConIA() {
-    // --- NUEVO: Obtener el arco seleccionado del modal ---
+    // --- OBTENER ENTRADA DEL USUARIO (Sin cambios) ---
     const arcoSelect = document.getElementById('ia-arco-select');
     const arcoCustomInput = document.getElementById('ia-arco-custom');
-    let arcoSeleccionado = 'sin_arco'; // Valor por defecto
+    let arcoSeleccionado = 'sin_arco';
 
     if (arcoSelect) {
         if (arcoSelect.value === 'personalizar' && arcoCustomInput) {
-            // Si se elige 'personalizar', usa el valor del input, o el por defecto si está vacío.
             arcoSeleccionado = arcoCustomInput.value.trim() || 'sin_arco';
         } else {
             arcoSeleccionado = arcoSelect.value;
         }
     }
-    // --- FIN DE LA MODIFICACIÓN ---
 
     const textoUsuario = document.getElementById('ia-datos-area').value.trim();
     if (!textoUsuario) {
-        alert("Por favor, introduce algún texto o instrucción para que la IA trabaje.");
+        mostrarError("Por favor, introduce algún texto o instrucción para que la IA trabaje.");
         return;
     }
     cerrarModalAIDatos();
     const chatDiv = window.chatDiv || document.getElementById('chat');
-    chatDiv.innerHTML += `<p><strong>Tú:</strong> ${textoUsuario}</p><p><strong>Silenos:</strong> Entendido. Analizando tu petición...</p>`;
+    chatDiv.innerHTML += `<p><strong>Tú:</strong> ${textoUsuario.substring(0, 100)}...</p><p><strong>Silenos:</strong> Entendido. Iniciando análisis inteligente...</p>`;
     chatDiv.scrollTop = chatDiv.scrollHeight;
 
     try {
-        // --- PASO 1: Determinar la intención del usuario ---
+        // --- PASO 1: DETERMINAR LA INTENCIÓN (Router mejorado) ---
         const promptRouter = `
-            Analiza la siguiente petición del usuario y clasifícala en una de estas tres categorías:
+            Analiza la siguiente petición del usuario y clasifícala en una de estas TRES categorías:
             1. "EXTRAER": El usuario ha pegado un texto largo y quiere que extraigas información estructurada de él.
-            2. "GENERAR_TEMA": El usuario quiere que generes un conjunto de datos sobre un tema, idea u obra. (Ej: "Crea personajes para una historia de detectives").
-            3. "GENERAR_CONCRETO": El usuario pide crear uno o más elementos muy específicos. (Ej: "Crea un objeto mágico llamado 'La Gema del Ocaso'").
+            2. "GENERAR_TEMA": El usuario quiere que generes un conjunto de datos sobre un tema, idea u obra (Ej: "Crea 5 personajes para una historia de ciencia ficción").
+            3. "GENERAR_CONCRETO": El usuario pide crear uno o más elementos muy específicos y nombrados (Ej: "Crea un objeto mágico llamado 'La Gema del Ocaso'").
 
             **Petición del usuario:** "${textoUsuario}"
 
             Responde ÚNICAMENTE con un objeto JSON con la siguiente estructura:
             { "intencion": "EXTRAER" | "GENERAR_TEMA" | "GENERAR_CONCRETO", "peticion_resumida": "Un resumen de lo que hay que hacer." }
         `;
-
-        const respuestaRouter = await llamarIAConFeedback(promptRouter, "Interpretando tu solicitud...", "gemini-2.0-flash-lite");
+        const respuestaRouter = await llamarIAConFeedback(promptRouter, "Interpretando tu solicitud...", "gemini-2.5-flash");
         const { intencion, peticion_resumida } = respuestaRouter;
 
         if (!intencion || !peticion_resumida) {
             throw new Error("La IA no pudo entender la intención de tu petición. Intenta ser más claro.");
         }
         
-        chatDiv.innerHTML += `<p><strong>Silenos:</strong> Intención detectada: ${intencion}. Manos a la obra...</p>`;
+        chatDiv.innerHTML += `<p><strong>Silenos:</strong> Intención detectada: ${intencion}. Procediendo con el pipeline adecuado...</p>`;
         chatDiv.scrollTop = chatDiv.scrollHeight;
 
-        // --- PASO 2: Generar los datos textuales ---
-        const etiquetasValidas = opcionesEtiqueta
-            .map(o => o.valor)
-            .filter(v => v !== 'indeterminado' && v !== 'personalizar')
-            .join(', ');
+        let datosTextuales = [];
 
-        const promptGeneracionDatos = `
-            **Tarea Principal:** Basado en la siguiente solicitud, genera una lista de datos estructurados.
-            **Solicitud:** "${peticion_resumida}"
-            
-            **Instrucciones Adicionales:**
-            - Si la solicitud es EXTRAER, basa tu respuesta únicamente en el texto original proporcionado por el usuario.
-            - Si es GENERAR, sé creativo y produce contenido original que se ajuste a la petición.
-            - Para CADA dato generado, proporciona: "nombre", "descripcion" (detallada, para el embedding), 
-            "promptVisual" (una descripción para generar una imagen detalla y repetible de ese dato), (si es una persona, detalla con exactitud su morfologia, TODOS los rasgos de su cara y su vestimenta), 
-            y la "etiqueta" MÁS APROPIADA de [${etiquetasValidas}].
+        // --- BIFURCACIÓN DE PIPELINES ---
+        if (intencion === 'EXTRAER') {
+console.log('extraer');
+            datosTextuales = await pipelineExtraccionInteligente(textoUsuario, chatDiv);
+        } else if (intencion === 'GENERAR_TEMA' || intencion === 'GENERAR_CONCRETO') {
+console.log('generar');
+            datosTextuales = await pipelineGeneracionContenido(peticion_resumida, chatDiv);
+        } else {
+console.log('interaccionar');            throw new Error(`Intención '${intencion}' no reconocida o sin pipeline asignado.`);
+        }
 
-            **Formato de Salida Obligatorio:** Responde ÚNICAMENTE con un objeto JSON válido que sea un array de datos. Cada objeto en el array debe tener la estructura completa: 
-            { "nombre": "...", "descripcion": "...", "promptVisual": "...", "etiqueta": "..." }
-        `;
-
-        const datosTextuales = await llamarIAConFeedback(promptGeneracionDatos, "Generando información...", "gemini-2.5-flash-lite");
-
-        if (!Array.isArray(datosTextuales) || datosTextuales.length === 0) {
-             throw new Error("La IA no devolvió datos estructurados. La respuesta puede estar en el chat.");
+        if (!datosTextuales || datosTextuales.length === 0) {
+            throw new Error("El pipeline de la IA no devolvió ningún dato estructurado. Revisa el texto de entrada o los logs.");
         }
         
-        chatDiv.innerHTML += `<p><strong>Silenos:</strong> Se han generado ${datosTextuales.length} perfiles de datos. Creando embeddings para el arco '${arcoSeleccionado}'...</p>`;
+        chatDiv.innerHTML += `<p><strong>Silenos:</strong> Proceso finalizado. Se han obtenido ${datosTextuales.length} perfiles de datos. Creando embeddings para el arco '${arcoSeleccionado}'...</p>`;
         chatDiv.scrollTop = chatDiv.scrollHeight;
 
-        // --- PASO 3: Generar embeddings y crear los elementos en el DOM ---
+        // --- PASO FINAL: GENERAR EMBEDDINGS Y CREAR ELEMENTOS (Lógica sin cambios) ---
         let totalCreados = 0;
         for (const dato of datosTextuales) {
             if (!dato.nombre || !dato.descripcion) continue;
 
             try {
                 const embeddingVector = await generarEmbedding(dato.descripcion);
-
-                // --- PASO 3b: Crear el elemento con toda la información ---
                 const datosCompletos = {
                     ...dato,
-                    arco: arcoSeleccionado, // Usar el arco seleccionado del modal
+                    arco: arcoSeleccionado,
                     embedding: embeddingVector || []
                 };
-
                 agregarPersonajeDesdeDatos(datosCompletos);
                 totalCreados++;
-
             } catch (embeddingError) {
                 console.error(`Error al generar embedding para "${dato.nombre}":`, embeddingError);
                 chatDiv.innerHTML += `<p><strong>Aviso:</strong> No se pudo crear el embedding para "${dato.nombre}". Se creó el dato sin él.</p>`;
@@ -1230,20 +1209,256 @@ async function procesarEntradaConIA() {
         }
         
         if (totalCreados > 0) {
-            alert(`¡Proceso completado! Se crearon ${totalCreados} datos nuevos en el arco '${arcoSeleccionado}'.`);
+            mostrarError(`¡Proceso completado! Se crearon ${totalCreados} datos nuevos en el arco '${arcoSeleccionado}'.`);
             document.getElementById('ia-datos-area').value = '';
             reinicializarFiltrosYActualizarVista();
         } else {
-            alert("El proceso finalizó, pero no se pudo crear ningún dato. Revisa el chat para más información.");
+            mostrarError("El proceso finalizó, pero no se pudo crear ningún dato. Revisa el chat para más información.");
         }
 
     } catch (error) {
-        alert("Ocurrió un error al procesar la solicitud con la IA: " + error.message);
+        mostrarError("Ocurrió un error al procesar la solicitud con la IA: " + error.message);
         console.error("Error en procesarEntradaConIA:", error);
         chatDiv.innerHTML += `<p><strong>Error:</strong> ${error.message}</p>`;
     } finally {
         if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
     }
+}
+
+/**
+ * Pipeline de generación de contenido para crear elementos desde cero.
+ * @param {string} peticionResumida - La instrucción del usuario resumida por el router.
+ * @param {HTMLElement} chatDiv - El elemento del DOM para mostrar el feedback.
+ * @returns {Promise<Array<Object>>} - Una promesa que resuelve a un array de objetos de datos estructurados.
+ */
+async function pipelineGeneracionContenido(peticionResumida, chatDiv) {
+    console.log("Pipeline de generación creativa iniciado.");
+    chatDiv.innerHTML += `<p><strong>Silenos:</strong> Accediendo al pipeline de generación creativa...</p>`;
+    chatDiv.scrollTop = chatDiv.scrollHeight;
+
+    const etiquetasValidas = opcionesEtiqueta
+        .map(o => o.valor)
+        .filter(v => v !== 'indeterminado' && v !== 'personalizar')
+        .join(', ');
+
+    const promptGeneracion = `
+        **Tarea Principal:** Basado en la siguiente solicitud, genera una lista de uno o más datos estructurados de forma creativa.
+        **Solicitud del Usuario:** "${peticionResumida}"
+
+        **Instrucciones:**
+        - Produce contenido original y detallado que se ajuste a la petición.
+        - Para CADA dato generado, proporciona: "nombre", "descripcion" (detallada, para el embedding), "promptVisual" (una descripción para generar una imagen detallada y repetible del dato; si es una persona, detalla con exactitud su morfología, TODOS los rasgos de su cara y su vestimenta), y la "etiqueta" MÁS APROPIADA de la lista [${etiquetasValidas}].
+
+        **Formato de Salida Obligatorio:** Responde ÚNICAMENTE con un objeto JSON válido que sea un array de datos. Cada objeto en el array debe tener la estructura completa:
+        { "nombre": "...", "descripcion": "...", "promptVisual": "...", "etiqueta": "..." }
+    `;
+    
+    const datosGenerados = await llamarIAConFeedback(promptGeneracion, "Generando contenido creativo...", "gemini-2.5-flash-lite");
+
+    // Aseguramos que la salida sea siempre un array
+    if (!Array.isArray(datosGenerados)) {
+        if (typeof datosGenerados === 'object' && datosGenerados !== null) {
+            return [datosGenerados]; // Si devuelve un solo objeto, lo metemos en un array
+        }
+        throw new Error("La IA de generación no devolvió un formato de array de objetos válido.");
+    }
+    
+    return datosGenerados;
+}
+
+  
+
+/**
+ * Pipeline de extracción lineal, diseñado para procesar una llamada a la vez
+ * para evitar la saturación de la API. Ideal para APIs con límites de peticiones por minuto.
+ * @param {string} textoUsuario - El texto completo proporcionado por el usuario.
+ * @param {HTMLElement} chatDiv - El elemento del DOM para mostrar el feedback.
+ * @returns {Promise<Array<Object>>} - Una promesa que resuelve a un array de objetos de datos estructurados.
+ */
+ 
+ 
+ 
+/**
+ * --- VERSIÓN MEJORADA CON RENDERIZADO PROGRESIVO ---
+ * Este pipeline extrae y RENDERIZA los datos progresivamente para una experiencia de usuario más fluida.
+ * NOTA: La firma de la función ha cambiado. Ahora requiere 'arcoSeleccionado' y ya no devuelve un array de datos.
+ * La función que llama a este pipeline (`procesarEntradaConIA`) debe ser adaptada para pasarle el arco
+ * y ya no procesar el array que esta función devolvía antes.
+ *
+ * @param {string} textoUsuario - El texto completo proporcionado por el usuario.
+ * @param {HTMLElement} chatDiv - El elemento del DOM para mostrar el feedback.
+ * @param {string} arcoSeleccionado - El arco narrativo al que se asignarán los nuevos datos.
+ * @returns {Promise<number>} - Una promesa que resuelve al número total de datos creados.
+ */
+async function pipelineExtraccionInteligente(textoUsuario, chatDiv, arcoSeleccionado) {
+    let totalCreados = 0;
+    
+    // Definimos las categorías a procesar. Cada una será una pasada de 2 llamadas.
+    const categorias = [
+        {
+            nombre: "Personajes y Entidades",
+            descripcion: "Personajes con nombre, criaturas, animales o seres vivos relevantes en la trama.",
+            etiquetaAsociada: "personaje",
+            etiquetasSugeridas: "personaje, animal, ser_vivo, mitologia"
+        },
+        {
+            nombre: "Lugares y Ubicaciones",
+            descripcion: "Ciudades, edificios, regiones, planetas o cualquier ubicación geográfica o estructural mencionada.",
+            etiquetaAsociada: "ubicacion",
+            etiquetasSugeridas: "ubicacion, edificio, elemento_geografico"
+        },
+        {
+            nombre: "Objetos y Artefactos",
+            descripcion: "Ítems, herramientas, armas, atuendos, comida o cualquier objeto tangible importante.",
+            etiquetaAsociada: "objeto",
+            etiquetasSugeridas: "objeto, atuendo, comida, transporte, muebles, arte"
+        },
+        {
+            nombre: "Sucesos y Eventos",
+            descripcion: "Acontecimientos clave, batallas, ceremonias, momentos históricos o puntos de inflexión en la narrativa.",
+            etiquetaAsociada: "evento",
+            etiquetasSugeridas: "evento"
+        },
+        {
+            nombre: "Conceptos y Lore",
+            descripcion: "Ideas abstractas, reglas del mundo, lore, terminología específica, notas culturales o conceptos visuales importantes.",
+            etiquetaAsociada: "concepto",
+            etiquetasSugeridas: "concepto, nota, visual"
+        }
+    ];
+
+    chatDiv.innerHTML += `<p><strong>Silenos:</strong> Iniciando pipeline de extracción por categorías...</p>`;
+    chatDiv.scrollTop = chatDiv.scrollHeight;
+
+    // --- BUCLE PRINCIPAL ---
+    for (const [index, categoria] of categorias.entries()) {
+        try {
+            console.log(`Inicio de fase ${index + 1} de ${categorias.length}`);
+            // --- FASE 1: IDENTIFICACIÓN ---
+            const pasoActual = index * 2 + 1;
+            const totalPasos = categorias.length * 2;
+            chatDiv.innerHTML += `<p><strong>Silenos:</strong> [Paso ${pasoActual}/${totalPasos}] Identificando: <strong>${categoria.nombre}</strong>...</p>`;
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+
+            const promptIdentificacion = `
+                **Tarea:** Lee el siguiente texto y extrae una lista exhaustiva de todos los "${categoria.descripcion}".
+                **Texto:** """${textoUsuario}"""
+                **Instrucciones:**
+                - Enfócate únicamente en la categoría: ${categoria.nombre}.
+                - Devuelve solo los nombres propios o términos específicos.
+                - Evita duplicados.
+                **Formato de Salida Obligatorio:** Responde ÚNICAMENTE con un array de strings en formato JSON.
+                **Ejemplo:** ["Nombre 1", "Nombre 2", "Término 3"]
+            `;
+            
+            const listaNombres = await llamarIAConFeedback(promptIdentificacion, `Identificando ${categoria.nombre}...`, "gemini-2.5-flash");
+
+            if (!Array.isArray(listaNombres) || listaNombres.length === 0) {
+                chatDiv.innerHTML += `<p><strong>Silenos:</strong> No se encontraron elementos para "${categoria.nombre}". Saltando al siguiente.</p>`;
+                chatDiv.scrollTop = chatDiv.scrollHeight;
+                continue; // Si no hay nada, pasamos a la siguiente categoría
+            }
+            
+            chatDiv.innerHTML += `<p><strong>Silenos:</strong> Se encontraron ${listaNombres.length} elemento(s) de tipo "${categoria.nombre}".</p>`;
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+
+            // --- FASE 2: ELABORACIÓN Y RENDERIZADO POR LOTES ---
+            const pasoElaboracion = index * 2 + 2;
+            chatDiv.innerHTML += `<p><strong>Silenos:</strong> [Paso ${pasoElaboracion}/${totalPasos}] Elaborando detalles para: <strong>${categoria.nombre}</strong>...</p>`;
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+
+            const CHUNK_SIZE = 8; // Procesamos en lotes para evitar errores de 'fetch' por tamaño de request
+            
+            for (let i = 0; i < listaNombres.length; i += CHUNK_SIZE) {
+                console.log(`Procesando lote ${i / CHUNK_SIZE + 1} de ${Math.ceil(listaNombres.length / CHUNK_SIZE)} para "${categoria.nombre}"`);
+                const chunk = listaNombres.slice(i, i + CHUNK_SIZE);
+                const numLote = (i / CHUNK_SIZE) + 1;
+                const totalLotes = Math.ceil(listaNombres.length / CHUNK_SIZE);
+
+                chatDiv.innerHTML += `<p><strong>Silenos:</strong> ...procesando lote ${numLote} de ${totalLotes} para "${categoria.nombre}".</p>`;
+                chatDiv.scrollTop = chatDiv.scrollHeight;
+
+                const promptElaboracion = `
+                    **Tarea:** Basado en el texto completo, genera los datos detallados para el siguiente LOTE de entidades de la categoría "${categoria.nombre}".
+                    **Texto de Referencia Completo:** """${textoUsuario}"""
+                    **Lote de Nombres a Detallar:** ${JSON.stringify(chunk)}
+
+                    **Instrucciones Detalladas:**
+                    1.  Para CADA nombre en la lista del lote, crea un objeto JSON con la siguiente estructura:
+                        - "nombre": El nombre exacto de la lista.
+                        - "descripcion": Un resumen detallado y completo, sintetizando toda la información disponible en el texto sobre ese elemento.
+                        - "promptVisual": Una descripción visual muy detallada para una IA generadora de imágenes. Describe con precisión la apariencia, colores, atmósfera, etc.
+                        - "etiqueta": Asigna la etiqueta MÁS APROPIADA de la lista [${categoria.etiquetasSugeridas}]. Si dudas, usa "${categoria.etiquetaAsociada}".
+                    
+                    **Formato de Salida Obligatorio:** Responde ÚNICAMENTE con un array de objetos JSON válido. No incluyas texto explicativo.
+                `;
+
+                const datosElaboradosChunk = await llamarIAConFeedback(promptElaboracion, `Elaborando ${chunk.length} elemento(s) del lote ${numLote}/${totalLotes}...`, "gemini-2.5-flash-lite");
+
+                if (Array.isArray(datosElaboradosChunk) && datosElaboradosChunk.length > 0) {
+                    // --- INICIO DE LA MODIFICACIÓN CLAVE ---
+                    // Procesar y renderizar cada dato del lote inmediatamente.
+                    for (const dato of datosElaboradosChunk) {
+                        if (!dato.nombre || !dato.descripcion) continue;
+
+                        try {
+                            // Se asume que generarEmbedding() y agregarPersonajeDesdeDatos() están disponibles en el scope.
+                            const embeddingVector = await generarEmbedding(dato.descripcion);
+                            const datosCompletos = {
+                                ...dato,
+                                arco: arcoSeleccionado,
+                                embedding: embeddingVector || []
+                            };
+                            agregarPersonajeDesdeDatos(datosCompletos);
+                            totalCreados++;
+                        } catch (embeddingError) {
+                            console.error(`Error al generar embedding para "${dato.nombre}":`, embeddingError);
+                            chatDiv.innerHTML += `<p><strong>Aviso:</strong> No se pudo crear el embedding para "${dato.nombre}". Se creó el dato sin él.</p>`;
+                            agregarPersonajeDesdeDatos({ ...dato, arco: arcoSeleccionado, embedding: [] });
+                            totalCreados++;
+                        }
+                    }
+                    // Actualizar la vista de filtros después de añadir un lote de datos.
+                    if (typeof reinicializarFiltrosYActualizarVista === 'function') {
+                        reinicializarFiltrosYActualizarVista();
+                    }
+                    // --- FIN DE LA MODIFICACIÓN CLAVE ---
+                }
+            }
+            chatDiv.innerHTML += `<p><strong>Silenos:</strong> Se procesaron y mostraron perfiles para "${categoria.nombre}".</p>`;
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+
+        } catch (error) {
+            console.error(`Error procesando la categoría "${categoria.nombre}":`, error);
+            chatDiv.innerHTML += `<p><strong>Error:</strong> Falló el procesamiento para la categoría "${categoria.nombre}". Continuando con la siguiente.</p>`;
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+    }
+
+    if (totalCreados === 0) {
+        throw new Error("El pipeline finalizó, pero no se pudo extraer ningún dato estructurado. Revisa el texto de entrada.");
+    }
+    
+    chatDiv.innerHTML += `<p><strong>Silenos:</strong> ¡Proceso completado! Se han extraído un total de ${totalCreados} perfiles de datos.</p>`;
+    chatDiv.scrollTop = chatDiv.scrollHeight;
+
+    return totalCreados;
+}
+
+
+
+// No olvides la función auxiliar si no la tienes ya definida en el mismo ámbito
+function dividirTextoEnUnidades(texto, unidadPrincipal) {
+    const regex = new RegExp(`(?=${unidadPrincipal}\\s+\\d+)`, 'gi');
+    const fragmentos = texto.split(regex).filter(f => f.trim() !== '');
+    return fragmentos.length <= 1 ? [texto] : fragmentos;
+}
+
+// Función de utilidad para mostrar errores (reemplaza a 'alert')
+function mostrarError(mensaje) {
+    // Implementa aquí tu lógica para mostrar un modal o un toast no bloqueante
+  console.log('mensaje'); // Muestra el mensaje en la consola
+    alert(mensaje); // Mantengo alert como fallback por si no tienes un modal
 }
 
 
@@ -1308,283 +1523,10 @@ function abrirModalAIDatos() {
 
     if (modalOverlay) modalOverlay.style.display = 'flex';
 }
+ 
 
 
-/**
- * Procesa la entrada del usuario utilizando un flujo de IA de múltiples pasos,
- * asignando los datos generados al arco narrativo seleccionado en el modal.
- */
-async function procesarEntradaConIA() {
-    // --- NUEVO: Obtener el arco seleccionado del modal ---
-    const arcoSelect = document.getElementById('ia-arco-select');
-    const arcoCustomInput = document.getElementById('ia-arco-custom');
-    let arcoSeleccionado = 'sin_arco'; // Valor por defecto
-
-    if (arcoSelect) {
-        if (arcoSelect.value === 'personalizar' && arcoCustomInput) {
-            // Si se elige 'personalizar', usa el valor del input, o el por defecto si está vacío.
-            arcoSeleccionado = arcoCustomInput.value.trim() || 'sin_arco';
-        } else {
-            arcoSeleccionado = arcoSelect.value;
-        }
-    }
-    // --- FIN DE LA MODIFICACIÓN ---
-
-    const textoUsuario = document.getElementById('ia-datos-area').value.trim();
-    if (!textoUsuario) {
-        alert("Por favor, introduce algún texto o instrucción para que la IA trabaje.");
-        return;
-    }
-    cerrarModalAIDatos();
-    const chatDiv = window.chatDiv || document.getElementById('chat');
-    chatDiv.innerHTML += `<p><strong>Tú:</strong> ${textoUsuario}</p><p><strong>Silenos:</strong> Entendido. Analizando tu petición...</p>`;
-    chatDiv.scrollTop = chatDiv.scrollHeight;
-
-    try {
-        // --- PASO 1: Determinar la intención del usuario ---
-        const promptRouter = `
-            Analiza la siguiente petición del usuario y clasifícala en una de estas tres categorías:
-            1. "EXTRAER": El usuario ha pegado un texto largo y quiere que extraigas información estructurada de él.
-            2. "GENERAR_TEMA": El usuario quiere que generes un conjunto de datos sobre un tema, idea u obra. (Ej: "Crea personajes para una historia de detectives").
-            3. "GENERAR_CONCRETO": El usuario pide crear uno o más elementos muy específicos. (Ej: "Crea un objeto mágico llamado 'La Gema del Ocaso'").
-
-            **Petición del usuario:** "${textoUsuario}"
-
-            Responde ÚNICAMENTE con un objeto JSON con la siguiente estructura:
-            { "intencion": "EXTRAER" | "GENERAR_TEMA" | "GENERAR_CONCRETO", "peticion_resumida": "Un resumen de lo que hay que hacer." }
-        `;
-
-        const respuestaRouter = await llamarIAConFeedback(promptRouter, "Interpretando tu solicitud...", "gemini-2.0-flash-lite");
-        const { intencion, peticion_resumida } = respuestaRouter;
-
-        if (!intencion || !peticion_resumida) {
-            throw new Error("La IA no pudo entender la intención de tu petición. Intenta ser más claro.");
-        }
-        
-        chatDiv.innerHTML += `<p><strong>Silenos:</strong> Intención detectada: ${intencion}. Manos a la obra...</p>`;
-        chatDiv.scrollTop = chatDiv.scrollHeight;
-
-        // --- PASO 2: Generar los datos textuales ---
-        const etiquetasValidas = opcionesEtiqueta
-            .map(o => o.valor)
-            .filter(v => v !== 'indeterminado' && v !== 'personalizar')
-            .join(', ');
-
-        const promptGeneracionDatos = `
-            **Tarea Principal:** Basado en la siguiente solicitud, genera una lista de datos estructurados.
-            **Solicitud:** "${peticion_resumida}"
-            
-            **Instrucciones Adicionales:**
-            - Si la solicitud es EXTRAER, basa tu respuesta únicamente en el texto original proporcionado por el usuario.
-            - Si es GENERAR, sé creativo y produce contenido original que se ajuste a la petición.
-            - Para CADA dato generado, proporciona: "nombre", "descripcion" (detallada, para el embedding), "promptVisual" (una descripción para generar una imagen), y la "etiqueta" MÁS APROPIADA de [${etiquetasValidas}].
-
-            **Formato de Salida Obligatorio:** Responde ÚNICAMENTE con un objeto JSON válido que sea un array de datos. Cada objeto en el array debe tener la estructura completa: 
-            { "nombre": "...", "descripcion": "...", "promptVisual": "...", "etiqueta": "..." }
-        `;
-
-        const datosTextuales = await llamarIAConFeedback(promptGeneracionDatos, "Generando información...", "gemini-2.5-flash-lite");
-
-        if (!Array.isArray(datosTextuales) || datosTextuales.length === 0) {
-             throw new Error("La IA no devolvió datos estructurados. La respuesta puede estar en el chat.");
-        }
-        
-        chatDiv.innerHTML += `<p><strong>Silenos:</strong> Se han generado ${datosTextuales.length} perfiles de datos. Creando embeddings para el arco '${arcoSeleccionado}'...</p>`;
-        chatDiv.scrollTop = chatDiv.scrollHeight;
-
-        // --- PASO 3: Generar embeddings y crear los elementos en el DOM ---
-        let totalCreados = 0;
-        for (const dato of datosTextuales) {
-            if (!dato.nombre || !dato.descripcion) continue;
-
-            try {
-                const embeddingVector = await generarEmbedding(dato.descripcion);
-
-                // --- PASO 3b: Crear el elemento con toda la información ---
-                const datosCompletos = {
-                    ...dato,
-                    arco: arcoSeleccionado, // Usar el arco seleccionado del modal
-                    embedding: embeddingVector || []
-                };
-
-                agregarPersonajeDesdeDatos(datosCompletos);
-                totalCreados++;
-
-            } catch (embeddingError) {
-                console.error(`Error al generar embedding para "${dato.nombre}":`, embeddingError);
-                chatDiv.innerHTML += `<p><strong>Aviso:</strong> No se pudo crear el embedding para "${dato.nombre}". Se creó el dato sin él.</p>`;
-                agregarPersonajeDesdeDatos({ ...dato, arco: arcoSeleccionado, embedding: [] });
-                totalCreados++;
-            }
-        }
-        
-        if (totalCreados > 0) {
-            alert(`¡Proceso completado! Se crearon ${totalCreados} datos nuevos en el arco '${arcoSeleccionado}'.`);
-            document.getElementById('ia-datos-area').value = '';
-            reinicializarFiltrosYActualizarVista();
-        } else {
-            alert("El proceso finalizó, pero no se pudo crear ningún dato. Revisa el chat para más información.");
-        }
-
-    } catch (error) {
-        alert("Ocurrió un error al procesar la solicitud con la IA: " + error.message);
-        console.error("Error en procesarEntradaConIA:", error);
-        chatDiv.innerHTML += `<p><strong>Error:</strong> ${error.message}</p>`;
-    } finally {
-        if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
-    }
-}
-
-
-
-
-async function procesarEntradaConIACOPIASEGURIDADS() {
-    const textoUsuario = document.getElementById('ia-datos-area').value.trim();
-    if (!textoUsuario) {
-        alert("Por favor, introduce algún texto para analizar.");
-        return;
-    }
-    cerrarModalAIDatos();
-    const chatDiv = window.chatDiv || document.getElementById('chat');
-    chatDiv.innerHTML += `<p><strong>Tú:</strong> ${textoUsuario}</p><p><strong>Silenos:</strong> Analizando entrada...</p>`;
-    chatDiv.scrollTop = chatDiv.scrollHeight;
-
-    try {
-        // Lógica para importar desde JSON crudo
-        if (textoUsuario.startsWith('[') || textoUsuario.startsWith('{')) {
-            try {
-                const datosJson = JSON.parse(textoUsuario);
-                const datosArray = Array.isArray(datosJson) ? datosJson : [datosJson];
-                
-                datosArray.forEach(dato => agregarPersonajeDesdeDatos(dato));
-                
-                alert(`¡Éxito! Se importaron ${datosArray.length} dato(s) desde el JSON.`);
-                reinicializarFiltrosYActualizarVista();
-                document.getElementById('ia-datos-area').value = '';
-                if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
-                return;
-
-            } catch (jsonError) {
-                chatDiv.innerHTML += `<p><strong>Info:</strong> El texto parece JSON pero no es válido. Intentando corregir con IA...</p>`;
-            }
-        }
-
-        // Paso 1: Identificar categorías
-        const promptCategorias = `
-            **Contexto:** Voy a darte un texto, posiblemente largo y denso como un artículo de enciclopedia. Tu tarea es actuar como un asistente de investigación para extraer la información más importante y estructurarla.
-            **Texto a Analizar:** "${textoUsuario}"
-            **Instrucciones:**
-            1.  **Análisis Interno (No lo incluyas en el JSON final):** Lee el texto e identifica los temas principales. Piensa en cómo agruparías la información de forma lógica.
-            2.  **Tarea Principal:** Basado en tu análisis, crea una lista de nombres de categorías para clasificar los datos.
-            **Formato de Salida Obligatorio:** Responde ÚNICAMENTE con un objeto JSON con la estructura: { "categorias_identificadas": ["Categoría 1", "Categoría 2"] }`;
-        
-        const respuestaCategorias = await llamarIAConFeedback(promptCategorias, "Identificando categorías", "gemini-2.5-flash-lite-preview-06-17");
-        
-        const categorias = respuestaCategorias.categorias_identificadas;
-        if (!categorias || !Array.isArray(categorias) || categorias.length === 0) {
-            throw new Error("La IA no pudo identificar categorías relevantes en el texto. Intenta ser más específico.");
-        }
-        
-        chatDiv.innerHTML += `<p><strong>Silenos:</strong> Categorías encontradas: ${categorias.join(', ')}. Extrayendo y visualizando detalles...</p>`;
-        chatDiv.scrollTop = chatDiv.scrollHeight;
-
-        let totalDatosImportados = 0;
-        for (const categoria of categorias) {
-            
-            const etiquetasValidas = opcionesEtiqueta
-                .map(o => o.valor)
-                .filter(v => v !== 'indeterminado' && v !== 'personalizar')
-                .join(', ');
-
-            const promptDetalles = `
-                Para la obra "${textoUsuario}", genera una lista de elementos que pertenecen a la categoría "${categoria}".
-                Para cada elemento, proporciona: "nombre", "descripcion", la "etiqueta" MÁS APROPIADA de [${etiquetasValidas}], y un "arco" narrativo ('planteamiento' o 'sin_arco').
-                Responde ÚNICAMENTE con un objeto JSON válido en formato de array. Cada objeto debe tener la estructura completa: 
-                { "nombre": "...", "descripcion": "...", "etiqueta": "...", "arco": "..." }`;
-
-            const respuestaDetalles = await llamarIAConFeedback(promptDetalles, `Extrayendo detalles de "${categoria}"`, "gemini-2.5-flash-lite-preview-06-17");    
-
-            if (Array.isArray(respuestaDetalles) && respuestaDetalles.length > 0) {
-                let importadosCategoria = 0;
-                
-                // --- INICIO DE LA MODIFICACIÓN ---
-                // Bucle en serie para crear o fusionar datos
-                for (const dato of respuestaDetalles) {
-                    if (dato.nombre && dato.descripcion) {
-                        let elementoDato = null;
-                        let esNuevo = true;
-                        const nombreNormalizado = dato.nombre.trim().toLowerCase();
-
-                        // Buscar si ya existe un elemento con el mismo nombre
-                        const todosLosDatos = document.querySelectorAll('#listapersonajes .personaje');
-                        for (const p of todosLosDatos) {
-                            const nombreInput = p.querySelector('.nombreh');
-                            if (nombreInput && nombreInput.value.trim().toLowerCase() === nombreNormalizado) {
-                                elementoDato = p;
-                                esNuevo = false;
-                                break; // Encontramos el elemento, salimos del bucle
-                            }
-                        }
-
-                        if (esNuevo) {
-                            // Si es nuevo, lo creamos como antes
-                            elementoDato = agregarPersonajeDesdeDatos(dato);
-                        } else {
-                            // Si ya existe, fusionamos la descripción
-                            const cajaTextoExistente = elementoDato.querySelector('textarea');
-                            if (cajaTextoExistente) {
-                                // Añade la nueva descripción a la existente
-                                cajaTextoExistente.value += `\n\n${dato.descripcion}`;
-                                
-                                // Actualizamos también la previsualización de la descripción
-                                const descripcionPreview = elementoDato.querySelector('.personaje-descripcion-preview');
-                                if (descripcionPreview) {
-                                    descripcionPreview.textContent = cajaTextoExistente.value;
-                                }
-                            }
-                        }
-
-                        if (!elementoDato) {
-                            console.error('No se pudo crear o encontrar el elemento para el dato:', dato);
-                            continue;
-                        }
-
-                        importadosCategoria++;
-
-                        // La lógica de generación de imagen solo debe aplicarse a elementos nuevos sin imagen
-                        if (esNuevo) {
-                            const imgExistente = elementoDato.querySelector('.personaje-visual img');
-                            const tieneImagenValida = imgExistente && imgExistente.src && !imgExistente.src.endsWith('/');
-                            const tieneSvgValido = elementoDato.dataset.svgContent;
-
-                            if (typeof generarImagenParaDatos === 'function' && !tieneImagenValida && !tieneSvgValido) {
-                                // Aquí iría la lógica para generar la imagen si es necesario
-                            }
-                        }
-                    }
-                }
-                // --- FIN DE LA MODIFICACIÓN ---
-
-                totalDatosImportados += importadosCategoria;
-                chatDiv.innerHTML += `<p><strong>Éxito:</strong> Se procesaron ${importadosCategoria} datos de la categoría "${categoria}".</p>`;
-            }
-        }
-        
-        if (totalDatosImportados > 0) {
-            alert(`¡Proceso completado! Se importaron y visualizaron un total de ${totalDatosImportados} datos detallados.`);
-            document.getElementById('ia-datos-area').value = '';
-            reinicializarFiltrosYActualizarVista();
-        } else {
-            alert("El proceso finalizó, pero no se pudo importar ningún dato. Revisa el chat para más información.");
-        }
-
-    } catch (error) {
-        alert("Ocurrió un error al procesar la solicitud: " + error.message);
-        console.error("Error en procesarEntradaConIA:", error);
-    } finally {
-        if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
-    }
-}
+ 
 
 /**
  * --- FUNCIÓN CORREGIDA ---

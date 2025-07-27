@@ -225,11 +225,14 @@ function renderizarVisorDeLibros() {
         const libroCard = document.createElement('div');
         libroCard.className = 'libro-card';
 
-        const portada = document.createElement('div');
-        portada.className = 'libro-portada';
-        if (libro.portadaUrl) {
-            portada.style.backgroundImage = `url('${libro.portadaUrl}')`;
-        }
+      const portada = document.createElement('div');
+portada.className = 'libro-portada';
+if (libro.portadaUrl) {
+    const imgElement = document.createElement('img'); // Crear el elemento <img>
+    imgElement.src = libro.portadaUrl;                // Asignar la URL
+    imgElement.alt = `Portada de ${libro.titulo}`;    // Añadir texto alternativo (buena práctica)
+    portada.appendChild(imgElement);                  // Añadir la <img> al div
+}
         portada.onclick = () => {
             seleccionarLibro(libro.id);
             if (typeof abrir === 'function') abrir('capitulosh');
@@ -328,7 +331,7 @@ function renderizarVisorDeLibros() {
         
         if (typeof apiKey !== 'undefined' && apiKey) {
             const btnIA = document.createElement('button');
-            btnIA.textContent = 'IA 🧠';
+            btnIA.textContent = '✨';
             btnIA.className = 'btn-ia';
             btnIA.title = 'Generar portada con IA';
             btnIA.onclick = (event) => {

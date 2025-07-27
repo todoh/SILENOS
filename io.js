@@ -55,8 +55,6 @@ async function empaquetarDatosDelProyecto() {
         guardarEscenaActual();
     }
 
-
-
     // Esta función empaqueta todo en un objeto JSON.
     console.log("Empaquetando datos del proyecto...");
     const listapersonajes = document.getElementById("listapersonajes").children;
@@ -73,14 +71,25 @@ async function empaquetarDatosDelProyecto() {
         };
     });
 
-    // --- LÓGICA DE GUARDADO DE PERSONAJES (MODIFICADA) ---
+    // --- LÓGICA DE GUARDADO DE PERSONAJES (CORREGIDA) ---
     const promesasPersonajes = Array.from(listapersonajes).map(async (personajeNode) => {
         const nombre = personajeNode.querySelector("input.nombreh")?.value || "";
-        // Se especifica la clase para evitar ambigüedad entre los dos textareas
         const descripcion = personajeNode.querySelector("textarea.descripcionh")?.value || "";
-        // Se añade la lectura del nuevo campo promptVisual
         const promptVisual = personajeNode.querySelector("textarea.prompt-visualh")?.value || "";
         const svgContent = personajeNode.dataset.svgContent || "";
+
+        // --- INICIO DE LA CORRECCIÓN ---
+        // 1. Se lee el string JSON del dataset.
+        const embeddingStr = personajeNode.dataset.embedding || '[]';
+        let embeddingArray = [];
+        try {
+            // 2. Se convierte el string de nuevo a un array.
+            embeddingArray = JSON.parse(embeddingStr);
+        } catch (e) {
+            console.error(`Fallo al parsear embedding desde el DOM para "${nombre}". Se guardará como array vacío.`, e);
+            embeddingArray = [];
+        }
+        // --- FIN DE LA CORRECCIÓN ---
 
         const etiquetaEl = personajeNode.querySelector(".change-tag-btn");
         const arcoEl = personajeNode.querySelector(".change-arc-btn");
@@ -90,7 +99,6 @@ async function empaquetarDatosDelProyecto() {
 
         let imagenComprimida = "";
 
-        // Si no hay SVG, entonces sí procesamos y guardamos la imagen del tag <img>.
         if (!svgContent) {
             const imagenSrc = personajeNode.querySelector("img")?.src || "";
             if (imagenSrc) {
@@ -98,10 +106,8 @@ async function empaquetarDatosDelProyecto() {
             }
         }
 
-        // Si no hay nombre, descripción, imagen ni svg, no guardamos el dato.
         if (!nombre && !descripcion && !promptVisual && !imagenComprimida && !svgContent) return null;
 
-        // Devolvemos el objeto incluyendo el nuevo campo promptVisual.
         return {
             nombre,
             descripcion,
@@ -109,7 +115,8 @@ async function empaquetarDatosDelProyecto() {
             imagen: imagenComprimida,
             svgContent,
             etiqueta,
-            arco
+            arco,
+            embedding: embeddingArray // 3. Se guarda el array en el JSON final.
         };
     });
 
@@ -170,13 +177,8 @@ async function empaquetarDatosDelProyecto() {
         informeGeneral: typeof ultimoInformeGenerado !== 'undefined' ? ultimoInformeGenerado : null,
         libros: typeof libros !== 'undefined' ? libros : [],
         animacionesSvg: typeof window.escenasSvg !== 'undefined' ? window.escenasSvg : []
-
     };
-
-
-
 }
-
 
 /**
  * Busca en Google Drive un archivo de proyecto creado por esta aplicación.
