@@ -65,7 +65,7 @@ crossorigin="anonymous"></script>
             <button id="bdatos" class="tons"  onclick="cerrartodo(), gridear('personajes');">Datos</button> 
             <button id="bguion" class="tons" onclick="abrir('guion-literario');">Guión</button>
             <button id="blibros" class="tons" onclick="cerrartodo(), abrir('capitulosh');">Libro</button>
-
+<button class="tons" onclick="cerrartodo(), abrir('animacionessvg')  ;" >🎬 Animación SVG</button>
     <button id="bajustes" class="pro" onclick="abrirModalConfig()">⚙️ Configuración</button>
         <button class="pro" id="bguardarjson" class="pro" onclick="guardarJSON()">💾 Guardar</button>
         <input   type="file" id="file-load" accept="application/json" onchange="cargarJSON(event)" style="display: none;">
@@ -83,7 +83,7 @@ crossorigin="anonymous"></script>
             <button class="tons" onclick="cerrartodo(), abrir('momentos');"  style="display: none;"  >Librojuego</button>
             <button class="tons" onclick="cerrartodo(), abrir('juego');"  style="display: none;">Juego</button>
             <button class="tons" onclick="cerrartodo(), abrir('rpgmaker');" style="display: none;">RPG Maker</button>
-            <button class="tons" onclick="cerrartodo(), abrir('animacionessvg')  ;" style="display: none;">🎬 Animación SVG</button>
+            
             <button class="tons" id="biblioteca-btn" style="display: none;" onclick="cerrartodo(), abrir('biblioteca');">📚 Biblioteca</button>
             <button class="pro" onclick="abrirModalExportar()" style="display: none;">💽 Exportar</button>
         <button id="bajustes" class="pro" onclick="abrirModalConfig()">⚙️ Ajustes </button>
@@ -333,60 +333,28 @@ crossorigin="anonymous"></script>
 </div>
 
 <div id="animacionessvg">
-    <div id="toast"></div>
-
-    <div id="keyframe-menu">
-        <div>
-            <div>
-                <label for="easing-select">Movimiento:</label>
-                <select id="easing-select">
-                    <option value="linear">Lineal</option>
-                    <option value="steps">Pasos Suaves</option>
-                    <option value="ease-in-out">Suave</option>
-                </select>
+    <!-- INICIO: Panel de Escenas Generadas (Pega esto en tu HTML) -->
+        <div id="ai-scenes-panel">
+            <h3>Escenas Generadas</h3>
+            <div id="ai-scenes-list">
+                <p class="empty-list-placeholder">Aún no se han generado escenas.</p>
             </div>
-            <button id="delete-keyframe-btn">Eliminar Keyframe</button>
         </div>
-    </div>
-<div id="gestion-escenas-svg">
-    <button id="selector-escena-svg-btn"class="pro6"  >☰</button>
-    <div id="lista-escenas-svg-popup" class="hidden">
-        <button id="crear-nueva-escena-svg-btn">+ Nueva Escena</button>
-        <hr>
-        <div id="lista-escenas-svg-container">
-            </div>
-    </div>
-</div>
-<header>
-    <div>
-        <button id="import-svg-btn">Importar SVG</button>
-        <button id="import-img-btn">Importar Imagen</button>
-        <button id="import-dato-img-btn">Importar Imagen de Dato</button>
-        <input type="file" id="import-input" class="hidden">
-        <button id="add-rect-btn">Añadir Rectángulo</button>
-        <button id="add-circle-btn">Añadir Círculo</button>
-        <div class="color-picker-container">
-            <label for="color-picker">Color:</label>
-            <input type="color" id="color-picker" value="#3b82f6">
-        </div>
-        <div id="selection-actions">
-            <button id="flip-h-btn" title="Voltear Horizontal">↔</button>
-            <button id="flip-v-btn" title="Voltear Vertical">↕</button>
-            <button id="delete-btn">Eliminar</button>
-        </div>
-    </div>
-</header>
-
-    <main>
-        <aside id="layer-panel">
+        <!-- FIN: Panel de Escenas Generadas -->
+    <div id="ai-animation-view">
         
-            <div id="layer-list"></div>
-        </aside>
+        <div id="ai-prompt-panel">
+            <h3>Generador de Animación por IA</h3>
+            <p>Describe la animación que quieres crear. La IA usará los "Datos" existentes como personajes y generará una nueva escena animada.</p>
+            <textarea id="ai-prompt-input" placeholder="Ej: Un samurai llamado 'Kenshin' camina desde la izquierda. Un ninja llamado 'Hanzo' aparece a la derecha. Kenshin desenfunda su espada."></textarea>
+            <button id="ai-generate-button">✨ Generar Animación</button>
+            <div id="ai-status-container" style="display: none;"></div>
+        </div>
 
         <div id="canvas-container">
             <svg id="svg-canvas" width="100%" height="100%">
                 <g id="shapes-container"></g>
-                <g id="transform-controls">
+                <g id="transform-controls" style="display: none;">
                     <rect id="transform-box-outline"></rect>
                     <g id="transform-handles">
                         <rect class="handle resize-handle" data-handle="top-left" width="10" height="10"></rect>
@@ -403,25 +371,38 @@ crossorigin="anonymous"></script>
                 </g>
             </svg>
         </div>
-    </main>
 
-    <footer>
-        <div>
-            <div class="controls-group">
-                <button id="play-btn">Play</button>
-                <button id="set-keyframe-btn">Fijar Keyframe</button>
-            </div>
-            <div class="timeline-controls-group">
-                <span id="time-label">0.0s</span>
-                <input type="range" id="timeline-slider" min="0" max="5000" value="0">
-            </div>
-            <div class="duration-controls-group">
-                <label for="duration-input">Duración (s):</label>
-                <input type="number" id="duration-input" value="5" min="1">
-            </div>
-            <button id="export-btn3">Exportar SVG</button>
+        <div id="selection-actions" class="hidden" style="position: absolute; top: 120px; left: 15px; display: flex; gap: 5px; background: rgba(240, 240, 240, 0.8); padding: 5px; border-radius: 5px; backdrop-filter: blur(4px);">
+            <input type="color" id="color-picker" title="Cambiar color">
+            <button id="flip-h-btn" title="Voltear Horizontal">↔</button>
+            <button id="flip-v-btn" title="Voltear Vertical">↕</button>
+            <button id="delete-btn" title="Eliminar">🗑️</button>
         </div>
-    </footer>
+        <footer>
+            <div>
+                <div class="controls-group">
+                    <button id="play-btn">Play</button>
+                    <button id="set-keyframe-btn" style="display: none;">Fijar Keyframe</button>
+                </div>
+                <div class="timeline-controls-group">
+                    <span id="time-label">0.0s</span>
+                    <input type="range" id="timeline-slider" min="0" max="5000" value="0">
+                </div>
+                <div class="duration-controls-group">
+                    <label for="duration-input">Duración (s):</label>
+                    <input type="number" id="duration-input" value="5" min="1">
+                </div>
+                 <button id="export-btn3" style="display: none;">Exportar SVG</button>
+            </div>
+        </footer>
+
+    </div>
+
+    <div id="toast"></div>
+    <div id="keyframe-menu" style="display: none;">
+        </div>
+    <div id="gestion-escenas-svg" style="display: none;">
+        </div>
 </div>
 
 <div id="juego" style="display: none; width: 100%; height: 100%;">

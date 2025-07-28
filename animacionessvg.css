@@ -98,7 +98,7 @@
     flex-wrap: wrap;
     gap: 8px; /* gap-2 */
     position: fixed;
-    bottom: 50%;
+    bottom: 43%;
 left: 0%;
 }
 
@@ -215,7 +215,7 @@ left: 0%;
     position: fixed;
     bottom: 0%;
     width: 100%;
-     height: 50%;
+     height: 46%;
      overflow-y: scroll;
 left: 0%;
     }
@@ -307,6 +307,8 @@ left: 0%;
     border: 1px solid #e5e7eb; /* border-gray-200 */
     overflow: hidden;
     height: 48dvh;
+    top: 50%;
+    
 }
 
 #svg-canvas {
@@ -365,7 +367,7 @@ left: 0%;
     z-index: 10;
     border-top: 1px solid #e5e7eb;
         position: fixed;
-    bottom: 50%;
+    bottom: 46%;
     right: 0%;
 }
 
@@ -465,4 +467,292 @@ left: 0%;
 /* Inputs ocultos */
 .hidden {
     display: none;
+}
+
+
+
+/* AÑADIR ESTO EN animacionessvg.css */
+
+#gestion-escenas-svg {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    z-index: 100;
+}
+
+#selector-escena-svg-btn2 {
+    padding: 8px 16px;
+    background-color: #6d28d9; /* violet-700 */
+    color: white;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+#selector-escena-svg-btn2:hover {
+    background-color: #5b21b6; /* violet-800 */
+}
+
+#lista-escenas-svg-popup {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 8px;
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    width: 220px;
+    padding: 8px;
+}
+
+#lista-escenas-svg-popup.hidden {
+    display: none;
+}
+
+#lista-escenas-svg-popup hr {
+    margin: 8px 0;
+    border-color: #f3f4f6;
+}
+
+#crear-nueva-escena-svg-btn, .escena-svg-item button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+#crear-nueva-escena-svg-btn {
+    font-weight: 600;
+    color: #16a34a; /* green-600 */
+}
+
+#crear-nueva-escena-svg-btn:hover {
+    background-color: #f0fdf4; /* green-50 */
+}
+
+.escena-svg-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.escena-svg-item button.load-btn {
+    flex-grow: 1;
+}
+.escena-svg-item button:hover {
+    background-color: #f3f4f6; /* gray-100 */
+}
+
+.escena-svg-item button.delete-scene-btn {
+    color: #ef4444; /* red-500 */
+    font-weight: bold;
+    flex-grow: 0;
+    width: 30px;
+}
+.escena-svg-item button.delete-scene-btn:hover {
+    background-color: #fee2e2; /* red-100 */
+}
+
+
+/* Ocultar el editor manual original */
+#animacionessvg header,
+#animacionessvg aside#layer-panel {
+    display: none;
+}
+
+/* Estilos para la nueva vista de IA */
+#ai-animation-view {
+    display: grid;
+    grid-template-areas:
+        "prompt-panel canvas"
+        "footer       canvas";
+    grid-template-columns: 350px 1fr;
+    grid-template-rows: auto 1fr;
+    height: 100%;
+    gap: 1rem;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+#ai-prompt-panel {
+    position: absolute;
+    left: 50%; transform: translateX(-50%);
+  top: 0%; height: 40%; width: 70%;
+    z-index: 1000;
+    background-color: var(--color-fondo-panel); /* Usando tus variables de color */
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+ resize: none;
+    grid-area: prompt-panel;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 40%;
+    padding: 1.5rem;
+    background-color: var(--color-fondo-panel); /* Usando tus variables de color */
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+#ai-prompt-panel h3 {
+    margin: 0;
+    color: var(--color-texto-principal);
+}
+
+#ai-prompt-panel p {
+    font-size: 0.9em;
+    color: var(--color-texto-secundario);
+    margin-bottom: 0.5rem;
+}
+
+#ai-prompt-input {
+    height: 150px;
+    resize: vertical;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#ai-generate-button {
+    padding: 12px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    background-color: #4f46e5; /* Color principal */
+    color: white;
+    transition: background-color 0.2s;
+}
+
+#ai-generate-button:hover {
+    background-color: #4338ca;
+}
+
+#ai-generate-button:disabled {
+    background-color: #999;
+    cursor: not-allowed;
+}
+
+#canvas-container {
+    grid-area: canvas;
+    /* Los estilos existentes para el canvas-container deberían funcionar bien */
+}
+
+#animacionessvg footer {
+    grid-area: footer;
+    align-self: end; /* Alinea el footer abajo del todo en su celda */
+}
+
+/* Estilos para el contenedor de estado de la IA */
+#ai-status-container {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: rgba(0,0,0,0.1);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.spinner-carga-modal {
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top: 4px solid #fff;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 0.5rem auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* --- ESTILOS PARA EL PANEL DE ESCENAS GENERADAS (Pega esto en tu CSS) --- */
+
+#ai-scenes-panel {
+    grid-area: prompt-panel; /* Se ubicará en la misma área de la grid */
+    margin-top: 18rem; /* Ajusta este valor si es necesario para separarlo del panel de prompt */
+    background-color: var(--color-fondo-panel, #f9fafb);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    max-height: 45vh; /* Altura máxima para que no ocupe toda la pantalla */
+    overflow: hidden;
+}
+
+#ai-scenes-panel h3 {
+    margin: 0 0 1rem 0;
+    color: var(--color-texto-principal);
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-borde, #e5e7eb);
+}
+
+#ai-scenes-list {
+    flex-grow: 1;
+    overflow-y: auto; /* Habilita el scroll si la lista es larga */
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.ai-scene-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background-color: var(--color-fondo-secundario, #fff);
+    border: 1px solid var(--color-borde, #e5e7eb);
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.ai-scene-item.active {
+    background-color: #dbeafe; /* Un color para destacar la escena activa */
+    border-color: #4f46e5;
+}
+
+.ai-scene-item span {
+    font-weight: 500;
+}
+
+.ai-scene-item .scene-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.ai-scene-item button {
+    padding: 0.3rem 0.6rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    color: white;
+    transition: opacity 0.2s;
+}
+
+.ai-scene-item button:hover {
+    opacity: 0.85;
+}
+
+.load-scene-btn {
+    background-color: #3b82f6; /* Azul */
+}
+
+.delete-scene-btn {
+    background-color: #ef4444; /* Rojo */
+}
+
+.empty-list-placeholder {
+    text-align: center;
+    color: #9ca3af;
+    padding: 2rem 0;
 }
