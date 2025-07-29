@@ -160,7 +160,7 @@ function reiniciarEstadoApp() {
     indiceCapituloActivo = -1;
 
     // Resetear UI
-    document.getElementById("titulo-proyecto").innerText = "Silenos Versión 1.1.10";
+    document.getElementById("titulo-proyecto").innerText = "Silenos Versión 1.1.11";
     document.getElementById("listapersonajes").innerHTML = "";
     document.getElementById("lista-capitulos").innerHTML = "";
     document.getElementById("momentos-lienzo").innerHTML = "";

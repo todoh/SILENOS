@@ -511,102 +511,66 @@ function cargarDatosEnLaApp(data) {
 renderizarVisorDeLibros();
     if (typeof flexear === 'function') flexear('silenos');
 }
+ 
+ async function guardarJSON() {
+    console.log("Guardando el proyecto en formato JSON local...");
+    try {
+        const data = await empaquetarDatosDelProyecto();
 
-// ===================================
-// FUNCIONES DE GUARDADO/CARGA OFFLINE
-// ===================================
-
-/**
- * Guarda el proyecto completo en un archivo JSON local.
- */
-function guardarJSON() {
-    // Se sigue el patrón de tu código original, usando variables globales
-    const datos = {
-        tituloProyecto: document.getElementById('titulo-proyecto').innerText,
-        libros: libros,
-        escenas: escenas,
-        personajes: personajes, // Se usa la variable global, como en tu archivo.
-        storyScenes: storyScenes,
-        guionLiterario: guionLiterarioData,
-        momentos: momentos,
-    };
-
-    // --- CÓDIGO AÑADIDO (Esto es lo nuevo y no afecta al resto) ---
-    // Incluir los datos del editor interactivo si el editor ha sido inicializado.
-    if (window.editor && window.editor.data) {
-        datos.juegoInteractivoData = window.editor.data;
-    }
-    // --- FIN DEL CÓDIGO AÑADIDO ---
-
-    const nombreArchivo = `${datos.tituloProyecto.replace(/\s+/g, '_') || 'Silenos_Project'}.json`;
-    const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = nombreArchivo;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(a.href);
-}
-/**
- * Carga un proyecto desde un archivo JSON local seleccionado por el usuario.
- */
-function cargarJSON(event) {
-    const file = event.target.files[0];
-    if (!file) {
-        return;
-    }
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const datos = JSON.parse(e.target.result);
-
-            // Se cargan los datos en las variables globales, como en tu archivo original
-            document.getElementById('titulo-proyecto').innerText = datos.tituloProyecto || 'Silenos';
-            libros = datos.libros || [];
-            escenas = datos.escenas || {};
-            storyScenes = datos.storyScenes || [];
-            guionLiterarioData = datos.guionLiterario || [];
-            momentos = datos.momentos || [];
-            personajes = datos.personajes || []; 
-
-            // Se llama ÚNICAMENTE a las funciones de renderizado que SÉ que existen por tu archivo
-            renderizarVisorDeLibros();
-            actualizarLista();
-            // He eliminado las llamadas a renderEscenasUI() y renderMomentos() que causaban el error.
-
-            // --- CÓDIGO AÑADIDO (Esto es lo nuevo y no afecta al resto) ---
-            // Restaurar los datos del editor interactivo si existen en el archivo.
-            if (datos.juegoInteractivoData) {
-                if (window.editor) {
-                    // Si el editor ya está listo, le pasamos los datos
-                    window.editor.data = datos.juegoInteractivoData;
-                    window.editor.renderAll(); // Le pedimos al propio editor que se actualice
-                } else {
-                    // Si no, dejamos los datos en espera para que el editor los recoja
-                    window.pendingInteractiveData = datos.juegoInteractivoData;
-                }
-            }
-            // --- FIN DEL CÓDIGO AÑADIDO ---
-
-        } catch (error) {
-            console.error("Error al cargar o procesar el archivo JSON:", error);
-            alert("Hubo un error al cargar el archivo. Asegúrate de que es un archivo de proyecto de Silenos válido.");
+        // --- INICIO DEL CÓDIGO AÑADIDO ---
+        // Se añade la información del editor interactivo al objeto de datos principal.
+        // Esto no afecta a la función 'empaquetarDatosDelProyecto'.
+        if (window.editor && window.editor.data) {
+            data.juegoInteractivoData = window.editor.data;
         }
+        // --- FIN DEL CÓDIGO AÑADIDO ---
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `${data.titulo.replace(/\s+/g, '_')}.json`;
+        a.click();
+        console.log("Proyecto guardado localmente con éxito.");
+    } catch (error) {
+        console.error("Error al procesar los datos para guardar el JSON local:", error);
+        alert("Hubo un error al guardar el proyecto localmente.");
+    }
+}
+ 
+function cargarJSON(event) {
+    let file = event.target.files[0];
+    if (!file) return;
+
+    let reader = new FileReader();
+    reader.onload = function(e) {
+        let data;
+        try {
+            data = JSON.parse(e.target.result);
+        } catch (error) {
+            alert("Error: El archivo no es un JSON válido.");
+            console.error("Error al parsear JSON:", error);
+            return;
+        }
+        
+        // Se llama a tu función principal de carga, que se mantiene intacta.
+        cargarDatosEnLaApp(data);
+
+        // --- INICIO DEL CÓDIGO AÑADIDO ---
+        // Después de cargar los datos principales, se restauran los del juego interactivo.
+        if (data.juegoInteractivoData) {
+            if (window.editor) {
+                // Si el editor ya está listo, se le pasan los datos directamente.
+                window.editor.data = data.juegoInteractivoData;
+                window.editor.renderAll(); // Se actualiza la interfaz del editor.
+            } else {
+                // Si el editor aún no está listo, se dejan los datos en espera.
+                // (Recuerda tener la lógica en tu 'interactivo.js' para recoger estos datos pendientes al iniciar).
+                window.pendingInteractiveData = data.juegoInteractivoData;
+            }
+        }
+        // --- FIN DEL CÓDIGO AÑADIDO ---
     };
     reader.readAsText(file);
-}
-
-
-function limpiarCacheDelProyecto() {
-    const clavesAGuardar = ['silenos_gapi_token', 'theme', 'google_api_key'];
-    const todasLasClaves = Object.keys(localStorage);
-    todasLasClaves.forEach(clave => {
-        if (!clavesAGuardar.includes(clave)) {
-            localStorage.removeItem(clave);
-            console.log(`Clave eliminada de la caché: ${clave}`);
-        }
-    });
 }
 
 /**
