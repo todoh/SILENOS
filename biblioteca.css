@@ -14,7 +14,7 @@
     /* Mantenemos el sistema de columnas que permite alturas variables */
     column-width: 220px;
     column-gap: 20px;
-
+    overflow: scroll;
     /* AÑADIDO CLAVE: Nos aseguramos de que la propia cuadrícula ocupe todo el ancho disponible */
     width: 100%;
 }

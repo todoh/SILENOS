@@ -4,7 +4,7 @@
  * Recopila todas las imágenes únicas y sus etiquetas de las diferentes secciones del proyecto.
  * @returns {Array<Object>} Un array de objetos, donde cada objeto es {src: 'url', label: 'etiqueta'}.
  */
-function recopilarTodasLasImagenes() {
+  function recopilarTodasLasImagenes() {
     const imagenesMap = new Map();
 
     // Función auxiliar para añadir imagen y etiqueta al mapa
@@ -183,3 +183,67 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 // ===== FIN: CÓDIGO DEL VISOR DE IMÁGENES (LIGHTBOX) =====
+
+
+// ===== INICIO: NUEVA FUNCIÓN PARA DESCARGAR ZIP =====
+
+document.addEventListener('DOMContentLoaded', () => {
+    const botonDescargarZIP = document.getElementById('descargar-zip-btn');
+    if (botonDescargarZIP) {
+        botonDescargarZIP.addEventListener('click', descargarTodasLasImagenesComoZIP);
+    }
+});
+
+/**
+ * Recopila todas las imágenes, las empaqueta en un archivo ZIP y lo descarga.
+ */
+async function descargarTodasLasImagenesComoZIP() {
+    console.log("Iniciando la descarga de imágenes como ZIP...");
+    const boton = document.getElementById('descargar-zip-btn');
+    if(boton) boton.disabled = true;
+    
+    // Muestra un indicador de carga (si tienes una función para ello)
+    // mostrarIndicadorCarga(true, 'Creando archivo ZIP...');
+
+    const imagenes = recopilarTodasLasImagenes(); // Usa la función que ya tienes
+    if (imagenes.length === 0) {
+        alert("No se encontraron imágenes para descargar.");
+        if(boton) boton.disabled = false;
+        // mostrarIndicadorCarga(false);
+        return;
+    }
+
+    const zip = new JSZip();
+    let contador = 0;
+
+    for (const imagen of imagenes) {
+        try {
+            const response = await fetch(imagen.src);
+            const blob = await response.blob();
+            
+            // Genera un nombre de archivo único para evitar colisiones
+            const nombreArchivo = `${imagen.label.replace(/[^a-z0-9]/gi, '_')}_${contador}.${blob.type.split('/')[1] || 'png'}`;
+            zip.file(nombreArchivo, blob);
+            contador++;
+        } catch (error) {
+            console.error(`No se pudo cargar la imagen: ${imagen.src}`, error);
+        }
+    }
+
+    console.log("Generando el archivo ZIP...");
+    zip.generateAsync({ type: "blob" })
+        .then(function(content) {
+            // Crea un enlace para la descarga
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(content);
+            link.download = "biblioteca_de_imagenes.zip";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            console.log("Descarga completada.");
+            if(boton) boton.disabled = false;
+            // mostrarIndicadorCarga(false);
+        });
+}
+
+// ===== FIN: NUEVA FUNCIÓN PARA DESCARGAR ZIP =====
