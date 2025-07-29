@@ -1,0 +1,275 @@
+/* Estilo general para el contenedor del editor RPG */
+#interactivo {
+    font-family: Arial, sans-serif;
+    background-color: #2c2c2c;
+    color: #f0f0f0;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000; height: 100%;
+    width: 100%;
+    display: none;
+}
+
+
+        /* --- General Styles --- */
+        :root {
+            --bg-color: #1a1c20;
+            --primary-color: #282c34;
+            --secondary-color: #3e4451;
+            --text-color: #abb2bf;
+            --header-color: #ffffff;
+            --accent-color: #61afef;
+            --success-color: #98c379;
+            --danger-color: #e06c75;
+            --warning-color: #e5c07b;
+            --border-color: #4b5263;
+        }
+   
+        * {
+            box-sizing: border-box;
+        }
+
+        /* --- Layout --- */
+        .editor-container2 {
+            max-width: 1200px;
+            margin: auto;
+            background-color: var(--primary-color);
+            border-radius: 8px;
+            height: 80%;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        header {
+            padding: 15px 25px;
+            background-color: var(--secondary-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 {
+            color: var(--header-color);
+            margin: 0;
+            font-size: 1.5em;
+        }
+        nav button {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 15px;
+            margin-left: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        nav button.active, nav button:hover {
+            background-color: var(--accent-color);
+            color: #fff;
+            border-color: var(--accent-color);
+        }
+        main {
+            padding: 25px;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        /* --- Components --- */
+        .item-list {
+            list-style: none;
+            padding: 0;
+        }
+        .item-list-entry {
+            background-color: var(--secondary-color);
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid var(--accent-color);
+        }
+        .item-list-entry .id {
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            color: var(--success-color);
+        }
+        .btn {
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        .btn-edit { background-color: var(--warning-color); color: var(--bg-color); }
+        .btn-delete { background-color: var(--danger-color); color: #fff; }
+        .btn-add { background-color: var(--success-color); color: var(--bg-color); font-size: 1.1em; padding: 10px 20px; }
+        
+        /* --- Forms --- */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: var(--header-color);
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            border-radius: 4px;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        /* --- Modal --- */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content-editor {   z-index: 1001;
+            background-color: var(--primary-color);
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+        }
+
+#preview-modal {
+    
+}
+ 
+
+/* Opcional: mejora la interacción con el fondo */
+.modal {
+    display: none; /* Mantenemos esto */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    
+    /* Centra el contenido del modal */
+    justify-content: center;
+    align-items: center;
+}
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+        .modal-header h2 { margin: 0; color: var(--header-color); }
+        .modal-footer {
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+            margin-top: 20px;
+            text-align: right;
+        }
+        .btn-close { background-color: var(--secondary-color); color: var(--text-color); }
+
+        /* --- Import/Export --- */
+        #import-export-area textarea {
+            width: 100%;
+            height: 200px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .io-buttons {
+            margin-top: 15px;
+            display: flex;
+            gap: 15px;
+        }
+ /* --- NUEVO: Estilos para el Editor de Acciones --- */
+.action-editor-container, .dialogue-option-row {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    padding: 15px;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+.dialogue-option-row {
+    margin-bottom: 15px;
+}
+.action-params {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+    border-top: 1px dashed var(--border-color);
+    padding-top: 10px;
+}
+.btn-delete-option {
+    margin-top: 10px;
+    background-color: var(--danger-color);
+    color: white;
+}
+.list-item-preview {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    background-color: var(--bg-color);
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+.item-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.image-uploader {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px;
+    background-color: var(--bg-color);
+    border-radius: 5px;
+}
+.image-uploader .image-preview {
+    width: 60px;
+    height: 60px;
+}
+.image-uploader input[type="file"] {
+    display: none;
+}
+.image-uploader .btn-upload {
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 5px;
+}

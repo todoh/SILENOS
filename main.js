@@ -85,6 +85,7 @@ function cerrartodo() {
   document.getElementById('animacionessvg').style.display = 'none';
   document.getElementById('rpgmaker').style.display = 'none';
   document.getElementById('proyecto').style.display = 'none';
+  document.getElementById('interactivo').style.display = 'none';
 
 
 }
