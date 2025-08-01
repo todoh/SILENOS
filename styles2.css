@@ -172,8 +172,9 @@ background-color: #41414100;
 
 /* Estilos para el botón S (Asistente), movidos aquí desde el otro CSS para unificar */
 #asistente-btn {
+    transform: translateY(-50%);
     position: fixed;
-    top: 2%;
+    top: 50%;
     right: 1%;
     width: 60px;
     height: 60px;

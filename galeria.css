@@ -96,7 +96,7 @@
     background-color: transparent;
     width: 80%;
     margin: 0%;
-    position: fixed; left:10%;
+    position: absolute; left:10%;
     top: 16%; 
    z-index: 5;
 padding: 0% ;
@@ -183,17 +183,7 @@ padding: 0% ;
     color: #666;
 }
 
- #proyecto {
-    background-color: transparent;
-    width:100%;
-    margin: 0%;
-    position: absolute; left: 0%;
-    top: 0%;
-padding: 0% ;
-    height: 100%;
-    display: none;
-    align-items: flex-start;
-}
+ 
  
 
 /* Estilos para el menú de exportación */

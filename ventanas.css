@@ -1,0 +1,120 @@
+/* Estilos para las ventanas flotantes (.pantalla) */
+.pantalla {
+    /* Tamaño inicial más pequeño */
+    width: 500px;
+    height: 400px;
+    
+    /* Centrado inicial en la pantalla */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    background-color: #dddddd00; /* Color de fondo oscuro */
+    color: #000000; /* Color de texto claro */
+    border: 0px solid #555;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    border-radius: 8px;
+    resize: both;
+    overflow: hidden; /* Importante para que el contenido no se salga */
+    display: none; /* Ocultas por defecto */
+    flex-direction: column;
+    min-width: 250px;
+    min-height: 150px;
+}
+
+/* Estilo para la ventana minimizada */
+.pantalla.minimizada {
+    height: 42px; /* Solo se ve el título */
+    min-height: 42px;
+    resize: none;
+    overflow: hidden;
+}
+
+.titulo-ventana {
+    height: 42px; /* Altura del título */
+    background-color: rgba(31, 31, 31, 0.103); /* Semi-transparent background */
+    color: #000000;
+    padding: 8px 12px;
+    cursor: move;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+    border-bottom: 0px solid #444;
+    backdrop-filter: blur(5px); /* Adjust the blur value as needed */
+    -webkit-backdrop-filter: blur(5px); /* For Safari support */
+}
+
+.titulo-ventana .titulo {
+    font-weight: bold;
+}
+
+.botones-ventana {
+    display: flex;
+    align-items: center;
+}
+
+.botones-ventana button {
+    background: transparent;
+    border: none;
+    color: #000000;
+    cursor: pointer;
+    margin-left: 4px;
+    padding: 4px;
+    border-radius: 4px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.botones-ventana button:hover {
+    background-color: #555;
+}
+
+.botones-ventana button svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+}
+
+.contenido-ventana {
+    background-color: #fafafa;
+   
+    flex-grow: 1; /* Hace que el contenido ocupe el espacio restante */
+    overflow: auto; /* Añade scroll si el contenido es muy largo */
+}
+
+/* Gestor de ventanas */
+#gestor-ventanas {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%; background-color: #ffffff25;
+       backdrop-filter: blur(5px); /* Adjust the blur value as needed */
+    -webkit-backdrop-filter: blur(5px); /* For Safari support */
+    color: #000000;
+    padding: 5px 10px;
+    box-sizing: border-box;
+    z-index: 10000;
+    border-top: 0px solid #444;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+#gestor-ventanas h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: normal;
+}
+
+#lista-ventanas {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 8px;
+}

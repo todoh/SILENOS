@@ -1,13 +1,6 @@
 /* datos/biblioteca.css (Versión corregida para ancho completo y alturas variables) */
 
-#biblioteca {
-    display: none; /* Oculta por defecto, gestionado por main.js */
-    padding: 25px;
-    box-sizing: border-box;
-    height: 100%;
-    width: 100%;
-    overflow-y: auto;
-}
+ 
 
 /* --- AQUI ESTÁ LA CORRECCIÓN --- */
 #biblioteca-grid {

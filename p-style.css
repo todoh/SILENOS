@@ -1,0 +1,272 @@
+/* ================================================================= */
+/* ESTILOS COMPLETOS Y CORREGIDOS PARA 'p-style.css'           */
+/* ================================================================= */
+
+/* --- Estilos Generales de la sección Programador --- */
+#programador {
+ 
+    flex-direction: column;
+    
+   
+ 
+   
+}
+
+/* --- Cabecera --- */
+.p-editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+      z-index: 20;
+    flex-shrink: 0;
+ 
+}
+.p-editor-header h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+.p-editor-header p {
+    font-size: 0.875rem;
+    
+}
+.p-editor-header .flex {
+    display: flex;
+    align-items: center;
+}
+.p-editor-header .space-x-2 > * + * {
+    margin-left: 0.5rem;
+}
+.p-editor-header button {
+    color: rgb(0, 0, 0);
+    font-weight: 700;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s;
+    border: none;
+    cursor: pointer;
+}
+.p-editor-header button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.p-editor-header .bg-gray-600 { background-color: #ffffff00; }
+.p-editor-header .bg-gray-600:hover { background-color: #37415100; }
+.p-editor-header .bg-blue-600 { background-color: #2563eb; }
+.p-editor-header .bg-blue-600:hover { background-color: #1d4ed8; }
+.p-editor-header .bg-purple-600 { background-color: #9333ea; }
+.p-editor-header .bg-purple-600:hover { background-color: #7e22ce; }
+.p-editor-header .bg-green-600 { background-color: #16a34a; }
+.p-editor-header .bg-green-600:hover { background-color: #15803d; }
+.p-editor-header .bg-red-600 { background-color: #dc2626; }
+.p-editor-header .bg-red-600:hover { background-color: #b91c1c; }
+.p-editor-header .bg-red-800 { background-color: #991b1b; }
+.p-editor-header .bg-red-800:hover { background-color: #7f1d1d; }
+
+/* --- Contenedor Principal (Lienzo + Salida) --- */
+.p-editor-main {
+    display: flex;
+    flex-grow: 1;
+    position: absolute;
+    top: 100px; /* O el alto que ocupe tu cabecera */
+    left: 0;
+    right: 0;   /* Añadido */
+    bottom: 0;  /* Añadido */
+    /* width: 100%; (eliminado para usar left/right) */
+}
+
+/* --- Contenedor del Lienzo --- */
+#p-canvas-container {
+    flex-grow: 1; 
+    position: absolute; /* Cambiado de 'relative' */
+    top: 0;
+    left: 0;
+    right: 24rem; /* Ancho del panel de salida #p-output-panel */
+    bottom: 0;
+    overflow: auto; 
+}
+
+/* --- Lienzo (Canvas) --- */
+#p-canvas {
+    width: 200vw;
+    height: 200vh; /* Usamos un tamaño grande para poder movernos */
+    background-color: #c0c0c0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.651) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.432) 1px, transparent 1px);
+    background-size: 20px 20px;
+    position: relative; /* ¡MUY IMPORTANTE para posicionar los nodos! */
+    overflow: visible;
+}
+
+/* --- Panel de Salida --- */
+#p-output-panel {
+    position: absolute;
+    right: 0%;
+    width: 24rem;
+    flex-shrink: 0;
+    height: 100%;
+    background-color: #ffffff00;
+    padding: 1rem;
+    overflow-y: auto;
+    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+    color: rgb(0, 0, 0);
+}
+#p-output-panel h2 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+#p-output {
+    background-color: #ffffff00;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-family: monospace;
+    white-space: pre-wrap;
+    min-height: 50px;
+}
+
+/* ======================================================================= */
+/* --- ESTILOS PARA NODOS Y CONECTORES (de tu versión original) --- */
+/* ======================================================================= */
+
+/* --- Estilos para los nodos --- */
+.p-node {
+    position: absolute; 
+    background-color: #2d2d2d;
+    border: 1px solid #444;
+    border-radius: 8px;
+    color: white;
+    padding: 12px;
+    min-width: 200px;
+    cursor: grab;
+    user-select: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    transition: box-shadow 0.2s;
+    z-index: 50; /* <- LÍNEA AÑADIDA PARA ASEGURAR QUE ESTÉ ENCIMA */
+}
+
+.p-node:active {
+    cursor: grabbing;
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+    z-index: 60; /* <- LÍNEA AÑADIDA PARA ASEGURAR QUE ESTÉ ENCIMA AL ARRASTRAR */
+}
+
+.p-node-header {
+    font-weight: bold;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #444;
+}
+
+.p-node-content input {
+    width: 100%;
+    box-sizing: border-box; /* Añadido para mejor consistencia */
+    background-color: #1a1a1a;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 6px;
+    color: white;
+}
+
+/* --- Estilos para los conectores de entrada/salida (las flechas) --- */
+.p-connector {
+    width: 14px;
+    height: 14px;
+    background-color: #666;
+    border: 2px solid #888;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    transition: background-color 0.2s;
+    z-index: 10; /* Asegura que esté por encima del nodo */
+}
+
+.p-connector.p-input {
+    left: -8px; /* Ajustado para que quede centrado en el borde */
+}
+
+.p-connector.p-output {
+    right: -8px; /* Ajustado para que quede centrado en el borde */
+}
+
+.p-connector:hover {
+    background-color: #8e44ad; /* Color púrpura al pasar el ratón */
+}
+
+/* --- Estilos para las líneas de conexión --- */
+.leader-line {
+display: block !important;
+    visibility: visible !important;
+    
+    /* Usamos un z-index extremadamente alto con !important para anular todo */
+    z-index: 9999 !important; }
+
+    /* --- Estilos para el Menú Desplegable de Nodos --- */
+.p-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.p-dropbtn {
+    background-color: #4a4a4a;
+    color: white;
+    padding: 8px 16px;
+    font-size: 14px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.p-dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #2d2d2d;
+    min-width: 220px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 100;
+    border-radius: 5px;
+    padding: 10px;
+    border: 1px solid #444;
+}
+
+.p-dropdown-category {
+    margin-bottom: 10px;
+}
+
+.p-dropdown-category:last-child {
+    margin-bottom: 0;
+}
+
+.p-dropdown-category span {
+    font-weight: bold;
+    color: #9e9e9e;
+    font-size: 0.8em;
+    text-transform: uppercase;
+    display: block;
+    padding: 4px 8px;
+}
+
+.p-dropdown-content a {
+    color: white;
+    padding: 8px 12px;
+    text-decoration: none;
+    display: block;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.p-dropdown-content a:hover {
+    background-color: #8e44ad;
+}
+
+.p-dropdown:hover .p-dropdown-content {
+    display: block;
+}
+
+.p-dropdown:hover .p-dropbtn {
+    background-color: #6a6a6a;
+}

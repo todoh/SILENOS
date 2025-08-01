@@ -1761,3 +1761,38 @@ function actualizarDatosDeImagen(personajeId, pngUrl, svgCode) {
         console.error(`[DATOS] No se encontró el personaje con ID "${personajeId}" para actualizar su imagen.`);
     }
 }
+
+
+// AÑADIR ESTA FUNCIÓN AL FINAL DEL ARCHIVO datos.js
+
+/**
+ * Crea un nuevo "Dato" en la sección de Datos para archivar una imagen generada.
+ * El dato se asigna automáticamente al arco "Visuales".
+ * @param {string} imageUrl - La URL de la imagen (en formato base64 o de otro tipo) a guardar.
+ */
+function archivarImagenComoDato(imageUrl) {
+    if (!imageUrl) return;
+
+    // Prepara la estructura de datos para el nuevo elemento.
+    const nuevoDato = {
+        // Se le da un nombre único basado en la fecha para poder identificarlo.
+        nombre: `Visual - ${new Date().toLocaleString()}`,
+        descripcion: ' ',
+        promptVisual: '',
+        imagen: imageUrl,
+        etiqueta: 'indeterminado', // Se le asigna la etiqueta 'visual' por defecto.
+        arco: 'visuales',  // Se asigna al arco 'visuales' como se solicitó.
+        svgContent: '',
+        embedding: []
+    };
+
+    // Llama a la función existente para crear el elemento en el DOM.
+    agregarPersonajeDesdeDatos(nuevoDato);
+    
+    // Opcional: Actualiza la vista de filtros para que el nuevo dato aparezca inmediatamente.
+    if (typeof reinicializarFiltrosYActualizarVista === 'function') {
+        reinicializarFiltrosYActualizarVista();
+    }
+    
+    console.log(`Imagen archivada con éxito en el arco "Visuales".`);
+}

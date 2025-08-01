@@ -343,7 +343,7 @@ function actualizarBotonContextual() {
             newBtn.onclick = abrirModalAIDatos;
             newBtn2.title = 'Generar Imágenes con IA';
             newBtn2.onclick = abrirModalImagenes;
-            newBtn2.style.display = 'flex';
+            newBtn2.style.display = 'none';
         } else if (idSeccionActiva === 'momentos') {
             newBtn.title = 'Generar Aventura Interactiva con IA';
             newBtn.onclick = abrirModalMomentosIA;

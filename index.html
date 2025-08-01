@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7136138379132657"
-     crossorigin="anonymous"></script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7393544781642897"
+crossorigin="anonymous"></script>
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,6 +20,8 @@
 <link rel="stylesheet" href="ultimosajustes.css">
 
 <link rel="stylesheet" href="interactivo.css">
+<link rel="stylesheet" href="ventanas.css">
+<link rel="stylesheet" href="p-style.css">
 
 <!-- Hoja de estilos para el nuevo editor de datos -->
 <link rel="stylesheet" href="editor-personajes.css">
@@ -45,9 +47,16 @@
 
 </head>
 <body>
+  
+    <script>
+ // document.addEventListener('contextmenu', function(event) {
+   // event.preventDefault();
+ // });
+</script>
 <script src="https://www.webrtc-experiment.com/RecordRTC.js"></script>
 <script src="principio.js"></script> 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leader-line-new@1.1.9/leader-line.min.js"></script>
 
 <div id="silenos" >
     <div id="opciones" >
@@ -63,37 +72,44 @@
 <button id="asistente-btn" title="Asistente IA">S</button>
 <div id="asistente-popup">
     <div id="asistente-menu">
-        <button id="bproyecto" class="pro" id="proyecto-btn" onclick="cerrartodo(), abrir('proyecto');">🏗️ Proyecto</button>
+           <div class="asistente-categoria">
+           
+            <button   id="bguardarjson" class="tons" onclick="guardarJSON()">Guardar</button>
+            <button   id="bcargarjson" class="tons" onclick="document.getElementById('file-load').click()">Cargar</button>        
+            <button  id="btema" class="tons" id="theme-toggle-button" onclick="toggleTheme()">🌙</button>
+         <button id="bajustes" class="tons" onclick="abrirModalConfig()">⚙️</button>
+        </div>
+        <div class="asistente-categoria">
+            <button id="bproyecto" class="tons" onclick="abrirVentana('proyecto');">Proyecto</button>
+        </div>
+        <div class="asistente-categoria">
+            <button id="bdatos" class="tons" onclick="abrirVentana('personajes');">Datos</button> 
+            <button id="bguion" class="tons" onclick="abrirVentana('guion-literario');">Guión</button>
+            <button id="blibros" class="tons" onclick="abrirVentana('capitulosh');">Libro</button>
+        </div>
+        <div class="asistente-categoria">
+            <button class="tons" onclick="abrirVentana('diapositivas');">Editor Diapositivas</button>
+            <button id="biblioteca-btn" class="tons" onclick="abrirVentana('biblioteca');">Galería de Imágenes</button>
+        </div>
+        
+        <div class="asistente-categoria">
+           <button class="tons" onclick="abrirVentana('programador');"  >Programador</button>   <button class="tons" onclick="abrirVentana('interactivo');"  >Videojuego</button>
+        </div>
+     
 
-            <button id="bdatos" class="tons"  onclick="cerrartodo(), gridear('personajes');">Datos</button> 
-            <button id="bguion" class="tons" onclick="abrir('guion-literario');">Guión</button>
-            <button id="blibros" class="tons" onclick="cerrartodo(), abrir('capitulosh');">Libro</button>
-<button class="tons" onclick="cerrartodo(), abrir('animacionessvg')  ;"style="display: none;" >🎬 Animación</button>
-<button class="tons" onclick="cerrartodo(), abrir('diapositivas')  ;" >🤳 Diapositivas</button>
-          <button id="biblioteca-btn" class="tons" onclick="cerrartodo(), abrir('biblioteca')  ;"  >🖼️ Biblioteca</button>
- 
 
-<button class="tons" onclick="cerrartodo(), abrir('interactivo')  ;"  >🎮 Interactivo</button>
-
-    <button id="bajustes" class="pro" onclick="abrirModalConfig()">⚙️ Configuración</button>
-        <button class="pro" id="bguardarjson" class="pro" onclick="guardarJSON()">💾 Guardar</button>
-        <input   type="file" id="file-load" accept="application/json" onchange="cargarJSON(event)" style="display: none;">
-        <button class="pro" id="bcargarjson" class="pro" onclick="document.getElementById('file-load').click()">🗂️ Cargar</button>        
-        <button class="pro" id="btema" class="pro" id="theme-toggle-button" onclick="toggleTheme()">🌙 Tema</button>
-
-
-            <button class="tons"  onclick="cerrartodo(), abrir('vistageneral') ;"style="display: none;">Vista General</button>
+            <button class="tons"  onclick="abrirVentana('vistageneral');"style="display: none;">Vista General</button>
             <div id="removidos"  style="display: none;">
-            <button class="tons" onclick="cerrartodo(), abrir('escenah');" style="display: none;"  >Storyboard</button>
-            <button class="tons" onclick="cerrartodo(), abrir('animacionsvg');"style="display: none;">🎬 Animación</button>
-            <button class="tons" onclick="cerrartodo(), abrir('imagenes');" style="display: none;" >Imagenes</button>
-            <button class="tons" onclick="cerrartodo(), abrir('animaciones');"  style="display: none;"">Animaciones</button>
-            <button class="tons" id="pelicula" onclick="cerrartodo(), abrir('galeria');" style="display: none;" >Pelicula</button>
-            <button class="tons" onclick="cerrartodo(), abrir('momentos');"  style="display: none;"  >Librojuego</button>
-            <button class="tons" onclick="cerrartodo(), abrir('juego');"  style="display: none;">Juego</button>
-            <button class="tons" onclick="cerrartodo(), abrir('rpgmaker');" style="display: none;">RPG Maker</button>
+            <button class="tons" onclick="abrirVentana('escenah');" style="display: none;"  >Storyboard</button>
+            <button class="tons" onclick="abrirVentana('animacionessvg');"style="display: none;">🎬 Animación</button>
+            <button class="tons" onclick="abrirVentana('imagenes');" style="display: none;" >Imagenes</button>
+            <button class="tons" onclick="abrirVentana('animaciones');"  style="display: none;"">Animaciones</button>
+            <button class="tons" id="pelicula" onclick="abrirVentana('galeria');" style="display: none;" >Pelicula</button>
+            <button class="tons" onclick="abrirVentana('momentos');"  style="display: none;"  >Librojuego</button>
+            <button class="tons" onclick="abrirVentana('juego');"  style="display: none;">Juego</button>
+            <button class="tons" onclick="abrirVentana('rpgmaker');" style="display: none;">RPG Maker</button>
             
-            <button class="tons"  style="display: none;" onclick="cerrartodo(), abrir('biblioteca');">📚 Biblioteca</button>
+            <button class="tons"  style="display: none;" onclick="abrirVentana('biblioteca');">📚 Biblioteca</button>
             <button class="pro" onclick="abrirModalExportar()" style="display: none;">💽 Exportar</button>
         <button id="bajustes" class="pro" onclick="abrirModalConfig()">⚙️ Ajustes </button>
         <button id="bguardarjson" class="pro" onclick="guardarJSON()">💾 Guardar</button>
@@ -105,13 +121,13 @@
 
     </div>
 </div>
-<div id="biblioteca" style="display: none;" >
+<div id="biblioteca" class="pantalla" data-titulo="Biblioteca" style="display: none;" >
        <div id="biblioteca-controles">
         <button id="descargar-zip-btn" class="pro6">📥</button>
     </div>
     <div id="biblioteca-grid"></div>
 </div>
-<div id="diapositivas" style="display: none;" >
+<div id="diapositivas" class="pantalla" data-titulo="Diapositivas" style="display: none;" >
   <div class="w-full lg:w-1/3 xl:w-1/4 p-4 overflow-y-auto flex flex-col">
      
 
@@ -154,9 +170,12 @@
 
 </div> 
 
+<div id="gestor-ventanas">
+    <h3>Ventanas Abiertas</h3>
+    <ul id="lista-ventanas"></ul>
+</div>
 
-
-<div id="interactivo" >
+<div id="interactivo" class="pantalla" data-titulo="Editor Interactivo" >
 
 <div class="editor-container2">
     <header>
@@ -241,12 +260,12 @@
 
 <div id="google-auth-container"></div>
 
-<div id="rpgmaker">
+<div id="rpgmaker" class="pantalla" data-titulo="RPG Maker">
     <!-- Controles de Partida y Exportación -->
    
 </div>
 
-<div id="animaciones" style="display: none;">
+<div id="animaciones" class="pantalla" data-titulo="🎬 Animación 3D" style="display: none;">
     <div class="contenedor-principal" style="display: flex; flex-direction: column; height: 100%; padding: 1rem; box-sizing: border-box;">
 
         <header class="text-center mb-4">
@@ -299,7 +318,7 @@
     </div>
 </div>
 
-<div id="imagenes" style="display: none;">
+<div id="imagenes" class="pantalla" data-titulo="Generador de Imágenes" style="display: none;">
     <div class="container">
         <!-- Interruptor 2D/3D -->
         <div class="image-mode-toggle">
@@ -325,7 +344,6 @@
             
         </div>
         
-
 
 
         <!-- Nuevo Panel de control 3D -->
@@ -363,7 +381,7 @@
     </div>
 </div>
 
-<div id="momentos">
+<div id="momentos" class="pantalla" data-titulo="Aventura Interactiva">
     <button class="pro5" id="agregar-momento-btn">➕</button>
     <div id="momentos-controles-flotantes">
         
@@ -417,7 +435,7 @@
 
 </div>
 
-<div id="animacionessvg">
+<div id="animacionessvg" class="pantalla" data-titulo="Animación SVG">
     <!-- INICIO: Panel de Escenas Generadas (Pega esto en tu HTML) -->
         <div id="ai-scenes-panel">
             <h3>Escenas Generadas</h3>
@@ -490,7 +508,7 @@
         </div>
 </div>
 
-<div id="juego" style="display: none; width: 100%; height: 100%;">
+<div id="juego" class="pantalla" data-titulo="Editor de Mundos" style="display: none; width: 100%; height: 100%;">
     <div id="editor-container">
         <header id="main-header">
             <h1>Editor de Mundos</h1>
@@ -531,7 +549,7 @@
     </div>
 </div>
 
-<div id="proyecto" style="display: none;" >
+<div id="proyecto" class="pantalla" data-titulo="Proyecto" style="display: none;" >
 
 
 
@@ -542,7 +560,7 @@
 <button id="" class="  pro5 " onclick="crearNuevoLibro()" >+</button>
 </div>
 
- <div id="vistageneral" >
+ <div id="vistageneral" class="pantalla" data-titulo="👁️ Vista General" >
 
 
 
@@ -572,11 +590,12 @@
 </div>
 </div>
  
-<div id="guion-literario">
+<div id="guion-literario" class="pantalla" data-titulo="Guion Literario">
+    <button class="pro6" id="selector-guion-btn-local">☰</button>
+        <button class="pro16" id="sumar-capitulo-guion" onclick="agregarCapituloYMostrar()">+</button>
     <div id="guion-toolbar">
         <!-- El botón para abrir el selector de guiones se mueve aquí -->
-        <button class="pro6" id="selector-guion-btn-local">☰</button>
-        <button class="pro5" id="sumar-capitulo-guion" onclick="agregarCapituloYMostrar()">+</button>
+        
     </div>
     <div id="guion-layout">
         <!-- El índice lateral se elimina de la vista, pero el div se puede mantener para compatibilidad -->
@@ -591,7 +610,7 @@
     </div>
 </div>
 
-<div id="ia" >
+<div id="ia" class="pantalla" data-titulo="Asistente IA de Guion" >
     <div id="creasion" >
         <button class="pro" onclick="cerrartodo(), abrir('capitulosh'), actualizarParametrosIA(), crearEscenasAutomaticamente(nombredelahistoria, cantidaddeescenas, cantidadframes);">Insertar Capítulos vacíos en la Historia</button>
         <input type="text" id="nombrehistoria" placeholder="Nombre de las Escenas" value="Nombre de la Historia">
@@ -616,7 +635,7 @@
 </div>
 
 
-<div id="editor">
+<div id="editor" class="pantalla" data-titulo="💬 Chat" >
       <p></p>
       <p></p>
       <p></p>
@@ -626,7 +645,7 @@
 <button id="enviar" onclick="enviartexto()">Enviar</button>
 <div id="modos" ></div></div>
 
-<div id="escenah">
+<div id="escenah" class="pantalla" data-titulo="🎬 Storyboard">
     <button id="crear-escena-btn" class="pro6" onclick="abrirSelectorDeEscena(event)">+ 🎬</button>
     <div class="escena-toolbar">
          <button id="generargraficos" >Generar gráficos de la escena con IA</button>
@@ -640,13 +659,13 @@
 </div>
 
 
-<div id="capitulosh" style="display: none;" >
+<div id="capitulosh" class="pantalla" data-titulo="📚 Libro" style="display: none;" >
     <button id="selector-libro-btn" class="pro6" onclick="abrirSelectorDeLibro(event)">☰</button>
     
   
 
     
-    <button class="pro5" id="sumarpersonaje" onclick="nuevaEscena()">+</button>
+    <button class="pro16" id="sumarpersonaje" onclick="nuevaEscena()">+</button>
 
     <div id="capitulos">
         <div id="lista-capitulos">
@@ -679,21 +698,72 @@
     </button>
 </div></div>
 
-<div id="personajes">
+<div id="programador" class="pantalla" data-titulo="Programador">
+    <div class="p-editor-header bg-gray-800 p-3 shadow-md z-20 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+            <button id="p-undo-btn" class="tons2" onclick="pUndo()">Deshacer</button>
+            <button id="p-redo-btn" class="tons2" onclick="pRedo()">Rehacer</button>
+            <button id="p-zoom-out-btn" class="tons2">-</button>
+            <span id="p-zoom-level-indicator">100%</span>
+            <button id="p-zoom-in-btn" class="tons2">+</button>
+
+            <div class="p-dropdown">
+                <button class="p-dropbtn tons2">Añadir Nodo</button>
+                <div class="p-dropdown-content">
+    <div class="p-dropdown-category">
+        <span>Lógica</span>
+        <a href="#" onclick="pAddNode('initiator'); return false;">🚀 Iniciador</a>
+        <a href="#" onclick="pAddNode('text_variable'); return false;">📝 Variable de Texto</a>
+    </div>
+    <div class="p-dropdown-category">
+        <span>Control de Flujo</span>
+         <a href="#" onclick="pAddNode('await_delay'); return false;">⏳ Esperar (Await)</a>
+    </div>
+    <div class="p-dropdown-category">
+        <span>Procesamiento</span>
+        <a href="#" onclick="pAddNode('uppercase'); return false;">Poner en Mayúsculas</a>
+        <a href="#" onclick="pAddNode('suffix'); return false;">Añadir Sufijo</a>
+        <a href="#" onclick="pAddNode('log'); return false;">Mostrar Resultado</a>
+    </div>
+    <div class="p-dropdown-category">
+        <span>IA</span>
+        <a href="#" onclick="pAddNode('generacion_imagen'); return false;">Generación de Imagen</a>
+    </div>
+</div>
+            </div>
+            <button onclick="pRunAutomation()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">▶ Ejecutar</button>
+            <button onclick="pClearAll()" class="bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-4 rounded-lg transition-colors">Limpiar Todo</button>
+        </div>
+    </div>
+
+    <div class="p-editor-main flex-grow flex relative overflow-hidden">
+        <div id="p-canvas-container" class="flex-grow h-full overflow-auto">
+            <div id="p-canvas"></div>
+        </div>
+        <div id="p-output-panel" class="w-96 flex-shrink-0 h-full bg-gray-800 p-4 overflow-y-auto shadow-inner">
+            <h2 class="text-lg font-bold mb-2">Salida de la Ejecución</h2>
+            <div id="p-output" class="bg-black p-3 rounded-md text-sm font-mono whitespace-pre-wrap"></div>
+        </div>
+    </div>
+</div>
+
+
+<div id="personajes" class="pantalla" data-titulo="Datos">
     <button class="pro16" onclick="modalExportarDatos()" >E</button>
     <button class="pro17" style="display: none;" onclick=" document.getElementById('vistageneral').style.display = 'flex', document.getElementById('personajes').style.display = 'none', document.getElementById('biblioteca').style.display = 'none'; " >📜</button>
+<button class="pro17" id="sumarpersonaje" onclick="agregarPersonaje()">+</button>
 
     <button class="pro17"  onclick="generarImagenesFaltantes()" style="display: none;" >🖼️✨</button>
     <div class="herramientas" ></div>
     <div id="datos-botones-superiores">
-        <button class="pro5" id="sumarpersonaje" onclick="agregarPersonaje()">+</button>
+        
 
 
     </div>
     <div id="listapersonajes"></div></div>
 </div>
 
-<div id="escena-vista">
+<div id="escena-vista" class="pantalla" data-titulo="Escena Vista">
     <textarea id="escena-texto" placeholder="Texto de la escena"></textarea>
     <div id="drop-zone"   >
         <img id="imagen-preview" alt="Vista previa de la imagen">
@@ -785,7 +855,7 @@
     <li><a href="#" onclick="changeLanguage('hi'); return false;">🇮🇳 - हिन्दी</a></li>
     <li><a href="#" onclick="changeLanguage('ru'); return false;">🇷🇺 - Русский</a></li>
 
-    <li><a href="#" onclick="changeLanguage('fr'); return false;">🇫🇷 - Français</a></li>
+    <li><a href="#" onclick="changeLanguage('fr'); return false;">🇫� - Français</a></li>
     <li><a href="#" onclick="changeLanguage('de'); return false;">🇩🇪 - Deutsch</a></li>
     <li><a href="#" onclick="changeLanguage('it'); return false;">🇮🇹 - Italiano</a></li>
     <li><a href="#" onclick="changeLanguage('pt'); return false;">🇵🇹 - Português</a></li>
@@ -923,8 +993,8 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
             </div>
         </div>
         <div id="esfera">
-           <button id="nuevo" class="pro3" onclick="iniciarAnimacionSalida(), cerrartodo(), abrir('proyecto'), renderizarVisorDeLibros();; ">Entrar</button>
-            <button  id="cargar" class="pro3" onclick="iniciarAnimacionSalida(), cerrartodo(), abrir('proyecto');document.getElementById('file-load').click(), renderizarVisorDeLibros();">Cargar</button>
+           <button id="nuevo" class="pro3" onclick="iniciarAnimacionSalida() , renderizarVisorDeLibros();; ">Entrar</button>
+            <button  id="cargar" class="pro3" onclick="iniciarAnimacionSalida(), abrirVentana('proyecto');document.getElementById('file-load').click(), renderizarVisorDeLibros();">Cargar</button>
            <button style="display: none;" id="cargar" class="pro3" onclick="handleCargarCarpeta()">Cargar Carpeta</button>
  </div>
     </div>
@@ -1113,7 +1183,7 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
 <script type="module" src="juego_main.js"></script>
 
 
-<button id="open-imagenes-modal-btn" class="" title="Abrir Informe" onclick=" document.getElementById('vistageneral').style.display = 'flex', document.getElementById('personajes').style.display = 'none', document.getElementById('biblioteca').style.display = 'none'; " style="display: none;">👁️‍🗨️</button>
+<button id="open-imagenes-modal-btn" class="" style="display: none;" title="Abrir Informe" onclick=" document.getElementById('vistageneral').style.display = 'flex', document.getElementById('personajes').style.display = 'none', document.getElementById('biblioteca').style.display = 'none'; " style="display: none;">👁️‍🗨️</button>
 <button id="contextual-action-btn" title="Acción contextual" style="display: none;">✨</button>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -1150,10 +1220,12 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
  <script src="interactivo.js"></script>
  <script src="diapositivas.js"></script>
  <script src="biblioteca.js"></script>
+ <script src="ventanas.js"></script>
+<script src="p-node.js"></script>       <script src="p-conexion.js"></script>
+ <script src="p-ejecucion.js"></script>
+ <script src="p-ui.js"></script>         <script src="p-main.js"></script>        ```
 
-
-
-<script src="main.js" defer></script>
+ <script src="main.js" defer></script>
 <!-- Modal Genérico para Edición -->
 
 <div id="edit-modal" class="modal">
@@ -1171,5 +1243,18 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
         </div>
     </div>
 </div>
+
+ <script>
+        function abrirVentana(id) {
+            const ventana = document.getElementById(id);
+            if (ventana) {
+                ventana.style.display = 'flex'; // Usamos flex por la estructura de la ventana
+                // Llama a la función del gestor para actualizar la lista
+                if (window.actualizarGestor) {
+                    window.actualizarGestor();
+                }
+            }
+        }
+    </script>
 </body>
 </html>

@@ -67,7 +67,7 @@ function renderizarGaleria(arrayDeObjetosImagen) {
     if (!grid) return;
     grid.innerHTML = '';
     if (!arrayDeObjetosImagen || arrayDeObjetosImagen.length === 0) {
-        grid.innerHTML = '<p class="mensaje-placeholder">No se encontraron imágenes en el proyecto.</p>';
+        grid.innerHTML = '<p class="mensaje-placeholder"> </p>';
         return;
     }
 
