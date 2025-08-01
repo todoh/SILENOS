@@ -118,3 +118,62 @@
     display: flex;
     gap: 8px;
 }
+
+/* --- ESTILOS PARA LA VISTA CLARA --- */
+
+/* Por defecto, el botón de cierre del modo claro está oculto */
+.clear-mode-close {
+    display: none;
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    width: 32px;
+    height: 32px;
+    background-color:transparent;
+    color: rgb(0, 0, 0);
+    border: none;
+    border-radius: 50%;
+    font-size: 20px;
+    line-height: 32px;
+    text-align: center;
+    cursor: pointer;
+    z-index: 10001; /* Encima del contenido de la pantalla */
+    transition: background-color 0.2s;
+}
+
+.clear-mode-close:hover {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+
+/* Cuando el modo claro está activo en el body... */
+body.clear-view-mode .pantalla {
+    /* Ocupar toda la pantalla menos la barra inferior */
+    width: 100vw !important;
+    height: calc(100vh - 42px) !important; /* Ajusta 42px si la altura de tu barra inferior es diferente */
+    top: 0 !important;
+    left: 0 !important;
+    
+    /* Quitar estilos de ventana */
+    transform: none !important;
+    border-radius: 0;
+    border: none;
+    resize: none;
+    box-shadow: none;
+    z-index: 5000; /* Alto z-index para estar por encima de otros elementos */
+}
+
+/* Ocultar la barra de título original en modo claro */
+body.clear-view-mode .titulo-ventana {
+    display: none;
+}
+
+/* El contenido debe ocupar todo el espacio disponible */
+body.clear-view-mode .contenido-ventana {
+    height: 100%;
+}
+
+/* Mostrar el nuevo botón de cierre solo en modo claro */
+body.clear-view-mode .clear-mode-close {
+    display: block;
+}

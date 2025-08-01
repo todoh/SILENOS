@@ -37,7 +37,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const contenidoVentanaDiv = ventana.querySelector('.contenido-ventana');
             contenidoOriginal.forEach(nodo => contenidoVentanaDiv.appendChild(nodo));
-
+// Crear y añadir el botón de cierre para el "modo claro"
+        const clearModeCloseBtn = document.createElement('button');
+        clearModeCloseBtn.className = 'clear-mode-close';
+        clearModeCloseBtn.innerHTML = '&times;'; // El símbolo de 'X'
+        clearModeCloseBtn.title = 'Cerrar';
+        clearModeCloseBtn.onclick = () => window.cerrarVentana(ventana.id);
+        ventana.appendChild(clearModeCloseBtn);
             // 2. LÓGICA DE LA VENTANA (Arrastre, botones, etc.)
             const tituloVentana = ventana.querySelector('.titulo-ventana');
             let isDragging = false, offsetX, offsetY;

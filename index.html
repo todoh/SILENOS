@@ -46,7 +46,7 @@ crossorigin="anonymous"></script>
 
 
 </head>
-<body>
+<body class="clear-view-mode">
   
     <script>
  // document.addEventListener('contextmenu', function(event) {
@@ -77,7 +77,8 @@ crossorigin="anonymous"></script>
             <button   id="bguardarjson" class="tons" onclick="guardarJSON()">Guardar</button>
             <button   id="bcargarjson" class="tons" onclick="document.getElementById('file-load').click()">Cargar</button>        
             <button  id="btema" class="tons" id="theme-toggle-button" onclick="toggleTheme()">🌙</button>
-         <button id="bajustes" class="tons" onclick="abrirModalConfig()">⚙️</button>
+            <button id="bvista" class="tons" title="Cambiar a Vista Clara">🖼️</button>
+            <button id="bajustes" class="tons" onclick="abrirModalConfig()">⚙️</button>
         </div>
         <div class="asistente-categoria">
             <button id="bproyecto" class="tons" onclick="abrirVentana('proyecto');">Proyecto</button>
@@ -1256,5 +1257,23 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
             }
         }
     </script>
+     <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const toggleViewBtn = document.getElementById('bvista');
+        const body = document.body;
+
+        toggleViewBtn.addEventListener('click', () => {
+            body.classList.toggle('clear-view-mode');
+
+            if (body.classList.contains('clear-view-mode')) {
+                toggleViewBtn.innerHTML = '🔳'; // Icono para volver a modo ventana
+                toggleViewBtn.title = 'Cambiar a Vista de Ventanas';
+            } else {
+                toggleViewBtn.innerHTML = '⬜'; // Icono para ir a modo claro
+                toggleViewBtn.title = 'Cambiar a Vista Clara';
+            }
+        });
+    });
+ </script>
 </body>
 </html>
