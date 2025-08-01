@@ -77,7 +77,7 @@ crossorigin="anonymous"></script>
             <button   id="bguardarjson" class="tons" onclick="guardarJSON()">Guardar</button>
             <button   id="bcargarjson" class="tons" onclick="document.getElementById('file-load').click()">Cargar</button>        
             <button  id="btema" class="tons" id="theme-toggle-button" onclick="toggleTheme()">🌙</button>
-            <button id="bvista" class="tons" title="Cambiar a Vista Clara">🖼️</button>
+            <button id="bvista" class="tons" title="Cambiar a Vista Clara">🔳</button>
             <button id="bajustes" class="tons" onclick="abrirModalConfig()">⚙️</button>
         </div>
         <div class="asistente-categoria">
@@ -176,7 +176,7 @@ crossorigin="anonymous"></script>
     <ul id="lista-ventanas"></ul>
 </div>
 
-<div id="interactivo" class="pantalla" data-titulo="Editor Interactivo" >
+<div id="interactivo" class="pantalla" data-titulo="Videojuego" >
 
 <div class="editor-container2">
     <header>
@@ -591,7 +591,7 @@ crossorigin="anonymous"></script>
 </div>
 </div>
  
-<div id="guion-literario" class="pantalla" data-titulo="Guion Literario">
+<div id="guion-literario" class="pantalla" data-titulo="Guion">
     <button class="pro6" id="selector-guion-btn-local">☰</button>
         <button class="pro16" id="sumar-capitulo-guion" onclick="agregarCapituloYMostrar()">+</button>
     <div id="guion-toolbar">
@@ -646,7 +646,7 @@ crossorigin="anonymous"></script>
 <button id="enviar" onclick="enviartexto()">Enviar</button>
 <div id="modos" ></div></div>
 
-<div id="escenah" class="pantalla" data-titulo="🎬 Storyboard">
+<div id="escenah" class="pantalla" data-titulo="Storyboard">
     <button id="crear-escena-btn" class="pro6" onclick="abrirSelectorDeEscena(event)">+ 🎬</button>
     <div class="escena-toolbar">
          <button id="generargraficos" >Generar gráficos de la escena con IA</button>
@@ -660,7 +660,7 @@ crossorigin="anonymous"></script>
 </div>
 
 
-<div id="capitulosh" class="pantalla" data-titulo="📚 Libro" style="display: none;" >
+<div id="capitulosh" class="pantalla" data-titulo="Libro" style="display: none;" >
     <button id="selector-libro-btn" class="pro6" onclick="abrirSelectorDeLibro(event)">☰</button>
     
   
@@ -709,31 +709,45 @@ crossorigin="anonymous"></script>
             <button id="p-zoom-in-btn" class="tons2">+</button>
 
             <div class="p-dropdown">
-                <button class="p-dropbtn tons2">Añadir Nodo</button>
-                <div class="p-dropdown-content">
-    <div class="p-dropdown-category">
-        <span>Lógica</span>
-        <a href="#" onclick="pAddNode('initiator'); return false;">🚀 Iniciador</a>
-        <a href="#" onclick="pAddNode('text_variable'); return false;">📝 Variable de Texto</a>
-    </div>
-    <div class="p-dropdown-category">
-        <span>Control de Flujo</span>
-         <a href="#" onclick="pAddNode('await_delay'); return false;">⏳ Esperar (Await)</a>
-    </div>
-    <div class="p-dropdown-category">
-        <span>Procesamiento</span>
-        <a href="#" onclick="pAddNode('uppercase'); return false;">Poner en Mayúsculas</a>
-        <a href="#" onclick="pAddNode('suffix'); return false;">Añadir Sufijo</a>
-        <a href="#" onclick="pAddNode('log'); return false;">Mostrar Resultado</a>
-    </div>
-    <div class="p-dropdown-category">
-        <span>IA</span>
-        <a href="#" onclick="pAddNode('generacion_imagen'); return false;">Generación de Imagen</a>
+    <button class="p-dropbtn tons2">Añadir Nodo</button>
+    <div class="p-dropdown-content">
+        <div class="p-dropdown-category">
+            <span>Lógica</span>
+            <a href="#" onclick="pAddNode('initiator'); return false;">🚀 Iniciador</a>
+            <a href="#" onclick="pAddNode('text_variable'); return false;">📝 Variable de Texto</a>
+        </div>
+        <div class="p-dropdown-category">
+            <span>Control de Flujo</span>
+             <a href="#" onclick="pAddNode('await_delay'); return false;">⏳ Esperar (Await)</a>
+        </div>
+        <div class="p-dropdown-category">
+            <span>Procesamiento</span>
+            <a href="#" onclick="pAddNode('uppercase'); return false;">Poner en Mayúsculas</a>
+            <a href="#" onclick="pAddNode('suffix'); return false;">Añadir Sufijo</a>
+            <a href="#" onclick="pAddNode('log'); return false;">Mostrar Resultado</a>
+        </div>
+        <div class="p-dropdown-category">
+            <span>IA</span>
+            <a href="#" onclick="pAddNode('generacion_imagen'); return false;">🖼️ Generación de Imagen</a>
+            <a href="#" onclick="pAddNode('generador_datos'); return false;">🧩 Generador de Datos</a>
+            <a href="#" onclick="pAddNode('generador_personajesyobjetos'); return false;">🧩 Generador de Personajes y Objetos</a>
+
+          
+        </div>
     </div>
 </div>
-            </div>
-            <button onclick="pRunAutomation()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">▶ Ejecutar</button>
+             
+            <div class="p-blueprint-controls flex items-center space-x-2 ml-4 border-l-2 border-gray-600 pl-4">
+                <select id="p-planos-select"  ></select>
+                <button id="p-save-plano-btn" class="tons2">Guardar Plano</button>
+                <button id="p-rename-plano-btn" class="tons2">Renombrar</button>
+                <button id="p-delete-plano-btn" class="tons2">Borrar</button>
+                 <button onclick="pRunAutomation()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">▶ Ejecutar</button>
             <button onclick="pClearAll()" class="bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-4 rounded-lg transition-colors">Limpiar Todo</button>
+            </div>
+            </div>
+        <div>
+           
         </div>
     </div>
 

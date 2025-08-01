@@ -18,7 +18,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.75rem;
-      z-index: 20;
+       z-index: 99999; 
     flex-shrink: 0;
  
 }
@@ -110,7 +110,7 @@
     padding: 1rem;
     overflow-y: auto;
     box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
-    color: rgb(0, 0, 0);
+    color: rgb(0, 0, 0); z-index: 9999; /* Asegura que esté encima de todo */
 }
 #p-output-panel h2 {
     font-size: 1.125rem;
@@ -200,10 +200,10 @@
 /* --- Estilos para las líneas de conexión --- */
 .leader-line {
 display: block !important;
-    visibility: visible !important;
+  
     
     /* Usamos un z-index extremadamente alto con !important para anular todo */
-    z-index: 9999 !important; }
+    z-index: 9991 !important; }
 
     /* --- Estilos para el Menú Desplegable de Nodos --- */
 .p-dropdown {

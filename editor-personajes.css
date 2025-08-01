@@ -7,6 +7,8 @@
     grid-auto-rows: auto;
     gap: 50px 25px;
     padding: 30px;
+    padding-top: 4%;
+    padding-left: 10%; padding-right: 10%;
     padding-bottom: 17%;
     height: 100%;
     overflow-y: auto;
