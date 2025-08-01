@@ -161,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.abrirVentana = (id) => {
+        
         const ventana = document.getElementById(id);
         if (ventana) {
             ventana.style.display = 'flex';
@@ -168,6 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ventana.style.zIndex = zIndexCounter;
             window.actualizarGestor();
         }
+       actualizarBotonContextual(id);   
     };
 
     window.cerrarVentana = (id) => {

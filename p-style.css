@@ -270,3 +270,67 @@ display: block !important;
 .p-dropdown:hover .p-dropbtn {
     background-color: #6a6a6a;
 }
+
+.p-json-loader {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin: 0 15px;
+}
+
+#p-json-input {
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    border: 1px solid #444;
+    border-radius: 5px;
+    padding: 8px;
+    font-family: monospace;
+    font-size: 12px;
+    width: 250px;
+    height: 50px;
+    resize: vertical;
+    min-height: 30px;
+}
+
+.p-json-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+#p-json-file-input {
+    display: none;
+}
+
+.p-file-label {
+    background-color: #5a5a5a;
+    color: white;
+    padding: 6px 12px;
+    font-size: 12px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+    font-weight: bold;
+    text-align: center;
+}
+
+.p-file-label:hover {
+    background-color: #6a6a6a;
+}
+
+#p-load-blueprint-btn {
+    background-color: #3a6ea5;
+    color: white;
+    padding: 6px 12px;
+    font-size: 12px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+    font-weight: bold;
+}
+
+#p-load-blueprint-btn:hover {
+    background-color: #4a80b9;
+}
