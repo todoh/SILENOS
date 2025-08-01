@@ -721,20 +721,27 @@ crossorigin="anonymous"></script>
              <a href="#" onclick="pAddNode('await_delay'); return false;">⏳ Esperar (Await)</a>
         </div>
         <div class="p-dropdown-category">
-            <span>Procesamiento</span>
-            <a href="#" onclick="pAddNode('uppercase'); return false;">Poner en Mayúsculas</a>
-            <a href="#" onclick="pAddNode('suffix'); return false;">Añadir Sufijo</a>
-            <a href="#" onclick="pAddNode('log'); return false;">Mostrar Resultado</a>
+            <span>✨ TEXTO Y JSON</span>
+            <a href="#" onclick="pAddNode('gemini_text_request'); return false;">🤖 Generación de Texto</a>
+            <a href="#" onclick="pAddNode('gemini_json_request'); return false;">📄 Generador de Json</a>
+           
+
+          
         </div>
         <div class="p-dropdown-category">
-            <span>IA</span>
+            <span>✨ IMAGEN Y DATOS</span>
             <a href="#" onclick="pAddNode('generacion_imagen'); return false;">🖼️ Generación de Imagen</a>
             <a href="#" onclick="pAddNode('generador_datos'); return false;">🧩 Generador de Datos</a>
             <a href="#" onclick="pAddNode('generador_personajesyobjetos'); return false;">🧩 Generador de Personajes y Objetos</a>
 
           
         </div>
-
+ <div class="p-dropdown-category">
+            <span>Procesamiento</span>
+            <a href="#" onclick="pAddNode('uppercase'); return false;">Poner en Mayúsculas</a>
+            <a href="#" onclick="pAddNode('suffix'); return false;">Añadir Sufijo</a>
+            <a href="#" onclick="pAddNode('log'); return false;">Mostrar Resultado</a>
+        </div>
 
     </div>
 
@@ -1251,6 +1258,7 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
 <script src="p-nodes-index.js"></script>        
  <script src="p-interprete.js"></script> 
 <script src="p-main.js"></script> 
+ <script src="p-gemini-api.js"></script> 
 
 <script src="p-node.js"></script>       <script src="p-conexion.js"></script>
  <script src="p-ejecucion.js"></script>

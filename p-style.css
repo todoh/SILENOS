@@ -103,7 +103,7 @@
 #p-output-panel {
     position: absolute;
     right: 0%;
-    width: 24rem;
+    width: 28rem;
     flex-shrink: 0;
     height: 100%;
     background-color: #ffffff00;
@@ -333,4 +333,16 @@ display: block !important;
 
 #p-load-blueprint-btn:hover {
     background-color: #4a80b9;
+}
+
+pre {
+background-color: transparent;
+border: none;
+padding: 0;
+margin: 0;
+overflow: auto;
+white-space: pre-wrap;
+word-wrap: break-word;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); 
+
 }

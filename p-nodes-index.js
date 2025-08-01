@@ -61,9 +61,20 @@ const pNodeDefinitions = {
         outputs: 0,
         content: `<span>Muestra la entrada en el panel de salida.</span>`,
         process: (pNode, pInputs) => {
-            const pOutputDiv = document.getElementById('p-output');
-            const pLogMessage = `[${pNode.id}]: ${pInputs[0] || 'N/A'}\n`;
-            pOutputDiv.innerHTML += `<p>${pLogMessage}</p>`;
+            const outputDiv = document.getElementById('p-output');
+            const input = pInputs[0];
+            let contentToLog;
+
+            // Si la entrada es un objeto y no es nulo, lo formatea como JSON.
+            if (typeof input === 'object' && input !== null) {
+                // JSON.stringify con null y 2 formatea el JSON para que sea legible.
+                contentToLog = `<pre contenteditable="true" >${JSON.stringify(input, null, 2)}</pre>`;
+            } else {
+                // Si es texto, número, etc., lo muestra directamente.
+                contentToLog = input || 'N/A';
+            }
+            
+            outputDiv.innerHTML += `<div style="margin-bottom: 8px;">[${pNode.id}]: ${contentToLog}</div>`;
         }
     },
     generacion_imagen: {
@@ -205,6 +216,68 @@ generador_personajesyobjetos: {
         return generarDatosConImagenAvanzada(pInputs[0]);
     }
 }
+, gemini_text_request: {
+        title: '🤖 Petición de Texto a Gemini',
+        inputs: 1,
+        outputs: 1,
+        content: `
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+                <label for="model-select">Modelo:</label>
+                <select data-save="model">
+                   <option value="gemini-2.5-flash">2.5 Flash</option>
+                    <option value="gemini-2.5-flash-lite">2.5 Flash Lite</option>
+                    <option value="gemini-2.5-pro">2.5 Pro</option>
+                     <option value="gemini-2.0-flash">2.0 Flash</option>
+                    <option value="gemini-2.0-flash-lite">2.0 Flash Lite</option>
+                    <option value="gemini-2.0-pro">2.0 Pro</option>
+                </select>
+                <label for="system-prompt">Prompt de Sistema (opcional):</label>
+                <textarea data-save="system_prompt" rows="3" placeholder="Ej: Eres un asistente experto en..."></textarea>
+            </div>
+        `,
+        process: async (pNode, pInputs) => {
+            const systemPrompt = pNode.element.querySelector('[data-save="system_prompt"]').value;
+            const model = pNode.element.querySelector('[data-save="model"]').value;
+            const userPrompt = pInputs[0] || '';
+            
+            const fullPrompt = `${systemPrompt}\n\n${userPrompt}`.trim();
+            
+            // Llama a la función de la nueva librería
+            const result = await pCallGeminiApi(fullPrompt, model, false);
+            return result; // Devuelve la respuesta de texto
+        }
+    },
 
+     gemini_json_request: {
+        title: '📄 Petición de JSON a Gemini',
+        inputs: 1,
+        outputs: 1,
+        content: `
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+                <label for="model-select">Modelo:</label>
+                <select data-save="model">
+                option value="gemini-2.5-flash">2.5 Flash</option>
+                    <option value="gemini-2.5-flash-lite">2.5 Flash Lite</option>
+                    <option value="gemini-2.5-pro">2.5 Pro</option>
+                     <option value="gemini-2.0-flash">2.0 Flash</option>
+                    <option value="gemini-2.0-flash-lite">2.0 Flash Lite</option>
+                    <option value="gemini-2.0-pro">2.0 Pro</option>
+                </select>
+                <label for="system-prompt">Prompt de Sistema:</label>
+                <textarea data-save="system_prompt" rows="3" placeholder="Ej: Devuelve un JSON con la clave 'respuesta'..."></textarea>
+            </div>
+        `,
+        process: async (pNode, pInputs) => {
+            const systemPrompt = pNode.element.querySelector('[data-save="system_prompt"]').value;
+            const model = pNode.element.querySelector('[data-save="model"]').value;
+            const userPrompt = pInputs[0] || '';
+
+            const fullPrompt = `${systemPrompt}\n\nDatos de entrada: ${JSON.stringify(userPrompt)}`.trim();
+
+            // Llama a la función de la nueva librería pidiendo un JSON
+            const result = await pCallGeminiApi(fullPrompt, model, true);
+            return result; // Devuelve el objeto JSON
+        }
+    }
 
 };
