@@ -39,7 +39,7 @@
     border-radius: 15px;
     cursor: pointer;
     overflow: hidden;
-    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.062);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     display: flex;
     align-items: center;

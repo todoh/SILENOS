@@ -47,9 +47,29 @@ document.addEventListener('DOMContentLoaded', () => {
     pUpdateBlueprintDropdown();
 
     // Carga el último estado o empieza de cero
-    pLoadLastState();
-});
+    pLoadLastState();     pSetupAccordionMenu(); 
 
+});
+function pSetupAccordionMenu() {
+    const accordion = document.querySelector('.p-menu-accordion');
+    if (!accordion) return;
+
+    const detailsElements = accordion.querySelectorAll('details.p-dropdown-category');
+
+    detailsElements.forEach(details => {
+        details.addEventListener('toggle', (event) => {
+            // Si el elemento se está abriendo
+            if (details.open) {
+                // Cierra todos los demás
+                detailsElements.forEach(otherDetails => {
+                    if (otherDetails !== details) {
+                        otherDetails.removeAttribute('open');
+                    }
+                });
+            }
+        });
+    });
+}
 /**
  * Configura todos los event listeners de la aplicación.
  */
@@ -327,3 +347,5 @@ function pLoadLastState() {
 
 // Las funciones pAddNode, pCreateConnection, pRunAutomation, pPopulateNodeDropdown, pInitUI, pUpdateAllConnections
 // deben estar definidas en tus otros archivos JS (p-node.js, p-conexion.js, p-ejecucion.js, p-ui.js, etc.)
+
+ 

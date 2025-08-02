@@ -1,0 +1,146 @@
+ .container  {
+    display: flex;
+ height: 100%;
+  width:86%;
+ top: 0%;
+  right: 0%;
+  overflow-y: auto;
+  position: fixed;
+ 
+ }
+ 
+
+#editor-container {
+ 
+    display: flex;
+ height: 100%;
+  width: 100%;
+ 
+  position: relative;
+  
+ }
+     .flex-1 {
+ 
+    display: flex;
+ height: 100%;
+  width: 89%;
+ top: 0;
+  left: 14%;
+  right: 0;
+  position: absolute;
+ 
+     }  
+.e-sidebar {  
+    display: flex;
+ height: 100%;
+  width:10%;
+ top: 0%;
+  left: 0%;
+  overflow: hidden;
+ padding-left: 1%;
+justify-content: left;
+align-items: center;
+  position: fixed;
+
+     }
+.text-xl {
+    position: absolute;
+    width:80%;
+    height:30px;
+    display: flex;
+    flex-direction: column;
+    align-items:flex-start; 
+    justify-content: center;
+     border-radius: 8px;
+    padding: 10px;
+    margin-left: 10%;
+border: #000000 1px solid;
+ 
+
+}
+.e-drop-container {
+    margin-top: 35px;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items:flex-start;
+    justify-content: center;
+     border-radius: 8px;
+    padding: 20px;}
+
+   .e-module  { position: relative;
+    display: flex;
+          width: 100%;
+        }
+
+
+        /* Estilo para el placeholder en los divs editables */
+        [contenteditable][placeholder]:empty:before {
+            content: attr(placeholder);
+            color: #a0aec0;
+            pointer-events: none;
+            display: block;
+        }
+        
+        /* Estilo visual para el módulo que se está arrastrando */
+        .e-dragging {
+            opacity: 0.4;
+            border: 2px dashed #4a5568;
+        }
+        
+        /* Zona donde se puede soltar un módulo (antes de este) */
+        .e-drag-over-zone { border-top: 3px solid #f63b3b !important; }
+        .e-drag-over-zone-bottom { border-bottom: 3px solid #f63b3b !important; }
+
+        
+        .e-tool { cursor: grab; }
+        .e-tool:active { cursor: grabbing; }
+        
+        /* Estilo para las zonas de soltar (drop zones) */
+
+.e-drop-container.e-drop-zone {
+            outline: 2px dashed #3b83f600;
+            outline-offset: -10px;
+        
+        }
+
+        .e-drop-container.e-drop-zone-active {
+            outline: 2px dashed #3b83f600;
+            outline-offset: -10px;
+            background-color: #5538036b;
+        }
+        /* Estilo específico para la zona de soltar anidada */
+        .e-div-content-area.e-drop-zone-active {
+         height: 60%;  width: 80%; margin: 5%;   background-color: #dbeafe; /* Un azul más claro para anidados */
+        }
+
+        /* --- ESTILOS PARA PLEGADO --- */
+        .e-div-module.e-collapsed .e-div-content-area {
+display: none;        }
+
+        .e-div-module.e-collapsed h3 {
+            margin-bottom: 0;
+        }
+
+        .e-div-module.e-collapsed .e-collapse-btn svg {
+            transform: rotate(-90deg);
+        }
+
+        /* --- ESTILOS PARA SELECCIÓN MÚLTIPLE --- */
+        .e-module.e-selected {
+            outline: 2px solid #000000;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.3);
+        }
+.e-module img {max-width: 120px; max-height: 120px;}
+.e-module {min-height: 100px;      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+margin: 0.2%; padding: 1%;  }           
+
+
+#carta {background-color: #a0aec000; justify-content: center; }
+#carta button {position: relative; margin: 0%;}
+
+#carta img {max-width: 110px; max-height: 110px; position: relative ; display: flex;margin: 1%;  margin-left: 8%;}
+.carta-item { position: relative; display: flex; padding: 5px;}
+.carta-item textarea{ top: 0%; position: relative;display: flex; width: 70%; margin-left: 4%;}

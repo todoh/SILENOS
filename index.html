@@ -22,6 +22,7 @@ crossorigin="anonymous"></script>
 <link rel="stylesheet" href="interactivo.css">
 <link rel="stylesheet" href="ventanas.css">
 <link rel="stylesheet" href="p-style.css">
+<link rel="stylesheet" href="editor.css">
 
 <!-- Hoja de estilos para el nuevo editor de datos -->
 <link rel="stylesheet" href="editor-personajes.css">
@@ -82,9 +83,12 @@ crossorigin="anonymous"></script>
         </div>
         <div class="asistente-categoria">
             <button id="bproyecto" class="tons" onclick="abrirVentana('proyecto');">Proyecto</button>
+             <button id="bdatos" class="tons" onclick="abrirVentana('personajes');">Datos</button> 
         </div>
+
+ 
+
         <div class="asistente-categoria">
-            <button id="bdatos" class="tons" onclick="abrirVentana('personajes');">Datos</button> 
             <button id="bguion" class="tons" onclick="abrirVentana('guion-literario');">Guión</button>
             <button id="blibros" class="tons" onclick="abrirVentana('capitulosh');">Libro</button>
         </div>
@@ -93,8 +97,11 @@ crossorigin="anonymous"></script>
             <button id="biblioteca-btn" class="tons" onclick="abrirVentana('biblioteca');">Galería de Imágenes</button>
         </div>
         
-        <div class="asistente-categoria">
-           <button class="tons" onclick="abrirVentana('programador');"  >Programador</button>   <button class="tons" onclick="abrirVentana('interactivo');"  >Videojuego</button>
+       <div class="asistente-categoria">                 
+    
+            <button id="beditor" class="tons" onclick="abrirVentana('editor2');">Editor</button> 
+           <button class="tons" onclick="abrirVentana('programador');"  >Programador</button>  
+            <button class="tons" onclick="abrirVentana('interactivo');"  >Videojuego</button>
         </div>
      
 
@@ -590,8 +597,9 @@ crossorigin="anonymous"></script>
 
 </div>
 </div>
- 
+<div id="modal-overlay"></div>
 <div id="guion-literario" class="pantalla" data-titulo="Guion">
+        <button class="pro17"  title="Acción contextual"  onclick="abrirModalIAHerramientas()" >✨</button>
     <button class="pro6" id="selector-guion-btn-local">☰</button>
         <button class="pro16" id="sumar-capitulo-guion" onclick="agregarCapituloYMostrar()">+</button>
     <div id="guion-toolbar">
@@ -661,6 +669,8 @@ crossorigin="anonymous"></script>
 
 
 <div id="capitulosh" class="pantalla" data-titulo="Libro" style="display: none;" >
+            <button class="pro17"  title="Acción contextual"  onclick=" abrirModalSeleccionLibroParaFrames()" >✨</button>
+
     <button id="selector-libro-btn" class="pro6" onclick="abrirSelectorDeLibro(event)">☰</button>
     
   
@@ -679,25 +689,96 @@ crossorigin="anonymous"></script>
 <div id="selector-libro-popup" class="lista-guiones-popup-local" style="display: none;">
     </div>
 
-<div id="modal-seleccionar-libro-para-frames" class="modal-content" style="display: none;">
-    <button class="modal-close-button" onclick="cerrarModalSeleccionLibro()">&times;</button>
-    <h3>Generar Frames con IA</h3>
 
-    <div class="modal-seccion">
-        <label for="guion-origen-select">1. Elige el Guion a utilizar como base:</label>
-        <select id="guion-origen-select" class="modal-select"></select>
+
+</div>
+
+<div id="editor2" class="pantalla p-4 sm:p-8" data-titulo="Editor">
+    <div class="space-y-4 max-w-2xl mx-auto p-4 border rounded-lg bg-gray-50 shadow-sm">
+        
+        <div>
+            <label for="editor2-json-paste-area" class="font-semibold text-gray-700">Pega el contenido JSON aquí:</label>
+            <textarea id="editor2-json-paste-area" rows="4" class="w-full mt-1 p-2 border rounded-md" placeholder='Ejemplo: ["Aragorn", "Espada Andúril", "Minas Tirith"]'></textarea>
+        </div>
+        
+        <div class="flex items-center text-center">
+            <div class="flex-grow border-t border-gray-300"></div>
+            <span class="flex-shrink mx-4 text-gray-500 text-sm">O</span>
+            <div class="flex-grow border-t border-gray-300"></div>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <label for="editor2-json-input" class="font-semibold text-gray-700 whitespace-nowrap">Carga un archivo:</label>
+            <input type="file" id="editor2-json-input" accept=".json" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+        </div>
+        
+        <div class="text-center">
+            <button id="editor2-load-btn" class="pro5 mt-2">Cargar Composición</button>
+        </div>
     </div>
 
-    <div class="modal-seccion">
-        <label>2. Elige el Libro donde se guardarán los capítulos:</label>
-        <div id="lista-libros-para-frames" class="lista-libros-popup-estilo">
+    <div id="carta" class="mt-8 space-y-6 bg-white p-6 rounded-lg shadow max-w-2xl mx-auto">
+        </div>
+</div>
+
+
+ <div id="editor22" class="pantalla" data-titulo="Editor"">
+   <div id="editor-container" class="antialiased text-gray-800"> <div class="flex">
+        <!-- BARRA LATERAL FIJA CON HERRAMIENTAS ARRASTRABLES -->
+        <aside class="e-sidebar w-64 bg-white p-6 shadow-lg sticky top-0">
+             <button id="e-delete-selected-btn" class="hidden e-delete-btn w-full flex items-center justify-center gap-2 bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition-all mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" y2="17"/><line x1="14" y1="11" y2="17"/></svg>
+                Eliminar Selección
+            </button>
+            <div class="space-y-4">
+                <!-- Herramienta de Texto -->
+                <div draggable="true" data-tool="text" class="e-tool flex items-center gap-3 p-3 border rounded-lg shadow-sm hover:shadow-md hover:bg-gray-50 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500"><path d="M14 9.5a3.5 3.5 0 0 0-7 0v11"/><path d="M12 4.5H4"/><path d="M8 4.5H4"/></svg>
+                    <span class="font-semibold">Texto</span>
+                </div>
+                <!-- Herramienta de Imagen -->
+                <div draggable="true" data-tool="image" class="e-tool flex items-center gap-3 p-3 border rounded-lg shadow-sm hover:shadow-md hover:bg-gray-50 transition-all">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                    <span class="font-semibold">Imagen</span>
+                </div>
+                <!-- Herramienta de Contenedor (Div) -->
+                <div draggable="true" data-tool="div" class="e-tool flex items-center gap-3 p-3 border rounded-lg shadow-sm hover:shadow-md hover:bg-gray-50 transition-all">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-500"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                    <span class="font-semibold">Contenedor</span>
+                </div>
             </div>
+        </aside>
+
+        <!-- ÁREA DE CONTENIDO PRINCIPAL -->
+        <div id="e-main-area" class="flex-1">
+            <div class="container mx-auto max-w-4xl p-4 sm:p-8">
+           
+                <main id="e-editor-container" class="e-drop-container space-y-6 min-h-[50vh] rounded-xl transition-colors duration-300">
+                    <!-- Los módulos se añadirán aquí dinámicamente -->
+                </main>
+            </div>
+        </div>
+        
+        <input type="file" id="e-image-upload-input" class="hidden" accept="image/*">
+    </div> </div>
+
+    <!-- Modal de Confirmación de Eliminación -->
+    <div id="e-delete-confirm-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 transition-opacity duration-300">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm transform transition-all duration-300 scale-95">
+            <h3 id="e-delete-modal-title" class="text-lg font-bold text-gray-900 mb-4">Confirmar Eliminación</h3>
+            <p id="e-delete-modal-text" class="text-gray-600 mb-6">¿Estás seguro de que quieres eliminar este módulo? Esta acción no se puede deshacer.</p>
+            <div class="flex justify-end gap-4">
+                <button id="e-cancel-delete-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Cancelar</button>
+                <button id="e-confirm-delete-btn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Eliminar</button>
+            </div>
+        </div>
     </div>
 
-    <button id="confirmar-generacion-frames-btn" class="modal-button principal-action" onclick="confirmarSeleccionYProcesar()">
-        ✨ Generar en Libro Seleccionado
-    </button>
-</div></div>
+    <!-- Caja de Selección -->
+    <div id="e-selection-box" class="hidden absolute border-2 border-blue-500 bg-blue-500 bg-opacity-20 pointer-events-none z-50"></div>
+
+
+</div>
 
 <div id="programador" class="pantalla" data-titulo="Programador">
     <div class="p-editor-header bg-gray-800 p-3 shadow-md z-20 flex items-center justify-between">
@@ -710,40 +791,119 @@ crossorigin="anonymous"></script>
 
             <div class="p-dropdown">
     <button class="p-dropbtn tons2">Añadir Nodo</button>
-    <div class="p-dropdown-content">
-        <div class="p-dropdown-category">
-            <span>Lógica</span>
+ <div class="p-dropdown-content p-menu-accordion">
+    <!-- Nodos Básicos y de IA existentes -->
+    <details class="p-dropdown-category">
+        <summary>🏁 Inicio y Variables</summary>
+        <div>
             <a href="#" onclick="pAddNode('initiator'); return false;">🚀 Iniciador</a>
             <a href="#" onclick="pAddNode('text_variable'); return false;">📝 Variable de Texto</a>
         </div>
-        <div class="p-dropdown-category">
-            <span>Control de Flujo</span>
-             <a href="#" onclick="pAddNode('await_delay'); return false;">⏳ Esperar (Await)</a>
-        </div>
-        <div class="p-dropdown-category">
-            <span>✨ TEXTO Y JSON</span>
+    </details>
+
+    <details class="p-dropdown-category">
+        <summary>✨ IA (Texto, JSON, Imagen)</summary>
+        <div>
             <a href="#" onclick="pAddNode('gemini_text_request'); return false;">🤖 Generación de Texto</a>
             <a href="#" onclick="pAddNode('gemini_json_request'); return false;">📄 Generador de Json</a>
-           
-
-          
-        </div>
-        <div class="p-dropdown-category">
-            <span>✨ IMAGEN Y DATOS</span>
             <a href="#" onclick="pAddNode('generacion_imagen'); return false;">🖼️ Generación de Imagen</a>
             <a href="#" onclick="pAddNode('generador_datos'); return false;">🧩 Generador de Datos</a>
             <a href="#" onclick="pAddNode('generador_personajesyobjetos'); return false;">🧩 Generador de Personajes y Objetos</a>
-
-          
         </div>
- <div class="p-dropdown-category">
-            <span>Procesamiento</span>
-            <a href="#" onclick="pAddNode('uppercase'); return false;">Poner en Mayúsculas</a>
+    </details>
+
+    <!-- Nuevos Nodos de Lógica y Flujo de Control -->
+    <details class="p-dropdown-category">
+        <summary>🚦 Lógica y Flujo</summary>
+        <div>
+            <a href="#" onclick="pAddNode('switch'); return false;">🚦 Selector (Switch)</a>
+            <a href="#" onclick="pAddNode('for_each'); return false;">🔁 Para Cada (For Each)</a>
+            <a href="#" onclick="pAddNode('router'); return false;">🔀 Enrutador por Contenido</a>
+            <a href="#" onclick="pAddNode('await_delay'); return false;">⏳ Esperar (Await)</a>
+            <a href="#" onclick="pAddNode('break'); return false;">🛑 Interrumpir (Break)</a>
+        </div>
+    </details>
+
+    <!-- Nuevos Nodos de Procesamiento de Datos -->
+    <details class="p-dropdown-category">
+        <summary>🛠️ Procesamiento de Datos</summary>
+        <div>
+            <a href="#" onclick="pAddNode('json_parser'); return false;">➡️📄 Extraer de JSON</a>
+            <a href="#" onclick="pAddNode('csv_parser'); return false;">📃 Analizador CSV</a>
+            <a href="#" onclick="pAddNode('array_builder'); return false;">➕📊 Construir Array</a>
+            <a href="#" onclick="pAddNode('object_merger'); return false;">🧬 Fusionar Objetos</a>
+            <a href="#" onclick="pAddNode('regex_extractor'); return false;">🔍 Extractor Regex</a>
+            <a href="#" onclick="pAddNode('text_formatter'); return false;">✍️ Formateador de Texto</a>
+            <a href="#" onclick="pAddNode('uppercase'); return false;">Abc ➜ ABC</a>
             <a href="#" onclick="pAddNode('suffix'); return false;">Añadir Sufijo</a>
-            <a href="#" onclick="pAddNode('log'); return false;">Mostrar Resultado</a>
         </div>
+    </details>
 
-    </div>
+    <!-- Nuevos Nodos de Integración y API -->
+    <details class="p-dropdown-category">
+        <summary>🔌 Integraciones y API</summary>
+        <div>
+            <a href="#" onclick="pAddNode('http_request'); return false;">🌐 Petición HTTP</a>
+            <a href="#" onclick="pAddNode('database_query'); return false;">🗄️ Consulta a BD</a>
+            <a href="#" onclick="pAddNode('read_google_sheet'); return false;">📈 Leer Google Sheets</a>
+            <a href="#" onclick="pAddNode('file_reader'); return false;">📂 Leer Archivo Local</a>
+        </div>
+    </details>
+
+    <!-- Nuevos Nodos de Interacción Humana -->
+    <details class="p-dropdown-category">
+        <summary>🙋‍♂️ Interacción Humana</summary>
+        <div>
+            <a href="#" onclick="pAddNode('await_user_input'); return false;">💬 Esperar Input</a>
+            <a href="#" onclick="pAddNode('approval_gate'); return false;">✅ Puerta de Aprobación</a>
+            <a href="#" onclick="pAddNode('send_email'); return false;">📧 Enviar Email</a>
+        </div>
+    </details>
+
+    <!-- Nuevos Nodos de Agentes y Memoria -->
+    <details class="p-dropdown-category">
+        <summary>🧠 Agentes y Memoria</summary>
+        <div>
+            <a href="#" onclick="pAddNode('vector_store_write'); return false;">🧠 Escribir en Memoria</a>
+            <a href="#" onclick="pAddNode('vector_store_read'); return false;">🔎 Leer de Memoria</a>
+            <a href="#" onclick="pAddNode('chat_memory'); return false;">🗣️ Memoria de Chat</a>
+            <a href="#" onclick="pAddNode('goal_planner'); return false;">🎯 Planificador de Metas</a>
+        </div>
+    </details>
+
+    <!-- Nuevos Nodos de Procesamiento Multimedia -->
+    <details class="p-dropdown-category">
+        <summary>🎬 Multimedia</summary>
+        <div>
+            <a href="#" onclick="pAddNode('image_to_text'); return false;">🖼️ Imagen a Texto</a>
+            <a href="#" onclick="pAddNode('text_to_speech'); return false;">🔊 Texto a Voz</a>
+            <a href="#" onclick="pAddNode('image_generator'); return false;">🎨 Generador de Imágenes</a>
+        </div>
+    </details>
+    
+    <!-- Nuevos Nodos de Agendamiento y Disparadores -->
+    <details class="p-dropdown-category">
+        <summary>⏰ Disparadores (Triggers)</summary>
+        <div>
+            <a href="#" onclick="pAddNode('schedule_trigger'); return false;">⏰ Por Horario</a>
+            <a href="#" onclick="pAddNode('webhook_trigger'); return false;">🎣 Por Webhook</a>
+            <a href="#" onclick="pAddNode('file_watcher_trigger'); return false;">📁 Por Archivo</a>
+        </div>
+    </details>
+
+    <!-- Nuevos Nodos de Análisis y Depuración -->
+    <details class="p-dropdown-category">
+        <summary>🔍 Análisis y Depuración</summary>
+        <div>
+            <a href="#" onclick="pAddNode('data_aggregator'); return false;">🧮 Agregador de Datos</a>
+            <a href="#" onclick="pAddNode('flow_inspector'); return false;">🔬 Inspector de Flujo</a>
+            <a href="#" onclick="pAddNode('error_handler'); return false;">🛡️ Manejador de Errores</a>
+            <a href="#" onclick="pAddNode('log'); return false;">➜ Mostrar Resultado</a>
+        </div>
+    </details>
+</div>
+
+
 
 
 </div>
@@ -782,6 +942,8 @@ crossorigin="anonymous"></script>
 
 
 <div id="personajes" class="pantalla" data-titulo="Datos">
+    <button class="pro18"  title="Acción contextual"  onclick="abrirModalAIDatos()" >✨</button>
+
     <button class="pro16" onclick="modalExportarDatos()" >E</button>
     <button class="pro17" style="display: none;" onclick=" document.getElementById('vistageneral').style.display = 'flex', document.getElementById('personajes').style.display = 'none', document.getElementById('biblioteca').style.display = 'none'; " >📜</button>
 <button class="pro17" id="sumarpersonaje" onclick="agregarPersonaje()">+</button>
@@ -811,7 +973,7 @@ crossorigin="anonymous"></script>
 
 <canvas id="hiddenCanvas" style="display:none;"></canvas>
 
-<div id="modal-overlay"></div>
+
 
 <div id ="animacionsvg" class="nom" >
 
@@ -1084,6 +1246,25 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
     </div>
 </div>
 
+<div id="modal-seleccionar-libro-para-frames" class="modal-content" style="display: none;">
+    <button class="modal-close-button" onclick="cerrarModalSeleccionLibro()">&times;</button>
+    <h3>Generar Frames con IA</h3>
+
+    <div class="modal-seccion">
+        <label for="guion-origen-select">1. Elige el Guion a utilizar como base:</label>
+        <select id="guion-origen-select" class="modal-select"></select>
+    </div>
+
+    <div class="modal-seccion">
+        <label>2. Elige el Libro donde se guardarán los capítulos:</label>
+        <div id="lista-libros-para-frames" class="lista-libros-popup-estilo">
+            </div>
+    </div>
+
+    <button id="confirmar-generacion-frames-btn" class="modal-button principal-action" onclick="confirmarSeleccionYProcesar()">
+        ✨ Generar en Libro Seleccionado
+    </button>
+</div>
 <style>
     .ia-control-row { display: flex; justify-content: space-between; align-items: center; gap: 15px; }
     .ia-control-row label { font-weight: 500; flex-shrink: 0; }
@@ -1215,9 +1396,11 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
 <script type="module" src="animacion2d.js"></script>
 <script type="module" src="juego_main.js"></script>
 
-
+  
 <button id="open-imagenes-modal-btn" class="" style="display: none;" title="Abrir Informe" onclick=" document.getElementById('vistageneral').style.display = 'flex', document.getElementById('personajes').style.display = 'none', document.getElementById('biblioteca').style.display = 'none'; " style="display: none;">👁️‍🗨️</button>
-<button id="contextual-action-btn" title="Acción contextual" style="display: none;">✨</button>
+
+<button id="contextual-action-btn" title="Acción contextual" style="display: none;"> </button>
+
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="geminiasistente.js"></script>
@@ -1255,10 +1438,15 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
  <script src="biblioteca.js"></script>
  <script src="ventanas.js"></script>
 
+
+<script src="editor.js"></script>        
+
+
 <script src="p-nodes-index.js"></script>        
  <script src="p-interprete.js"></script> 
 <script src="p-main.js"></script> 
  <script src="p-gemini-api.js"></script> 
+ <script src="p-logicas.js"></script> 
 
 <script src="p-node.js"></script>       <script src="p-conexion.js"></script>
  <script src="p-ejecucion.js"></script>

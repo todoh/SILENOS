@@ -401,7 +401,7 @@ background-color: transparent;
  min-height: 250px;
     display: none;
     position: fixed;
-    z-index: 1000001;
+visibility: visible;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);       
@@ -411,7 +411,7 @@ background-color: transparent;
     flex-direction: column;
     gap: 15px;
     align-items: center;    border: 0px solid #ffffff;
- 
+     z-index: 1000001 !important;
 } 
 
 .modal-close-button {

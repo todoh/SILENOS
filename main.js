@@ -87,6 +87,7 @@ function cerrartodo() {
   document.getElementById('proyecto').style.display = 'none';
   document.getElementById('interactivo').style.display = 'none';
   document.getElementById('diapositivas').style.display = 'none';
+  document.getElementById('editor').style.display = 'none';
 
 
 }
@@ -335,7 +336,7 @@ function actualizarBotonContextual() {
     if (idSeccionActiva) {
         newBtn.innerHTML = '✨';
         newBtn2.innerHTML = '👁️‍🗨️';
-        newBtn.style.display = 'flex';
+        newBtn.style.display = 'none';
         newBtn2.style.display = 'none';
         
         if (idSeccionActiva === 'personajes') {
@@ -1245,6 +1246,8 @@ function seleccionarLibro(id) {
 
 function abrirModalSeleccionLibroParaFrames() {
     const modal = document.getElementById('modal-seleccionar-libro-para-frames');
+    modal.classList.add('modal-content');
+
     const overlay = document.getElementById('modal-overlay');
     const listaLibrosContainer = document.getElementById('lista-libros-para-frames');
     const selectGuiones = document.getElementById('guion-origen-select');
