@@ -693,92 +693,59 @@ crossorigin="anonymous"></script>
 
 </div>
 
-<div id="editor2" class="pantalla p-4 sm:p-8" data-titulo="Editor">
-    <div class="space-y-4 max-w-2xl mx-auto p-4 border rounded-lg bg-gray-50 shadow-sm">
-        
-        <div>
-            <label for="editor2-json-paste-area" class="font-semibold text-gray-700">Pega el contenido JSON aquí:</label>
-            <textarea id="editor2-json-paste-area" rows="4" class="w-full mt-1 p-2 border rounded-md" placeholder='Ejemplo: ["Aragorn", "Espada Andúril", "Minas Tirith"]'></textarea>
+ 
+
+ 
+
+ <div id="editor2" class="pantalla p-4 sm:p-8" data-titulo="Editor">
+    <div class="flex items-center justify-between mb-4">
+        <button id="e-guardar-receta-btn" class="pro16">
+            Guardar Composición
+        </button>
+        <select id="e-cargar-receta-select" class="pro17">
+            <option value="" disabled selected>Cargar composición...</option>
+        </select>
+    </div>
+ 
+    <div id="e-main-area" class="flex-1">
+        <div class="container mx-auto max-w-4xl p-4 sm:p-8">
+            <main id="e-editor-container" class="e-drop-container space-y-6 min-h-[50vh] rounded-xl transition-colors duration-300">
+                </main>
         </div>
-        
+    </div>
+    
+    <div class="space-y-4 max-w-2xl mx-auto p-4 border rounded-lg bg-gray-50 shadow-sm mt-8">
+      
         <div class="flex items-center text-center">
             <div class="flex-grow border-t border-gray-300"></div>
             <span class="flex-shrink mx-4 text-gray-500 text-sm">O</span>
             <div class="flex-grow border-t border-gray-300"></div>
         </div>
-
         <div class="flex items-center gap-4">
             <label for="editor2-json-input" class="font-semibold text-gray-700 whitespace-nowrap">Carga un archivo:</label>
             <input type="file" id="editor2-json-input" accept=".json" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
         </div>
-        
         <div class="text-center">
             <button id="editor2-load-btn" class="pro5 mt-2">Cargar Composición</button>
         </div>
     </div>
 
     <div id="carta" class="mt-8 space-y-6 bg-white p-6 rounded-lg shadow max-w-2xl mx-auto">
-        </div>
-</div>
-
-
- <div id="editor22" class="pantalla" data-titulo="Editor"">
-   <div id="editor-container" class="antialiased text-gray-800"> <div class="flex">
-        <!-- BARRA LATERAL FIJA CON HERRAMIENTAS ARRASTRABLES -->
-        <aside class="e-sidebar w-64 bg-white p-6 shadow-lg sticky top-0">
-             <button id="e-delete-selected-btn" class="hidden e-delete-btn w-full flex items-center justify-center gap-2 bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition-all mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" y2="17"/><line x1="14" y1="11" y2="17"/></svg>
-                Eliminar Selección
-            </button>
-            <div class="space-y-4">
-                <!-- Herramienta de Texto -->
-                <div draggable="true" data-tool="text" class="e-tool flex items-center gap-3 p-3 border rounded-lg shadow-sm hover:shadow-md hover:bg-gray-50 transition-all">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500"><path d="M14 9.5a3.5 3.5 0 0 0-7 0v11"/><path d="M12 4.5H4"/><path d="M8 4.5H4"/></svg>
-                    <span class="font-semibold">Texto</span>
-                </div>
-                <!-- Herramienta de Imagen -->
-                <div draggable="true" data-tool="image" class="e-tool flex items-center gap-3 p-3 border rounded-lg shadow-sm hover:shadow-md hover:bg-gray-50 transition-all">
-                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                    <span class="font-semibold">Imagen</span>
-                </div>
-                <!-- Herramienta de Contenedor (Div) -->
-                <div draggable="true" data-tool="div" class="e-tool flex items-center gap-3 p-3 border rounded-lg shadow-sm hover:shadow-md hover:bg-gray-50 transition-all">
-                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-500"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
-                    <span class="font-semibold">Contenedor</span>
-                </div>
-            </div>
-        </aside>
-
-        <!-- ÁREA DE CONTENIDO PRINCIPAL -->
-        <div id="e-main-area" class="flex-1">
-            <div class="container mx-auto max-w-4xl p-4 sm:p-8">
-           
-                <main id="e-editor-container" class="e-drop-container space-y-6 min-h-[50vh] rounded-xl transition-colors duration-300">
-                    <!-- Los módulos se añadirán aquí dinámicamente -->
-                </main>
-            </div>
-        </div>
-        
-        <input type="file" id="e-image-upload-input" class="hidden" accept="image/*">
-    </div> </div>
-
-    <!-- Modal de Confirmación de Eliminación -->
-    <div id="e-delete-confirm-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 transition-opacity duration-300">
-        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm transform transition-all duration-300 scale-95">
-            <h3 id="e-delete-modal-title" class="text-lg font-bold text-gray-900 mb-4">Confirmar Eliminación</h3>
-            <p id="e-delete-modal-text" class="text-gray-600 mb-6">¿Estás seguro de que quieres eliminar este módulo? Esta acción no se puede deshacer.</p>
-            <div class="flex justify-end gap-4">
-                <button id="e-cancel-delete-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Cancelar</button>
-                <button id="e-confirm-delete-btn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Eliminar</button>
-            </div>
-        </div>
     </div>
 
-    <!-- Caja de Selección -->
-    <div id="e-selection-box" class="hidden absolute border-2 border-blue-500 bg-blue-500 bg-opacity-20 pointer-events-none z-50"></div>
+   
 
-
+  <div class="menuu" >
+            
+            <textarea id="editor2-json-paste-area" rows="4" style="visibility: visible;" placeholder='Ejemplo: ["Aragorn", "Espada Andúril", "Minas Tirith"]'></textarea>
+        </div>
 </div>
+
+<div id="editor22" class="pantalla" data-titulo="Editor">
+    </div>
+
+
+ 
 
 <div id="programador" class="pantalla" data-titulo="Programador">
     <div class="p-editor-header bg-gray-800 p-3 shadow-md z-20 flex items-center justify-between">

@@ -2195,3 +2195,121 @@ function eliminarDatoDesdeEditor(boton) {
 // ===================================
 // FIN: Funcionalidad para cargar composición en el editor
 // ===================================
+
+
+// EN: datos.js -> Reemplaza la función existente por esta
+
+/**
+ * Crea un nuevo "Dato" para una receta y lo añade a la lista #listapersonajes.
+ * No guarda en memoria persistente, solo crea el elemento en la interfaz.
+ * @param {string} nombre - El nombre completo de la receta (ej. "Receta - Mi Composición").
+ * @param {string} jsonComposicion - El string JSON que representa la composición.
+ */
+// EN: datos.js -> MODIFICA esta función
+
+function archivarReceta(nombre, jsonComposicion) {
+    const nuevoDato = {
+        nombre: nombre,
+        descripcion: 'Esta es una composición guardada.',
+        promptVisual: jsonComposicion,
+        imagen: '',
+        etiqueta: 'nota',
+        arco: 'sin_arco',
+        svgContent: '',
+        embedding: []
+    };
+
+    if (typeof agregarPersonajeDesdeDatos === 'function') {
+        agregarPersonajeDesdeDatos(nuevoDato);
+    } else {
+        return;
+    }
+
+    if (typeof reinicializarFiltrosYActualizarVista === 'function') {
+        reinicializarFiltrosYActualizarVista();
+    }
+    
+    // --- IMPORTANTE ---
+    // Asegúrate de que aquí NO haya una llamada a 'actualizarListaRecetas()'.
+    // La hemos eliminado para que no se actualice automáticamente.
+
+    alert(`Composición "${nombre}" creada.`);
+}
+
+
+// EN: datos.js -> REEMPLAZA esta función
+
+/**
+ * --- VERSIÓN CORREGIDA Y ROBUSTA ---
+ * Obtiene la lista de nombres de todas las recetas guardadas, buscando SIEMPRE
+ * en los elementos del DOM, que es la fuente de verdad de lo que se muestra.
+ * @returns {string[]} Un array con los nombres de las recetas encontradas.
+ */
+function obtenerNombresRecetas() {
+    const nombres = [];
+    const todosLosDatos = document.querySelectorAll('#listapersonajes .personaje'); // Busca todos los datos en la lista
+
+    todosLosDatos.forEach(datoEl => {
+        const nombreInput = datoEl.querySelector('.nombreh');
+        // Si el dato tiene un nombre y empieza con "Receta - ", lo añadimos
+        if (nombreInput && nombreInput.value.startsWith('Receta - ')) {
+            nombres.push(nombreInput.value);
+        }
+    });
+    
+    console.log(`Búsqueda de recetas finalizada. Encontradas: ${nombres.length}`);
+    return nombres;
+}
+
+/**
+ * Obtiene el JSON de la composición de una receta por su nombre.
+ * @param {string} nombreReceta - El nombre de la receta a buscar.
+ * @returns {string|null} El JSON de la composición o null si no se encuentra.
+ */
+function obtenerRecetaPorNombre(nombreReceta) {
+    const todosLosDatos = document.querySelectorAll('#listapersonajes .personaje');
+
+    for (const datoEl of todosLosDatos) {
+        const nombreInput = datoEl.querySelector('.nombreh');
+        if (nombreInput && nombreInput.value === nombreReceta) {
+            const promptVisualArea = datoEl.querySelector('.prompt-visualh');
+            if (promptVisualArea) {
+                return promptVisualArea.value;
+            }
+        }
+    }
+    return null;
+}
+/**
+ * Agrega un nuevo dato (como una receta) a la lista y lo guarda en la memoria.
+ * A diferencia de agregarDato(), esta función recibe un objeto de dato ya construido.
+ * @param {object} nuevoDato - El objeto de dato a agregar (debe tener nombre, tipo, etc.).
+ */
+function agregarNuevoDato(nuevoDato) {
+    if (!nuevoDato || typeof nuevoDato !== 'object' || !nuevoDato.nombre) {
+        console.error("Error: Se intentó agregar un dato inválido.", nuevoDato);
+        return;
+    }
+
+    // 1. Asegura que el nuevo dato tenga un ID único.
+    if (!nuevoDato.id) {
+        nuevoDato.id = 'dato_' + Date.now();
+    }
+
+    // 2. Crea el elemento HTML para el nuevo dato usando la función que ya tienes.
+    const elemento = crearElementoDato(nuevoDato);
+    const lista = document.getElementById('listapersonajes');
+    
+    if (lista) {
+        // 3. Añade el nuevo elemento al principio de la lista en la interfaz.
+        lista.prepend(elemento); 
+        inicializarEventListenersDato(elemento); // Asegura que los botones del nuevo elemento funcionen.
+    } else {
+        console.error("Error: No se encontró el contenedor '#listapersonajes' en el DOM.");
+        return; // Detiene la ejecución si no se puede mostrar el dato.
+    }
+    
+    // 4. Llama a la función existente para guardar el estado actualizado en localStorage.
+    guardarDatos();
+    console.log(`Dato '${nuevoDato.nombre}' agregado y guardado correctamente.`);
+}

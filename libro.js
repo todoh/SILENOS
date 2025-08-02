@@ -360,8 +360,10 @@ if (libro.portadaUrl) {
  * @param {object} libro - El libro que se va a exportar.
  */
 function mostrarMenuExportar(event, libro) {
+    
     // Cierra cualquier menú de exportación que ya esté abierto
     cerrarMenuExportar();
+    console.log(`Mostrando menú de exportación para el libro: ${libro.titulo}`);
 
     const menu = document.createElement('div');
     menu.id = 'export-menu';

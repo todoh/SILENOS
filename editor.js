@@ -17,6 +17,108 @@
     const selectionBox = document.getElementById('e-selection-box');
     const deleteSelectedBtn = document.getElementById('e-delete-selected-btn');
 
+
+const guardarRecetaBtn = document.getElementById('e-guardar-receta-btn');
+const cargarRecetaSelect = document.getElementById('e-cargar-receta-select');
+const editorContainer = document.getElementById('e-editor-container');
+ 
+
+ ;
+
+
+// Listener para el nuevo botón de guardar
+if (guardarRecetaBtn) {
+    guardarRecetaBtn.addEventListener('click', () => {
+        // Abre un modal para que el usuario introduzca el nombre
+        const nombre = prompt('Introduce un nombre para la composición:');
+        if (nombre) {
+            guardarComposicionComoReceta(nombre);
+        }
+    });
+}
+
+// Listener para el nuevo selector de cargar
+if (cargarRecetaSelect) {        cargarRecetaSelect.addEventListener('click', actualizarListaRecetas);
+
+    cargarRecetaSelect.addEventListener('change', (event) => {
+        const nombreReceta = event.target.value;
+        if (nombreReceta) {
+            cargarComposicionDesdeReceta(nombreReceta);
+        }
+    });
+}
+
+// --- NUEVAS FUNCIONES DE LÓGICA DE RECETAS ---
+
+// EN: editor.js -> Reemplaza la función existente por esta
+
+/**
+ * Recolecta los datos de la composición actual y llama a la función para archivarla.
+ * @param {string} nombre - El nombre para la nueva receta, proporcionado por el usuario.
+ */
+function guardarComposicionComoReceta(nombre) {
+    const cartaContainer = document.getElementById('carta');
+    if (!cartaContainer) return;
+
+    const textareas = cartaContainer.querySelectorAll('.carta-item textarea');
+    if (textareas.length === 0) {
+        alert('La composición está vacía.');
+        return;
+    }
+
+    const nombresDeLaComposicion = Array.from(textareas).map(textarea => textarea.dataset.nombreOriginal);
+    const jsonComposicion = JSON.stringify(nombresDeLaComposicion, null, 2);
+
+    if (typeof archivarReceta === 'function') {
+        const nombreReceta = `Receta - ${nombre}`;
+        archivarReceta(nombreReceta, jsonComposicion);
+    }
+}
+
+function cargarComposicionDesdeReceta(nombreReceta) {
+    if (typeof obtenerRecetaPorNombre !== 'function' || typeof renderizarContenidoEnCarta !== 'function') {
+        return;
+    }
+    
+    const jsonReceta = obtenerRecetaPorNombre(nombreReceta);
+    if (jsonReceta) {
+        try {
+            const nombres = JSON.parse(jsonReceta);
+            renderizarContenidoEnCarta(nombres);
+        } catch (error) {
+            alert('Error al cargar la composición.');
+        }
+    }
+}
+
+function actualizarListaRecetas() {
+    if (typeof obtenerNombresRecetas !== 'function') {
+        return;
+    }
+
+    const nombresRecetas = obtenerNombresRecetas();
+    const valorSeleccionado = cargarRecetaSelect.value; 
+
+    cargarRecetaSelect.innerHTML = ''; 
+
+    const placeholderOption = document.createElement('option');
+    placeholderOption.textContent = 'Cargar composición...';
+    placeholderOption.value = '';
+    placeholderOption.disabled = true;
+    placeholderOption.selected = true;
+    cargarRecetaSelect.appendChild(placeholderOption);
+
+    nombresRecetas.forEach(nombre => {
+        const option = document.createElement('option');
+        option.textContent = nombre;
+        option.value = nombre;
+        cargarRecetaSelect.appendChild(option);
+    });
+
+    cargarRecetaSelect.value = valorSeleccionado;
+}
+
+
     // --- CREACIÓN DE MÓDULOS ---
 
     function createModule(type, container, afterElement) {

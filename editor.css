@@ -144,3 +144,16 @@ margin: 0.2%; padding: 1%;  }
 #carta img {max-width: 110px; max-height: 110px; position: relative ; display: flex;margin: 1%;  margin-left: 8%;}
 .carta-item { position: relative; display: flex; padding: 5px;}
 .carta-item textarea{ top: 0%; position: relative;display: flex; width: 70%; margin-left: 4%;}
+
+.menuu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 20%;
+    height: 10%;
+    background-color: rgba(255, 255, 255, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000001;
+}
