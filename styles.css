@@ -422,7 +422,7 @@ visibility: visible;
     border: none;
     font-size: 1.8rem;
     cursor: pointer;
-    color: #888;
+    color: #000000;
     line-height: 1;
 }
 .modal-close-button:hover {
