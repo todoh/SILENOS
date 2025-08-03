@@ -1,5 +1,9 @@
 // --- MANEJO DE NODOS Y UI ---
 
+/**
+ * --- FUNCIÓN CORREGIDA ---
+ * Añade un nodo al lienzo y restaura su estado si se proporciona.
+ */
 function pAddNode(pType, pId = null, pPosition = null, pState = null, pRecord = true) {
     const pNodeId = pId || `p-node-${pNodeIdCounter++}`;
     if (pId) {
@@ -30,29 +34,37 @@ function pAddNode(pType, pId = null, pPosition = null, pState = null, pRecord = 
         pNodeElement.style.left = `${pPosition.x}px`;
         pNodeElement.style.top = `${pPosition.y}px`;
     } else {
-        // --- LÓGICA MODIFICADA PARA POSICIONAR EN EL CURSOR ---
-        // --- LÓGICA MODIFICADA PARA POSICIONAR EN EL CENTRO DE LA VISTA ---
-if (pCanvasContainer) {
-    // Calcular el centro del área visible del contenedor sumando el scroll y la mitad del ancho/alto visible
-    const centerX = pCanvasContainer.scrollLeft + (pCanvasContainer.clientWidth / 2);
-    const centerY = pCanvasContainer.scrollTop + (pCanvasContainer.clientHeight / 2);
-
-    // Ajustar la posición calculada por el nivel de zoom actual
-    const finalX = centerX / pZoomLevel;
-    const finalY = centerY / pZoomLevel;
-    
-    pNodeElement.style.left = `${finalX}px`;
-    pNodeElement.style.top = `${finalY}px`;
-} else {
+        if (pCanvasContainer) {
+            const centerX = pCanvasContainer.scrollLeft + (pCanvasContainer.clientWidth / 2);
+            const centerY = pCanvasContainer.scrollTop + (pCanvasContainer.clientHeight / 2);
+            const finalX = (centerX / pZoomLevel) - (pNodeElement.offsetWidth / 2);
+            const finalY = (centerY / pZoomLevel) - (pNodeElement.offsetHeight / 2);
+            pNodeElement.style.left = `${finalX}px`;
+            pNodeElement.style.top = `${finalY}px`;
+        } else {
             pNodeElement.style.left = `2500px`;
             pNodeElement.style.top = `2500px`;
         }
     }
 
+    // --- BLOQUE DE RESTAURACIÓN DE ESTADO CORREGIDO ---
     if (pState) {
         pNodeElement.querySelectorAll('[data-save]').forEach(pEl => {
-            if (pState[pEl.getAttribute('data-save')] !== undefined) {
-                pEl.value = pState[pEl.getAttribute('data-save')];
+            const key = pEl.getAttribute('data-save');
+            if (pState[key] !== undefined) {
+                // Aplicamos el valor según el tipo de elemento
+                switch (pEl.type) {
+                    case 'checkbox':
+                        pEl.checked = pState[key]; // Restauramos el estado del checkbox
+                        break;
+                    case 'select-one':
+                    case 'text':
+                    case 'textarea':
+                    case 'number':
+                    default:
+                        pEl.value = pState[key]; // Restauramos el valor de los demás
+                        break;
+                }
             }
         });
     }
@@ -65,7 +77,9 @@ if (pCanvasContainer) {
     
     pNodeElement.addEventListener('contextmenu', (pE) => {
         pE.preventDefault();
-        pRemoveNode(pNodeId);
+        if (confirm(`¿Estás seguro de que quieres eliminar el nodo "${pNodeDef.title}"?`)) {
+            pRemoveNode(pNodeId);
+        }
     });
 
     if (pRecord) {
@@ -73,6 +87,7 @@ if (pCanvasContainer) {
     }
     return pNode;
 }
+
 
 function pRemoveNode(pNodeId) {
     const pNodeToRemove = pNodes[pNodeId];
@@ -97,7 +112,8 @@ function pMakeDraggable(pElement) {
     (header || pElement).onmousedown = pDragMouseDown;
 
     function pDragMouseDown(pE) {
-        if (pE.button !== 0 || pE.target.classList.contains('p-connector') || pE.target.tagName === 'INPUT') return;
+        // Permitir arrastrar solo con el botón izquierdo y si no se está interactuando con un conector o un campo de formulario
+        if (pE.button !== 0 || pE.target.classList.contains('p-connector') || ['INPUT', 'TEXTAREA', 'SELECT'].includes(pE.target.tagName)) return;
         pE.preventDefault();
         pE.stopPropagation();
         pPos3 = pE.clientX;
@@ -149,8 +165,8 @@ function pHandleZoom(event) {
 
 function pCenterView() {
     if (pCanvasContainer && pCanvas) {
-        pCanvasContainer.scrollLeft = (pCanvas.offsetWidth - pCanvasContainer.clientWidth) / 2;
-        pCanvasContainer.scrollTop = (pCanvas.offsetHeight - pCanvasContainer.clientHeight) / 2;
+        pCanvasContainer.scrollLeft = (pCanvas.offsetWidth * pZoomLevel - pCanvasContainer.clientWidth) / 2;
+        pCanvasContainer.scrollTop = (pCanvas.offsetHeight * pZoomLevel - pCanvasContainer.clientHeight) / 2;
     }
 }
 
@@ -166,13 +182,7 @@ function pInitUI() {
         pZoomOutBtn.addEventListener('click', () => pApplyZoom(pZoomLevel - 0.1));
         pCanvasContainer.addEventListener('wheel', pHandleZoom, { passive: false });
         
-        pCanvasContainer.addEventListener('mousemove', (e) => {
-            const rect = pCanvasContainer.getBoundingClientRect();
-            pLastMousePosition.x = e.clientX - rect.left;
-            pLastMousePosition.y = e.clientY - rect.top;
-        });
-
-        // --- LÓGICA DE PANNING (ARRASTRE) CORREGIDA Y MEJORADA ---
+        // --- LÓGICA DE PANNING (ARRASTRE) ---
         let isPanning = false;
         let startX, startY, startScrollLeft, startScrollTop;
 
@@ -183,8 +193,6 @@ function pInitUI() {
             const dy = e.clientY - startY;
             pCanvasContainer.scrollLeft = startScrollLeft - dx;
             pCanvasContainer.scrollTop = startScrollTop - dy;
-            // No es necesario llamar a pUpdateAllConnections aquí,
-            // el evento 'scroll' ya lo hace.
         };
 
         const stopPanning = () => {
@@ -196,6 +204,7 @@ function pInitUI() {
         };
 
         pCanvas.addEventListener('mousedown', (e) => {
+            // Iniciar panning solo si se hace clic en el fondo del canvas
             if (e.target === pCanvas) {
                 isPanning = true;
                 pCanvas.style.cursor = 'grabbing';

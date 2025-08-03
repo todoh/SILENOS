@@ -57,7 +57,7 @@ crossorigin="anonymous"></script>
 <script src="https://www.webrtc-experiment.com/RecordRTC.js"></script>
 <script src="principio.js"></script> 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/leader-line-new@1.1.9/leader-line.min.js"></script>
+    
 
 <div id="silenos" >
     <div id="opciones" >
@@ -795,6 +795,16 @@ crossorigin="anonymous"></script>
     <details class="p-dropdown-category">
         <summary>🛠️ Procesamiento de Datos</summary>
         <div>
+
+            <a href="#" onclick="pAddNode('salida_a_datos'); return false;">➡️📄 Salida a Datos</a>
+            <a href="#" onclick="pAddNode('json_add_field'); return false;">➡️📄 Añadir campo a Json</a>
+            <a href="#" onclick="pAddNode('json_to_text'); return false;">➡️📄 Json a Texto</a>
+            <a href="#" onclick="pAddNode('text_to_json'); return false;">➡️📄 Texto a Json</a>
+
+              <a href="#" onclick="pAddNode('json_render_3d'); return false;">➡️🖼️ Json a 3D base64</a>
+
+
+
             <a href="#" onclick="pAddNode('json_parser'); return false;">➡️📄 Extraer de JSON</a>
             <a href="#" onclick="pAddNode('csv_parser'); return false;">📃 Analizador CSV</a>
             <a href="#" onclick="pAddNode('array_builder'); return false;">➕📊 Construir Array</a>
@@ -1368,7 +1378,7 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
 
 <button id="contextual-action-btn" title="Acción contextual" style="display: none;"> </button>
 
-
+<script src="https://cdn.jsdelivr.net/npm/leader-line-new@1.1.9/leader-line.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="geminiasistente.js"></script>
 <script src="animaciones.js"></script>
@@ -1409,15 +1419,17 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
 <script src="editor.js"></script>        
 
 
-<script src="p-nodes-index.js"></script>        
- <script src="p-interprete.js"></script> 
-<script src="p-main.js"></script> 
- <script src="p-gemini-api.js"></script> 
- <script src="p-logicas.js"></script> 
+<script src="p-nodes-index.js"></script>
+<script src="p-logicas.js"></script>
 
-<script src="p-node.js"></script>       <script src="p-conexion.js"></script>
- <script src="p-ejecucion.js"></script>
- <script src="p-ui.js"></script>         <script src="p-main.js"></script> 
+<script src="p-gemini-api.js"></script>
+<script src="p-node.js"></script>
+<script src="p-conexion.js"></script>
+<script src="p-ui.js"></script>
+
+<script src="p-interprete.js"></script>
+<script src="p-ejecucion.js"></script>
+<script src="p-main.js"></script>
 
  <script src="main.js" defer></script>
 <!-- Modal Genérico para Edición -->

@@ -255,8 +255,8 @@ generador_personajesyobjetos: {
         content: `
             <div style="display: flex; flex-direction: column; gap: 5px;">
                 <label for="model-select">Modelo:</label>
-                <select data-save="model">
-                option value="gemini-2.5-flash">2.5 Flash</option>
+                <select data-save="model">                  
+                 <option value="gemini-2.5-flash">2.5 Flash</option>
                     <option value="gemini-2.5-flash-lite">2.5 Flash Lite</option>
                     <option value="gemini-2.5-pro">2.5 Pro</option>
                      <option value="gemini-2.0-flash">2.0 Flash</option>
@@ -278,6 +278,326 @@ generador_personajesyobjetos: {
             const result = await pCallGeminiApi(fullPrompt, model, true);
             return result; // Devuelve el objeto JSON
         }
+    },    salida_a_datos: {
+        title: '💾 Salida a Datos',
+        inputs: 1,
+        outputs: 0,
+        content: `<span>Recibe un JSON y lo guarda directamente en la aplicación.</span>`,
+        process: (pNode, pInputs) => {
+            const pOutputDiv = document.getElementById('p-output');
+            const datosEntrada = pInputs[0];
+
+            if (!datosEntrada || typeof datosEntrada !== 'object') {
+                const errorMsg = "Error: El nodo 'Salida a Datos' necesita un objeto JSON (o un array de ellos) en su entrada.";
+                if(pOutputDiv) pOutputDiv.innerHTML += `<p style="color: red;">${errorMsg}</p>`;
+                console.error(errorMsg);
+                return;
+            }
+
+            const datosArray = Array.isArray(datosEntrada) ? datosEntrada : [datosEntrada];
+
+            if (typeof agregarPersonajeDesdeDatos === 'undefined') {
+                const errorMsg = "Error crítico: La función global 'agregarPersonajeDesdeDatos' no está disponible.";
+                if(pOutputDiv) pOutputDiv.innerHTML += `<p style="color: red;">${errorMsg}</p>`;
+                console.error(errorMsg);
+                return;
+            }
+
+            if(pOutputDiv) pOutputDiv.innerHTML += `<p><strong>Salida a Datos:</strong> Iniciando guardado para ${datosArray.length} objeto(s).</p>`;
+            let totalCreados = 0;
+
+            try {
+                for (const dato of datosArray) {
+                    if (!dato.nombre) {
+                        if(pOutputDiv) pOutputDiv.innerHTML += `<p style="color: orange;">Advertencia: Se omitió un objeto por faltar el campo 'nombre'.</p>`;
+                        continue;
+                    }
+
+                    if(pOutputDiv) pOutputDiv.innerHTML += `<hr><p>➡️ Guardando directamente: <strong>${dato.nombre}</strong></p>`;
+
+                    // No hay llamadas a la API. Montamos el objeto con valores por defecto si faltan.
+                    const datosCompletos = {
+                        ...dato,
+                        imagen: dato.imagen || '', // Usa la imagen existente o un valor por defecto.
+                        embedding: dato.embedding || [], // Usa el embedding existente o uno por defecto.
+                    };
+
+                    agregarPersonajeDesdeDatos(datosCompletos);
+                    if(pOutputDiv) pOutputDiv.innerHTML += `<p style="color: green; font-weight: bold;">✔️ Dato "${dato.nombre}" añadido directamente.</p>`;
+                    totalCreados++;
+                }
+
+                if (typeof reinicializarFiltrosYActualizarVista === 'function') {
+                    reinicializarFiltrosYActualizarVista();
+                }
+                
+                if(pOutputDiv) pOutputDiv.innerHTML += `<hr><p style="font-weight: bold;">Proceso completado. Se añadieron ${totalCreados} datos.</p>`;
+
+            } catch (error) {
+                const errorMsg = `Fallo en 'Salida a Datos': ${error.message}`;
+                if(pOutputDiv) pOutputDiv.innerHTML += `<p style="color: red;">${errorMsg}</p>`;
+                console.error(errorMsg, error);
+            }
+        }
+    },
+    // --- NODO AÑADIDO ---
+    json_add_field: {
+        title: '➕ Añadir Campo a JSON',
+        inputs: 2,
+        inputNames: ["JSON Base", "Valor"],
+        outputs: 1,
+        content: `
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+                <label for="json-key">Nombre del Campo (Clave):</label>
+                <input type="text" data-save="key" placeholder="Ej: nombre">
+            </div>
+        `,
+        process: (pNode, pInputs) => {
+            const [jsonInput, value] = pInputs;
+            // CORRECCIÓN: Se usa .trim() para eliminar espacios accidentales.
+            const key = pNode.element.querySelector('[data-save="key"]').value.trim();
+            const pOutputDiv = document.getElementById('p-output');
+
+            if (!key) {
+                if(pOutputDiv) pOutputDiv.innerHTML += `<p style="color: orange;">Advertencia en nodo [${pNode.id}]: El nombre del campo (clave) no puede estar vacío.</p>`;
+                return (typeof jsonInput === 'object' && jsonInput !== null) ? jsonInput : {};
+            }
+
+            const baseObject = (typeof jsonInput === 'object' && jsonInput !== null) ? jsonInput : {};
+            
+            const result = {
+                ...baseObject,
+                [key]: value
+            };
+
+            return result;
+        }
+    
+    },json_to_text: {
+        title: '📄 JSON a Texto',
+        inputs: 1,
+        outputs: 1,
+        content: `<span>Convierte un objeto JSON a texto plano (string) con formato.</span>`,
+        process: (pNode, pInputs) => {
+            const jsonInput = pInputs[0];
+            if (typeof jsonInput !== 'object' || jsonInput === null) {
+                return ''; // Devuelve una cadena vacía si la entrada no es un objeto válido.
+            }
+            // JSON.stringify con los argumentos null y 2 formatea el string con indentación.
+            return JSON.stringify(jsonInput, null, 2);
+        }
+    }
+,  
+    
+    json_render_3d: {
+        "title": "📦 Render 3D desde JSON (Completo)",
+        "inputs": 1,
+        "outputs": 1,
+        "content": "<span>Renderiza un modelo 3D desde JSON. Soporta todas las geometrías estándar de Three.js y auto-detecta el formato de entrada.</span>",
+        "process": async (pNode, pInputs) => {
+            let sceneData = pInputs[0];
+            const pOutputDiv = document.getElementById('p-output');
+
+            // --- Validación Inicial y Autocorrección de Formato ---
+            if (typeof THREE === 'undefined') {
+                const errorMsg = "Error: La biblioteca Three.js no está cargada.";
+                if (pOutputDiv) pOutputDiv.innerHTML += `<p style="color: red;">${errorMsg}</p>`;
+                return null;
+            }
+
+            if (typeof sceneData === 'string' && sceneData.trim().startsWith('{')) {
+                try {
+                    sceneData = JSON.parse(sceneData);
+                } catch (e) {
+                    const errorMsg = `Error en [${pNode.id}]: La entrada parece ser JSON pero no se pudo procesar. Error: ${e.message}`;
+                    if (pOutputDiv) pOutputDiv.innerHTML += `<p style="color: red;">${errorMsg}</p>`;
+                    return null;
+                }
+            }
+
+            let objectsArray = null;
+            if (sceneData && Array.isArray(sceneData.objects)) {
+                objectsArray = sceneData.objects;
+            } else if (sceneData && Array.isArray(sceneData.parts)) {
+                objectsArray = sceneData.parts;
+            }
+
+            if (!objectsArray) {
+                const errorMsg = `Error en [${pNode.id}]: La entrada debe ser un JSON con una propiedad 'objects' o 'parts' que sea un array.`;
+                if (pOutputDiv) pOutputDiv.innerHTML += `<p style="color: red;">${errorMsg}</p>`;
+                return null;
+            }
+            
+            // --- Configuración de la Escena 3D ---
+            const width = 512;
+            const height = 512;
+            const scene = new THREE.Scene();
+            // Se elimina scene.background para tener fondo transparente
+            const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(width, height);
+            renderer.shadowMap.enabled = true;
+
+            // --- Iluminación ---
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+            directionalLight.position.set(5, 10, 7.5);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+
+            // --- Construcción del Modelo (Lógica con Todas las Geometrías) ---
+            const modelGroup = new THREE.Group();
+            try {
+                objectsArray.forEach(obj => {
+                    let geometryType, geometryParams, materialColor, materialRoughness, materialMetalness;
+
+                    if (obj.material && typeof obj.geometry === 'object') {
+                        geometryType = obj.geometry.type;
+                        geometryParams = obj.geometry;
+                        materialColor = obj.material.color;
+                        materialRoughness = obj.material.roughness;
+                        materialMetalness = obj.material.metalness;
+                    } else {
+                        geometryType = obj.geometry;
+                        geometryParams = obj.geometryParams || {};
+                        materialColor = obj.color;
+                        materialRoughness = obj.roughness;
+                        materialMetalness = obj.metalness;
+                    }
+
+                    if (!geometryType || !materialColor) {
+                        console.warn(`Saltando objeto "${obj.name}" por falta de 'geometry' o 'color'/'material'.`);
+                        return;
+                    }
+
+                    let geometry;
+                    switch (geometryType) {
+                        case "Box": case "BoxGeometry":
+                            geometry = new THREE.BoxGeometry(geometryParams.width || 1, geometryParams.height || 1, geometryParams.depth || 1);
+                            break;
+                        case "Sphere": case "SphereGeometry":
+                            geometry = new THREE.SphereGeometry(geometryParams.radius || 1, geometryParams.widthSegments || 32, geometryParams.heightSegments || 16);
+                            break;
+                        case "Cylinder": case "CylinderGeometry":
+                            geometry = new THREE.CylinderGeometry(geometryParams.radiusTop ?? geometryParams.radius ?? 1, geometryParams.radiusBottom ?? geometryParams.radius ?? 1, geometryParams.height || 2, geometryParams.radialSegments || 32);
+                            break;
+                        case "Cone": case "ConeGeometry":
+                            geometry = new THREE.ConeGeometry(geometryParams.radius || 1, geometryParams.height || 2, geometryParams.radialSegments || 32);
+                            break;
+                        case "Torus": case "TorusGeometry":
+                            geometry = new THREE.TorusGeometry(geometryParams.radius || 1, geometryParams.tube || 0.4, geometryParams.radialSegments || 16, geometryParams.tubularSegments || 100);
+                            break;
+                        case "Icosahedron": case "IcosahedronGeometry":
+                            geometry = new THREE.IcosahedronGeometry(geometryParams.radius || 1, geometryParams.detail || 0);
+                            break;
+                        case "Dodecahedron": case "DodecahedronGeometry":
+                             geometry = new THREE.DodecahedronGeometry(geometryParams.radius || 1, geometryParams.detail || 0);
+                            break;
+                        case "Octahedron": case "OctahedronGeometry":
+                             geometry = new THREE.OctahedronGeometry(geometryParams.radius || 1, geometryParams.detail || 0);
+                            break;
+                        case "Tetrahedron": case "TetrahedronGeometry":
+                             geometry = new THREE.TetrahedronGeometry(geometryParams.radius || 1, geometryParams.detail || 0);
+                            break;
+                        case "Plane": case "PlaneGeometry":
+                            geometry = new THREE.PlaneGeometry(geometryParams.width || 1, geometryParams.height || 1);
+                            break;
+                        case "Circle": case "CircleGeometry":
+                            geometry = new THREE.CircleGeometry(geometryParams.radius || 1, geometryParams.segments || 32);
+                            break;
+                        case "Ring": case "RingGeometry":
+                            geometry = new THREE.RingGeometry(geometryParams.innerRadius || 0.5, geometryParams.outerRadius || 1, geometryParams.thetaSegments || 32);
+                            break;
+                        case "TorusKnot": case "TorusKnotGeometry":
+                            geometry = new THREE.TorusKnotGeometry(geometryParams.radius || 1, geometryParams.tube || 0.4, geometryParams.tubularSegments || 100, geometryParams.radialSegments || 16, geometryParams.p || 2, geometryParams.q || 3);
+                            break;
+                        default:
+                            throw new Error(`Geometría desconocida: ${geometryType}`);
+                    }
+                    
+                    const material = new THREE.MeshStandardMaterial({
+                        color: new THREE.Color(materialColor),
+                        roughness: materialRoughness ?? 0.5,
+                        metalness: materialMetalness ?? 0.1
+                    });
+
+                    const mesh = new THREE.Mesh(geometry, material);
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    
+                    if(obj.position) mesh.position.set(obj.position.x || 0, obj.position.y || 0, obj.position.z || 0);
+                    if(obj.scale) mesh.scale.set(obj.scale.x || 1, obj.scale.y || 1, obj.scale.z || 1);
+                    if(obj.rotation) mesh.rotation.set(obj.rotation.x || 0, obj.rotation.y || 0, obj.rotation.z || 0);
+                    
+                    modelGroup.add(mesh);
+                });
+            } catch (error) {
+                const errorMsg = `Error construyendo el modelo 3D: ${error.message}`;
+                if (pOutputDiv) pOutputDiv.innerHTML += `<p style="color: red;">${errorMsg}</p>`;
+                renderer.dispose();
+                return null;
+            }
+            
+            scene.add(modelGroup);
+
+            // --- Encuadre automático de la Cámara (Centrado y con Zoom) ---
+            const box = new THREE.Box3().setFromObject(modelGroup);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            
+            if (maxDim > 0) {
+                const fov = camera.fov * (Math.PI / 180);
+                const cameraDistance = Math.abs(maxDim / Math.tan(fov / 2));
+                camera.position.set(
+                    center.x,
+                    center.y, // Cámara centrada verticalmente
+                    center.z + cameraDistance * 1.2 // Más cerca para mayor zoom
+                );
+            } else {
+                camera.position.set(0, 5, 15);
+            }
+            
+            camera.lookAt(center);
+
+            // --- Renderizado y Limpieza ---
+            renderer.render(scene, camera);
+            const base64Image = renderer.domElement.toDataURL('image/png');
+
+            scene.traverse(object => {
+                if (object.isMesh) {
+                    object.geometry.dispose();
+                    if (object.material.isMaterial) {
+                        object.material.dispose();
+                    }
+                }
+            });
+            renderer.dispose();
+
+            if (pOutputDiv) pOutputDiv.innerHTML += `<p>✅ Modelo 3D renderizado y capturado como imagen.</p>`;
+            return base64Image;
+        }
     }
 
+, text_to_json: {
+        title: '➡️ Texto a JSON',
+        inputs: 1,
+        outputs: 1,
+        content: `<span>Convierte una cadena de texto JSON en un objeto JSON real.</span>`,
+        process: (pNode, pInputs) => {
+            const textInput = pInputs[0];
+            const pOutputDiv = document.getElementById('p-output');
+            if (typeof textInput !== 'string' || !textInput.trim()) {
+                return null;
+            }
+            try {
+                // Intenta parsear el texto a JSON.
+                return JSON.parse(textInput);
+            } catch (error) {
+                const errorMsg = `Error en [${pNode.id}]: El texto de entrada no es un JSON válido. ${error.message}`;
+                if (pOutputDiv) pOutputDiv.innerHTML += `<p style="color: red;">${errorMsg}</p>`;
+                return null;
+            }
+        }
+    }
 };

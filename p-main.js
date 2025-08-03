@@ -47,7 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
     pUpdateBlueprintDropdown();
 
     // Carga el último estado o empieza de cero
-    pLoadLastState();     pSetupAccordionMenu(); 
+    pLoadLastState();
+    pSetupAccordionMenu(); 
 
 });
 function pSetupAccordionMenu() {
@@ -276,22 +277,58 @@ function pUpdateButtonStates() {
 // --- HISTORIAL (DESHACER / REHACER) ---
 // ================================================================= //
 
+/**
+ * --- FUNCIÓN CORREGIDA ---
+ * Crea un objeto que representa el estado completo y actual del lienzo,
+ * incluyendo los valores de todos los campos editables en los nodos.
+ * @returns {object} El estado del lienzo listo para ser guardado.
+ */
 function pGetCurrentStateObject() {
-    const nodeStates = Object.values(pNodes).map(pNode => ({
-        id: pNode.id,
-        type: pNode.type,
-        position: { x: pNode.element.offsetLeft, y: pNode.element.offsetTop },
-        state: pNode.state
-    }));
+    // Itera sobre cada nodo en el lienzo
+    const nodeStates = Object.values(pNodes).map(pNode => {
+        
+        // Objeto para guardar el estado de este nodo específico
+        const stateData = {};
+
+        // Busca TODOS los elementos que tienen el atributo 'data-save' dentro del nodo
+        pNode.element.querySelectorAll('[data-save]').forEach(el => {
+            const key = el.getAttribute('data-save');
+            
+            // Determina qué propiedad guardar según el tipo de elemento
+            switch (el.type) {
+                case 'checkbox':
+                    stateData[key] = el.checked; // Para checkboxes, guardamos si está marcado o no
+                    break;
+                case 'select-one':
+                case 'text':
+                case 'textarea':
+                case 'number':
+                default:
+                    stateData[key] = el.value; // Para los demás, guardamos su valor
+                    break;
+            }
+        });
+
+        // Devuelve el objeto completo del nodo
+        return {
+            id: pNode.id,
+            type: pNode.type,
+            position: { x: pNode.element.offsetLeft, y: pNode.element.offsetTop },
+            state: stateData // Usamos el estado que acabamos de leer del DOM
+        };
+    });
+
     const connectionStates = pConnections.map(pConn => ({ from: pConn.from, to: pConn.to }));
+
     return { nodes: nodeStates, connections: connectionStates, nodeIdCounter: pNodeIdCounter };
 }
+
 
 function pRecordHistory() {
     if (pHistoryIndex < pHistory.length - 1) {
         pHistory = pHistory.slice(0, pHistoryIndex + 1);
     }
-    const state = pGetCurrentStateObject();
+    const state = pGetCurrentStateObject(); // Ahora llama a nuestra nueva función
     pHistory.push(state);
     if (pHistory.length > P_MAX_HISTORY_STEPS) {
         pHistory.shift();
@@ -307,7 +344,7 @@ function pRecordHistory() {
  */
 function pRestoreState(state) {
     if (!state || !state.nodes) return;
-    pLoadBlueprint(state);
+    pLoadBlueprint(state, false); // No grabar en el historial al restaurar desde el historial
 }
 
 function pUndo() {
@@ -347,5 +384,3 @@ function pLoadLastState() {
 
 // Las funciones pAddNode, pCreateConnection, pRunAutomation, pPopulateNodeDropdown, pInitUI, pUpdateAllConnections
 // deben estar definidas en tus otros archivos JS (p-node.js, p-conexion.js, p-ejecucion.js, p-ui.js, etc.)
-
- 
