@@ -628,26 +628,29 @@ line-height: 1.5;}
     width: auto;
     margin: 0;
     margin-right: 4%;}
-.ideframe { padding: 1%;
+.ideframe { padding: 1%;font-size: large;
     top: 1%; left: 110%;
     position: absolute;
-    width: auto;
+    width: auto; 
     margin: 0%;
     margin-right: 1%;width: 8dvw; }
 
-.ideframeh { padding: 1%; position: absolute;
+.ideframeh { padding: 1%; position: absolute;font-size: large;
     width: auto;z-index: 10000 !important;
-     margin: 2%; left: 0%; bottom: 0%;
+     margin: 2%; right:10%; bottom: 0%;background-color: transparent;
     }
-.ideframeh2 { padding: 1%; position: absolute;
+.ideframeh2 { padding: 1%; position: absolute;font-size: large;
     width: auto;z-index: 10000 !important;
-    margin: 2%; left: 5%; bottom: 0%;
+    margin: 2%; right: 5%; bottom: 0%;background-color: transparent;
     }
-.ideframeh3 { padding: 1%; position: absolute;
+.ideframeh3 { padding: 1%; position: absolute;font-size: large;
     width: auto;z-index: 10000 !important;
-    margin: 2%; left: 5%; bottom: 14%;
+    margin: 2%; right: 15%; bottom: 0%; background-color: transparent;
     }
-
+.custom-label { padding: 1%; position: absolute;font-size: large;
+    width: auto;z-index: 10000 !important;
+    margin: 2%; right: 8%; bottom: 30%; background-color: transparent;
+}
 .frameh textarea {
     width: 55%; position: absolute;
  
@@ -662,26 +665,13 @@ line-height: 1.5;}
     .frameh input[type="file"] {
    opacity: 0;
 }
-.custom-label { position: absolute;
-    z-index: 100;
-    background-color: transparent; 
-    color: #555; 
-    padding: 0px;
-    cursor: pointer;
-    display: flex;
-    border-radius: 5px;
-    height: 8%;
-   left: 12%; bottom:13%;
- 
- 
-position: absolute;
-}
+
 .custom-label:hover {
     color: #000; 
 }
 .frameh img {max-width: 15%; position: absolute;
     max-height: 90%;
-    left:5%;
+    left:6%;
     top: 5%;
   padding: 0%;
     border-radius: 5px; margin-top: 0% !important;
@@ -695,6 +685,7 @@ position: absolute;
     position: relative;
     display: flex;
  left: 0%; 
+ padding-left: 10%;
  background-color: transparent;  
         
     text-align: center;      flex-shrink: 0;}
@@ -2906,4 +2897,72 @@ width: 1280px!important ;
   
   /* Y añade una "sombra-halo" como indicador de foco */
  
+}
+
+/* ======================================================= */
+/* ESTILOS PARA EL VISOR DE IMÁGENES DE FRAMES (LIGHTBOX)  */
+/* ======================================================= */
+
+/* El contenedor del visor que cubre toda la pantalla */
+#image-preview-overlay {
+  /* Posición fija para cubrir toda la ventana, sin importar el scroll */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  
+  /* Fondo oscuro semi-transparente */
+  background-color: rgba(0, 0, 0, 0.85);
+
+  /* Usamos Flexbox para centrar la imagen perfectamente (vertical y horizontal) */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  /* Asegura que esté por encima de casi todo lo demás */
+  z-index: 9999;
+
+  /* Inicialmente está oculto. La clase .visible lo mostrará. */
+  visibility: hidden;
+  opacity: 0;
+
+  /* Transición suave para el efecto de aparición y desaparición */
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+/* Regla que se activa cuando el JavaScript añade la clase .visible */
+#image-preview-overlay.visible {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* La imagen ampliada dentro del visor */
+#enlarged-img {
+  /* La imagen será grande, pero nunca más ancha o alta que el 90% de la pantalla */
+  max-width: 90%;
+  max-height: 90%;
+
+  /* CLAVE: Mantiene la proporción de la imagen sin deformarla */
+  object-fit: contain;
+
+  /* Una sombra sutil para destacar la imagen */
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+  border-radius: 4px; /* Bordes ligeramente redondeados */
+}
+
+/* El botón de cerrar (X) */
+#image-preview-overlay .close-btn {
+  position: absolute;
+  top: 15px;
+  right: 25px;
+  color: white;
+  font-size: 45px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+#image-preview-overlay .close-btn:hover {
+    color: #bbb;
 }
