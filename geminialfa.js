@@ -444,6 +444,8 @@ async function enviarTextoConInstrucciones() {
 
         progressBarManager.set(95, 'Finalizando y guardando...');
         finalizarGeneracionGuion(tituloHistoriaGlobal, historiaContenidoHTML);
+                guardarContextoIADelLibro(); // Guardamos el guion en el libro.
+
         progressBarManager.finish("¡Proceso completado!");
         alert("¡Proceso completado! El guion se ha generado en su sección.");
         if (typeof abrirGuion === 'function') abrirGuion();
@@ -458,3 +460,36 @@ async function enviarTextoConInstrucciones() {
     }
 }
 
+/**
+ * Guarda el contexto de la generación de IA en el objeto del libro activo.
+ * Este contexto es esencial para poder realizar reescrituras futuras.
+ */
+function guardarContextoIADelLibro() {
+    if (!libroActivoId || !libros[libroActivoId]) {
+        console.error("No se puede guardar el contexto de IA: no hay un libro activo.");
+        return;
+    }
+
+    // Recolectar todos los datos necesarios para la reescritura
+    const contextoParaGuardar = {
+        ideaOriginal: document.getElementById("gemini1").value,
+        tituloOriginal: tituloHistoriaGlobal,
+        planteamientoGeneral: planteamientoGeneralGlobal,
+        resumenPorEscenas: resumenPorEscenasGlobal,
+        // Guardamos una versión simplificada de los datos usados para no sobrecargar localStorage
+        datosUsados: recolectarYAgruparDatos(), 
+        cantidadFramesOriginal: window.cantidadframes,
+        fechaGeneracion: new Date().toISOString()
+    };
+
+    // Inicializamos el objeto si no existe
+    if (!libros[libroActivoId].iaContext) {
+        libros[libroActivoId].iaContext = {};
+    }
+
+    libros[libroActivoId].iaContext = contextoParaGuardar;
+
+    // Guardar el estado actualizado de los libros en localStorage
+    localStorage.setItem("libros", JSON.stringify(libros));
+    console.log("Contexto de IA guardado para el libro:", libroActivoId);
+}
