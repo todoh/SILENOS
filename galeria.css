@@ -95,7 +95,9 @@
  #libroscreados {
     background-color: transparent;
     /* Estos estilos ya no son necesarios aquí, se gestionarán en .catalogolibros */
-    display: none; 
+    display: flex; 
+    padding: 5%;
+    height: 100%;
 }
  
 /* Estilo para la "tarjeta" individual de cada libro */
