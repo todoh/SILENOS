@@ -94,20 +94,12 @@
 
  #libroscreados {
     background-color: transparent;
-    width: 80%;
-    margin: 0%;
-    position: absolute; left:10%;
-    top: 16%; 
-   z-index: 5;
-padding: 0% ;
-    height: 73%;
-    display: flex; overflow-y: hidden;
-    overflow-x: scroll;
- gap: 0px;
-    align-items: flex-start;
+    /* Estos estilos ya no son necesarios aquí, se gestionarán en .catalogolibros */
+    display: none; 
 }
  
 /* Estilo para la "tarjeta" individual de cada libro */
+/* NOTA: He movido los estilos de .libroh aquí para unificarlos con .libro-card si son similares, pero mantendré .libroh por si lo usas en otro lado. */
 .libro-card {
     display: flex;
     flex-direction: column; /* Apila los elementos internos (portada, título, botones) verticalmente */
@@ -221,6 +213,140 @@ padding: 0% ;
   left: 20px;
   z-index: 8888888;
 }
+.catalogo {
+ 
+  color: rgb(0, 0, 0);
+  padding: 10px 15px;
+  border: none; 
+  border-radius: 8%;
+  cursor: pointer;
+  font-family: sans-serif;
+  font-size: 26px;
+  width: auto; /* Ancho fijo para consistencia */
+  transition:   transform 0.3s;
+  position: absolute; z-index: 9999999;
+  bottom: 5%;
+  right: 2%;
+}
+
+.compra {
+  margin:  10%;
+font-size: larger;
+  color: #ffffff;
+  background-color: #000000;
+  padding: 10px 15px;
+  border: none; 
+  border-radius: 8%;
+  cursor: pointer;
+  font-family: sans-serif;
+  font-size: 26px;
+  width: auto; /* Ancho fijo para consistencia */
+  transition:   transform 0.3s;
+
+
+}
+
+   .catalogolibros {
+    padding: 4%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 40px; /* Espacio entre los libros */
+        justify-content: center;
+    }
+
+    /* Contenedor principal de cada libro */
+    .libroh {
+        position: relative; /* Clave para posicionar la info encima */
+        width: 250px;
+        height: 380px;
+        cursor: pointer;
+        overflow: hidden; /* Oculta lo que se salga del contenedor */
+        border-radius: 10px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+
+    /* Imagen del libro */
+    .libroh img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.4s ease; /* Transición suave para la imagen */
+    }
+    
+    /* Título visible debajo de la imagen */
+    .libroh span {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 1rem;
+        transition: opacity 0.4s ease;
+    }
+
+    /* Contenedor de la información (oculto por defecto) */
+    .info-libro {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(22, 22, 22, 0.95); /* Fondo oscuro semitransparente */
+        color: white;
+        
+        /* Centra el contenido */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 20px;
+        box-sizing: border-box;
+
+        /* Efecto de aparición */
+        opacity: 0; /* Totalmente transparente */
+        visibility: hidden; /* Oculto */
+        transform: scale(0.9); /* Ligeramente más pequeño */
+        transition: opacity 0.4s ease, visibility 0.4s ease, transform 0.4s ease;
+    }
+
+    /* --- El efecto HOVER --- */
+    /* Cuando pasas el ratón sobre .libroh... */
+    .libroh:hover .info-libro {
+        opacity: 1; /* Se vuelve totalmente visible */
+        visibility: visible; /* Aparece */
+        transform: scale(1); /* Vuelve a su tamaño normal */
+    }
+    
+    .libroh:hover img {
+        transform: scale(1.1); /* Hacemos un ligero zoom a la portada */
+    }
+    
+    .libroh:hover span {
+        opacity: 0; /* Ocultamos el título inicial */
+    }
+
+
+    /* Estilos para la información dentro de la capa superpuesta */
+    .info-libro h3 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: #ffc107; /* Un color de acento */
+    }
+
+    .info-libro p {
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+    }
+    
+    .info-libro iframe {
+        width: 100%; /* Ancho completo del contenedor */
+        height: 150px; /* Altura fija para el video */
+        border: none;
+        border-radius: 5px;
+    }
 
 /* 2. EL BOTÓN */
 .lang-button-css {
