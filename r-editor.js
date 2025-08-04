@@ -53,20 +53,41 @@ function renderGrid() {
 
                     const entity = chunk.objects.find(obj => obj.subX === subX && obj.subZ === subZ);
                     if (entity) {
-                        // --- LÓGICA DE RENDERIZADO MEJORADA ---
-                        // Si el objeto guardado tiene su propio icono (porque es custom), lo usamos.
-                        if (entity.icon) {
-                             if (entity.modelType === 'json3d') {
-                                subCell.innerHTML = `<span style="font-size: 20px;">🧊</span>`;
-                            } else { // sprite
-                                subCell.innerHTML = `<img src="${entity.icon}" style="width: 20px; height: 20px; object-fit: contain;">`;
+                        let iconSrc = null;
+                        let modelType = entity.modelType;
+
+                        if (entity.dataRef) {
+                            const characterDataElements = document.querySelectorAll('#listapersonajes .personaje');
+                            for (const charElement of characterDataElements) {
+                                const nombreInput = charElement.querySelector('.nombreh');
+                                if (nombreInput && nombreInput.value === entity.dataRef) {
+                                    const imgElement = charElement.querySelector('.personaje-visual img');
+                                    if (imgElement) {
+                                        iconSrc = imgElement.src;
+                                    }
+                                    break;
+                                }
                             }
-                        } else {
-                            // Si no, buscamos en las herramientas por defecto.
+                        } 
+                        else if (entity.icon) {
+                            iconSrc = entity.icon;
+                        } 
+                        else {
                             const toolData = tools.entities[entity.type];
                             if (toolData) {
                                 subCell.textContent = toolData.icon || '❓';
                             }
+                        }
+
+                        if (iconSrc) {
+                            if (modelType === 'json3d') {
+                                subCell.innerHTML = `<span style="font-size: 20px;">🧊</span>`;
+                            } else {
+                                subCell.innerHTML = `<img src="${iconSrc}" style="width: 20px; height: 20px; object-fit: contain;" alt="${entity.dataRef || ''}">`;
+                            }
+                        } else if (entity.dataRef) {
+                            subCell.innerHTML = `❓`;
+                            subCell.title = `Referencia rota a: ${entity.dataRef}`;
                         }
                     }
 
@@ -106,15 +127,14 @@ function handleGridClick(event) {
         }
 
         if (activeTool.id === 'playerStart') {
-            chunk.objects.push({ type: activeTool.id, subX, subZ });
+             chunk.objects.push({ type: activeTool.id, subX, subZ });
         } else {
-            // --- LÓGICA DE GUARDADO MEJORADA ---
             const newObject = { type: activeTool.id, subX, subZ };
-            // Si es una entidad custom, guardamos sus datos visuales directamente en el objeto.
+            
             if (activeTool.category === 'customEntity') {
                 const toolData = tools.customEntities[activeTool.id];
                 if (toolData) {
-                    newObject.icon = toolData.icon;
+                    newObject.dataRef = toolData.dataRef;
                     newObject.modelType = toolData.modelType;
                 }
             }
@@ -174,7 +194,6 @@ function doPanning(event) { if (!PanningState.isPanning) return; event.preventDe
 function openCharacterModal() { editorDOM.characterGrid.innerHTML = ''; const modalTitle = editorDOM.characterModal.querySelector('h3'); if(modalTitle) { modalTitle.textContent = 'Selecciona un Dato para Importar'; } const characterDataElements = document.querySelectorAll('#listapersonajes .personaje'); characterDataElements.forEach(charElement => { const nombre = charElement.querySelector('.nombreh')?.value; if (!nombre) return; const promptVisualText = charElement.querySelector('.prompt-visualh')?.value; let isJsonModel = false; let jsonData = null; if (promptVisualText) { try { const parsed = JSON.parse(promptVisualText); if (parsed && typeof parsed === 'object' && (Array.isArray(parsed.parts) || Array.isArray(parsed.objects) || parsed.hasOwnProperty('chunks'))) { isJsonModel = true; jsonData = parsed; } } catch (e) {} } const item = document.createElement('div'); item.className = 'character-grid-item'; item.dataset.name = nombre; if (isJsonModel) { item.dataset.type = 'json3d'; item.dataset.modelData = JSON.stringify(jsonData); item.innerHTML = `<div style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 40px;">🧊</div><span>${nombre}</span>`; item.onclick = importCharacterAsTool; editorDOM.characterGrid.appendChild(item); } else { const imagenSrc = charElement.querySelector('.personaje-visual img')?.src; if (imagenSrc && !imagenSrc.endsWith('/')) { item.dataset.type = 'sprite'; item.dataset.imgSrc = imagenSrc; item.innerHTML = `<img src="${imagenSrc}" alt="${nombre}"><span>${nombre}</span>`; item.onclick = importCharacterAsTool; editorDOM.characterGrid.appendChild(item); } } }); editorDOM.characterModal.style.display = 'flex'; }
 function closeCharacterModal() { editorDOM.characterModal.style.display = 'none'; }
 
-// MODIFICADO: Se añaden propiedades de colisión por defecto a los objetos importados.
 function importCharacterAsTool(event) {
     const item = event.currentTarget;
     const name = item.dataset.name;
@@ -190,8 +209,9 @@ function importCharacterAsTool(event) {
         name: name,
         type: 'custom',
         modelType: type,
-        isSolid: true,      // Por defecto, los objetos importados son sólidos.
-        radius: 1.2         // Se les asigna el radio de un árbol por defecto.
+        dataRef: name, 
+        isSolid: true,
+        radius: 1.2
     };
 
     let buttonIconHTML = '';
@@ -302,6 +322,72 @@ function saveWorldToCharacter() {
     alert(`¡Mundo "${name.trim()}" guardado como un dato completo!`);
 }
 
+// Carga automáticamente los datos con el arco "videojuego" como herramientas.
+function autoLoadGameAssets() {
+    console.log("Buscando assets de videojuego para cargar...");
+    const characterDataElements = document.querySelectorAll('#listapersonajes .personaje');
+    
+    characterDataElements.forEach(charElement => {
+        const arco = charElement.querySelector('.change-arc-btn')?.dataset.arco;
+        
+        if (arco === 'videojuego') {
+            const nombre = charElement.querySelector('.nombreh')?.value;
+            if (!nombre) return;
+
+            const toolId = `custom_${nombre.replace(/\s+/g, '_')}`;
+            if (tools.customEntities[toolId]) {
+                return;
+            }
+
+            const promptVisualText = charElement.querySelector('.prompt-visualh')?.value;
+            let modelType = 'sprite';
+            
+            if (promptVisualText) {
+                try {
+                    const parsed = JSON.parse(promptVisualText);
+                    if (parsed && typeof parsed === 'object' && (Array.isArray(parsed.parts) || Array.isArray(parsed.objects) || parsed.hasOwnProperty('chunks'))) {
+                        modelType = 'json3d';
+                    }
+                } catch (e) { /* No es JSON, se asume que es un sprite */ }
+            }
+            
+            const newTool = {
+                name: nombre,
+                type: 'custom',
+                modelType: modelType,
+                dataRef: nombre,
+                isSolid: true,
+                radius: 1.2
+            };
+
+            let buttonIconHTML = '';
+            const imagenSrc = charElement.querySelector('.personaje-visual img')?.src;
+
+            if (modelType === 'json3d') {
+                 newTool.icon = JSON.parse(promptVisualText);
+                 buttonIconHTML = `<span style="font-size: 20px; margin-right: 10px;">🧊</span>`;
+            } else if (imagenSrc && !imagenSrc.endsWith('/')) {
+                 newTool.icon = imagenSrc;
+                 buttonIconHTML = `<img src="${imagenSrc}" class="entity-image-icon" alt="${nombre}">`;
+            } else {
+                return;
+            }
+
+            tools.customEntities[toolId] = newTool;
+
+            const btn = document.createElement('button');
+            btn.className = 'palette-item';
+            btn.dataset.category = 'customEntity';
+            btn.dataset.id = toolId;
+            btn.innerHTML = `${buttonIconHTML} ${nombre}`;
+            btn.onclick = () => selectTool('customEntity', toolId);
+            editorDOM.entityPalette.appendChild(btn);
+            
+            console.log(`Asset "${nombre}" cargado desde el arco 'videojuego'.`);
+        }
+    });
+}
+
 
 // --- INICIALIZACIÓN Y EVENT LISTENERS ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -336,4 +422,30 @@ document.addEventListener('DOMContentLoaded', () => {
     container.addEventListener('mouseup', stopPanning);
     container.addEventListener('mouseleave', stopPanning);
     container.addEventListener('mousemove', doPanning);
+});
+
+// --- CORRECCIÓN DE SINCRONIZACIÓN ---
+// Se ejecuta cuando la ventana principal se ha cargado, y luego se usa un
+// sistema de reintentos para asegurar que los "Datos" y sus imágenes estén listos.
+window.addEventListener('load', () => {
+    let attempts = 0;
+    const maxAttempts = 20; // Intentar durante 10 segundos
+
+    const tryLoadAssets = () => {
+        const characterDataElements = document.querySelectorAll('#listapersonajes .personaje');
+        const videoGameAssets = Array.from(characterDataElements).filter(el => el.querySelector('.change-arc-btn')?.dataset.arco === 'videojuego');
+
+        // Condición de éxito: Se encontraron assets Y TODAS sus imágenes están completamente cargadas.
+        if (videoGameAssets.length > 0 && videoGameAssets.every(el => el.querySelector('.personaje-visual img')?.complete)) {
+            console.log("Assets de 'Videojuego' listos. Cargando en la paleta...");
+            autoLoadGameAssets();
+        } else if (attempts < maxAttempts) {
+            attempts++;
+            setTimeout(tryLoadAssets, 500); // Reintentar en 500ms
+        } else {
+            console.warn("No se pudieron cargar automáticamente los assets de 'Videojuego' después de varios intentos.");
+        }
+    };
+
+    tryLoadAssets();
 });

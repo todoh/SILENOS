@@ -7,7 +7,7 @@ const CHUNK_SIZE = 32;
 const SUB_CELL_SIZE = CHUNK_SIZE / SUBGRID_SIZE;
 const textureColors = { grass: 0x7C9C4A, sand: 0xEDC9AF, stone: 0x615953, water: 0x3B698B, forest: 0x3E7C4F };
 const playerController = { height: 1.8, speed: 18.0, radius: 0.5, mesh: null, targetPosition: null };
-const cameraController = { distance: 18, angle: Math.PI / 4, offset: new THREE.Vector3() };
+const cameraController = { distance: 18, angle: Math.PI / 4, offset: new THREE.Vector3(), minZoom: 5, maxZoom: 50 };
 const INTERACTION_DISTANCE = 5; // Distancia máxima para interactuar
 
 function startPreview() {
@@ -58,6 +58,8 @@ function startPreview() {
         handlePreviewResize();
         window.addEventListener('resize', handlePreviewResize, false);
         container.addEventListener('click', handlePreviewClick, false);
+        // NUEVO: Listener para la rueda del ratón (zoom)
+        container.addEventListener('wheel', handleMouseWheel, false);
         previewState.isActive = true;
         animatePreview();
     }, 0);
@@ -66,9 +68,11 @@ function startPreview() {
 function stopPreview() {
     if (!previewState.isActive) return;
     cancelAnimationFrame(previewState.animationFrameId);
-    window.removeEventListener('resize', handlePreviewResize, false);
     const container = document.getElementById('r-game-container');
+    window.removeEventListener('resize', handlePreviewResize, false);
     container.removeEventListener('click', handlePreviewClick, false);
+    // NUEVO: Eliminar listener de la rueda del ratón
+    container.removeEventListener('wheel', handleMouseWheel, false);
     if (previewState.renderer) previewState.renderer.dispose();
     container.innerHTML = '';
     previewState = { isActive: false, scene: null, camera: null, renderer: null, clock: null, animationFrameId: null, groundMeshes: [], collidableObjects: [], interactiveObjects: [] };
@@ -85,6 +89,16 @@ function handlePreviewResize() {
     previewState.camera.updateProjectionMatrix();
     previewState.renderer.setSize(width, height);
 }
+
+// NUEVO: Función para manejar el zoom con la rueda del ratón
+function handleMouseWheel(event) {
+    event.preventDefault();
+    const zoomSpeed = 0.5;
+    cameraController.distance += event.deltaY * 0.05 * zoomSpeed;
+    // Limitar el zoom para que no se aleje ni se acerque demasiado
+    cameraController.distance = Math.max(cameraController.minZoom, Math.min(cameraController.maxZoom, cameraController.distance));
+}
+
 
 function handlePreviewClick(event) {
     if (!previewState.isActive) return;
@@ -199,7 +213,6 @@ function updateCamera() {
     previewState.camera.lookAt(playerController.mesh.position.clone());
 }
 
-// NUEVA FUNCIÓN DE AYUDA: Busca la URL de la imagen de un "Dato" por su nombre.
 function findCharacterImageSrc(dataRefName) {
     const allCharacters = document.querySelectorAll('#listapersonajes .personaje');
     for (const charElement of allCharacters) {
@@ -211,7 +224,7 @@ function findCharacterImageSrc(dataRefName) {
             }
         }
     }
-    return null; // Devuelve null si no se encuentra el dato o no tiene imagen.
+    return null;
 }
 
 function loadWorldFromData(data) {
@@ -236,14 +249,13 @@ function loadWorldFromData(data) {
                 let isCustom = false;
                 let iconSrc = null;
 
-                // --- LÓGICA DE BÚSQUEDA DE DATOS REESCRITA ---
                 if (obj.dataRef) {
                     isCustom = true;
                     entityData = tools.customEntities[obj.type]; 
                     iconSrc = findCharacterImageSrc(obj.dataRef);
-                } else if (obj.icon) { // Compatibilidad con guardados antiguos
+                } else if (obj.icon) {
                     isCustom = true;
-                    entityData = { ...obj, ...tools.customEntities[obj.type] }; // Fusionar para obtener isSolid, etc.
+                    entityData = { ...obj, ...tools.customEntities[obj.type] };
                     iconSrc = obj.icon;
                 } else {
                     entityData = tools.entities[obj.type];
@@ -262,14 +274,22 @@ function loadWorldFromData(data) {
                             console.warn(`No se pudo encontrar la imagen para la referencia: ${obj.dataRef}`);
                             return; 
                         }
+                        
                         const map = textureLoader.load(iconSrc);
-                        const material = new THREE.SpriteMaterial({ map: map, transparent: true, alphaTest: 0.5 });
-                        objectMesh = new THREE.Sprite(material);
-                        objectMesh.scale.set(8, 8, 1);
-                        objectMesh.position.set(objX, 4, objZ);
+                        const material = new THREE.MeshBasicMaterial({
+                            map: map,
+                            transparent: true,
+                            alphaTest: 0.1,
+                            side: THREE.DoubleSide
+                        });
+                        // MODIFICADO: Se aumenta el tamaño del plano
+                        const geometry = new THREE.PlaneGeometry(8, 8); 
+                        objectMesh = new THREE.Mesh(geometry, material);
+                        // MODIFICADO: Se ajusta la posición Y a la mitad de la nueva altura
+                        objectMesh.position.set(objX, 4, objZ); 
+
                         previewState.scene.add(objectMesh);
                         
-                        // Asignar colisión
                         if (entityData.isSolid) {
                             objectMesh.userData.collisionType = 'circle';
                             objectMesh.userData.radius = entityData.radius || 1.2;
