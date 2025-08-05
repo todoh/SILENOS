@@ -93,6 +93,8 @@ crossorigin="anonymous"></script>
         <div class="asistente-categoria">
             <button id="bguion" class="tons" onclick="abrirVentana('guion-literario');">📜Guión</button>
             <button id="blibros" class="tons" onclick="abrirVentana('capitulosh');">📚Libro</button>
+                        <button class="tons" onclick="abrirVentana('escenah');"    >🎬Storyboard</button>
+
         </div>
         <div class="asistente-categoria">
             <button class="tons" onclick="abrirVentana('diapositivas');"  style="display: none;">🤳Diapositivas</button>
@@ -111,7 +113,6 @@ crossorigin="anonymous"></script>
 
             <button class="tons"  onclick="abrirVentana('vistageneral');"style="display: none;">Vista General</button>
             <div id="removidos"  style="display: none;">
-            <button class="tons" onclick="abrirVentana('escenah');" style="display: none;"  >Storyboard</button>
             <button class="tons" onclick="abrirVentana('animacionessvg');"style="display: none;">🎬 Animación</button>
             <button class="tons" onclick="abrirVentana('imagenes');" style="display: none;" >Imagenes</button>
             <button class="tons" onclick="abrirVentana('animaciones');"  style="display: none;"">Animaciones</button>
@@ -658,12 +659,14 @@ crossorigin="anonymous"></script>
 <div id="modos" ></div></div>
 
 <div id="escenah" class="pantalla" data-titulo="Storyboard">
-    <button id="crear-escena-btn" class="pro6" onclick="abrirSelectorDeEscena(event)">+ 🎬</button>
+        <button class="pro17"  title="Acción contextual"  onclick="abrirModalGenerarStoryboardDesdeLibro()" >✨</button>
+  <button id="agregar-toma-btn" class="pro16 "  >+</button>
+    <button id="crear-escena-btn" class="pro6" onclick="abrirSelectorDeEscena(event)">🎬</button>
     <div class="escena-toolbar">
          <button id="generargraficos" >Generar gráficos de la escena con IA</button>
         <select id="escenas-dropdown"></select>
         <input type="text" id="escena-nombre-input" placeholder="Nombre de la Escena...">
-        <button id="agregar-toma-btn" class="escena2 pro5 "  >➕</button>
+      
     </div>
     
     <div id="tomas-timeline">

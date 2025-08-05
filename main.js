@@ -482,18 +482,15 @@ function mostrarIndicadorCarga(mostrar, mensaje = "Procesando...") {
 }
 
 
+ 
+// En tu archivo main.js, reemplaza la función existente por esta:
+
 /**
- * CORREGIDO: Procesa un libro para generar escenas y tomas de storyboard.
- * @param {string} libroId - El ID del libro a procesar.
+ * Genera un storyboard, pidiendo a la IA que divida cada párrafo en múltiples
+ * tomas. Para cada toma, solo se rellena el campo del guion conceptual.
+ *
+ * @param {string} libroId - El ID del libro para el cual generar el storyboard.
  */
-// main.js
-
-// main.js
-
-// main.js
-
-// main.js
-
 async function crearYMostrarEscenasParaLibro(libroId) {
     if (!libroId) {
         alert("No se ha seleccionado ningún libro.");
@@ -532,7 +529,6 @@ async function crearYMostrarEscenasParaLibro(libroId) {
 
     mostrarIndicadorCarga(true, `Preparando escena para "${libro.titulo}"...`);
 
-    // --- CORRECCIÓN CLAVE 1: Crear y mostrar la escena ANTES de procesar los párrafos ---
     const nuevaEscena = {
         id: `scene_${Date.now()}`,
         nombre: `Storyboard de ${libro.titulo}`,
@@ -540,9 +536,8 @@ async function crearYMostrarEscenasParaLibro(libroId) {
     };
     
     storyScenes.push(nuevaEscena);
-    activeSceneId = nuevaEscena.id; // Hacerla activa inmediatamente
+    activeSceneId = nuevaEscena.id;
     
-    // Renderiza el contenedor de la escena vacío para que el usuario lo vea
     if (typeof renderEscenasUI === 'function') {
         renderEscenasUI();
     } else {
@@ -550,25 +545,26 @@ async function crearYMostrarEscenasParaLibro(libroId) {
         mostrarIndicadorCarga(false);
         return;
     }
-    // --- FIN CORRECCIÓN 1 ---
 
     try {
-        // Itera sobre cada párrafo del libro
         for (let i = 0; i < parrafos.length; i++) {
             const parrafo = parrafos[i];
             
             mostrarIndicadorCarga(true, `Generando tomas para el párrafo ${i + 1}/${parrafos.length}...`);
 
-            const prompt = `Basado en el siguiente párrafo de una historia, divídelo en las tomas cinematográficas necesarias y genera una descripción y un prompt de imagen para CADA TOMA.
+            // --- CAMBIO 1: El prompt pide múltiples tomas, pero solo el guion conceptual para cada una ---
+            const prompt = `Basado en el siguiente párrafo de una historia, divídelo en las tomas cinematográficas necesarias para narrarlo visualmente. Para CADA TOMA, genera únicamente una descripción detallada ("guion_conceptual").
 
 Párrafo: "${parrafo}"
 
-Formato de respuesta (JSON estricto con un array de tomas):
+Formato de respuesta (JSON estricto con un array de tomas, cada una con un solo campo):
 {
   "tomas_generadas": [
     {
-      "guion_conceptual": "Descripción detallada de la primera toma, incluyendo personajes, acciones, entorno, tipo de plano y emoción.",
-      "prompt_visual": "Prompt conciso y efectivo para generar una imagen de la primera toma. Incluye estilo artístico."
+      "guion_conceptual": "Descripción detallada de la primera toma, incluyendo personajes, acciones, entorno, tipo de plano y emoción."
+    },
+    {
+      "guion_conceptual": "Descripción de la segunda toma..."
     }
   ]
 }`;
@@ -577,31 +573,30 @@ Formato de respuesta (JSON estricto con un array de tomas):
                  throw new Error("La función `llamarIAConFeedback` no está definida.");
             }
             
-            const respuestaAPI = await llamarIAConFeedback(prompt, `Párrafo ${i+1}`, true);
+            const modelToUse = 'gemini-2.5-flash';
+            const respuestaAPI = await llamarIAConFeedback(prompt, `Párrafo ${i+1}`, modelToUse, true);
 
+            // --- CAMBIO 2: La lógica procesa el array, pero crea la toma con el prompt visual vacío ---
             if (respuestaAPI && Array.isArray(respuestaAPI.tomas_generadas) && respuestaAPI.tomas_generadas.length > 0) {
                 
                 for (const tomaData of respuestaAPI.tomas_generadas) {
-                    if (tomaData.guion_conceptual && tomaData.prompt_visual) {
+                    // Solo necesitamos validar que el guion conceptual exista
+                    if (tomaData.guion_conceptual) {
                         const nuevaToma = {
                             id: `toma_${nuevaEscena.id}_${nuevaEscena.tomas.length}`,
                             duracion: 8,
                             imagen: '',
-                            guionConceptual: tomaData.guion_conceptual,
-                            guionTecnico: tomaData.prompt_visual,
+                            guionConceptual: tomaData.guion_conceptual, // Se rellena desde la IA
+                            guionTecnico: "",                          // Se deja vacío intencionadamente
                             guionArtistico: ""
                         };
-                        // Añade la toma al array de la escena que ya está activa
                         nuevaEscena.tomas.push(nuevaToma);
                     }
                 }
                 
-                // --- CORRECCIÓN CLAVE 2: Renderizar la UI DESPUÉS de añadir las tomas de cada párrafo ---
-                // Esto actualizará la vista con las nuevas tomas sin esperar al final del proceso.
                 if (typeof renderEscenasUI === 'function') {
                     renderEscenasUI();
                 }
-                // --- FIN CORRECCIÓN 2 ---
 
             } else {
                 console.warn(`No se pudo generar ninguna toma para el párrafo ${i+1}:`, parrafo);
@@ -614,11 +609,9 @@ Formato de respuesta (JSON estricto con un array de tomas):
         console.error("Error durante la generación del storyboard:", error);
         alert("Ocurrió un error al generar las tomas. Revisa la consola para más detalles.");
     } finally {
-        // Al final de todo, se oculta el indicador de carga.
         mostrarIndicadorCarga(false);
     }
 }
-
 
 function toggleTheme() {
     document.body.classList.toggle('dark-theme');

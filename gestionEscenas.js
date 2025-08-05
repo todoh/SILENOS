@@ -21,6 +21,24 @@ function initEscenas() {
         timelineDiv.addEventListener('dragleave', handleDragLeaveTimeline);
     }
 
+    // Añade el estilo para el estado de carga de la generación individual.
+    const style = document.createElement('style');
+    style.id = 'toma-procesando-style-individual';
+    style.textContent = `
+        .toma-procesando-individual .toma-imagen-area {
+            outline: 3px solid #6a0dad; /* Borde morado */
+            box-shadow: 0 0 15px rgba(106, 13, 173, 0.7);
+            animation: pulse-purple 1.5s infinite;
+        }
+        @keyframes pulse-purple {
+            0% { box-shadow: 0 0 15px rgba(106, 13, 173, 0.7); }
+            50% { box-shadow: 0 0 25px rgba(106, 13, 173, 1); }
+            100% { box-shadow: 0 0 15px rgba(106, 13, 173, 0.7); }
+        }
+    `;
+    document.head.appendChild(style);
+
+
     renderEscenasUI();
 }
 
@@ -84,7 +102,6 @@ function eliminarToma(tomaId) {
     }
 }
 
-
 /**
  * Actualiza la escena activa cuando se selecciona una del dropdown.
  */
@@ -108,8 +125,6 @@ function cambiarNombreEscena(event) {
         }
     }
 }
-
- 
 
 /**
  * Dibuja y actualiza la interfaz de usuario de la sección de escenas.
@@ -230,16 +245,15 @@ function renderEscenasUI() {
 
                 const videoBtn = document.createElement('button');
                 videoBtn.className = 'toma-video-btn';
-                videoBtn.innerHTML = '🎬';
-                videoBtn.title = 'Generar Escena';
+                videoBtn.innerHTML = '✨'; // Cambiado a icono de magia para generar imagen
+                videoBtn.title = 'Generar Imagen con IA';
                 
+                // --- MODIFICACIÓN CLAVE ---
+                // El botón ahora llama a la nueva función para generar imágenes con IA.
                 videoBtn.onclick = () => {
-                    if (typeof iniciarGeneracionDeToma === 'function') {
-                        iniciarGeneracionDeToma(toma, tomaContainer);
-                    } else {
-                        alert('Error: La función principal para generar tomas (iniciarGeneracionDeToma) no está disponible.');
-                    }
+                    generarImagenParaTomaConIA(toma.id);
                 };
+                // --- FIN DE LA MODIFICACIÓN ---
 
                 promptTomaContainer.appendChild(promptToma);
                 promptTomaContainer.appendChild(copyBtn);
@@ -265,6 +279,135 @@ function renderEscenasUI() {
     }
 
     timelineDiv.scrollLeft = scrollLeft;
+}
+
+/**
+ * NUEVA FUNCIÓN: Genera una imagen para una toma específica usando IA.
+ * Adapta la lógica de `generarImagenParaFrameConIA`.
+ * @param {string} tomaId - El ID de la toma para la que se generará una imagen.
+ */
+async function generarImagenParaTomaConIA(tomaId) {
+    const escenaActiva = storyScenes.find(s => s.id === activeSceneId);
+    if (!escenaActiva) return;
+    const toma = escenaActiva.tomas.find(t => t.id === tomaId);
+
+    if (!toma || !toma.guionConceptual.trim()) {
+        alert("Por favor, escribe un guion conceptual en la toma antes de generar una imagen.");
+        return;
+    }
+
+    const tomaContainer = document.querySelector(`.toma-card[data-toma-id="${toma.id}"]`);
+    if (tomaContainer) {
+        tomaContainer.classList.add('toma-procesando-individual');
+    }
+
+    try {
+        const userPrompt = toma.guionConceptual.trim();
+        let promptFinal = `Crea una ilustración cinematográfica SIN TEXTO para la siguiente escena: "${userPrompt}". El aspecto debe ser de 16:9, panorámico horizontal y de alta calidad. EVITA USAR EL TEXTO DE LA ESCENA EN LA IMAGEN.`;
+
+        // FASE 1: ANÁLISIS DE PERSONAJES (Lógica reutilizada de tu función original)
+        const datosIndexados = [];
+        document.querySelectorAll('#listapersonajes .personaje').forEach(p => {
+            const nombre = p.querySelector('.nombreh')?.value.trim();
+            const descripcion = p.querySelector('.descripcionh')?.value.trim();
+            const promptVisual = p.querySelector('.prompt-visualh')?.value.trim();
+            if (nombre) {
+                datosIndexados.push({ nombre, descripcion, promptVisual });
+            }
+        });
+
+        if (datosIndexados.length > 0) {
+            const contextoPersonajes = datosIndexados.map(p => `- ${p.nombre}: ${p.descripcion}`).join('\n');
+            const promptAnalisis = `
+                **Contexto:** Tienes una lista de personajes y sus descripciones:
+                ${contextoPersonajes}
+                **Tarea:** Lee el siguiente texto de una escena y devuelve ÚNICAMENTE un objeto JSON con una clave "personajes_en_escena" que contenga un array con los NOMBRES EXACTOS de los personajes de la lista que aparecen en el texto. Si no aparece ninguno, devuelve un array vacío.
+                **Texto de la escena:** "${userPrompt}"
+            `;
+            if (typeof llamarIAConFeedback === 'function') {
+                const respuestaAnalisis = await llamarIAConFeedback(promptAnalisis, "Identificando personajes en toma...", 'gemini-1.5-flash', true);
+                if (respuestaAnalisis && Array.isArray(respuestaAnalisis.personajes_en_escena)) {
+                    const nombresPersonajes = respuestaAnalisis.personajes_en_escena;
+                    const promptsVisuales = nombresPersonajes
+                        .map(nombre => datosIndexados.find(p => p.nombre === nombre)?.promptVisual)
+                        .filter(Boolean)
+                        .join('. ');
+                    if (promptsVisuales) {
+                        promptFinal += `\n\n**Instrucciones visuales de personajes (muy importante):** ${promptsVisuales}`;
+                    }
+                }
+            }
+        }
+
+        // FASE 2: GENERACIÓN DE IMAGEN (Lógica reutilizada de tu función original)
+        if (typeof apiKey === 'undefined' || !apiKey) {
+            throw new Error("Error de configuración: La 'apiKey' global no está definida.");
+        }
+        
+        const MODEL_NAME = 'gemini-2.0-flash-preview-image-generation';
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`;
+        const payload = {
+            "contents": [{
+                "parts": [
+                    { "text": promptFinal },
+                    { "inlineData": { "mimeType": "image/png", "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" } }
+                ]
+            }],
+            "generationConfig": { "responseModalities": ["TEXT", "IMAGE"] },
+            "safetySettings": [
+                { "category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE" },
+                { "category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE" },
+                { "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE" },
+                { "category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE" }
+            ]
+        };
+
+        const maxRetries = 3;
+        let lastError = null;
+
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                console.log(`Enviando petición para imagen de toma (Intento ${attempt}/${maxRetries})...`);
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const responseData = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(responseData.error?.message || "Error desconocido de la API.");
+                }
+
+                const imagePart = responseData.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+
+                if (imagePart?.inlineData?.data) {
+                    const pngDataUrl = `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
+                    toma.imagen = pngDataUrl;
+                    renderEscenasUI();
+                    console.log(`Imagen generada y asignada a la toma ${toma.id}.`);
+                    return; // Éxito, salir de la función
+                } else {
+                    const textResponse = responseData.candidates?.[0]?.content?.parts?.[0]?.text || "No se encontró contenido de imagen.";
+                    throw new Error(`La API no devolvió una imagen. Respuesta: ${textResponse}`);
+                }
+            } catch (error) {
+                lastError = error;
+                console.error(`Intento ${attempt} fallido:`, error);
+                if (attempt < maxRetries) await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+        }
+        throw lastError || new Error("Error desconocido tras múltiples intentos.");
+
+    } catch (error) {
+        alert(`No se pudo generar la imagen. Error: ${error.message || "Error desconocido."}`);
+        console.error("Error en generarImagenParaTomaConIA:", error);
+    } finally {
+        if (tomaContainer) {
+            tomaContainer.classList.remove('toma-procesando-individual');
+        }
+    }
 }
 
 
@@ -303,50 +446,27 @@ async function generarGraficosSecuencialmente() {
         const tomaContainer = document.querySelector(`.toma-card[data-toma-id="${toma.id}"]`);
         if (!tomaContainer) continue;
 
-        const prompt = toma.guionTecnico;
+        // Para la generación secuencial, usaremos el guion conceptual como base.
+        const prompt = toma.guionConceptual;
         if (!prompt || !prompt.trim() || toma.imagen) {
-            console.log(`Saltando toma ${toma.id} por falta de prompt o por tener ya una imagen.`);
+            console.log(`Saltando toma ${toma.id} por falta de guion conceptual o por tener ya una imagen.`);
             continue;
         }
         
         tomaContainer.classList.add('toma-procesando-secuencial');
         tomaContainer.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-
-        const imagenArea = tomaContainer.querySelector('.toma-imagen-area');
-        const statusDiv = mostrarEstado(imagenArea, 'Iniciando...');
-        const statusUpdater = (mensaje, esError = false) => actualizarEstado(statusDiv, mensaje, esError);
-
+        
         try {
-            if (typeof generarYComponerToma !== 'function') {
-                throw new Error('La función núcleo (generarYComponerToma) no está disponible.');
-            }
-            
-            const imageUrl = await generarYComponerToma(prompt, statusUpdater);
-            
-            toma.imagen = imageUrl;
-            const imagenPreview = tomaContainer.querySelector('.toma-imagen-preview');
-            const placeholder = tomaContainer.querySelector('.imagen-placeholder');
-            
-            if (imagenPreview) {
-                imagenPreview.src = imageUrl;
-                imagenPreview.style.display = 'block';
-            }
-            if (placeholder) {
-                placeholder.style.display = 'none';
-            }
-
+            // Reutilizamos la misma lógica de generación individual
+            await generarImagenParaTomaConIA(toma.id);
         } catch (error) {
-            console.error(`Error al componer la escena para la toma ${toma.id}:`, error);
-            statusUpdater(`Error: ${error.message}`, true);
-            await new Promise(resolve => setTimeout(resolve, 5000));
+            console.error(`Error al generar imagen para la toma ${toma.id} en modo secuencial:`, error);
+            // El manejo de errores ya está dentro de generarImagenParaTomaConIA
         } finally {
-            if (statusDiv && statusDiv.parentElement) {
-               statusDiv.remove();
-            }
             tomaContainer.classList.remove('toma-procesando-secuencial');
         }
 
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Pequeña pausa entre generaciones
     }
 
     document.getElementById('toma-procesando-style-secuencial')?.remove();
@@ -454,28 +574,6 @@ function removeDropIndicator() {
     }
 }
 
-/**
- * Función de ejemplo para buscar una imagen en tu directorio "datos".
- * Debes implementar la lógica real según cómo gestiones tus archivos.
- * @param {string} prompt El texto a buscar.
- * @returns {Promise<string|null>} La URL de la imagen si se encuentra, o null.
- */
-
-
-async function buscarImagenEnDatos(prompt) {
-    // Esta es una implementación simulada.
-    // En un caso real, aquí harías una petición a tu servidor o
-    // buscarías en un índice de archivos locales.
-    console.log(`Buscando en 'datos' una imagen para el prompt: "${prompt}"`);
-    
-    // Ejemplo: si tienes un objeto global con los datos cargados
-    if (window.datosGuardados && window.datosGuardados[prompt]) {
-        return window.datosGuardados[prompt].url;
-    }
-    
-    // Simula una búsqueda que no encuentra nada
-    return null;
-}
 // --- Función de utilidad para convertir File a Base64 ---
 function fileToBase64(file) {
     return new Promise((resolve, reject) => {
