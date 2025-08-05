@@ -89,21 +89,71 @@ function sleep(ms) {
 }
 
 /**
- * Limpia la respuesta de la IA para extraer un objeto JSON válido.
+ * Encuentra el índice del bracket/llave de cierre correspondiente.
+ * @param {string} str - El string en el que buscar.
+ * @param {number} pos - La posición del bracket/llave de apertura.
+ * @returns {number} El índice del bracket/llave de cierre, o -1 si no se encuentra.
+ */
+function findClosingBracket(str, pos) {
+    const openChar = str[pos];
+    const closeChar = openChar === '{' ? '}' : ']';
+    let depth = 1;
+
+    // Recorremos el string desde la posición siguiente a la de apertura
+    for (let i = pos + 1; i < str.length; i++) {
+        const char = str[i];
+        if (char === openChar) {
+            depth++;
+        } else if (char === closeChar) {
+            depth--;
+        }
+
+        // Cuando la profundidad vuelve a cero, hemos encontrado el cierre
+        if (depth === 0) {
+            return i;
+        }
+    }
+    return -1; // No se encontró un cierre correspondiente
+}
+
+
+/**
+ * Limpia la respuesta de la IA para extraer el PRIMER objeto o array JSON válido.
+ * --- VERSIÓN 4 (QUIRÚRGICA CON CONTEO DE BRACKETS) ---
+ * Este método aísla con precisión solo el primer JSON completo, ignorando cualquier
+ * texto o JSON adicional que la IA pueda devolver después, solucionando los errores de "concatenación".
+ * @param {string} textoCrudo - El texto completo devuelto por la IA.
+ * @param {string} etapaDescriptiva - Descripción para logs de error.
+ * @returns {string} Un string JSON válido y limpio.
  */
 function limpiarYExtraerJson(textoCrudo, etapaDescriptiva) {
-    let textoJson = textoCrudo;
-    const match = textoJson.match(/```json\s*([\s\S]*?)\s*```/);
-    if (match && match[1]) {
-        textoJson = match[1];
+    // 1. Buscar el primer delimitador de apertura de JSON
+    const primerDelimitadorIndex = textoCrudo.search(/[[{]/);
+
+    if (primerDelimitadorIndex === -1) {
+        console.error(`No se encontró un JSON inicial ('{' o '[') para '${etapaDescriptiva}'. Respuesta cruda:`, textoCrudo);
+        throw new Error(`La respuesta de la IA para ${etapaDescriptiva} no contenía un JSON válido.`);
     }
-    const primerLlave = textoJson.indexOf('{');
-    const ultimaLlave = textoJson.lastIndexOf('}');
-    if (primerLlave !== -1 && ultimaLlave > primerLlave) {
-        return textoJson.substring(primerLlave, ultimaLlave + 1).trim();
+
+    // 2. Usar la función auxiliar para encontrar el final exacto del primer JSON
+    const ultimoDelimitadorIndex = findClosingBracket(textoCrudo, primerDelimitadorIndex);
+
+    if (ultimoDelimitadorIndex === -1) {
+        console.error(`No se pudo encontrar el bracket/llave de cierre correspondiente para '${etapaDescriptiva}'. Respuesta cruda:`, textoCrudo);
+        throw new Error(`La respuesta de la IA para ${etapaDescriptiva} contenía un JSON incompleto.`);
     }
-    console.error(`No se pudo extraer una estructura JSON válida del texto para '${etapaDescriptiva}'. Respuesta cruda:`, textoCrudo);
-    throw new Error(`La respuesta de la IA para ${etapaDescriptiva} no contenía un objeto JSON válido.`);
+
+    // 3. Extraer la subcadena que corresponde únicamente al primer JSON
+    const jsonPotencial = textoCrudo.substring(primerDelimitadorIndex, ultimoDelimitadorIndex + 1);
+
+    // 4. Se realiza una última validación con JSON.parse para asegurar que no hay errores de sintaxis internos.
+    try {
+        JSON.parse(jsonPotencial);
+        return jsonPotencial; // Si no hay error, el JSON es válido.
+    } catch (e) {
+        console.error(`Error final al parsear el JSON extraído para '${etapaDescriptiva}'. Error: ${e.message}. JSON Extraído:`, jsonPotencial);
+        throw new Error(`La respuesta de la IA para ${etapaDescriptiva} contenía un JSON con sintaxis interna incorrecta.`);
+    }
 }
 
 /**
