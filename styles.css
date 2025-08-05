@@ -622,9 +622,9 @@ line-height: 1.5;}
 /* ========= FIN: NUEVOS ESTILOS ========= */
 
 .ide {
-    top: 1%; left: 104%;
-    position: absolute;
-    padding: 1%;
+    top: 1%; 
+    position: relative;
+    padding: 1%; margin-left: 2%;
     width: auto;
     margin: 0;
     margin-right: 4%;}

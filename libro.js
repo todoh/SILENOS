@@ -1026,3 +1026,88 @@ function abrirModalVisualizador(libro) {
     // Mostrar la primera página (la portada)
     mostrarPagina(paginaActual);
 }
+
+
+// =================================================================
+// SILENOS - FUNCIONALIDAD PARA POBLAR LIBROS DESDE GUIONES
+// AÑADIR ESTO AL FINAL DE libro.js
+// =================================================================
+
+/**
+ * Abre el modal para seleccionar un guion y un libro.
+ * Ahora se llama "Poblar Libro desde Guion".
+ */
+function abrirModalPoblarLibro() {
+    const modal = document.getElementById('modal-seleccionar-libro-para-frames');
+    if (!modal) {
+        alert("Error: El modal de selección no existe en el HTML.");
+        return;
+    }
+
+    // Poblar el selector de guiones
+    const guionSelect = document.getElementById('guion-origen-select');
+    guionSelect.innerHTML = '<option value="">-- Selecciona un Guion --</option>'; 
+    
+    if (typeof guionesGuardados !== 'undefined' && Object.keys(guionesGuardados).length > 0) {
+        for (const id in guionesGuardados) {
+            const option = document.createElement('option');
+            option.value = id;
+            option.textContent = guionesGuardados[id].tituloOriginal || `Guion ${id}`;
+            guionSelect.appendChild(option);
+        }
+    } else {
+        guionSelect.innerHTML = '<option value="">No hay guiones generados</option>';
+    }
+
+    // --- CORRECCIÓN DEFINITIVA ---
+    // Poblar la lista de libros (leyendo 'libros' como un Array)
+    const listaLibrosDiv = document.getElementById('lista-libros-para-frames');
+    listaLibrosDiv.innerHTML = '';
+    
+    if (!libros || libros.length === 0) {
+        listaLibrosDiv.innerHTML = '<p>No hay libros creados. Ve a "Proyecto" para crear uno.</p>';
+    } else {
+        libros.forEach(libro => { // Iteramos sobre el array directamente
+            const libroDiv = document.createElement('div');
+            libroDiv.className = 'libro-seleccionable';
+            libroDiv.textContent = libro.titulo; // Usamos la propiedad 'titulo'
+            libroDiv.dataset.libroId = libro.id; // Usamos la propiedad 'id'
+            libroDiv.onclick = () => {
+                document.querySelectorAll('.libro-seleccionable').forEach(el => el.classList.remove('seleccionado'));
+                libroDiv.classList.add('seleccionado');
+            };
+            listaLibrosDiv.appendChild(libroDiv);
+        });
+    }
+    // --- FIN DE LA CORRECCIÓN ---
+
+    // Configurar el botón de confirmación
+    const confirmarBtn = document.getElementById('confirmar-generacion-frames-btn');
+    confirmarBtn.textContent = '✨ Poblar Libro con Guion Seleccionado';
+    confirmarBtn.onclick = confirmarPobladoDeLibro; 
+
+    // Mostrar el modal
+    modal.style.display = 'block';
+    const overlay = document.getElementById('modal-overlay');
+    if(overlay) overlay.style.display = 'block';
+}
+
+
+/**
+ * Cierra el modal de selección. (Es probable que ya tengas esta función)
+ */
+function cerrarModalSeleccionLibro() {
+    const modal = document.getElementById('modal-seleccionar-libro-para-frames');
+    if (modal) modal.style.display = 'none';
+    const overlay = document.getElementById('modal-overlay');
+    if(overlay) overlay.style.display = 'none';
+}
+// =================================================================
+// SILENOS - FUNCIONALIDAD PARA POBLAR LIBROS DESDE GUIONES
+// AÑADIR ESTO AL FINAL DE libro.js
+// =================================================================
+
+/**
+ * Abre el modal para seleccionar un guion y un libro.
+ */
+ 

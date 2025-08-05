@@ -91,7 +91,46 @@
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+/* =================================================== */
+/* ESTILOS PARA EL MODAL DE SELECCIÓN DE LIBRO Y GUION */
+/* =================================================== */
 
+/* Estilo para cada libro en la lista */
+.libro-seleccionable {
+    padding: 12px 15px;
+    margin: 5px 0;
+    border: 2px solid transparent; /* Borde transparente por defecto */
+    border-radius: 8px;
+    background-color: #f0f0f0; /* Un color de fondo claro */
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    text-align: left;
+}
+
+/* Estilo cuando pasas el ratón por encima */
+.libro-seleccionable:hover {
+    background-color: #e0e0e0;
+    border-color: #cccccc;
+}
+
+/* ¡LA CLAVE! Estilo para el libro que está seleccionado */
+.libro-seleccionable.seleccionado {
+    background-color: #cce7ff; /* Un azul claro para destacar */
+    border-color: #007bff;      /* Un borde azul sólido */
+    color: #004085;             /* Texto más oscuro para legibilidad */
+    font-weight: bold;          /* Texto en negrita */
+}
+
+/* Estilos para el contenedor de la lista en el modal */
+#lista-libros-para-frames {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    background-color: #fff;
+}
  #libroscreados {
     background-color: transparent;
     /* Estos estilos ya no son necesarios aquí, se gestionarán en .catalogolibros */

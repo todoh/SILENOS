@@ -98,15 +98,13 @@ function fileToBase64(file) {
 function actualizarLista() {
     const lista = document.getElementById("lista-capitulos");
     if (!lista) return;
-    lista.innerHTML = ""; // Limpiamos la lista para redibujar
+    lista.innerHTML = "";
 
-    // Si no hay un libro activo, muestra un mensaje y termina.
     if (!libroActivoId) {
         lista.innerHTML = '<p class="mensaje-placeholder">Usa el botón del menú para seleccionar o crear un libro.</p>';
         return;
     }
 
-    // Filtra y ordena los capítulos que pertenecen al libro activo.
     const escenasDelLibroActivo = Object.keys(escenas)
         .filter(id => escenas[id].libroId === libroActivoId)
         .sort();
@@ -115,18 +113,14 @@ function actualizarLista() {
         lista.innerHTML = '<p class="mensaje-placeholder">Este libro está vacío. Haz clic en el botón "+" para añadir tu primer capítulo.</p>';
     }
 
-    // Itera sobre cada capítulo para crearlo en el DOM.
     escenasDelLibroActivo.forEach(id => {
         const escenaData = escenas[id];
-        
-        // --- Contenedor principal del Capítulo ---
         const divCapitulo = document.createElement("div");
-        divCapitulo.className = "escena"; // Tu clase CSS para un capítulo
+        divCapitulo.className = "escena";
         divCapitulo.setAttribute("data-id", id);
 
-        // --- Cabecera del Capítulo (Título y botones) ---
         const cabecera = document.createElement("div");
-        cabecera.className = "detalle"; // Tu clase CSS para la cabecera
+        cabecera.className = "detalle";
 
         const inputNombre = document.createElement("input");
         inputNombre.className = "imput";
@@ -136,7 +130,41 @@ function actualizarLista() {
             escenaData.texto = event.target.value;
             guardarCambios();
         };
+        cabecera.append(inputNombre);
 
+        // =================================================================
+        // INICIO: CÓDIGO AÑADIDO PARA LOS BOTONES DE REESCRITURA
+        // =================================================================
+        const libroActivo = libros.find(l => l.id === libroActivoId);
+        const tieneContextoIA = libroActivo && libroActivo.iaContext;
+
+        // Los botones solo aparecen si el libro tiene un guion vinculado Y el capítulo fue generado por IA.
+        if (escenaData.generadoPorIA && tieneContextoIA) {
+            const reescribirCapBtn = document.createElement("button");
+            reescribirCapBtn.textContent = "✍️";
+            reescribirCapBtn.className = "ide"; // Reutilizamos el estilo
+            reescribirCapBtn.title = "Reescribir este capítulo con IA";
+            reescribirCapBtn.onclick = (event) => {
+                event.stopPropagation();
+                iniciarReescrituraCapitulo(id); // Llama a la función en reescritura.js
+            };
+
+            const reescribirDesdeBtn = document.createElement("button");
+            reescribirDesdeBtn.textContent = "✍️»";
+            reescribirDesdeBtn.className = "ide"; // Reutilizamos el estilo
+            reescribirDesdeBtn.title = "Reescribir desde este capítulo hasta el final";
+            reescribirDesdeBtn.onclick = (event) => {
+                event.stopPropagation();
+                iniciarReescrituraDesdeCapitulo(id); // Llama a la función en reescritura.js
+            };
+            
+            // Añadimos los botones de IA a la cabecera
+            cabecera.append(reescribirCapBtn, reescribirDesdeBtn);
+        }
+        // =================================================================
+        // FIN: CÓDIGO AÑADIDO
+        // =================================================================
+        
         const eliminarBtn = document.createElement("button");
         eliminarBtn.textContent = "❌";
         eliminarBtn.className = "ide";
@@ -158,47 +186,18 @@ function actualizarLista() {
             event.stopPropagation();
             agregarFrame(id);
         };
-
-
-
-        // Comprobar si este libro tiene contexto de IA para mostrar los botones de reescritura
-    const tieneContextoIA = libros[libroActivoId] && libros[libroActivoId].iaContext;
-
-    if (escenaData.generadoPorIA && tieneContextoIA) {
-        const reescribirCapBtn = document.createElement("button");
-        reescribirCapBtn.textContent = "✍️";
-        reescribirCapBtn.className = "ide"; // Reutiliza estilo o crea uno nuevo
-        reescribirCapBtn.title = "Reescribir este capítulo con IA";
-        reescribirCapBtn.onclick = (event) => {
-            event.stopPropagation();
-            iniciarReescrituraCapitulo(id);
-        };
-
-        const reescribirDesdeBtn = document.createElement("button");
-        reescribirDesdeBtn.textContent = "✍️»";
-        reescribirDesdeBtn.className = "ide";
-        reescribirDesdeBtn.title = "Reescribir desde este capítulo hasta el final";
-        reescribirDesdeBtn.onclick = (event) => {
-            event.stopPropagation();
-            iniciarReescrituraDesdeCapitulo(id);
-        };
-
-        // Añadir los botones a la cabecera
-        cabecera.append(reescribirCapBtn, reescribirDesdeBtn);
-    }
-        cabecera.append(inputNombre, eliminarBtn, agregarFrameBtnPrincipal);
+        
+        cabecera.append(eliminarBtn, agregarFrameBtnPrincipal);
         
         divCapitulo.appendChild(cabecera);
 
-        // --- Contenedor de todos los Frames ---
         const contenedorFrames = document.createElement("div");
-        contenedorFrames.className = "contenedor-frames"; // Tu clase CSS para la lista de frames
+        contenedorFrames.className = "contenedor-frames";
 
         (escenaData.frames || []).forEach((frameData, index) => {
             const frameDiv = document.createElement("div");
             frameDiv.className = "frameh";
 
-            // --- Área de Texto del Frame ---
             const inputTexto = document.createElement("textarea");
             inputTexto.value = frameData.texto || "";
             inputTexto.placeholder = "Escribe el texto del frame...";
@@ -207,7 +206,6 @@ function actualizarLista() {
                 guardarCambios();
             };
 
-            // --- Imagen y Lógica de Carga ---
             const imagenPreview = document.createElement("img");
             imagenPreview.style.display = frameData.imagen ? "block" : "none";
             if (frameData.imagen) {
@@ -241,27 +239,19 @@ function actualizarLista() {
                 }
             };
 
-            // ==========================================================
-            //  CAMBIO: Se reemplaza <label> por <button> para subir imagen
-            // ==========================================================
             const botonSubirImagen = document.createElement("button");
-            botonSubirImagen.className = "custom-label"; // Reutilizamos la clase para posicionamiento
+            botonSubirImagen.className = "custom-label";
             botonSubirImagen.textContent = "📷";
             botonSubirImagen.title = "Subir o cambiar imagen";
-            
-            // Estilos para que parezca un icono sin fondo/borde
             botonSubirImagen.style.border = "none";
             botonSubirImagen.style.background = "transparent";
             botonSubirImagen.style.padding = "0";
-            botonSubirImagen.style.fontSize = "1.5em"; // Hacemos el emoji más grande y fácil de pulsar
-
+            botonSubirImagen.style.fontSize = "1.5em";
             botonSubirImagen.onclick = (event) => {
-                event.stopPropagation(); // Previene que otros eventos de clic se disparen
-                document.getElementById(inputId).click(); // Dispara el clic en el input de archivo oculto
+                event.stopPropagation();
+                document.getElementById(inputId).click();
             };
 
-
-            // --- Botones de Acción del Frame ---
             const agregarFrameBtn = document.createElement("button");
             agregarFrameBtn.textContent = "➕";
             agregarFrameBtn.className = "ideframeh";
@@ -293,8 +283,6 @@ function actualizarLista() {
                 }
             };
 
-            // --- Ensamblaje del Frame ---
-            // Se añade el nuevo botón (botonSubirImagen) en lugar del label.
             frameDiv.append(inputTexto, botonSubirImagen, inputImagen, imagenPreview, agregarFrameBtn, eliminarFrameBtn, generarImagenBtn);
             contenedorFrames.appendChild(frameDiv);
         });
@@ -306,41 +294,30 @@ function actualizarLista() {
 
 // =================================================================
 // LÓGICA DEL VISOR DE IMÁGENES (LIGHTBOX)
-// Se ejecuta una sola vez cuando el documento está listo.
 // =================================================================
 document.addEventListener('DOMContentLoaded', () => {
     const overlay = document.getElementById('image-preview-overlay');
     const enlargedImg = document.getElementById('enlarged-img');
     const closeBtn = overlay ? overlay.querySelector('.close-btn') : null;
 
-    // Si los elementos del visor no existen en el HTML, no continuamos.
     if (!overlay || !enlargedImg || !closeBtn) {
-        console.warn("Los elementos del visor de imágenes (overlay) no se encontraron en el HTML. La función de ampliar imagen no estará disponible.");
+        console.warn("Los elementos del visor de imágenes (overlay) no se encontraron en el HTML.");
         return;
     }
 
-    /**
-     * Cierra el visor de imágenes y resetea su contenido.
-     */
     function closePreview() {
         overlay.classList.remove('visible');
-        // IMPORTANTE: Limpiamos el 'src' para que no quede en memoria.
         enlargedImg.src = ""; 
     }
 
-    // --- ASIGNACIÓN DE EVENTOS PARA CERRAR EL VISOR ---
-
-    // 1. Clic en el fondo oscuro (el propio overlay)
     overlay.addEventListener('click', (event) => {
         if (event.target === overlay) {
             closePreview();
         }
     });
   
-    // 2. Clic en el botón de cerrar (la 'X')
     closeBtn.addEventListener('click', closePreview);
 
-    // 3. Pulsar la tecla 'Escape'
     document.addEventListener('keydown', (event) => {
         if (event.key === "Escape" && overlay.classList.contains('visible')) {
             closePreview();
@@ -355,16 +332,14 @@ function crearEscenasAutomaticamente(nombreBase, numEscenas, numFrames) {
     }
 
     if (!nombreBase || numEscenas <= 0) {
-        console.error("Llamada inválida a crearEscenasAutomaticamente: se requiere nombre base y número de escenas.");
+        console.error("Llamada inválida a crearEscenasAutomaticamente");
         return;
     }
 
     for (let i = 1; i <= numEscenas; i++) {
-        // Se mantiene la lógica de ID único para robustez
         const id = `${libroActivoId}-${nombreBase}-${Date.now() + i}`;
-
         if (escenas[id]) {
-            console.warn(`La escena con ID ${id} ya existía. Se omitió la creación.`);
+            console.warn(`La escena con ID ${id} ya existía.`);
             continue;
         }
 
@@ -384,8 +359,6 @@ function crearEscenasAutomaticamente(nombreBase, numEscenas, numFrames) {
             libroId: libroActivoId
         };
     }
-
-    console.log(`${numEscenas} escenas creadas con el nombre base "${nombreBase}" y asociadas al libro ID: ${libroActivoId}.`);
     
     guardarCambios();
     actualizarLista();
@@ -393,29 +366,6 @@ function crearEscenasAutomaticamente(nombreBase, numEscenas, numFrames) {
 
 function reiniciarContadorEscenas() {
     ultimoId = 0;
-    console.log("Contador de escenas (ultimoId) reiniciado a 0.");
-}
-
-function guardarCambios() {
-    if (typeof(Storage) !== "undefined") {
-        try {
-            const cleanEscenas = JSON.parse(JSON.stringify(escenas));
-            localStorage.setItem("escenas", JSON.stringify(cleanEscenas));
-        } catch (error) {
-            console.error("Error al guardar cambios en localStorage:", error);
-        }
-    } else {
-        console.error("localStorage no está disponible en este navegador.");
-    }
-}
-
-function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-        reader.readAsDataURL(file);
-    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -430,16 +380,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('click', (event) => {
     
-    // --- THIS IS THE CORRECTED PART ---
-    // First, find the closest parent div with the class 'frameh'
     const targetFrameDiv = event.target.closest('div.frameh');
     
     if (targetFrameDiv) {
-      // If we found the div, now find the image inside it
       const imageInside = targetFrameDiv.querySelector('img');
       
       if (imageInside) {
-        // If an image exists, open the preview with its source
         event.preventDefault();
         enlargedImg.src = imageInside.src;
         overlay.classList.add('visible');
@@ -447,17 +393,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // If you click on the overlay (the dark background), it closes
   overlay.addEventListener('click', (event) => {
     if (event.target === overlay) {
       closePreview();
     }
   });
   
-  // If you click the close button, it also closes
   closeBtn.addEventListener('click', closePreview);
 
-  // You can also close the preview by pressing the 'Escape' key
   document.addEventListener('keydown', (event) => {
     if (event.key === "Escape" && overlay.classList.contains('visible')) {
       closePreview();

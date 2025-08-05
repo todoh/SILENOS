@@ -1,71 +1,47 @@
 // =================================================================
-// SILENOS - MÓDULO DE REESCRITURA CON IA
+// SILENOS - MÓDULO DE REESCRITURA Y POBLADO AVANZADO CON IA (GRANULAR)
 // =================================================================
 
 /**
  * Inicia el proceso de reescritura para un ÚNICO capítulo.
- * Pide confirmación al usuario antes de proceder.
- * @param {string} capituloId - El ID del capítulo a reescribir.
  */
 async function iniciarReescrituraCapitulo(capituloId) {
     if (!confirm("¿Reescribir únicamente este capítulo usando la IA?\nSe usará el guion original como guía. El contenido actual del capítulo se reemplazará.")) {
         return;
     }
-
     const contexto = _obtenerContextoLibro();
     if (!contexto) return;
 
     try {
-        if (typeof progressBarManager !== 'undefined') {
-            progressBarManager.start(`Reescribiendo Capítulo...`, null, true); // El tercer parámetro indica que es una tarea corta
-        }
-
+        if (typeof progressBarManager !== 'undefined') progressBarManager.start(`Reescribiendo Capítulo...`);
         await _reescribirUnSoloCapitulo(capituloId, contexto);
-
-        if (typeof progressBarManager !== 'undefined') {
-            progressBarManager.finish("Capítulo reescrito con éxito.");
-        }
+        if (typeof progressBarManager !== 'undefined') progressBarManager.finish("Capítulo reescrito con éxito.");
         alert("El capítulo ha sido reescrito.");
-
     } catch (error) {
         console.error("Error al reescribir el capítulo:", error);
-        if (typeof progressBarManager !== 'undefined') {
-            progressBarManager.error(`Error: ${error.message}`);
-        }
+        if (typeof progressBarManager !== 'undefined') progressBarManager.error(`Error: ${error.message}`);
         alert(`No se pudo reescribir el capítulo: ${error.message}`);
     }
 }
 
 /**
  * Inicia el proceso de reescritura desde un capítulo seleccionado HASTA EL FINAL.
- * Pide confirmación al usuario ya que es una acción destructiva.
- * @param {string} capituloIdInicial - El ID del capítulo desde el cual empezar a reescribir.
  */
 async function iniciarReescrituraDesdeCapitulo(capituloIdInicial) {
-    if (!confirm("ADVERTENCIA: ¿Reescribir la historia desde este capítulo hasta el final?\nSe eliminarán y reemplazarán todos los capítulos siguientes. Esta acción no se puede deshacer.")) {
+    if (!confirm("ADVERTENCIA: ¿Reescribir la historia desde este capítulo hasta el final?\nSe eliminarán y reemplazarán todos los capítulos siguientes.")) {
         return;
     }
-
     const contexto = _obtenerContextoLibro();
     if (!contexto) return;
 
     try {
-        if (typeof progressBarManager !== 'undefined') {
-            progressBarManager.start(`Iniciando reescritura total...`);
-        }
-
+        if (typeof progressBarManager !== 'undefined') progressBarManager.start(`Iniciando reescritura total...`);
         await _reescribirMultiplesCapitulos(capituloIdInicial, contexto);
-
-        if (typeof progressBarManager !== 'undefined') {
-            progressBarManager.finish("La historia ha sido reescrita desde el punto seleccionado.");
-        }
+        if (typeof progressBarManager !== 'undefined') progressBarManager.finish("La historia ha sido reescrita desde el punto seleccionado.");
         alert("La historia ha sido reescrita con éxito.");
-
     } catch (error) {
         console.error("Error en la reescritura múltiple:", error);
-        if (typeof progressBarManager !== 'undefined') {
-            progressBarManager.error(`Error: ${error.message}`);
-        }
+        if (typeof progressBarManager !== 'undefined') progressBarManager.error(`Error: ${error.message}`);
         alert(`No se pudo completar la reescritura: ${error.message}`);
     }
 }
@@ -74,155 +50,224 @@ async function iniciarReescrituraDesdeCapitulo(capituloIdInicial) {
 
 /**
  * Obtiene el contexto de IA guardado para el libro activo.
- * @returns {object|null} El objeto de contexto o null si no se encuentra.
  */
 function _obtenerContextoLibro() {
-    if (!libroActivoId || !libros[libroActivoId]) {
+    if (!libroActivoId || !libros) {
         alert("Error: No hay un libro activo seleccionado.");
         return null;
     }
-    const contexto = libros[libroActivoId].iaContext;
+    const libroActivo = libros.find(l => l.id === libroActivoId);
+    if (!libroActivo) {
+        alert("Error: No se pudo encontrar el libro activo.");
+        return null;
+    }
+    const contexto = libroActivo.iaContext;
     if (!contexto || !contexto.resumenPorEscenas) {
-        alert("Este libro no fue generado por la IA o no tiene un guion guardado. No se puede reescribir.");
+        alert("Este libro no tiene un guion de IA vinculado. No se puede reescribir.");
         return null;
     }
     return contexto;
 }
 
 /**
- * Orquesta la reescritura de un solo capítulo.
- * @param {string} capituloId - El ID del capítulo.
- * @param {object} contexto - El contexto de IA del libro.
+ * Orquesta la reescritura de un solo capítulo, frame por frame.
  */
 async function _reescribirUnSoloCapitulo(capituloId, contexto) {
     const { indice, capitulosDelLibro } = _obtenerIndiceYCapitulosDelLibro(capituloId);
+    if (indice === -1) throw new Error("No se pudo encontrar el capítulo.");
 
-    if (indice === -1) {
-        throw new Error("No se pudo encontrar el capítulo en la estructura del libro.");
-    }
-
-    progressBarManager.set(20, `Obteniendo contexto del capítulo anterior...`);
-
-    let contextoEscenaAnterior = "";
+    let contextoCapituloAnterior = "";
     if (indice > 0) {
         const capituloAnteriorId = capitulosDelLibro[indice - 1];
-        const framesAnteriores = escenas[capituloAnteriorId].frames.map(f => f.texto).join("\n");
-        contextoEscenaAnterior = `Contenido del capítulo anterior para dar continuidad: ${framesAnteriores}`;
+        if (escenas[capituloAnteriorId]) {
+            contextoCapituloAnterior = escenas[capituloAnteriorId].frames.map(f => f.texto).join("\n\n");
+        }
     }
 
-    progressBarManager.set(50, `Llamando a la IA para generar nuevo contenido...`);
-
-    const nuevoContenidoCapitulo = await _generarContenidoCapitulo(indice, contexto, contextoEscenaAnterior);
-
-    progressBarManager.set(80, `Actualizando datos del capítulo...`);
-
-    // Actualizar el capítulo existente
-    const capituloExistente = escenas[capituloId];
-    capituloExistente.texto = nuevoContenidoCapitulo.titulo_escena_desarrollada;
-    capituloExistente.frames = nuevoContenidoCapitulo.frames_desarrollados.map(f => ({
-        texto: f.contenido_frame || "",
-        imagen: "" // La imagen se reinicia, se puede generar de nuevo
-    }));
-    capituloExistente.generadoPorIA = true; // Reafirmar que es de IA
-
+    // Borra los frames existentes para reescribirlos
+    escenas[capituloId].frames = [];
+    escenas[capituloId].texto = `Reescribiendo Capítulo ${indice + 1}...`;
     guardarCambios();
+    actualizarLista();
+
+    await _generarCapituloFramePorFrame(capituloId, indice, contexto, contextoCapituloAnterior);
+}
+
+/**
+ * Orquesta la reescritura de múltiples capítulos, frame por frame.
+ */
+async function _reescribirMultiplesCapitulos(capituloIdInicial, contexto) {
+    const { indice: indiceInicial, capitulosDelLibro } = _obtenerIndiceYCapitulosDelLibro(capituloIdInicial);
+    if (indiceInicial === -1) throw new Error("No se pudo encontrar el capítulo de inicio.");
+
+    progressBarManager.set(5, `Eliminando capítulos antiguos...`);
+    _eliminarCapitulosDesdeIndice(indiceInicial, capitulosDelLibro);
+    
+    let contextoCapituloAnterior = "";
+    if (indiceInicial > 0) {
+        const capituloAnteriorId = capitulosDelLibro[indiceInicial - 1];
+        if (escenas[capituloAnteriorId]) {
+            contextoCapituloAnterior = escenas[capituloAnteriorId].frames.map(f => f.texto).join("\n\n");
+        }
+    }
+
+    for (let i = indiceInicial; i < contexto.resumenPorEscenas.length; i++) {
+        const nuevoCapituloId = `${libroActivoId}-capitulo-${Date.now() + i}`;
+        escenas[nuevoCapituloId] = {
+            tipo: "generica",
+            texto: `Escribiendo Capítulo ${i + 1}...`,
+            imagen: "",
+            opciones: [],
+            botones: [],
+            frames: [],
+            generadoPorIA: true,
+            libroId: libroActivoId
+        };
+        guardarCambios();
+        actualizarLista();
+
+        await _generarCapituloFramePorFrame(nuevoCapituloId, i, contexto, contextoCapituloAnterior);
+        
+        contextoCapituloAnterior = escenas[nuevoCapituloId].frames.map(f => f.texto).join("\n\n");
+    }
+}
+
+/**
+ * Proceso principal de generación de un libro capítulo a capítulo usando la IA.
+ */
+async function _poblarLibroConIA(libroId, contexto) {
+    Object.keys(escenas).forEach(id => {
+        if (escenas[id].libroId === libroId) delete escenas[id];
+    });
+    guardarCambios();
+    actualizarLista();
+
+    let contextoCapituloAnterior = ""; 
+
+    for (let i = 0; i < contexto.resumenPorEscenas.length; i++) {
+        const nuevoCapituloId = `${libroId}-capitulo-${Date.now() + i}`;
+        escenas[nuevoCapituloId] = {
+            tipo: "generica", texto: `Escribiendo Capítulo ${i + 1}...`, imagen: "",
+            opciones: [], botones: [], frames: [], generadoPorIA: true, libroId: libroId
+        };
+        guardarCambios();
+        actualizarLista();
+
+        await _generarCapituloFramePorFrame(nuevoCapituloId, i, contexto, contextoCapituloAnterior);
+        
+        contextoCapituloAnterior = escenas[nuevoCapituloId].frames.map(f => f.texto).join("\n\n");
+    }
+
+    const libroParaActualizar = libros.find(libro => libro.id === libroId);
+    if(libroParaActualizar) {
+        libroParaActualizar.iaContext = contexto;
+        localStorage.setItem("libros", JSON.stringify(libros)); 
+    }
+    
+    seleccionarLibro(libroId, libroParaActualizar.titulo);
     actualizarLista();
 }
 
 /**
- * Orquesta la reescritura de múltiples capítulos, eliminando los antiguos primero.
- * @param {string} capituloIdInicial - El ID del capítulo de inicio.
- * @param {object} contexto - El contexto de IA del libro.
+ * Genera el contenido completo de un capítulo, haciendo una llamada a la IA por cada frame
+ * y dividiendo la respuesta en párrafos individuales.
  */
-async function _reescribirMultiplesCapitulos(capituloIdInicial, contexto) {
-    const { indice: indiceInicial, capitulosDelLibro } = _obtenerIndiceYCapitulosDelLibro(capituloIdInicial);
+async function _generarCapituloFramePorFrame(capituloId, capituloIndex, contexto, contextoCapituloAnterior) {
+    let textoFramesAnteriores = "";
+    const totalFramesLogicos = contexto.cantidadFramesOriginal || 4; // Número de llamadas a la IA
+    const totalCapitulos = contexto.resumenPorEscenas.length;
 
-    if (indiceInicial === -1) {
-        throw new Error("No se pudo encontrar el capítulo de inicio.");
-    }
-
-    progressBarManager.set(10, `Eliminando capítulos antiguos...`);
-    _eliminarCapitulosDesdeIndice(indiceInicial, capitulosDelLibro);
-    
-    let contextoEscenaAnterior = "";
-    if (indiceInicial > 0) {
-        const capituloAnteriorId = capitulosDelLibro[indiceInicial - 1];
-        const framesAnteriores = escenas[capituloAnteriorId].frames.map(f => f.texto).join("\n");
-        contextoEscenaAnterior = `Contenido del capítulo anterior para dar continuidad: ${framesAnteriores}`;
-    }
-
-    for (let i = indiceInicial; i < contexto.resumenPorEscenas.length; i++) {
-        const progress = 20 + (70 * (i - indiceInicial) / (contexto.resumenPorEscenas.length - indiceInicial));
-        progressBarManager.set(progress, `Reescribiendo capítulo ${i + 1}/${contexto.resumenPorEscenas.length}...`);
-
-        const nuevoContenido = await _generarContenidoCapitulo(i, contexto, contextoEscenaAnterior);
-
-        // Crear un nuevo capítulo con el contenido generado
-        const nuevoCapituloId = `${libroActivoId}-capitulo-${Date.now()}`;
-        escenas[nuevoCapituloId] = {
-            tipo: "generica",
-            texto: nuevoContenido.titulo_escena_desarrollada,
-            imagen: "",
-            opciones: [],
-            botones: [],
-            frames: nuevoContenido.frames_desarrollados.map(f => ({ texto: f.contenido_frame || "", imagen: "" })),
-            generadoPorIA: true,
-            libroId: libroActivoId
-        };
+    for (let frameIndex = 0; frameIndex < totalFramesLogicos; frameIndex++) {
+        const progress = 10 + (80 * (capituloIndex / totalCapitulos)) + (80 / totalCapitulos * (frameIndex / totalFramesLogicos));
+        progressBarManager.set(progress, `Escribiendo sub-parte ${frameIndex + 1}/${totalFramesLogicos} (Cap. ${capituloIndex + 1})...`);
         
-        // El contenido recién generado se convierte en el contexto para el siguiente
-        contextoEscenaAnterior = `Contenido del capítulo anterior para dar continuidad: ` + nuevoContenido.frames_desarrollados.map(f => f.contenido_frame).join("\n");
+        // 1. Llama a la IA para obtener un bloque de texto con varios párrafos.
+        const bloqueDeTexto = await _generarParrafosParaFrame(capituloIndex, frameIndex, totalFramesLogicos, contexto, textoFramesAnteriores, contextoCapituloAnterior);
+        
+        // 2. Divide el bloque de texto en párrafos individuales.
+        const parrafos = bloqueDeTexto.split('\n').filter(p => p.trim() !== '');
+
+        // 3. Crea un nuevo 'frame' (un frameh en la UI) por cada párrafo.
+        parrafos.forEach(parrafo => {
+            escenas[capituloId].frames.push({ texto: parrafo, imagen: "" });
+        });
+
+        // 4. Acumula el bloque completo para el contexto de la siguiente llamada.
+        textoFramesAnteriores += bloqueDeTexto + "\n\n";
 
         guardarCambios();
-        actualizarLista(); // Actualizar la UI para ver el progreso en tiempo real
-        await new Promise(resolve => setTimeout(resolve, 200)); // Pequeña pausa
+        actualizarLista();
+        await new Promise(resolve => setTimeout(resolve, 100));
     }
+
+    // 5. Genera el título final para el capítulo.
+    const textoCapituloCompleto = escenas[capituloId].frames.map(f => f.texto).join("\n\n");
+    const tituloFinalCapitulo = await _generarTituloParaCapitulo(textoCapituloCompleto, contexto.resumenPorEscenas[capituloIndex].resumen_escena);
+    escenas[capituloId].texto = tituloFinalCapitulo;
+    
+    guardarCambios();
+    actualizarLista();
+}
+
+
+/**
+ * Llama a la IA para generar varios párrafos para un único frame.
+ */
+async function _generarParrafosParaFrame(capituloIndex, frameIndex, totalFrames, contexto, textoFramesAnteriores, textoCapituloAnterior) {
+    const resumenCapitulo = contexto.resumenPorEscenas[capituloIndex].resumen_escena;
+    
+    const prompt = `
+        **Contexto General de la Historia:**
+        - Título: ${contexto.tituloOriginal}
+        - Planteamiento: ${contexto.planteamientoGeneral}
+
+        **Contexto del Capítulo ${capituloIndex + 1}:**
+        - Resumen: ${resumenCapitulo}
+        ${textoCapituloAnterior ? `- Texto del capítulo anterior:\n${textoCapituloAnterior.substring(0, 1500)}...` : ""}
+
+        **Progreso Actual Dentro del Capítulo:**
+        ${textoFramesAnteriores ? `- Texto ya escrito en este capítulo:\n${textoFramesAnteriores}` : "Este es el primer frame del capítulo."}
+
+        **TAREA:**
+        Eres un escritor de novelas. Estás escribiendo el Frame ${frameIndex + 1} de ${totalFrames} para el Capítulo ${capituloIndex + 1}.
+        Tu objetivo es escribir **únicamente el texto para este frame**.
+        Basándote en toda la información anterior, escribe entre 3 y 5 párrafos detallados y narrativos que continúen la historia de forma lógica y atractiva.
+        No incluyas títulos, encabezados como "Frame X", ni resúmenes. Solo el texto narrativo.`;
+
+    // Se espera texto plano, no JSON.
+    return await llamarIAConFeedback(prompt, `Frame ${frameIndex + 1} de Cap. ${capituloIndex + 1}`, 'gemini-2.5-flash-lite', false);
 }
 
 /**
- * Llama a la IA para generar el contenido de un capítulo específico.
- * @param {number} indiceCapitulo - El índice del capítulo a generar (0-based).
- * @param {object} contexto - El contexto de IA del libro.
- * @param {string} contextoEscenaAnterior - El texto de la escena anterior.
- * @returns {Promise<object>} La respuesta JSON de la IA con el contenido del capítulo.
+ * Llama a la IA para generar un título para un capítulo basado en su contenido.
  */
-async function _generarContenidoCapitulo(indiceCapitulo, contexto, contextoEscenaAnterior) {
-    const resumenEspecifico = contexto.resumenPorEscenas[indiceCapitulo].resumen_escena;
+async function _generarTituloParaCapitulo(textoCompleto, resumen) {
     const prompt = `
-        **Instrucción de Idioma OBLIGATORIA:** Tu respuesta COMPLETA debe estar en el mismo idioma que el Título General.
+        **Contexto:**
+        - Resumen del Capítulo: "${resumen}"
+        - Texto Completo del Capítulo (extracto):\n"${textoCompleto.substring(0, 2000)}..."
 
-        Título General: ${contexto.tituloOriginal}
-        Planteamiento General de la Historia: ${contexto.planteamientoGeneral}
-        Resumen Específico del Capítulo ${indiceCapitulo + 1}: ${resumenEspecifico}
-        ${contextoEscenaAnterior ? `${contextoEscenaAnterior}` : ""}
-        
-        **Instrucción de Relevancia:** Puedes usar estos datos como inspiración: ${JSON.stringify(contexto.datosUsados, null, 2)}
-        
-        **Tarea Principal:** Desarrolla el capítulo ${indiceCapitulo + 1} siguiendo ESTRICTAMENTE el resumen y dando continuidad a la historia. Divídelo en ${window.cantidadframes || 4} frames y dale un título al capítulo.
-        **Formato JSON OBLIGATORIO:** {"titulo_escena_desarrollada": "string", "frames_desarrollados": [{"contenido_frame": "string"}]}`;
-
-    // Reutilizamos la función robusta de geminialfa.js
-    // Asegúrate que llamarIAConFeedback esté disponible globalmente o impórtala si usas módulos.
-    return await llamarIAConFeedback(prompt, `Reescritura Capítulo ${indiceCapitulo + 1}`, 'gemini-1.5-flash');
+        **TAREA:**
+        Basado en el resumen y el texto completo, genera un título corto, evocador y atractivo para este capítulo.
+        Responde únicamente con el título, sin comillas ni texto adicional.`;
+    
+    const titulo = await llamarIAConFeedback(prompt, `Título de Capítulo`, 'gemini-2.5-flash-lite', false);
+    return titulo.replace(/\"/g, "").trim(); // Limpiar comillas y espacios
 }
 
 /**
  * Obtiene el índice de un capítulo y la lista ordenada de todos los capítulos del libro.
- * @param {string} capituloId - El ID del capítulo a buscar.
- * @returns {{indice: number, capitulosDelLibro: string[]}}
  */
 function _obtenerIndiceYCapitulosDelLibro(capituloId) {
     const capitulosDelLibro = Object.keys(escenas)
         .filter(id => escenas[id].libroId === libroActivoId)
-        .sort(); // Asumimos un orden basado en ID (timestamp) o podrías necesitar una key de orden.
+        .sort();
     const indice = capitulosDelLibro.indexOf(capituloId);
     return { indice, capitulosDelLibro };
 }
 
 /**
  * Elimina capítulos del objeto 'escenas' a partir de un índice dado.
- * @param {number} indiceInicial - El índice a partir del cual eliminar.
- * @param {string[]} capitulosDelLibro - Array de IDs de capítulos ordenados.
  */
 function _eliminarCapitulosDesdeIndice(indiceInicial, capitulosDelLibro) {
     for (let i = indiceInicial; i < capitulosDelLibro.length; i++) {
@@ -231,4 +276,55 @@ function _eliminarCapitulosDesdeIndice(indiceInicial, capitulosDelLibro) {
     }
     guardarCambios();
     actualizarLista();
+}
+
+/**
+ * Se ejecuta al confirmar en el modal. Orquesta la GENERACIÓN de un libro.
+ */
+async function confirmarPobladoDeLibro() {
+    const guionSelect = document.getElementById('guion-origen-select');
+    const libroSeleccionadoEl = document.querySelector('.libro-seleccionable.seleccionado');
+
+    const guionId = guionSelect.value;
+    const libroId = libroSeleccionadoEl ? libroSeleccionadoEl.dataset.libroId : null;
+
+    if (!guionId || !libroId) {
+        alert("Por favor, selecciona un guion y un libro.");
+        return;
+    }
+
+    const libroSeleccionado = libros.find(libro => libro.id === libroId);
+    const scriptData = guionesGuardados[guionId];
+
+    if (!libroSeleccionado || !scriptData) {
+        alert("Error: No se encontraron los datos del libro o del guion.");
+        return;
+    }
+
+    if (confirm(`¿Generar el libro "${libroSeleccionado.titulo}" usando el guion "${scriptData.tituloOriginal}"? Se llamará a la IA para escribir cada frame y se borrará el contenido actual.`)) {
+        
+        if(typeof cerrarModalSeleccionLibro === 'function') {
+            cerrarModalSeleccionLibro();
+        }
+        
+        try {
+            if (typeof progressBarManager !== 'undefined') {
+                progressBarManager.start(`Generando libro desde guion...`);
+            }
+
+            await _poblarLibroConIA(libroId, scriptData);
+
+            if (typeof progressBarManager !== 'undefined') {
+                progressBarManager.finish("Libro generado con éxito.");
+            }
+            alert("¡Libro generado con éxito desde el guion!");
+
+        } catch (error) {
+            console.error("Error al poblar el libro con IA:", error);
+            if (typeof progressBarManager !== 'undefined') {
+                progressBarManager.error(`Error: ${error.message}`);
+            }
+            alert(`No se pudo generar el libro: ${error.message}`);
+        }
+    }
 }
