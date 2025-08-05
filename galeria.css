@@ -633,7 +633,7 @@ overflow-x: hidden; ;
 
 /* Clase para mostrar el overlay */
 .image-overlay.visible {
-  display: flex; /* Cambiar a flex para centrar el contenido */
+  display: none; /* Cambiar a flex para centrar el contenido */
 }
 
 /* Estilo para la imagen ampliada */

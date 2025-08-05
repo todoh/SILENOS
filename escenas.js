@@ -310,14 +310,17 @@ document.addEventListener('DOMContentLoaded', () => {
         enlargedImg.src = ""; 
     }
 
+    // Cierra el preview si se hace clic fuera de la imagen (en el fondo del overlay)
     overlay.addEventListener('click', (event) => {
         if (event.target === overlay) {
             closePreview();
         }
     });
-  
+    
+    // Cierra el preview con el botón X
     closeBtn.addEventListener('click', closePreview);
 
+    // Cierra el preview con la tecla "Escape"
     document.addEventListener('keydown', (event) => {
         if (event.key === "Escape" && overlay.classList.contains('visible')) {
             closePreview();
@@ -367,44 +370,3 @@ function crearEscenasAutomaticamente(nombreBase, numEscenas, numFrames) {
 function reiniciarContadorEscenas() {
     ultimoId = 0;
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-
-  const overlay = document.getElementById('image-preview-overlay');
-  const enlargedImg = document.getElementById('enlarged-img');
-  const closeBtn = overlay.querySelector('.close-btn');
-
-  function closePreview() {
-    overlay.classList.remove('visible');
-  }
-
-  document.addEventListener('click', (event) => {
-    
-    const targetFrameDiv = event.target.closest('div.frameh');
-    
-    if (targetFrameDiv) {
-      const imageInside = targetFrameDiv.querySelector('img');
-      
-      if (imageInside) {
-        event.preventDefault();
-        enlargedImg.src = imageInside.src;
-        overlay.classList.add('visible');
-      }
-    }
-  });
-
-  overlay.addEventListener('click', (event) => {
-    if (event.target === overlay) {
-      closePreview();
-    }
-  });
-  
-  closeBtn.addEventListener('click', closePreview);
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key === "Escape" && overlay.classList.contains('visible')) {
-      closePreview();
-    }
-  });
-
-});
