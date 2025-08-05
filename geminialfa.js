@@ -205,7 +205,7 @@ async function enviarTextoConInstrucciones() {
             `**Instrucción Maestra OBLIGATORIA:** Basa la historia en estos datos: ${JSON.stringify(datosAgrupados, null, 2)}\n\n` : "";
 
         const promptPaso1 = `${contextoInicialDatos}**Idea Inicial:** "${geminichat}"\n\n**Tarea:** Genera un título y un resumen general de la historia.\n**Formato JSON OBLIGATORIO:** {"titulo_historia_sugerido": "string", "planteamiento_general_historia": "string"}`;
-        const respuestaPaso1 = await llamarIAConFeedback(promptPaso1, "Paso 1: Título y Planteamiento", 'gemini-2.5-flash');
+        const respuestaPaso1 = await llamarIAConFeedback(promptPaso1, "Paso 1: Título y Planteamiento", 'gemini-2.5-pro');
 
         tituloHistoriaGlobal = respuestaPaso1.titulo_historia_sugerido || "Historia Sin Título";
         planteamientoGeneralGlobal = respuestaPaso1.planteamiento_general_historia || "No se generó planteamiento.";
@@ -226,7 +226,7 @@ async function enviarTextoConInstrucciones() {
 
         progressBarManager.set(25, 'Dividiendo la historia en capítulos...');
         const promptPaso2 = `Título: ${tituloHistoriaGlobal}\nPlanteamiento: ${planteamientoGeneralGlobal}\n**Tarea:** Divide el planteamiento en ${window.cantidaddeescenas} resúmenes de capítulo.\n**Formato JSON OBLIGATORIO:** {"resumen_por_escenas": [{"resumen_escena": "string"}]}`;
-        const respuestaPaso2 = await llamarIAConFeedback(promptPaso2, `Paso 2: Resúmenes de Capítulos`, 'gemini-2.5-flash');
+        const respuestaPaso2 = await llamarIAConFeedback(promptPaso2, `Paso 2: Resúmenes de Capítulos`, 'gemini-2.5-pro');
         resumenPorEscenasGlobal = respuestaPaso2.resumen_por_escenas || [];
         ultimaHistoriaGeneradaJson.resumenPorEscenas = resumenPorEscenasGlobal;
 

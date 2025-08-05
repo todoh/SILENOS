@@ -235,7 +235,7 @@ async function _generarParrafosParaFrame(capituloIndex, frameIndex, totalFrames,
         No incluyas títulos, encabezados como "Frame X", ni resúmenes. Solo el texto narrativo.`;
 
     // Se espera texto plano, no JSON.
-    return await llamarIAConFeedback(prompt, `Frame ${frameIndex + 1} de Cap. ${capituloIndex + 1}`, 'gemini-2.5-flash-lite', false);
+    return await llamarIAConFeedback(prompt, `Frame ${frameIndex + 1} de Cap. ${capituloIndex + 1}`, 'gemini-2.5-flash', false);
 }
 
 /**
@@ -251,7 +251,7 @@ async function _generarTituloParaCapitulo(textoCompleto, resumen) {
         Basado en el resumen y el texto completo, genera un título corto, evocador y atractivo para este capítulo.
         Responde únicamente con el título, sin comillas ni texto adicional.`;
     
-    const titulo = await llamarIAConFeedback(prompt, `Título de Capítulo`, 'gemini-2.5-flash-lite', false);
+    const titulo = await llamarIAConFeedback(prompt, `Título de Capítulo`, 'gemini-2.5-flash', false);
     return titulo.replace(/\"/g, "").trim(); // Limpiar comillas y espacios
 }
 
