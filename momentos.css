@@ -134,7 +134,7 @@ align-items: end;}
     width: 100%; 
     height: 100%; 
     pointer-events: none; 
-    z-index: 0;
+    z-index:9999999;
     overflow: visible;
 }
 
@@ -165,7 +165,7 @@ align-items: end;}
     padding: 5px;
     box-sizing: border-box;
     flex-shrink: 0; 
-    height: 30%; 
+    height: 15%; 
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -302,4 +302,68 @@ align-items: end;}
 
 #momentos-controles-ia {
     display: none;
+}
+/* --- ESTILOS PARA LA IMAGEN Y BOTÓN DE CARGA EN NODOS --- */
+
+/* Contenedor principal del contenido visual del nodo */
+.momento-contenido {
+     height: 60%; /* Altura del área de la imagen */
+    background-color: #e9ebee; /* Color de fondo mientras no hay imagen */
+    border-radius: 4px;
+    margin: 5px 10px;
+    overflow: hidden; /* Oculta partes de la imagen que se salgan */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px dashed #ccc;
+}
+
+/* Estilo para la imagen de fondo del nodo */
+.momento-imagen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Hace que la imagen cubra el área sin deformarse */
+    z-index: 1;
+}
+
+/* Oculta el input de archivo por defecto */
+.input-imagen-oculto {
+    display: none;
+}
+
+/* Estilo para el botón (la etiqueta 'label') que activa la carga */
+.btn-cargar-imagen { top: 0%;
+    
+    position: absolute;
+    z-index: 999999; /* Se asegura de que esté por encima de la imagen */
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-cargar-imagen:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.btn-cargar-imagen i {
+    font-size: 12px;
+}
+
+ 
+
+/* Muestra el botón de carga al pasar el ratón por encima del área, si hay imagen */
+.momento-contenido:hover .btn-cargar-imagen {
+    opacity: 1;
+    pointer-events: auto;
 }

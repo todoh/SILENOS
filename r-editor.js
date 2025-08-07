@@ -144,32 +144,191 @@ function handleGridClick(event) {
     renderGrid();
 }
 
-function populatePalettes() {
+/**
+ * Genera una previsualización 3D de un modelo JSON y la devuelve como una imagen DataURL.
+ * @param {object} modelJson - El objeto JSON que define el modelo.
+ * @param {number} [size=80] - El tamaño (ancho y alto) de la imagen de previsualización.
+ * @returns {Promise<string>} Una promesa que se resuelve con el DataURL de la imagen.
+ */
+async function generate3DPreview(modelJson, size = 80) {
+    // Asegurarse de que THREE.js y la función de creación de modelos estén disponibles
+    if (typeof THREE === 'undefined' || typeof createModelFromJSON === 'undefined') {
+        console.error("generate3DPreview requiere THREE.js y createModelFromJSON.");
+        // Devuelve una imagen de marcador de posición en caso de error
+        return 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="40">❓</text></svg>';
+    }
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(size, size);
+
+    // Iluminación básica para que el objeto se vea bien
+    scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
+    dirLight.position.set(1.5, 2, 1);
+    scene.add(dirLight);
+
+    // Crear el modelo a partir del JSON
+    const model = createModelFromJSON(modelJson);
+    scene.add(model);
+
+    // Centrar la cámara en el objeto
+    const box = new THREE.Box3().setFromObject(model);
+    const modelSize = box.getSize(new THREE.Vector3());
+    const modelCenter = box.getCenter(new THREE.Vector3());
+
+    const maxDim = Math.max(modelSize.x, modelSize.y, modelSize.z);
+    const fov = camera.fov * (Math.PI / 180);
+    let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+    cameraZ *= 1.6; // Añadir un poco de espacio para que no toque los bordes
+
+    camera.position.set(modelCenter.x, modelCenter.y, modelCenter.z + cameraZ);
+    camera.lookAt(modelCenter);
+
+    // Renderizar la escena y obtener el resultado
+    renderer.render(scene, camera);
+    const dataUrl = renderer.domElement.toDataURL('image/png');
+
+    // Limpieza para liberar memoria
+    renderer.dispose();
+    model.traverse(object => {
+        if (object.isMesh) {
+            if (object.geometry) object.geometry.dispose();
+            if (object.material) object.material.dispose();
+        }
+    });
+
+    return dataUrl;
+}
+
+
+async function populatePalettes() {
     editorDOM.texturePalette.innerHTML = '<h2>Texturas de Terreno</h2>';
     editorDOM.entityPalette.innerHTML = '<h2>Entidades</h2>';
-    
+
+    // Crear los nuevos contenedores de cuadrícula
+    const textureGrid = document.createElement('div');
+    textureGrid.className = 'palette-container';
+    editorDOM.texturePalette.appendChild(textureGrid);
+
+    const entityGrid = document.createElement('div');
+    entityGrid.className = 'palette-container';
+    editorDOM.entityPalette.appendChild(entityGrid);
+
+    // Poblar Texturas
     for (const id in tools.textures) {
         const tool = tools.textures[id];
         const btn = document.createElement('button');
         btn.className = 'palette-item';
         btn.dataset.category = 'texture';
         btn.dataset.id = id;
-        btn.innerHTML = `<div class="color-swatch" style="background-color:${tool.color};"></div> ${tool.name}`;
+        btn.innerHTML = `
+            <div class="palette-item-preview">
+                <div class="color-swatch" style="background-color:${tool.color};"></div>
+            </div>
+            <span>${tool.name}</span>
+        `;
         btn.onclick = () => selectTool('texture', id);
-        editorDOM.texturePalette.appendChild(btn);
+        textureGrid.appendChild(btn);
     }
-    
-    for (const id in tools.entities) {
-        const tool = tools.entities[id];
+
+    // Poblar Entidades (base y personalizadas)
+    const allEntities = {...tools.entities, ...tools.customEntities };
+    for (const id in allEntities) {
+        const tool = allEntities[id];
+        const isCustom = !!tools.customEntities[id];
+        const category = isCustom ? 'customEntity' : 'entity';
+        
         const btn = document.createElement('button');
         btn.className = 'palette-item';
-        btn.dataset.category = 'entity';
+        btn.dataset.category = category;
         btn.dataset.id = id;
-        btn.innerHTML = `<span style="font-size: 20px; margin-right: 10px;">${tool.icon}</span> ${tool.name}`;
-        btn.onclick = () => selectTool('entity', id);
-        editorDOM.entityPalette.appendChild(btn);
+
+        let previewHTML = '';
+        const modelData = tool.model || (tool.modelType === 'json3d' ? tool.icon : null);
+
+        if (modelData) {
+            // Generar previsualización 3D
+            const previewSrc = await generate3DPreview(modelData);
+            previewHTML = `<div class="palette-item-preview"><img src="${previewSrc}" alt="${tool.name}"></div>`;
+        } else if (tool.icon && (tool.icon.startsWith('data:image') || tool.icon.startsWith('http'))) {
+            // Usar imagen de sprite
+            previewHTML = `<div class="palette-item-preview"><img src="${tool.icon}" alt="${tool.name}"></div>`;
+        } else {
+            // Usar icono de emoji como último recurso
+            previewHTML = `<div class="palette-item-preview palette-item-preview-emoji">${tool.icon || '❓'}</div>`;
+        }
+
+        btn.innerHTML = `${previewHTML}<span>${tool.name}</span>`;
+        btn.onclick = () => selectTool(category, id);
+        entityGrid.appendChild(btn);
     }
 }
+
+
+async function importCharacterAsTool(event) { // <--- Función ahora es async
+    const item = event.currentTarget;
+    const name = item.dataset.name;
+    const type = item.dataset.type;
+    const toolId = `custom_${name.replace(/\s+/g, '_')}`;
+
+    if (tools.customEntities[toolId]) {
+        alert(`El dato "${name}" ya ha sido importado.`);
+        return;
+    }
+
+    const newTool = {
+        name: name,
+        type: 'custom',
+        modelType: type,
+        dataRef: name,
+        isSolid: true,
+        radius: 1.2
+    };
+
+    let previewHTML = '';
+    if (type === 'sprite') {
+        const imgSrc = item.dataset.imgSrc;
+        newTool.icon = imgSrc;
+        previewHTML = `<div class="palette-item-preview"><img src="${imgSrc}" alt="${name}"></div>`;
+    } else if (type === 'json3d') {
+        const modelData = JSON.parse(item.dataset.modelData);
+        newTool.icon = modelData;
+        // Generar previsualización 3D al importar
+        const previewSrc = await generate3DPreview(modelData);
+        previewHTML = `<div class="palette-item-preview"><img src="${previewSrc}" alt="${name}"></div>`;
+    }
+
+    tools.customEntities[toolId] = newTool;
+
+    const entityGrid = editorDOM.entityPalette.querySelector('.palette-container');
+    if (entityGrid) {
+        const btn = document.createElement('button');
+        btn.className = 'palette-item';
+        btn.dataset.category = 'customEntity';
+        btn.dataset.id = toolId;
+        btn.innerHTML = `${previewHTML}<span>${name}</span>`;
+        btn.onclick = () => selectTool('customEntity', toolId);
+        entityGrid.appendChild(btn);
+    }
+
+    closeCharacterModal();
+    alert(`¡"${name}" añadido a la paleta de entidades!`);
+}
+
+// --- INICIALIZACIÓN Y EVENT LISTENERS (ACTUALIZADO) ---
+document.addEventListener('DOMContentLoaded', async () => { // <--- Callback ahora es async
+    await populatePalettes(); // <--- Esperar a que las paletas se generen
+    renderGrid();
+    selectTool('texture', 'grass');
+    populateWorldList();
+
+    // ... El resto de tus event listeners permanecen igual
+    editorDOM.mapGrid.addEventListener('mousedown', handleGridClick);
+    editorDOM.zoomInButton.addEventListener('click', zoomIn);
+    // ... etc.
+});
 
 function selectTool(category, id) {
     activeTool = { category, id };
@@ -194,51 +353,7 @@ function doPanning(event) { if (!PanningState.isPanning) return; event.preventDe
 function openCharacterModal() { editorDOM.characterGrid.innerHTML = ''; const modalTitle = editorDOM.characterModal.querySelector('h3'); if(modalTitle) { modalTitle.textContent = 'Selecciona un Dato para Importar'; } const characterDataElements = document.querySelectorAll('#listapersonajes .personaje'); characterDataElements.forEach(charElement => { const nombre = charElement.querySelector('.nombreh')?.value; if (!nombre) return; const promptVisualText = charElement.querySelector('.prompt-visualh')?.value; let isJsonModel = false; let jsonData = null; if (promptVisualText) { try { const parsed = JSON.parse(promptVisualText); if (parsed && typeof parsed === 'object' && (Array.isArray(parsed.parts) || Array.isArray(parsed.objects) || parsed.hasOwnProperty('chunks'))) { isJsonModel = true; jsonData = parsed; } } catch (e) {} } const item = document.createElement('div'); item.className = 'character-grid-item'; item.dataset.name = nombre; if (isJsonModel) { item.dataset.type = 'json3d'; item.dataset.modelData = JSON.stringify(jsonData); item.innerHTML = `<div style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 40px;">🧊</div><span>${nombre}</span>`; item.onclick = importCharacterAsTool; editorDOM.characterGrid.appendChild(item); } else { const imagenSrc = charElement.querySelector('.personaje-visual img')?.src; if (imagenSrc && !imagenSrc.endsWith('/')) { item.dataset.type = 'sprite'; item.dataset.imgSrc = imagenSrc; item.innerHTML = `<img src="${imagenSrc}" alt="${nombre}"><span>${nombre}</span>`; item.onclick = importCharacterAsTool; editorDOM.characterGrid.appendChild(item); } } }); editorDOM.characterModal.style.display = 'flex'; }
 function closeCharacterModal() { editorDOM.characterModal.style.display = 'none'; }
 
-function importCharacterAsTool(event) {
-    const item = event.currentTarget;
-    const name = item.dataset.name;
-    const type = item.dataset.type;
-    const toolId = `custom_${name.replace(/\s+/g, '_')}`;
-
-    if (tools.customEntities[toolId]) {
-        alert(`El dato "${name}" ya ha sido importado.`);
-        return;
-    }
-
-    const newTool = {
-        name: name,
-        type: 'custom',
-        modelType: type,
-        dataRef: name, 
-        isSolid: true,
-        radius: 1.2
-    };
-
-    let buttonIconHTML = '';
-    if (type === 'sprite') {
-        const imgSrc = item.dataset.imgSrc;
-        newTool.icon = imgSrc;
-        buttonIconHTML = `<img src="${imgSrc}" class="entity-image-icon" alt="${name}">`;
-    } else if (type === 'json3d') {
-        const modelData = JSON.parse(item.dataset.modelData);
-        newTool.icon = modelData;
-        buttonIconHTML = `<span style="font-size: 20px; margin-right: 10px;">🧊</span>`;
-    }
-
-    tools.customEntities[toolId] = newTool;
-
-    const btn = document.createElement('button');
-    btn.className = 'palette-item';
-    btn.dataset.category = 'customEntity';
-    btn.dataset.id = toolId;
-    btn.innerHTML = `${buttonIconHTML} ${name}`;
-    btn.onclick = () => selectTool('customEntity', toolId);
-    editorDOM.entityPalette.appendChild(btn);
-
-    closeCharacterModal();
-    alert(`¡"${name}" añadido a la paleta de entidades!`);
-}
-
+ 
 
 // --- Sistema de Guardado y Carga ---
 function loadWorldData(worldName) {

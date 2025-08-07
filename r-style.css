@@ -1,13 +1,4 @@
-/* --- ESTILOS GLOBALES Y DEL EDITOR (ACTUALIZADOS) --- */
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    margin: 0;
-  
-    color: white;
-    overflow: hidden;
-}
-
-/* Todos los selectores de ID han sido actualizados con el prefijo "r-" */
+ 
 #r-editor-container {
     display: flex;
     flex-direction: column;
@@ -19,22 +10,12 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 10px 20px;
-   
     border-bottom: 1px solid #444;
     flex-shrink: 0;
 }
 
-#r-main-header h1 {
-    margin: 0;
-    font-size: 1.5em;
-}
-
-#r-main-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
+#r-main-header h1 { margin: 0; font-size: 1.5em; }
+#r-main-controls { display: flex; align-items: center; gap: 10px; }
 #r-main-controls button {
     padding: 8px 15px;
     font-size: 1em;
@@ -45,110 +26,100 @@ body {
     cursor: pointer;
     transition: background-color 0.2s;
 }
+#r-main-controls button:hover { background-color: #5a9bdc; }
 
-#r-main-controls button:hover {
-    background-color: #5a9bdc;
-}
-
-#r-zoom-controls {
-    display: flex;
-    gap: 5px;
-    border: 1px solid #555;
-    border-radius: 5px;
-    padding: 2px;
-    margin-right: 10px;
-}
-
-.zoom-btn {
-    width: 35px;
-    height: 35px;
-    font-size: 20px;
-    font-weight: bold;
-    padding: 0;
-    background-color: #555 !important;
-    line-height: 35px;
-    text-align: center;
-}
-
-.zoom-btn:hover {
-    background-color: #666 !important;
-}
-
-#r-main-content {
-    display: flex;
-    flex-grow: 1;
-    overflow: hidden;
-}
+#r-main-content { display: flex; flex-grow: 1; overflow: hidden; }
 
 #r-side-panel {
     width: 25%;
- 
+    min-width: 280px;
     padding: 15px;
     overflow-y: auto;
     border-right: 1px solid #444;
     flex-shrink: 0;
 }
 
-.palette {
-    margin-bottom: 25px;
-}
-
 .palette h2 {
     margin-top: 0;
+    margin-bottom: 15px;
     border-bottom: 1px solid #555;
-    padding-bottom: 8px;
+    padding-bottom: 10px;
     font-size: 1.2em;
+}
+
+/* --- INICIO: NUEVOS ESTILOS DE CUADRÍCULA PARA PALETAS --- */
+.palette-container {
+    display: grid;
+    /* Crea una cuadrícula responsiva con columnas de al menos 85px */
+    grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+    gap: 10px; /* Espacio entre los elementos */
 }
 
 .palette-item {
     display: flex;
+    flex-direction: column; /* Apila la vista previa y el texto verticalmente */
     align-items: center;
-    width: calc(100% - 20px);
-    padding: 10px;
-    margin-bottom: 5px;
+    justify-content: flex-start;
+    height: 110px; /* Altura fija para cada elemento */
+    padding: 8px;
     border: 2px solid #555;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
- 
-    color: rgb(0, 0, 0);
-    font-size: 1em;
-    text-align: left;
+    background-color: #444;
+    color: white;
+    text-align: center;
+    font-size: 12px;
     text-transform: capitalize;
     transition: border-color 0.2s, background-color 0.2s;
+    word-break: break-word;
+    margin-bottom: 5px;
 }
 
-.palette-item:hover {
-    border-color: #777;
-}
+.palette-item:hover { border-color: #777; }
 
 .palette-item.selected {
     border-color: #87ceeb;
- 
+    background-color: #3d5a79;
     font-weight: bold;
 }
 
-.palette-item .color-swatch {
-    width: 20px;
-    height: 20px;
-    border-radius: 3px;
-    margin-right: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.5);
+/* Contenedor para la vista previa (imagen 3D, emoji o color) */
+.palette-item-preview {
+    width: 70px;
+    height: 70px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.2);
 }
 
-/* Estilo para las imágenes de los personajes en la paleta */
-.palette-item .entity-image-icon {
-    width: 24px;
-    height: 24px;
-    margin-right: 10px;
-    object-fit: cover;
-    border-radius: 3px;
+/* Estilo para la imagen de previsualización 3D o sprite */
+.palette-item-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
+
+/* Estilo para el icono de emoji */
+.palette-item-preview-emoji {
+    font-size: 40px;
+}
+
+/* Estilo para la muestra de color de la textura */
+.color-swatch {
+    width: 100%;
+    height: 100%;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+/* --- FIN: NUEVOS ESTILOS DE CUADRÍCULA --- */
 
 
 #r-map-grid-container {
     flex-grow: 1;
     overflow: auto;
- 
     text-align: center;
     cursor: grab;
 }
@@ -161,6 +132,7 @@ body {
     gap: 5px;
 }
 
+/* El resto de tus estilos (modal, grid-cell, etc.) pueden permanecer igual */
 .grid-cell {
     width: 125px;
     height: 125px;
@@ -349,3 +321,144 @@ body {
     color: #ddd;
 }
 /* --- FIN: NUEVOS ESTILOS --- */
+/* --- ESTILOS GLOBALES Y DEL EDITOR (ACTUALIZADOS) --- */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    color: white;
+    overflow: hidden;
+}
+
+#r-editor-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+#r-main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    border-bottom: 1px solid #444;
+    flex-shrink: 0;
+}
+
+#r-main-header h1 { margin: 0; font-size: 1.5em; }
+#r-main-controls { display: flex; align-items: center; gap: 10px; }
+#r-main-controls button {
+    padding: 8px 15px;
+    font-size: 1em;
+    background-color: #4682B4;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+#r-main-controls button:hover { background-color: #5a9bdc; }
+
+#r-main-content { display: flex; flex-grow: 1; overflow: hidden; }
+
+#r-side-panel {
+    width: 25%;
+    min-width: 280px;
+    padding: 15px;
+    overflow-y: auto;
+    border-right: 1px solid #444;
+    flex-shrink: 0;
+}
+
+.palette h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #555;
+    padding-bottom: 10px;
+    font-size: 1.2em;
+}
+
+/* --- INICIO: NUEVOS ESTILOS DE CUADRÍCULA PARA PALETAS --- */
+.palette-container {
+    display: grid;
+    /* Crea una cuadrícula responsiva con columnas de al menos 85px */
+    grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+    gap: 10px; /* Espacio entre los elementos */
+}
+
+.palette-item {
+    display: flex;
+    flex-direction: column; /* Apila la vista previa y el texto verticalmente */
+    align-items: center;
+    justify-content: flex-start;
+    height: 110px; /* Altura fija para cada elemento */
+    padding: 8px;
+    border: 2px solid #555;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: #444;
+    color: white;
+    text-align: center;
+    font-size: 12px;
+    text-transform: capitalize;
+    transition: border-color 0.2s, background-color 0.2s;
+    word-break: break-word;
+}
+
+.palette-item:hover { border-color: #777; }
+
+.palette-item.selected {
+    border-color: #87ceeb;
+    background-color: #3d5a79;
+    font-weight: bold;
+}
+
+/* Contenedor para la vista previa (imagen 3D, emoji o color) */
+.palette-item-preview {
+    width: 70px;
+    height: 70px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Estilo para la imagen de previsualización 3D o sprite */
+.palette-item-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Estilo para el icono de emoji */
+.palette-item-preview-emoji {
+    font-size: 40px;
+}
+
+/* Estilo para la muestra de color de la textura */
+.color-swatch {
+    width: 100%;
+    height: 100%;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+/* --- FIN: NUEVOS ESTILOS DE CUADRÍCULA --- */
+
+
+#r-map-grid-container {
+    flex-grow: 1;
+    overflow: auto;
+    text-align: center;
+    cursor: grab;
+}
+
+#r-map-grid {
+    display: grid;
+    cursor: pointer;
+    transition: transform 0.2s ease-out;
+    margin: 20px;
+    gap: 5px;
+}
+
+/* El resto de tus estilos (modal, grid-cell, etc.) pueden permanecer igual */

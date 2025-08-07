@@ -283,8 +283,27 @@ function actualizarLista() {
                 }
             };
 
-            frameDiv.append(inputTexto, botonSubirImagen, inputImagen, imagenPreview, agregarFrameBtn, eliminarFrameBtn, generarImagenBtn);
-            contenedorFrames.appendChild(frameDiv);
+// =================================================================
+// Botón para generar 9 imágenes en serie
+// =================================================================
+          const generarImagenesEnSerieBtn = document.createElement("button");
+           generarImagenesEnSerieBtn.id = 'ideframe';
+            generarImagenesEnSerieBtn.className = 'ideframeh4'; 
+            generarImagenesEnSerieBtn.title = 'Generar 9 Imágenes con IA en serie';
+            generarImagenesEnSerieBtn.innerHTML = '✨×9';
+            generarImagenesEnSerieBtn.onclick = (event) => {
+                event.stopPropagation();
+                if (window.generarMultiplesImagenesParaFrameConIA) {
+                    generarMultiplesImagenesParaFrameConIA(id, index);
+                } else {
+                    alert("La función de generación de imágenes en serie no está disponible.");
+                }
+            };
+            
+            frameDiv.append(inputTexto, botonSubirImagen, inputImagen, imagenPreview, agregarFrameBtn, eliminarFrameBtn, generarImagenBtn, generarImagenesEnSerieBtn);
+            contenedorFrames.appendChild(frameDiv);
+
+            
         });
 
         divCapitulo.appendChild(contenedorFrames);

@@ -82,6 +82,7 @@ crossorigin="anonymous"></script>
             <button  id="btema" class="tons" id="theme-toggle-button" onclick="toggleTheme()">🌙</button>
             <button id="bvista" class="tons" title="Cambiar a Vista Clara">🔳</button>
             <button id="bajustes" class="tons" onclick="abrirModalConfig()">⚙️Configuración</button>
+            <button class="pro" onclick="abrirModalExportar()"  >💽 Exportar</button>
         </div>
         <div class="asistente-categoria">
             <button id="bproyecto" class="tons" onclick="abrirVentana('proyecto');">🏗️Proyecto</button>
@@ -106,7 +107,9 @@ crossorigin="anonymous"></script>
             <button id="beditor" class="tons" onclick="abrirVentana('editor2');"  style="display: none;" >📝Editor</button> 
             <button class="tons" onclick="abrirVentana('programador');"  >💻Programador</button>  
             <button id="bdatos" class="tons" onclick="abrirVentana('renderizador');">🎨Renderizador</button> 
-            <button class="tons" onclick="abrirVentana('interactivo');" style="display: none;" >🎮Videojuego</button>
+            <button class="tons" onclick="abrirVentana('interactivo');"   >🎮Videojuego</button>
+            <button class="tons" onclick="abrirVentana('momentos');"    >Librojuego</button>
+
         </div>
      
 
@@ -394,7 +397,9 @@ crossorigin="anonymous"></script>
 </div>
 
 <div id="momentos" class="pantalla" data-titulo="Aventura Interactiva">
-    <button class="pro5" id="agregar-momento-btn">➕</button>
+        <button class="pro16"  title="Acción contextual"  onclick="abrirModalAIDatos()" >✨</button>
+
+    <button class="pro5" id="agregar-momento-btn">+</button>
     <div id="momentos-controles-flotantes">
         
         <button class="pro" id="preview-connections-btn" title="Muestra u oculta las líneas de conexión entre momentos.">Previsualizar Conexiones</button>
@@ -663,7 +668,7 @@ crossorigin="anonymous"></script>
   <button id="agregar-toma-btn" class="pro16 "  >+</button>
     <button id="crear-escena-btn" class="pro6" onclick="abrirSelectorDeEscena(event)">🎬</button>
     <div class="escena-toolbar">
-         <button id="generargraficos" >Generar gráficos de la escena con IA</button>
+    
         <select id="escenas-dropdown"></select>
         <input type="text" id="escena-nombre-input" placeholder="Nombre de la Escena...">
       
@@ -864,7 +869,7 @@ crossorigin="anonymous"></script>
     <img src="catalogo/sileno.jpg" alt="Sileno: El Toque del Vacío: Midas, Sileno y la Sombra Dionisíaca" />
     <div class="info-libro">
         <h3>Sileno: El Toque del Vacío: Midas, Sileno y la Sombra Dionisíaca</h3>
-        <p>Sileno: El Toque del Vacío: Midas, Sileno y la Sombra Dionisíaca</p><iframe width="560" height="315" src="https://www.youtube.com/embed/BK47D3gxGfA?si=ZY51QSXlUNYIvZ5Z" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        <p>Sileno: El Toque del Vacío: Midas, Sileno y la Sombra Dionisíaca</p><iframe  src="https://www.youtube.com/embed/BK47D3gxGfA?si=ZY51QSXlUNYIvZ5Z" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         <a href="https://www.amazon.es/dp/B0FJGHZZRQ" target="_blank" rel="noopener noreferrer" class="compra">Comprar</a>
     </div>
 </div>
@@ -1748,7 +1753,12 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
 <!-- <script src="escenas/geminivideo.js"></script> <!-- This was a duplicate load and has been removed -->
 
 <script src="escenas/generacion2d.js"></script>
-<script src="momentos.js"></script>
+
+
+<script src="momentos-core.js"></script>
+<script src="momentos-vista.js"></script>
+<script src="momentos-ia.js"></script>
+
 <script src="editor-momento.js"></script> 
 <script src="guion.js"></script>
 <script src="galeria.js"></script> 

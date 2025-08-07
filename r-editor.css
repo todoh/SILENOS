@@ -1,0 +1,251 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    background-color: #333;
+    color: white;
+}
+
+#editor-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #222;
+    border-bottom: 1px solid #444;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.5em;
+}
+
+#controls button {
+    padding: 10px 20px;
+    font-size: 1em;
+    background-color: #4682B4;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#controls button:hover {
+    background-color: #5a9bdc;
+}
+
+#main-content {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+#side-panel {
+    width: 300px;
+    background-color: #2a2a2a;
+    padding: 15px;
+    overflow-y: auto;
+    border-right: 1px solid #444;
+}
+
+.palette {
+    margin-bottom: 20px;
+}
+
+ 
+
+
+.palette h2 {
+    margin-top: 0;
+    border-bottom: 1px solid #555;
+    padding-bottom: 5px;
+    font-size: 1.2em;
+}
+
+.palette-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 5px;
+    border: 2px solid #555;
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: #444;
+    color: white;
+    font-size: 1em;
+    text-align: left;
+    text-transform: capitalize;
+}
+
+.palette-item:hover {
+    border-color: #777;
+}
+
+.palette-item.selected {
+    border-color: #4682B4;
+    background-color: #3d5a79;
+    font-weight: bold;
+}
+
+.entity-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+}
+
+#map-grid-container {
+    flex-grow: 1;
+    overflow: auto; /* Permite scroll y zoom */
+    background-color: #1c1e21;
+}
+
+#map-grid {
+    display: grid;
+    cursor: crosshair;
+}
+
+.grid-cell {
+    aspect-ratio: 1 / 1;
+    border: 1px solid #444;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5em;
+}
+.grid-cell:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+}
+.grid-cell span {
+    pointer-events: none; /* para que el click vaya a la celda */
+}
+
+/* Colores para las texturas (similar al minimapa) */
+.texture-water { background-color: #3B698B; }
+.texture-grass { background-color: #7C9C4A; }
+.texture-mountain { background-color: #615953; }
+.texture-savanna { background-color: #D2B48C; }
+.texture-snow { background-color: #F0F8FF; }
+.texture-sand { background-color: #EDC9AF; }
+.texture-forest_floor { background-color: #3E7C4F; }
+
+/* Modal de previsualización */
+#game-container {
+    width: 100%;
+    height: 90%; /* Ajusta según el contenido del modal */
+    position: relative;
+    background-color: #000;
+}
+
+/* r-style.css o similar */
+
+/* --- INICIO: ESTILOS PARA INVENTARIO --- */
+#inventory-button {
+    position: absolute;
+    bottom: 25px;
+    right: 25px;
+    z-index: 1002; /* Por encima del canvas del juego */
+    background-color: #3a3a3a;
+    border: 2px solid #888;
+    color: white;
+    font-size: 2em;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+#inventory-button:hover {
+    background-color: #555;
+    transform: scale(1.1);
+}
+
+#inventory-panel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: clamp(300px, 60%, 500px);
+    height: 70%;
+    background-color: rgba(40, 40, 40, 0.95);
+    border: 2px solid #aaa;
+    border-radius: 10px;
+    z-index: 1003;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    backdrop-filter: blur(5px);
+}
+
+#inventory-panel.hidden {
+    display: none;
+}
+
+#inventory-panel h2 {
+    margin: 0 0 15px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #666;
+    text-align: center;
+}
+
+#inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+    gap: 15px;
+    overflow-y: auto;
+    flex-grow: 1;
+    padding: 10px;
+}
+
+.inventory-item {
+    aspect-ratio: 1 / 1;
+    background-color: #333;
+    border: 1px solid #666;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    padding: 5px;
+}
+
+.inventory-item img {
+    width: 75%;
+    height: 75%;
+    object-fit: contain;
+}
+
+.item-count {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+#inventory-close-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+}
+/* --- FIN: ESTILOS PARA INVENTARIO --- */

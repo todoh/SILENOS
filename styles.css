@@ -637,24 +637,38 @@ line-height: 1.5;}
 
 .ideframeh { padding: 1%; position: absolute;font-size: large;
     width: auto;z-index: 10000 !important;
-     margin: 2%; right:10%; bottom: 0%;background-color: transparent;
+     margin: 2%; right:4%; bottom: 0%;background-color: transparent;
     }
 .ideframeh2 { padding: 1%; position: absolute;font-size: large;
     width: auto;z-index: 10000 !important;
-    margin: 2%; right: 5%; bottom: 0%;background-color: transparent;
+    margin: 2%; right: 0%; bottom: 0%;background-color: transparent;
     }
 .ideframeh3 { padding: 1%; position: absolute;font-size: large;
     width: auto;z-index: 10000 !important;
-    margin: 2%; right: 15%; bottom: 0%; background-color: transparent;
+    margin: 2%; right: 8%; bottom: 0%; background-color: transparent;
+    }
+    
+.ideframeh4 { padding: 1%; position: absolute;font-size: large;
+    width: auto;z-index: 10000 !important;
+    margin: 2%; right: 8%; bottom: 30%; background-color: transparent;
     }
 .custom-label { padding: 1%; position: absolute;font-size: large;
     width: auto;z-index: 10000 !important;
-    margin: 2%; right: 8%; bottom: 30%; background-color: transparent;
+    margin: 2%; right: 3%; bottom: 30%; background-color: transparent;
+}
+/* Añade esto a tu archivo de estilos CSS */
+.frameh.generando-imagen {
+  border: 2px solid #4CAF50 !important; /* Un verde claro y visible */
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.7);
+  transition: border 0.3s ease, box-shadow 0.3s ease; /* Efecto suave */
+  border-radius: 8px; /* Para que el borde sea redondeado */
+  padding: 5px; /* Evita que el borde se pegue al contenido */
+  margin: -5px; /* Compensa el padding para no mover otros elementos */
 }
 .frameh textarea {
     width: 55%; position: absolute;
  
-   top: 5%; bottom: 1%;    left: 23%;
+   top: 5%; bottom: 1%;    left: 30%;
   
     border-radius: 5px; 
     border: 0px solid #ccc;
@@ -669,7 +683,7 @@ line-height: 1.5;}
 .custom-label:hover {
     color: #000; 
 }
-.frameh img {max-width: 15%; position: absolute;
+.frameh img {max-width: 22%; position: absolute;
     max-height: 90%;
     left:6%;
     top: 5%;

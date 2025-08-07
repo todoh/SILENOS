@@ -15,6 +15,10 @@ let panelState = {
     entidadesContainer: null, 
     accionesContainer: null,
     agregarAccionBtn: null,
+    imagenPreview: null,
+    imagenDropZone: null,
+    imagenFileInput: null,
+
 };
 
 /**
@@ -134,7 +138,16 @@ function actualizarDatosNodo() {
     // Título y Descripción
     nodo.querySelector('.momento-titulo').textContent = s.tituloInput.value;
     nodo.dataset.descripcion = s.descripcionInput.value;
-
+  const imagenNodo = nodo.querySelector('.momento-imagen');
+    if (imagenNodo && s.imagenPreview) {
+        imagenNodo.src = s.imagenPreview.src;
+        // Añade o quita una clase para estilado si el nodo tiene imagen
+        if (s.imagenPreview.src && !s.imagenPreview.src.endsWith('/')) {
+            nodo.classList.add('con-imagen');
+        } else {
+            nodo.classList.remove('con-imagen');
+        }
+    }
     // Guardar datos del Entorno
     const entornoData = {
         texturaSuelo: document.getElementById('entorno-suelo-select')?.value || '',
@@ -165,7 +178,24 @@ function actualizarDatosNodo() {
 
     if (window.previsualizacionActiva) dibujarConexiones();
 }
-
+/**
+ * Procesa el archivo de imagen seleccionado por el usuario y lo muestra en el panel.
+ * @param {Event} e - El evento 'change' del input de archivo.
+ */
+function manejarCargaDeImagen(e) {
+    const file = e.target.files[0];
+    if (file && panelState.imagenPreview) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            panelState.imagenPreview.src = event.target.result;
+            panelState.imagenPreview.style.display = 'block';
+            if(panelState.imagenDropZone) panelState.imagenDropZone.classList.add('con-imagen');
+            // Una vez cargada la imagen en el panel, actualizamos el nodo
+            actualizarDatosNodo(); 
+        };
+        reader.readAsDataURL(file);
+    }
+}
 // --- FUNCIONES PARA POBLAR EL PANEL ---
 
 function poblarEntornoPanel(data = {}) {

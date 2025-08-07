@@ -1477,7 +1477,8 @@ async function generarImagenParaFrameConIA(escenaId, frameIndex) {
     }
 
     const userPrompt = frame.texto.trim();
-    alert("Analizando la escena y generando imagen con IA... Esto puede tardar un momento.");
+ const capituloDiv = document.querySelector(`.escena[data-id="${escenaId}"]`);
+    const frameDiv = capituloDiv ? capituloDiv.querySelectorAll('.frameh')[frameIndex] : null;
 
     if (typeof apiKey === 'undefined' || !apiKey) {
         alert("Error de configuración: La 'apiKey' global no está definida.");
@@ -1489,7 +1490,9 @@ async function generarImagenParaFrameConIA(escenaId, frameIndex) {
 
     try {
         // --- FASE 1: ANÁLISIS DE PERSONAJES EN LA ESCENA ---
-
+ if (frameDiv) {
+            frameDiv.classList.add('generando-imagen'); // Aplica el borde verde
+        }
         // 1. Indexar todos los datos de personajes disponibles
         const datosIndexados = [];
         document.querySelectorAll('#listapersonajes .personaje').forEach(p => {
@@ -1581,6 +1584,11 @@ async function generarImagenParaFrameConIA(escenaId, frameIndex) {
                     guardarCambios();
                     actualizarLista();
                     console.log(`Imagen generada y asignada al frame ${frameIndex} de la escena "${escenaId}".`);
+
+if (frameDiv) {
+            frameDiv.classList.remove('generando-imagen');
+        }
+
                     return; // Éxito
                 } else {
                     const textResponse = responseData.candidates?.[0]?.content?.parts?.[0]?.text || "No se encontró contenido de imagen.";
@@ -1599,6 +1607,9 @@ async function generarImagenParaFrameConIA(escenaId, frameIndex) {
         alert(`No se pudo generar la imagen. Error: ${error.message || "Error desconocido."}`);
         console.error("Error en generarImagenParaFrameConIA:", error);
     }
+
+
+
 }
 
 
@@ -1789,4 +1800,71 @@ async function removeGreenScreen(imagePart) {
         img.onerror = (err) => reject(new Error("Error al cargar la imagen Base64 para procesarla. Detalles: " + err.message));
         img.src = `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
     });
+}
+/**
+ * Genera en lote imágenes para el frame actual y los 8 siguientes.
+ * @param {string} capituloId - El ID del capítulo que contiene los frames.
+ * @param {number} startIndex - El índice del frame inicial en el array de frames del capítulo.
+ */
+//================================================================================
+// DENTRO DE generador.js - FUNCIÓN EN SERIE MODIFICADA
+//================================================================================
+
+async function generarMultiplesImagenesParaFrameConIA(capituloId, startIndex) {
+    const capitulo = escenas[capituloId];
+    if (!capitulo) {
+        alert("Error: No se encontró el capítulo activo.");
+        return;
+    }
+
+    const BATCH_SIZE = 9;
+    const framesParaProcesar = capitulo.frames.slice(startIndex, startIndex + BATCH_SIZE);
+
+    if (framesParaProcesar.length === 0) {
+        // No hay necesidad de una alerta aquí, un log es suficiente.
+        console.warn("No hay frames suficientes para iniciar la generación en lote.");
+        return;
+    }
+
+    // ELIMINADO: El diálogo de confirmación para una experiencia más fluida.
+    // if (!confirm(`...`)) {
+    //     return;
+    // }
+    
+    if (typeof mostrarIndicadorCarga !== 'function') {
+        console.error("La función global 'mostrarIndicadorCarga' no fue encontrada.");
+        alert("Error crítico: La función del indicador de carga no está disponible.");
+        return;
+    }
+
+    mostrarIndicadorCarga(true, `Iniciando lote de ${framesParaProcesar.length} imágenes...`);
+
+    try {
+        for (let i = 0; i < framesParaProcesar.length; i++) {
+            const frameIndexActual = startIndex + i;
+            const frame = framesParaProcesar[i];
+            
+            mostrarIndicadorCarga(true, `Generando imagen ${i + 1} de ${framesParaProcesar.length}...`);
+
+            if (frame.imagen || !frame.texto.trim()) {
+                console.log(`Saltando el frame en el índice ${frameIndexActual} porque ya tiene imagen o le falta texto.`);
+                continue;
+            }
+
+            // Esta llamada ya contiene la nueva lógica del borde verde.
+            // El borde aparecerá en el frame actual, y desaparecerá cuando 
+            // `actualizarLista()` se llame al final de la generación de esa imagen.
+            await generarImagenParaFrameConIA(capituloId, frameIndexActual);
+            
+            // Pausa para evitar sobrecargar la API
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        alert(`Generación en lote de ${framesParaProcesar.length} imágenes ha finalizado.`);
+
+    } catch (error) {
+        console.error("Ocurrió un error durante la generación en lote de frames:", error);
+        alert("Ocurrió un error durante la generación en lote. Consulta la consola para más detalles.");
+    } finally {
+        mostrarIndicadorCarga(false);
+    }
 }
