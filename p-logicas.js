@@ -64,7 +64,7 @@ const pNodeDefinitionsAvanzadas = {
             prompt = prompt.replace('[OPTIONS]', `[${options.join(', ')}]`);
             const fullPrompt = `${prompt}\n\nEntrada: "${inputText}"`;
 
-            const chosenOption = await pCallGeminiApi(fullPrompt, "gemini-1.5-flash-latest", false);
+            const chosenOption = await pCallGeminiApi(fullPrompt, "gemini-2.5-flash", false);
             
             const matchingIndex = options.findIndex(opt => opt.trim().toLowerCase() === chosenOption.trim().toLowerCase());
 

@@ -352,7 +352,152 @@ if (libro.portadaUrl) {
         visorContainer.appendChild(libroCard);
     });
 }
+function renderizarVisorDeLibros2() {
+    const visorContainer = document.getElementById('resultadofinal-procedimiento');
+    visorContainer.style.display = 'flex'; // Muestra el contenedor
+    if (!visorContainer) {
+        console.error('Error: El contenedor "libroscreados" no se encontró.');
+        return;
+    }
 
+    visorContainer.innerHTML = ''; // Limpia el contenedor antes de renderizar
+
+    if (!libros || libros.length === 0) {
+        visorContainer.innerHTML = '<p id="sin-libros-mensaje" class="sin-libros-mensaje"></p>';
+        return;
+    }
+
+    libros.forEach(libro => {
+        const libroCard = document.createElement('div');
+        libroCard.className = 'libro-card';
+
+      const portada = document.createElement('div');
+portada.className = 'libro-portada';
+if (libro.portadaUrl) {
+    const imgElement = document.createElement('img'); // Crear el elemento <img>
+    imgElement.src = libro.portadaUrl;                // Asignar la URL
+    imgElement.alt = `Portada de ${libro.titulo}`;    // Añadir texto alternativo (buena práctica)
+    portada.appendChild(imgElement);                  // Añadir la <img> al div
+}
+        portada.onclick = () => {
+            seleccionarLibro(libro.id);
+            if (typeof abrir === 'function') abrir('capitulosh');
+        };
+
+        const titulo = document.createElement('p');
+        titulo.className = 'libro-titulo';
+        titulo.textContent = libro.titulo;
+        titulo.onclick = (event) => {
+            event.stopPropagation();
+            const inputEdicion = document.createElement('input');
+            inputEdicion.type = 'text';
+            inputEdicion.value = libro.titulo;
+            inputEdicion.className = 'libro-titulo-input';
+            
+            const guardarCambios = () => {
+                const nuevoTitulo = inputEdicion.value.trim();
+                if (nuevoTitulo && nuevoTitulo !== libro.titulo) {
+                    libro.titulo = nuevoTitulo;
+                    if (libro.id === libroActivoId) seleccionarLibro(libro.id);
+                }
+                renderizarVisorDeLibros(); 
+            };
+
+            inputEdicion.addEventListener('blur', guardarCambios);
+            inputEdicion.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') inputEdicion.blur();
+                else if (e.key === 'Escape') renderizarVisorDeLibros();
+            });
+
+            titulo.parentElement.replaceChild(inputEdicion, titulo);
+            inputEdicion.focus();
+            inputEdicion.select();
+        };
+
+        const botonesContainer = document.createElement('div');
+        botonesContainer.className = 'libro-botones';
+
+        const btnCargarPortada = document.createElement('button');
+        btnCargarPortada.textContent = '📷';
+        btnCargarPortada.title = 'Cargar portada';
+        btnCargarPortada.onclick = (event) => {
+            event.stopPropagation();
+            const inputArchivo = document.createElement('input');
+            inputArchivo.type = 'file';
+            inputArchivo.accept = 'image/*';
+            inputArchivo.onchange = (e) => {
+                const archivo = e.target.files[0];
+                if (!archivo) return;
+                const reader = new FileReader();
+                reader.onload = (eventReader) => {
+                    libro.portadaUrl = eventReader.target.result;
+                    renderizarVisorDeLibros();
+                };
+                reader.readAsDataURL(archivo);
+            };
+            inputArchivo.click();
+        };
+
+        const btnExportar = document.createElement('button');
+        btnExportar.textContent = '📤';
+        btnExportar.title = 'Exportar libro';
+        btnExportar.onclick = (event) => {
+            event.stopPropagation();
+            mostrarMenuExportar(event, libro);
+        };
+
+        const btnEliminar = document.createElement('button');
+        btnEliminar.textContent = '❌';
+        btnEliminar.className = 'btn-eliminar';
+        btnEliminar.title = 'Eliminar libro';
+        btnEliminar.onclick = (event) => {
+            event.stopPropagation();
+            if (confirm(`¿Seguro que quieres eliminar el libro "${libro.titulo}"?`)) {
+                const index = libros.findIndex(l => l.id === libro.id);
+                if (index > -1) {
+                    libros.splice(index, 1);
+                    renderizarVisorDeLibros();
+                }
+            }
+        };
+        
+        // ==================== INICIO DEL CAMBIO ====================
+        // Botón para visualizar el libro en un modal
+        const btnVisualizar = document.createElement('button');
+        btnVisualizar.textContent = '👁️'; // O el texto "Visualizar"
+        btnVisualizar.title = 'Visualizar libro';
+        btnVisualizar.className = 'btn-visualizar';
+        btnVisualizar.onclick = (event) => {
+            event.stopPropagation();
+            abrirModalVisualizador(libro); // Llamada a la nueva función
+        };
+        // ===================== FIN DEL CAMBIO ======================
+
+        botonesContainer.appendChild(btnCargarPortada);
+        
+        if (typeof apiKey !== 'undefined' && apiKey) {
+            const btnIA = document.createElement('button');
+            btnIA.textContent = '✨';
+            btnIA.className = 'btn-ia';
+            btnIA.title = 'Generar portada con IA';
+            btnIA.onclick = (event) => {
+                event.stopPropagation();
+                generarPortadaConIA(libro);
+            };
+            botonesContainer.appendChild(btnIA);
+        }
+        
+        botonesContainer.appendChild(btnVisualizar); // Añadimos el nuevo botón
+        botonesContainer.appendChild(btnExportar);
+        botonesContainer.appendChild(btnEliminar);
+
+        libroCard.appendChild(portada);
+        libroCard.appendChild(titulo);
+        libroCard.appendChild(botonesContainer);
+
+        visorContainer.appendChild(libroCard);
+    });
+}
 
 /**
  * Muestra un menú contextual para seleccionar el formato de exportación.

@@ -14,7 +14,7 @@ crossorigin="anonymous"></script>
 <link rel="stylesheet" href="clarooscuro.css">
 <link rel="stylesheet" href="momentos.css">
 <link rel="stylesheet" href="editor-momento.css">
-<link rel="stylesheet" href="galeria.css">
+
 <link rel="stylesheet" href="biblioteca.css">
 
 <link rel="stylesheet" href="animacionessvg.css">
@@ -25,7 +25,7 @@ crossorigin="anonymous"></script>
 <link rel="stylesheet" href="ventanas.css">
 <link rel="stylesheet" href="p-style.css">
 <link rel="stylesheet" href="editor.css">
-
+<link rel="stylesheet" href="galeria.css">
 <!-- Hoja de estilos para el nuevo editor de datos -->
 <link rel="stylesheet" href="editor-personajes.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>S</text></svg>">
@@ -77,7 +77,8 @@ crossorigin="anonymous"></script>
     <div id="asistente-menu">
            <div class="asistente-categoria">
            
-            <button   id="bguardarjson" class="tons" onclick="guardarJSON()">💾Guardar</button>
+            <button   id="bguardarjson" class="tons" onclick="guardarJSON()">💾Guardar</button>       
+             <input type="file" id="file-load" accept="application/json" onchange="cargarJSON(event)" style="display: none;">
             <button   id="bcargarjson" class="tons" onclick="document.getElementById('file-load').click()">🗂️Cargar</button>        
             <button  id="btema" class="tons" id="theme-toggle-button" onclick="toggleTheme()">🌙</button>
             <button id="bvista" class="tons" title="Cambiar a Vista Clara">🔳</button>
@@ -87,6 +88,7 @@ crossorigin="anonymous"></script>
         <div class="asistente-categoria">
             <button id="bproyecto" class="tons" onclick="abrirVentana('proyecto');">🏗️Proyecto</button>
              <button id="bdatos" class="tons" onclick="abrirVentana('personajes');">🗂️Datos</button> 
+             <button id="bdatos" class="tons" onclick="abrirVentana('procedimiento');">Procedimiento</button> 
         </div>
 
  
@@ -128,7 +130,6 @@ crossorigin="anonymous"></script>
             <button class="pro" onclick="abrirModalExportar()" style="display: none;">💽 Exportar</button>
         <button id="bajustes" class="pro" onclick="abrirModalConfig()">⚙️ Ajustes </button>
         <button id="bguardarjson" class="pro" onclick="guardarJSON()">💾 Guardar</button>
-        <input type="file" id="file-load" accept="application/json" onchange="cargarJSON(event)" style="display: none;">
         <button id="bcargarjson" class="pro" onclick="document.getElementById('file-load').click()">🗂️ Cargar</button>        
         <button id="btema" class="pro" id="theme-toggle-button" onclick="toggleTheme()">🌙 Tema</button>
             </div>
@@ -568,14 +569,15 @@ crossorigin="anonymous"></script>
 
 <div id="proyecto" class="pantalla" data-titulo="Proyecto" style="display: none;" >
 
-
-
  <input type="text" id="asistente-titulo-input" placeholder="Título del proyecto" value="Silenos Versión 1.1.11" >
-<div id="libroscreados" ></div>
+
+ <div id="libroscreados" ></div>
 
 
 <button id="" class="  pro5 " onclick="crearNuevoLibro()" >+</button>
 </div>
+
+
 
  <div id="vistageneral" class="pantalla" data-titulo="👁️ Vista General" >
 
@@ -703,6 +705,27 @@ crossorigin="anonymous"></script>
 
 
 </div>
+      
+
+<div id="procedimiento" class="pantalla" data-titulo="Automático">
+    <div class="procedimiento-container">
+       
+        <p>Escribe una idea, una frase o un párrafo. La IA creará una historia y luego podrá analizarla para extraer todos sus datos.</p>
+        <textarea id="prompt-procedimiento" placeholder="Ej: Un astronauta encuentra un misterioso cubo flotando cerca de Saturno..."></textarea>
+        
+        <button id="enviar-procedimiento"  onclick="" >✨ Generar Libro Ilustrado</button>
+        
+        <div id="resultado-procedimiento" style="width: 20%; height: 5% ; " >
+            </div>
+
+         
+    </div>
+<div id="resultadofinal-procedimiento" >
+         <img src="silenoscarga.gif" alt="">   </div>
+   <img class="gifs"  src="silenoscarga.gif" alt=""> 
+</div>
+
+
 
 <div id="renderizador" class="pantalla" data-titulo="Renderizador">
     <div id="r-editor-container">
@@ -1526,7 +1549,7 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
 
 </div>
  
-<div id="principio">
+<div id="principio" class="pantalla" data-titulo="Inicio"  >
   <button class="catalogo" onclick="abrirVentana('catalogo');" >Catálogo</button>
 
 <div   class="language-selector-css">
@@ -1711,6 +1734,8 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
     </div>
 </div>
 
+
+
     <!-- ================== -->
     <!-- MODAL CREADOR DE PERSONAJES -->
     <!-- ================== -->
@@ -1855,10 +1880,10 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
 <script src="p-interprete.js"></script>
 <script src="p-ejecucion.js"></script>
 <script src="p-main.js"></script>
-
+<script src="procedimiento.js"></script>
  <script src="main.js" defer></script>
 <!-- Modal Genérico para Edición -->
-
+<script type="module" src="https://sdk.googleapis.com/genai/v1.js"></script>
 <div id="edit-modal" class="modal">
     <div class="modal-content-editor">
         <div class="modal-header">
@@ -1876,6 +1901,9 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
 </div>
 
  <script>
+
+
+
         function abrirVentana(id) {
             const ventana = document.getElementById(id);
             if (ventana) {

@@ -329,7 +329,7 @@ async function generarImagenParaTomaConIA(tomaId) {
                 **Texto de la escena:** "${userPrompt}"
             `;
             if (typeof llamarIAConFeedback === 'function') {
-                const respuestaAnalisis = await llamarIAConFeedback(promptAnalisis, "Identificando personajes en toma...", 'gemini-1.5-flash', true);
+                const respuestaAnalisis = await llamarIAConFeedback(promptAnalisis, "Identificando personajes en toma...", 'gemini-2.5-flash', true);
                 if (respuestaAnalisis && Array.isArray(respuestaAnalisis.personajes_en_escena)) {
                     const nombresPersonajes = respuestaAnalisis.personajes_en_escena;
                     const promptsVisuales = nombresPersonajes
@@ -582,7 +582,7 @@ async function generarImagenParaTomaConIA(tomaId) {
                 **Texto de la escena:** "${userPrompt}"
             `;
             if (typeof llamarIAConFeedback === 'function') {
-                const respuestaAnalisis = await llamarIAConFeedback(promptAnalisis, "Identificando personajes en toma...", 'gemini-1.5-flash', true);
+                const respuestaAnalisis = await llamarIAConFeedback(promptAnalisis, "Identificando personajes en toma...", 'gemini-2.5-flash', true);
                 if (respuestaAnalisis && Array.isArray(respuestaAnalisis.personajes_en_escena)) {
                     const nombresPersonajes = respuestaAnalisis.personajes_en_escena;
                     const promptsVisuales = nombresPersonajes

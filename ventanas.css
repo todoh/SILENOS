@@ -79,6 +79,62 @@
     height: 18px;
     fill: currentColor;
 }
+.procedimiento-container {
+    width: 90%;
+    max-width: 800px;
+ display: flex;
+   justify-content: center;
+   align-items: center;
+  position: relative;
+    top: 50%; 
+    left: 50%;
+
+    transform: translate(-50%, -50%);
+    border-radius: 10px;
+    
+    flex-direction: column;
+    gap: 15px;
+}
+#prompt-procedimiento {
+    width: 100%;
+    min-height: 150px;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #444;
+   
+    font-size: 1em;
+}
+#resultado-procedimiento {
+    margin-top: 15px;
+    padding: 15px;
+  
+    border-radius: 5px;
+    min-height: 100px;
+    white-space: pre-wrap; /* Para respetar los saltos de línea y espacios */
+}
+#resultadofinal-procedimiento {
+    margin-top: 15px;
+    padding: 15px; position: fixed;
+   display: none;
+    height: 90%;
+      left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 5px;
+    min-height: 100px;
+    white-space: pre-wrap; /* Para respetar los saltos de línea y espacios */
+}
+.gifs {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+ z-index: -1;
+ display: none;  /* Oculto por defecto */
+}
+
 
 .contenido-ventana {
     background-color: #fafafa;
@@ -171,6 +227,7 @@ body.clear-view-mode .titulo-ventana {
 /* El contenido debe ocupar todo el espacio disponible */
 body.clear-view-mode .contenido-ventana {
     height: 100%;
+    width: 100%;
 }
 
 /* Mostrar el nuevo botón de cierre solo en modo claro */

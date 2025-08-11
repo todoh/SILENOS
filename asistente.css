@@ -34,8 +34,7 @@
     }
     .status-indicator {
         position: fixed;
-        top: 7%;
-        left: 1% !important;
+      
         display: flex;
        
         background-color: var(--color-fondo-secundario, #f0f0f0);
@@ -61,14 +60,16 @@
         left: 75px;
     }
     #progress-bar-container {
-        left: 215px;
-        width: 250px;
+      left: 1%;  bottom: 6%;
+      
+      height: 3%;
+position: fixed;        width: 320px;
     }
     #progress-bar-label {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 100px;
+        max-width: 160px;
         margin-right: 8px;
     }
     .progress-bar-background {
@@ -168,8 +169,7 @@
         opacity: 1;
     }
     #principio {
-        /* #principio está encima y se le añade una transición de opacidad */
-        transition: opacity 1.5s ease-out;
+         transition: opacity 1.5s ease-out;
     
     }
     /* ▲▲▲ FIN DE LA CORRECCIÓN ▲▲▲ */

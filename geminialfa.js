@@ -115,7 +115,58 @@ function findClosingBracket(str, pos) {
     }
     return -1; // No se encontró un cierre correspondiente
 }
+/**
+ * Limpia y extrae un string JSON de una respuesta de texto crudo de la IA.
+ * Esta versión es robusta y maneja problemas comunes como:
+ * 1. Bloques de código Markdown (```json ... ```).
+ * 2. Espacios en blanco inválidos (como non-breaking spaces).
+ * 3. Proporciona errores más claros si el parseo final falla.
+ * @param {string} textoCrudo - El texto recibido de la API.
+ * @param {string} etapa - Un nombre descriptivo del proceso para los mensajes de error.
+ * @returns {string} Un string JSON limpio y listo para ser parseado.
+ */
+function limpiarYExtraerJson2(textoCrudo, etapa) {
+    if (!textoCrudo || typeof textoCrudo !== 'string') {
+        throw new Error(`Respuesta inválida para ${etapa}: la entrada está vacía o no es un string.`);
+    }
 
+    let jsonLimpio = textoCrudo;
+    
+    // 1. Reemplazar todos los tipos de espacios raros por espacios normales.
+    // Esto incluye el non-breaking space (U+00A0) que causó tu error.
+    jsonLimpio = jsonLimpio.replace(/\s/g, ' ');
+
+    // 2. Intentar extraer el contenido de un bloque de código Markdown.
+    const markdownMatch = jsonLimpio.match(/```(json)?\s*([\s\S]*?)\s*```/);
+    if (markdownMatch && markdownMatch[2]) {
+        jsonLimpio = markdownMatch[2];
+    }
+
+    // 3. Si no se encontró un bloque Markdown, buscar el primer '{' o '['.
+    // Esto asegura la compatibilidad con respuestas que no usan Markdown.
+    const primerCorchete = jsonLimpio.search(/[[{]/);
+    if (primerCorchete === -1) {
+        throw new Error(`Respuesta inválida para ${etapa}: no se encontró un JSON.`);
+    }
+
+    // 4. Encontrar el bracket de cierre correspondiente para recortar cualquier texto extra al final.
+    const ultimoCorchete = findClosingBracket(jsonLimpio, primerCorchete);
+    if (ultimoCorchete === -1) {
+        throw new Error(`Respuesta para ${etapa} es un JSON incompleto (falta bracket de cierre).`);
+    }
+
+    jsonLimpio = jsonLimpio.substring(primerCorchete, ultimoCorchete + 1);
+
+    // 5. Verificar la sintaxis final antes de devolver.
+    try {
+        JSON.parse(jsonLimpio);
+        return jsonLimpio; // Devolvemos el string limpio, no el objeto parseado.
+    } catch (e) {
+        console.error("Error de sintaxis al intentar parsear el JSON limpio:", e.message);
+        console.error("JSON que falló:", jsonLimpio); // Muy útil para depurar
+        throw new Error(`Error de sintaxis en JSON para ${etapa} después de la limpieza.`);
+    }
+}
 
 /**
  * Limpia la respuesta de la IA para extraer el PRIMER objeto o array JSON válido.

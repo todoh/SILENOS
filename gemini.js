@@ -110,19 +110,8 @@ function reconstruirJsonDesdeGuionHTML(guionObject) {
  * NO TOCA LA LÓGICA INTERNA, solo cambia el origen de los datos.
  * @param {string} guionSeleccionadoTitulo - Título del guion seleccionado en el modal.
  */
-// Reemplaza esta función en datos/gemini.js
-
-/**
- * Desarrolla los frames de un guion utilizando la función reutilizable callGenerativeApi.
- * Muestra un mensaje de "pensando" en el chat antes de cada llamada a la IA.
- *
- * @param {string} guionSeleccionadoTitulo - Título del guion seleccionado en el modal.
- */
-/**
- * Desarrolla los frames de un guion utilizando la función reutilizable callGenerativeApi.
- * Esta versión es más robusta gracias a la nueva lógica de reintentos y limpieza de JSON.
- * @param {string} guionSeleccionadoTitulo - Título del guion seleccionado en el modal.
- */
+ 
+ 
 async function desarrollarFramesDesdeGeminimente(guionSeleccionadoTitulo) {
     const guionObjeto = guionLiterarioData.find(g => g.titulo === guionSeleccionadoTitulo);
     if (!guionObjeto) {
@@ -214,7 +203,7 @@ La estructura exacta del JSON debe ser:
                         }
 
                         // Usamos la robusta función callGenerativeApi
-                        const respuestaJson = await callGenerativeApi(promptDesarrollo, 'gemini-2.5-flash-lite', true);
+                        const respuestaJson = await callGenerativeApi(promptDesarrollo, 'gemini-2.5-flash', true);
                         
                         respuestaBrutaParaDebug = JSON.stringify(respuestaJson, null, 2);
                         const nuevosFrames = respuestaJson.nuevos_frames_desarrollados;

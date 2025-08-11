@@ -927,8 +927,11 @@ async function callGenerativeApi(prompt, model = 'gemini-2.5-flash', expectJson 
 
     if (expectJson) {
         try {
+                        const jsonLimpio = limpiarYExtraerJson(fullRawText, `modelo ${model}`);
+            return JSON.parse(jsonLimpio);
+
             // Devolvemos el JSON parseado.
-            return JSON.parse(fullRawText);
+          //  return JSON.parse(fullRawText);
         } catch (error) {
             console.error("Fallo al parsear JSON. String recibido:", fullRawText);
             throw new Error(`La respuesta de la API para el modelo ${model} no contenía un JSON válido.`);
@@ -1246,8 +1249,8 @@ async function ultrascorregir(userPrompt) { // Nombre corregido a 'ultras' para 
 
         if (!response.ok) {
             const errorMessage = responseData.error?.message || "Unknown API error.";
-            console.error("API Error Response:", response.status, responseData);
-            throw new Error(`API Error: ${errorMessage}`);
+          //  console.error("API Error Response:", response.status, responseData);
+           // throw new Error(`API Error: ${errorMessage}`);
         }
 
         console.log("[Generador con Guardado] Respuesta de API recibida.");
@@ -1426,7 +1429,7 @@ async function generarPortadaConIA(libro) {
             const responseData = await response.json();
 
             if (!response.ok) {
-                throw new Error(responseData.error?.message || "Error desconocido de la API.");
+         //       throw new Error(responseData.error?.message || "Error desconocido de la API.");
             }
 
             const imagePart = responseData.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
@@ -1449,7 +1452,7 @@ async function generarPortadaConIA(libro) {
 
             } else {
                 const textResponse = responseData.candidates?.[0]?.content?.parts?.[0]?.text || "No se encontró contenido de imagen.";
-                throw new Error(`La API no devolvió una imagen. Respuesta: ${textResponse}`);
+          //      throw new Error(`La API no devolvió una imagen. Respuesta: ${textResponse}`);
             }
 
         } catch (error) {
@@ -1471,6 +1474,7 @@ async function generarPortadaConIA(libro) {
  */
 async function generarImagenParaFrameConIA(escenaId, frameIndex) {
     const frame = escenas[escenaId]?.frames?.[frameIndex];
+   frame.textContent += estiloArtistico;// Asegura que frame tenga un objeto con texto
     if (!frame || !frame.texto.trim()) {
         alert("Por favor, escribe un texto en el frame antes de generar una imagen.");
         return;
@@ -1573,7 +1577,7 @@ async function generarImagenParaFrameConIA(escenaId, frameIndex) {
                 const responseData = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(responseData.error?.message || "Error desconocido de la API.");
+                 //   throw new Error(responseData.error?.message || "Error desconocido de la API.");
                 }
 
                 const imagePart = responseData.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
@@ -1592,7 +1596,7 @@ if (frameDiv) {
                     return; // Éxito
                 } else {
                     const textResponse = responseData.candidates?.[0]?.content?.parts?.[0]?.text || "No se encontró contenido de imagen.";
-                    throw new Error(`La API no devolvió una imagen. Respuesta: ${textResponse}`);
+              //      throw new Error(`La API no devolvió una imagen. Respuesta: ${textResponse}`);
                 }
             } catch (error) {
                 lastError = error;
@@ -1601,7 +1605,7 @@ if (frameDiv) {
             }
         }
         // Si el bucle termina, todos los intentos fallaron
-        throw lastError || new Error("Error desconocido tras múltiples intentos.");
+      //  throw lastError || new Error("Error desconocido tras múltiples intentos.");
 
     } catch (error) {
         alert(`No se pudo generar la imagen. Error: ${error.message || "Error desconocido."}`);
