@@ -14,7 +14,7 @@
 
 #principio {
     background-color: rgba(0, 0, 0, 0);
-    display: flex;
+    display: none;
     justify-content: center;
     align-items: center;
     position: fixed;
@@ -67,26 +67,52 @@
     /* ▼▼▼ PASO 2: BAJAMOS LA ALTURA DE LOS BOTONES ▼▼▼ */
      /* Ajustado para bajarlo más (antes era 70px) */
 }
+.title {
+position: absolute; left: 0%;
 
-#titulo1 {
+}
+#titulo2 {
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    flex-direction:row;
+    justify-content: right;
     gap: 10px;
     line-height: 1;
     font-family: 'Helvetica Neue', 'Arial', sans-serif;
     font-weight: 300;
-    font-size: 4vw;
+    font-size: 1.7vw;
     letter-spacing: 0.07em;
     text-shadow: 0 0 15px rgba(255, 255, 255, 0.25);
     color: white;
     text-transform: uppercase;
     transition: opacity 0.5s ease-out;
     position: absolute;
-    top: 7%;
-    right: 5%;
-     
+  padding: 0.6%;
+    left: 1%; right: 1%;
+  
     background-color: rgba(0, 0, 0, 0);
+}
+
+#titulo2 button {
+   
+ 
+  
+gap: 20px;
+      display: flex;
+        align-items: center;
+        justify-content: center;
+       text-align: center;
+        position: relative;
+         font-size: large;
+        padding: 10px 15px;
+height: 50px;
+     margin-left: 0.8%;
+          background-color: #585858;
+        color: white;
+        border: 1px solid #666;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        transform: translateY(-10px) translateX(-50%);
+        transition: transform 0.3s ease; z-index: 9998;
 }
 
 .os-red {
@@ -95,7 +121,7 @@
 }
 
 .version-text {
-    font-size: 0.35em;
+    font-size: 0.55em;
     font-weight: 400;
     text-transform: lowercase;
     letter-spacing: 1.5px;

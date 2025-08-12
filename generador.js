@@ -97,7 +97,7 @@ async function createUnifiedPrompt(userPrompt) {
     `;
     
     // CORRECCIÓN: Se usa callGenerativeApi para la clasificación.
-    const elementType = await callGenerativeApi(classificationPrompt, 'gemini-2.5-flash-lite-preview-06-17', false);
+    const elementType = await callGenerativeApi(classificationPrompt, 'gemini-2.0-flash', false);
     const tipoElemento = elementType.trim().toLowerCase();
     console.log(`[Clasificación Avanzada] Elemento detectado: ${tipoElemento}`);
 
@@ -596,7 +596,7 @@ async function handleGeneration() {
         // CORRECCIÓN: Se pasa la apiKey a la función que la necesita.
         const prompt = await createUnifiedPrompt(userPrompt);
         // CORRECCIÓN: Se usa callGenerativeApi en lugar de la función eliminada.
-        const generatedData = await callGenerativeApi(prompt, 'gemini-1.5-pro', true);
+        const generatedData = await callGenerativeApi(prompt, 'gemini-2.0-flash', true);
 
         const { nombre, descripcion, etiqueta, arco, svgContent } = generatedData;
 
@@ -715,7 +715,7 @@ async function generarImagenDesdePrompt(userPrompt) {
     // CORRECCIÓN: Se llama a mejorarImagenDesdeSVG con el svgContent del paso anterior.
     const generatedDataMejorada2 = await mejorarImagenDesdeSVG(generatedData.svgContent, 
     "Mejora la conexion entre los elementos del SVG y corrige las formas se vean naturales con lineas organicas y realistas.", 
-    'gemini-2.5-flash-lite-preview-06-17');
+    'gemini-2.5-flash-lite');
 
     // PASO 3: Mejorar la imagen con un prompt de texturizado.
    // console.log("[Generador Externo SVG] Texturizando...");
@@ -1037,14 +1037,14 @@ async function generarImagenParaDatos(userPrompt) {
     try { console.log("paso1");
         // PASO 1: Generar SVG base.
         const promptInicial = `Crea un SVG de "${userPrompt}". Responde solo con el código SVG.`;
-        const respuestaSvgInicial = await callGenerativeApi(promptInicial, 'gemini-2.5-flash-lite-preview-06-17', false);
+        const respuestaSvgInicial = await callGenerativeApi(promptInicial, 'gemini-2.5-flash-lite', false);
         const svgInicial = extraerBloqueSVG(respuestaSvgInicial);
         if (!svgInicial) throw new Error("La IA no generó un SVG base.");
 
         // PASO 2: Mejorar SVG. 
         console.log("paso2");
         const promptMejora = `Refina este SVG para que sea más realista, añade detalles y texturas: \`\`\`xml\n${svgInicial}\n\`\`\` Responde solo con el nuevo código SVG.`;
-        const respuestaSvgMejorado = await callGenerativeApi(promptMejora, 'gemini-2.5-flash-lite-preview-06-17', false);
+        const respuestaSvgMejorado = await callGenerativeApi(promptMejora, 'gemini-2.5-flash-lite', false);
         const svgFinal = extraerBloqueSVG(respuestaSvgMejorado);
         if (!svgFinal) throw new Error("La IA no generó una mejora del SVG.");
 

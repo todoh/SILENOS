@@ -6,7 +6,7 @@ crossorigin="anonymous"></script>
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Silenos Versión 1.1.11</title>
+<title>Silenos Versión 1.1.13</title>
 <link rel="stylesheet" href="r-style.css">
 
 <link rel="stylesheet" href="styles.css">
@@ -38,11 +38,12 @@ crossorigin="anonymous"></script>
 
 <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
 
-<!--
-<script src="https://apis.google.com/js/api.js" async defer></script>s
-<script src="https://accounts.google.com/gsi/client" onload="gapiLoaded()" async defer></script>
--->
-<meta property="og:title" content="SILENOS Versión 1.1.11" />
+<!-- Hoja de estilos para el nuevo
+<script src="https://apis.google.com/js/api.js" async defer></script>
+<script src="https://accounts.google.com/gsi/client" onload="gapiLoaded()" async defer></script> 
+editor de datos -->
+
+<meta property="og:title" content="SILENOS Versión 1.1.13" />
 <meta property="og:description" content="Editor de Historia con Inteligencia Artificial" />
 <meta property="og:url" content="https://todoh.github.io/SILENOS" />
 <meta property="og:image" content="https://raw.githubusercontent.com/todoh/SILENOS/refs/heads/main/silenos.png" />
@@ -63,7 +64,7 @@ crossorigin="anonymous"></script>
 
 <div id="silenos" >
     <div id="opciones" >
-        <h2 id="titulo-proyecto" style="display: none;" contenteditable="true" placeholder="Escribe el título del proyecto">Silenos Versión 1.1.11</h2>
+        <h2 id="titulo-proyecto" style="display: none;" contenteditable="true" placeholder="Escribe el título del proyecto">Nombre De Tu Proyecto</h2>
         <div id="menu" >
              <div id="carpeta" style="margin-top: 20px; display: none; padding: 10px; border: 1px solid #ccc; border-radius: 5px; max-height: 300px; overflow-y: auto;">
 
@@ -400,7 +401,7 @@ crossorigin="anonymous"></script>
 <div id="momentos" class="pantalla" data-titulo="Aventura Interactiva">
         <button class="pro16"  title="Acción contextual"  onclick="abrirModalAIDatos()" >✨</button>
 
-    <button class="pro5" id="agregar-momento-btn">+</button>
+    <button class="pro6" id="agregar-momento-btn">+</button>
     <div id="momentos-controles-flotantes">
         
         <button class="pro" id="preview-connections-btn" title="Muestra u oculta las líneas de conexión entre momentos.">Previsualizar Conexiones</button>
@@ -569,7 +570,6 @@ crossorigin="anonymous"></script>
 
 <div id="proyecto" class="pantalla" data-titulo="Proyecto" style="display: none;" >
 
- <input type="text" id="asistente-titulo-input" placeholder="Título del proyecto" value="Silenos Versión 1.1.11" >
 
  <div id="libroscreados" ></div>
 
@@ -689,7 +689,7 @@ crossorigin="anonymous"></script>
   
 
     
-    <button class="pro16" id="sumarpersonaje" onclick="nuevaEscena()">+</button>
+    <button class="pro16" id="sumarpersonaje" onclick="nuevaEscena()">📚</button>
 
     <div id="capitulos">
         <div id="lista-capitulos">
@@ -783,6 +783,39 @@ crossorigin="anonymous"></script>
             </div>
         </div>
     </div>
+</div>
+
+
+<div id="info"  class="pantalla" data-titulo="Info" >
+  
+ 
+
+ <p><span>S I L E N</span><span class="os-red"> O S</span> Versión 1.1.13</p>
+
+<p class="presentacion" > Silenos es un estudio creativo todo en uno para escritores, 
+    diseñadores de juegos y creadores de contenido que buscan una herramienta integrada que les lleve desde la conceptualización de una idea hasta la 
+    producción de una obra multimedia e interactiva, apoyándose fuertemente en la inteligencia artificial para acelerar y enriquecer el proceso creativo.</p>
+<p class="presentacion" >1. Da Vida a tus Guiones con un Co-creador Infatigable
+¿Tienes una idea brillante pero te bloqueas al estructurarla? Con nuestro generador de guiones, esa chispa inicial se convierte en una historia completamente desarrollada. Simplemente define tu premisa y observa cómo nuestra Inteligencia Artificial teje capítulos, escenas y diálogos coherentes, respetando los personajes y lugares de tu propio universo para mantener una consistencia perfecta. Olvídate del lienzo en blanco y deja que la IA construya los cimientos de tu guion, para que tú puedas dedicarte a pulir el alma y la emoción de tu relato.
+</p><div class="imagenes2" > <img src="guion.gif" alt="">
+</div>
+<p class="presentacion" >2. Crea Libros Ilustrados Completos en un Instante
+Imagina poder susurrar una frase y ver nacer un universo entero. Nuestro generador de libros ilustrados lleva la creación a un nuevo nivel de magia y automatización. Introduce un concepto, desde una idea fugaz hasta un párrafo detallado, y nuestra tecnología no solo escribirá una narrativa completa, sino que también la analizará para dar vida a sus personajes y escenarios con ilustraciones únicas y evocadoras. Es la herramienta definitiva para materializar tu visión, pasando de la concepción a un libro terminado e ilustrado en cuestión de minutos.
+</p>
+<div class="imagenes" > <img src="portada1.png" alt=""><img src="portada2.png" alt=""><img src="portada3.png" alt="">
+</div>
+
+<p class="presentacion" >3. Transforma tus Palabras en Arte Visual Impresionante
+Ponle rostro a tus héroes y paisajes a tus mundos. Nuestro generador de ilustraciones actúa como tu artista personal, convirtiendo descripciones textuales en impactantes imágenes en 2D y 3D. Ya no tienes que buscar imágenes que se parezcan a tu idea; ahora puedes crear la visión exacta que tienes en tu mente, desde el diseño de una armadura legendaria hasta la panorámica de una ciudad fantástica. Rompe las barreras del texto y muestra tu universo con una riqueza visual que cautivará a tu audiencia como nunca antes.</p>
+<div class="imagenes2" > <img src="im0.png" alt=""> <img src="im2.png" alt=""> <img src="im3.png" alt=""> <img src="im4.png" alt=""> <img src="im5.png" alt="">
+</div> 
+ 
+<p class="presentacion"  >4. Personaliza y Desbloquea Todo el Poder de la IA
+Para que la magia de la inteligencia artificial sea verdaderamente tuya, Silenos te da el control total. La aplicación se integra directamente con los servicios de IA de Google, y para activar estas funciones avanzadas, solo necesitas tu propia clave API gratuita de Google AI Studio. Dentro del panel de configuración, encontrarás un enlace directo para obtener tu clave y un campo para pegarla. Este simple paso asegura que el poder de generación de historias, ilustraciones y mundos funcione bajo tu cuenta, 
+dándote el control absoluto y permitiéndote dar rienda suelta a una creatividad sin límites y completamente personalizada.</p>
+<div class="imagenes2" > <img src="api.jpg" alt="">
+</div> 
+
 </div>
 
 
@@ -1549,7 +1582,7 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
 
 </div>
  
-<div id="principio" class="pantalla" data-titulo="Inicio"  >
+<div id="principio" class="pantalla2" data-titulo="Inicio"  >
   <button class="catalogo" onclick="abrirVentana('catalogo');" >Catálogo</button>
 
 <div   class="language-selector-css">
@@ -1579,19 +1612,9 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
 
 </div>
 
-    <video autoplay muted loop id="video-fondo">
-        <source src="4.mp4" type="video/mp4">
-        Tu navegador no soporta videos HTML5.
-    </video>
+
     <div id="titulo-esfera-container"> 
-        <div id="titulo1">
-            <div>
-                <span>SILEN</span><span class="os-red">OS</span>
-            </div>
-            <div class="version-text">
-                versión 1.1.12
-            </div>
-        </div>
+      
         <div id="esfera">
            <button id="nuevo" class="pro3" onclick="iniciarAnimacionSalida() , renderizarVisorDeLibros();; ">Entrar</button>
             <button  id="cargar" class="pro3" onclick="iniciarAnimacionSalida(), abrirVentana('proyecto');document.getElementById('file-load').click(), renderizarVisorDeLibros();">Cargar</button>
@@ -1734,8 +1757,52 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
     </div>
 </div>
 
+ 
+<div id="menuweb">  
+  <div id="titulo2">
+    <div class="title" onclick="cerrartodo(), abrirVentana('info');" >
+      <span>S I L E N</span><span class="os-red"> O S</span>
+    </div>
+
+       <input class="barra" type="text" id="asistente-titulo-input" placeholder="Título del proyecto" value="Nombre De Tu Proyecto" >
 
 
+<button onclick="cerrartodo(), abrirVentana('procedimiento');" style="display: none;">Libro Ilustrado</button> 
+
+<button onclick="cerrartodo(), abrirVentana('guion-literario');">Guión</button>
+<button onclick="cerrartodo(), abrirVentana('capitulosh');">Libro</button>   
+<button onclick="cerrartodo(), abrirVentana('momentos');" style="display: none;">Momentos</button>
+<button onclick="cerrartodo(), abrirVentana('personajes');">Datos</button>
+<button onclick="cerrartodo(), abrirVentana('proyecto');">🏗️Proyecto</button>
+<button id="bguardarjson"  onclick="guardarJSON()">💾</button>       
+<input type="file" id="file-load" accept="application/json" onchange="cargarJSON(event)" style="display: none;">
+<button   id="bcargarjson" onclick="document.getElementById('file-load').click()">🗂️</button>        
+     
+<button id="bajustes"  onclick="abrirModalConfig()">⚙️</button>
+<button   onclick="abrirModalExportar()"  >Exportar</button>
+
+    <div id="g_id_onload" class="gg"
+         data-client_id="438997287133-lpr4acdlv3cjikfki54fc2sj60t75n3i.apps.googleusercontent.com"
+         data-context="signin"
+         data-ux_mode="popup"
+         data-callback="handleCredentialResponse"
+         data-itp_support="true">
+    </div>
+    <div class="g_id_signin"
+         data-type="standard"
+         data-shape="pill"
+         data-theme="outline"
+         data-text="signin_with"
+         data-size="large"
+         data-logo_alignment="left">
+    </div>
+         <div id="user-profile-container" style="display: none; align-items: center; gap: 10px; padding: 5px; border: 1px solid #ccc; border-radius: 20px;">
+            <img id="user-profile-pic" src="" alt="Foto de perfil" style="width: 30px; height: 30px; border-radius: 50%;">
+            <span id="user-profile-name" style="font-weight: bold; color: #333;"></span>
+            <button id="logout-button" onclick="signOut()" style="background: none; border: none; cursor: pointer; font-size: 16px;" title="Cerrar sesión">🚪</button>
+        </div>
+    </div>
+</div>
     <!-- ================== -->
     <!-- MODAL CREADOR DE PERSONAJES -->
     <!-- ================== -->
@@ -1763,7 +1830,8 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
   <img id="enlarged-img" class="enlarged-image-content">
 </div>
 
-
+<div style="display: none;">      <video autoplay muted loop id="video-fondo">
+        <source src="4.mp4" type="video/mp4">    </video></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -1899,7 +1967,16 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
         </div>
     </div>
 </div>
-
+<style>#info {display: flex;
+ background-color: white;
+padding: 4%;
+ position: relative;
+ width: 100%; padding-right:0% ;
+padding-left: 6%;  
+    color: #333;
+ font-size: 2.2em;
+ overflow-y: scroll;
+}  </style>
  <script>
 
 
@@ -1933,5 +2010,47 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
         });
     });
  </script>
+ <script>
+function handleCredentialResponse(response) {
+  // 1. Decodificar la credencial para obtener los datos del usuario
+  const responsePayload = jwt_decode(response.credential);
+
+  // (Opcional) Mantenemos los logs en la consola para depuración
+  console.log("Login exitoso para:", responsePayload.name);
+
+  // 2. Ocultar el botón de "Iniciar Sesión"
+  document.querySelector('.g_id_signin').style.display = 'none';
+  // También es buena idea ocultar el otro div de Google para evitar popups
+  document.getElementById('g_id_onload').style.display = 'none';
+
+
+  // 3. Obtener los elementos del perfil y rellenarlos con los datos
+  const userProfileContainer = document.getElementById('user-profile-container');
+  const userProfilePic = document.getElementById('user-profile-pic');
+  const userProfileName = document.getElementById('user-profile-name');
+
+  userProfilePic.src = responsePayload.picture;
+  userProfileName.innerText = responsePayload.given_name || responsePayload.name.split(' ')[0]; // Muestra el primer nombre
+
+  // 4. Mostrar el contenedor del perfil de usuario
+  userProfileContainer.style.display = 'flex'; // Usamos flex para que se alinee bien
+}
+
+function signOut() {
+  // 1. Ocultamos el perfil del usuario
+  document.getElementById('user-profile-container').style.display = 'none';
+
+  // 2. Mostramos de nuevo el botón de "Iniciar Sesión"
+  document.querySelector('.g_id_signin').style.display = 'block';
+  document.getElementById('g_id_onload').style.display = 'block';
+
+  console.log('El usuario ha cerrado sesión.');
+  
+  // Nota: Esto es un cierre de sesión visual.
+  // Google gestiona las cookies, pero para el usuario, la sesión en tu web ha terminado.
+}
+
+</script>
+<script src="https://unpkg.com/jwt-decode/build/jwt-decode.js"></script>
 </body>
 </html>

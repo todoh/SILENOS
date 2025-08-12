@@ -100,7 +100,7 @@ const tools = {
             }
         },
     
-  pine_tree: {
+  "pine_tree": {
     "icon": "🌲",
     "name": "Pino Hiperdetallado",
     "isSolid": true,
@@ -272,7 +272,100 @@ const tools = {
       ]
     }
   },
-     luxury_mansion: {
+        
+        antique_lamppost: {
+    "icon": "💡",
+    "name": "Farola Antigua (Pequeña)",
+    "isSolid": true,
+    "radius": 0.27,
+    "model": {
+      "objects": [
+        // --- BASE DE LA FAROLA ---
+        // Modelo escalado a 1/3 de su tamaño original.
+        {
+          "name": "base_bottom",
+          "geometry": { "type": "Cylinder", "radiusTop": 0.27, "radiusBottom": 0.27, "height": 0.13, "radialSegments": 16 },
+          "material": { "color": 0x2C3E50 },
+          "position": { "x": 0, "y": 0.07, "z": 0 }
+        },
+        {
+          "name": "base_mid",
+          "geometry": { "type": "Cylinder", "radiusTop": 0.2, "radiusBottom": 0.23, "height": 0.27, "radialSegments": 16 },
+          "material": { "color": 0x34495E },
+          "position": { "x": 0, "y": 0.27, "z": 0 }
+        },
+
+        // --- POSTE PRINCIPAL ---
+        {
+          "name": "post",
+          "geometry": { "type": "Cylinder", "radiusTop": 0.08, "radiusBottom": 0.08, "height": 4, "radialSegments": 12 },
+          "material": { "color": 0x34495E },
+          "position": { "x": 0, "y": 2.4, "z": 0 }
+        },
+
+        // --- SECCIÓN DE LA LINTERNA ---
+        {
+          "name": "lantern_support",
+          "geometry": { "type": "Box", "width": 0.13, "height": 0.5, "depth": 0.13 },
+          "material": { "color": 0x2C3E50 },
+          "position": { "x": 0, "y": 4.65, "z": 0 }
+        },
+        {
+          "name": "lantern_roof",
+          "geometry": { "type": "Cylinder", "radiusTop": 0, "radiusBottom": 0.4, "height": 0.27, "radialSegments": 8 },
+          "material": { "color": 0x2C3E50 },
+          "position": { "x": 0, "y": 5.03, "z": 0 }
+        },
+        {
+          "name": "lantern_case",
+          "geometry": { "type": "Box", "width": 0.5, "height": 0.6, "depth": 0.5 },
+          "material": { "color": 0xF1C40F, "transparent": true, "opacity": 0.2 },
+          "position": { "x": 0, "y": 4.6, "z": 0 }
+        },
+
+        // --- LUZ INTERIOR ---
+        {
+          "name": "light_bulb",
+          "geometry": { "type": "Sphere", "radius": 0.17, "widthSegments": 16, "heightSegments": 16 },
+          "material": { "color": 0xF1C40F, "emissive": 0xF1C40F, "emissiveIntensity": 2 },
+          "position": { "x": 0, "y": 4.6, "z": 0 }
+        }
+      ]
+    }
+  },
+        
+        building: {
+            icon: '🏢',
+            name: 'Edificio',
+            isSolid: true, 
+            radius: 7,
+            model: {
+                objects: [
+                    // Paredes
+                    { name: 'wall_north', geometry: { type: 'Box' }, material: { color: 0xaaaaaa }, position: { x: 0, y: 2.5, z: -5 }, scale: { x: 10, y: 5, z: 0.5 } },
+                    { name: 'wall_east', geometry: { type: 'Box' }, material: { color: 0xaaaaaa }, position: { x: 5, y: 2.5, z: 0 }, scale: { x: 0.5, y: 5, z: 10 } },
+                    { name: 'wall_west', geometry: { type: 'Box' }, material: { color: 0xaaaaaa }, position: { x: -5, y: 2.5, z: 0 }, scale: { x: 0.5, y: 5, z: 10 } },
+                    { name: 'wall_south_1', geometry: { type: 'Box' }, material: { color: 0xaaaaaa }, position: { x: -3.75, y: 2.5, z: 5 }, scale: { x: 2.5, y: 5, z: 0.5 } },
+                    { name: 'wall_south_2', geometry: { type: 'Box' }, material: { color: 0xaaaaaa }, position: { x: 3.75, y: 2.5, z: 5 }, scale: { x: 2.5, y: 5, z: 0.5 } },
+                    // Puerta
+                    {
+                        name: 'building_door',
+                        geometry: { type: 'Box' },
+                        material: { color: 0x8B4513 },
+                        position: { x: 0, y: 2.5, z: 5 },
+                        scale: { x: 5, y: 5, z: 0.3 }
+                    },
+                    // Suelo del edificio
+                    {
+                        name: 'building_floor',
+                        geometry: { type: 'Box' },
+                        material: { color: 0xcccccc },
+                        position: { x: 0, y: 0.1, z: 0 },
+                        scale: { x: 10, y: 0.2, z: 10 }
+                    }
+                ]
+            }
+        },   luxury_mansion: {
     "icon": "🏛️",
     "name": "Mansión de Lujo",
     "isSolid": true,
@@ -1029,7 +1122,9 @@ potted_tropical_plant: {
       ]
     }
 } 
-}};
+    },
+    customEntities: {}
+};
 
 
 // =======================================================================
@@ -1064,8 +1159,9 @@ function createModelFromJSON(jsonData) {
             const geoType = geoDef.type || part.geometry;
             const geoParams = geoDef || part.geometryParams;
 
+            // Se normalizan los nombres para que CylinderGeometry pueda crear conos
             if (geoType.includes('Cylinder')) {
-                geometry = new THREE.CylinderGeometry(geoParams.radiusTop ?? geoParams.radius, geoParams.radiusBottom ?? geoParams.radius, geoParams.height, geoParams.radialSegments);
+                geometry = new THREE.CylinderGeometry(geoParams.radiusTop ?? 0, geoParams.radiusBottom ?? geoParams.radius, geoParams.height, geoParams.radialSegments);
             } else if (geoType.includes('Icosahedron')) {
                 geometry = new THREE.IcosahedronGeometry(geoParams.radius, geoParams.detail);
             } else if (geoType.includes('Sphere')) {
@@ -1090,16 +1186,6 @@ function createModelFromJSON(jsonData) {
         if (part.name) mesh.name = part.name;
         if (part.position) mesh.position.set(part.position.x || 0, part.position.y || 0, part.position.z || 0);
         
-        // --- CÓDIGO AÑADIDO PARA LA ROTACIÓN ---
-        if (part.rotation) {
-            mesh.rotation.set(
-                part.rotation.x || 0,
-                part.rotation.y || 0,
-                part.rotation.z || 0
-            );
-        }
-        // --- FIN DEL CÓDIGO AÑADIDO ---
-
         mesh.castShadow = true;
         group.add(mesh);
     });

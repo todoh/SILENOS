@@ -16,7 +16,7 @@
 
 /* Contenedor para todos los botones flotantes */
 #momentos-controles-flotantes {
-    position: fixed;
+    position: absolute;
     right: 50%;
     transform: translateX(50%);
     top: 1%;

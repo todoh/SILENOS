@@ -88,6 +88,8 @@ function cerrartodo() {
   document.getElementById('interactivo').style.display = 'none';
   document.getElementById('diapositivas').style.display = 'none';
   document.getElementById('editor').style.display = 'none';
+  document.getElementById('procedimiento').style.display = 'none';
+  document.getElementById('info').style.display = 'none';
 
 
 }
