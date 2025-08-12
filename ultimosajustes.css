@@ -85,14 +85,14 @@
         position: relative;
          font-size: large;
         padding: 10px 15px;
-height: 50px;
+height: 30px;
      
         background-color: #2c2c2c;
         color: white;
         border: 1px solid #666;
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        transform: translateY(-10px) translateX(-50%);
+        transform: translateY(-1px) translateX(-50%);
         transition: transform 0.3s ease; z-index: 9998;
     }
 
