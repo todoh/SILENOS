@@ -85,7 +85,7 @@ function actualizarCalculosAventuraIA() {
 /**
  * Orquesta el proceso completo de generación de la aventura con IA.
  */
-async function generarAventuraConIA() {
+async function generarAventuraConIA2222() {
     cerrarModalMomentosIA();
     if (progressBarManager.isActive) {
         alert("Ya hay un proceso de IA en ejecución.");
@@ -203,7 +203,143 @@ const prompt = `
         alert(`Ocurrió un error: ${error.message}`);
     }
 }
+async function generarAventuraConIA() {
+    cerrarModalMomentosIA(); // Cerrar el modal para ver la barra de progreso
+    if (progressBarManager.isActive) {
+        alert("Ya hay un proceso de IA en ejecución. Por favor, espera a que termine.");
+        return;
+    }
+    progressBarManager.start('Iniciando Aventura Interactiva...');
 
+    // Recoger los valores de los controles del modal
+    const guionSelect = document.getElementById('guion-select-modal');
+    const tituloGuion = guionSelect.value;
+    const numeroDeNodos = document.getElementById('ia-nodos-input').value;
+    const numeroDeFinales = document.getElementById('ia-finales-input').value;
+    const densidadValor = document.getElementById('ia-densidad-slider').value;
+    const densidadDesc = { 1: "muy lineal", 2: "con pocas bifurcaciones", 3: "con ramificación moderada", 4: "muy ramificada", 5: "extremadamente compleja" }[densidadValor];
+
+    if (!tituloGuion) {
+        progressBarManager.error("Selecciona un guion");
+        return alert("Por favor, selecciona un guion de referencia.");
+    }
+    
+    // Asumimos que guionLiterarioData y _extraerTextoPlanoDeGuionHTML están disponibles globalmente
+    const capitulo = guionLiterarioData.find(g => g.titulo === tituloGuion);
+    const contenido = capitulo ? _extraerTextoPlanoDeGuionHTML(capitulo.contenido) : '';
+    
+    if (!contenido) {
+        progressBarManager.error("Guion vacío");
+        return alert("El guion seleccionado está vacío.");
+    }
+    
+    progressBarManager.set(10, 'Preparando prompt maestro...');
+
+    // El nuevo "Super-Prompt"
+    const prompt = `
+        Eres un diseñador de juegos experto en ficción interactiva. Tu tarea es convertir el siguiente guion en una red de "momentos" interconectados para un videojuego.
+
+        **Guion de Referencia:**
+        ---
+        ${contenido}
+        ---
+
+        **REQUISITOS ESTRUCTURALES OBLIGATORIOS:**
+        1.  **Total de Momentos (Nodos):** La aventura debe tener exactamente ${numeroDeNodos} momentos en total.
+        2.  **Número de Finales:** La historia debe conducir a exactamente ${numeroDeFinales} momentos finales distintos.
+        3.  **Densidad de Ramificación:** La estructura debe ser ${densidadDesc}.
+
+        **FORMATO DE RESPUESTA (MUY IMPORTANTE):**
+        Responde ÚNICAMENTE con un objeto JSON válido que contenga un array llamado "momentos". NO incluyas explicaciones, comentarios, ni marcadores de código como \`\`\`json.
+        La estructura de cada objeto dentro del array "momentos" DEBE ser la siguiente, respetando las comas entre cada propiedad:
+        {
+          "id": "string (identificador único, ej: 'inicio')",
+          "titulo": "string (título corto y descriptivo)",
+          "descripcion": "string (texto narrativo detallado del momento)",
+          "esFinal": boolean (true si es un final, de lo contrario false),
+          "acciones": [
+            {
+              "textoBoton": "string (texto del botón de decisión)",
+              "idDestino": "string (el 'id' del momento de destino)"
+            }
+          ]
+        }
+
+        Ejemplo de un objeto momento VÁLIDO:
+        {"id": "cueva_oscura", "titulo": "La Cueva Oscura", "descripcion": "Entras en una cueva húmeda y oscura. Un eco resuena en la distancia.", "esFinal": false, "acciones": [{"textoBoton": "Encender antorcha", "idDestino": "cueva_iluminada"}, {"textoBoton": "Avanzar a ciegas", "idDestino": "tropiezo_fatal"}]}
+    `;
+
+    try {
+        progressBarManager.set(20, 'Consultando a la IA...');
+        // Reutilizamos la función robusta llamarIAConFeedback
+        const respuestaJson = await llamarIAConFeedback(prompt, "Generando Red de Aventura Interactiva", 'gemini-2.5-flash-lite', true, 3); // Usamos un modelo potente
+        
+        progressBarManager.set(50, 'IA respondió. Procesando y creando momentos...');
+        if (!respuestaJson?.momentos || !Array.isArray(respuestaJson.momentos) || respuestaJson.momentos.length === 0) {
+            throw new Error("La respuesta de la IA no tuvo el formato de momentos esperado.");
+        }
+
+        const momentosData = respuestaJson.momentos;
+        const lienzo = document.getElementById('momentos-lienzo');
+        let offsetX = 0;
+        
+        // Calculamos el desplazamiento para los nuevos nodos
+        lienzo.querySelectorAll('.momento-nodo').forEach(nodo => {
+            const rightEdge = parseFloat(nodo.style.left || 0) + nodo.offsetWidth;
+            if (rightEdge > offsetX) offsetX = rightEdge;
+        });
+        if (offsetX > 0) offsetX += 150; // Añadimos un margen
+
+        const idMap = new Map();
+        
+        // Primera pasada: Crear nodos y mapear IDs
+        momentosData.forEach(datos => {
+            const nuevoId = `momento_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+            idMap.set(datos.id, nuevoId); // Mapeamos el id temporal de la IA a nuestro id único y seguro
+            // Asumimos que crearNodoEnLienzo está disponible globalmente
+            crearNodoEnLienzo({ ...datos, id: nuevoId, acciones: [], x: 0, y: 0 }); 
+        });
+        
+        progressBarManager.set(75, 'Conectando acciones y decisiones...');
+        
+        // Segunda pasada: Conectar las acciones usando los IDs mapeados
+        momentosData.forEach(datos => {
+            const idOriginal = datos.id;
+            const nuevoId = idMap.get(idOriginal);
+            const nodo = document.getElementById(nuevoId);
+            if (!nodo) return;
+
+            const accionesTraducidas = (datos.acciones || []).map(a => ({
+                ...a,
+                idDestino: idMap.get(a.idDestino) // Traducimos el id de destino usando el mapa
+            })).filter(a => a.idDestino); // Filtramos acciones que no llevan a ningún sitio
+            
+            nodo.dataset.acciones = JSON.stringify(accionesTraducidas);
+        });
+
+        progressBarManager.set(85, 'Organizando el lienzo...');
+        // Asumimos que organizarNodosEnLienzo está disponible globalmente
+        organizarNodosEnLienzo(momentosData, idMap, offsetX);
+        
+        progressBarManager.set(95, 'Finalizando...');
+        if (momentosData.length > 0) {
+            const primerId = idMap.get(momentosData[0].id);
+            if (!lienzo.querySelector('.momento-nodo.inicio')) {
+                marcarComoInicio(primerId);
+            }
+            // Centramos la vista en el primer nodo creado
+            setTimeout(() => centrarVistaEnNodo(document.getElementById(primerId)), 100);
+        }
+
+        progressBarManager.finish();
+        alert("¡Nueva aventura añadida al lienzo con éxito!");
+
+    } catch (error) {
+        console.error("Error generando aventura con IA:", error);
+        progressBarManager.error('Error en la IA');
+        alert(`Ocurrió un error al generar la aventura: ${error.message}`);
+    }
+}
 
 // --- FUNCIONES DE AUTO-LAYOUT ---
 

@@ -41,22 +41,22 @@ function inicializarPanelEdicion() {
             <button id="panel-edicion-cerrar-btn" class="panel-cerrar-btn">×</button>
         </div>
         <div class="panel-contenido">
-            <label>Título:</label>
+          
             <input type="text" id="panel-editor-titulo" placeholder="Título del momento...">
             
-            <label>Descripción Narrativa:</label>
+           
             <textarea id="panel-editor-descripcion" rows="4" placeholder="Describe lo que sucede en este momento..."></textarea>
             
             <hr>
 
-            <h4><i class="fas fa-cube"></i> Editor de Entorno</h4>
+            
             <div id="panel-entorno-container">
                 <!-- Los campos del entorno se generarán aquí -->
             </div>
             
             <hr>
 
-            <h4><i class="fas fa-users"></i> Gestor de Entidades (Sprites)</h4>
+     
             <div id="panel-entidades-container">
                 <!-- Las entidades se listarán aquí -->
             </div>
@@ -64,7 +64,6 @@ function inicializarPanelEdicion() {
 
             <hr>
 
-            <h4><i class="fas fa-directions"></i> Acciones (Decisiones)</h4>
             <div id="panel-acciones-container">
                 <!-- Las acciones se listarán aquí -->
             </div>

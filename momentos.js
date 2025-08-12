@@ -15,9 +15,10 @@ const canvasState = {
     lastX: 0,
     lastY: 0,
 };
-const ZOOM_LEVELS = [0.25, 0.5, 1.0, 1.5];
-let currentZoomIndex = 2; // Índice para ZOOM_LEVELS (1.0)
-
+// Array de niveles de zoom desde 10% a 200% en saltos de 10%
+const ZOOM_LEVELS = Array.from({length: 20}, (_, i) => parseFloat(((i + 1) * 0.1).toFixed(1)));
+// El índice inicial ahora apunta al valor 1.0 (100%) en el nuevo array
+let currentZoomIndex = 9;
 
 /**
  * Inicializa los listeners y componentes de la sección Momentos.
@@ -306,7 +307,12 @@ function cerrarModalMomentosIA() {
 // =======================================================================
 
 // MODIFICACIÓN en la función existente generarAventuraConIA
-async function generarAventuraConIA() {
+/**
+ * Genera una red de momentos de aventura interactiva utilizando la IA.
+ * Recoge los datos de un modal, construye un "Super-Prompt" y llama a la IA.
+ * Luego, procesa la respuesta para crear y organizar los nodos en el lienzo.
+ */
+async function generarAventuraConIA2222() {
     cerrarModalMomentosIA(); // Cerrar el modal para ver la barra de progreso
     if (progressBarManager.isActive) {
         alert("Ya hay un proceso de IA en ejecución. Por favor, espera a que termine.");
@@ -326,8 +332,11 @@ async function generarAventuraConIA() {
         progressBarManager.error("Selecciona un guion");
         return alert("Por favor, selecciona un guion de referencia.");
     }
+    
+    // Asumimos que guionLiterarioData y _extraerTextoPlanoDeGuionHTML están disponibles globalmente
     const capitulo = guionLiterarioData.find(g => g.titulo === tituloGuion);
     const contenido = capitulo ? _extraerTextoPlanoDeGuionHTML(capitulo.contenido) : '';
+    
     if (!contenido) {
         progressBarManager.error("Guion vacío");
         return alert("El guion seleccionado está vacío.");
@@ -336,7 +345,7 @@ async function generarAventuraConIA() {
     progressBarManager.set(10, 'Preparando prompt maestro...');
 
     // El nuevo "Super-Prompt"
-const prompt = `
+    const prompt = `
         Eres un diseñador de juegos experto en ficción interactiva. Tu tarea es convertir el siguiente guion en una red de "momentos" interconectados para un videojuego.
 
         **Guion de Referencia:**
@@ -350,7 +359,7 @@ const prompt = `
         3.  **Densidad de Ramificación:** La estructura debe ser ${densidadDesc}.
 
         **FORMATO DE RESPUESTA (MUY IMPORTANTE):**
-        Responde ÚNICAMENTE con un objeto JSON válido. NO incluyas explicaciones, comentarios, ni marcadores de código como \`\`\`json.
+        Responde ÚNICAMENTE con un objeto JSON válido que contenga un array llamado "momentos". NO incluyas explicaciones, comentarios, ni marcadores de código como \`\`\`json.
         La estructura de cada objeto dentro del array "momentos" DEBE ser la siguiente, respetando las comas entre cada propiedad:
         {
           "id": "string (identificador único, ej: 'inicio')",
@@ -371,52 +380,63 @@ const prompt = `
 
     try {
         progressBarManager.set(20, 'Consultando a la IA...');
-        // La función llamarIAConFeedback ya existe y es robusta, la reutilizamos.
-        const respuestaJson = await llamarIAConFeedback(prompt, "Generando Red de Aventura Interactiva", true);
+        // Reutilizamos la función robusta llamarIAConFeedback
+        const respuestaJson = await llamarIAConFeedback(prompt, "Generando Red de Aventura Interactiva", 'gemini-2.5-flash-lite', true, 3); // Usamos un modelo potente
         
         progressBarManager.set(50, 'IA respondió. Procesando y creando momentos...');
-        if (!respuestaJson?.momentos?.length) throw new Error("La respuesta de la IA no tuvo el formato de momentos esperado.");
+        if (!respuestaJson?.momentos || !Array.isArray(respuestaJson.momentos) || respuestaJson.momentos.length === 0) {
+            throw new Error("La respuesta de la IA no tuvo el formato de momentos esperado.");
+        }
 
-        // El resto del código para crear los nodos y organizarlos es el mismo que ya tenías y funciona bien.
-        // Lo incluimos aquí para completitud.
+        const momentosData = respuestaJson.momentos;
         const lienzo = document.getElementById('momentos-lienzo');
         let offsetX = 0;
+        
+        // Calculamos el desplazamiento para los nuevos nodos
         lienzo.querySelectorAll('.momento-nodo').forEach(nodo => {
             const rightEdge = parseFloat(nodo.style.left || 0) + nodo.offsetWidth;
             if (rightEdge > offsetX) offsetX = rightEdge;
         });
-        if (offsetX > 0) offsetX += 150;
+        if (offsetX > 0) offsetX += 150; // Añadimos un margen
 
-        const momentosData = respuestaJson.momentos;
         const idMap = new Map();
         
+        // Primera pasada: Crear nodos y mapear IDs
         momentosData.forEach(datos => {
             const nuevoId = `momento_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-            idMap.set(datos.id, nuevoId); // Mapeamos el id temporal de la IA a nuestro id único
-            crearNodoEnLienzo({ ...datos, id: nuevoId, acciones: [], x: 0, y: 0 });
+            idMap.set(datos.id, nuevoId); // Mapeamos el id temporal de la IA a nuestro id único y seguro
+            // Asumimos que crearNodoEnLienzo está disponible globalmente
+            crearNodoEnLienzo({ ...datos, id: nuevoId, acciones: [], x: 0, y: 0 }); 
         });
         
         progressBarManager.set(75, 'Conectando acciones y decisiones...');
+        
+        // Segunda pasada: Conectar las acciones usando los IDs mapeados
         momentosData.forEach(datos => {
-            const nodo = document.getElementById(idMap.get(datos.id));
+            const idOriginal = datos.id;
+            const nuevoId = idMap.get(idOriginal);
+            const nodo = document.getElementById(nuevoId);
             if (!nodo) return;
+
             const accionesTraducidas = (datos.acciones || []).map(a => ({
                 ...a,
-                idDestino: idMap.get(a.idDestino) // Usamos el mapa para obtener el id real
-            })).filter(a => a.idDestino);
+                idDestino: idMap.get(a.idDestino) // Traducimos el id de destino usando el mapa
+            })).filter(a => a.idDestino); // Filtramos acciones que no llevan a ningún sitio
+            
             nodo.dataset.acciones = JSON.stringify(accionesTraducidas);
         });
 
         progressBarManager.set(85, 'Organizando el lienzo...');
+        // Asumimos que organizarNodosEnLienzo está disponible globalmente
         organizarNodosEnLienzo(momentosData, idMap, offsetX);
         
         progressBarManager.set(95, 'Finalizando...');
-        if (momentosData.length > 0 && !lienzo.querySelector('.momento-nodo.inicio')) {
-            const primerId = idMap.get(momentosData[0].id);
-            marcarComoInicio(primerId);
-        }
         if (momentosData.length > 0) {
             const primerId = idMap.get(momentosData[0].id);
+            if (!lienzo.querySelector('.momento-nodo.inicio')) {
+                marcarComoInicio(primerId);
+            }
+            // Centramos la vista en el primer nodo creado
             setTimeout(() => centrarVistaEnNodo(document.getElementById(primerId)), 100);
         }
 
@@ -426,7 +446,7 @@ const prompt = `
     } catch (error) {
         console.error("Error generando aventura con IA:", error);
         progressBarManager.error('Error en la IA');
-        alert(`Ocurrió un error: ${error.message}`);
+        alert(`Ocurrió un error al generar la aventura: ${error.message}`);
     }
 }
 /**
