@@ -399,7 +399,7 @@ editor de datos -->
 </div>
 
 <div id="momentos" class="pantalla" data-titulo="Aventura Interactiva">
- 
+ <button class="pro17"  title="Ilustrar todo"  onclick="ilustrarTodo()" >🖌️</button>
     <button class="pro16"  title="Acción contextual"  onclick="abrirModalMomentosIA()" >✨</button>
 
     <button class="pro6" id="agregar-momento-btn">+</button>
@@ -1639,36 +1639,30 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
 <div id="modal-momentos-ia" class="modal-content" style="display: none; width: auto; max-width: 600px;">
     <button class="modal-close-button" onclick="cerrarModalMomentosIA()">&times;</button>
     
-    <h3>Generar Aventura Interactiva con IA</h3>
-    <p style="font-size: 0.9em; color: #666; text-align: center; margin-bottom: 15px;">
-        Define los parámetros de tu historia. La IA construirá una red de momentos basada en tus especificaciones y el guion seleccionado.
+    <h3>Generador de Aventura Estructural</h3>
+    <p style="font-size: 0.9em; color: #666; text-align: center; margin-bottom: 25px;">
+        Define la estructura narrativa. La IA construirá la historia por fases.
     </p>
 
     <div id="modal-ia-content-placeholder" style="width: 100%; display: flex; flex-direction: column; gap: 20px;">
         <div class="ia-control-row">
-            <label for="guion-select-modal">Guion de Referencia:</label>
+            <label for="guion-select-modal">1. Guion de Referencia:</label>
             <select id="guion-select-modal" class="pro"></select>
         </div>
 
         <div class="ia-control-row">
-            <label for="ia-nodos-input">Momentos Totales (Nodos):</label>
-            <input type="number" id="ia-nodos-input" class="pro ia-input-numero" min="5" max="100" value="15">
-        </div>
-
-        <div class="ia-control-row">
-            <label for="ia-finales-input">Finales Deseados:</label>
+            <label for="ia-finales-input">2. Número de Finales:</label>
             <input type="number" id="ia-finales-input" class="pro ia-input-numero" min="1" max="10" value="2">
         </div>
         
         <div class="ia-control-row">
-            <label for="ia-densidad-slider">Densidad de Ramificación:</label>
-            <input type="range" id="ia-densidad-slider" min="1" max="5" value="2" step="1">
-            <span id="ia-densidad-label">Baja</span>
+            <label for="ia-tamanio-input">3. Tamaño de la Obra (0-5):</label>
+            <input type="number" id="ia-tamanio-input" class="pro ia-input-numero" min="0" max="5" value="1">
         </div>
 
         <div class="ia-info-box">
-            <div id="ia-min-nodos-display">Nodos mínimos recomendados: 7</div>
-            <div id="ia-api-calls-display">Peticiones a la API estimadas: ~16</div>
+            <div id="ia-api-calls-display">Peticiones a la API estimadas: ~3</div>
+            <p style="font-size: 0.9em; margin-top: 5px;">El 'Tamaño' añade ramas que regresan a la trama principal, haciendo la historia más compleja.</p>
         </div>
 
         <button id="generar-aventura-ia-btn-modal" class="pro modal-button">✨ Generar Aventura</button>

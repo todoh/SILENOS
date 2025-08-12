@@ -1,35 +1,46 @@
-// =======================================================================
-//  IA - GENERACIÓN DE AVENTURA Y AUTO-LAYOUT
-// =======================================================================
+// =================================================================
+// CÓDIGO ÚNICO Y DEFINITIVO PARA MOMENTOS-IA.JS
+// Contiene la arquitectura estructural, el manejo del nuevo modal y el layout.
+// =================================================================
 
 /**
- * Abre y prepara el modal para la generación de aventura con IA.
+ * [NUEVA] Abre y prepara el modal para la generación de aventura ESTRUCTURAL.
  */
 function abrirModalMomentosIA() {
     const overlay = document.getElementById('modal-overlay');
     const modal = document.getElementById('modal-momentos-ia');
-    if (!overlay || !modal) return;
-
-    const guionSelectModal = document.getElementById('guion-select-modal');
-    if (typeof cargarGuionesEnDropdown === 'function') {
-        cargarGuionesEnDropdown(guionSelectModal); 
+    if (!overlay || !modal) {
+        console.error("No se encontraron los elementos del modal de IA.");
+        return;
     }
 
+    // Poblar el dropdown de guiones
+    const guionSelectModal = document.getElementById('guion-select-modal');
+    if (typeof cargarGuionesEnDropdown === 'function') {
+        cargarGuionesEnDropdown(guionSelectModal);
+    }
+
+    // Mostrar modal
     overlay.style.display = 'block';
     modal.style.display = 'flex';
     overlay.onclick = cerrarModalMomentosIA;
 
-    const nodosInput = document.getElementById('ia-nodos-input');
+    // --- LÓGICA DE LISTENERS PARA EL NUEVO MODAL ---
     const finalesInput = document.getElementById('ia-finales-input');
-    const densidadSlider = document.getElementById('ia-densidad-slider');
+    const tamanioInput = document.getElementById('ia-tamanio-input');
     const generarBtn = document.getElementById('generar-aventura-ia-btn-modal');
-    
-    [nodosInput, finalesInput, densidadSlider].forEach(input => {
-        input.addEventListener('input', actualizarCalculosAventuraIA);
-    });
-    
-    generarBtn.addEventListener('click', generarAventuraConIA);
 
+    // Limpia listeners antiguos y añade los nuevos para evitar duplicados
+    const nuevoGenerarBtn = generarBtn.cloneNode(true);
+    generarBtn.parentNode.replaceChild(nuevoGenerarBtn, generarBtn);
+    nuevoGenerarBtn.addEventListener('click', generarAventuraEstructural);
+
+    finalesInput.removeEventListener('input', actualizarCalculosAventuraIA);
+    tamanioInput.removeEventListener('input', actualizarCalculosAventuraIA);
+    finalesInput.addEventListener('input', actualizarCalculosAventuraIA);
+    tamanioInput.addEventListener('input', actualizarCalculosAventuraIA);
+
+    // Ejecutar el cálculo una vez al abrir para mostrar el valor inicial correcto
     actualizarCalculosAventuraIA();
 }
 
@@ -47,382 +58,573 @@ function cerrarModalMomentosIA() {
 }
 
 /**
- * Actualiza los cálculos y validaciones en el modal de IA en tiempo real.
+ * [NUEVA] Actualiza los cálculos en el modal rediseñado.
  */
 function actualizarCalculosAventuraIA() {
-    const nodosInput = document.getElementById('ia-nodos-input');
     const finalesInput = document.getElementById('ia-finales-input');
-    const densidadSlider = document.getElementById('ia-densidad-slider');
-    const densidadLabel = document.getElementById('ia-densidad-label');
-    const minNodosDisplay = document.getElementById('ia-min-nodos-display');
+    const tamanioInput = document.getElementById('ia-tamanio-input');
     const apiCallsDisplay = document.getElementById('ia-api-calls-display');
-    const generarBtn = document.getElementById('generar-aventura-ia-btn-modal');
 
-    const numNodos = parseInt(nodosInput.value);
-    const numFinales = parseInt(finalesInput.value);
-    const densidad = parseInt(densidadSlider.value);
+    if (!finalesInput || !tamanioInput || !apiCallsDisplay) return;
 
-    const densidadDesc = { 1: "Muy Lineal", 2: "Baja", 3: "Moderada", 4: "Alta", 5: "Muy Compleja" };
-    densidadLabel.textContent = densidadDesc[densidad] || "Moderada";
-    
-    const minNodos = Math.ceil((numFinales * 1.5) + (densidad * 1.5));
-    minNodosDisplay.textContent = `Nodos mínimos recomendados: ${minNodos}`;
+    const numFinales = parseInt(finalesInput.value) || 1;
+    const tamanioObra = parseInt(tamanioInput.value) || 0;
 
-    const estimatedCalls = 1 + numNodos;
+    const estimatedCalls = 1 + (numFinales - 1) + tamanioObra;
     apiCallsDisplay.textContent = `Peticiones a la API estimadas: ~${estimatedCalls}`;
-
-    if (numNodos < minNodos) {
-        generarBtn.disabled = true;
-        nodosInput.style.borderColor = 'red';
-        minNodosDisplay.style.color = 'red';
-    } else {
-        generarBtn.disabled = false;
-        nodosInput.style.borderColor = '';
-        minNodosDisplay.style.color = '';
-    }
 }
 
 /**
- * Orquesta el proceso completo de generación de la aventura con IA.
+ * [NUEVA] Convierte el estado actual del mapa de nodos en un resumen de texto para la IA.
  */
-async function generarAventuraConIA2222() {
+function generarResumenDeLaHistoriaParaIA(nodosGenerados) {
+    let resumen = "Esta es la estructura y contenido actual de la historia:\n";
+    for (const [id, data] of nodosGenerados.entries()) {
+        const titulo = data.titulo || "Momento sin título";
+        // Añadimos los primeros 60 caracteres de la descripción para dar contexto
+        const descCorta = (data.descripcion || "Sin descripción.").substring(0, 60);
+        resumen += `- Nodo ${id} ("${titulo}"): ${descCorta}...\n`;
+    }
+    return resumen;
+}
+
+/**
+ * 
+ * 
+  const MODELO_PRINCIPAL = 'gemini-2.5-flash-lite';
+    const MODELO_SECUNDARIO = 'gemini-2.5-flash-lite';
+ * 
+ * [NUEVO ORQUESTADOR] Genera la aventura siguiendo la nueva lógica estructural por fases.
+ */
+
+// =================================================================
+// VERSIÓN FINAL CON CONTEXTO MEJORADO Y REGLA ANTI-REPETICIÓN
+// =================================================================
+
+async function generarAventuraEstructural() {
     cerrarModalMomentosIA();
     if (progressBarManager.isActive) {
         alert("Ya hay un proceso de IA en ejecución.");
         return;
     }
-    progressBarManager.start('Iniciando Aventura Interactiva...');
+    progressBarManager.start('Iniciando generación estructural...');
 
+    const finalesInput = document.getElementById('ia-finales-input');
+    const tamanioInput = document.getElementById('ia-tamanio-input');
     const guionSelect = document.getElementById('guion-select-modal');
-    const tituloGuion = guionSelect.value;
-    const numeroDeNodos = document.getElementById('ia-nodos-input').value;
-    const numeroDeFinales = document.getElementById('ia-finales-input').value;
-    const densidadValor = document.getElementById('ia-densidad-slider').value;
-    const densidadDesc = { 1: "muy lineal", 2: "con pocas bifurcaciones", 3: "con ramificación moderada", 4: "muy ramificada", 5: "extremadamente compleja" }[densidadValor];
-
-    if (!tituloGuion) {
-        progressBarManager.error("Selecciona un guion");
-        return alert("Por favor, selecciona un guion de referencia.");
-    }
-    const capitulo = guionLiterarioData.find(g => g.titulo === tituloGuion);
-    const contenido = capitulo ? _extraerTextoPlanoDeGuionHTML(capitulo.contenido) : '';
-    if (!contenido) {
-        progressBarManager.error("Guion vacío");
-        return alert("El guion seleccionado está vacío.");
-    }
     
-    progressBarManager.set(10, 'Preparando prompt maestro...');
+    const numFinales = parseInt(finalesInput.value);
+    const tamanioObra = parseInt(tamanioInput.value);
+    const tituloGuion = guionSelect.value;
 
-const prompt = `
-        Eres un diseñador de juegos experto en ficción interactiva. Tu tarea es convertir el siguiente guion en una red de "momentos" interconectados para un videojuego.
+  const MODELO_PRINCIPAL = 'gemini-2.5-flash-lite';
+    const MODELO_SECUNDARIO = 'gemini-2.5-flash-lite';
 
-        **Guion de Referencia:**
-        ---
-        ${contenido}
-        ---
+    const capitulo = guionLiterarioData.find(g => g.titulo === tituloGuion);
+    const contenidoGuion = capitulo ? _extraerTextoPlanoDeGuionHTML(capitulo.contenido) : '';
+    if (!contenidoGuion) return progressBarManager.error("Guion vacío.");
 
-        **REQUISITOS ESTRUCTURALES OBLIGATORIOS:**
-        1.  **Total de Momentos (Nodos):** La aventura debe tener exactamente ${numeroDeNodos} momentos en total.
-        2.  **Número de Finales:** La historia debe conducir a exactamente ${numeroDeFinales} momentos finales distintos.
-        3.  **Densidad de Ramificación:** La estructura debe ser ${densidadDesc}.
-
-        **FORMATO DE RESPUESTA (MUY IMPORTANTE):**
-        Responde ÚNICAMENTE con un objeto JSON válido. NO incluyas explicaciones, comentarios, ni marcadores de código como \`\`\`json.
-        La estructura de cada objeto dentro del array "momentos" DEBE ser la siguiente, respetando las comas entre cada propiedad:
-        {
-          "id": "string (identificador único, ej: 'inicio')",
-          "titulo": "string (título corto y descriptivo)",
-          "descripcion": "string (texto narrativo detallado del momento)",
-          "esFinal": boolean (true si es un final, de lo contrario false),
-          "acciones": [
-            {
-              "textoBoton": "string (texto del botón de decisión)",
-              "idDestino": "string (el 'id' del momento de destino)"
-            }
-          ]
-        }
-
-        Ejemplo de un objeto momento VÁLIDO:
-        {"id": "cueva_oscura", "titulo": "La Cueva Oscura", "descripcion": "Entras en una cueva húmeda y oscura. Un eco resuena en la distancia.", "esFinal": false, "acciones": [{"textoBoton": "Encender antorcha", "idDestino": "cueva_iluminada"}, {"textoBoton": "Avanzar a ciegas", "idDestino": "tropiezo_fatal"}]}
-    `;
+    const nodosGenerados = new Map();
+    const idMapMaestro = new Map();
+    let totalPasos = 1 + (numFinales - 1) + tamanioObra;
+    let pasoActual = 0;
+    
+    const prefijosUsados = new Set();
+    function generarPrefijoUnico() {
+        let prefijo;
+        do {
+            prefijo = Math.floor(1000 + Math.random() * 9000);
+        } while (prefijosUsados.has(prefijo));
+        prefijosUsados.add(prefijo);
+        return prefijo;
+    }
 
     try {
-        progressBarManager.set(20, 'Consultando a la IA...');
-        const respuestaJson = await llamarIAConFeedback(prompt, "Generando Red de Aventura Interactiva", true);
+        // --- FASE 1: TRAMA PRINCIPAL ---
+        pasoActual++;
+        progressBarManager.set( (pasoActual / totalPasos) * 100, `Fase 1: Creando trama principal...`);
+        const promptFase1 = `Basado en el guion: "${contenidoGuion}", crea la TRAMA PRINCIPAL de una historia. Debe ser una secuencia lineal de entre 7 y 15 momentos que lleve a un final. Responde ÚNICAMENTE con un JSON: {"momentos": [{"id": "...", "titulo": "...", "descripcion": "...", "esFinal": boolean}]}`;
+        const respuestaFase1 = await llamarIAConFeedback(promptFase1, "Generando Trama Principal", MODELO_PRINCIPAL, true, 3);
+        if (!respuestaFase1?.momentos?.length) throw new Error("La Fase 1 falló.");
         
-        progressBarManager.set(50, 'IA respondió. Procesando y creando momentos...');
-        if (!respuestaJson?.momentos?.length) throw new Error("La respuesta de la IA no tuvo el formato esperado.");
-
-        const lienzo = document.getElementById('momentos-lienzo');
-        let offsetX = 0;
-        lienzo.querySelectorAll('.momento-nodo').forEach(nodo => {
-            const rightEdge = parseFloat(nodo.style.left || 0) + nodo.offsetWidth;
-            if (rightEdge > offsetX) offsetX = rightEdge;
-        });
-        if (offsetX > 0) offsetX += 150;
-
-        const momentosData = respuestaJson.momentos;
-        const idMap = new Map();
-        
-        momentosData.forEach(datos => {
-            const nuevoId = `momento_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-            idMap.set(datos.id, nuevoId);
-            crearNodoEnLienzo({ ...datos, id: nuevoId, acciones: [], x: 0, y: 0 }); // Llama a la función del core
-        });
-        
-        progressBarManager.set(75, 'Conectando acciones y decisiones...');
-        momentosData.forEach(datos => {
-            const nodo = document.getElementById(idMap.get(datos.id));
-            if (!nodo) return;
-            const accionesTraducidas = (datos.acciones || []).map(a => ({
-                ...a,
-                idDestino: idMap.get(a.idDestino)
-            })).filter(a => a.idDestino);
-            nodo.dataset.acciones = JSON.stringify(accionesTraducidas);
+        const momentosTroncoOriginales = respuestaFase1.momentos;
+        const momentosTronco = momentosTroncoOriginales.map(datos => {
+            const prefijo = generarPrefijoUnico();
+            return { ...datos, titulo: `[${prefijo}] ${datos.titulo || 'Momento'}` };
         });
 
-        progressBarManager.set(85, 'Organizando el lienzo...');
-        organizarNodosEnLienzo(momentosData, idMap, offsetX);
-        
-        progressBarManager.set(95, 'Finalizando...');
-        if (momentosData.length > 0 && !lienzo.querySelector('.momento-nodo.inicio')) {
-            const primerId = idMap.get(momentosData[0].id);
-            marcarComoInicio(primerId); // Llama a la función del core
-        }
-        if (momentosData.length > 0) {
-            const primerId = idMap.get(momentosData[0].id);
-            setTimeout(() => centrarVistaEnNodo(document.getElementById(primerId)), 100); // Llama a la función de vista
-        }
-
-        progressBarManager.finish();
-        alert("¡Nueva aventura añadida al lienzo con éxito!");
-
-    } catch (error) {
-        console.error("Error generando aventura con IA:", error);
-        progressBarManager.error('Error en la IA');
-        alert(`Ocurrió un error: ${error.message}`);
-    }
-}
-async function generarAventuraConIA() {
-    cerrarModalMomentosIA(); // Cerrar el modal para ver la barra de progreso
-    if (progressBarManager.isActive) {
-        alert("Ya hay un proceso de IA en ejecución. Por favor, espera a que termine.");
-        return;
-    }
-    progressBarManager.start('Iniciando Aventura Interactiva...');
-
-    // Recoger los valores de los controles del modal
-    const guionSelect = document.getElementById('guion-select-modal');
-    const tituloGuion = guionSelect.value;
-    const numeroDeNodos = document.getElementById('ia-nodos-input').value;
-    const numeroDeFinales = document.getElementById('ia-finales-input').value;
-    const densidadValor = document.getElementById('ia-densidad-slider').value;
-    const densidadDesc = { 1: "muy lineal", 2: "con pocas bifurcaciones", 3: "con ramificación moderada", 4: "muy ramificada", 5: "extremadamente compleja" }[densidadValor];
-
-    if (!tituloGuion) {
-        progressBarManager.error("Selecciona un guion");
-        return alert("Por favor, selecciona un guion de referencia.");
-    }
-    
-    // Asumimos que guionLiterarioData y _extraerTextoPlanoDeGuionHTML están disponibles globalmente
-    const capitulo = guionLiterarioData.find(g => g.titulo === tituloGuion);
-    const contenido = capitulo ? _extraerTextoPlanoDeGuionHTML(capitulo.contenido) : '';
-    
-    if (!contenido) {
-        progressBarManager.error("Guion vacío");
-        return alert("El guion seleccionado está vacío.");
-    }
-    
-    progressBarManager.set(10, 'Preparando prompt maestro...');
-
-    // El nuevo "Super-Prompt"
-    const prompt = `
-        Eres un diseñador de juegos experto en ficción interactiva. Tu tarea es convertir el siguiente guion en una red de "momentos" interconectados para un videojuego.
-
-        **Guion de Referencia:**
-        ---
-        ${contenido}
-        ---
-
-        **REQUISITOS ESTRUCTURALES OBLIGATORIOS:**
-        1.  **Total de Momentos (Nodos):** La aventura debe tener exactamente ${numeroDeNodos} momentos en total.
-        2.  **Número de Finales:** La historia debe conducir a exactamente ${numeroDeFinales} momentos finales distintos.
-        3.  **Densidad de Ramificación:** La estructura debe ser ${densidadDesc}.
-
-        **FORMATO DE RESPUESTA (MUY IMPORTANTE):**
-        Responde ÚNICAMENTE con un objeto JSON válido que contenga un array llamado "momentos". NO incluyas explicaciones, comentarios, ni marcadores de código como \`\`\`json.
-        La estructura de cada objeto dentro del array "momentos" DEBE ser la siguiente, respetando las comas entre cada propiedad:
-        {
-          "id": "string (identificador único, ej: 'inicio')",
-          "titulo": "string (título corto y descriptivo)",
-          "descripcion": "string (texto narrativo detallado del momento)",
-          "esFinal": boolean (true si es un final, de lo contrario false),
-          "acciones": [
-            {
-              "textoBoton": "string (texto del botón de decisión)",
-              "idDestino": "string (el 'id' del momento de destino)"
+        momentosTronco.forEach((datos, index) => {
+            if (!momentosTroncoOriginales[index].id) return;
+            const nuevoId = `P-${index + 1}`;
+            idMapMaestro.set(momentosTroncoOriginales[index].id, nuevoId);
+            if (index < momentosTronco.length - 1) {
+                datos.acciones = [{ textoBoton: momentosTronco[index+1].titulo, idDestino: momentosTroncoOriginales[index + 1].id }];
             }
-          ]
-        }
-
-        Ejemplo de un objeto momento VÁLIDO:
-        {"id": "cueva_oscura", "titulo": "La Cueva Oscura", "descripcion": "Entras en una cueva húmeda y oscura. Un eco resuena en la distancia.", "esFinal": false, "acciones": [{"textoBoton": "Encender antorcha", "idDestino": "cueva_iluminada"}, {"textoBoton": "Avanzar a ciegas", "idDestino": "tropiezo_fatal"}]}
-    `;
-
-    try {
-        progressBarManager.set(20, 'Consultando a la IA...');
-        // Reutilizamos la función robusta llamarIAConFeedback
-        const respuestaJson = await llamarIAConFeedback(prompt, "Generando Red de Aventura Interactiva", 'gemini-2.5-flash-lite', true, 3); // Usamos un modelo potente
-        
-        progressBarManager.set(50, 'IA respondió. Procesando y creando momentos...');
-        if (!respuestaJson?.momentos || !Array.isArray(respuestaJson.momentos) || respuestaJson.momentos.length === 0) {
-            throw new Error("La respuesta de la IA no tuvo el formato de momentos esperado.");
-        }
-
-        const momentosData = respuestaJson.momentos;
-        const lienzo = document.getElementById('momentos-lienzo');
-        let offsetX = 0;
-        
-        // Calculamos el desplazamiento para los nuevos nodos
-        lienzo.querySelectorAll('.momento-nodo').forEach(nodo => {
-            const rightEdge = parseFloat(nodo.style.left || 0) + nodo.offsetWidth;
-            if (rightEdge > offsetX) offsetX = rightEdge;
+            nodosGenerados.set(nuevoId, { ...datos, idFinal: nuevoId, tipo: 'Principal' });
         });
-        if (offsetX > 0) offsetX += 150; // Añadimos un margen
 
-        const idMap = new Map();
-        
-        // Primera pasada: Crear nodos y mapear IDs
-        momentosData.forEach(datos => {
-            const nuevoId = `momento_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-            idMap.set(datos.id, nuevoId); // Mapeamos el id temporal de la IA a nuestro id único y seguro
-            // Asumimos que crearNodoEnLienzo está disponible globalmente
-            crearNodoEnLienzo({ ...datos, id: nuevoId, acciones: [], x: 0, y: 0 }); 
-        });
-        
-        progressBarManager.set(75, 'Conectando acciones y decisiones...');
-        
-        // Segunda pasada: Conectar las acciones usando los IDs mapeados
-        momentosData.forEach(datos => {
-            const idOriginal = datos.id;
-            const nuevoId = idMap.get(idOriginal);
-            const nodo = document.getElementById(nuevoId);
-            if (!nodo) return;
-
-            const accionesTraducidas = (datos.acciones || []).map(a => ({
-                ...a,
-                idDestino: idMap.get(a.idDestino) // Traducimos el id de destino usando el mapa
-            })).filter(a => a.idDestino); // Filtramos acciones que no llevan a ningún sitio
+        // --- FASE 2: RAMAS DE FINALES ---
+        for (let i = 0; i < numFinales - 1; i++) {
+            pasoActual++;
+            progressBarManager.set( (pasoActual / totalPasos) * 100,`Fase 2: Creando final alternativo ${i+1}...`);
+            const resumenHistoria = generarResumenDeLaHistoriaParaIA(nodosGenerados);
             
-            nodo.dataset.acciones = JSON.stringify(accionesTraducidas);
-        });
+            const promptFase2 = `Dada la historia actual:\n${resumenHistoria}\nCrea una RAMA ARGUMENTAL ALTERNATIVA de entre 7 y 15 momentos.
+            REGLAS:
+            1. Responde ÚNICAMENTE con JSON: {"momentos": [...], "idNodoPadre": "ID_DEL_NODO_P_ELEGIDO"}.
+            2. CADA momento debe tener el formato: {"id": "...", "titulo": "...", "descripcion": "...", "esFinal": boolean}.
+            3. IMPORTANTE: La nueva rama debe ser CONCEPTUALMENTE DIFERENTE a las ya existentes. NO REPITAS temas o títulos que ya ves en el resumen.`;
+            
+            const respuestaFase2 = await llamarIAConFeedback(promptFase2, "Generando Final Alternativo", MODELO_PRINCIPAL, true, 3);
+            if (!respuestaFase2?.momentos?.length || !respuestaFase2.idNodoPadre) continue;
 
-        progressBarManager.set(85, 'Organizando el lienzo...');
-        // Asumimos que organizarNodosEnLienzo está disponible globalmente
-        organizarNodosEnLienzo(momentosData, idMap, offsetX);
-        
-        progressBarManager.set(95, 'Finalizando...');
-        if (momentosData.length > 0) {
-            const primerId = idMap.get(momentosData[0].id);
-            if (!lienzo.querySelector('.momento-nodo.inicio')) {
-                marcarComoInicio(primerId);
+            const nodoPadreId = respuestaFase2.idNodoPadre.trim();
+            if (!nodosGenerados.has(nodoPadreId)) continue;
+            
+            const momentosDeLaRamaOriginales = respuestaFase2.momentos;
+            const momentosDeLaRama = momentosDeLaRamaOriginales.map(datos => {
+                const prefijo = generarPrefijoUnico();
+                return { ...datos, titulo: `[${prefijo}] ${datos.titulo || 'Momento'}` };
+            });
+
+            momentosDeLaRama.forEach((datos, index) => {
+                const originalData = momentosDeLaRamaOriginales[index];
+                if (!originalData.id) return;
+                const nuevoId = `${nodoPadreId}-B${i+1}-${index + 1}`;
+                idMapMaestro.set(originalData.id, nuevoId);
+                if (index < momentosDeLaRama.length - 1) {
+                    datos.acciones = [{ textoBoton: momentosDeLaRama[index+1].titulo, idDestino: momentosDeLaRamaOriginales[index + 1].id }];
+                }
+                nodosGenerados.set(nuevoId, { ...datos, idFinal: nuevoId, tipo: 'Bifurcacion' });
+            });
+
+            const nodoPadreData = nodosGenerados.get(nodoPadreId);
+            if(nodoPadreData) {
+                if (!nodoPadreData.nuevasAcciones) nodoPadreData.nuevasAcciones = [];
+                const primerNodoRama = momentosDeLaRama.find(m => m.id);
+                if(primerNodoRama) {
+                    const idDestinoMapeado = idMapMaestro.get(momentosDeLaRamaOriginales.find(m => m.id === primerNodoRama.id).id);
+                    nodoPadreData.nuevasAcciones.push({ textoBoton: primerNodoRama.titulo, idDestino: idDestinoMapeado });
+                }
             }
-            // Centramos la vista en el primer nodo creado
-            setTimeout(() => centrarVistaEnNodo(document.getElementById(primerId)), 100);
+        }
+        
+        // --- FASE 3: RAMAS DE RETORNO ---
+        for (let i = 0; i < tamanioObra; i++) {
+            pasoActual++;
+            progressBarManager.set( (pasoActual / totalPasos) * 100,`Fase 3: Creando rama de retorno ${i+1}...`);
+            const resumenHistoria = generarResumenDeLaHistoriaParaIA(nodosGenerados);
+            
+            const promptFase3 = `Dada la historia:\n${resumenHistoria}\nCrea una RAMA de RETORNO de entre 3 y 8 momentos.
+            REGLAS:
+            1. Debe empezar en un nodo que NO sea 'P' (una rama secundaria).
+            2. Debe terminar conectando a un nodo 'P' posterior al origen de la rama secundaria.
+            3. Responde ÚNICAMENTE con JSON: {"momentos": [...], "idNodoOrigenSecundario": "ID_ORIGEN", "idNodoDestinoPrincipal": "ID_DESTINO_P"}.
+            4. CADA momento debe tener el formato: {"id": "...", "titulo": "...", "descripcion": "...", "esFinal": false}.
+            5. IMPORTANTE: La nueva rama debe ser CONCEPTUALMENTE DIFERENTE a las ya existentes. NO REPITAS temas o títulos.`;
+            
+            const respuestaFase3 = await llamarIAConFeedback(promptFase3, "Generando Rama de Retorno", MODELO_SECUNDARIO, true, 3);
+            if (!respuestaFase3?.momentos?.length || !respuestaFase3.idNodoOrigenSecundario || !respuestaFase3.idNodoDestinoPrincipal) continue;
+            
+            const nodoOrigenId = respuestaFase3.idNodoOrigenSecundario.trim();
+            const nodoDestinoId = respuestaFase3.idNodoDestinoPrincipal.trim();
+            if (!nodosGenerados.has(nodoOrigenId) || !nodosGenerados.has(nodoDestinoId)) continue;
+            
+            const momentosDeRetornoOriginales = respuestaFase3.momentos;
+            const momentosDeRetorno = momentosDeRetornoOriginales.map(datos => {
+                const prefijo = generarPrefijoUnico();
+                return { ...datos, titulo: `[${prefijo}] ${datos.titulo || 'Momento'}` };
+            });
+
+            momentosDeRetorno.forEach((datos, index) => {
+                const originalData = momentosDeRetornoOriginales[index];
+                if (!originalData.id) return;
+                const nuevoId = `${nodoOrigenId}-S${i+1}-${index + 1}`;
+                idMapMaestro.set(originalData.id, nuevoId);
+                if (index < momentosDeRetorno.length - 1) {
+                    datos.acciones = [{ textoBoton: momentosDeRetorno[index+1].titulo, idDestino: momentosDeRetornoOriginales[index + 1].id }];
+                }
+                nodosGenerados.set(nuevoId, { ...datos, idFinal: nuevoId, tipo: 'Retorno' });
+            });
+            
+            const nodoOrigenData = nodosGenerados.get(nodoOrigenId);
+            if(nodoOrigenData) {
+                 if (!nodoOrigenData.nuevasAcciones) nodoOrigenData.nuevasAcciones = [];
+                 const primerNodoRetorno = momentosDeRetorno.find(m => m.id);
+                 if(primerNodoRetorno) {
+                    const idDestinoMapeado = idMapMaestro.get(momentosDeRetornoOriginales.find(m => m.id === primerNodoRetorno.id).id);
+                    nodoOrigenData.nuevasAcciones.push({ textoBoton: primerNodoRetorno.titulo, idDestino: idDestinoMapeado });
+                 }
+            }
+
+            const ultimoNodoRetorno = momentosDeRetorno[momentosDeRetorno.length - 1];
+            if(ultimoNodoRetorno) {
+                const ultimoNodoRetornoIdOriginal = momentosDeRetornoOriginales.find(m => m.id === ultimoNodoRetorno.id).id;
+                const ultimoNodoRetornoIdFinal = idMapMaestro.get(ultimoNodoRetornoIdOriginal);
+                const ultimoNodoRetornoData = nodosGenerados.get(ultimoNodoRetornoIdFinal);
+                if(ultimoNodoRetornoData) {
+                    if (!ultimoNodoRetornoData.acciones) ultimoNodoRetornoData.acciones = [];
+                    ultimoNodoRetornoData.acciones.push({ textoBoton: "Volver a la trama", idDestino: nodoDestinoId });
+                }
+            }
         }
 
-        progressBarManager.finish();
-        alert("¡Nueva aventura añadida al lienzo con éxito!");
+        // --- FASE DE CONSTRUCCIÓN Y RENDERIZADO FINAL ---
+        progressBarManager.set(95, 'Construyendo y conectando todo...');
+        for (const [id, data] of nodosGenerados.entries()) {
+            crearNodoEnLienzo({
+                id: data.idFinal,
+                titulo: data.titulo || "Sin Título",
+                descripcion: data.descripcion,
+                entorno: data.entorno || {},
+                entidades: data.entidades || [],
+                acciones: [], x: 0, y: 0, tipo: data.tipo,
+            });
+        }
+        for (const [id, data] of nodosGenerados.entries()) {
+            const nodoElemento = document.getElementById(data.idFinal);
+            if (!nodoElemento) continue;
+            let accionesFinales = [];
+            if (data.acciones) {
+                const accionesTraducidas = data.acciones.map(accion => {
+                    const idDestinoFinal = idMapMaestro.get(accion.idDestino) || accion.idDestino;
+                    return { ...accion, idDestino: idDestinoFinal };
+                }).filter(a => a.idDestino);
+                accionesFinales.push(...accionesTraducidas);
+            }
+            if (data.nuevasAcciones) {
+                accionesFinales.push(...data.nuevasAcciones);
+            }
+            nodoElemento.dataset.acciones = JSON.stringify(accionesFinales);
+        }
+
+        // --- FINALIZACIÓN Y AUTO-LAYOUT ---
+        progressBarManager.set(98, 'Organizando el lienzo...');
+        organizarNodosPorFases(nodosGenerados);
+        progressBarManager.finish("¡Aventura estructural generada!");
 
     } catch (error) {
-        console.error("Error generando aventura con IA:", error);
+        console.error("Error en la generación estructural:", error);
         progressBarManager.error('Error en la IA');
-        alert(`Ocurrió un error al generar la aventura: ${error.message}`);
+        alert(`Ocurrió un error en el proceso estructural: ${error.message}`);
     }
 }
 
-// --- FUNCIONES DE AUTO-LAYOUT ---
+/**
+ * Organiza los nodos en el lienzo basándose en su nomenclatura jerárquica.
+ */
+function organizarNodosPorFases(nodosGenerados) {
+    const lienzo = document.getElementById('momentos-lienzo');
+    if (!lienzo || nodosGenerados.size === 0) return;
 
-function organizarNodosEnLienzo(momentos, idMap, offsetX = 0) {
-    if (!momentos || momentos.length === 0) return;
+    const NODE_WIDTH = 150;
+    const GAP_X = 80;
+    const BRANCH_GAP_Y = 250;
+    const nodosPorTipo = {
+        Principal: [],
+        Bifurcacion: [],
+        Retorno: []
+    };
+    const nodosPorPadre = new Map();
 
-    const adyacencias = new Map();
-    const nodosEnEstaAventura = new Set();
-
-    momentos.forEach(momento => {
-        const idReal = idMap.get(momento.id);
-        nodosEnEstaAventura.add(idReal);
-        if (!adyacencias.has(idReal)) adyacencias.set(idReal, []);
-        (momento.acciones || []).forEach(accion => {
-            const idDestinoReal = idMap.get(accion.idDestino);
-            if(idDestinoReal) adyacencias.get(idReal).push(idDestinoReal);
-        });
-    });
-
-    const rootId = idMap.get(momentos[0].id);
-    if (!rootId) return;
-
-    const niveles = new Map();
-    const visitados = new Set();
-    const cola = [[rootId, 0]];
-    visitados.add(rootId);
-
-    while(cola.length > 0) {
-        const [nodoActualId, nivelActual] = cola.shift();
-        niveles.set(nodoActualId, nivelActual);
-        const hijos = adyacencias.get(nodoActualId) || [];
-        hijos.forEach(hijoId => {
-            if(!visitados.has(hijoId) && nodosEnEstaAventura.has(hijoId)) {
-                visitados.add(hijoId);
-                cola.push([hijoId, nivelActual + 1]);
-            }
-        });
+    for (const [id, data] of nodosGenerados.entries()) {
+        if (nodosPorTipo[data.tipo]) nodosPorTipo[data.tipo].push(data);
+        const partesId = id.split('-');
+        if (partesId.length > 2) {
+            const padreId = partesId.slice(0, -2).join('-');
+            if (!nodosPorPadre.has(padreId)) nodosPorPadre.set(padreId, []);
+            nodosPorPadre.get(padreId).push(data);
+        }
     }
-    
-    nodosEnEstaAventura.forEach(nodeId => {
-        if(!visitados.has(nodeId)) niveles.set(nodeId, 0);
+
+    if (nodosPorTipo.Principal.length === 0) return;
+
+    nodosPorTipo.Principal.sort((a, b) => parseInt(a.idFinal.split('-')[1]) - parseInt(b.idFinal.split('-')[1]));
+
+    const minRequiredWidth = nodosPorTipo.Principal.length * (NODE_WIDTH + GAP_X);
+    const centerX = Math.max(200, (lienzo.clientWidth / 2) - (minRequiredWidth / 2));
+
+    nodosPorTipo.Principal.forEach((nodoData, index) => {
+        const x = centerX + index * (NODE_WIDTH + GAP_X);
+        const y = 300;
+        const nodoElement = document.getElementById(nodoData.idFinal);
+        if (nodoElement) {
+            nodoElement.style.left = `${x}px`;
+            nodoElement.style.top = `${y}px`;
+        }
     });
 
-    const nodosPorNivel = new Map();
-    niveles.forEach((nivel, id) => {
-        if(!nodosPorNivel.has(nivel)) nodosPorNivel.set(nivel, []);
-        nodosPorNivel.get(nivel).push(id);
-    });
+    let branchSide = 1;
+    for (const padreId of nodosPorTipo.Principal.map(n => n.idFinal)) {
+        if (nodosPorPadre.has(padreId)) {
+            const hijos = nodosPorPadre.get(padreId);
+            const nodoPadreElement = document.getElementById(padreId);
+            if (!nodoPadreElement) continue;
 
-    const PADDING = 100;
-    nodosPorNivel.forEach((nodosEnNivel, nivel) => {
-        const x = offsetX + (nivel * (NODE_SIZE + NODE_GAP)) + PADDING;
-        nodosEnNivel.forEach((nodoId, index) => {
-            const y = index * (NODE_SIZE + NODE_GAP) + PADDING;
-            const nodoElement = document.getElementById(nodoId);
-            if (nodoElement) {
-                nodoElement.style.left = `${x}px`;
-                nodoElement.style.top = `${y}px`;
-                nodoElement.dataset.x = x;
-                nodoElement.dataset.y = y;
-            }
-        });
-    });
-    
+            const startX = parseFloat(nodoPadreElement.style.left);
+            const startY = parseFloat(nodoPadreElement.style.top) + (branchSide * BRANCH_GAP_Y);
+
+            hijos.sort((a, b) => {
+                const partsA = a.idFinal.split('-');
+                const partsB = b.idFinal.split('-');
+                return parseInt(partsA[partsA.length - 1]) - parseInt(partsB[partsB.length - 1]);
+            });
+
+            hijos.forEach((nodoData, index) => {
+                const x = startX + index * (NODE_WIDTH + GAP_X);
+                const y = startY;
+                const nodoElement = document.getElementById(nodoData.idFinal);
+                if (nodoElement) {
+                    nodoElement.style.left = `${x}px`;
+                    nodoElement.style.top = `${y}px`;
+                }
+            });
+            branchSide *= -1;
+        }
+    }
+
+
     reajustarTamanioLienzo();
+    setTimeout(() => {
+        // Asumiendo que previsualizacionActiva y dibujarConexiones existen en otro fichero
+        if (window.previsualizacionActiva) dibujarConexiones();
+    }, 100);
 }
+
 
 function reajustarTamanioLienzo() {
     const lienzo = document.getElementById('momentos-lienzo');
-    if(!lienzo) return;
-
-    let maxX = 0;
-    let maxY = 0;
+    if (!lienzo) return;
+    const EXPANSION_MARGIN = 300;
+    let maxX = 0,
+        maxY = 0;
     lienzo.querySelectorAll('.momento-nodo').forEach(nodo => {
         const x = parseFloat(nodo.style.left) + nodo.offsetWidth;
         const y = parseFloat(nodo.style.top) + nodo.offsetHeight;
-        if(x > maxX) maxX = x;
-        if(y > maxY) maxY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
     });
-
     const nuevoAncho = Math.max(lienzo.offsetWidth, maxX + EXPANSION_MARGIN);
     const nuevoAlto = Math.max(lienzo.offsetHeight, maxY + EXPANSION_MARGIN);
-    
     lienzo.style.width = `${nuevoAncho}px`;
     lienzo.style.height = `${nuevoAlto}px`;
+}
+
+function _extraerTextoPlanoDeGuionHTML(html) {
+    if (!html) return '';
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent || "";
+}
+/**
+ * [MEJORADA] Convierte el estado actual del mapa de nodos en un resumen de texto para la IA,
+ * incluyendo ahora una parte de la descripción para dar más contexto.
+ */
+
+// Añade estas tres funciones a momentos-ia.js
+
+/**
+ * [NUEVA FUNCIÓN ORQUESTADORA]
+ * Se activa al pulsar el botón 'Ilustrar' y gestiona todo el proceso.
+ */
+/**
+ * [ACTUALIZADA] Orquestador para el botón individual.
+ * Ahora simplemente envuelve la llamada a la nueva función de procesamiento.
+ */
+async function ilustrarMomentoConIA() {
+    const nodoActual = panelState.nodoActual;
+    if (!nodoActual) {
+        alert("No hay ningún momento seleccionado para ilustrar.");
+        return;
+    }
+
+    progressBarManager.start('Analizando descripción de la escena...');
+
+    try {
+        await procesarIlustracionParaUnNodo(nodoActual);
+        progressBarManager.finish("¡Ilustración añadida con éxito!");
+    } catch (error) {
+        console.error("Error al ilustrar momento con IA:", error);
+        progressBarManager.error("Error de la IA");
+        // No mostramos alerta aquí porque procesarIlustracionParaUnNodo ya lo hace
+    }
+}
+
+/**
+ * [NUEVA FUNCIÓN DE PROMPT]
+ * Crea un prompt de IA optimizado para generar una escena panorámica en SVG.
+ * @param {string} descripcion - La descripción del momento.
+ * @returns {string} El prompt completo para la IA.
+ */
+function crearPromptParaIlustrarEscena(descripcion) {
+    return `
+        Eres un ilustrador experto en crear escenas y paisajes atmosféricos en formato SVG.
+        Tu tarea es convertir una descripción textual en una ilustración SVG panorámica.
+
+        **Descripción de la Escena:**
+        ---
+        ${descripcion}
+        ---
+
+        **Instrucciones de Dibujo OBLIGATORIAS:**
+        1.  **Estilo:** Utiliza un estilo de ilustración "flat design" o "vectorial limpio", con colores bien definidos y formas claras. Evita el fotorrealismo.
+        2.  **Composición:** Crea una escena completa. Debe tener un fondo (cielo, paredes), un plano medio (árboles, edificios, terreno) y, si aplica, un primer plano (objetos cercanos).
+        3.  **Atmósfera:** Usa el color y la iluminación para transmitir la atmósfera descrita (ej. tonos fríos para una escena nocturna, colores cálidos para una escena alegre).
+        4.  **Formato SVG Panorámico:** El SVG DEBE usar un viewBox="0 0 1280 720" para crear una imagen panorámica (aspecto 16:9).
+        5.  **Fondo Transparente:** El SVG no debe tener un <rect> de fondo de color sólido. El fondo debe ser transparente.
+
+        **Formato de Respuesta OBLIGATORIO:**
+        Responde ÚNICAMENTE con un objeto JSON válido que contenga el código SVG. No incluyas explicaciones ni texto fuera del JSON.
+        Ejemplo de respuesta válida:
+        {
+          "svgContent": "<svg viewBox='0 0 1280 720' xmlns='http://www.w3.org/2000/svg'>...</svg>"
+        }
+    `;
+}
+
+/**
+ * [NUEVA FUNCIÓN DE RENDERIZADO]
+ * Dibuja el SVG en un canvas panorámico, lo convierte a PNG y lo guarda en el nodo.
+ * @param {HTMLElement} nodo - El nodo del momento que se va a actualizar.
+ * @param {string} svgContent - El código SVG generado por la IA.
+ */
+async function guardarIlustracionEnNodo(nodo, svgContent) {
+    return new Promise((resolve, reject) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+
+        // Dimensiones panorámicas (16:9)
+        canvas.width = 1280;
+        canvas.height = 720;
+
+        // Convertir el SVG a un Data URL para que pueda ser cargado en un objeto Image
+        const svgBlob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+
+        img.onload = () => {
+            // Dibujar la imagen SVG en el canvas
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            URL.revokeObjectURL(url); // Liberar memoria
+
+            // Convertir el contenido del canvas a un PNG en formato base64
+            const pngDataUrl = canvas.toDataURL('image/png');
+
+            // Actualizar la imagen directamente en el nodo del lienzo principal
+            const imgElementoEnNodo = nodo.querySelector('.momento-imagen');
+            if (imgElementoEnNodo) {
+                imgElementoEnNodo.src = pngDataUrl;
+                nodo.classList.add('con-imagen'); // Clase para mostrar la imagen y ocultar el botón de carga
+            }
+            
+            // También actualizamos la vista previa en el panel de edición si está abierto
+            const imgPreviewEnPanel = document.getElementById('panel-editor-imagen-preview');
+            if (imgPreviewEnPanel && panelState.nodoActual === nodo) {
+                imgPreviewEnPanel.src = pngDataUrl;
+                imgPreviewEnPanel.style.display = 'block';
+            }
+
+            resolve();
+        };
+
+        img.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error("No se pudo cargar el SVG generado en la imagen."));
+        };
+
+        img.src = url;
+    });
+}
+
+
+/**
+ * [NUEVA FUNCIÓN PRINCIPAL]
+ * Itera sobre todos los nodos del lienzo y los ilustra uno por uno con un retardo.
+ */
+async function ilustrarTodo() {
+    // 1. Confirmación del usuario
+    const nodosTotales = document.querySelectorAll('#momentos-lienzo .momento-nodo');
+    if (!confirm(`Esto iniciará un proceso para ilustrar ${nodosTotales.length} momentos.
+El proceso se ejecutará en segundo plano con una pausa de 6 segundos por cada momento.
+¿Deseas continuar?`)) {
+        return;
+    }
+
+    // 2. Obtener y filtrar los nodos que necesitan ilustración
+    const nodosAIlustrar = Array.from(nodosTotales).filter(nodo => {
+        const descripcion = nodo.dataset.descripcion || '';
+        // Solo procesamos nodos con descripción y sin una imagen ya cargada (evita re-ilustrar)
+        const tieneImagen = nodo.querySelector('.momento-imagen')?.src.includes('data:image');
+        return descripcion.trim().length >= 10 && !tieneImagen;
+    });
+
+    if (nodosAIlustrar.length === 0) {
+        alert("No se encontraron momentos con descripción suficiente que necesiten ser ilustrados.");
+        return;
+    }
+
+    // 3. Iniciar el proceso
+    progressBarManager.start(`Ilustrando 0 de ${nodosAIlustrar.length} momentos...`);
+    let nodosProcesados = 0;
+
+    try {
+        // 4. Bucle principal con retardo
+        for (const nodo of nodosAIlustrar) {
+            progressBarManager.set(
+                (nodosProcesados / nodosAIlustrar.length) * 100,
+                `Ilustrando momento ${nodosProcesados + 1} de ${nodosAIlustrar.length}...`
+            );
+
+            try {
+                // Llama a la lógica de ilustración para un solo nodo
+                await procesarIlustracionParaUnNodo(nodo);
+            } catch (error) {
+                // Si un nodo falla, lo registramos y continuamos con el siguiente
+                console.error(`Falló la ilustración para el nodo ${nodo.id}:`, error);
+            }
+            
+            nodosProcesados++;
+
+            // 5. Pausa de 6 segundos (excepto en el último nodo)
+            if (nodosProcesados < nodosAIlustrar.length) {
+                await new Promise(resolve => setTimeout(resolve, 6000));
+            }
+        }
+
+        progressBarManager.finish('¡Todos los momentos han sido ilustrados!');
+
+    } catch (error) {
+        // Error general del proceso
+        console.error("Error en el proceso de ilustración total:", error);
+        progressBarManager.error("Proceso cancelado por un error");
+        alert(`Ocurrió un error general durante la ilustración: ${error.message}`);
+    }
+}
+
+
+/**
+ * [NUEVA FUNCIÓN REFACTORIZADA]
+ * Contiene la lógica para ilustrar un único nodo. Es llamada tanto por 'ilustrarTodo'
+ * como por el botón individual del panel.
+ * @param {HTMLElement} nodo - El nodo del momento a ilustrar.
+ */
+async function procesarIlustracionParaUnNodo(nodo) {
+    const descripcion = nodo.dataset.descripcion;
+    if (!descripcion || descripcion.trim().length < 10) {
+        // Si se llama directamente, avisa al usuario. Si es en lote, simplemente retorna.
+        if (!progressBarManager.isActive) {
+            alert("La descripción del momento es muy corta. Escribe más detalles.");
+        }
+        return Promise.reject("Descripción demasiado corta.");
+    }
+
+    // Crear el prompt y llamar a la IA
+    const promptParaEscena = crearPromptParaIlustrarEscena(descripcion);
+    const respuestaIA = await llamarIAConFeedback(promptParaEscena, `Ilustrando: "${nodo.querySelector('.momento-titulo').textContent}"`, 'gemini-1.5-flash-latest', true, 1);
+
+    if (!respuestaIA || !respuestaIA.svgContent) {
+        throw new Error("La IA no devolvió un contenido SVG válido.");
+    }
+
+    // Renderizar y guardar la imagen
+    await guardarIlustracionEnNodo(nodo, respuestaIA.svgContent);
 }

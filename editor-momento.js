@@ -197,8 +197,11 @@ function manejarCargaDeImagen(e) {
 }
 // --- FUNCIONES PARA POBLAR EL PANEL ---
 
+ 
+
 function poblarEntornoPanel(data = {}) {
     const container = panelState.entornoContainer;
+    // Se añade el nuevo botón de ilustración
     container.innerHTML = `
         <div class="panel-campo">
             <label>Textura Suelo:</label>
@@ -210,18 +213,20 @@ function poblarEntornoPanel(data = {}) {
             <label>Color Cielo:</label>
             <input type="color" id="entorno-cielo-input" value="${data.colorCielo || '#87ceeb'}">
         </div>
+        <button id="btn-ilustrar-momento-ia" class="btn-accion-agregar" style="width: 100%; margin-top: 10px;">
+            ✨ Ilustrar Momento con IA
+        </button>
     `;
 
     const selectSuelo = container.querySelector('#entorno-suelo-select');
     
+    // El resto de la lógica para poblar el select de texturas se mantiene igual...
     const datosContainer = document.getElementById('datos-container'); 
     if (datosContainer) {
         const datosItems = datosContainer.querySelectorAll('.dato-card');
         datosItems.forEach(item => {
             const nombreEl = item.querySelector('.dato-nombre');
-            // CORRECCIÓN: Buscar la imagen dentro del elemento .personaje-visual
             const imgEl = item.querySelector('.personaje-visual img');
-            
             if (nombreEl && imgEl && imgEl.src) {
                 const nombre = nombreEl.textContent.trim();
                 const option = document.createElement('option');
@@ -230,13 +235,12 @@ function poblarEntornoPanel(data = {}) {
                 selectSuelo.appendChild(option);
             }
         });
-    } else {
-        console.warn("No se encontró el contenedor de datos ('#datos-container') para poblar las texturas.");
     }
 
-    // Establecer el valor guardado
     selectSuelo.value = data.texturaSuelo || '';
 
+    // Añadimos el listener para el nuevo botón
+    container.querySelector('#btn-ilustrar-momento-ia').addEventListener('click', ilustrarMomentoConIA);
     container.querySelectorAll('input, select').forEach(input => input.addEventListener('input', actualizarDatosNodo));
 }
 
