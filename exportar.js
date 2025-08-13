@@ -30,7 +30,7 @@ function modalExportarDatos() {
         display: flex;
         flex-direction: column;
         box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        font-family: sans-serif;
+        
     `;
 
     // Título del modal
@@ -263,7 +263,7 @@ async function generarHTML() {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>${tituloProyecto}</title>
             <style>
-                body { font-family: sans-serif; line-height: 1.6; margin: 0; padding: 20px; background-color: #f4f4f4; color: #333; }
+                body { font-family: montserrat; line-height: 1.6; margin: 0; padding: 20px; background-color: #f4f4f4; color: #333; }
                 .container { max-width: 800px; margin: auto; background: white; padding: 20px 40px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
                 h1, h2 { color: #333; }
                 h1 { text-align: center; border-bottom: 2px solid #ccc; padding-bottom: 10px; }

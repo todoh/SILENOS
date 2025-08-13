@@ -287,12 +287,12 @@ function crearMomentoEnLienzoDesdeDatos(datos) {
     nuevoNodo.className = 'momento-nodo';
     nuevoNodo.id = datos.id;
     
-    // Se rellena la estructura HTML (igual que en la creación manual)
+    // Se rellena la estructura HTML
     nuevoNodo.innerHTML = `
         <span class="marcador-inicio" title="Marcar como inicio de la historia">🚩</span>
         <p contenteditable="false" class="momento-titulo">${datos.titulo || 'Sin Título'}</p>
         <div class="momento-contenido">
-            <img src="${datos.imagen || ''}" alt="Fondo del momento" class="momento-imagen" />
+            <img src="" alt="Fondo del momento" class="momento-imagen" />
             <label for="upload-${datos.id}" class="btn-cargar-imagen">
                 <i class="fas fa-camera"></i> Cargar Imagen
             </label>
@@ -313,23 +313,42 @@ function crearMomentoEnLienzoDesdeDatos(datos) {
     nuevoNodo.dataset.descripcion = datos.descripcion || "";
     nuevoNodo.dataset.acciones = JSON.stringify(datos.acciones || []);
     
-    // Estos se mantienen por compatibilidad, aunque no los uses activamente en el nodo.
+    // Estos se mantienen por compatibilidad.
     nuevoNodo.dataset.entorno = '{}';
     nuevoNodo.dataset.entidades = '[]';
     
+    const imgElement = nuevoNodo.querySelector('.momento-imagen');
+
+    // --- LÓGICA CLAVE CORREGIDA ---
+    // 1. Priorizamos el SVG si existe en los datos cargados.
+    if (datos.svgIlustracion && datos.svgIlustracion.trim() !== '') {
+        // Guardamos el SVG crudo en el dataset para que todo lo demás funcione.
+        nuevoNodo.dataset.svgIlustracion = datos.svgIlustracion;
+
+        // Creamos un Data URL a partir del SVG para mostrarlo en la imagen.
+        const svgDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(datos.svgIlustracion)));
+        imgElement.src = svgDataUrl;
+        nuevoNodo.classList.add('con-imagen');
+    } else if (datos.imagen) {
+        // 2. Si no hay SVG, usamos la imagen PNG de fallback.
+        imgElement.src = datos.imagen;
+        nuevoNodo.classList.add('con-imagen');
+    }
+    // --- FIN DE LA CORRECCIÓN ---
+
     // Se añade el nodo al lienzo
     lienzo.appendChild(nuevoNodo);
 
-    // --- Se vuelven a conectar todos los eventos (muy importante) ---
+    // --- Se vuelven a conectar todos los eventos ---
     const inputImagen = nuevoNodo.querySelector(`#upload-${datos.id}`);
-    const imgElement = nuevoNodo.querySelector('.momento-imagen');
-
     inputImagen.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = (event) => {
                 imgElement.src = event.target.result;
+                // Al cargar una nueva imagen, borramos el SVG viejo si existía.
+                delete nuevoNodo.dataset.svgIlustracion;
             };
             reader.readAsDataURL(file);
         }
@@ -348,7 +367,6 @@ function crearMomentoEnLienzoDesdeDatos(datos) {
         }
     };
     
-    // Se hace que el nodo sea arrastrable de nuevo.
     makeDraggable(nuevoNodo);
     
     return nuevoNodo;

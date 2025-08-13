@@ -58,12 +58,15 @@ async function generarGAME(nombreMomentoInicial) {
             idDestino: idToSanitizedNameMap.get(accion.idDestino) || ''
         })).filter(accion => accion.idDestino); // Filtra acciones con destino inválido
 
-        momentosData[sanitizedTitulo] = {
-            titulo: titulo,
-            descripcion: nodo.dataset.descripcion || '',
-            imagen: nodo.querySelector('.momento-imagen').src,
-            acciones: accionesMapeadas
-        };
+     // dentro del bucle for (const nodo of nodosMomento)
+momentosData[sanitizedTitulo] = {
+    titulo: titulo,
+    descripcion: nodo.dataset.descripcion || '',
+    // Nuevo: Pasamos el código SVG crudo. Dejamos el .src como fallback por si hay imágenes antiguas.
+    svg: nodo.dataset.svgIlustracion || '', 
+    imagenFallback: nodo.querySelector('.momento-imagen').src,
+    acciones: accionesMapeadas
+};
     }
 
     // --- [MODIFICADO] PASO 3: Crear el contenido del archivo HTML final con el NUEVO DISEÑO ---
@@ -79,7 +82,7 @@ async function generarGAME(nombreMomentoInicial) {
         }
         .game-container {
             display: flex; flex-direction: column;
-            height: 100vh; width: 100vw;
+            height: 100%; width: 100%;
         }
         .image-container {
             flex: 0 0 73%;
@@ -121,7 +124,7 @@ async function generarGAME(nombreMomentoInicial) {
     `;
 
     const script = `
-        // [SCRIPT DEL JUEGO MODIFICADO] Lógica para un renderizado dinámico
+        // [SCRIPT DEL JUEGO MODIFICADO] Lógica para renderizado dinámico con soporte para SVG y fallbacks
         const momentos = ${JSON.stringify(momentosData)};
         const idInicio = "${nombreInicialSanitizado}";
 
@@ -135,20 +138,36 @@ async function generarGAME(nombreMomentoInicial) {
                 return;
             }
 
+            // --- Actualización de la lógica de la imagen ---
+            const gameImage = document.getElementById('game-image');
+
+            // Priorizamos mostrar el SVG si existe para máxima calidad.
+            if (momento.svg && momento.svg.trim() !== '') {
+                // Creamos un Data URL a partir del texto SVG crudo.
+                // Usamos unescape y encodeURIComponent para manejar correctamente caracteres especiales (UTF-8) antes de codificar a Base64.
+                const svgDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(momento.svg)));
+                gameImage.src = svgDataUrl;
+            } else {
+                // Si no hay SVG, usamos la imagen de fallback (útil para momentos no ilustrados o con PNGs antiguos).
+                gameImage.src = momento.imagenFallback || '';
+            }
+
+            // --- El resto de la lógica permanece igual ---
             document.getElementById('game-title').textContent = momento.titulo;
             document.getElementById('game-description').innerHTML = momento.descripcion.replace(/\\n/g, "<br>");
-            document.getElementById('game-image').src = momento.imagen;
-
+            
             const actionsContainer = document.getElementById('game-actions');
             actionsContainer.innerHTML = ''; // Limpiar botones anteriores
 
-            momento.acciones.forEach(accion => {
-                const button = document.createElement('button');
-                button.className = 'action-button';
-                button.textContent = accion.textoBoton;
-                button.onclick = () => mostrarMomento(accion.idDestino);
-                actionsContainer.appendChild(button);
-            });
+            if (momento.acciones) {
+                momento.acciones.forEach(accion => {
+                    const button = document.createElement('button');
+                    button.className = 'action-button';
+                    button.textContent = accion.textoBoton;
+                    button.onclick = () => mostrarMomento(accion.idDestino);
+                    actionsContainer.appendChild(button);
+                });
+            }
         }
         
         window.onload = () => mostrarMomento(idInicio);

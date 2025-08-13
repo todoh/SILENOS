@@ -1570,7 +1570,7 @@ function mostrarModalMejora(personajeDIV) {
         position: relative; background-color: #fff; padding: 30px;
         border-radius: 12px; width: 90%; max-width: 500px;
         display: flex; flex-direction: column;
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.17); font-family: sans-serif;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.17);  
     `;
     modalContent.addEventListener('click', (event) => event.stopPropagation());
 

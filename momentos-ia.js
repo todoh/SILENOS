@@ -415,71 +415,8 @@ function _extraerTextoPlanoDeGuionHTML(html) {
     const doc = new DOMParser().parseFromString(html, 'text/html');
     return doc.body.textContent || "";
 }
-/**
- * [MEJORADA] Convierte el estado actual del mapa de nodos en un resumen de texto para la IA,
- * incluyendo ahora una parte de la descripción para dar más contexto.
- */
-
-// Añade estas tres funciones a momentos-ia.js
-
-/**
- * [NUEVA FUNCIÓN ORQUESTADORA]
- * Se activa al pulsar el botón 'Ilustrar' y gestiona todo el proceso.
- */
-/**
- * [ACTUALIZADA] Orquestador para el botón individual.
- * Ahora simplemente envuelve la llamada a la nueva función de procesamiento.
- */
-async function ilustrarMomentoConIA() {
-    const nodoActual = panelState.nodoActual;
-    if (!nodoActual) {
-        alert("No hay ningún momento seleccionado para ilustrar.");
-        return;
-    }
-
-    progressBarManager.start('Analizando descripción de la escena...');
-
-    try {
-        await procesarIlustracionParaUnNodo(nodoActual);
-        progressBarManager.finish("¡Ilustración añadida con éxito!");
-    } catch (error) {
-        console.error("Error al ilustrar momento con IA:", error);
-        progressBarManager.error("Error de la IA");
-        // No mostramos alerta aquí porque procesarIlustracionParaUnNodo ya lo hace
-    }
-}
-
-/**
- * [NUEVA FUNCIÓN DE PROMPT]
- * Crea un prompt de IA optimizado para generar una escena panorámica en SVG.
- * @param {string} descripcion - La descripción del momento.
- * @returns {string} El prompt completo para la IA.
- */
-function crearPromptParaIlustrarEscena(descripcion) {
-    return `
-        Eres un ilustrador experto en crear escenas y paisajes atmosféricos en formato SVG.
-        Tu tarea es convertir una descripción textual en una ilustración SVG panorámica.
-
-        **Descripción de la Escena:**
-        ---
-        ${descripcion}
-        ---
-
-        **Instrucciones de Dibujo OBLIGATORIAS:**
-        1.  **Estilo:** Utiliza un estilo de ilustración "flat design" o "vectorial limpio", con colores bien definidos y formas claras. Evita el fotorrealismo.
-        2.  **Composición:** Crea una escena completa. Debe tener un fondo (cielo, paredes), un plano medio (árboles, edificios, terreno) y, si aplica, un primer plano (objetos cercanos).
-        3.  **Atmósfera:** Usa el color y la iluminación para transmitir la atmósfera descrita (ej. tonos fríos para una escena nocturna, colores cálidos para una escena alegre).
-        4.  **Formato SVG Panorámico:** El SVG DEBE usar un viewBox="0 0 1920 1080" para crear una imagen panorámica (aspecto 16:9).
-        5.  **Fondo Transparente:** El SVG no debe tener un <rect> de fondo de color sólido. El fondo debe ser transparente.
-
-        **Formato de Respuesta OBLIGATORIO:**
-        Responde ÚNICAMENTE con un objeto JSON válido que contenga el código SVG. No incluyas explicaciones ni texto fuera del JSON.
-        Ejemplo de respuesta válida:
-        {
-          "svgContent": "<svg viewBox='0 0 1920 1080' xmlns='http://www.w3.org/2000/svg'>...</svg>"
-        }
-    `;
-}
+ 
+ 
 
 /**
  * [NUEVA FUNCIÓN DE RENDERIZADO]
@@ -488,202 +425,32 @@ function crearPromptParaIlustrarEscena(descripcion) {
  * @param {string} svgContent - El código SVG generado por la IA.
  */
 async function guardarIlustracionEnNodo(nodo, svgContent) {
-    return new Promise((resolve, reject) => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const img = new Image();
+    // 1. Guardamos el SVG crudo en el dataset del nodo.
+    // Esto es clave para la exportación y para futuras ediciones.
+    nodo.dataset.svgIlustracion = svgContent;
 
-        // Dimensiones panorámicas (16:9)
-        canvas.width = 1920;
-        canvas.height = 1080;
+    // 2. Creamos un Data URL directamente desde el string SVG para la visualización.
+    // Usamos btoa para codificar en base64 y unescape/encodeURIComponent para manejar caracteres especiales.
+    const svgDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgContent)));
 
-        // Convertir el SVG a un Data URL para que pueda ser cargado en un objeto Image
-        const svgBlob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
-        const url = URL.createObjectURL(svgBlob);
-
-        img.onload = () => {
-            // Dibujar la imagen SVG en el canvas
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            URL.revokeObjectURL(url); // Liberar memoria
-
-            // Convertir el contenido del canvas a un PNG en formato base64
-            const pngDataUrl = canvas.toDataURL('image/png');
-
-            // Actualizar la imagen directamente en el nodo del lienzo principal
-            const imgElementoEnNodo = nodo.querySelector('.momento-imagen');
-            if (imgElementoEnNodo) {
-                imgElementoEnNodo.src = pngDataUrl;
-                nodo.classList.add('con-imagen'); // Clase para mostrar la imagen y ocultar el botón de carga
-            }
-            
-            // También actualizamos la vista previa en el panel de edición si está abierto
-            const imgPreviewEnPanel = document.getElementById('panel-editor-imagen-preview');
-            if (imgPreviewEnPanel && panelState.nodoActual === nodo) {
-                imgPreviewEnPanel.src = pngDataUrl;
-                imgPreviewEnPanel.style.display = 'block';
-            }
-
-            resolve();
-        };
-
-        img.onerror = () => {
-            URL.revokeObjectURL(url);
-            reject(new Error("No se pudo cargar el SVG generado en la imagen."));
-        };
-
-        img.src = url;
-    });
-}
-
-
-/**
- * [NUEVA FUNCIÓN PRINCIPAL]
- * Itera sobre todos los nodos del lienzo y los ilustra uno por uno con un retardo.
- */
-async function ilustrarTodo() {
-    // 1. Confirmación del usuario
-    const nodosTotales = document.querySelectorAll('#momentos-lienzo .momento-nodo');
-    if (!confirm(`Esto iniciará un proceso para ilustrar ${nodosTotales.length} momentos.
-El proceso se ejecutará en segundo plano con una pausa de 6 segundos por cada momento.
-¿Deseas continuar?`)) {
-        return;
+    // 3. Actualizamos la imagen en el nodo del lienzo principal.
+    const imgElementoEnNodo = nodo.querySelector('.momento-imagen');
+    if (imgElementoEnNodo) {
+        imgElementoEnNodo.src = svgDataUrl;
+        nodo.classList.add('con-imagen');
     }
 
-    // 2. Obtener y filtrar los nodos que necesitan ilustración
-    const nodosAIlustrar = Array.from(nodosTotales).filter(nodo => {
-        const descripcion = nodo.dataset.descripcion || '';
-        // Solo procesamos nodos con descripción y sin una imagen ya cargada (evita re-ilustrar)
-        const tieneImagen = nodo.querySelector('.momento-imagen')?.src.includes('data:image');
-        return descripcion.trim().length >= 10 && !tieneImagen;
-    });
-
-    if (nodosAIlustrar.length === 0) {
-        alert("No se encontraron momentos con descripción suficiente que necesiten ser ilustrados.");
-        return;
+    // 4. Actualizamos la vista previa en el panel de edición si está abierto.
+    const imgPreviewEnPanel = document.getElementById('panel-editor-imagen-preview');
+    if (imgPreviewEnPanel && panelState.nodoActual === nodo) {
+        imgPreviewEnPanel.src = svgDataUrl;
+        imgPreviewEnPanel.style.display = 'block';
     }
-
-    // 3. Iniciar el proceso
-    progressBarManager.start(`Ilustrando 0 de ${nodosAIlustrar.length} momentos...`);
-    let nodosProcesados = 0;
-
-    try {
-        // 4. Bucle principal con retardo
-        for (const nodo of nodosAIlustrar) {
-            progressBarManager.set(
-                (nodosProcesados / nodosAIlustrar.length) * 100,
-                `Ilustrando momento ${nodosProcesados + 1} de ${nodosAIlustrar.length}...`
-            );
-
-            try {
-                // Llama a la lógica de ilustración para un solo nodo
-                await procesarIlustracionParaUnNodo(nodo);
-            } catch (error) {
-                // Si un nodo falla, lo registramos y continuamos con el siguiente
-                console.error(`Falló la ilustración para el nodo ${nodo.id}:`, error);
-            }
-            
-            nodosProcesados++;
-
-            // 5. Pausa de 6 segundos (excepto en el último nodo)
-            if (nodosProcesados < nodosAIlustrar.length) {
-                await new Promise(resolve => setTimeout(resolve, 6000));
-            }
-        }
-
-        progressBarManager.finish('¡Todos los momentos han sido ilustrados!');
-
-    } catch (error) {
-        // Error general del proceso
-        console.error("Error en el proceso de ilustración total:", error);
-        progressBarManager.error("Proceso cancelado por un error");
-        alert(`Ocurrió un error general durante la ilustración: ${error.message}`);
-    }
-}
-
-
-/**
- * [MODIFICADA] Contiene la lógica para ilustrar un único nodo en DOS PASOS:
- * 1. Genera un SVG base.
- * 2. Lo refina con otra llamada a la IA.
- * @param {HTMLElement} nodo - El nodo del momento a ilustrar.
- */
-async function procesarIlustracionParaUnNodo(nodo) {
-    const descripcion = nodo.dataset.descripcion;
-    if (!descripcion || descripcion.trim().length < 10) {
-        if (!progressBarManager.isActive) {
-            alert("La descripción del momento es muy corta. Escribe más detalles.");
-        }
-        return Promise.reject("Descripción demasiado corta.");
-    }
-
-    // --- INICIO DE LA MODIFICACIÓN ---
-
-    // PASO 1: Generar el SVG inicial (el "borrador")
-    const promptParaEscena = crearPromptParaIlustrarEscena(descripcion);
-    const respuestaInicial = await llamarIAConFeedback(promptParaEscena, `Creando borrador para: "${nodo.querySelector('.momento-titulo').textContent}"`, 'gemini-2.5-flash-lite', true, 1);
-
-    if (!respuestaInicial || !respuestaInicial.svgContent) {
-        throw new Error("La IA no devolvió un SVG inicial válido.");
-    }
-    const svgInicial = respuestaInicial.svgContent;
-
-    // PASO 2: Mejorar el SVG recién generado
-    const promptDeMejoraGenerico = "Añade más detalle, mejora la iluminación y las texturas para un acabado más profesional y artístico.";
-    const svgMejorado = await mejorarSVG(svgInicial, promptDeMejoraGenerico, `Refinando ilustración para: "${nodo.querySelector('.momento-titulo').textContent}"`);
     
-    // PASO 3: Renderizar y guardar la imagen MEJORADA
-    await guardarIlustracionEnNodo(nodo, svgMejorado);
-    
-    // --- FIN DE LA MODIFICACIÓN ---
+    // La función ya no necesita ser una promesa explícita.
+    return Promise.resolve();
 }
-
-/**
- * [NUEVA FUNCIÓN - El Director de Arte]
- * Analiza una descripción, identifica elementos clave y los describe visualmente,
- * manteniendo consistencia con una guía de diseño existente.
- * @param {string} descripcionMomento - La descripción de la escena actual. ej: "hombre en la luna".
- * @param {object} guiaDeDisenoExistente - El objeto con los diseños ya definidos.
- * @returns {Promise<object>} Un objeto con las descripciones de los elementos para ESTA escena.
- */
-async function analizarYDescribirElementos(descripcionMomento, guiaDeDisenoExistente) {
-    const promptAnalisis = `
-        Eres un director de arte y diseñador de producción. Tu tarea es mantener la consistencia visual.
-        Analiza la descripción de una nueva escena y una guía de diseño con elementos ya definidos.
-
-        **Guía de Diseño Existente (JSON):**
-        ---
-        ${JSON.stringify(guiaDeDisenoExistente, null, 2)}
-        ---
-
-        **Descripción de la Nueva Escena:**
-        ---
-        "${descripcionMomento}"
-        ---
-
-        **Tus Tareas:**
-        1.  Identifica los 2-4 sustantivos o elementos visuales más importantes de la "Nueva Escena" (ej: 'hombre', 'luna', 'nave espacial').
-        2.  Para cada elemento, comprueba si ya existe en la "Guía de Diseño Existente".
-        3.  Si un elemento YA EXISTE en la guía, usa su descripción tal cual.
-        4.  Si un elemento es NUEVO, crea una descripción visual detallada y específica (2-10 palabras). Sé creativo y concreto. Por ejemplo, en lugar de "coche", define "un sedán rojo de los años 90, algo abollado".
-        5.  Devuelve ÚNICAMENTE un objeto JSON con los elementos y sus descripciones para la escena actual. NO incluyas elementos que no estén en la descripción de la nueva escena.
-
-        Ejemplo de respuesta para la escena "un ogro cruza un puente de madera":
-        {
-          "ogro": "un ogro corpulento de piel verde musgo y con un solo ojo",
-          "puente de madera": "un viejo puente colgante de tablones oscuros y cuerdas gastadas"
-        }
-    `;
-
-    // Usamos el modelo secundario para esta tarea, puede ser más rápido y barato.
-    const respuestaIA = await llamarIAConFeedback(promptAnalisis, `Analizando diseño para: "${descripcionMomento}"`, 'gemini-2.5-flash', true, 1);
-
-    if (!respuestaIA) {
-        console.error("La IA de análisis de diseño no devolvió respuesta.");
-        return {}; // Devuelve un objeto vacío en caso de fallo
-    }
-    return respuestaIA;
-}
-
+ 
 
 /**
  * [NUEVA FUNCIÓN - El Constructor de Prompts]
@@ -728,16 +495,71 @@ function crearPromptConsistenteParaEscena(descripcionMomento, elementosDescritos
 
  
 /**
- * [MODIFICADA CON 3 PASOS]
- * Realiza el trabajo de generar y refinar la imagen para un único nodo en TRES PASOS.
+ * [MODIFICADA CON PASO DE COMPOSICIÓN]
+ * Realiza el trabajo de generar y refinar la imagen para un único nodo.
+ * Ahora incluye un "Paso 0" para decidir qué elementos de la guía usar.
  * @param {HTMLElement} nodo - El nodo del momento a procesar.
- * @param {string} promptConsistente - El prompt ya enriquecido con la guía de diseño.
+ * @param {object} guiaDeDiseno - La guía de diseño MAESTRA generada por el analizador.
  * @returns {Promise<{status: string, id: string, error?: string}>} El resultado del proceso.
  */
-async function generarYRefinarImagenParaNodo(nodo, promptConsistente) {
+async function generarYRefinarImagenParaNodo(nodo, guiaDeDiseno) {
     const tituloNodo = nodo.querySelector('.momento-titulo').textContent;
+    const descripcionMomento = nodo.dataset.descripcion;
+
     try {
-        // --- PASO A: Generar Borrador ---
+        // --- PASO 0: Composición de la Escena ---
+        // Se hace una llamada a la IA para que decida qué elementos de la guía aplican a esta escena.
+        const promptComposicion = `
+            Eres un Director de Fotografía y Compositor de Escenas. Tu misión es interpretar la narrativa de una escena y seleccionar los elementos visuales precisos de un catálogo para construirla.
+
+            **FILOSOFÍA DE COMPOSICIÓN:**
+            - **Menos es más:** Selecciona SOLO los elementos esenciales para contar la historia de este momento. No satures la escena.
+            - **Foco narrativo:** Tu selección debe guiar la mirada del espectador hacia el punto clave de la descripción.
+            - **Respeto al catálogo:** No inventes elementos. Usa únicamente los que se proveen en la guía de diseño.
+
+            **Guía de Diseño Disponible (Catálogo de Elementos):**
+            ---
+            ${JSON.stringify(guiaDeDiseno, null, 2)}
+            ---
+
+            **Descripción de la Escena Específica a Componer:**
+            ---
+            "${descripcionMomento}"
+            ---
+
+            **Tu Tarea:**
+            1. Lee la "Descripción de la Escena Específica".
+            2. Revisa la "Guía de Diseño Disponible" y elige SÓLO los elementos que aparecen explícita o implícitamente en la descripción.
+            3. Devuelve ÚNICAMENTE un objeto JSON con una clave "elementos". El valor será un objeto que contiene solo los elementos seleccionados y sus descripciones completas de la guía.
+
+            **Ejemplo de respuesta JSON esperada:**
+            {
+              "elementos": {
+                "Kaelen, el Guardián del Velo": {
+                  "Concepto Central": "Un antiguo guerrero cuya armadura se ha fusionado con la corteza de un árbol arcano...",
+                  "F - Forma y Estructura": "Silueta imponente y ancha...",
+                  "M - Material y Textura": "La armadura es de un metal similar al bronce...",
+                  "C - Paleta de Color": "Tonos tierra dominantes...",
+                  "L - Interacción con la Luz": "La superficie es mayormente mate...",
+                  "Detalles Distintivos": "Una enredadera con pequeñas flores blancas..."
+                },
+                "Puente de los Susurros": "..."
+              }
+            }
+        `;
+        
+        const feedbackComposicion = `Componiendo: "${tituloNodo}"`;
+        const respuestaComposicion = await llamarIAConFeedback(promptComposicion, feedbackComposicion, 'gemini-2.5-flash-lite', true, 1);
+        
+        if (!respuestaComposicion || !respuestaComposicion.elementos) {
+            throw new Error("La IA de composición no devolvió una lista de elementos válida.");
+        }
+        
+        // Creamos el prompt de ilustración final con los elementos seleccionados para esta escena.
+        const promptConsistente = crearPromptConsistenteParaEscena(descripcionMomento, respuestaComposicion.elementos);
+
+
+        // --- PASO A: Generar Borrador (utiliza el prompt recién creado) ---
         const respuestaIlustracion = await llamarIAConFeedback(promptConsistente, `Ilustrando: "${tituloNodo}"`, 'gemini-2.5-flash', true, 1);
         if (!respuestaIlustracion || !respuestaIlustracion.svgContent) {
             throw new Error("La IA no devolvió un borrador de SVG.");
@@ -745,12 +567,24 @@ async function generarYRefinarImagenParaNodo(nodo, promptConsistente) {
         const svgInicial = respuestaIlustracion.svgContent;
 
         // --- PASO B: Primer Refinamiento (Artístico) ---
-        const promptDeMejoraGenerico = "Añade más detalle, mejora la iluminación y las texturas para un acabado más profesional y artístico, respetando la guía de diseño.";
+        const promptDeMejoraGenerico = `
+            Eres un Artista Digital especialista en refinamiento de ilustraciones SVG. Tu tarea es tomar un borrador y elevarlo a un nivel profesional.
+
+            **FILOSOFÍA DE REFINAMIENTO:**
+            - **Mejora, no reemplaces:** Mantén la composición y los elementos centrales del borrador. Tu trabajo es embellecerlo.
+            - **Coherencia Visual:** Respeta el estilo y las descripciones de la guía de diseño implícita en el SVG original.
+            - **Impacto Emocional:** Usa la luz, el color y la textura para acentuar la atmósfera descrita en la escena.
+
+            **Tu Tarea:**
+            1. Analiza el SVG base.
+            2. Mejora la **iluminación**: añade fuentes de luz creíbles, sombras profundas y brillos para dar volumen.
+            3. Enriquece las **texturas**: simula las superficies descritas (metal, piedra, tela, piel).
+            4. Refina el **trazado**: ajusta el grosor de las líneas para crear profundidad y foco.
+            5. Devuelve únicamente el código SVG mejorado.
+        `;
         const svgMejorado = await mejorarSVG(svgInicial, promptDeMejoraGenerico, `Refinando: "${tituloNodo}"`, 'gemini-2.0-flash');
 
-        // --- [NUEVO] PASO C: Refinamiento Final (Pulido) ---
-     //   const promptRefinamientoFinal = "Pule los detalles finales, ajusta las líneas para que sean más limpias y orgánicas y asegúrate de que el estilo sea cohesivo.";
-      //  const svgRefinadoFinal = await mejorarSVG(svgMejorado, promptRefinamientoFinal, `Puliendo: "${tituloNodo}"`, 'gemini-2.0-flash-lite');
+        // --- PASO C: Refinamiento Final ---
         const svgRefinadoFinal = svgMejorado;
         
         // --- PASO D: Guardar en el nodo ---
@@ -798,91 +632,127 @@ async function procesarLote(lote, numeroDeLote, totalLotes) {
     console.log(`--- LOTE ${numeroDeLote} FINALIZADO. Resultados:`, resultados);
 }
 /**
- * [VERSIÓN MEJORADA CON REINTENTOS]
- * Analiza un LOTE completo de momentos. Ahora incluye un bucle de reintento
- * para ser más robusto frente a respuestas inesperadas de la IA.
+ * [MODIFICADA] Analiza un LOTE completo de momentos para crear una GUÍA DE DISEÑO única y consistente.
+ * Ya no se encarga de asignar elementos a cada momento individual.
  * @param {Array<object>} loteDeMomentos - Array de objetos, ej: [{idTemporal: 1, descripcion: "..."}].
  * @param {object} guiaDeDisenoExistente - El objeto con los diseños de lotes anteriores.
- * @returns {Promise<{guiaActualizada: object, elementosPorMomento: object}>} El resultado del análisis.
+ * @returns {Promise<object>} Devuelve únicamente el objeto de la guía de diseño actualizada.
+ */
+/**
+ * Analiza un lote de momentos o escenas para expandir una guía de diseño visual existente.
+ * Utiliza un prompt detallado para instruir a la IA a actuar como un Director de Arte,
+ * asegurando coherencia y descripciones ricas y estructuradas.
+ *
+ * @param {Array<Object>} loteDeMomentos - El nuevo conjunto de escenas a analizar.
+ * @param {Object} guiaDeDisenoExistente - El objeto JSON con la guía de diseño actual.
+ * @returns {Promise<Object>} Una promesa que se resuelve con la guía de diseño actualizada.
+ * @throws {Error} Si la IA no devuelve la estructura JSON esperada después de varios intentos.
  */
 async function analizarLoteDeMomentos(loteDeMomentos, guiaDeDisenoExistente) {
+    // --- El Prompt Mejorado ---
+    // Este prompt es mucho más detallado para guiar a la IA hacia un resultado de alta calidad.
+    // Define una "persona", una filosofía de diseño y un formato de salida muy específico.
     const promptAnalisisPorLote = `
-        Eres un director de arte y diseñador de producción. Tu tarea es analizar un LOTE de escenas y mantener una estricta consistencia visual.
+        Eres un prestigioso Director de Arte y Diseñador de Producción con una visión excepcional para la coherencia visual y la narrativa a través de la imagen. Tu especialidad es crear mundos cohesivos y memorables. Tu tarea es expandir una guía de diseño existente analizando un nuevo lote de momentos o escenas de una historia.
 
-        **Guía de Diseño Existente (de lotes anteriores):**
+        **FILOSOFÍA DE DISEÑO:**
+        - **Coherencia ante todo:** Cada nuevo elemento debe sentirse parte del mismo universo que los elementos existentes.
+        - **La forma sigue a la función:** El diseño de un elemento (personaje, objeto, lugar) debe reflejar su propósito, historia y personalidad.
+        - **Especificidad sobre generalidad:** Evita descripciones vagas. En lugar de "una espada", describe "una hoja de acero damasquino, con una guarda de bronce en forma de alas de halcón y una empuñadura de cuero gastado".
+
+        **Guía de Diseño Existente (Base para tu trabajo):**
         ---
         ${JSON.stringify(guiaDeDisenoExistente, null, 2)}
         ---
 
-        **Nuevo Lote de Escenas a Analizar (procesar en orden):**
+        **Nuevo Lote de Momentos a Integrar:**
         ---
         ${JSON.stringify(loteDeMomentos, null, 2)}
         ---
 
-        **Tus Tareas:**
-        1. Procesa las escenas del lote EN ORDEN. La consistencia debe mantenerse tanto con la guía existente como DENTRO del lote actual.
-        2. Para cada escena, identifica sus elementos clave (sustantivos).
-        3. Si un elemento ya existe en la guía (o en un momento anterior de ESTE LOTE), REUTILIZA su descripción.
-        4. Si un elemento es NUEVO, crea una descripción visual detallada y específica.
-        5. Devuelve ÚNICAMENTE un objeto JSON con dos claves:
-            - "guiaActualizada": Un objeto JSON con la guía de diseño COMPLETA Y ACTUALIZADA después de procesar este lote.
-            - "elementosPorMomento": Un objeto JSON donde cada clave es el "idTemporal" de una escena y su valor es un objeto con los elementos y descripciones específicos para ESE momento.
+        **INSTRUCCIONES DETALLADAS:**
 
-        **Ejemplo de respuesta JSON esperada:**
+        1.  **Analiza Holísticamente:** Lee y comprende todas las escenas del nuevo lote para captar el contexto y las interacciones entre los elementos.
+        2.  **Identifica Entidades Clave:** Extrae los sustantivos principales que requieren diseño visual (personajes, criaturas, objetos importantes, localizaciones, vehículos, etc.).
+        3.  **Verifica y Reutiliza:** Antes de crear algo nuevo, comprueba rigurosamente si la entidad ya existe en la "Guía de Diseño Existente". Si es así, **DEBES** reutilizar su descripción para mantener la consistencia. No la modifiques.
+        4.  **Diseña Nuevas Entidades:** Si una entidad es nueva, crea una descripción visual rica y estructurada. Utiliza el siguiente formato como guía para tus descripciones:
+            * **Concepto Central:** Una o dos frases que capturen la esencia del elemento.
+            * **F - Forma y Estructura:** Describe su silueta, geometría, proporciones y construcción. ¿Es angular, orgánico, simétrico, caótico?
+            * **M - Material y Textura:** ¿De qué está hecho? Describe los materiales (madera, piedra, metal, tela) y sus texturas (rugoso, liso, pulido, oxidado, gastado).
+            * **C - Paleta de Color:** Define los colores dominantes, secundarios y de acento. Menciona la saturación y el brillo (p. ej., "ocres desaturados, con toques de carmesí y azul cobalto").
+            * **L - Interacción con la Luz:** ¿Cómo refleja, absorbe o emite luz? ¿Es mate, brillante, translúcido, bioluminiscente?
+            * **Detalles Distintivos:** Menciona cualquier característica única, como cicatrices, grabados, patrones recurrentes, o símbolos importantes.
+
+        5.  **Genera el JSON Final:** Tu única salida debe ser un objeto JSON que contenga una única clave: \`guiaActualizada\`. El valor de esta clave será la guía de diseño completa, fusionando la guía existente con las nuevas descripciones que has creado. No añadas comentarios, explicaciones ni ningún otro texto fuera del objeto JSON.
+
+        **Ejemplo Detallado de Respuesta JSON Esperada:**
         {
-          "guiaActualizada": { "ogro": "...", "puente": "...", "princesa": "..." },
-          "elementosPorMomento": { "temp_1": { "ogro": "...", "puente": "..." }, "temp_2": { "ogro": "...", "princesa": "..." } }
+          "guiaActualizada": {
+            "Kaelen, el Guardián del Velo": {
+              "Concepto Central": "Un antiguo guerrero cuya armadura se ha fusionado con la corteza de un árbol arcano. Irradia una calma estoica y una fuerza latente.",
+              "F - Forma y Estructura": "Silueta imponente y ancha. Formas angulares y masivas en la armadura de placas...",
+              "M - Material y Textura": "La armadura es de un metal similar al bronce, pero con una pátina verde musgo...",
+              "C - Paleta de Color": "Tonos tierra dominantes: marrones profundos, ocres, verdes musgo desaturados...",
+              "L - Interacción con la Luz": "La superficie es mayormente mate, absorbiendo la luz...",
+              "Detalles Distintivos": "Una enredadera con pequeñas flores blancas crece desde su guantelete derecho..."
+            },
+            "El Orbe del Silencio": {
+              "Concepto Central": "Un artefacto esférico que absorbe todo sonido a su alrededor...",
+              "F - Forma y Estructura": "Una esfera perfecta de aproximadamente 30 cm de diámetro...",
+              "M - Material y Textura": "Parece obsidiana pulida, pero no refleja la luz...",
+              "C - Paleta de Color": "Negro absoluto, un vacío de color...",
+              "L - Interacción con la Luz": "Totalmente mate. No produce reflejos...",
+              "Detalles Distintivos": "Cuando alguien intenta hablar cerca, finísimas y casi invisibles grietas de luz violeta recorren su superficie..."
+            }
+          }
         }
     `;
 
-    // --- [INICIO DE LA MODIFICACIÓN] Lógica de reintento ---
+    // --- Lógica de Ejecución y Reintentos ---
     const MAX_INTENTOS = 3;
+    const RETRY_DELAY_MS = 2500; // Tiempo de espera entre reintentos
+
     for (let i = 1; i <= MAX_INTENTOS; i++) {
         try {
-            const feedback = `Analizando lote (${loteDeMomentos.length} escenas, Intento ${i}/${MAX_INTENTOS})...`;
+            const feedback = `Analizando guía de diseño (${loteDeMomentos.length} escenas, Intento ${i}/${MAX_INTENTOS})...`;
             
-            // Asegúrate de usar un modelo potente para esta tarea. 'gemini-2.5-pro' es una buena opción.
+            // Asumimos que esta función existe y maneja la llamada a la API de la IA.
+            // El 'true' fuerza la respuesta en formato JSON.
             const respuestaIA = await llamarIAConFeedback(promptAnalisisPorLote, feedback, 'gemini-2.5-flash', true, 1);
 
-            // Se valida que la respuesta tenga la estructura correcta
-            if (respuestaIA && respuestaIA.guiaActualizada && respuestaIA.elementosPorMomento) {
-                console.log(`Análisis del lote exitoso en el intento ${i}.`);
-                return respuestaIA; // ¡Éxito! Salimos de la función.
+            // Validación robusta: nos aseguramos de que la respuesta sea un objeto
+            // y que contenga la clave `guiaActualizada`, que también debe ser un objeto.
+            if (respuestaIA && typeof respuestaIA === 'object' && respuestaIA.guiaActualizada && typeof respuestaIA.guiaActualizada === 'object') {
+                console.log(`✅ Análisis de guía de diseño exitoso en el intento ${i}.`);
+                return respuestaIA.guiaActualizada; // ¡Éxito! Devolvemos solo el objeto de la guía.
             }
             
-            // Si la estructura no es correcta, se registra y se preparara el reintento.
-            console.warn(`Intento ${i}/${MAX_INTENTOS} no devolvió la estructura JSON esperada. Respuesta recibida:`, respuestaIA);
+            // Si la estructura no es la correcta, lo registramos para depuración.
+            console.warn(`Intento ${i}/${MAX_INTENTOS} no devolvió la estructura JSON esperada. Respuesta recibida:`, JSON.stringify(respuestaIA, null, 2));
 
         } catch (error) {
-            console.warn(`Intento ${i}/${MAX_INTENTOS} falló con un error de API:`, error.message);
+            // Capturamos errores de red o de la API.
+            console.error(`Intento ${i}/${MAX_INTENTOS} falló con un error de API:`, error.message);
         }
 
-        // Si no es el último intento, esperamos un momento antes de reintentar.
+        // Esperamos antes del siguiente reintento, solo si no es el último intento.
         if (i < MAX_INTENTOS) {
-            await new Promise(resolve => setTimeout(resolve, 2500));
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
         }
     }
     
-    // Si el bucle termina, todos los intentos fallaron. Lanzamos el error final.
-    throw new Error("La IA de análisis de lote no devolvió la estructura JSON esperada después de varios intentos.");
-    // --- [FIN DE LA MODIFICACIÓN] ---
+    // Si todos los intentos fallan, lanzamos un error claro.
+    throw new Error("La IA de análisis de guía no devolvió una respuesta válida después de varios intentos.");
 }
 
+ 
 /**
- * [VERSIÓN FINAL CON INICIO ESCALONADO]
- * Orquesta la ilustración con una fase de análisis secuencial y una fase de generación
- * que lanza lotes en paralelo a intervalos fijos, sin esperar a que el anterior termine.
- */
-/**
- * [VERSIÓN FINAL CON ANÁLISIS Y GENERACIÓN POR LOTES]
- * Orquesta la ilustración completa. La fase de análisis ahora también se ejecuta por lotes.
- */
-/**
- * [VERSIÓN FINAL CON LÓGICA DE PIPELINE]
- * Orquesta la ilustración de forma que el análisis de un lote y la ilustración
- * del lote anterior puedan ocurrir de forma concurrente.
+ * [MODIFICADO] Orquesta la ilustración siguiendo el nuevo pipeline de 2 fases:
+ * 1. Análisis por lotes para crear una guía de diseño maestra.
+ * 2. Ilustración por lotes, donde cada nodo compone su propia escena.
  */
 async function ilustrarTodoEnParaleloPorLotes() {
+    // ... (código inicial de confirmación y filtrado de nodos sin cambios) ...
     const nodosTotales = document.querySelectorAll('#momentos-lienzo .momento-nodo');
     const BATCH_SIZE = 9;
     const DELAY_ENTRE_LOTES = 55000;
@@ -904,70 +774,59 @@ async function ilustrarTodoEnParaleloPorLotes() {
         alert("No se encontraron momentos que necesiten ilustración.");
         return;
     }
-
+    
     progressBarManager.start('Iniciando proceso de ilustración en pipeline...');
 
     try {
         let guiaDeDisenoMaestra = {};
         const promesasDeTodosLosLotes = [];
 
-        // 1. Dividimos todos los nodos en lotes desde el principio.
         const lotesDeNodos = [];
         for (let i = 0; i < nodosAIlustrar.length; i += BATCH_SIZE) {
             lotesDeNodos.push(nodosAIlustrar.slice(i, i + BATCH_SIZE));
         }
 
-        // --- [NUEVO BUCLE PRINCIPAL DE PIPELINE] ---
-        // Este bucle itera una vez por lote, realizando el análisis y programando la ilustración.
         for (let i = 0; i < lotesDeNodos.length; i++) {
             const loteActualNodos = lotesDeNodos[i];
             const numeroDeLote = i + 1;
 
-            // --- PASO 1: ANALIZAR EL LOTE ACTUAL (Bloqueante para este bucle) ---
-            const progress = 5 + (i / lotesDeNodos.length) * 45; // El análisis ocupa la primera mitad de la barra.
-            progressBarManager.set(progress, `Analizando lote de diseño ${numeroDeLote} de ${lotesDeNodos.length}...`);
+            // --- PASO 1: ANALIZAR EL LOTE ACTUAL (para obtener la guía de diseño) ---
+            const progress = 5 + (i / lotesDeNodos.length) * 45;
+            progressBarManager.set(progress, `Analizando guía de diseño del lote ${numeroDeLote} de ${lotesDeNodos.length}...`);
 
             const momentosParaAnalizar = loteActualNodos.map((nodo, index) => ({
                 idTemporal: `temp_${index}`,
                 descripcion: nodo.dataset.descripcion
             }));
+            
+            // [MODIFICADO] Ahora solo esperamos la guía de diseño.
+            guiaDeDisenoMaestra = await analizarLoteDeMomentos(momentosParaAnalizar, guiaDeDisenoMaestra);
 
-            // Esperamos a que el análisis de ESTE lote termine para tener la guía actualizada.
-            const resultadoAnalisis = await analizarLoteDeMomentos(momentosParaAnalizar, guiaDeDisenoMaestra);
-            guiaDeDisenoMaestra = resultadoAnalisis.guiaActualizada; // Actualizamos la guía para el siguiente lote.
+            // [MODIFICADO] Preparamos los datos para la fase de ilustración.
+            // Simplemente pasamos cada nodo junto con la guía maestra completa.
+            const nodosParaIlustrarEsteLote = loteActualNodos.map(nodo => ({
+                nodo,
+                guiaDeDiseno: guiaDeDisenoMaestra
+            }));
 
-            // Preparamos los datos para la fase de ilustración de este lote.
-            const nodosConPromptsParaEsteLote = [];
-            for (let j = 0; j < loteActualNodos.length; j++) {
-                const nodo = loteActualNodos[j];
-                const idTemporal = `temp_${j}`;
-                const elementosDescritos = resultadoAnalisis.elementosPorMomento[idTemporal];
-                if (elementosDescritos) {
-                    const promptConsistente = crearPromptConsistenteParaEscena(nodo.dataset.descripcion, elementosDescritos);
-                    nodosConPromptsParaEsteLote.push({ nodo, promptConsistente });
-                }
-            }
-
-            // --- PASO 2: PROGRAMAR LA ILUSTRACIÓN DEL LOTE ACTUAL (No bloqueante) ---
+            // --- PASO 2: PROGRAMAR LA ILUSTRACIÓN DEL LOTE ACTUAL ---
             const delayDeInicio = i * DELAY_ENTRE_LOTES;
             console.log(`Análisis del Lote ${numeroDeLote} completado. Programando su ilustración para que inicie en ${delayDeInicio / 1000}s.`);
+            
+            // [MODIFICADO] Modificamos la función 'procesarLote' para que acepte el nuevo formato de datos.
+            // (La adaptación de procesarLote es implícita y se muestra a continuación)
 
             const promesaDelLote = new Promise(resolve => {
                 setTimeout(async () => {
-                    // La función procesarLote se encarga de la ilustración en paralelo de este lote.
-                    // Su barra de progreso interna se actualizará al comenzar.
-                    await procesarLote(nodosConPromptsParaEsteLote, numeroDeLote, lotesDeNodos.length);
-                    resolve(); // Resolvemos la promesa cuando este lote ha terminado de ilustrarse.
+                    await procesarLote(nodosParaIlustrarEsteLote, numeroDeLote, lotesDeNodos.length);
+                    resolve();
                 }, delayDeInicio);
             });
 
             promesasDeTodosLosLotes.push(promesaDelLote);
-            // El bucle principal NO espera aquí. Continúa inmediatamente para analizar el siguiente lote.
         }
 
-        // Al final, esperamos a que todas las promesas de ilustración programadas se completen.
         await Promise.all(promesasDeTodosLosLotes);
-
         progressBarManager.finish('¡Proceso de ilustración en pipeline finalizado!');
 
     } catch (error) {
@@ -975,6 +834,23 @@ async function ilustrarTodoEnParaleloPorLotes() {
         progressBarManager.error("Proceso cancelado por un error crítico");
         alert(`Ocurrió un error general durante la ilustración: ${error.message}`);
     }
+}
+
+
+// Es necesario un pequeño ajuste en `procesarLote` para que pase los argumentos correctos.
+async function procesarLote(lote, numeroDeLote, totalLotes) {
+    console.log(`--- INICIANDO LOTE ${numeroDeLote} de ${totalLotes} ---`);
+    
+    const progress = 30 + ((numeroDeLote - 1) / totalLotes) * 70;
+    progressBarManager.set(progress, `Procesando lote ${numeroDeLote} de ${totalLotes} (${lote.length} imágenes)...`);
+
+    // [MODIFICADO] El mapeo ahora extrae 'nodo' y 'guiaDeDiseno' para pasarlos a la función de ilustración.
+    const promesasDelLote = lote.map(({ nodo, guiaDeDiseno }) =>
+        generarYRefinarImagenParaNodo(nodo, guiaDeDiseno)
+    );
+
+    const resultados = await Promise.allSettled(promesasDelLote);
+    console.log(`--- LOTE ${numeroDeLote} FINALIZADO. Resultados:`, resultados);
 }
  
 

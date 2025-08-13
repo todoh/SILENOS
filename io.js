@@ -128,6 +128,8 @@ async function empaquetarDatosDelProyecto() {
     const nodosMomento = document.querySelectorAll('#momentos-lienzo .momento-nodo');
     const promesasMomentos = Array.from(nodosMomento).map(async (nodo) => {
         const imagenComprimida = await _compressImageForSave(nodo.querySelector('.momento-imagen').src);
+                const svgIlustracion = nodo.dataset.svgIlustracion || '';
+
         return {
             id: nodo.id,
             titulo: nodo.querySelector('.momento-titulo').textContent,
@@ -135,6 +137,7 @@ async function empaquetarDatosDelProyecto() {
             x: parseInt(nodo.style.left, 10),
             y: parseInt(nodo.style.top, 10),
             imagen: imagenComprimida,
+            svgIlustracion: svgIlustracion, 
             acciones: JSON.parse(nodo.dataset.acciones || '[]')
         };
     });

@@ -400,6 +400,8 @@ editor de datos -->
 
 <div id="momentos" class="pantalla" data-titulo="Aventura Interactiva">
  <button class="pro17"  title="Ilustrar todo"  onclick="ilustrarTodoEnParaleloPorLotes()" >🖌️</button>
+  <button class="pro18"  title="Ilustrar todo"  onclick="generacionLoteMomentos()" style="display: none;">🎨</button>
+
     <button class="pro16"  title="Acción contextual"  onclick="abrirModalMomentosIA()" >✨</button>
 
     <button class="pro6" id="agregar-momento-btn">+</button>
@@ -1767,6 +1769,11 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
 <button onclick="cerrartodo(), abrirVentana('guion-literario');">Guión</button>
 <button onclick="cerrartodo(), abrirVentana('capitulosh');">Libro</button>   
 <button onclick="cerrartodo(), abrirVentana('momentos');">Videojuego</button>
+
+<button  onclick="cerrartodo(),abrirVentana('programador');"  >💻</button>  
+<button id="bdatos"  onclick="cerrartodo(),abrirVentana('renderizador');">3D</button> 
+<button  onclick="cerrartodo(),abrirVentana('interactivo');"   >🎮</button>
+
 <button onclick="cerrartodo(), abrirVentana('personajes');">Datos</button>
 <button onclick="cerrartodo(), abrirVentana('proyecto');">🏗️Proyecto</button>
 <button id="bguardarjson"  onclick="guardarJSON()">💾</button>       
@@ -1833,16 +1840,16 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
 
 <!-- SCRIPTS MOVED HERE, INSIDE THE BODY TAG -->
 <script type="module">
-  import { generarToma } from './escenas/geminivideo.js';
-  window.generarToma = generarToma; 
+  //import { generarToma } from './escenas/geminivideo.js';
+  //window.generarToma = generarToma; 
 </script>
 
 <script src="compositor-escenas-3d.js"></script>
-<!-- <script src="escenas/geminivideo.js"></script> <!-- This was a duplicate load and has been removed -->
+<!-- <script src="escenas/geminivideo.js"></script> 
 
-<script src="escenas/generacion2d.js"></script>
+<script src="escenas/generacion2d.js"></script><!-- This was a duplicate load and has been removed -->
 
-
+<script src="momentos-generacion.js"></script>
 <script src="momentos-core.js"></script>
 <script src="momentos-vista.js"></script>
 <script src="momentos-ia.js"></script>

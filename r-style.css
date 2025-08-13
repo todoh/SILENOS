@@ -322,12 +322,7 @@
 }
 /* --- FIN: NUEVOS ESTILOS --- */
 /* --- ESTILOS GLOBALES Y DEL EDITOR (ACTUALIZADOS) --- */
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    margin: 0;
-    color: white;
-    overflow: hidden;
-}
+ 
 
 #r-editor-container {
     display: flex;

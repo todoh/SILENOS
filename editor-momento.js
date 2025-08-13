@@ -240,7 +240,7 @@ function poblarEntornoPanel(data = {}) {
     selectSuelo.value = data.texturaSuelo || '';
 
     // Añadimos el listener para el nuevo botón
-    container.querySelector('#btn-ilustrar-momento-ia').addEventListener('click', ilustrarMomentoConIA);
+    container.querySelector('#btn-ilustrar-momento-ia').addEventListener('click', generarYRefinarImagenParaNodo);
     container.querySelectorAll('input, select').forEach(input => input.addEventListener('input', actualizarDatosNodo));
 }
 

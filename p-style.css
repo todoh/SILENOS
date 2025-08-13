@@ -90,10 +90,10 @@
 #p-canvas {
     width: 200vw;
     height: 200vh; /* Usamos un tamaño grande para poder movernos */
-    background-color: #c0c0c0;
+    background-color: #f1f1f1;
     background-image:
-        linear-gradient(rgba(255, 255, 255, 0.651) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.432) 1px, transparent 1px);
+        linear-gradient(#f1f1f1, transparent 1px),
+        linear-gradient(90deg,#f1f1f1, transparent 1px);
     background-size: 20px 20px;
     position: relative; /* ¡MUY IMPORTANTE para posicionar los nodos! */
     overflow: visible;
@@ -103,7 +103,7 @@
 #p-output-panel {
     position: absolute;
     right: 0%;
-    width: 28rem;
+    width: 24rem;
     flex-shrink: 0;
     height: 100%;
     background-color: #ffffff00;
@@ -151,10 +151,10 @@
 /* --- Estilos para los nodos --- */
 .p-node {
     position: absolute; 
-    background-color: #2d2d2d;
-    border: 1px solid #444;
+    background-color: #ffffff00;
+    border: 0px solid #444;
     border-radius: 8px;
-    color: white;
+    color: rgb(0, 0, 0);
     padding: 12px;
     min-width: 200px;
     cursor: grab;

@@ -91,7 +91,9 @@ function cerrartodo() {
   document.getElementById('procedimiento').style.display = 'none';
   document.getElementById('info').style.display = 'none';
 
-
+  document.getElementById('renderizador').style.display = 'none';
+  document.getElementById('interactivo').style.display = 'none';
+  document.getElementById('programador').style.display = 'none';
 }
 
 function abrir(escena) {
@@ -832,7 +834,7 @@ function exportarLibroSeleccionado() {
             <title>${libro.titulo}</title>
             <style>
                 /* Estilos Generales */
-                body { font-family: sans-serif; line-height: 1.6; margin: 0; padding: 20px; background-color: #fdfdfd; scroll-behavior: smooth; }
+                body { font-family: montserrat; line-height: 1.6; margin: 0; padding: 20px; background-color: #fdfdfd; scroll-behavior: smooth; }
                 .container { max-width: 800px; margin: auto; padding: 0 20px; }
                 h1 { color: #2c3e50; text-align: center; }
                 h2 { color:rgb(0, 0, 0); border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; margin-top: 40px; }
