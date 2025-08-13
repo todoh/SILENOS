@@ -675,7 +675,7 @@ async function analizarYDescribirElementos(descripcionMomento, guiaDeDisenoExist
     `;
 
     // Usamos el modelo secundario para esta tarea, puede ser más rápido y barato.
-    const respuestaIA = await llamarIAConFeedback(promptAnalisis, `Analizando diseño para: "${descripcionMomento}"`, 'gemini-2.5-flash-lite', true, 1);
+    const respuestaIA = await llamarIAConFeedback(promptAnalisis, `Analizando diseño para: "${descripcionMomento}"`, 'gemini-2.5-flash', true, 1);
 
     if (!respuestaIA) {
         console.error("La IA de análisis de diseño no devolvió respuesta.");
@@ -749,8 +749,9 @@ async function generarYRefinarImagenParaNodo(nodo, promptConsistente) {
         const svgMejorado = await mejorarSVG(svgInicial, promptDeMejoraGenerico, `Refinando: "${tituloNodo}"`, 'gemini-2.0-flash');
 
         // --- [NUEVO] PASO C: Refinamiento Final (Pulido) ---
-        const promptRefinamientoFinal = "Pule los detalles finales, ajusta las líneas para que sean más limpias y orgánicas y asegúrate de que el estilo sea cohesivo.";
-        const svgRefinadoFinal = await mejorarSVG(svgMejorado, promptRefinamientoFinal, `Puliendo: "${tituloNodo}"`, 'gemini-2.0-flash-lite');
+     //   const promptRefinamientoFinal = "Pule los detalles finales, ajusta las líneas para que sean más limpias y orgánicas y asegúrate de que el estilo sea cohesivo.";
+      //  const svgRefinadoFinal = await mejorarSVG(svgMejorado, promptRefinamientoFinal, `Puliendo: "${tituloNodo}"`, 'gemini-2.0-flash-lite');
+        const svgRefinadoFinal = svgMejorado;
         
         // --- PASO D: Guardar en el nodo ---
         await guardarIlustracionEnNodo(nodo, svgRefinadoFinal);
@@ -796,102 +797,185 @@ async function procesarLote(lote, numeroDeLote, totalLotes) {
     
     console.log(`--- LOTE ${numeroDeLote} FINALIZADO. Resultados:`, resultados);
 }
+/**
+ * [VERSIÓN MEJORADA CON REINTENTOS]
+ * Analiza un LOTE completo de momentos. Ahora incluye un bucle de reintento
+ * para ser más robusto frente a respuestas inesperadas de la IA.
+ * @param {Array<object>} loteDeMomentos - Array de objetos, ej: [{idTemporal: 1, descripcion: "..."}].
+ * @param {object} guiaDeDisenoExistente - El objeto con los diseños de lotes anteriores.
+ * @returns {Promise<{guiaActualizada: object, elementosPorMomento: object}>} El resultado del análisis.
+ */
+async function analizarLoteDeMomentos(loteDeMomentos, guiaDeDisenoExistente) {
+    const promptAnalisisPorLote = `
+        Eres un director de arte y diseñador de producción. Tu tarea es analizar un LOTE de escenas y mantener una estricta consistencia visual.
 
+        **Guía de Diseño Existente (de lotes anteriores):**
+        ---
+        ${JSON.stringify(guiaDeDisenoExistente, null, 2)}
+        ---
+
+        **Nuevo Lote de Escenas a Analizar (procesar en orden):**
+        ---
+        ${JSON.stringify(loteDeMomentos, null, 2)}
+        ---
+
+        **Tus Tareas:**
+        1. Procesa las escenas del lote EN ORDEN. La consistencia debe mantenerse tanto con la guía existente como DENTRO del lote actual.
+        2. Para cada escena, identifica sus elementos clave (sustantivos).
+        3. Si un elemento ya existe en la guía (o en un momento anterior de ESTE LOTE), REUTILIZA su descripción.
+        4. Si un elemento es NUEVO, crea una descripción visual detallada y específica.
+        5. Devuelve ÚNICAMENTE un objeto JSON con dos claves:
+            - "guiaActualizada": Un objeto JSON con la guía de diseño COMPLETA Y ACTUALIZADA después de procesar este lote.
+            - "elementosPorMomento": Un objeto JSON donde cada clave es el "idTemporal" de una escena y su valor es un objeto con los elementos y descripciones específicos para ESE momento.
+
+        **Ejemplo de respuesta JSON esperada:**
+        {
+          "guiaActualizada": { "ogro": "...", "puente": "...", "princesa": "..." },
+          "elementosPorMomento": { "temp_1": { "ogro": "...", "puente": "..." }, "temp_2": { "ogro": "...", "princesa": "..." } }
+        }
+    `;
+
+    // --- [INICIO DE LA MODIFICACIÓN] Lógica de reintento ---
+    const MAX_INTENTOS = 3;
+    for (let i = 1; i <= MAX_INTENTOS; i++) {
+        try {
+            const feedback = `Analizando lote (${loteDeMomentos.length} escenas, Intento ${i}/${MAX_INTENTOS})...`;
+            
+            // Asegúrate de usar un modelo potente para esta tarea. 'gemini-2.5-pro' es una buena opción.
+            const respuestaIA = await llamarIAConFeedback(promptAnalisisPorLote, feedback, 'gemini-2.5-flash', true, 1);
+
+            // Se valida que la respuesta tenga la estructura correcta
+            if (respuestaIA && respuestaIA.guiaActualizada && respuestaIA.elementosPorMomento) {
+                console.log(`Análisis del lote exitoso en el intento ${i}.`);
+                return respuestaIA; // ¡Éxito! Salimos de la función.
+            }
+            
+            // Si la estructura no es correcta, se registra y se preparara el reintento.
+            console.warn(`Intento ${i}/${MAX_INTENTOS} no devolvió la estructura JSON esperada. Respuesta recibida:`, respuestaIA);
+
+        } catch (error) {
+            console.warn(`Intento ${i}/${MAX_INTENTOS} falló con un error de API:`, error.message);
+        }
+
+        // Si no es el último intento, esperamos un momento antes de reintentar.
+        if (i < MAX_INTENTOS) {
+            await new Promise(resolve => setTimeout(resolve, 2500));
+        }
+    }
+    
+    // Si el bucle termina, todos los intentos fallaron. Lanzamos el error final.
+    throw new Error("La IA de análisis de lote no devolvió la estructura JSON esperada después de varios intentos.");
+    // --- [FIN DE LA MODIFICACIÓN] ---
+}
 
 /**
  * [VERSIÓN FINAL CON INICIO ESCALONADO]
  * Orquesta la ilustración con una fase de análisis secuencial y una fase de generación
  * que lanza lotes en paralelo a intervalos fijos, sin esperar a que el anterior termine.
  */
+/**
+ * [VERSIÓN FINAL CON ANÁLISIS Y GENERACIÓN POR LOTES]
+ * Orquesta la ilustración completa. La fase de análisis ahora también se ejecuta por lotes.
+ */
+/**
+ * [VERSIÓN FINAL CON LÓGICA DE PIPELINE]
+ * Orquesta la ilustración de forma que el análisis de un lote y la ilustración
+ * del lote anterior puedan ocurrir de forma concurrente.
+ */
 async function ilustrarTodoEnParaleloPorLotes() {
     const nodosTotales = document.querySelectorAll('#momentos-lienzo .momento-nodo');
     const BATCH_SIZE = 9;
     const DELAY_ENTRE_LOTES = 55000;
 
-    // ... (el diálogo de confirmación y la obtención de nodos a ilustrar se mantienen igual) ...
-     if (!confirm(`Esto iniciará un proceso de ilustración AVANZADO.
-- Se analizarán todos los momentos para crear una guía visual.
-- Luego, se ilustrarán en paralelo en lotes de ${BATCH_SIZE}.
-- Cada lote comenzará ${DELAY_ENTRE_LOTES / 1000} segundos después del anterior, de forma escalonada.
+    if (!confirm(`Esto iniciará un proceso de ilustración en modo PIPELINE.
+- El análisis y la ilustración se harán por lotes de ${BATCH_SIZE}.
+- La ilustración de un lote comenzará tan pronto como su análisis termine, de forma escalonada.
 ¿Deseas continuar?`)) {
         return;
     }
-     const nodosAIlustrar = Array.from(nodosTotales).filter(nodo => {
+
+    const nodosAIlustrar = Array.from(nodosTotales).filter(nodo => {
         const descripcion = nodo.dataset.descripcion || '';
         const tieneImagen = nodo.querySelector('.momento-imagen')?.src.includes('data:image');
         return descripcion.trim().length >= 10 && !tieneImagen;
     });
-     if (nodosAIlustrar.length === 0) {
+
+    if (nodosAIlustrar.length === 0) {
         alert("No se encontraron momentos que necesiten ilustración.");
         return;
     }
 
-    progressBarManager.start('Iniciando proceso avanzado de ilustración...');
+    progressBarManager.start('Iniciando proceso de ilustración en pipeline...');
 
     try {
-        // --- FASE 1: ANÁLISIS SECUENCIAL (igual que antes) ---
-        progressBarManager.set(5, 'Fase 1: Analizando todas las escenas para guía de diseño...');
-        const guiaDeDeisenoMaestra = {};
-        const nodosConDatos = [];
+        let guiaDeDisenoMaestra = {};
+        const promesasDeTodosLosLotes = [];
 
-        for (let i = 0; i < nodosAIlustrar.length; i++) {
-            const nodo = nodosAIlustrar[i];
-            const progress = 5 + (i / nodosAIlustrar.length) * 25;
-            progressBarManager.set(progress, `Analizando diseño para: "${nodo.querySelector('.momento-titulo').textContent}"`);
-            
-            const descripcionOriginal = nodo.dataset.descripcion;
-            const elementosParaEstaEscena = await analizarYDescribirElementos(descripcionOriginal, guiaDeDeisenoMaestra);
-            Object.assign(guiaDeDeisenoMaestra, elementosParaEstaEscena);
-
-            const promptConsistente = crearPromptConsistenteParaEscena(descripcionOriginal, elementosParaEstaEscena);
-            nodosConDatos.push({ nodo, promptConsistente });
-        }
-        console.log("Guía de Diseño Maestra Final:", guiaDeDeisenoMaestra);
-
-
-        // --- [LÓGICA MODIFICADA] FASE 2: PROGRAMACIÓN ESCALONADA DE LOTES ---
-        progressBarManager.set(30, 'Fase 2: Programando lotes de ilustración...');
-        const lotes = [];
-        for (let i = 0; i < nodosConDatos.length; i += BATCH_SIZE) {
-            lotes.push(nodosConDatos.slice(i, i + BATCH_SIZE));
+        // 1. Dividimos todos los nodos en lotes desde el principio.
+        const lotesDeNodos = [];
+        for (let i = 0; i < nodosAIlustrar.length; i += BATCH_SIZE) {
+            lotesDeNodos.push(nodosAIlustrar.slice(i, i + BATCH_SIZE));
         }
 
-        if (lotes.length > 0) {
-            const promesasDeTodosLosLotes = [];
+        // --- [NUEVO BUCLE PRINCIPAL DE PIPELINE] ---
+        // Este bucle itera una vez por lote, realizando el análisis y programando la ilustración.
+        for (let i = 0; i < lotesDeNodos.length; i++) {
+            const loteActualNodos = lotesDeNodos[i];
+            const numeroDeLote = i + 1;
 
-            // Este bucle se ejecuta muy rápido, solo programa los inicios.
-            for (let i = 0; i < lotes.length; i++) {
-                const loteActual = lotes[i];
-                const numeroDeLote = i + 1;
-                const delayDeInicio = i * DELAY_ENTRE_LOTES;
+            // --- PASO 1: ANALIZAR EL LOTE ACTUAL (Bloqueante para este bucle) ---
+            const progress = 5 + (i / lotesDeNodos.length) * 45; // El análisis ocupa la primera mitad de la barra.
+            progressBarManager.set(progress, `Analizando lote de diseño ${numeroDeLote} de ${lotesDeNodos.length}...`);
 
-                console.log(`Programando Lote ${numeroDeLote} para que inicie en ${delayDeInicio / 1000} segundos.`);
-                
-                // Creamos una promesa que se resolverá cuando el lote programado termine.
-                const promesaDelLote = new Promise(resolve => {
-                    setTimeout(async () => {
-                        // Cuando llega el momento, se ejecuta el procesamiento del lote.
-                        await procesarLote(loteActual, numeroDeLote, lotes.length);
-                        resolve(); // El lote ha terminado, resolvemos la promesa.
-                    }, delayDeInicio);
-                });
-                
-                promesasDeTodosLosLotes.push(promesaDelLote);
+            const momentosParaAnalizar = loteActualNodos.map((nodo, index) => ({
+                idTemporal: `temp_${index}`,
+                descripcion: nodo.dataset.descripcion
+            }));
+
+            // Esperamos a que el análisis de ESTE lote termine para tener la guía actualizada.
+            const resultadoAnalisis = await analizarLoteDeMomentos(momentosParaAnalizar, guiaDeDisenoMaestra);
+            guiaDeDisenoMaestra = resultadoAnalisis.guiaActualizada; // Actualizamos la guía para el siguiente lote.
+
+            // Preparamos los datos para la fase de ilustración de este lote.
+            const nodosConPromptsParaEsteLote = [];
+            for (let j = 0; j < loteActualNodos.length; j++) {
+                const nodo = loteActualNodos[j];
+                const idTemporal = `temp_${j}`;
+                const elementosDescritos = resultadoAnalisis.elementosPorMomento[idTemporal];
+                if (elementosDescritos) {
+                    const promptConsistente = crearPromptConsistenteParaEscena(nodo.dataset.descripcion, elementosDescritos);
+                    nodosConPromptsParaEsteLote.push({ nodo, promptConsistente });
+                }
             }
 
-            // Esperamos a que todas las promesas de todos los lotes (que se ejecutan escalonadamente) terminen.
-            await Promise.all(promesasDeTodosLosLotes);
+            // --- PASO 2: PROGRAMAR LA ILUSTRACIÓN DEL LOTE ACTUAL (No bloqueante) ---
+            const delayDeInicio = i * DELAY_ENTRE_LOTES;
+            console.log(`Análisis del Lote ${numeroDeLote} completado. Programando su ilustración para que inicie en ${delayDeInicio / 1000}s.`);
+
+            const promesaDelLote = new Promise(resolve => {
+                setTimeout(async () => {
+                    // La función procesarLote se encarga de la ilustración en paralelo de este lote.
+                    // Su barra de progreso interna se actualizará al comenzar.
+                    await procesarLote(nodosConPromptsParaEsteLote, numeroDeLote, lotesDeNodos.length);
+                    resolve(); // Resolvemos la promesa cuando este lote ha terminado de ilustrarse.
+                }, delayDeInicio);
+            });
+
+            promesasDeTodosLosLotes.push(promesaDelLote);
+            // El bucle principal NO espera aquí. Continúa inmediatamente para analizar el siguiente lote.
         }
 
-        progressBarManager.finish('¡Proceso de ilustración escalonado finalizado!');
+        // Al final, esperamos a que todas las promesas de ilustración programadas se completen.
+        await Promise.all(promesasDeTodosLosLotes);
+
+        progressBarManager.finish('¡Proceso de ilustración en pipeline finalizado!');
 
     } catch (error) {
-        console.error("Error crítico en el proceso de ilustración en paralelo:", error);
+        console.error("Error crítico en el proceso de ilustración en pipeline:", error);
         progressBarManager.error("Proceso cancelado por un error crítico");
         alert(`Ocurrió un error general durante la ilustración: ${error.message}`);
     }
 }
-
  
 
 
