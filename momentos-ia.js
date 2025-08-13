@@ -469,14 +469,14 @@ function crearPromptParaIlustrarEscena(descripcion) {
         1.  **Estilo:** Utiliza un estilo de ilustración "flat design" o "vectorial limpio", con colores bien definidos y formas claras. Evita el fotorrealismo.
         2.  **Composición:** Crea una escena completa. Debe tener un fondo (cielo, paredes), un plano medio (árboles, edificios, terreno) y, si aplica, un primer plano (objetos cercanos).
         3.  **Atmósfera:** Usa el color y la iluminación para transmitir la atmósfera descrita (ej. tonos fríos para una escena nocturna, colores cálidos para una escena alegre).
-        4.  **Formato SVG Panorámico:** El SVG DEBE usar un viewBox="0 0 1280 720" para crear una imagen panorámica (aspecto 16:9).
+        4.  **Formato SVG Panorámico:** El SVG DEBE usar un viewBox="0 0 1920 1080" para crear una imagen panorámica (aspecto 16:9).
         5.  **Fondo Transparente:** El SVG no debe tener un <rect> de fondo de color sólido. El fondo debe ser transparente.
 
         **Formato de Respuesta OBLIGATORIO:**
         Responde ÚNICAMENTE con un objeto JSON válido que contenga el código SVG. No incluyas explicaciones ni texto fuera del JSON.
         Ejemplo de respuesta válida:
         {
-          "svgContent": "<svg viewBox='0 0 1280 720' xmlns='http://www.w3.org/2000/svg'>...</svg>"
+          "svgContent": "<svg viewBox='0 0 1920 1080' xmlns='http://www.w3.org/2000/svg'>...</svg>"
         }
     `;
 }
@@ -494,8 +494,8 @@ async function guardarIlustracionEnNodo(nodo, svgContent) {
         const img = new Image();
 
         // Dimensiones panorámicas (16:9)
-        canvas.width = 1280;
-        canvas.height = 720;
+        canvas.width = 1920;
+        canvas.height = 1080;
 
         // Convertir el SVG a un Data URL para que pueda ser cargado en un objeto Image
         const svgBlob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
@@ -602,29 +602,336 @@ El proceso se ejecutará en segundo plano con una pausa de 6 segundos por cada m
 
 
 /**
- * [NUEVA FUNCIÓN REFACTORIZADA]
- * Contiene la lógica para ilustrar un único nodo. Es llamada tanto por 'ilustrarTodo'
- * como por el botón individual del panel.
+ * [MODIFICADA] Contiene la lógica para ilustrar un único nodo en DOS PASOS:
+ * 1. Genera un SVG base.
+ * 2. Lo refina con otra llamada a la IA.
  * @param {HTMLElement} nodo - El nodo del momento a ilustrar.
  */
 async function procesarIlustracionParaUnNodo(nodo) {
     const descripcion = nodo.dataset.descripcion;
     if (!descripcion || descripcion.trim().length < 10) {
-        // Si se llama directamente, avisa al usuario. Si es en lote, simplemente retorna.
         if (!progressBarManager.isActive) {
             alert("La descripción del momento es muy corta. Escribe más detalles.");
         }
         return Promise.reject("Descripción demasiado corta.");
     }
 
-    // Crear el prompt y llamar a la IA
-    const promptParaEscena = crearPromptParaIlustrarEscena(descripcion);
-    const respuestaIA = await llamarIAConFeedback(promptParaEscena, `Ilustrando: "${nodo.querySelector('.momento-titulo').textContent}"`, 'gemini-1.5-flash-latest', true, 1);
+    // --- INICIO DE LA MODIFICACIÓN ---
 
-    if (!respuestaIA || !respuestaIA.svgContent) {
-        throw new Error("La IA no devolvió un contenido SVG válido.");
+    // PASO 1: Generar el SVG inicial (el "borrador")
+    const promptParaEscena = crearPromptParaIlustrarEscena(descripcion);
+    const respuestaInicial = await llamarIAConFeedback(promptParaEscena, `Creando borrador para: "${nodo.querySelector('.momento-titulo').textContent}"`, 'gemini-2.5-flash-lite', true, 1);
+
+    if (!respuestaInicial || !respuestaInicial.svgContent) {
+        throw new Error("La IA no devolvió un SVG inicial válido.");
+    }
+    const svgInicial = respuestaInicial.svgContent;
+
+    // PASO 2: Mejorar el SVG recién generado
+    const promptDeMejoraGenerico = "Añade más detalle, mejora la iluminación y las texturas para un acabado más profesional y artístico.";
+    const svgMejorado = await mejorarSVG(svgInicial, promptDeMejoraGenerico, `Refinando ilustración para: "${nodo.querySelector('.momento-titulo').textContent}"`);
+    
+    // PASO 3: Renderizar y guardar la imagen MEJORADA
+    await guardarIlustracionEnNodo(nodo, svgMejorado);
+    
+    // --- FIN DE LA MODIFICACIÓN ---
+}
+
+/**
+ * [NUEVA FUNCIÓN - El Director de Arte]
+ * Analiza una descripción, identifica elementos clave y los describe visualmente,
+ * manteniendo consistencia con una guía de diseño existente.
+ * @param {string} descripcionMomento - La descripción de la escena actual. ej: "hombre en la luna".
+ * @param {object} guiaDeDisenoExistente - El objeto con los diseños ya definidos.
+ * @returns {Promise<object>} Un objeto con las descripciones de los elementos para ESTA escena.
+ */
+async function analizarYDescribirElementos(descripcionMomento, guiaDeDisenoExistente) {
+    const promptAnalisis = `
+        Eres un director de arte y diseñador de producción. Tu tarea es mantener la consistencia visual.
+        Analiza la descripción de una nueva escena y una guía de diseño con elementos ya definidos.
+
+        **Guía de Diseño Existente (JSON):**
+        ---
+        ${JSON.stringify(guiaDeDisenoExistente, null, 2)}
+        ---
+
+        **Descripción de la Nueva Escena:**
+        ---
+        "${descripcionMomento}"
+        ---
+
+        **Tus Tareas:**
+        1.  Identifica los 2-4 sustantivos o elementos visuales más importantes de la "Nueva Escena" (ej: 'hombre', 'luna', 'nave espacial').
+        2.  Para cada elemento, comprueba si ya existe en la "Guía de Diseño Existente".
+        3.  Si un elemento YA EXISTE en la guía, usa su descripción tal cual.
+        4.  Si un elemento es NUEVO, crea una descripción visual detallada y específica (2-10 palabras). Sé creativo y concreto. Por ejemplo, en lugar de "coche", define "un sedán rojo de los años 90, algo abollado".
+        5.  Devuelve ÚNICAMENTE un objeto JSON con los elementos y sus descripciones para la escena actual. NO incluyas elementos que no estén en la descripción de la nueva escena.
+
+        Ejemplo de respuesta para la escena "un ogro cruza un puente de madera":
+        {
+          "ogro": "un ogro corpulento de piel verde musgo y con un solo ojo",
+          "puente de madera": "un viejo puente colgante de tablones oscuros y cuerdas gastadas"
+        }
+    `;
+
+    // Usamos el modelo secundario para esta tarea, puede ser más rápido y barato.
+    const respuestaIA = await llamarIAConFeedback(promptAnalisis, `Analizando diseño para: "${descripcionMomento}"`, 'gemini-2.5-flash-lite', true, 1);
+
+    if (!respuestaIA) {
+        console.error("La IA de análisis de diseño no devolvió respuesta.");
+        return {}; // Devuelve un objeto vacío en caso de fallo
+    }
+    return respuestaIA;
+}
+
+
+/**
+ * [NUEVA FUNCIÓN - El Constructor de Prompts]
+ * Crea el prompt final para el ilustrador, combinando la acción del momento
+ * con la guía de diseño detallada.
+ * @param {string} descripcionMomento - La descripción original de la escena.
+ * @param {object} elementosDescritos - El objeto con las descripciones visuales para la escena.
+ * @returns {string} El prompt de ilustración final y detallado.
+ */
+function crearPromptConsistenteParaEscena(descripcionMomento, elementosDescritos) {
+    let guiaVisualTexto = "Usa la siguiente guía de diseño obligatoria para los elementos:\n";
+    for (const [elemento, descripcion] of Object.entries(elementosDescritos)) {
+        guiaVisualTexto += `- **${elemento}:** ${descripcion}\n`;
     }
 
-    // Renderizar y guardar la imagen
-    await guardarIlustracionEnNodo(nodo, respuestaIA.svgContent);
+    // El prompt de ilustración original, ahora enriquecido
+    return `
+        Eres un ilustrador experto en crear escenas y paisajes atmosféricos en formato SVG.
+        Tu tarea es convertir una descripción textual en una ilustración SVG panorámica, siguiendo una guía de diseño estricta.
+
+        **Descripción de la Escena a Ilustrar:**
+        ---
+        ${descripcionMomento}
+        ---
+
+        **Guía de Diseño OBLIGATORIA:**
+        ---
+        ${guiaVisualTexto}
+        ---
+
+        **Instrucciones de Dibujo OBLIGATORIAS:**
+        1.  **Estilo:** Utiliza un estilo de ilustración "flat design" o "vectorial limpio".
+        2.  **Composición:** Crea una escena completa con fondo, plano medio y primer plano.
+        3.  **Atmósfera:** Usa el color y la iluminación para transmitir la atmósfera descrita.
+        4.  **Formato SVG Panorámico:** El SVG DEBE usar un viewBox="0 0 1920 1080".
+        5.  **Fondo Transparente:** El fondo debe ser transparente.
+
+        **Formato de Respuesta OBLIGATORIO:**
+        Responde ÚNICAMENTE con un objeto JSON válido: { "svgContent": "<svg>...</svg>" }
+    `;
+}
+
+ 
+/**
+ * [MODIFICADA CON 3 PASOS]
+ * Realiza el trabajo de generar y refinar la imagen para un único nodo en TRES PASOS.
+ * @param {HTMLElement} nodo - El nodo del momento a procesar.
+ * @param {string} promptConsistente - El prompt ya enriquecido con la guía de diseño.
+ * @returns {Promise<{status: string, id: string, error?: string}>} El resultado del proceso.
+ */
+async function generarYRefinarImagenParaNodo(nodo, promptConsistente) {
+    const tituloNodo = nodo.querySelector('.momento-titulo').textContent;
+    try {
+        // --- PASO A: Generar Borrador ---
+        const respuestaIlustracion = await llamarIAConFeedback(promptConsistente, `Ilustrando: "${tituloNodo}"`, 'gemini-2.5-flash', true, 1);
+        if (!respuestaIlustracion || !respuestaIlustracion.svgContent) {
+            throw new Error("La IA no devolvió un borrador de SVG.");
+        }
+        const svgInicial = respuestaIlustracion.svgContent;
+
+        // --- PASO B: Primer Refinamiento (Artístico) ---
+        const promptDeMejoraGenerico = "Añade más detalle, mejora la iluminación y las texturas para un acabado más profesional y artístico, respetando la guía de diseño.";
+        const svgMejorado = await mejorarSVG(svgInicial, promptDeMejoraGenerico, `Refinando: "${tituloNodo}"`, 'gemini-2.0-flash');
+
+        // --- [NUEVO] PASO C: Refinamiento Final (Pulido) ---
+        const promptRefinamientoFinal = "Pule los detalles finales, ajusta las líneas para que sean más limpias y orgánicas y asegúrate de que el estilo sea cohesivo.";
+        const svgRefinadoFinal = await mejorarSVG(svgMejorado, promptRefinamientoFinal, `Puliendo: "${tituloNodo}"`, 'gemini-2.0-flash-lite');
+        
+        // --- PASO D: Guardar en el nodo ---
+        await guardarIlustracionEnNodo(nodo, svgRefinadoFinal);
+
+        return { status: 'fulfilled', id: nodo.id };
+
+    } catch (error) {
+        console.error(`Error procesando el nodo ${nodo.id}:`, error);
+        const imgElemento = nodo.querySelector('.momento-imagen');
+        if (imgElemento) imgElemento.parentElement.innerHTML += '<p style="color:red; font-size:10px;">Error IA</p>';
+        
+        return { status: 'rejected', id: nodo.id, error: error.message };
+    }
+}
+
+/**
+ * [VERSIÓN FINAL EN PARALELO Y POR LOTES]
+ * Orquesta la ilustración de todos los momentos aplicando una fase de análisis secuencial
+ * seguida de una fase de generación y refinamiento en paralelo por lotes de 12.
+ */
+/**
+ * [NUEVA FUNCIÓN AYUDANTE PARA LOTES]
+ * Se encarga de procesar un único lote de imágenes en paralelo.
+ * @param {Array} lote - El array de nodos con datos para procesar.
+ * @param {number} numeroDeLote - El número identificador del lote (ej. 1, 2, 3...).
+ * @param {number} totalLotes - El número total de lotes.
+ */
+async function procesarLote(lote, numeroDeLote, totalLotes) {
+    console.log(`--- INICIANDO LOTE ${numeroDeLote} de ${totalLotes} ---`);
+    
+    // Actualizamos la barra de progreso al iniciar el lote.
+    // El progreso se calcula basado en el número de lotes que han comenzado.
+    const progress = 30 + ((numeroDeLote - 1) / totalLotes) * 70;
+    progressBarManager.set(progress, `Procesando lote ${numeroDeLote} de ${totalLotes} (${lote.length} imágenes en paralelo)...`);
+
+    // Creamos el array de promesas para el lote actual.
+    const promesasDelLote = lote.map(({ nodo, promptConsistente }) =>
+        generarYRefinarImagenParaNodo(nodo, promptConsistente)
+    );
+
+    // Ejecutamos todas las promesas del lote en paralelo y esperamos a que terminen.
+    const resultados = await Promise.allSettled(promesasDelLote);
+    
+    console.log(`--- LOTE ${numeroDeLote} FINALIZADO. Resultados:`, resultados);
+}
+
+
+/**
+ * [VERSIÓN FINAL CON INICIO ESCALONADO]
+ * Orquesta la ilustración con una fase de análisis secuencial y una fase de generación
+ * que lanza lotes en paralelo a intervalos fijos, sin esperar a que el anterior termine.
+ */
+async function ilustrarTodoEnParaleloPorLotes() {
+    const nodosTotales = document.querySelectorAll('#momentos-lienzo .momento-nodo');
+    const BATCH_SIZE = 9;
+    const DELAY_ENTRE_LOTES = 55000;
+
+    // ... (el diálogo de confirmación y la obtención de nodos a ilustrar se mantienen igual) ...
+     if (!confirm(`Esto iniciará un proceso de ilustración AVANZADO.
+- Se analizarán todos los momentos para crear una guía visual.
+- Luego, se ilustrarán en paralelo en lotes de ${BATCH_SIZE}.
+- Cada lote comenzará ${DELAY_ENTRE_LOTES / 1000} segundos después del anterior, de forma escalonada.
+¿Deseas continuar?`)) {
+        return;
+    }
+     const nodosAIlustrar = Array.from(nodosTotales).filter(nodo => {
+        const descripcion = nodo.dataset.descripcion || '';
+        const tieneImagen = nodo.querySelector('.momento-imagen')?.src.includes('data:image');
+        return descripcion.trim().length >= 10 && !tieneImagen;
+    });
+     if (nodosAIlustrar.length === 0) {
+        alert("No se encontraron momentos que necesiten ilustración.");
+        return;
+    }
+
+    progressBarManager.start('Iniciando proceso avanzado de ilustración...');
+
+    try {
+        // --- FASE 1: ANÁLISIS SECUENCIAL (igual que antes) ---
+        progressBarManager.set(5, 'Fase 1: Analizando todas las escenas para guía de diseño...');
+        const guiaDeDeisenoMaestra = {};
+        const nodosConDatos = [];
+
+        for (let i = 0; i < nodosAIlustrar.length; i++) {
+            const nodo = nodosAIlustrar[i];
+            const progress = 5 + (i / nodosAIlustrar.length) * 25;
+            progressBarManager.set(progress, `Analizando diseño para: "${nodo.querySelector('.momento-titulo').textContent}"`);
+            
+            const descripcionOriginal = nodo.dataset.descripcion;
+            const elementosParaEstaEscena = await analizarYDescribirElementos(descripcionOriginal, guiaDeDeisenoMaestra);
+            Object.assign(guiaDeDeisenoMaestra, elementosParaEstaEscena);
+
+            const promptConsistente = crearPromptConsistenteParaEscena(descripcionOriginal, elementosParaEstaEscena);
+            nodosConDatos.push({ nodo, promptConsistente });
+        }
+        console.log("Guía de Diseño Maestra Final:", guiaDeDeisenoMaestra);
+
+
+        // --- [LÓGICA MODIFICADA] FASE 2: PROGRAMACIÓN ESCALONADA DE LOTES ---
+        progressBarManager.set(30, 'Fase 2: Programando lotes de ilustración...');
+        const lotes = [];
+        for (let i = 0; i < nodosConDatos.length; i += BATCH_SIZE) {
+            lotes.push(nodosConDatos.slice(i, i + BATCH_SIZE));
+        }
+
+        if (lotes.length > 0) {
+            const promesasDeTodosLosLotes = [];
+
+            // Este bucle se ejecuta muy rápido, solo programa los inicios.
+            for (let i = 0; i < lotes.length; i++) {
+                const loteActual = lotes[i];
+                const numeroDeLote = i + 1;
+                const delayDeInicio = i * DELAY_ENTRE_LOTES;
+
+                console.log(`Programando Lote ${numeroDeLote} para que inicie en ${delayDeInicio / 1000} segundos.`);
+                
+                // Creamos una promesa que se resolverá cuando el lote programado termine.
+                const promesaDelLote = new Promise(resolve => {
+                    setTimeout(async () => {
+                        // Cuando llega el momento, se ejecuta el procesamiento del lote.
+                        await procesarLote(loteActual, numeroDeLote, lotes.length);
+                        resolve(); // El lote ha terminado, resolvemos la promesa.
+                    }, delayDeInicio);
+                });
+                
+                promesasDeTodosLosLotes.push(promesaDelLote);
+            }
+
+            // Esperamos a que todas las promesas de todos los lotes (que se ejecutan escalonadamente) terminen.
+            await Promise.all(promesasDeTodosLosLotes);
+        }
+
+        progressBarManager.finish('¡Proceso de ilustración escalonado finalizado!');
+
+    } catch (error) {
+        console.error("Error crítico en el proceso de ilustración en paralelo:", error);
+        progressBarManager.error("Proceso cancelado por un error crítico");
+        alert(`Ocurrió un error general durante la ilustración: ${error.message}`);
+    }
+}
+
+ 
+
+
+/**
+ * [MODIFICADA] Toma un SVG existente y lo refina usando un modelo de IA específico.
+ * @param {string} svgExistente - El código SVG del "borrador" a mejorar.
+ * @param {string} promptMejora - La instrucción para la IA sobre cómo refinar el SVG.
+ * @param {string} feedback - El mensaje a mostrar en la barra de progreso.
+ 
+ * @returns {Promise<string>} El código del SVG mejorado.
+ */
+async function mejorarSVG(svgExistente, promptMejora, feedback, modelo = ' ') { // <-- Parámetro de modelo añadido
+    // Creamos el prompt de mejora.
+    const promptFinalMejora = `
+        Eres un ilustrador experto en refinar arte vectorial. Tu tarea es mejorar un SVG existente basándote en una instrucción.
+        SVG ACTUAL:
+        \`\`\`xml
+        ${svgExistente}
+        \`\`\`
+        INSTRUCCIÓN DE MEJORA: "${promptMejora}"
+        TAREAS OBLIGATORIAS:
+        1. Analiza el SVG y la instrucción.
+        2. Refina el dibujo: añade más detalles, mejora los colores, aplica degradados sutiles y mejora las sombras y luces para dar más volumen y realismo.
+        3. Mantén la coherencia estructural. Todas las partes deben seguir conectadas de forma lógica.
+        4. Responde ÚNICAMENTE con el código del NUEVO SVG mejorado. No incluyas explicaciones ni comentarios.
+    `;
+
+    // Llamamos a la IA con el modelo especificado
+    const respuestaMejora = await llamarIAConFeedback(promptFinalMejora, feedback, modelo, false);
+
+    if (typeof extraerBloqueSVG !== 'function') {
+        console.error("La función 'extraerBloqueSVG' no está disponible globalmente.");
+        return respuestaMejora.match(/<svg[\s\S]*?<\/svg>/)?.[0] || respuestaMejora;
+    }
+
+    const svgMejorado = extraerBloqueSVG(respuestaMejora);
+    if (!svgMejorado) {
+        console.warn("La mejora no devolvió un SVG válido, se usará el SVG anterior.");
+        return svgExistente;
+    }
+
+    return svgMejorado;
 }

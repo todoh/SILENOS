@@ -97,7 +97,7 @@ async function createUnifiedPrompt(userPrompt) {
     `;
     
     // CORRECCIÓN: Se usa callGenerativeApi para la clasificación.
-    const elementType = await callGenerativeApi(classificationPrompt, 'gemini-2.0-flash', false);
+    const elementType = await callGenerativeApi(classificationPrompt, 'gemini-2.5-flash-lite', false);
     const tipoElemento = elementType.trim().toLowerCase();
     console.log(`[Clasificación Avanzada] Elemento detectado: ${tipoElemento}`);
 
@@ -708,7 +708,7 @@ async function generarImagenDesdePrompt(userPrompt) {
 
     // PASO 2: Generar el SVG inicial.
     // CORRECCIÓN: Se usa callGenerativeApi con el modelo y la clave correctos.
-    const generatedData = await callGenerativeApi(promptDetallado, 'gemini-2.5-flash', true);
+    const generatedData = await callGenerativeApi(promptDetallado, 'gemini-2.5-flash-lite', true);
 
 // PASO 2.5: Mejorar la imagen con un prompt de texturizado.
     console.log("[Generador Externo SVG] Detallando...");

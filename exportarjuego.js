@@ -5,26 +5,20 @@
 async function generarGAME(nombreMomentoInicial) {
     const tituloProyecto = document.getElementById("titulo-proyecto").innerText;
 
-    /**
-     * Convierte un texto a un formato válido para un atributo ID de HTML.
-     * @param {string} texto El texto a sanitizar.
-     * @returns {string} El texto sanitizado.
-     */
     function sanitizarParaId(texto) {
         if (!texto) return '';
         return texto.trim()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar acentos
-            .replace(/[^a-zA-Z0-9\s-]/g, "") // Quitar caracteres especiales excepto espacios y guiones
-            .replace(/\s+/g, '-') // Reemplazar espacios con guiones
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-zA-Z0-9\s-]/g, "")
+            .replace(/\s+/g, '-')
             .toLowerCase();
     }
 
     const nodosMomento = document.querySelectorAll('#momentos-lienzo .momento-nodo');
-    let momentosHTML = '';
-
-    // PASO 1: Validar nombres duplicados y crear mapas de referencia
+    
+    // --- PASO 1: Validar nombres y crear mapas (sin cambios, tu lógica es perfecta) ---
     const idToSanitizedNameMap = new Map();
-    const sanitizedNameCheck = new Map(); // [nombreSanitizado]: tituloOriginal
+    const sanitizedNameCheck = new Map();
     let hasDuplicates = false;
     let duplicateErrorMsg = 'Error: No se puede exportar. Se encontraron nombres de momentos que resultan en el mismo identificador. Por favor, renómbralos para que sean únicos:\n';
 
@@ -41,7 +35,6 @@ async function generarGAME(nombreMomentoInicial) {
             } else {
                  duplicateErrorMsg += `, y también "${titulo}"`;
             }
-
         } else if (sanitizedTitulo) {
             sanitizedNameCheck.set(sanitizedTitulo, titulo);
         }
@@ -50,49 +43,117 @@ async function generarGAME(nombreMomentoInicial) {
 
     if (hasDuplicates) {
         alert(duplicateErrorMsg);
-        return; // Detener la exportación
+        return;
+    }
+    
+    // --- [MODIFICADO] PASO 2: Recopilar datos en un objeto JSON en lugar de HTML ---
+    const momentosData = {};
+    for (const nodo of nodosMomento) {
+        const titulo = nodo.querySelector('.momento-titulo').textContent;
+        const sanitizedTitulo = idToSanitizedNameMap.get(nodo.id);
+        
+        const accionesOriginales = JSON.parse(nodo.dataset.acciones || '[]');
+        const accionesMapeadas = accionesOriginales.map(accion => ({
+            ...accion,
+            idDestino: idToSanitizedNameMap.get(accion.idDestino) || ''
+        })).filter(accion => accion.idDestino); // Filtra acciones con destino inválido
+
+        momentosData[sanitizedTitulo] = {
+            titulo: titulo,
+            descripcion: nodo.dataset.descripcion || '',
+            imagen: nodo.querySelector('.momento-imagen').src,
+            acciones: accionesMapeadas
+        };
     }
 
-    // PASO 2: Recopilar todos los datos de los momentos del DOM
-    for (const nodo of nodosMomento) {
-        const id = nodo.id;
-        const titulo = nodo.querySelector('.momento-titulo').textContent;
-        const sanitizedTitulo = idToSanitizedNameMap.get(id);
+    // --- [MODIFICADO] PASO 3: Crear el contenido del archivo HTML final con el NUEVO DISEÑO ---
+    const nombreInicialSanitizado = sanitizarParaId(nombreMomentoInicial);
+    
+    const css = `
+        /* [CSS MODIFICADO] Estilos para el nuevo layout de juego */
+        html, body {
+            margin: 0; padding: 0; height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #f0f0f0;
+        }
+        .game-container {
+            display: flex; flex-direction: column;
+            height: 100vh; width: 100vw;
+        }
+        .image-container {
+            flex: 0 0 73%;
+            overflow: hidden;
+            background-color: #000;
+        }
+        #game-image {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+        .content-container {
+            flex: 1; display: flex; flex-direction: column;
+            padding: 25px; box-sizing: border-box;
+            overflow-y: auto;
+        }
+        #game-title {
+            margin: 0 0 15px 0; font-size: 1.8em; color: #ffffff;
+            flex-shrink: 0;
+        }
+        #game-description {
+            margin: 0 0 20px 0; font-size: 1.1em; line-height: 1.6;
+            color: #cccccc; flex-grow: 1;
+        }
+        .actions-container {
+            display: flex; flex-direction: column;
+            gap: 12px; margin-top: auto;
+            flex-shrink: 0;
+        }
+        .action-button {
+            width: 100%; padding: 15px; font-size: 1.1em; font-weight: bold;
+            color: #ffffff; background-color: #007bff;
+            border: none; border-radius: 8px; cursor: pointer;
+            text-align: center; text-decoration: none;
+            transition: background-color 0.2s;
+        }
+        .action-button:hover { background-color: #0056b3; }
+        .error-container { text-align: center; color: #ffdddd; padding: 40px; }
+    `;
 
-        const descripcion = nodo.dataset.descripcion || '';
-        const imagenSrc = nodo.querySelector('.momento-imagen').src;
-        const acciones = JSON.parse(nodo.dataset.acciones || '[]');
+    const script = `
+        // [SCRIPT DEL JUEGO MODIFICADO] Lógica para un renderizado dinámico
+        const momentos = ${JSON.stringify(momentosData)};
+        const idInicio = "${nombreInicialSanitizado}";
 
-        let botonesHTML = '';
-        if (acciones.length > 0) {
-            acciones.forEach(accion => {
-                const idDestino = accion.idDestino;
-                const nombreDestinoSanitizado = idToSanitizedNameMap.get(idDestino) || '';
-                
-                if (nombreDestinoSanitizado) {
-                    botonesHTML += `<button onclick="mostrarMomento('${nombreDestinoSanitizado}')">${accion.textoBoton}</button>`;
-                } else {
-                    console.warn(`En el momento "${titulo}", la acción "${accion.textoBoton}" apunta a un ID de destino no válido o inexistente: "${idDestino}".`);
-                    botonesHTML += `<button disabled title="Destino no encontrado">${accion.textoBoton}</button>`;
-                }
+        function mostrarMomento(sanitizedName) {
+            const momento = momentos[sanitizedName];
+            const container = document.querySelector('.game-container');
+
+            if (!momento) {
+                console.error('No se encontró el momento con el nombre:', sanitizedName);
+                container.innerHTML = '<div class="error-container"><h1>Error de Navegación</h1><p>El momento de destino <strong>(' + sanitizedName + ')</strong> no existe.</p></div>';
+                return;
+            }
+
+            document.getElementById('game-title').textContent = momento.titulo;
+            document.getElementById('game-description').innerHTML = momento.descripcion.replace(/\\n/g, "<br>");
+            document.getElementById('game-image').src = momento.imagen;
+
+            const actionsContainer = document.getElementById('game-actions');
+            actionsContainer.innerHTML = ''; // Limpiar botones anteriores
+
+            momento.acciones.forEach(accion => {
+                const button = document.createElement('button');
+                button.className = 'action-button';
+                button.textContent = accion.textoBoton;
+                button.onclick = () => mostrarMomento(accion.idDestino);
+                actionsContainer.appendChild(button);
             });
         }
+        
+        window.onload = () => mostrarMomento(idInicio);
+    `;
 
-        // Crea el bloque HTML para este momento usando el nombre sanitizado como ID
-        momentosHTML += `
-            <div class="momento-exportado" id="${sanitizedTitulo}">
-                <h3>${titulo}</h3>
-                ${imagenSrc && !imagenSrc.endsWith('/null') ? `<img src="${imagenSrc}" alt="Imagen para ${titulo}">` : ''}
-                <p>${descripcion.replace(/\n/g, "<br>")}</p>
-                <div class="acciones-exportadas">
-                    ${botonesHTML}
-                </div>
-            </div>
-        `;
-    }
-
-    // PASO 3: Crear el contenido del archivo HTML final
-    const nombreInicialSanitizado = sanitizarParaId(nombreMomentoInicial);
     const htmlCompleto = `
 <!DOCTYPE html>
 <html lang="es">
@@ -100,101 +161,25 @@ async function generarGAME(nombreMomentoInicial) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${tituloProyecto}</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f0f2f5;
-            color: #1c1e21;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        .juego-container {
-            max-width: 680px;
-            width: 100%;
-        }
-        .momento-exportado {
-            background-color: #ffffff;
-            border: 1px solid #dddfe2;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.1);
-            display: none; /* Oculto por defecto */
-        }
-        .momento-exportado h3 {
-            font-size: 1.5em;
-            margin-top: 0;
-            color: #1c1e21;
-        }
-        .momento-exportado img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-        .momento-exportado p {
-            font-size: 1.1em;
-            line-height: 1.5;
-            margin-bottom: 20px;
-        }
-        .acciones-exportadas {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .acciones-exportadas button {
-            width: 100%;
-            padding: 12px 20px;
-            font-size: 1em;
-            font-weight: bold;
-            color: #fff;
-            background-color: #1877f2;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .acciones-exportadas button:hover {
-            background-color: #166fe5;
-        }
-        .error-container { text-align: center; color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 20px; border-radius: 8px;}
-    </style>
+    <style>${css}</style>
 </head>
 <body>
-    <div class="juego-container">
-        ${momentosHTML}
+    <div class="game-container">
+        <div class="image-container">
+            <img id="game-image" src="" alt="Escena del momento">
+        </div>
+        <div class="content-container">
+            <h1 id="game-title"></h1>
+            <p id="game-description"></p>
+            <div class="actions-container" id="game-actions"></div>
+        </div>
     </div>
-
-    <script>
-        function mostrarMomento(nombreMomento) {
-            const todosLosMomentos = document.querySelectorAll('.momento-exportado');
-            todosLosMomentos.forEach(momento => {
-                momento.style.display = 'none';
-            });
-
-            const momentoActual = document.getElementById(nombreMomento);
-            if (momentoActual) {
-                momentoActual.style.display = 'block';
-            } else {
-                console.error('No se encontró el momento con el nombre:', nombreMomento);
-                const container = document.querySelector('.juego-container');
-                container.innerHTML = '<div class="error-container"><h1>Error de Navegación</h1><p>El momento de destino <strong>(' + nombreMomento + ')</strong> no existe.</p><p>Posibles causas:<ul><li>El nombre del momento de destino fue cambiado.</li><li>El botón apunta a un nombre incorrecto.</li><li>El momento de destino fue eliminado.</li></ul></p></div>';
-            }
-        }
-
-        window.onload = function() {
-            mostrarMomento('${nombreInicialSanitizado}');
-        };
+    <script>${script.replace(/<\/script>/g, '<\\/script>')}
     <\/script>
 </body>
-</html>
-    `;
+</html>`;
 
-    // 4. Descargar el archivo
+    // 4. Descargar el archivo (sin cambios)
     const blob = new Blob([htmlCompleto], { type: 'text/html' });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -204,11 +189,8 @@ async function generarGAME(nombreMomentoInicial) {
 }
 
 
-// AÑADIR ESTE CÓDIGO AL ARCHIVO: exportarjuego.js
-
 /**
  * Popula el menú desplegable para seleccionar el momento inicial en el modal de exportación.
- * Lee todos los nodos de momento del lienzo y los añade como opciones.
  */
 function poblarSelectorMomentoInicial() {
     const selectMomentoInicial = document.getElementById('momento-inicial-id');
@@ -216,12 +198,9 @@ function poblarSelectorMomentoInicial() {
         console.error("Error: No se encontró el elemento select 'momento-inicial-id'.");
         return;
     }
-
     const nodosMomento = document.querySelectorAll('#momentos-lienzo .momento-nodo');
-    const valorSeleccionadoPreviamente = selectMomentoInicial.value; // Guardar selección si la hubiera
-
-    selectMomentoInicial.innerHTML = ''; // Limpiar opciones antiguas
-
+    const valorSeleccionadoPreviamente = selectMomentoInicial.value;
+    selectMomentoInicial.innerHTML = '';
     if (nodosMomento.length === 0) {
         const option = document.createElement('option');
         option.value = "";
@@ -230,41 +209,29 @@ function poblarSelectorMomentoInicial() {
         selectMomentoInicial.appendChild(option);
         return;
     }
-
-    // Añadir una opción por defecto
     const placeholder = document.createElement('option');
     placeholder.value = "";
     placeholder.textContent = "Selecciona un momento inicial...";
     selectMomentoInicial.appendChild(placeholder);
-
-    // Añadir cada momento como una opción
     nodosMomento.forEach(nodo => {
         const option = document.createElement('option');
         const titulo = nodo.querySelector('.momento-titulo').textContent.trim();
-        
-        // La función generarGAME() espera el nombre original del momento.
         option.value = titulo; 
         option.textContent = titulo;
         selectMomentoInicial.appendChild(option);
     });
-
-    // Intentar restaurar la selección anterior si aún es válida
     selectMomentoInicial.value = valorSeleccionadoPreviamente;
 }
 
 /**
  * Inicia la exportación del juego HTML.
- * Se llama desde el botón "Exportar Videojuego HTML" en el modal.
  */
 function iniciarExportacionJuego() {
     const momentoInicialSelect = document.getElementById('momento-inicial-id');
     const nombreMomentoInicial = momentoInicialSelect.value;
-
     if (!nombreMomentoInicial) {
         alert("Por favor, selecciona un momento inicial para comenzar el juego.");
         return;
     }
-
-    // Llama a la función principal de exportación con el nombre seleccionado.
     generarGAME(nombreMomentoInicial);
 }
