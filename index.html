@@ -1807,7 +1807,7 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
                     </div>
                 </div>
             </fieldset>
-            <fieldset style="border: 1px solid #555; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+          <fieldset style="border: 1px solid #555; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
     <legend style="padding: 0 5px;">Ruta de Movimiento</legend>
     
     <div id="edit-movimiento-lista" style="margin-bottom: 15px; border-left: 2px solid #555; padding-left: 10px;">
@@ -1815,20 +1815,22 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
 
     <div id="edit-movimiento-nuevo" style="background-color: #3f3f3f; padding: 10px; border-radius: 4px;">
         <h5 style="margin: 0 0 10px 0;">Añadir nuevo paso:</h5>
-        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px; align-items: center;">
-            <label for="movimiento-tipo-nuevo">Tipo:</label>
-            <select id="movimiento-tipo-nuevo" class="modal-input">
-                <option value="aleatorio">Aleatorio</option>
-                <option value="ir_a">Ir a Coordenada</option>
-            </select>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button id="movimiento-anadir-aleatorio-btn" class="pro6" style="padding: 10px;">🎲</button>
+            <button id="movimiento-seleccionar-coord-btn" class="pro16" style="padding: 10px;">📍</button>
         </div>
-        <div id="movimiento-params-nuevo" style="margin-top: 10px;">
+        <div id="movimiento-params-aleatorio" style="margin-top: 10px; display: none;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: center;">
+                <label for="movimiento-duracion-nuevo">Duración (segundos):</label>
+                <input type="number" id="movimiento-duracion-nuevo" placeholder="Infinito" class="modal-input">
             </div>
-        <button id="movimiento-anadir-paso-btn" class="pro15" style="width: 100%; margin-top: 10px;">👣</button>
+             <button id="movimiento-confirmar-aleatorio-btn" class="pro5" style="width: 100%; margin-top: 10px;">✔️</button>
+        </div>
     </div>
 </fieldset>
  
-            <button id="r-edit-entity-save-btn" class="pro16" style="width: 100%; padding: 12px; font-size: 16px;">💾</button>
+            <button id="r-edit-entity-save-btn" class="pro17" style="width: 100%; padding: 12px; font-size: 16px;">💾</button>
         </div>
     </div>
 </div>

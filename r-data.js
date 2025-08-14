@@ -23,7 +23,7 @@ const tools = {
         water: { color: '#3B698B', name: 'Agua', isPassable: false },
         forest: { color: '#3E7C4F', name: 'Bosque', isPassable: true },
     },
-    entities: {
+    entities: {eraser: { name: "Borrador", icon: "❌", isSolid: false },
         playerStart: { icon: '🚩', name: 'Inicio del Jugador', isSolid: false, radius: 0 },
             lamppost: {
             icon: '💡', // Un emoji o ícono de respaldo
