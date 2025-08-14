@@ -2,58 +2,19 @@
 html { font-family:  'Montserrat'; font-size: 16px;  
     scroll-behavior: smooth;
 }
-/* --- Dark Theme --- */
-.dark-theme {
-    background-color: #1e1e1e;
-    color: #e0e0e0;
-}
-.dark-theme h2 {
-    background-color: #333333;
-    color: #f0f0f0;
-    border-bottom: 1px solid #444;
-}
-.dark-theme #escena-vista, .dark-theme #editor, .dark-theme .personaje, .dark-theme .escena, .dark-theme .frameh {
-    background-color: #2c2c2c;
-    color: #e0e0e0;
-    border-color: #444;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-/* Estilo del modal de configuración en tema oscuro */
-.dark-theme #lugares {
-    background-color: #2c2c2c;
-    color: #e0e0e0;
-    border: 1px solid #555;
-}
-.dark-theme #chat {
-    background: #252525;
-    border: 1px solid #444;
-}
-.dark-theme #chat p:nth-child(odd) { /* Gemini */
-    background-color: #333;
-    color: #e0e0e0;
-}
-.dark-theme #chat p:nth-child(even) { /* Usuario */
-    background-color: #3a3a3a;
-    color: #e0e0e0;
-}
-.dark-theme #user-input, .dark-theme .personaje textarea, .dark-theme .frameh textarea, .dark-theme #gemini1, .dark-theme #apiInput {
-    background-color: #333;
-    color: #e0e0e0;
-    border: 1px solid #555;
-}
-.dark-theme button {
-    background-color: #444;
-    color: #e0e0e0;
-    border: 1px solid #666;
-}
-.dark-theme button:hover {
-    background-color: #555;
-}
-.dark-theme .pro {
-    background-color: #00529B; /* Un azul oscuro para botones pro */
-    color: white;
-}
-
+ 
+  :root {
+            --bg-color: #1a1c20;
+            --primary-color: #282c34;
+            --secondary-color: #3e4451;
+            --text-color: #abb2bf;
+            --header-color: #ffffff;
+            --accent-color: #61afef;
+            --success-color: #98c379;
+            --danger-color: #e06c75;
+            --warning-color: #e5c07b;
+            --border-color: #4b5263;
+        }
 
 
 .pro5 {background-color:transparent!important; color:rgb(0, 0, 0)!important; border:none !important;
@@ -72,10 +33,7 @@ margin: 0px !important;
 
 
 } 
-.dark-theme .pro6 {
-    background-color: #313131; /* Un azul oscuro para botones pro */
-    color: white;
-}
+ 
 
 .pro6 {background-color:transparent !important; color: #000000 !important; border:none !important;
 z-index: 1000!important;
@@ -161,75 +119,7 @@ padding-left: 1% !important; padding-right: 1% !important; /* Añadido para marg
 
 
 
-.dark-theme .imput { /* Input de nombre de escena */
-    background-color: #333;
-    color: #e0e0e0;
-    border: 0px solid #555;
-}
-
-/* ========= INICIO: NUEVOS ESTILOS ========= */
-.dark-theme .input-no-editable {
-    background-color: #3a3a3a !important; /* Un poco más oscuro */
-    color: #a0a0a0 !important; /* Texto grisáceo */
-    cursor: not-allowed;
-}
-/* ========= FIN: NUEVOS ESTILOS ========= */
-
-
-.dark-theme #guion-literario {
-    background-color: #2c2c2c; /* Fondo principal del guion */
-}
-.dark-theme #indice-capitulos-guion {
-    background-color: #252525; /* Fondo del índice */
-    border-color: #444;
-}
-.dark-theme .titulo-capitulo-indice {
-    background-color: #333;
-    color: #e0e0e0;
-    border-bottom-color: #444;
-}
-.dark-theme .titulo-capitulo-indice:hover {
-    background-color: #3a3a3a;
-}
-.dark-theme .titulo-capitulo-indice.activo {
-    background-color: #00529B; /* Azul para activo */
-}
-.dark-theme #contenido-capitulo-activo input[type="text"], .dark-theme #contenido-capitulo-activo textarea, .dark-theme .capitulo-guion input[type="text"], .dark-theme .capitulo-guion textarea {
-    background-color: #33333300;
-    color: #ffffff;
-    border-color: #555;
-}
-.dark-theme .capitulo-guion {
-    background-color: #3a3a3a; /* Fondo de cada capítulo */
-    border-color: #444;
-}
-.dark-theme .titulo-capitulo-indice-container {
-    border-bottom-color: #444;
-    background-color: #333;
-}
-.dark-theme .titulo-capitulo-indice-container:hover {
-    background-color: #3a3a3a;
-}
-.dark-theme .titulo-capitulo-indice-container.activo-container {
-    background-color: #00529B; /* Azul para activo */
-}
-.dark-theme .eliminar-capitulo-btn-indice {
-    color: #ff8a80; /* Light red for dark theme */
-    background-color: transparent; /* Ensure it's transparent initially */
-}
-.dark-theme .eliminar-capitulo-btn-indice:hover {
-    background-color: #5a3e3e; /* Darker red background on hover */
-    color: #ff5252;
-}
-.dark-theme #contenido-capitulo-activo .mensaje-placeholder, .dark-theme .mensaje-placeholder {
-    color: #aaa; /* Lighter placeholder text for dark theme */
-}
-.dark-theme #gemini-raw-output {
-    background-color: #22272e; 
-    color: #c9d1d9; 
-    border-color: #484f58; 
-}
-
+ 
 
 /* --- ESTILOS PARA LA BARRA DE DESPLAZAMIENTO (SCROLLBAR) --- */
 
@@ -256,24 +146,7 @@ padding-left: 1% !important; padding-right: 1% !important; /* Añadido para marg
 ::-webkit-scrollbar-thumb:hover {
     background-color: #333333; /* Un gris oscuro para el efecto hover */
 }
-
-/* --- AJUSTES PARA EL TEMA OSCURO --- */
-
-/* En el tema oscuro, la pista necesita un color que contraste con el fondo oscuro y el control negro */
-.dark-theme ::-webkit-scrollbar-track {
-    background-color: #ff000000; /* Un gris más oscuro pero visible */
-}
-
-/* El control sigue siendo negro en el tema oscuro, como se solicitó */
-.dark-theme ::-webkit-scrollbar-thumb {
-    background-color: #000000;
-}
-
-/* Efecto hover ligeramente diferente para el tema oscuro */
-.dark-theme ::-webkit-scrollbar-thumb:hover {
-    background-color: #222222; /* Un negro un poco más claro */
-}
-
+ 
 
 
 
@@ -1110,17 +983,7 @@ width: 15%;
     font-style: italic;
 }
 
-.dark-theme .escena-toolbar button,
-.dark-theme .escena-toolbar select,
-.dark-theme .escena-toolbar input {
-    background-color: #333;
-    color: #e0e0e0;
-    border: 1px solid #555;
-}
-.dark-theme #tomas-timeline {
-    border-color: #444;
-    background-color: #22272e;
-}
+ 
 
 .toma-card {
     
@@ -2697,8 +2560,6 @@ left: 0%; right: 50%;
     right: 25px;
     width: 55px;
     height: 55px;
-    background-color: #3498db; /* Un color azul distintivo */
-    color: white;
     border: none;
     border-radius: 50%;
     font-size: 28px;
@@ -2713,7 +2574,7 @@ left: 0%; right: 50%;
 
 #open-imagenes-modal-btn:hover {
     transform: scale(1.1);
-    background-color: #2980b9;
+ 
 }
 
 
@@ -2744,8 +2605,8 @@ left: 0%; right: 50%;
     right: 25px;
     width: 55px;
     height: 55px;
-    background-color: #3498db; /* Azul para distinguirlo */
-    color: white;
+   
+  
     border: none;
     border-radius: 50%;
     font-size: 24px;
@@ -2760,12 +2621,10 @@ left: 0%; right: 50%;
 
 #open-imagenes-modal-btn:hover {
     transform: scale(1.1);
-    background-color: #2980b9;
+  
 }
 
-.dark-theme #open-imagenes-modal-btn {
-    background-color: #4a90e2;
-}
+ 
 
 /* Pequeños ajustes para el layout interno del generador */
 #modal-content-imagenes .control-panel {

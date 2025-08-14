@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     pInitUI(); 
     
     // Carga los nodos en el menú desplegable
-    pPopulateNodeDropdown();
+  //  pPopulateNodeDropdown();
     
     // Carga los planos guardados
     pLoadBlueprintsFromStorage();

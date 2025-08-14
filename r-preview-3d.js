@@ -2,7 +2,7 @@
 // === LÓGICA DEL VISOR 3D (THREE.JS) ====================================
 // =======================================================================
 
-let previewState = { isActive: false, scene: null, camera: null, renderer: null, clock: null, animationFrameId: null, groundMeshes: [], collidableObjects: [], interactiveObjects: [] };
+let previewState = { isActive: false, scene: null, camera: null, renderer: null, clock: null, animationFrameId: null, groundMeshes: [], collidableObjects: [], interactiveObjects: [] , movingObjects: []};
 const CHUNK_SIZE = 32;
 const SUB_CELL_SIZE = CHUNK_SIZE / SUBGRID_SIZE;
 const textureColors = { grass: 0x7C9C4A, sand: 0xEDC9AF, stone: 0x615953, water: 0x3B698B, forest: 0x3E7C4F };
@@ -18,6 +18,7 @@ function startPreview() {
     previewState.collidableObjects = [];
     previewState.groundMeshes = [];
     previewState.interactiveObjects = [];
+    previewState.movingObjects = [];
 
     previewState.scene = new THREE.Scene();
     previewState.scene.background = new THREE.Color(0x87ceeb);
@@ -227,6 +228,8 @@ function findCharacterImageSrc(dataRefName) {
     return null;
 }
 
+// EN: r-preview-3d.js
+
 function loadWorldFromData(data) {
     const textureLoader = new THREE.TextureLoader();
     for (const chunkId in data) {
@@ -269,6 +272,10 @@ function loadWorldFromData(data) {
                 const objZ = (chunkZ * CHUNK_SIZE) + (obj.subZ * SUB_CELL_SIZE) + (SUB_CELL_SIZE / 2);
 
                 if (isCustom) {
+                    // ▼▼▼ INICIO DE LA LÓGICA CORREGIDA PARA ASSETS PERSONALIZADOS ▼▼▼
+                    const gameProps = entityData.gameProps || {};
+                    const tamano = gameProps.tamano || { x: 4, y: 4, z: 1 }; // Usa el tamaño definido o uno por defecto
+                    
                     if (entityData.modelType === 'sprite') {
                         if (!iconSrc) {
                             console.warn(`No se pudo encontrar la imagen para la referencia: ${obj.dataRef}`);
@@ -282,11 +289,13 @@ function loadWorldFromData(data) {
                             alphaTest: 0.1,
                             side: THREE.DoubleSide
                         });
-                        // MODIFICADO: Se aumenta el tamaño del plano
-                        const geometry = new THREE.PlaneGeometry(8, 8); 
+                        
+                        // Usa el tamaño del JSON para la geometría del plano
+                        const geometry = new THREE.PlaneGeometry(tamano.x, tamano.y); 
                         objectMesh = new THREE.Mesh(geometry, material);
-                        // MODIFICADO: Se ajusta la posición Y a la mitad de la nueva altura
-                        objectMesh.position.set(objX, 4, objZ); 
+
+                        // La posición Y ahora es la mitad de la altura definida en el JSON
+                        objectMesh.position.set(objX, tamano.y / 2, objZ); 
 
                         previewState.scene.add(objectMesh);
                         
@@ -296,8 +305,25 @@ function loadWorldFromData(data) {
                             previewState.collidableObjects.push(objectMesh);
                         }
                     } else if (entityData.modelType === 'json3d') {
-                        // Lógica para 3D custom
+                        // Aquí se pueden aplicar las propiedades de 'tamano' a los modelos 3D si es necesario
+                        // Por ejemplo: modelGroup.scale.set(tamano.x, tamano.y, tamano.z);
                     }
+ // ▼▼▼ AÑADE ESTA LÓGICA AL FINAL DEL BLOQUE "if (isCustom)" ▼▼▼
+    // Si el objeto tiene una ruta de movimiento, lo preparamos para la animación
+    const rutaMovimiento = entityData.gameProps?.movimiento;
+    if (rutaMovimiento && rutaMovimiento.length > 0) {
+        objectMesh.userData.movimientoState = {
+            ruta: rutaMovimiento,
+            indicePasoActual: 0,
+            temporizadorPaso: 0,
+            destino: null
+        };
+        previewState.movingObjects.push(objectMesh);
+    }
+    // ▲▲▲ FIN DE LA NUEVA LÓGICA ▲▲▲
+
+
+                     // ▲▲▲ FIN DE LA LÓGICA CORREGIDA ▲▲▲
                 }
                 else if (entityData.model) {
                     const modelGroup = createModelFromJSON(entityData.model);
@@ -380,12 +406,78 @@ function loadWorldFromData(data) {
     }
 }
 
+// EN: r-preview-3d.js (añade esta nueva función)
+
+/**
+ * Actualiza la posición de todos los objetos con rutas de movimiento.
+ * @param {number} deltaTime - El tiempo transcurrido desde el último fotograma.
+ */
+function updateObjectMovements(deltaTime) {
+    const velocidad = 5.0; // Velocidad de movimiento de los NPCs
+
+    previewState.movingObjects.forEach(obj => {
+        const state = obj.userData.movimientoState;
+        if (!state) return;
+
+        let pasoActual = state.ruta[state.indicePasoActual];
+
+        // --- Lógica del paso actual ---
+        if (pasoActual.tipo === 'aleatorio') {
+            if (state.destino === null) {
+                // Generar un nuevo destino aleatorio cerca del objeto
+                const radioMovimiento = 15;
+                const angulo = Math.random() * Math.PI * 2;
+                state.destino = new THREE.Vector3(
+                    obj.position.x + Math.cos(angulo) * radioMovimiento,
+                    obj.position.y,
+                    obj.position.z + Math.sin(angulo) * radioMovimiento
+                );
+                state.temporizadorPaso = pasoActual.duracion;
+            }
+        } else if (pasoActual.tipo === 'ir_a') {
+            if (state.destino === null) {
+                state.destino = new THREE.Vector3(pasoActual.coordenadas.x, obj.position.y, pasoActual.coordenadas.z);
+            }
+        }
+
+        // --- Mover el objeto hacia el destino ---
+        if (state.destino) {
+            const direccion = state.destino.clone().sub(obj.position);
+            direccion.y = 0;
+            const distancia = direccion.length();
+            
+            if (distancia < 0.5) { // Si ya ha llegado al destino
+                state.destino = null; // Limpiamos el destino para que se procese el siguiente paso
+                if (pasoActual.tipo !== 'aleatorio') { // En aleatorio, el cambio de paso lo controla el temporizador
+                     state.indicePasoActual = (state.indicePasoActual + 1) % state.ruta.length;
+                }
+            } else {
+                const movimiento = direccion.normalize().multiplyScalar(Math.min(velocidad * deltaTime, distancia));
+                obj.position.add(movimiento);
+            }
+        }
+        
+        // --- Actualizar temporizador para pasos de tipo 'aleatorio' ---
+        if (pasoActual.tipo === 'aleatorio' && pasoActual.duracion !== null) {
+            state.temporizadorPaso -= deltaTime;
+            if (state.temporizadorPaso <= 0) {
+                state.destino = null; // Forzamos un nuevo destino
+                state.indicePasoActual = (state.indicePasoActual + 1) % state.ruta.length;
+            }
+        }
+    });
+}
+
+// Modifica animatePreview para que llame a la nueva función
 function animatePreview() {
     if (!previewState.isActive) return;
     previewState.animationFrameId = requestAnimationFrame(animatePreview);
     handlePreviewResize();
     const deltaTime = previewState.clock.getDelta();
+    
     updatePlayer(deltaTime);
+    updateObjectMovements(deltaTime); // <-- LLAMADA A LA NUEVA FUNCIÓN
+    
     updateCamera();
     previewState.renderer.render(previewState.scene, previewState.camera);
 }

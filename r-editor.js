@@ -6,7 +6,10 @@
 let activeTool = { type: 'texture', id: 'grass' };
 let currentZoom = 1.0;
 const WORLD_DATA_NAME_PREFIX = 'Mundo - '; // Prefijo para los nombres de datos de mundos
-
+let editorState = {
+    isPickingCoordinate: false, // ¿Estamos esperando un clic en el mapa?
+    entityBeingEdited: null,    // ¿Qué objeto del mapa estábamos editando?
+};
 // Referencias a los elementos del DOM.
 const editorDOM = {
     mapGridContainer: document.getElementById('r-map-grid-container'),
@@ -25,6 +28,12 @@ const editorDOM = {
     characterModal: document.getElementById('r-character-modal-overlay'),
     characterModalCloseBtn: document.querySelector('#r-character-modal-overlay .character-modal-close-button'),
     characterGrid: document.getElementById('r-character-grid'),
+     // ▼▼▼ AÑADE ESTAS NUEVAS REFERENCIAS AL MODAL DE EDICIÓN ▼▼▼
+    editEntityModal: document.getElementById('r-edit-entity-modal'),
+    editEntityCloseBtn: document.getElementById('r-edit-entity-close-btn'),
+    editEntitySaveBtn: document.getElementById('r-edit-entity-save-btn'),
+    editEntityNameSpan: document.getElementById('r-edit-entity-name'),
+    editColisionTipoSelect: document.getElementById('edit-colision-tipo'),
 };
 
 function renderGrid() {
@@ -103,6 +112,9 @@ function renderGrid() {
     }
 }
 
+// EN: r-editor.js
+// REEMPLAZA ESTA FUNCIÓN
+
 function handleGridClick(event) {
     if (event.button !== 0) return;
     const subCell = event.target.closest('.subgrid-cell');
@@ -110,40 +122,336 @@ function handleGridClick(event) {
 
     const chunkCell = subCell.closest('.grid-cell');
     const chunkId = chunkCell.dataset.chunkId;
-    const chunk = worldData.chunks[chunkId];
     const [chunkX, chunkZ] = chunkId.split('_').map(Number);
     const subX = parseInt(subCell.dataset.subX, 10);
     const subZ = parseInt(subCell.dataset.subZ, 10);
 
+    // ▼▼▼ LÓGICA PRINCIPAL AÑADIDA ▼▼▼
+    // Si estamos en modo de selección, capturamos la coordenada y terminamos.
+    if (editorState.isPickingCoordinate) {
+        // 1. Calcular las coordenadas del mundo real
+        const worldX = (chunkX * CHUNK_SIZE) + (subX * SUB_CELL_SIZE) + (SUB_CELL_SIZE / 2);
+        const worldZ = (chunkZ * CHUNK_SIZE) + (subZ * SUB_CELL_SIZE) + (SUB_CELL_SIZE / 2);
+
+        // 2. Encontrar el "Dato" original que estábamos editando
+        const datoElement = findDatoElementByName(editorState.entityBeingEdited.dataRef);
+        if (datoElement) {
+            // 3. Leer las propiedades actuales (incluyendo la ruta de movimiento)
+            const props = procesarPropiedadesVideojuego(datoElement);
+            
+            // 4. Crear el nuevo paso y añadirlo a la ruta
+            const nuevoPaso = { tipo: 'ir_a', coordenadas: { x: worldX, z: worldZ } };
+            props.movimiento.push(nuevoPaso);
+
+            // 5. Reconstruir y guardar el contenido en la descripción del "Dato"
+            const KEYWORD = 'Videojuego';
+            const SEPARATOR = '---';
+            const oldText = datoElement.querySelector('.descripcionh').value;
+            const separatorIndex = oldText.indexOf(SEPARATOR);
+            const descriptionText = separatorIndex > -1 ? oldText.substring(separatorIndex) : '';
+            const newJsonString = JSON.stringify(props, null, 2);
+            datoElement.querySelector('.descripcionh').value = `${KEYWORD}\n${newJsonString}\n\n${descriptionText}`.trim();
+
+            console.log(`Coordenada (${worldX}, ${worldZ}) añadida a la ruta de ${editorState.entityBeingEdited.dataRef}`);
+        }
+
+        // 6. Volver a abrir el modal, que ahora mostrará el paso añadido
+        openEntityEditorModal(editorState.entityBeingEdited);
+
+        // 7. Resetear el estado del editor
+        editorState.isPickingCoordinate = false;
+        editorState.entityBeingEdited = null;
+        editorDOM.mapGrid.style.cursor = 'pointer'; // Restaurar cursor
+        return; // Detenemos la ejecución aquí
+    }
+    // ▲▲▲ FIN DE LA LÓGICA DE SELECCIÓN ▲▲▲
+
+    // --- El resto de la función (lógica para colocar/editar/borrar) sigue igual ---
+    const chunk = worldData.chunks[chunkId];
+    const existingObjectIndex = chunk.objects.findIndex(obj => obj.subX === subX && obj.subZ === subZ);
+
+    if (existingObjectIndex > -1) {
+        const existingObject = chunk.objects[existingObjectIndex];
+        openEntityEditorModal(existingObject);
+        return;
+    }
+
     if (activeTool.category === 'texture') {
         chunk.groundTextureKey = activeTool.id;
     } else if (activeTool.category === 'entity' || activeTool.category === 'customEntity') {
-        const existingIndex = chunk.objects.findIndex(obj => obj.subX === subX && obj.subZ === subZ);
-        if (existingIndex > -1) chunk.objects.splice(existingIndex, 1);
-        
-        const playerStart = worldData.metadata.playerStartPosition;
-        if (playerStart && playerStart.chunkX === chunkX && playerStart.chunkZ === chunkZ && playerStart.subX === subX && playerStart.subZ === subZ) {
-            worldData.metadata.playerStartPosition = null;
-        }
-
-        if (activeTool.id === 'playerStart') {
-             chunk.objects.push({ type: activeTool.id, subX, subZ });
-        } else {
-            const newObject = { type: activeTool.id, subX, subZ };
-            
-            if (activeTool.category === 'customEntity') {
-                const toolData = tools.customEntities[activeTool.id];
-                if (toolData) {
-                    newObject.dataRef = toolData.dataRef;
-                    newObject.modelType = toolData.modelType;
-                }
+        // ... (resto de la lógica para colocar objetos) ...
+        const newObject = { type: activeTool.id, subX, subZ };
+        if (activeTool.category === 'customEntity') {
+            const toolData = tools.customEntities[activeTool.id];
+            if (toolData) {
+                newObject.dataRef = toolData.dataRef;
+                newObject.modelType = toolData.modelType;
             }
-            chunk.objects.push(newObject);
         }
+        chunk.objects.push(newObject);
     }
+
     renderGrid();
 }
+// EN: r-editor.js
 
+/**
+ * Busca el elemento DOM de un "Dato" en #listapersonajes por su nombre.
+ * @param {string} name - El nombre del dato a buscar.
+ * @returns {HTMLElement|null} El elemento del DOM o null si no se encuentra.
+ */
+function findDatoElementByName(name) {
+    const characterDataElements = document.querySelectorAll('#listapersonajes .personaje');
+    for (const charElement of characterDataElements) {
+        if (charElement.querySelector('.nombreh')?.value === name) {
+            return charElement;
+        }
+    }
+    return null;
+}
+
+/**
+ * Abre el modal de edición, lo rellena con las propiedades actuales del objeto
+ * y prepara el botón de guardado.
+ * @param {object} entity - El objeto de la entidad del grid cuyos datos se van a editar.
+ */
+// EN: r-editor.js
+// REEMPLAZA ESTA FUNCIÓN
+
+function openEntityEditorModal(entity) {
+    if (!entity.dataRef) {
+        alert("Este objeto no es personalizable (no proviene de un 'Dato').");
+        return;
+    }
+
+    const datoElement = findDatoElementByName(entity.dataRef);
+    if (!datoElement) {
+        alert(`No se encontró el "Dato" original llamado "${entity.dataRef}".`);
+        return;
+    }
+
+    // ▼▼▼ AÑADE ESTA LÍNEA ▼▼▼
+    // Guardamos la referencia al objeto del mapa que estamos editando
+    editorState.entityBeingEdited = entity;
+    // ▲▲▲ FIN DEL AÑADIDO ▲▲▲
+
+    const props = procesarPropiedadesVideojuego(datoElement);
+    renderizarRutaMovimiento(props.movimiento || []);
+    
+    editorDOM.editEntityNameSpan.textContent = entity.dataRef;
+    document.getElementById('edit-tamano-x').value = props.tamano?.x || 1;
+    document.getElementById('edit-tamano-y').value = props.tamano?.y || 1.8;
+    document.getElementById('edit-tamano-z').value = props.tamano?.z || 1;
+    
+    document.getElementById('edit-colision-tipo').value = props.colision?.tipo || 'ninguna';
+    document.getElementById('edit-colision-radio').value = props.colision?.radio || 0.5;
+    document.getElementById('edit-colision-altura').value = props.colision?.altura || 1.8;
+    
+    updateCollisionFieldsVisibility();
+
+    editorDOM.editEntityModal.dataset.editingDatoName = entity.dataRef;
+    editorDOM.editEntityModal.style.display = 'flex';
+}
+
+/**
+ * Lee los valores del modal, reconstruye el string del promptVisual y lo
+ * guarda en el textarea del "Dato" original.
+ */
+function saveEntityProperties() {
+    const datoName = editorDOM.editEntityModal.dataset.editingDatoName;
+    if (!datoName) return;
+
+    const datoElement = findDatoElementByName(datoName);
+    if (!datoElement) {
+        alert("Error: Se perdió la referencia al 'Dato' original.");
+        return;
+    }
+
+    // 1. Lee los nuevos valores del formulario del modal
+    const newProps = {
+        tamano: {
+            x: parseFloat(document.getElementById('edit-tamano-x').value),
+            y: parseFloat(document.getElementById('edit-tamano-y').value),
+            z: parseFloat(document.getElementById('edit-tamano-z').value)
+        },
+        colision: {
+            tipo: document.getElementById('edit-colision-tipo').value,
+            radio: parseFloat(document.getElementById('edit-colision-radio').value),
+            altura: parseFloat(document.getElementById('edit-colision-altura').value)
+        },
+
+     // ▼▼▼ NUEVA LÓGICA PARA LEER LA RUTA DESDE LA UI ▼▼▼
+        movimiento: []
+    };
+    
+    const pasos = document.querySelectorAll('#edit-movimiento-lista .ruta-paso');
+    pasos.forEach(pasoEl => {
+        const pasoData = {
+            tipo: pasoEl.dataset.tipo,
+        };
+        if (pasoData.tipo === 'aleatorio') {
+            pasoData.duracion = pasoEl.dataset.duracion === 'null' ? null : parseFloat(pasoEl.dataset.duracion);
+        } else if (pasoData.tipo === 'ir_a') {
+            pasoData.coordenadas = {
+                x: parseFloat(pasoEl.dataset.x),
+                z: parseFloat(pasoEl.dataset.z)
+            };
+        }
+        newProps.movimiento.push(pasoData);
+    });
+    // ▲▲▲ FIN DE LA NUEVA LÓGICA ▲▲▲
+
+    // 2. Reconstruye el contenido del promptVisual
+    const KEYWORD = 'Videojuego';
+    const SEPARATOR = '---';
+    const promptVisualTextarea = datoElement.querySelector('.descripcionh');
+    const oldText = promptVisualTextarea.value;
+    
+    // Extraemos la descripción de la IA (el texto después del separador)
+    const separatorIndex = oldText.indexOf(SEPARATOR);
+    const descriptionText = separatorIndex > -1 ? oldText.substring(separatorIndex) : '';
+
+    // Creamos el nuevo contenido
+    const newJsonString = JSON.stringify(newProps, null, 2);
+    promptVisualTextarea.value = `${KEYWORD}\n${newJsonString}\n\n${descriptionText}`.trim();
+
+    alert(`Propiedades de "${datoName}" actualizadas!`);
+    editorDOM.editEntityModal.style.display = 'none';
+}
+// EN: r-editor.js (añade este bloque de código nuevo)
+
+/**
+ * Renderiza la lista de pasos de una ruta de movimiento en el modal.
+ * @param {Array} ruta - El array de objetos de movimiento.
+ */
+function renderizarRutaMovimiento(ruta) {
+    const listaEl = document.getElementById('edit-movimiento-lista');
+    listaEl.innerHTML = ''; // Limpia la lista actual
+
+    if (!ruta || ruta.length === 0) {
+        listaEl.innerHTML = '<p style="color: #999; font-style: italic;">Sin ruta de movimiento.</p>';
+        return;
+    }
+
+    ruta.forEach((paso, index) => {
+        const pasoEl = document.createElement('div');
+        pasoEl.className = 'ruta-paso';
+        pasoEl.dataset.tipo = paso.tipo;
+
+        let textoPaso = '';
+        if (paso.tipo === 'aleatorio') {
+            const duracionTexto = paso.duracion === null ? '(infinito)' : `(${paso.duracion}s)`;
+            textoPaso = `Movimiento Aleatorio ${duracionTexto}`;
+            pasoEl.dataset.duracion = paso.duracion;
+        } else if (paso.tipo === 'ir_a') {
+            textoPaso = `Ir a Coordenada (X: ${paso.coordenadas.x}, Z: ${paso.coordenadas.z})`;
+            pasoEl.dataset.x = paso.coordenadas.x;
+            pasoEl.dataset.z = paso.coordenadas.z;
+        }
+
+        pasoEl.innerHTML = `<span>${index + 1}. ${textoPaso}</span> <button title="Eliminar paso">&times;</button>`;
+        pasoEl.querySelector('button').onclick = () => {
+            ruta.splice(index, 1); // Elimina el paso del array
+            renderizarRutaMovimiento(ruta); // Vuelve a renderizar la lista
+        };
+
+        listaEl.appendChild(pasoEl);
+    });
+}
+ 
+/**
+ * Activa el modo de selección de coordenadas, ocultando el modal y
+ * preparando el editor para capturar el próximo clic en el mapa.
+ */
+function iniciarModoSeleccionCoordenada() {
+    console.log("Iniciando modo de selección de coordenadas...");
+    editorState.isPickingCoordinate = true;
+    
+    // Ocultamos el modal para que el usuario pueda ver el mapa
+    editorDOM.editEntityModal.style.display = 'none';
+
+    // Cambiamos el cursor para dar feedback visual
+    editorDOM.mapGrid.style.cursor = 'crosshair';
+    
+    // Opcional: Mostrar un pequeño aviso
+    // alert("Haz clic en el mapa para seleccionar la coordenada de destino.");
+}
+function actualizarNuevosParamsMovimiento() {
+    const tipo = document.getElementById('movimiento-tipo-nuevo').value;
+    const container = document.getElementById('movimiento-params-nuevo');
+    
+    if (tipo === 'aleatorio') {
+        container.innerHTML = `
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px; align-items: center;">
+                <label for="movimiento-duracion-nuevo">Duración (segundos):</label>
+                <input type="number" id="movimiento-duracion-nuevo" placeholder="Dejar vacío para infinito" class="modal-input">
+            </div>`;
+    } else if (tipo === 'ir_a') {
+        // ▼▼▼ CAMBIO PRINCIPAL ▼▼▼
+        // Ahora mostramos un botón en lugar de los inputs de X y Z
+        container.innerHTML = `
+            <button id="movimiento-seleccionar-coord-btn" class="pro6" style="width: 100%; padding: 10px;">📍</button>`;
+        // Conectamos el evento al nuevo botón
+        document.getElementById('movimiento-seleccionar-coord-btn').onclick = iniciarModoSeleccionCoordenada;
+        // ▲▲▲ FIN DEL CAMBIO ▲▲▲
+    }
+}
+
+// Inicializa y conecta los eventos de la nueva sección del modal
+document.addEventListener('DOMContentLoaded', () => {
+    const tipoSelect = document.getElementById('movimiento-tipo-nuevo');
+    const anadirBtn = document.getElementById('movimiento-anadir-paso-btn');
+
+    if (tipoSelect) {
+        tipoSelect.addEventListener('change', actualizarNuevosParamsMovimiento);
+        // Llama una vez para inicializar los campos
+        actualizarNuevosParamsMovimiento();
+    }
+    
+    if (anadirBtn) {
+        anadirBtn.addEventListener('click', () => {
+            const listaEl = document.getElementById('edit-movimiento-lista');
+            // 1. Leer la ruta actual desde la UI para no perder datos
+            let rutaActual = [];
+            const pasosActuales = listaEl.querySelectorAll('.ruta-paso');
+            pasosActuales.forEach(pasoEl => {
+                // (Esta es la misma lógica de lectura que en saveEntityProperties)
+                const pasoData = { tipo: pasoEl.dataset.tipo };
+                if (pasoData.tipo === 'aleatorio') pasoData.duracion = pasoEl.dataset.duracion === 'null' ? null : parseFloat(pasoEl.dataset.duracion);
+                else if (pasoData.tipo === 'ir_a') pasoData.coordenadas = { x: parseFloat(pasoEl.dataset.x), z: parseFloat(pasoEl.dataset.z) };
+                rutaActual.push(pasoData);
+            });
+
+            // 2. Crear el nuevo paso desde los inputs
+            const tipo = document.getElementById('movimiento-tipo-nuevo').value;
+            const nuevoPaso = { tipo };
+            if (tipo === 'aleatorio') {
+                const duracionInput = document.getElementById('movimiento-duracion-nuevo');
+                nuevoPaso.duracion = duracionInput.value ? parseFloat(duracionInput.value) : null;
+            } else if (tipo === 'ir_a') {
+                nuevoPaso.coordenadas = {
+                    x: parseFloat(document.getElementById('movimiento-x-nuevo').value),
+                    z: parseFloat(document.getElementById('movimiento-z-nuevo').value)
+                };
+            }
+            
+            // 3. Añadir el nuevo paso y re-renderizar
+            rutaActual.push(nuevoPaso);
+            renderizarRutaMovimiento(rutaActual);
+        });
+    }
+});
+/**
+ * Muestra u oculta los campos de radio y altura según el tipo de colisión seleccionado.
+ */
+function updateCollisionFieldsVisibility() {
+    const tipo = editorDOM.editColisionTipoSelect.value;
+    const radioContainer = document.getElementById('edit-colision-radio-container');
+    const alturaContainer = document.getElementById('edit-colision-altura-container');
+
+    radioContainer.style.display = (tipo === 'capsula' || tipo === 'esfera') ? 'block' : 'none';
+    alturaContainer.style.display = (tipo === 'capsula' || tipo === 'caja') ? 'block' : 'none';
+}
 /**
  * Genera una previsualización 3D de un modelo JSON y la devuelve como una imagen DataURL.
  * @param {object} modelJson - El objeto JSON que define el modelo.
@@ -328,6 +636,13 @@ document.addEventListener('DOMContentLoaded', async () => { // <--- Callback aho
     editorDOM.mapGrid.addEventListener('mousedown', handleGridClick);
     editorDOM.zoomInButton.addEventListener('click', zoomIn);
     // ... etc.
+     // ▼▼▼ AÑADE ESTOS LISTENERS PARA EL NUEVO MODAL ▼▼▼
+    if (editorDOM.editEntityModal) {
+        editorDOM.editEntityCloseBtn.addEventListener('click', () => editorDOM.editEntityModal.style.display = 'none');
+        editorDOM.editEntitySaveBtn.addEventListener('click', saveEntityProperties);
+        editorDOM.editColisionTipoSelect.addEventListener('change', updateCollisionFieldsVisibility);
+    }
+    // ▲▲▲ FIN DE LOS NUEVOS LISTENERS ▲▲▲
 });
 
 function selectTool(category, id) {
@@ -436,56 +751,80 @@ function saveWorldToCharacter() {
     populateWorldList();
     alert(`¡Mundo "${name.trim()}" guardado como un dato completo!`);
 }
+/**
+ * Limpia y recarga todos los assets del arco "videojuego" en la paleta de entidades.
+ * La función es asíncrona para poder generar las previsualizaciones 3D.
+ */
+/**
+ * Limpia y recarga todos los assets del arco "videojuego" en la paleta de entidades.
+ * AHORA TAMBIÉN PROCESA Y GUARDA LAS PROPIEDADES DEL JUEGO.
+ */
+async function autoLoadGameAssets() {
+    console.log("Buscando y actualizando assets de videojuego para cargar...");
 
-// Carga automáticamente los datos con el arco "videojuego" como herramientas.
-function autoLoadGameAssets() {
-    console.log("Buscando assets de videojuego para cargar...");
+    document.querySelectorAll('.palette-item[data-category="customEntity"]').forEach(btn => btn.remove());
+    tools.customEntities = {};
+
+    const entityGrid = editorDOM.entityPalette.querySelector('.palette-container');
+    if (!entityGrid) {
+        console.error("No se encontró el contenedor de la paleta de entidades.");
+        return;
+    }
+
     const characterDataElements = document.querySelectorAll('#listapersonajes .personaje');
-    
-    characterDataElements.forEach(charElement => {
+
+    for (const charElement of characterDataElements) {
         const arco = charElement.querySelector('.change-arc-btn')?.dataset.arco;
-        
+
         if (arco === 'videojuego') {
             const nombre = charElement.querySelector('.nombreh')?.value;
-            if (!nombre) return;
+            if (!nombre) continue;
+
+            // ▼▼▼ INTEGRACIÓN DE LA NUEVA LÓGICA ▼▼▼
+            // Procesamos las propiedades ANTES de crear la herramienta
+            const propiedadesJuego = procesarPropiedadesVideojuego(charElement);
+            // ▲▲▲ FIN DE LA INTEGRACIÓN ▲▲▲
 
             const toolId = `custom_${nombre.replace(/\s+/g, '_')}`;
-            if (tools.customEntities[toolId]) {
-                return;
-            }
-
             const promptVisualText = charElement.querySelector('.prompt-visualh')?.value;
-            let modelType = 'sprite';
             
+            let modelType = 'sprite';
+            let modelData = null;
+
             if (promptVisualText) {
                 try {
                     const parsed = JSON.parse(promptVisualText);
-                    if (parsed && typeof parsed === 'object' && (Array.isArray(parsed.parts) || Array.isArray(parsed.objects) || parsed.hasOwnProperty('chunks'))) {
+                    if (parsed && typeof parsed === 'object' && (Array.isArray(parsed.parts) || Array.isArray(parsed.objects))) {
                         modelType = 'json3d';
+                        modelData = parsed;
                     }
-                } catch (e) { /* No es JSON, se asume que es un sprite */ }
+                } catch (e) { /* No es JSON, se mantiene como 'sprite' */ }
             }
-            
+
             const newTool = {
                 name: nombre,
                 type: 'custom',
                 modelType: modelType,
                 dataRef: nombre,
-                isSolid: true,
-                radius: 1.2
+                isSolid: propiedadesJuego.fisica ? !propiedadesJuego.fisica.estatico : true,
+                radius: propiedadesJuego.colision ? propiedadesJuego.colision.radio : 1.2,
+                // Guardamos el objeto completo de propiedades para uso futuro
+                gameProps: propiedadesJuego 
             };
 
-            let buttonIconHTML = '';
+            let previewHTML = '';
             const imagenSrc = charElement.querySelector('.personaje-visual img')?.src;
 
-            if (modelType === 'json3d') {
-                 newTool.icon = JSON.parse(promptVisualText);
-                 buttonIconHTML = `<span style="font-size: 20px; margin-right: 10px;">🧊</span>`;
+            if (modelType === 'json3d' && modelData) {
+                newTool.icon = modelData;
+                const previewSrc = await generate3DPreview(modelData);
+                previewHTML = `<div class="palette-item-preview"><img src="${previewSrc}" alt="${nombre}"></div>`;
             } else if (imagenSrc && !imagenSrc.endsWith('/')) {
-                 newTool.icon = imagenSrc;
-                 buttonIconHTML = `<img src="${imagenSrc}" class="entity-image-icon" alt="${nombre}">`;
+                newTool.icon = imagenSrc;
+                previewHTML = `<div class="palette-item-preview"><img src="${imagenSrc}" alt="${nombre}"></div>`;
             } else {
-                return;
+                console.warn(`Asset '${nombre}' omitido por falta de contenido visual válido.`);
+                continue;
             }
 
             tools.customEntities[toolId] = newTool;
@@ -494,15 +833,97 @@ function autoLoadGameAssets() {
             btn.className = 'palette-item';
             btn.dataset.category = 'customEntity';
             btn.dataset.id = toolId;
-            btn.innerHTML = `${buttonIconHTML} ${nombre}`;
+            btn.innerHTML = `
+                ${previewHTML}
+                <span>${nombre}</span>
+            `;
             btn.onclick = () => selectTool('customEntity', toolId);
-            editorDOM.entityPalette.appendChild(btn);
-            
-            console.log(`Asset "${nombre}" cargado desde el arco 'videojuego'.`);
+            entityGrid.appendChild(btn);
         }
-    });
+    }
+    console.log(`Assets desde el arco 'videojuego' actualizados. Total: ${Object.keys(tools.customEntities).length}`);
 }
 
+async function refreshGameAssetsPalette() {
+    console.log("Actualizando assets de la paleta...");
+
+    // 1. Limpiar los assets personalizados existentes de la UI y del objeto 'tools'
+    document.querySelectorAll('.palette-item[data-category="customEntity"]').forEach(btn => btn.remove());
+    tools.customEntities = {};
+
+    // 2. Volver a escanear los datos y cargarlos (lógica movida desde autoLoadGameAssets)
+    const entityGrid = editorDOM.entityPalette.querySelector('.palette-container');
+    if (!entityGrid) {
+        console.error("No se encontró el contenedor de la paleta de entidades.");
+        return;
+    }
+    
+    const characterDataElements = document.querySelectorAll('#listapersonajes .personaje');
+    
+    // Usamos un bucle for...of para poder usar 'await' dentro
+    for (const charElement of characterDataElements) {
+        const arco = charElement.querySelector('.change-arc-btn')?.dataset.arco;
+        
+        if (arco === 'videojuego') {
+            const nombre = charElement.querySelector('.nombreh')?.value;
+            if (!nombre) continue;
+
+            const toolId = `custom_${nombre.replace(/\s+/g, '_')}`;
+            
+            // Omitir si ya fue procesado (en caso de duplicados)
+            if (tools.customEntities[toolId]) continue;
+
+            const promptVisualText = charElement.querySelector('.prompt-visualh')?.value;
+            let modelType = 'sprite'; // Por defecto
+            let modelData = null;
+
+            if (promptVisualText) {
+                try {
+                    const parsed = JSON.parse(promptVisualText);
+                    if (parsed && typeof parsed === 'object' && (Array.isArray(parsed.parts) || Array.isArray(parsed.objects))) {
+                        modelType = 'json3d';
+                        modelData = parsed;
+                    }
+                } catch (e) { /* No es JSON, se queda como sprite */ }
+            }
+            
+            const newTool = {
+                name: nombre,
+                type: 'custom',
+                modelType: modelType,
+                dataRef: nombre,
+                isSolid: true, // Puedes ajustar estas propiedades por defecto
+                radius: 1.2
+            };
+
+            let previewHTML = '';
+            const imagenSrc = charElement.querySelector('.personaje-visual img')?.src;
+
+            if (modelType === 'json3d' && modelData) {
+                 newTool.icon = modelData;
+                 const previewSrc = await generate3DPreview(modelData);
+                 previewHTML = `<div class="palette-item-preview"><img src="${previewSrc}" alt="${nombre}"></div>`;
+            } else if (imagenSrc && !imagenSrc.endsWith('/')) {
+                 newTool.icon = imagenSrc;
+                 previewHTML = `<div class="palette-item-preview"><img src="${imagenSrc}" alt="${nombre}"></div>`;
+            } else {
+                // Si no tiene ni modelo 3D válido ni imagen, lo saltamos.
+                continue;
+            }
+
+            tools.customEntities[toolId] = newTool;
+
+            const btn = document.createElement('button');
+            btn.className = 'palette-item';
+            btn.dataset.category = 'customEntity';
+            btn.dataset.id = toolId;
+            btn.innerHTML = `${previewHTML}<span>${nombre}</span>`;
+            btn.onclick = () => selectTool('customEntity', toolId);
+            entityGrid.appendChild(btn);
+        }
+    }
+    console.log("Assets de la paleta actualizados.", tools.customEntities);
+}
 
 // --- INICIALIZACIÓN Y EVENT LISTENERS ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -564,3 +985,65 @@ window.addEventListener('load', () => {
 
     tryLoadAssets();
 });
+/**
+ * Revisa el promptVisual de un "Dato" en busca de propiedades para el videojuego.
+ * Si no existen, crea una estructura JSON por defecto y la escribe en el textarea.
+ * Si existen, las lee y las devuelve.
+ * @param {HTMLElement} charElement - El elemento DOM del "Dato" (div.personaje).
+ * @returns {object} Un objeto con las propiedades del juego para ese "Dato".
+ */
+ 
+
+function procesarPropiedadesVideojuego(charElement) {
+    const promptVisualTextarea = charElement.querySelector('.descripcionh');
+    if (!promptVisualTextarea) {
+        console.warn("No se encontró el textarea '.descripcionh' para el dato:", charElement);
+        return {};
+    }
+
+    const KEYWORD = 'Videojuego';
+    const SEPARATOR = '---';
+    let currentText = promptVisualTextarea.value.trim();
+    let gameProps = {};
+
+    const defaultProps = {
+        tamano: { x: 3, y: 4.8, z: 1 },
+        colision: { tipo: 'capsula', radio: 0.5, altura: 1.8 },
+        interactable: false,
+        fisica: { estatico: true, masa: 0 },
+             movimiento: [] 
+    };
+
+    if (currentText.startsWith(KEYWORD)) {
+        // ▼▼▼ LÍNEA MODIFICADA ▼▼▼
+        // Extraemos solo el texto entre la palabra clave y el separador "---"
+        const separatorIndex = currentText.indexOf(SEPARATOR);
+        const jsonText = currentText.substring(KEYWORD.length, separatorIndex > -1 ? separatorIndex : undefined).trim();
+        // ▲▲▲ FIN DE LA MODIFICACIÓN ▲▲▲
+
+        try {
+            if (jsonText) { // Solo intentamos parsear si hay texto
+                gameProps = JSON.parse(jsonText);
+                console.log(`Propiedades de videojuego leídas para "${charElement.querySelector('.nombreh')?.value}".`);
+            } else {
+                 gameProps = defaultProps; // Si no hay JSON, usamos las de por defecto
+            }
+        } catch (e) {
+            console.error(`Error al parsear las propiedades JSON para "${charElement.querySelector('.nombreh')?.value}". Se usarán las de por defecto. Error:`, e);
+            gameProps = defaultProps;
+        }
+    } else {
+        gameProps = defaultProps;
+        const propsJsonString = JSON.stringify(gameProps, null, 2);
+        
+        let newTextContent = `${KEYWORD}\n${propsJsonString}`;
+        if (currentText.length > 0) {
+            newTextContent += `\n\n${SEPARATOR}\n\n${currentText}`;
+        }
+
+        promptVisualTextarea.value = newTextContent;
+        console.log(`Propiedades de videojuego por defecto CREADAS para "${charElement.querySelector('.nombreh')?.value}".`);
+    }
+
+    return gameProps;
+}

@@ -1,29 +1,10 @@
 /* Estilo general para el contenedor del editor RPG */
 #interactivo {
-    
-
  
- 
-    
  
     display: none;
 }
-
-
-        /* --- General Styles --- */
-        :root {
-            --bg-color: #1a1c20;
-            --primary-color: #282c34;
-            --secondary-color: #3e4451;
-            --text-color: #abb2bf;
-            --header-color: #ffffff;
-            --accent-color: #61afef;
-            --success-color: #98c379;
-            --danger-color: #e06c75;
-            --warning-color: #e5c07b;
-            --border-color: #4b5263;
-        }
-   
+ 
         * {
             box-sizing: border-box;
         }
@@ -61,7 +42,7 @@
             transition: background-color 0.2s, color 0.2s;
         }
         nav button.active, nav button:hover {
-            background-color: transparent;
+    
             color: #fff;
             border-color: var(--accent-color);
         }
@@ -81,7 +62,7 @@
             padding: 0;
         }
         .item-list-entry {
-            background-color: transparent;
+      
             padding: 15px;
             border-radius: 5px;
             margin-bottom: 10px;
@@ -96,12 +77,7 @@
             color: var(--success-color);
         }
         .btn {
-            border: none;
-            padding: 8px 12px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-left: 8px;
+      
         }
         .btn-edit { background-color: var(--warning-color); color: var(--bg-color); }
         .btn-delete { background-color: var(--danger-color); color: #fff; }

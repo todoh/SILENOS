@@ -2,43 +2,87 @@
 #r-editor-container {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: 100dvh;
 }
 
 #r-main-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 20px;
-    border-bottom: 1px solid #444;
+    padding: 10px ;
+  position: absolute;
+  height: 8%;
+  width: 100%;
+  top: 0;
+  left: 0;
     flex-shrink: 0;
+}
+#r-texture-palette {
+
+
+    
+}
+
+
+#r-map-grid-container {
+    position: absolute;
+    top: 8%;
+    left: 29%;
+    width: 68%;
+    height: 89%;
+
+    flex-grow: 1;
+    overflow: auto;
+    text-align: center;
+    cursor: grab;
+}
+#r-map-grid {
+    display: grid;
+    cursor: pointer;
+    transition: transform 0.2s ease-out;
+    margin: 20px;
+    gap: 5px;
 }
 
 #r-main-header h1 { margin: 0; font-size: 1.5em; }
 #r-main-controls { display: flex; align-items: center; gap: 10px; }
-#r-main-controls button {
-    padding: 8px 15px;
-    font-size: 1em;
-    background-color: #4682B4;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
+#r-main-controls button {  
     transition: background-color 0.2s;
 }
-#r-main-controls button:hover { background-color: #5a9bdc; }
+ 
 
 #r-main-content { display: flex; flex-grow: 1; overflow: hidden; }
 
 #r-side-panel {
-    width: 25%;
-    min-width: 280px;
+    position: absolute;
+    height: 100%;
+     left: 1%;
+    top: 8%;
+    width: 27%;
+ margin-bottom: 5%;
     padding: 15px;
+  flex-direction: row;
+    padding-bottom: 7%;
     overflow-y: auto;
     border-right: 1px solid #444;
     flex-shrink: 0;
 }
+/* Estilos para los inputs del nuevo modal de edición */
+.modal-input {
+    width: 100%;
+    padding: 8px;
+    background-color: #444;
+    border: 1px solid #666;
+    color: white;
+    border-radius: 4px;
+    box-sizing: border-box; /* Importante para que el padding no afecte el ancho */
+    font-size: 14px;
+}
 
+.modal-input:focus {
+    outline: none;
+    border-color: #87ceeb;
+}
 .palette h2 {
     margin-top: 0;
     margin-bottom: 15px;
@@ -51,37 +95,34 @@
 .palette-container {
     display: grid;
     /* Crea una cuadrícula responsiva con columnas de al menos 85px */
-    grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
     gap: 10px; /* Espacio entre los elementos */
+overflow: hidden;
+ 
+padding-bottom: 5%;
 }
-
+ 
 .palette-item {
     display: flex;
     flex-direction: column; /* Apila la vista previa y el texto verticalmente */
     align-items: center;
     justify-content: flex-start;
-    height: 110px; /* Altura fija para cada elemento */
+    height: 140px; /* Altura fija para cada elemento */
     padding: 8px;
-    border: 2px solid #555;
+    border: 1px solid #5555554b;
     border-radius: 6px;
     cursor: pointer;
-    background-color: #444;
-    color: white;
+  
     text-align: center;
-    font-size: 12px;
+ 
     text-transform: capitalize;
     transition: border-color 0.2s, background-color 0.2s;
     word-break: break-word;
     margin-bottom: 5px;
 }
 
-.palette-item:hover { border-color: #777; }
-
-.palette-item.selected {
-    border-color: #87ceeb;
-    background-color: #3d5a79;
-    font-weight: bold;
-}
+.palette-item:hover { border-color: #a70000; }
+ 
 
 /* Contenedor para la vista previa (imagen 3D, emoji o color) */
 .palette-item-preview {
@@ -94,7 +135,13 @@
     border-radius: 4px;
     background-color: rgba(0, 0, 0, 0.2);
 }
+.palette-item img {
+width: 90px;
+height: 100%;
+object-fit: contain
 
+
+}
 /* Estilo para la imagen de previsualización 3D o sprite */
 .palette-item-preview img {
     width: 100%;
@@ -117,12 +164,7 @@
 /* --- FIN: NUEVOS ESTILOS DE CUADRÍCULA --- */
 
 
-#r-map-grid-container {
-    flex-grow: 1;
-    overflow: auto;
-    text-align: center;
-    cursor: grab;
-}
+
 
 #r-map-grid {
     display: grid;
@@ -139,7 +181,7 @@
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     grid-template-rows: repeat(5, 1fr);
-    border: 1px solid #555;
+ 
     padding: 2px;
 }
 
@@ -161,11 +203,14 @@
 }
 
 .subgrid-cell:hover {
-    background-color: rgba(135, 206, 235, 0.5);
+    background-color: rgba(135, 207, 235, 0);
     border: 1px solid #87ceeb;
+    color: black;
 }
 
 /* --- ESTILOS MODAL DE PREVISUALIZACIÓN --- */
+/* EN: r-style.css */
+
 .modal-overlay2 {
     position: fixed;
     top: 0;
@@ -173,11 +218,36 @@
     width: 100%;
     height: 100%;
     
+    /* ▼▼▼ CAMBIOS CLAVE ▼▼▼ */
+    background-color: rgba(0, 0, 0, 0.5); /* Añade un fondo oscuro semitransparente */
+    z-index: 10000; /* Aumenta la prioridad para que esté por encima de todo */
+    /* ▲▲▲ FIN DE LOS CAMBIOS ▲▲▲ */
+
     display: none;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
 }
+ .ruta-paso {
+    background-color: #4f4f4f;
+    padding: 8px 12px;
+    margin-bottom: 5px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+}
+.ruta-paso button {
+    background-color: #a03a3a;
+    border: none;
+    color: white;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-weight: bold;
+}
+
 
 .modal-content2 {
   
@@ -206,8 +276,8 @@
 .modal-close-button1 {
     position: absolute;
     visibility: visible;
-    top: 30px;
-    right: 30px;
+    top: 5%;
+    left: 0px;
     font-size: 50px;
     font-weight: bold;
     background-color: rgb(253, 58, 24);
@@ -334,76 +404,31 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 20px;
-    border-bottom: 1px solid #444;
+    padding: 10px ;
+ 
     flex-shrink: 0;
 }
 
-#r-main-header h1 { margin: 0; font-size: 1.5em; }
-#r-main-controls { display: flex; align-items: center; gap: 10px; }
-#r-main-controls button {
-    padding: 8px 15px;
-    font-size: 1em;
-    background-color: #4682B4;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-#r-main-controls button:hover { background-color: #5a9bdc; }
+ 
+  
 
-#r-main-content { display: flex; flex-grow: 1; overflow: hidden; }
-
-#r-side-panel {
-    width: 25%;
-    min-width: 280px;
-    padding: 15px;
-    overflow-y: auto;
-    border-right: 1px solid #444;
-    flex-shrink: 0;
-}
-
+ 
+ 
 .palette h2 {
     margin-top: 0;
     margin-bottom: 15px;
-    border-bottom: 1px solid #555;
+    
     padding-bottom: 10px;
     font-size: 1.2em;
 }
 
-/* --- INICIO: NUEVOS ESTILOS DE CUADRÍCULA PARA PALETAS --- */
-.palette-container {
-    display: grid;
-    /* Crea una cuadrícula responsiva con columnas de al menos 85px */
-    grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
-    gap: 10px; /* Espacio entre los elementos */
-}
-
-.palette-item {
-    display: flex;
-    flex-direction: column; /* Apila la vista previa y el texto verticalmente */
-    align-items: center;
-    justify-content: flex-start;
-    height: 110px; /* Altura fija para cada elemento */
-    padding: 8px;
-    border: 2px solid #555;
-    border-radius: 6px;
-    cursor: pointer;
-    background-color: #444;
-    color: white;
-    text-align: center;
-    font-size: 12px;
-    text-transform: capitalize;
-    transition: border-color 0.2s, background-color 0.2s;
-    word-break: break-word;
-}
+ 
 
 .palette-item:hover { border-color: #777; }
 
 .palette-item.selected {
     border-color: #87ceeb;
-    background-color: #3d5a79;
+    
     font-weight: bold;
 }
 
@@ -441,19 +466,6 @@
 /* --- FIN: NUEVOS ESTILOS DE CUADRÍCULA --- */
 
 
-#r-map-grid-container {
-    flex-grow: 1;
-    overflow: auto;
-    text-align: center;
-    cursor: grab;
-}
-
-#r-map-grid {
-    display: grid;
-    cursor: pointer;
-    transition: transform 0.2s ease-out;
-    margin: 20px;
-    gap: 5px;
-}
+ 
 
 /* El resto de tus estilos (modal, grid-cell, etc.) pueden permanecer igual */

@@ -26,6 +26,7 @@ crossorigin="anonymous"></script>
 <link rel="stylesheet" href="p-style.css">
 <link rel="stylesheet" href="editor.css">
 <link rel="stylesheet" href="galeria.css">
+
 <!-- Hoja de estilos para el nuevo editor de datos -->
 <link rel="stylesheet" href="editor-personajes.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>S</text></svg>">
@@ -41,6 +42,10 @@ crossorigin="anonymous"></script>
 <!-- Hoja de estilos para el nuevo
 <script src="https://apis.google.com/js/api.js" async defer></script>
 <script src="https://accounts.google.com/gsi/client" onload="gapiLoaded()" async defer></script> 
+
+<script src="https://www.webrtc-experiment.com/RecordRTC.js"></script>
+
+
 editor de datos -->
 
 <meta property="og:title" content="SILENOS Versión 1.1.13" />
@@ -57,7 +62,7 @@ editor de datos -->
    // event.preventDefault();
  // });
 </script>
-<script src="https://www.webrtc-experiment.com/RecordRTC.js"></script>
+
 <script src="principio.js"></script> 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     
@@ -734,8 +739,10 @@ editor de datos -->
     <div id="r-editor-container">
         <header id="r-main-header">
             <div id="r-main-controls">
-                <button id="r-import-character-button">👤 Importar Personaje</button>
-                
+                <button id="r-import-character-buttonss" onclick=" autoLoadGameAssets()"  >👤 Actualizar Datos</button>
+
+
+               
                 <div id="r-zoom-controls">
                     <button id="r-zoom-out-button" class="zoom-btn">-</button>
                     <button id="r-zoom-in-button" class="zoom-btn">+</button>
@@ -1753,7 +1760,78 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
         </div>
     </div>
 </div>
+<div id="r-edit-entity-modal" class="modal-overlay2" style="display: none;">
+    <div class="modal-content2" style="width: 450px; background-color: #2f2f2f; color: white;">
+        <span id="r-edit-entity-close-btn" class="modal-close-button1" style="color: white; top: 10px; right: 15px; font-size: 28px;">&times;</span>
+        <h3>Editando Propiedades de <span id="r-edit-entity-name" style="color: #87ceeb;"></span></h3>
+        
+        <div id="r-edit-entity-form" style="padding: 20px; overflow-y: auto; max-height: 70vh;">
+            
+            <fieldset style="border: 1px solid #555; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                <legend style="padding: 0 5px;">Tamaño (en metros)</legend>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label for="edit-tamano-x">Ancho (X)</label>
+                        <input type="number" id="edit-tamano-x" step="0.1" class="modal-input">
+                    </div>
+                    <div>
+                        <label for="edit-tamano-y">Alto (Y)</label>
+                        <input type="number" id="edit-tamano-y" step="0.1" class="modal-input">
+                    </div>
+                    <div>
+                        <label for="edit-tamano-z">Profundo (Z)</label>
+                        <input type="number" id="edit-tamano-z" step="0.1" class="modal-input">
+                    </div>
+                </div>
+            </fieldset>
 
+            <fieldset style="border: 1px solid #555; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                <legend style="padding: 0 5px;">Colisión</legend>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label for="edit-colision-tipo">Tipo</label>
+                        <select id="edit-colision-tipo" class="modal-input">
+                            <option value="ninguna">Ninguna</option>
+                            <option value="capsula">Cápsula</option>
+                            <option value="caja">Caja</option>
+                            <option value="esfera">Esfera</option>
+                        </select>
+                    </div>
+                    <div id="edit-colision-radio-container">
+                        <label for="edit-colision-radio">Radio</label>
+                        <input type="number" id="edit-colision-radio" step="0.1" class="modal-input">
+                    </div>
+                    <div id="edit-colision-altura-container">
+                        <label for="edit-colision-altura">Altura</label>
+                        <input type="number" id="edit-colision-altura" step="0.1" class="modal-input">
+                    </div>
+                </div>
+            </fieldset>
+            <fieldset style="border: 1px solid #555; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+    <legend style="padding: 0 5px;">Ruta de Movimiento</legend>
+    
+    <div id="edit-movimiento-lista" style="margin-bottom: 15px; border-left: 2px solid #555; padding-left: 10px;">
+        </div>
+
+    <div id="edit-movimiento-nuevo" style="background-color: #3f3f3f; padding: 10px; border-radius: 4px;">
+        <h5 style="margin: 0 0 10px 0;">Añadir nuevo paso:</h5>
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px; align-items: center;">
+            <label for="movimiento-tipo-nuevo">Tipo:</label>
+            <select id="movimiento-tipo-nuevo" class="modal-input">
+                <option value="aleatorio">Aleatorio</option>
+                <option value="ir_a">Ir a Coordenada</option>
+            </select>
+        </div>
+        <div id="movimiento-params-nuevo" style="margin-top: 10px;">
+            </div>
+        <button id="movimiento-anadir-paso-btn" class="pro15" style="width: 100%; margin-top: 10px;">👣</button>
+    </div>
+</fieldset>
+ 
+            <button id="r-edit-entity-save-btn" class="pro16" style="width: 100%; padding: 12px; font-size: 16px;">💾</button>
+        </div>
+    </div>
+</div>
  
 <div id="menuweb">  
   <div id="titulo2">
@@ -1843,11 +1921,14 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
   //import { generarToma } from './escenas/geminivideo.js';
   //window.generarToma = generarToma; 
 </script>
+<!-- 
+
 
 <script src="compositor-escenas-3d.js"></script>
-<!-- <script src="escenas/geminivideo.js"></script> 
+<script src="escenas/geminivideo.js"></script> 
+<script src="escenas/generacion2d.js"></script>
 
-<script src="escenas/generacion2d.js"></script><!-- This was a duplicate load and has been removed -->
+ This was a duplicate load and has been removed -->
 
 <script src="momentos-generacion.js"></script>
 <script src="momentos-core.js"></script>
@@ -1876,7 +1957,7 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
 <script src="editor-personajes-body.js"></script>
 <script src="editor-personajes-main.js"></script>
 <script type="module" src="animacion2d.js"></script>
-<script type="module" src="juego_main.js"></script>
+ 
 
   
 <button id="open-imagenes-modal-btn" class="" style="display: none;" title="Abrir Informe" onclick=" document.getElementById('vistageneral').style.display = 'flex', document.getElementById('personajes').style.display = 'none', document.getElementById('biblioteca').style.display = 'none'; " style="display: none;">👁️‍🗨️</button>
@@ -1911,18 +1992,28 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
     <script src="r-preview-3d.js"></script>
     <script src="r-editor.js"></script>
 
+
+<!-- SCRIPTS MOVED HERE, 
+ 
+
+
+
+
+INSIDE THE BODY TAG -->
+
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
 
 <script src="toma.js"></script>
-<script src="animacionsvg.js"></script>
+ 
 <script src="exportarjuego3d.js"></script>
 
-<script src="animacionessvg.js"></script>
+ 
 <script src="animacionessvggemini.js"></script>
  
 <script src="libro.js"></script>
 <script src="traduccion.js"></script>
-<script src="asistente2.js"></script>
+ 
 
 
  <script src="accionesinteractivo.js"></script>
@@ -1934,7 +2025,7 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
  <script src="ventanas.js"></script>
 
 
-<script src="editor.js"></script>        
+     
 <script src="reescritura.js"></script>        
       
 
@@ -1952,8 +2043,11 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
 <script src="p-main.js"></script>
 <script src="procedimiento.js"></script>
  <script src="main.js" defer></script>
+
 <!-- Modal Genérico para Edición -->
-<script type="module" src="https://sdk.googleapis.com/genai/v1.js"></script>
+ 
+
+
 <div id="edit-modal" class="modal">
     <div class="modal-content-editor">
         <div class="modal-header">
@@ -1965,7 +2059,7 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
         </div>
         <div class="modal-footer">
             <button class="btn btn-close">Cancelar</button>
-            <button id="btn-save-modal" class="btn btn-add">Guardar Cambios</button>
+            <button id="btn-save-modal" class="btn btn-add">💾</button>
         </div>
     </div>
 </div>

@@ -77,9 +77,9 @@ position: absolute; left: 0%;
     justify-content: right;
     gap: 10px;
     line-height: 1;
-    font-family: 'Helvetica Neue', 'Arial', sans-serif;
+    font-family: 'Montserrat';
     font-weight: 300;
-    font-size: 1.7vw;
+ font-size: 2em;
     letter-spacing: 0.07em;
     text-shadow: 0 0 15px rgba(255, 255, 255, 0.25);
     color: white;
@@ -170,7 +170,7 @@ aspect-ratio: 1 / 1; /* Mantiene la proporción de aspecto */
 #esfera.expandir {
     transform: scale(50);   aspect-ratio: 1 / 1 !important; 
 }
-.pro3 { background-color: rgba(0, 0, 0, 0);
+.pro3 {  
      
     border: none;
     margin: 0;

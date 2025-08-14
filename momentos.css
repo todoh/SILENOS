@@ -142,8 +142,8 @@ align-items: end;}
     position: absolute;
     width: 150px;
     height: 150px;
-    background-color: var(--background-color-light, #fff);
-    border: 2px solid var(--accent-color, #007bff);
+    background-color: transparent;
+    border: 0px solid var(--accent-color, #007bff);
     border-radius: 8px;
     color: var(--text-color, #333);
     display: flex;
@@ -352,14 +352,7 @@ align-items: end;}
     gap: 5px;
 }
 
-.btn-cargar-imagen:hover {
-    background-color: rgba(0, 0, 0, 0.7);
-}
-
-.btn-cargar-imagen i {
-    font-size: 12px;
-}
-
+ 
  
 
 /* Muestra el botón de carga al pasar el ratón por encima del área, si hay imagen */
