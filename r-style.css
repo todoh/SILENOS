@@ -30,7 +30,7 @@
     left: 29%;
     width: 68%;
     height: 89%;
-
+padding: 8%;
     flex-grow: 1;
     overflow: auto;
     text-align: center;
