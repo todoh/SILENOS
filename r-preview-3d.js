@@ -262,9 +262,8 @@ function loadWorldFromData(data) {
                 }
 
                 if (!entityData) return;
-
-                const objX = (chunkX * CHUNK_SIZE) + (obj.subX * SUB_CELL_SIZE) + (SUB_CELL_SIZE / 2);
-                const objZ = (chunkZ * CHUNK_SIZE) + (obj.subZ * SUB_CELL_SIZE) + (SUB_CELL_SIZE / 2);
+const objX = (chunkX * CHUNK_SIZE) + obj.x;
+        const objZ = (chunkZ * CHUNK_SIZE) + obj.z;
 
                 if (isCustom) {
                     let objectMesh = null;

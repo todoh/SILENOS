@@ -4,7 +4,7 @@
 
 const GRID_WIDTH = 40;
 const GRID_HEIGHT = 30;
-const SUBGRID_SIZE = 5;
+const SUBGRID_SIZE = 10;
 
 // Almacena todos los datos del mapa y la posición inicial del jugador.
 let worldData = {
@@ -15,7 +15,7 @@ let worldData = {
 };
 
 // Objeto que define las herramientas de texturas, entidades base y entidades personalizadas.
-const tools = {
+let tools = {
     textures: {
         grass: { color: '#7C9C4A', name: 'Hierba', isPassable: true },
         sand: { color: '#EDC9AF', name: 'Arena', isPassable: true },
@@ -26,6 +26,7 @@ const tools = {
         nieve: { color: '#e4e4e4ff', name: 'Nieve', isPassable: true },
     },
     entities: {eraser: { name: "Borrador", icon: "❌", isSolid: false },
+     selector: { name: "Selector", icon: "👆", isSolid: false },
         playerStart: { icon: '🚩', name: 'Inicio del Jugador', isSolid: false, radius: 0 },
             lamppost: {
             icon: '💡', // Un emoji o ícono de respaldo
@@ -179,9 +180,8 @@ const tools = {
         }
       ]
     }
-  }
- 
-,     stick: {
+  },    
+   stick: {
             name: 'Palo',
             icon: '🪵', // Emoji de respaldo
             isSolid: false,      // El jugador puede pasar por encima
@@ -1136,6 +1136,7 @@ potted_tropical_plant: {
  
 /**
  * Construye un objeto THREE.Group a partir de una definición JSON.
+ * ¡VERSIÓN MEJORADA Y COMPATIBLE!
  * @param {object} jsonData - El objeto JSON que define el modelo.
  * @returns {THREE.Group} El grupo de mallas que representa el modelo.
  */
@@ -1168,7 +1169,7 @@ function createModelFromJSON(jsonData) {
                         geoDef.radiusTop ?? geoDef.radius,
                         geoDef.radiusBottom ?? geoDef.radius,
                         geoDef.height,
-                        geoDef.radialSegments || 8
+                        geoDef.radialSegments || 16 // Aumentado para mejor calidad visual
                     );
                     break;
                 case 'Icosahedron':
@@ -1182,9 +1183,10 @@ function createModelFromJSON(jsonData) {
                     );
                     break;
                 case 'Box':
-                    // Usamos la escala aquí como fallback si no se definen las dimensiones
+                    // **LÓGICA MEJORADA PARA COMPATIBILIDAD**
+                    // Usa width/height/depth si existen (nuevo formato), si no, usa 1x1x1 (formato antiguo para escalar).
                     geometry = new THREE.BoxGeometry(
-                        geoDef.width || 1, // Por defecto 1, la escala se aplica después
+                        geoDef.width || 1,
                         geoDef.height || 1,
                         geoDef.depth || 1
                     );
@@ -1203,11 +1205,17 @@ function createModelFromJSON(jsonData) {
         
         if (part.name) mesh.name = part.name;
         
+        // Posicionamiento
         mesh.position.set(position.x, position.y, position.z);
-        mesh.rotation.set(rotation.x, rotation.y, rotation.z);
         
-        // --- LÍNEA CLAVE AÑADIDA ---
-        // Aquí aplicamos la escala a la pieza.
+        // **CORRECCIÓN CLAVE: CONVERSIÓN DE GRADOS A RADIANES**
+        // Multiplicamos los valores de rotación (que asumimos en grados) por el factor de conversión.
+        const radX = (rotation.x || 0) * (Math.PI / 180);
+        const radY = (rotation.y || 0) * (Math.PI / 180);
+        const radZ = (rotation.z || 0) * (Math.PI / 180);
+        mesh.rotation.set(radX, radY, radZ);
+        
+        // Escalado (para mantener compatibilidad con modelos antiguos)
         mesh.scale.set(scale.x, scale.y, scale.z);
         
         mesh.castShadow = true;

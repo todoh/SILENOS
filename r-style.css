@@ -171,20 +171,38 @@ object-fit: contain
     cursor: pointer;
     transition: transform 0.2s ease-out;
     margin: 20px;
-    gap: 5px;
+    gap: 1px;
 }
 
 /* El resto de tus estilos (modal, grid-cell, etc.) pueden permanecer igual */
 .grid-cell {
+    position: relative; /* Clave para el posicionamiento libre de entidades */
     width: 125px;
     height: 125px;
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    grid-template-rows: repeat(5, 1fr);
+    border: 0px solid #444;
+    padding: 0px;
+}
  
-    padding: 2px;
+
+.entity-marker {
+    position: absolute;
+    transform: translate(-50%, -50%); /* Centra el marcador en el punto exacto del clic */
+    width: 20px;
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+    font-size: 16px;
+    pointer-events: none; /* Para que el clic atraviese el marcador y vaya al chunk */
 }
 
+.entity-marker img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
 .grid-cell.texture-grass { background-color: #7C9C4A; }
 .grid-cell.texture-sand { background-color: #EDC9AF; }
 .grid-cell.texture-stone { background-color: #615953; }
@@ -192,21 +210,8 @@ object-fit: contain
 .grid-cell.texture-forest { background-color: #3E7C4F; }
 .grid-cell.texture-empty { background-color: #33333333; }
 
-.subgrid-cell {
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 18px;
-    transition: background-color 0.2s;
-    color: white;
-}
-
-.subgrid-cell:hover {
-    background-color: rgba(135, 207, 235, 0);
-    border: 1px solid #87ceeb;
-    color: black;
-}
+ 
+ 
 
 /* --- ESTILOS MODAL DE PREVISUALIZACIÓN --- */
 /* EN: r-style.css */
@@ -466,6 +471,22 @@ object-fit: contain
 /* --- FIN: NUEVOS ESTILOS DE CUADRÍCULA --- */
 
 
- 
+ /* Estilos para el nuevo lienzo de dibujado */
+#r-map-canvas {
+    background-color: #1c1e21;
+    cursor: crosshair;
+    /* La transformación para el zoom se aplicará aquí desde JS */
+}
+
+/* Estilos para los controles del pincel */
+#r-brush-controls {
+    border: 1px solid #555;
+}
+#r-brush-controls label {
+    font-size: 20px;
+}
+#r-brush-size-slider {
+    cursor: pointer;
+}
 
 /* El resto de tus estilos (modal, grid-cell, etc.) pueden permanecer igual */
