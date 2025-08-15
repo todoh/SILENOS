@@ -627,6 +627,11 @@ function inicializarInteraccionPersonajes() {
 document.addEventListener('DOMContentLoaded', () => {
     inicializarInteraccionPersonajes();
     inicializarControlesDeFiltro();
+    inicializarPrevisualizacion3DEnVivo();
+
+ 
+    
+ 
 });
 
 
@@ -752,7 +757,7 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     cajaPromptVisual.value = promptVisual;
     cajaPromptVisual.placeholder = 'Prompt Visual...';
     cajaPromptVisual.className = 'prompt-visualh';
-
+ cajaPromptVisual.addEventListener('input', debouncedInputHandler);
     // --- Wrapper para todos los botones de acción ---
     const buttonsWrapper = document.createElement('div');
     buttonsWrapper.className = 'edit-buttons-wrapper';
@@ -2313,3 +2318,109 @@ function agregarNuevoDato(nuevoDato) {
     guardarDatos();
     console.log(`Dato '${nuevoDato.nombre}' agregado y guardado correctamente.`);
 }
+
+
+// =========================================================================
+// INICIO: Previsualización 3D en Tiempo Real desde Prompt Visual
+// =========================================================================
+
+let debounceTimer;
+
+/**
+ * Función principal que se activa al editar un 'Prompt Visual'.
+ * Detecta si el texto es un JSON 3D válido y, de ser así, genera y aplica una previsualización.
+ * @param {Event} event - El evento 'input' del textarea.
+ */
+async function handleVisualPromptInput(event) {
+    const textarea = event.target;
+    const texto = textarea.value.trim();
+    const personajeDIV = textarea.closest('.personaje');
+    if (!personajeDIV) return;
+
+    // Resetea el SVG si el contenido no es un JSON de modelo 3D
+    const limpiarImagenPrevia = () => {
+        const imgPreview = personajeDIV.querySelector('.personaje-visual img');
+        const imgEditor = personajeDIV.querySelector('.edit-preview-image');
+        if (imgPreview) imgPreview.src = '';
+        if (imgEditor) imgEditor.src = '';
+        delete personajeDIV.dataset.svgContent; // Limpia el SVG guardado
+    };
+
+    let modelData = null;
+    try {
+        const parsed = JSON.parse(texto);
+        // Comprobamos las posibles estructuras de un modelo 3D
+        if (parsed && typeof parsed === 'object' && (Array.isArray(parsed.objects) || (parsed.model && Array.isArray(parsed.model.objects)))) {
+            modelData = parsed.model || parsed; // Usamos el objeto 'model' si existe, si no, el objeto entero
+        } else {
+            limpiarImagenPrevia();
+            return;
+        }
+    } catch (e) {
+        // Si no es un JSON válido, limpiamos cualquier previsualización 3D anterior y salimos.
+        limpiarImagenPrevia();
+        return;
+    }
+
+    // Si tenemos datos de modelo válidos, generamos la previsualización
+    if (modelData) {
+        try {
+            // Usamos la función que ya existe en r-editor.js
+            if (typeof generate3DPreview !== 'function') {
+                console.warn("La función generate3DPreview() no está disponible.");
+                return;
+            }
+
+            const previewDataUrl = await generate3DPreview(modelData);
+
+            // Actualizamos la imagen en la vista principal de Datos
+            const imgPreview = personajeDIV.querySelector('.personaje-visual img');
+            if (imgPreview) {
+                imgPreview.src = previewDataUrl;
+                imgPreview.classList.remove('hidden');
+            }
+
+            // Actualizamos la imagen en la vista de edición del Dato
+            const imgEditor = personajeDIV.querySelector('.edit-preview-image');
+            if (imgEditor) {
+                imgEditor.src = previewDataUrl;
+                imgEditor.style.display = 'block';
+            }
+            
+            // Guardamos el JSON como si fuera un SVG para mantener la consistencia
+            personajeDIV.dataset.svgContent = texto; 
+
+        } catch (error) {
+            console.error("Error al generar la previsualización 3D en tiempo real:", error);
+        }
+    }
+}
+
+/**
+ * Inicializa los listeners en TODOS los textareas de 'Prompt Visual' existentes.
+ * Utiliza un 'debounce' para no sobrecargar el navegador con renders mientras se escribe.
+ */
+function inicializarPrevisualizacion3DEnVivo() {
+    const todosLosPrompts = document.querySelectorAll('.prompt-visualh');
+    todosLosPrompts.forEach(textarea => {
+        // Elimina listeners antiguos para evitar duplicados si se llama varias veces
+        textarea.removeEventListener('input', debouncedInputHandler); 
+        
+        // Añade el nuevo listener con debounce
+        textarea.addEventListener('input', debouncedInputHandler);
+    });
+    console.log(`Inicializados ${todosLosPrompts.length} listeners para previsualización 3D en vivo.`);
+}
+
+/**
+ * Manejador de evento con 'debounce' para evitar ejecuciones excesivas.
+ * @param {Event} event 
+ */
+function debouncedInputHandler(event) {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        handleVisualPromptInput(event);
+    }, 750); // Espera 750ms después de la última pulsación antes de renderizar
+}
+
+ 

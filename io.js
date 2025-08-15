@@ -452,6 +452,8 @@ function cargarDatosEnLaApp(data) {
     console.log("Datos del proyecto cargados en la aplicación.");
     renderizarVisorDeLibros();
     if (typeof flexear === 'function') flexear('silenos');
+
+
 }
 
  

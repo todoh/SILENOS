@@ -22,6 +22,8 @@ const tools = {
         stone: { color: '#615953', name: 'Roca', isPassable: true },
         water: { color: '#3B698B', name: 'Agua', isPassable: false },
         forest: { color: '#3E7C4F', name: 'Bosque', isPassable: true },
+        lava: { color: '#df742dff', name: 'Lava', isPassable: false },
+        nieve: { color: '#e4e4e4ff', name: 'Nieve', isPassable: true },
     },
     entities: {eraser: { name: "Borrador", icon: "❌", isSolid: false },
         playerStart: { icon: '🚩', name: 'Inicio del Jugador', isSolid: false, radius: 0 },
@@ -168,8 +170,7 @@ const tools = {
           "position": { "x": 0, "y": 16, "z": 0 }
         },
         
-        // --- PUNTA DEL ÁRBOL ---
-        // Un cono final y afilado para la copa.
+    
         {
           "name": "tree_top",
           "geometry": { "type": "Cylinder", "radiusTop": 0, "radiusBottom": 1.0, "height": 2.5, "radialSegments": 12 },
@@ -1131,6 +1132,8 @@ potted_tropical_plant: {
 // === UTILIDAD PARA CREAR MODELOS 3D (ACTUALIZADA) ======================
 // =======================================================================
 
+ 
+ 
 /**
  * Construye un objeto THREE.Group a partir de una definición JSON.
  * @param {object} jsonData - El objeto JSON que define el modelo.
@@ -1152,41 +1155,63 @@ function createModelFromJSON(jsonData) {
 
     parts.forEach(part => {
         let geometry;
-        const geoDef = part.geometry;
-        const matDef = part.material;
+        const geoDef = part.geometry || {};
+        const matDef = part.material || {};
+        const scale = part.scale || { x: 1, y: 1, z: 1 };
+        const position = part.position || { x: 0, y: 0, z: 0 };
+        const rotation = part.rotation || { x: 0, y: 0, z: 0 };
 
         try {
-            const geoType = geoDef.type || part.geometry;
-            const geoParams = geoDef || part.geometryParams;
-
-            // Se normalizan los nombres para que CylinderGeometry pueda crear conos
-            if (geoType.includes('Cylinder')) {
-                geometry = new THREE.CylinderGeometry(geoParams.radiusTop ?? 0, geoParams.radiusBottom ?? geoParams.radius, geoParams.height, geoParams.radialSegments);
-            } else if (geoType.includes('Icosahedron')) {
-                geometry = new THREE.IcosahedronGeometry(geoParams.radius, geoParams.detail);
-            } else if (geoType.includes('Sphere')) {
-                geometry = new THREE.SphereGeometry(geoParams.radius, geoParams.widthSegments ?? geoParams.width, geoParams.heightSegments ?? geoParams.height);
-            } else if (geoType.includes('Box')) {
-                const scale = part.scale || {x: 1, y: 1, z: 1};
-                geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
-            } else {
-                console.warn(`Geometría no soportada: ${geoType}. Usando un cubo.`);
-                geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+            switch (geoDef.type) {
+                case 'Cylinder':
+                    geometry = new THREE.CylinderGeometry(
+                        geoDef.radiusTop ?? geoDef.radius,
+                        geoDef.radiusBottom ?? geoDef.radius,
+                        geoDef.height,
+                        geoDef.radialSegments || 8
+                    );
+                    break;
+                case 'Icosahedron':
+                    geometry = new THREE.IcosahedronGeometry(geoDef.radius, geoDef.detail || 0);
+                    break;
+                case 'Sphere':
+                    geometry = new THREE.SphereGeometry(
+                        geoDef.radius,
+                        geoDef.widthSegments || 16,
+                        geoDef.heightSegments || 16
+                    );
+                    break;
+                case 'Box':
+                    // Usamos la escala aquí como fallback si no se definen las dimensiones
+                    geometry = new THREE.BoxGeometry(
+                        geoDef.width || 1, // Por defecto 1, la escala se aplica después
+                        geoDef.height || 1,
+                        geoDef.depth || 1
+                    );
+                    break;
+                default:
+                    console.warn(`Geometría no soportada: ${geoDef.type}. Usando un cubo de respaldo.`);
+                    geometry = new THREE.BoxGeometry(1, 1, 1);
             }
         } catch (e) {
             console.error(`Error creando geometría:`, e, part);
-            geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+            geometry = new THREE.BoxGeometry(1, 1, 1);
         }
 
-        const color = matDef ? matDef.color : part.color;
-        const material = matDef ? new THREE.MeshStandardMaterial(matDef) : new THREE.MeshLambertMaterial({ color });
-        
+        const material = new THREE.MeshStandardMaterial(matDef);
         const mesh = new THREE.Mesh(geometry, material);
         
         if (part.name) mesh.name = part.name;
-        if (part.position) mesh.position.set(part.position.x || 0, part.position.y || 0, part.position.z || 0);
+        
+        mesh.position.set(position.x, position.y, position.z);
+        mesh.rotation.set(rotation.x, rotation.y, rotation.z);
+        
+        // --- LÍNEA CLAVE AÑADIDA ---
+        // Aquí aplicamos la escala a la pieza.
+        mesh.scale.set(scale.x, scale.y, scale.z);
         
         mesh.castShadow = true;
+        mesh.receiveShadow = true;
         group.add(mesh);
     });
 

@@ -18,6 +18,7 @@ const editorDOM = {
     entityPalette: document.getElementById('r-entity-palette'),
     previewButton: document.getElementById('r-preview-button'),
     saveButton: document.getElementById('r-save-button'),
+    exportHtmlButton: document.getElementById('r-export-html-button'),
     loadWorldSelect: document.getElementById('r-load-world-select'),
     saveToCharacterButton: document.getElementById('r-save-to-character-btn'),
     previewModal: document.getElementById('r-preview-modal'),
@@ -28,13 +29,120 @@ const editorDOM = {
     characterModal: document.getElementById('r-character-modal-overlay'),
     characterModalCloseBtn: document.querySelector('#r-character-modal-overlay .character-modal-close-button'),
     characterGrid: document.getElementById('r-character-grid'),
-     // ▼▼▼ AÑADE ESTAS NUEVAS REFERENCIAS AL MODAL DE EDICIÓN ▼▼▼
     editEntityModal: document.getElementById('r-edit-entity-modal'),
     editEntityCloseBtn: document.getElementById('r-edit-entity-close-btn'),
     editEntitySaveBtn: document.getElementById('r-edit-entity-save-btn'),
     editEntityNameSpan: document.getElementById('r-edit-entity-name'),
     editColisionTipoSelect: document.getElementById('edit-colision-tipo'),
+    
 };
+
+// =======================================================================
+// === FUNCIÓN DE EXPORTACIÓN A HTML (CORREGIDA) =========================
+// =======================================================================
+
+/**
+ * Recopila todos los recursos necesarios (JS, CSS, datos del mundo y entidades personalizadas) 
+ * y los empaqueta en un único archivo HTML auto-ejecutable que se descarga.
+ */
+async function exportStandaloneHTML() {
+    try {
+        const worldNameRaw = document.getElementById('r-load-world-select')?.value || 'Mi-Mundo';
+        const worldName = worldNameRaw.replace(WORLD_DATA_NAME_PREFIX, '').replace(/\s+/g, '-');
+        const fileName = `${worldName}.html`;
+
+        alert(`Iniciando la exportación de "${fileName}". El proceso puede tardar unos segundos...`);
+
+        const rDataJsContent = await fetch(document.querySelector('script[src*="r-data.js"]').src).then(res => res.text());
+        let rPreview3dJsContent = await fetch(document.querySelector('script[src*="r-preview-3d.js"]').src).then(res => res.text());
+
+        // --- PARCHES DE CÓDIGO PARA EL ARCHIVO EXPORTADO ---
+
+        // 1. Eliminar la dependencia del modal del editor
+        rPreview3dJsContent = rPreview3dJsContent
+            .replace("document.getElementById('r-preview-modal').style.display = 'flex';", "")
+            .replace("document.getElementById('r-preview-modal').style.display = 'none';", "");
+
+        // 2. <-- ¡CORRECCIÓN CLAVE! Anular la función que busca imágenes en el DOM del editor.
+        rPreview3dJsContent = rPreview3dJsContent.replace(
+            /function findCharacterImageSrc\s*\([^)]*\)\s*\{[\s\S]*?\}/, 
+            'function findCharacterImageSrc(dataRefName) { return null; }'
+        );
+
+        // 3. <-- ¡CORRECCIÓN CLAVE! Modificar la lógica de carga para que use los datos internos.
+        rPreview3dJsContent = rPreview3dJsContent.replace(
+            "iconSrc = findCharacterImageSrc(obj.dataRef);",
+            "iconSrc = entityData ? entityData.icon : null;"
+        );
+        
+        // --- FIN DE LOS PARCHES ---
+
+        const worldDataJson = JSON.stringify(worldData, null, 2);
+        const customEntitiesJson = JSON.stringify(tools.customEntities, null, 2);
+
+        const htmlTemplate = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor de Mundo: ${worldName}</title>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; }
+        #r-game-container { width: 100%; height: 100%; }
+        .info-box { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.5); color: white; padding: 10px; border-radius: 5px; font-family: sans-serif; }
+    </style>
+</head>
+<body>
+    <div id="r-game-container"></div>
+    <div class="info-box">Mundo: ${worldName}</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.138.3/build/three.min.js"><\/script>
+
+    <script id="r-data-script">
+        ${rDataJsContent}
+    <\/script>
+    
+    <script id="exported-world-data">
+        worldData = ${worldDataJson};
+    <\/script>
+
+    <script id="exported-custom-entities">
+        if (window.tools) {
+            window.tools.customEntities = ${customEntitiesJson};
+        }
+    <\/script>
+
+    <script id="r-preview-3d-script">
+        ${rPreview3dJsContent}
+    <\/script>
+
+    <script id="launcher">
+        window.addEventListener('load', () => {
+            console.log("Iniciando vista previa del mundo exportado...");
+            startPreview();
+        });
+    <\/script>
+</body>
+</html>`;
+
+        const blob = new Blob([htmlTemplate], { type: 'text/html' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+
+        alert(`¡"${fileName}" exportado con éxito!`);
+
+    } catch (error) {
+        console.error("Error durante la exportación a HTML:", error);
+        alert("Ocurrió un error al intentar exportar el archivo. Revisa la consola para más detalles.");
+    }
+}
+
 
 function renderGrid() {
     editorDOM.mapGrid.innerHTML = '';
@@ -65,38 +173,40 @@ function renderGrid() {
                         let iconSrc = null;
                         let modelType = entity.modelType;
 
-                        if (entity.dataRef) {
-                            const characterDataElements = document.querySelectorAll('#listapersonajes .personaje');
-                            for (const charElement of characterDataElements) {
-                                const nombreInput = charElement.querySelector('.nombreh');
-                                if (nombreInput && nombreInput.value === entity.dataRef) {
-                                    const imgElement = charElement.querySelector('.personaje-visual img');
-                                    if (imgElement) {
-                                        iconSrc = imgElement.src;
+                        // **MODIFICADO**: Detectar si es un modelo 3D por su tipo
+                        if (modelType === 'json3d') {
+                             subCell.innerHTML = `<span style="font-size: 20px;">🧊</span>`;
+                             subCell.title = entity.dataRef || entity.type;
+                        } else {
+                            if (entity.dataRef) {
+                                const characterDataElements = document.querySelectorAll('#listapersonajes .personaje');
+                                for (const charElement of characterDataElements) {
+                                    const nombreInput = charElement.querySelector('.nombreh');
+                                    if (nombreInput && nombreInput.value === entity.dataRef) {
+                                        const imgElement = charElement.querySelector('.personaje-visual img');
+                                        if (imgElement) {
+                                            iconSrc = imgElement.src;
+                                        }
+                                        break;
                                     }
-                                    break;
+                                }
+                            } 
+                            else if (entity.icon) {
+                                iconSrc = entity.icon;
+                            } 
+                            else {
+                                const toolData = tools.entities[entity.type];
+                                if (toolData) {
+                                    subCell.textContent = toolData.icon || '❓';
                                 }
                             }
-                        } 
-                        else if (entity.icon) {
-                            iconSrc = entity.icon;
-                        } 
-                        else {
-                            const toolData = tools.entities[entity.type];
-                            if (toolData) {
-                                subCell.textContent = toolData.icon || '❓';
-                            }
-                        }
 
-                        if (iconSrc) {
-                            if (modelType === 'json3d') {
-                                subCell.innerHTML = `<span style="font-size: 20px;">🧊</span>`;
-                            } else {
+                            if (iconSrc) {
                                 subCell.innerHTML = `<img src="${iconSrc}" style="width: 20px; height: 20px; object-fit: contain;" alt="${entity.dataRef || ''}">`;
+                            } else if (entity.dataRef) {
+                                subCell.innerHTML = `❓`;
+                                subCell.title = `Referencia rota a: ${entity.dataRef}`;
                             }
-                        } else if (entity.dataRef) {
-                            subCell.innerHTML = `❓`;
-                            subCell.title = `Referencia rota a: ${entity.dataRef}`;
                         }
                     }
 
@@ -113,9 +223,6 @@ function renderGrid() {
 }
  
 
-// EN: r-editor.js
-// REEMPLAZA esta función completa
-
 function handleGridClick(event) {
     if (event.button !== 0) return;
     const subCell = event.target.closest('.subgrid-cell');
@@ -128,9 +235,7 @@ function handleGridClick(event) {
     const subZ = parseInt(subCell.dataset.subZ, 10);
     const chunk = worldData.chunks[chunkId];
 
-    // Lógica para el modo "Seleccionar Coordenada" (sin cambios)
     if (editorState.isPickingCoordinate) {
-        // ... (el código existente para este bloque no necesita cambios)
         if (!editorState.entityBeingEdited) {
             console.warn("Se intentó seleccionar coordenada sin una entidad en edición. Saliendo del modo selección.");
             editorState.isPickingCoordinate = false;
@@ -165,37 +270,31 @@ function handleGridClick(event) {
         return;
     }
 
-    // ▼▼▼ INICIO DE LA LÓGICA REESTRUCTURADA ▼▼▼
     const existingObjectIndex = chunk.objects.findIndex(obj => obj.subX === subX && obj.subZ === subZ);
     
-    // 1. HERRAMIENTA BORRADOR
     if (activeTool.id === 'eraser') {
         let somethingWasDeleted = false;
-        // Borrar objeto si existe
         if (existingObjectIndex > -1) {
             chunk.objects.splice(existingObjectIndex, 1);
             somethingWasDeleted = true;
         }
-        // Borrar punto de inicio del jugador si existe
         const playerStart = worldData.metadata.playerStartPosition;
         if (playerStart && playerStart.chunkX === chunkX && playerStart.chunkZ === chunkZ && playerStart.subX === subX && playerStart.subZ === subZ) {
-            worldData.metadata.playerStartPosition = null; // Lo eliminamos
+            worldData.metadata.playerStartPosition = null;
             somethingWasDeleted = true;
         }
         if (somethingWasDeleted) {
             renderGrid();
         }
-        return; // Terminamos la acción aquí
+        return;
     }
 
-    // 2. HACER CLIC EN UN OBJETO EXISTENTE (SIN BORRADOR)
     if (existingObjectIndex > -1) {
         const existingObject = chunk.objects[existingObjectIndex];
         openEntityEditorModal(existingObject);
         return;
     }
 
-    // 3. PINTAR EN UNA CELDA VACÍA
     if (activeTool.category === 'texture') {
         chunk.groundTextureKey = activeTool.id;
     } else if (activeTool.category === 'entity' || activeTool.category === 'customEntity') {
@@ -207,21 +306,16 @@ function handleGridClick(event) {
                 const toolData = tools.customEntities[activeTool.id];
                 if (toolData) {
                     newObject.dataRef = toolData.dataRef;
-                    newObject.modelType = toolData.modelType;
+                    newObject.modelType = toolData.modelType; // **IMPORTANTE**: Guardar el tipo de modelo
                 }
             }
             chunk.objects.push(newObject);
         }
     }
     
-    renderGrid(); // Actualiza la vista después de pintar
-    // ▲▲▲ FIN DE LA LÓGICA REESTRUCTURADA ▲▲▲
+    renderGrid();
 }
-/**
- * Busca el elemento DOM de un "Dato" en #listapersonajes por su nombre.
- * @param {string} name - El nombre del dato a buscar.
- * @returns {HTMLElement|null} El elemento del DOM o null si no se encuentra.
- */
+
 function findDatoElementByName(name) {
     const characterDataElements = document.querySelectorAll('#listapersonajes .personaje');
     for (const charElement of characterDataElements) {
@@ -231,14 +325,6 @@ function findDatoElementByName(name) {
     }
     return null;
 }
-
-/**
- * Abre el modal de edición, lo rellena con las propiedades actuales del objeto
- * y prepara el botón de guardado.
- * @param {object} entity - El objeto de la entidad del grid cuyos datos se van a editar.
- */
-// EN: r-editor.js
-// REEMPLAZA ESTA FUNCIÓN
 
 function openEntityEditorModal(entity) {
     if (!entity.dataRef) {
@@ -252,10 +338,7 @@ function openEntityEditorModal(entity) {
         return;
     }
 
-    // ▼▼▼ AÑADE ESTA LÍNEA ▼▼▼
-    // Guardamos la referencia al objeto del mapa que estamos editando
     editorState.entityBeingEdited = entity;
-    // ▲▲▲ FIN DEL AÑADIDO ▲▲▲
 
     const props = procesarPropiedadesVideojuego(datoElement);
     renderizarRutaMovimiento(props.movimiento || []);
@@ -264,7 +347,9 @@ function openEntityEditorModal(entity) {
     document.getElementById('edit-tamano-x').value = props.tamano?.x || 1;
     document.getElementById('edit-tamano-y').value = props.tamano?.y || 1.8;
     document.getElementById('edit-tamano-z').value = props.tamano?.z || 1;
-    
+    document.getElementById('edit-rotacion-y').value = props.rotacionY || 0;
+    document.getElementById('edit-es-cubo-3d').checked = props.esCubo3D || false;
+    document.getElementById('edit-es-cilindro-3d').checked = props.esCilindro3D || false;
     document.getElementById('edit-colision-tipo').value = props.colision?.tipo || 'ninguna';
     document.getElementById('edit-colision-radio').value = props.colision?.radio || 0.5;
     document.getElementById('edit-colision-altura').value = props.colision?.altura || 1.8;
@@ -275,10 +360,6 @@ function openEntityEditorModal(entity) {
     editorDOM.editEntityModal.style.display = 'flex';
 }
 
-/**
- * Lee los valores del modal, reconstruye el string del promptVisual y lo
- * guarda en el textarea del "Dato" original.
- */
 function saveEntityProperties() {
     const datoName = editorDOM.editEntityModal.dataset.editingDatoName;
     if (!datoName) return;
@@ -289,20 +370,20 @@ function saveEntityProperties() {
         return;
     }
 
-    // 1. Lee los nuevos valores del formulario del modal
     const newProps = {
         tamano: {
             x: parseFloat(document.getElementById('edit-tamano-x').value),
             y: parseFloat(document.getElementById('edit-tamano-y').value),
             z: parseFloat(document.getElementById('edit-tamano-z').value)
         },
+        rotacionY: parseFloat(document.getElementById('edit-rotacion-y').value),
+        esCubo3D: document.getElementById('edit-es-cubo-3d').checked,
+        esCilindro3D: document.getElementById('edit-es-cilindro-3d').checked,
         colision: {
             tipo: document.getElementById('edit-colision-tipo').value,
             radio: parseFloat(document.getElementById('edit-colision-radio').value),
             altura: parseFloat(document.getElementById('edit-colision-altura').value)
         },
-
-     // ▼▼▼ NUEVA LÓGICA PARA LEER LA RUTA DESDE LA UI ▼▼▼
         movimiento: []
     };
     
@@ -321,34 +402,25 @@ function saveEntityProperties() {
         }
         newProps.movimiento.push(pasoData);
     });
-    // ▲▲▲ FIN DE LA NUEVA LÓGICA ▲▲▲
 
-    // 2. Reconstruye el contenido del promptVisual
     const KEYWORD = 'Videojuego';
     const SEPARATOR = '---';
     const promptVisualTextarea = datoElement.querySelector('.descripcionh');
     const oldText = promptVisualTextarea.value;
     
-    // Extraemos la descripción de la IA (el texto después del separador)
     const separatorIndex = oldText.indexOf(SEPARATOR);
     const descriptionText = separatorIndex > -1 ? oldText.substring(separatorIndex) : '';
 
-    // Creamos el nuevo contenido
     const newJsonString = JSON.stringify(newProps, null, 2);
     promptVisualTextarea.value = `${KEYWORD}\n${newJsonString}\n\n${descriptionText}`.trim();
 
     alert(`Propiedades de "${datoName}" actualizadas!`);
     editorDOM.editEntityModal.style.display = 'none';
 }
-// EN: r-editor.js (añade este bloque de código nuevo)
 
-/**
- * Renderiza la lista de pasos de una ruta de movimiento en el modal.
- * @param {Array} ruta - El array de objetos de movimiento.
- */
 function renderizarRutaMovimiento(ruta) {
     const listaEl = document.getElementById('edit-movimiento-lista');
-    listaEl.innerHTML = ''; // Limpia la lista actual
+    listaEl.innerHTML = '';
 
     if (!ruta || ruta.length === 0) {
         listaEl.innerHTML = '<p style="color: #999; font-style: italic;">Sin ruta de movimiento.</p>';
@@ -373,17 +445,15 @@ function renderizarRutaMovimiento(ruta) {
 
         pasoEl.innerHTML = `<span>${index + 1}. ${textoPaso}</span> <button title="Eliminar paso">&times;</button>`;
         pasoEl.querySelector('button').onclick = () => {
-            ruta.splice(index, 1); // Elimina el paso del array
-            renderizarRutaMovimiento(ruta); // Vuelve a renderizar la lista
+            ruta.splice(index, 1);
+            renderizarRutaMovimiento(ruta);
         };
 
         listaEl.appendChild(pasoEl);
     });
 }
  
- 
 function iniciarModoSeleccionCoordenada() {
-    // Primero, nos aseguramos de que realmente hay una entidad en edición.
     if (!editorState.entityBeingEdited) {
         alert("Error: No hay ninguna entidad seleccionada para editar.");
         return;
@@ -394,24 +464,26 @@ function iniciarModoSeleccionCoordenada() {
     editorDOM.mapGrid.style.cursor = 'crosshair';
 }
  
- 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Lógica de inicialización existente (no cambia) ---
     if (!worldData.metadata.playerStartPosition) {
-    console.log("No se encontró una posición de inicio. Estableciendo por defecto en (0,0).");
-    worldData.metadata.playerStartPosition = { chunkX: 0, chunkZ: 0, subX: 0, subZ: 0 };
-}
+        console.log("No se encontró una posición de inicio. Estableciendo por defecto en (0,0).");
+        worldData.metadata.playerStartPosition = { chunkX: 0, chunkZ: 0, subX: 0, subZ: 0 };
+    }
 
-populatePalettes();
-renderGrid();
-selectTool('texture', 'grass');
-populateWorldList();
+    populatePalettes();
+    renderGrid();
+    selectTool('texture', 'grass');
+    populateWorldList();
 
-    // --- Listeners existentes (no cambian) ---
     editorDOM.mapGrid.addEventListener('mousedown', handleGridClick);
     editorDOM.zoomInButton.addEventListener('click', zoomIn);
     editorDOM.zoomOutButton.addEventListener('click', zoomOut);
     editorDOM.saveButton.addEventListener('click', saveWorldToCharacter);
+    
+    if (editorDOM.exportHtmlButton) {
+        editorDOM.exportHtmlButton.addEventListener('click', exportStandaloneHTML);
+    }
+    
     if (editorDOM.saveToCharacterButton) {
         editorDOM.saveToCharacterButton.addEventListener('click', saveWorldToCharacter);
     }
@@ -424,14 +496,27 @@ populateWorldList();
         editorDOM.loadWorldSelect.addEventListener('click', populateWorldList);
     }
 
-    // --- Listeners del modal de edición principal (no cambian) ---
     if (editorDOM.editEntityModal) {
         editorDOM.editEntityCloseBtn.addEventListener('click', () => editorDOM.editEntityModal.style.display = 'none');
         editorDOM.editEntitySaveBtn.addEventListener('click', saveEntityProperties);
         editorDOM.editColisionTipoSelect.addEventListener('change', updateCollisionFieldsVisibility);
+
+        const cuboCheckbox = document.getElementById('edit-es-cubo-3d');
+        const cilindroCheckbox = document.getElementById('edit-es-cilindro-3d');
+
+        cuboCheckbox.addEventListener('change', () => {
+            if (cuboCheckbox.checked) {
+                cilindroCheckbox.checked = false;
+            }
+        });
+
+        cilindroCheckbox.addEventListener('change', () => {
+            if (cilindroCheckbox.checked) {
+                cuboCheckbox.checked = false;
+            }
+        });
     }
     
-    // ▼▼▼ NUEVA LÓGICA PARA LOS BOTONES DE MOVIMIENTO ▼▼▼
     const btnAnadirAleatorio = document.getElementById('movimiento-anadir-aleatorio-btn');
     const btnSeleccionarCoord = document.getElementById('movimiento-seleccionar-coord-btn');
     const paramsAleatorioContainer = document.getElementById('movimiento-params-aleatorio');
@@ -439,7 +524,6 @@ populateWorldList();
 
     if (btnAnadirAleatorio) {
         btnAnadirAleatorio.addEventListener('click', () => {
-            // Muestra los parámetros para el paso aleatorio
             paramsAleatorioContainer.style.display = 'block';
         });
     }
@@ -450,10 +534,7 @@ populateWorldList();
 
     if (btnConfirmarAleatorio) {
         btnConfirmarAleatorio.addEventListener('click', () => {
-            // Oculta los parámetros de nuevo
             paramsAleatorioContainer.style.display = 'none';
-            
-            // Misma lógica que usábamos antes para añadir un paso
             const listaEl = document.getElementById('edit-movimiento-lista');
             let rutaActual = [];
             const pasosActuales = listaEl.querySelectorAll('.ruta-paso');
@@ -471,14 +552,11 @@ populateWorldList();
             };
             
             rutaActual.push(nuevoPaso);
-            renderizarRutaMovimiento(rutaActual); // Re-renderiza la lista con el nuevo paso
+            renderizarRutaMovimiento(rutaActual);
         });
     }
-    // ▲▲▲ FIN DE LA NUEVA LÓGICA ▲▲▲
 });
-/**
- * Muestra u oculta los campos de radio y altura según el tipo de colisión seleccionado.
- */
+
 function updateCollisionFieldsVisibility() {
     const tipo = editorDOM.editColisionTipoSelect.value;
     const radioContainer = document.getElementById('edit-colision-radio-container');
@@ -487,17 +565,10 @@ function updateCollisionFieldsVisibility() {
     radioContainer.style.display = (tipo === 'capsula' || tipo === 'esfera') ? 'block' : 'none';
     alturaContainer.style.display = (tipo === 'capsula' || tipo === 'caja') ? 'block' : 'none';
 }
-/**
- * Genera una previsualización 3D de un modelo JSON y la devuelve como una imagen DataURL.
- * @param {object} modelJson - El objeto JSON que define el modelo.
- * @param {number} [size=80] - El tamaño (ancho y alto) de la imagen de previsualización.
- * @returns {Promise<string>} Una promesa que se resuelve con el DataURL de la imagen.
- */
-async function generate3DPreview(modelJson, size = 80) {
-    // Asegurarse de que THREE.js y la función de creación de modelos estén disponibles
+
+async function generate3DPreview(modelJson, size = 450) {
     if (typeof THREE === 'undefined' || typeof createModelFromJSON === 'undefined') {
         console.error("generate3DPreview requiere THREE.js y createModelFromJSON.");
-        // Devuelve una imagen de marcador de posición en caso de error
         return 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="40">❓</text></svg>';
     }
 
@@ -506,17 +577,14 @@ async function generate3DPreview(modelJson, size = 80) {
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(size, size);
 
-    // Iluminación básica para que el objeto se vea bien
     scene.add(new THREE.AmbientLight(0xffffff, 0.9));
     const dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
     dirLight.position.set(1.5, 2, 1);
     scene.add(dirLight);
 
-    // Crear el modelo a partir del JSON
     const model = createModelFromJSON(modelJson);
     scene.add(model);
 
-    // Centrar la cámara en el objeto
     const box = new THREE.Box3().setFromObject(model);
     const modelSize = box.getSize(new THREE.Vector3());
     const modelCenter = box.getCenter(new THREE.Vector3());
@@ -524,16 +592,14 @@ async function generate3DPreview(modelJson, size = 80) {
     const maxDim = Math.max(modelSize.x, modelSize.y, modelSize.z);
     const fov = camera.fov * (Math.PI / 180);
     let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-    cameraZ *= 1.6; // Añadir un poco de espacio para que no toque los bordes
+    cameraZ *= 1.6;
 
     camera.position.set(modelCenter.x, modelCenter.y, modelCenter.z + cameraZ);
     camera.lookAt(modelCenter);
 
-    // Renderizar la escena y obtener el resultado
     renderer.render(scene, camera);
     const dataUrl = renderer.domElement.toDataURL('image/png');
 
-    // Limpieza para liberar memoria
     renderer.dispose();
     model.traverse(object => {
         if (object.isMesh) {
@@ -545,15 +611,13 @@ async function generate3DPreview(modelJson, size = 80) {
     return dataUrl;
 }
 
-
 // EN: r-editor.js
-// REEMPLAZA esta función completa
+// REEMPLAZA ESTA FUNCIÓN COMPLETA
 
 async function populatePalettes() {
     editorDOM.texturePalette.innerHTML = '<h2>Texturas de Terreno</h2>';
     editorDOM.entityPalette.innerHTML = '<h2>Entidades</h2>';
 
-    // Crear los nuevos contenedores de cuadrícula
     const textureGrid = document.createElement('div');
     textureGrid.className = 'palette-container';
     editorDOM.texturePalette.appendChild(textureGrid);
@@ -562,75 +626,67 @@ async function populatePalettes() {
     entityGrid.className = 'palette-container';
     editorDOM.entityPalette.appendChild(entityGrid);
 
-    // ▼▼▼ INICIO DE LA NUEVA LÓGICA ▼▼▼
-    // Añadir la herramienta de borrador manualmente al principio de la paleta de entidades
+    // Dibuja la herramienta de borrar
     const eraserTool = tools.entities.eraser;
     if (eraserTool) {
         const btn = document.createElement('button');
         btn.className = 'palette-item';
-        btn.dataset.category = 'entity'; // Se trata como una entidad para la selección
+        btn.dataset.category = 'entity';
         btn.dataset.id = 'eraser';
-        btn.innerHTML = `
-            <div class="palette-item-preview palette-item-preview-emoji">${eraserTool.icon}</div>
-            <span>${eraserTool.name}</span>
-        `;
+        btn.innerHTML = `<div class="palette-item-preview palette-item-preview-emoji">${eraserTool.icon}</div><span>${eraserTool.name}</span>`;
         btn.onclick = () => selectTool('entity', 'eraser');
-        entityGrid.appendChild(btn); // Añade el botón al contenedor
+        entityGrid.appendChild(btn);
     }
-    // ▲▲▲ FIN DE LA NUEVA LÓGICA ▲▲▲
 
-    // Poblar Texturas (sin cambios)
+    // Dibuja las texturas de terreno
     for (const id in tools.textures) {
         const tool = tools.textures[id];
         const btn = document.createElement('button');
         btn.className = 'palette-item';
         btn.dataset.category = 'texture';
         btn.dataset.id = id;
-        btn.innerHTML = `
-            <div class="palette-item-preview">
-                <div class="color-swatch" style="background-color:${tool.color};"></div>
-            </div>
-            <span>${tool.name}</span>
-        `;
+        btn.innerHTML = `<div class="palette-item-preview"><div class="color-swatch" style="background-color:${tool.color};"></div></div><span>${tool.name}</span>`;
         btn.onclick = () => selectTool('texture', id);
         textureGrid.appendChild(btn);
     }
 
-    // Poblar Entidades (base y personalizadas - sin cambios)
-    const allEntities = {...tools.entities, ...tools.customEntities };
-    for (const id in allEntities) {
-        // Evitamos añadir el borrador de nuevo
+    // --- LÓGICA CORREGIDA ---
+    // 1. Carga PRIMERO todas las entidades predefinidas de r-data.js
+    for (const id in tools.entities) {
         if (id === 'eraser') continue;
 
-        const tool = allEntities[id];
-        const isCustom = !!tools.customEntities[id];
-        const category = isCustom ? 'customEntity' : 'entity';
-        
+        const tool = tools.entities[id];
         const btn = document.createElement('button');
         btn.className = 'palette-item';
-        btn.dataset.category = category;
+        btn.dataset.category = 'entity';
         btn.dataset.id = id;
 
         let previewHTML = '';
-        const modelData = tool.model || (tool.modelType === 'json3d' ? tool.icon : null);
-
-        if (modelData) {
-            const previewSrc = await generate3DPreview(modelData);
-            previewHTML = `<div class="palette-item-preview"><img src="${previewSrc}" alt="${tool.name}"></div>`;
-        } else if (tool.icon && (tool.icon.startsWith('data:image') || tool.icon.startsWith('http'))) {
-            previewHTML = `<div class="palette-item-preview"><img src="${tool.icon}" alt="${tool.name}"></div>`;
+        if (tool.model) {
+            // Genera la preview 3D para los modelos predefinidos
+            try {
+                const previewSrc = await generate3DPreview(tool.model);
+                previewHTML = `<div class="palette-item-preview"><img src="${previewSrc}" alt="${tool.name}"></div>`;
+            } catch (e) {
+                console.error(`Falló la previsualización para el modelo predefinido '${id}':`, e);
+                previewHTML = `<div class="palette-item-preview palette-item-preview-emoji">⚠️</div>`;
+            }
         } else {
             previewHTML = `<div class="palette-item-preview palette-item-preview-emoji">${tool.icon || '❓'}</div>`;
         }
-
+        
         btn.innerHTML = `${previewHTML}<span>${tool.name}</span>`;
-        btn.onclick = () => selectTool(category, id);
+        btn.onclick = () => selectTool('entity', id);
         entityGrid.appendChild(btn);
     }
+
+    // 2. DESPUÉS, llama a la función para cargar los assets personalizados del arco "Videojuego".
+    // Esto asegura que no haya conflictos y que el flujo de carga sea correcto.
+    await autoLoadGameAssets();
 }
 
 
-async function importCharacterAsTool(event) { // <--- Función ahora es async
+async function importCharacterAsTool(event) {
     const item = event.currentTarget;
     const name = item.dataset.name;
     const type = item.dataset.type;
@@ -658,7 +714,6 @@ async function importCharacterAsTool(event) { // <--- Función ahora es async
     } else if (type === 'json3d') {
         const modelData = JSON.parse(item.dataset.modelData);
         newTool.icon = modelData;
-        // Generar previsualización 3D al importar
         const previewSrc = await generate3DPreview(modelData);
         previewHTML = `<div class="palette-item-preview"><img src="${previewSrc}" alt="${name}"></div>`;
     }
@@ -680,24 +735,19 @@ async function importCharacterAsTool(event) { // <--- Función ahora es async
     alert(`¡"${name}" añadido a la paleta de entidades!`);
 }
 
-// --- INICIALIZACIÓN Y EVENT LISTENERS (ACTUALIZADO) ---
-document.addEventListener('DOMContentLoaded', async () => { // <--- Callback ahora es async
-    await populatePalettes(); // <--- Esperar a que las paletas se generen
+document.addEventListener('DOMContentLoaded', async () => {
+    await populatePalettes();
     renderGrid();
     selectTool('texture', 'grass');
     populateWorldList();
 
-    // ... El resto de tus event listeners permanecen igual
     editorDOM.mapGrid.addEventListener('mousedown', handleGridClick);
     editorDOM.zoomInButton.addEventListener('click', zoomIn);
-    // ... etc.
-     // ▼▼▼ AÑADE ESTOS LISTENERS PARA EL NUEVO MODAL ▼▼▼
     if (editorDOM.editEntityModal) {
         editorDOM.editEntityCloseBtn.addEventListener('click', () => editorDOM.editEntityModal.style.display = 'none');
         editorDOM.editEntitySaveBtn.addEventListener('click', saveEntityProperties);
         editorDOM.editColisionTipoSelect.addEventListener('change', updateCollisionFieldsVisibility);
     }
-    // ▲▲▲ FIN DE LOS NUEVOS LISTENERS ▲▲▲
 });
 
 function selectTool(category, id) {
@@ -706,7 +756,6 @@ function selectTool(category, id) {
     document.querySelector(`.palette-item[data-id='${id}']`).classList.add('selected');
 }
 
-// --- Lógica de Zoom y Paneo ---
 const ZOOM_STEP = 0.2;
 const MAX_ZOOM = 5.0;
 const MIN_ZOOM = 0.2;
@@ -719,13 +768,10 @@ function startPanning(event) { if (event.button !== 1) return; event.preventDefa
 function stopPanning() { if (!PanningState.isPanning) return; PanningState.isPanning = false; const container = editorDOM.mapGridContainer; container.style.cursor = 'grab'; container.style.removeProperty('user-select'); }
 function doPanning(event) { if (!PanningState.isPanning) return; event.preventDefault(); const container = editorDOM.mapGridContainer; const x = event.pageX - container.offsetLeft; const y = event.pageY - container.offsetTop; const walkX = (x - PanningState.startX); const walkY = (y - PanningState.startY); container.scrollLeft = PanningState.scrollLeft - walkX; container.scrollTop = PanningState.scrollTop - walkY; }
 
-// --- Lógica del Modal de Personajes ---
-function openCharacterModal() { editorDOM.characterGrid.innerHTML = ''; const modalTitle = editorDOM.characterModal.querySelector('h3'); if(modalTitle) { modalTitle.textContent = 'Selecciona un Dato para Importar'; } const characterDataElements = document.querySelectorAll('#listapersonajes .personaje'); characterDataElements.forEach(charElement => { const nombre = charElement.querySelector('.nombreh')?.value; if (!nombre) return; const promptVisualText = charElement.querySelector('.prompt-visualh')?.value; let isJsonModel = false; let jsonData = null; if (promptVisualText) { try { const parsed = JSON.parse(promptVisualText); if (parsed && typeof parsed === 'object' && (Array.isArray(parsed.parts) || Array.isArray(parsed.objects) || parsed.hasOwnProperty('chunks'))) { isJsonModel = true; jsonData = parsed; } } catch (e) {} } const item = document.createElement('div'); item.className = 'character-grid-item'; item.dataset.name = nombre; if (isJsonModel) { item.dataset.type = 'json3d'; item.dataset.modelData = JSON.stringify(jsonData); item.innerHTML = `<div style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 40px;">🧊</div><span>${nombre}</span>`; item.onclick = importCharacterAsTool; editorDOM.characterGrid.appendChild(item); } else { const imagenSrc = charElement.querySelector('.personaje-visual img')?.src; if (imagenSrc && !imagenSrc.endsWith('/')) { item.dataset.type = 'sprite'; item.dataset.imgSrc = imagenSrc; item.innerHTML = `<img src="${imagenSrc}" alt="${nombre}"><span>${nombre}</span>`; item.onclick = importCharacterAsTool; editorDOM.characterGrid.appendChild(item); } } }); editorDOM.characterModal.style.display = 'flex'; }
+// **MODIFICADO**: Ahora detecta modelos 3D en el 'promptVisual'
+function openCharacterModal() { editorDOM.characterGrid.innerHTML = ''; const modalTitle = editorDOM.characterModal.querySelector('h3'); if(modalTitle) { modalTitle.textContent = 'Selecciona un Dato para Importar'; } const characterDataElements = document.querySelectorAll('#listapersonajes .personaje'); characterDataElements.forEach(charElement => { const nombre = charElement.querySelector('.nombreh')?.value; if (!nombre) return; const promptVisualText = charElement.querySelector('.prompt-visualh')?.value; let isJsonModel = false; let jsonData = null; if (promptVisualText) { try { const parsed = JSON.parse(promptVisualText); if (parsed && typeof parsed === 'object' && (Array.isArray(parsed.parts) || Array.isArray(parsed.objects))) { isJsonModel = true; jsonData = parsed; } } catch (e) {} } const item = document.createElement('div'); item.className = 'character-grid-item'; item.dataset.name = nombre; if (isJsonModel) { item.dataset.type = 'json3d'; item.dataset.modelData = JSON.stringify(jsonData); item.innerHTML = `<div style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 40px;">🧊</div><span>${nombre}</span>`; item.onclick = importCharacterAsTool; editorDOM.characterGrid.appendChild(item); } else { const imagenSrc = charElement.querySelector('.personaje-visual img')?.src; if (imagenSrc && !imagenSrc.endsWith('/')) { item.dataset.type = 'sprite'; item.dataset.imgSrc = imagenSrc; item.innerHTML = `<img src="${imagenSrc}" alt="${nombre}"><span>${nombre}</span>`; item.onclick = importCharacterAsTool; editorDOM.characterGrid.appendChild(item); } } }); editorDOM.characterModal.style.display = 'flex'; }
 function closeCharacterModal() { editorDOM.characterModal.style.display = 'none'; }
 
- 
-
-// --- Sistema de Guardado y Carga ---
 function loadWorldData(worldName) {
     if (!worldName) return;
     let worldJson = null;
@@ -740,13 +786,29 @@ function loadWorldData(worldName) {
             }
         }
     }
+
     if (worldJson) {
         try {
             const parsedData = JSON.parse(worldJson);
+            const loadedChunks = {};
+
+            for (const chunkId in parsedData.chunks) {
+                const chunkData = parsedData.chunks[chunkId];
+                if (Array.isArray(chunkData)) {
+                    loadedChunks[chunkId] = {
+                        groundTextureKey: chunkData[0],
+                        objects: chunkData[1] || []
+                    };
+                } else {
+                    loadedChunks[chunkId] = chunkData;
+                }
+            }
+            
             worldData = {
                 metadata: parsedData.metadata || { playerStartPosition: null },
-                chunks: parsedData.chunks || {}
+                chunks: loadedChunks
             };
+
             renderGrid();
             alert(`¡Mundo "${worldName}" cargado!`);
         } catch (e) {
@@ -783,37 +845,71 @@ function saveWorldToCharacter() {
         alert("Guardado cancelado: el nombre no puede estar vacío.");
         return;
     }
-    if (typeof agregarPersonajeDesdeDatos !== 'function') {
-        alert("Error: La función para crear datos ('agregarPersonajeDesdeDatos') no está disponible. Asegúrate de que 'datos.js' esté cargado.");
-        return;
-    }
+
     const finalName = `${WORLD_DATA_NAME_PREFIX}${name.trim()}`;
-    const worldJson = JSON.stringify(worldData);
-    const nuevoDatoMundo = {
-        nombre: finalName,
-        descripcion: 'Dato de Mundo 3D. Contiene la estructura completa de un mundo para el renderizador.',
-        promptVisual: worldJson,
-        etiqueta: 'ubicacion',
-        arco: 'sin_arco',
-        imagen: '',
-        svgContent: '',
-        embedding: []
+
+    const dataToSave = {
+        metadata: worldData.metadata,
+        chunks: {}
     };
-    agregarPersonajeDesdeDatos(nuevoDatoMundo);
+
+    for (const chunkId in worldData.chunks) {
+        const chunk = worldData.chunks[chunkId];
+        dataToSave.chunks[chunkId] = [
+            chunk.groundTextureKey,
+            chunk.objects
+        ];
+    }
+
+    const worldJson = JSON.stringify(dataToSave, null, 2);
+    let existingDatoElement = null;
+    const allCharacters = document.querySelectorAll('#listapersonajes .personaje');
+    for (const charElement of allCharacters) {
+        const nameInput = charElement.querySelector('.nombreh');
+        if (nameInput && nameInput.value === finalName) {
+            existingDatoElement = charElement;
+            break;
+        }
+    }
+
+    if (existingDatoElement) {
+        if (confirm(`Ya existe un mundo llamado "${name.trim()}". ¿Quieres sobrescribirlo?`)) {
+            const promptVisualTextarea = existingDatoElement.querySelector('.prompt-visualh');
+            if (promptVisualTextarea) {
+                promptVisualTextarea.value = worldJson;
+                alert(`¡Mundo "${name.trim()}" sobrescrito correctamente!`);
+            } else {
+                alert("Error: No se pudo encontrar el campo de datos del mundo existente para sobrescribir.");
+            }
+        } else {
+            alert("Guardado cancelado.");
+            return;
+        }
+    } else {
+        if (typeof agregarPersonajeDesdeDatos !== 'function') {
+            alert("Error: La función para crear datos ('agregarPersonajeDesdeDatos') no está disponible.");
+            return;
+        }
+        const nuevoDatoMundo = {
+            nombre: finalName,
+            descripcion: 'Dato de Mundo 3D. Contiene la estructura completa de un mundo para el renderizador.',
+            promptVisual: worldJson,
+            etiqueta: 'ubicacion',
+            arco: 'sin_arco',
+            imagen: '',
+            svgContent: '',
+            embedding: []
+        };
+        agregarPersonajeDesdeDatos(nuevoDatoMundo);
+        alert(`¡Mundo "${name.trim()}" guardado como un dato completo!`);
+    }
+
     if (typeof reinicializarFiltrosYActualizarVista === 'function') {
         reinicializarFiltrosYActualizarVista();
     }
     populateWorldList();
-    alert(`¡Mundo "${name.trim()}" guardado como un dato completo!`);
 }
-/**
- * Limpia y recarga todos los assets del arco "videojuego" en la paleta de entidades.
- * La función es asíncrona para poder generar las previsualizaciones 3D.
- */
-/**
- * Limpia y recarga todos los assets del arco "videojuego" en la paleta de entidades.
- * AHORA TAMBIÉN PROCESA Y GUARDA LAS PROPIEDADES DEL JUEGO.
- */
+
 async function autoLoadGameAssets() {
     console.log("Buscando y actualizando assets de videojuego para cargar...");
 
@@ -835,17 +931,14 @@ async function autoLoadGameAssets() {
             const nombre = charElement.querySelector('.nombreh')?.value;
             if (!nombre) continue;
 
-            // ▼▼▼ INTEGRACIÓN DE LA NUEVA LÓGICA ▼▼▼
-            // Procesamos las propiedades ANTES de crear la herramienta
             const propiedadesJuego = procesarPropiedadesVideojuego(charElement);
-            // ▲▲▲ FIN DE LA INTEGRACIÓN ▲▲▲
-
             const toolId = `custom_${nombre.replace(/\s+/g, '_')}`;
             const promptVisualText = charElement.querySelector('.prompt-visualh')?.value;
             
             let modelType = 'sprite';
             let modelData = null;
 
+            // **MODIFICADO**: Detectar modelos 3D
             if (promptVisualText) {
                 try {
                     const parsed = JSON.parse(promptVisualText);
@@ -863,7 +956,6 @@ async function autoLoadGameAssets() {
                 dataRef: nombre,
                 isSolid: propiedadesJuego.fisica ? !propiedadesJuego.fisica.estatico : true,
                 radius: propiedadesJuego.colision ? propiedadesJuego.colision.radio : 1.2,
-                // Guardamos el objeto completo de propiedades para uso futuro
                 gameProps: propiedadesJuego 
             };
 
@@ -902,11 +994,9 @@ async function autoLoadGameAssets() {
 async function refreshGameAssetsPalette() {
     console.log("Actualizando assets de la paleta...");
 
-    // 1. Limpiar los assets personalizados existentes de la UI y del objeto 'tools'
     document.querySelectorAll('.palette-item[data-category="customEntity"]').forEach(btn => btn.remove());
     tools.customEntities = {};
 
-    // 2. Volver a escanear los datos y cargarlos (lógica movida desde autoLoadGameAssets)
     const entityGrid = editorDOM.entityPalette.querySelector('.palette-container');
     if (!entityGrid) {
         console.error("No se encontró el contenedor de la paleta de entidades.");
@@ -915,7 +1005,6 @@ async function refreshGameAssetsPalette() {
     
     const characterDataElements = document.querySelectorAll('#listapersonajes .personaje');
     
-    // Usamos un bucle for...of para poder usar 'await' dentro
     for (const charElement of characterDataElements) {
         const arco = charElement.querySelector('.change-arc-btn')?.dataset.arco;
         
@@ -925,11 +1014,10 @@ async function refreshGameAssetsPalette() {
 
             const toolId = `custom_${nombre.replace(/\s+/g, '_')}`;
             
-            // Omitir si ya fue procesado (en caso de duplicados)
             if (tools.customEntities[toolId]) continue;
 
             const promptVisualText = charElement.querySelector('.prompt-visualh')?.value;
-            let modelType = 'sprite'; // Por defecto
+            let modelType = 'sprite';
             let modelData = null;
 
             if (promptVisualText) {
@@ -947,7 +1035,7 @@ async function refreshGameAssetsPalette() {
                 type: 'custom',
                 modelType: modelType,
                 dataRef: nombre,
-                isSolid: true, // Puedes ajustar estas propiedades por defecto
+                isSolid: true,
                 radius: 1.2
             };
 
@@ -962,7 +1050,6 @@ async function refreshGameAssetsPalette() {
                  newTool.icon = imagenSrc;
                  previewHTML = `<div class="palette-item-preview"><img src="${imagenSrc}" alt="${nombre}"></div>`;
             } else {
-                // Si no tiene ni modelo 3D válido ni imagen, lo saltamos.
                 continue;
             }
 
@@ -980,7 +1067,6 @@ async function refreshGameAssetsPalette() {
     console.log("Assets de la paleta actualizados.", tools.customEntities);
 }
 
-// --- INICIALIZACIÓN Y EVENT LISTENERS ---
 document.addEventListener('DOMContentLoaded', () => {
     populatePalettes();
     renderGrid();
@@ -1015,24 +1101,21 @@ document.addEventListener('DOMContentLoaded', () => {
     container.addEventListener('mousemove', doPanning);
 });
 
-// --- CORRECCIÓN DE SINCRONIZACIÓN ---
-// Se ejecuta cuando la ventana principal se ha cargado, y luego se usa un
-// sistema de reintentos para asegurar que los "Datos" y sus imágenes estén listos.
 window.addEventListener('load', () => {
     let attempts = 0;
-    const maxAttempts = 20; // Intentar durante 10 segundos
+    const maxAttempts = 20;
 
     const tryLoadAssets = () => {
         const characterDataElements = document.querySelectorAll('#listapersonajes .personaje');
         const videoGameAssets = Array.from(characterDataElements).filter(el => el.querySelector('.change-arc-btn')?.dataset.arco === 'videojuego');
 
-        // Condición de éxito: Se encontraron assets Y TODAS sus imágenes están completamente cargadas.
         if (videoGameAssets.length > 0 && videoGameAssets.every(el => el.querySelector('.personaje-visual img')?.complete)) {
             console.log("Assets de 'Videojuego' listos. Cargando en la paleta...");
             autoLoadGameAssets();
+                 renderizarPreviewsInicialesDeDatos();
         } else if (attempts < maxAttempts) {
             attempts++;
-            setTimeout(tryLoadAssets, 500); // Reintentar en 500ms
+            setTimeout(tryLoadAssets, 500);
         } else {
             console.warn("No se pudieron cargar automáticamente los assets de 'Videojuego' después de varios intentos.");
         }
@@ -1040,14 +1123,6 @@ window.addEventListener('load', () => {
 
     tryLoadAssets();
 });
-/**
- * Revisa el promptVisual de un "Dato" en busca de propiedades para el videojuego.
- * Si no existen, crea una estructura JSON por defecto y la escribe en el textarea.
- * Si existen, las lee y las devuelve.
- * @param {HTMLElement} charElement - El elemento DOM del "Dato" (div.personaje).
- * @returns {object} Un objeto con las propiedades del juego para ese "Dato".
- */
- 
 
 function procesarPropiedadesVideojuego(charElement) {
     const promptVisualTextarea = charElement.querySelector('.descripcionh');
@@ -1063,25 +1138,25 @@ function procesarPropiedadesVideojuego(charElement) {
 
     const defaultProps = {
         tamano: { x: 3, y: 4.8, z: 1 },
+        rotacionY: 0,
+        esCubo3D: false,
+        esCilindro3D: false,
         colision: { tipo: 'capsula', radio: 0.5, altura: 1.8 },
         interactable: false,
         fisica: { estatico: true, masa: 0 },
-             movimiento: [] 
+        movimiento: [] 
     };
 
     if (currentText.startsWith(KEYWORD)) {
-        // ▼▼▼ LÍNEA MODIFICADA ▼▼▼
-        // Extraemos solo el texto entre la palabra clave y el separador "---"
         const separatorIndex = currentText.indexOf(SEPARATOR);
         const jsonText = currentText.substring(KEYWORD.length, separatorIndex > -1 ? separatorIndex : undefined).trim();
-        // ▲▲▲ FIN DE LA MODIFICACIÓN ▲▲▲
 
         try {
-            if (jsonText) { // Solo intentamos parsear si hay texto
+            if (jsonText) {
                 gameProps = JSON.parse(jsonText);
                 console.log(`Propiedades de videojuego leídas para "${charElement.querySelector('.nombreh')?.value}".`);
             } else {
-                 gameProps = defaultProps; // Si no hay JSON, usamos las de por defecto
+                 gameProps = defaultProps;
             }
         } catch (e) {
             console.error(`Error al parsear las propiedades JSON para "${charElement.querySelector('.nombreh')?.value}". Se usarán las de por defecto. Error:`, e);
@@ -1101,4 +1176,48 @@ function procesarPropiedadesVideojuego(charElement) {
     }
 
     return gameProps;
+}
+
+// EN: r-editor.js (Añadir al final del archivo)
+
+/**
+ * Recorre todos los datos en la lista principal (#listapersonajes) y genera
+ * la previsualización 3D inicial para aquellos que tengan un modelo JSON válido.
+ * Esta función se llama al cargar la página para asegurar que todo esté visible.
+ */
+async function renderizarPreviewsInicialesDeDatos() {
+    console.log("Iniciando renderizado de previsualizaciones 3D en las tarjetas de Datos...");
+    const todosLosDatos = document.querySelectorAll('#listapersonajes .personaje');
+
+    for (const datoDIV of todosLosDatos) {
+        const textarea = datoDIV.querySelector('.prompt-visualh');
+        
+        if (textarea && textarea.value) {
+            let modelData = null;
+            try {
+                const parsed = JSON.parse(textarea.value);
+                if (parsed && typeof parsed === 'object' && (Array.isArray(parsed.objects) || (parsed.model && Array.isArray(parsed.model.objects)))) {
+                    modelData = parsed.model || parsed;
+                }
+            } catch (e) {
+                // No es un JSON 3D, no hacemos nada.
+                continue;
+            }
+
+            if (modelData) {
+                try {
+                    // Llamamos a generate3DPreview (que está en este mismo archivo) con alta resolución.
+                    const previewDataUrl = await generate3DPreview(modelData, 300);
+                    
+                    const imgPreview = datoDIV.querySelector('.personaje-visual img');
+                    if (imgPreview) {
+                        imgPreview.src = previewDataUrl;
+                        imgPreview.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    console.error(`Error generando preview inicial para el dato '${datoDIV.querySelector('.nombreh')?.value}':`, error);
+                }
+            }
+        }
+    }
 }

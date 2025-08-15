@@ -227,9 +227,6 @@ function findCharacterImageSrc(dataRefName) {
     }
     return null;
 }
-
-// EN: r-preview-3d.js
-
 function loadWorldFromData(data) {
     const textureLoader = new THREE.TextureLoader();
     for (const chunkId in data) {
@@ -255,7 +252,6 @@ function loadWorldFromData(data) {
                 if (obj.dataRef) {
                     isCustom = true;
                     entityData = tools.customEntities[obj.type]; 
-                    iconSrc = findCharacterImageSrc(obj.dataRef);
                 } else if (obj.icon) {
                     isCustom = true;
                     entityData = { ...obj, ...tools.customEntities[obj.type] };
@@ -267,16 +263,20 @@ function loadWorldFromData(data) {
 
                 if (!entityData) return;
 
-                let objectMesh;
                 const objX = (chunkX * CHUNK_SIZE) + (obj.subX * SUB_CELL_SIZE) + (SUB_CELL_SIZE / 2);
                 const objZ = (chunkZ * CHUNK_SIZE) + (obj.subZ * SUB_CELL_SIZE) + (SUB_CELL_SIZE / 2);
 
                 if (isCustom) {
-                    // ▼▼▼ INICIO DE LA LÓGICA CORREGIDA PARA ASSETS PERSONALIZADOS ▼▼▼
+                    let objectMesh = null;
                     const gameProps = entityData.gameProps || {};
-                    const tamano = gameProps.tamano || { x: 4, y: 4, z: 1 }; // Usa el tamaño definido o uno por defecto
+                    const tamano = gameProps.tamano || { x: 4, y: 4, z: 1 };
                     
-                    if (entityData.modelType === 'sprite') {
+                    if (gameProps.esCubo3D) {
+                       // Lógica para Cubo3D
+                    } else if (gameProps.esCilindro3D) {
+                        // Lógica para Cilindro3D
+                    } else if (entityData.modelType === 'sprite') {
+                        iconSrc = findCharacterImageSrc(obj.dataRef) || entityData.icon;
                         if (!iconSrc) {
                             console.warn(`No se pudo encontrar la imagen para la referencia: ${obj.dataRef}`);
                             return; 
@@ -290,12 +290,36 @@ function loadWorldFromData(data) {
                             side: THREE.DoubleSide
                         });
                         
-                        // Usa el tamaño del JSON para la geometría del plano
                         const geometry = new THREE.PlaneGeometry(tamano.x, tamano.y); 
                         objectMesh = new THREE.Mesh(geometry, material);
 
-                        // La posición Y ahora es la mitad de la altura definida en el JSON
-                        objectMesh.position.set(objX, tamano.y / 2, objZ); 
+                    } else if (entityData.modelType === 'json3d') {
+                        if (typeof createModelFromJSON !== 'function') {
+                            console.error("La función 'createModelFromJSON' no está disponible para renderizar el objeto.");
+                            const geometry = new THREE.BoxGeometry(tamano.x, tamano.y, tamano.z || tamano.x);
+                            const material = new THREE.MeshLambertMaterial({ color: 0xff00ff });
+                            objectMesh = new THREE.Mesh(geometry, material);
+                        } else {
+                            objectMesh = createModelFromJSON(entityData.icon);
+                        }
+                    }
+
+                    if (objectMesh) {
+                        // --- LA CORRECCIÓN ESTÁ AQUÍ ---
+                        // Posicionamos la base del modelo en el suelo (y=0)
+                        objectMesh.position.set(objX, 0, objZ); 
+
+                        if (gameProps.rotacionY) {
+                            const rotacionEnRadianes = gameProps.rotacionY * (Math.PI / 180);
+                            objectMesh.rotation.y = rotacionEnRadianes;
+                        }
+                        
+                        objectMesh.traverse(child => {
+                            if (child.isMesh) {
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+                            }
+                        });
 
                         previewState.scene.add(objectMesh);
                         
@@ -304,26 +328,18 @@ function loadWorldFromData(data) {
                             objectMesh.userData.radius = entityData.radius || 1.2;
                             previewState.collidableObjects.push(objectMesh);
                         }
-                    } else if (entityData.modelType === 'json3d') {
-                        // Aquí se pueden aplicar las propiedades de 'tamano' a los modelos 3D si es necesario
-                        // Por ejemplo: modelGroup.scale.set(tamano.x, tamano.y, tamano.z);
+                        
+                        const rutaMovimiento = gameProps.movimiento;
+                        if (rutaMovimiento && rutaMovimiento.length > 0) {
+                            objectMesh.userData.movimientoState = {
+                                ruta: rutaMovimiento,
+                                indicePasoActual: 0,
+                                temporizadorPaso: 0,
+                                destino: null
+                            };
+                            previewState.movingObjects.push(objectMesh);
+                        }
                     }
- // ▼▼▼ AÑADE ESTA LÓGICA AL FINAL DEL BLOQUE "if (isCustom)" ▼▼▼
-    // Si el objeto tiene una ruta de movimiento, lo preparamos para la animación
-    const rutaMovimiento = entityData.gameProps?.movimiento;
-    if (rutaMovimiento && rutaMovimiento.length > 0) {
-        objectMesh.userData.movimientoState = {
-            ruta: rutaMovimiento,
-            indicePasoActual: 0,
-            temporizadorPaso: 0,
-            destino: null
-        };
-        previewState.movingObjects.push(objectMesh);
-    }
-    // ▲▲▲ FIN DE LA NUEVA LÓGICA ▲▲▲
-
-
-                     // ▲▲▲ FIN DE LA LÓGICA CORREGIDA ▲▲▲
                 }
                 else if (entityData.model) {
                     const modelGroup = createModelFromJSON(entityData.model);
@@ -376,38 +392,11 @@ function loadWorldFromData(data) {
                             }
                         }
                     });
-                } else {
-                    if (obj.type === 'tree') {
-                        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.8, 8, 8), new THREE.MeshLambertMaterial({ color: 0x66402D }));
-                        trunk.castShadow = true;
-                        const leaves = new THREE.Mesh(new THREE.ConeGeometry(3, 6, 8), new THREE.MeshLambertMaterial({ color: 0x228B22 }));
-                        leaves.position.y = 7;
-                        leaves.castShadow = true;
-                        objectMesh = new THREE.Group();
-                        objectMesh.add(trunk);
-                        objectMesh.add(leaves);
-                    } else if (obj.type === 'rock') {
-                        objectMesh = new THREE.Mesh(new THREE.DodecahedronGeometry(2.5), new THREE.MeshLambertMaterial({ color: 0x5c5c5c }));
-                        objectMesh.castShadow = true;
-                    }
-
-                    if (objectMesh) {
-                        objectMesh.position.set(objX, objectMesh.position.y || 1.25, objZ);
-                        previewState.scene.add(objectMesh);
-                        if (entityData.isSolid) {
-                            objectMesh.userData.collisionType = 'circle';
-                            objectMesh.userData.radius = entityData.radius;
-                            previewState.collidableObjects.push(objectMesh);
-                        }
-                    }
                 }
             });
         }
     }
 }
-
-// EN: r-preview-3d.js (añade esta nueva función)
-
 /**
  * Actualiza la posición de todos los objetos con rutas de movimiento.
  * @param {number} deltaTime - El tiempo transcurrido desde el último fotograma.

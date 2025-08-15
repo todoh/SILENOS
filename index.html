@@ -544,7 +544,8 @@ editor de datos -->
                     <button id="zoom-out-button" class="zoom-btn">-</button>
                     <button id="zoom-in-button" class="zoom-btn">+</button>
                 </div>
-                <button id="preview-button">🚀 Previsualizar</button>
+                <button id="preview-button">🚀 Previsualizar</button> 
+           
                 <button id="save-button">💾 Guardar en Navegador</button>
             </div>
         </header>
@@ -749,7 +750,7 @@ editor de datos -->
                 </div>
                 
                 <button id="r-preview-button">🚀 Previsualizar</button>
-                
+                     <button onclick="exportStandaloneHTML()" > Exportar Juego Completo </button>
                 <!-- BOTÓN DE GUARDADO ACTUALIZADO -->
                 <button id="r-save-button">💾 Guardar Mundo</button>
                 
@@ -1782,6 +1783,19 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
                         <label for="edit-tamano-z">Profundo (Z)</label>
                         <input type="number" id="edit-tamano-z" step="0.1" class="modal-input">
                     </div>
+
+<div id="edit-rotacion-container" class="form-group">
+    <label for="edit-rotacion-y">Rotación Y (grados):</label>
+    <input type="number" id="edit-rotacion-y" step="1" value="0">
+</div>
+<div class="form-group" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+    <input type="checkbox" id="edit-es-cubo-3d" style="width: auto; height: 18px;">
+    <label for="edit-es-cubo-3d" style="font-weight: normal;">Renderizar como Cubo 3D</label>
+</div>
+<div class="form-group" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 10px;">
+    <input type="checkbox" id="edit-es-cilindro-3d" style="width: auto; height: 18px;">
+    <label for="edit-es-cilindro-3d" style="font-weight: normal;">Renderizar como Cilindro 3D</label>
+</div>
                 </div>
             </fieldset>
 
@@ -1848,11 +1862,11 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
 
 <button onclick="cerrartodo(), abrirVentana('guion-literario');">Guión</button>
 <button onclick="cerrartodo(), abrirVentana('capitulosh');">Libro</button>   
-<button onclick="cerrartodo(), abrirVentana('momentos');">Videojuego</button>
-
+<button onclick="cerrartodo(), abrirVentana('momentos');">Novela Interactiva</button>
+<button id="bdatos"  onclick="cerrartodo(),abrirVentana('renderizador');">🎮</button> 
 <button  onclick="cerrartodo(),abrirVentana('programador');"  >💻</button>  
-<button id="bdatos"  onclick="cerrartodo(),abrirVentana('renderizador');">3D</button> 
-<button  onclick="cerrartodo(),abrirVentana('interactivo');"   >🎮</button>
+
+<button  onclick="cerrartodo(),abrirVentana('interactivo');"  style="display: none;" >🎮</button>
 
 <button onclick="cerrartodo(), abrirVentana('personajes');">Datos</button>
 <button onclick="cerrartodo(), abrirVentana('proyecto');">🏗️Proyecto</button>
