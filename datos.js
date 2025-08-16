@@ -556,69 +556,100 @@ function agregarPersonaje() {
  * Inicializa los listeners para abrir y cerrar la vista de edición de un dato.
  * Previene los errores de referencia y de nodo no encontrado.
  */
+// EN: datos.js
+// REEMPLAZA la función inicializarInteraccionPersonajes() completa por esta:
+
 function inicializarInteraccionPersonajes() {
     const listaPersonajesEl = document.getElementById('listapersonajes');
     if (!listaPersonajesEl) return;
 
-    // Listener para ABRIR el editor al hacer clic en un visual.
+    // Listener para ABRIR el editor
     listaPersonajesEl.addEventListener('click', (e) => {
-        // Ignora los clics en los botones de etiqueta/arco para no interferir con sus menús.
         if (e.target.closest('.change-tag-btn') || e.target.closest('.change-arc-btn')) {
-            return; 
+            return;
         }
 
         const visualClicked = e.target.closest('.personaje-visual');
         if (visualClicked) {
             const personajeActual = visualClicked.closest('.personaje');
             if (!personajeActual) return;
-            
-            // Cierra cualquier otro editor que esté abierto antes de abrir uno nuevo.
+
             const otroPersonajeActivo = document.querySelector('.personaje.editing');
             if (otroPersonajeActivo && otroPersonajeActivo !== personajeActual) {
                 otroPersonajeActivo.classList.remove('editing');
+                // Limpiar el visor 3D del otro personaje que se cierra
+                if (otroPersonajeActivo.miniViewer) {
+                    otroPersonajeActivo.miniViewer.cleanup();
+                    otroPersonajeActivo.miniViewer = null;
+                    const oldCanvas = otroPersonajeActivo.querySelector('.edit-3d-canvas');
+                    const oldImg = otroPersonajeActivo.querySelector('.edit-preview-image');
+                    if(oldCanvas) oldCanvas.style.display = 'none';
+                    if(oldImg) oldImg.style.display = 'block';
+                }
             }
             
-            // Alterna la clase 'editing' en el dato clickeado.
             personajeActual.classList.toggle('editing');
 
-            // Si el editor se acaba de abrir, actualiza la imagen de previsualización.
             if (personajeActual.classList.contains('editing')) {
+                // El editor se acaba de abrir
                 const visualImgSrc = visualClicked.querySelector('img')?.src;
                 const overlay = personajeActual.querySelector('.personaje-edit-overlay');
                 const previewImg = overlay.querySelector('.edit-preview-image');
+                const canvas3D = overlay.querySelector('.edit-3d-canvas');
+                const promptVisualText = personajeActual.querySelector('.prompt-visualh')?.value || '';
 
-                if (previewImg && visualImgSrc && !visualImgSrc.endsWith('/')) {
-                    previewImg.src = visualImgSrc;
-                    previewImg.style.display = 'block';
-                } else if (previewImg) {
-                    previewImg.style.display = 'none';
+                let modelData = null;
+                try {
+                    const parsed = JSON.parse(promptVisualText);
+                    if (parsed && typeof parsed === 'object' && (Array.isArray(parsed.objects))) {
+                        modelData = parsed;
+                    }
+                } catch (err) { /* No es un JSON 3D, no hacemos nada */ }
+
+                if (modelData && canvas3D) {
+                    // Es un modelo 3D, activamos el visor interactivo
+                    if(previewImg) previewImg.style.display = 'none';
+                    canvas3D.style.display = 'block';
+                    if (typeof Mini3DViewer !== 'undefined') {
+                        // Creamos y guardamos la instancia del visor en el propio elemento del DOM
+                        personajeActual.miniViewer = new Mini3DViewer(canvas3D, modelData);
+                    } else {
+                        console.error("La clase Mini3DViewer no está definida.");
+                    }
+                } else {
+                    // No es 3D o no hay canvas, mostramos la imagen estática
+                    if(canvas3D) canvas3D.style.display = 'none';
+                    if (previewImg && visualImgSrc && !visualImgSrc.endsWith('/')) {
+                        previewImg.src = visualImgSrc;
+                        previewImg.style.display = 'block';
+                    } else if (previewImg) {
+                        previewImg.style.display = 'none';
+                    }
+                }
+            } else {
+                // El editor se acaba de cerrar, limpiamos su visor 3D
+                if (personajeActual.miniViewer) {
+                    personajeActual.miniViewer.cleanup();
+                    personajeActual.miniViewer = null;
                 }
             }
         }
     });
 
-    // Listener global para CERRAR el editor al hacer clic FUERA de él.
+    // Listener global para CERRAR CUALQUIER editor abierto
     document.addEventListener('click', (e) => {
         const personajeActivo = document.querySelector('.personaje.editing');
-        const menuActivo = document.querySelector('.menu-etiquetas');
-
-        // Cierra el editor si el clic fue fuera del dato activo, sus menús o el modal de mejora.
-        if (personajeActivo &&
-            !e.target.closest('.personaje.editing') &&
-            !e.target.closest('.menu-etiquetas') &&
-            !e.target.closest('.input-etiqueta-personalizada') &&
-            !e.target.closest('#improve-modal-overlay')) { // <-- Corrección clave
-                
+        if (personajeActivo && !e.target.closest('.personaje.editing') && !e.target.closest('.menu-etiquetas')) {
             personajeActivo.classList.remove('editing');
-        }
-
-        // Cierra los menús de etiquetas/arcos si el clic fue fuera de ellos.
-        if (menuActivo && 
-            !e.target.closest('.menu-etiquetas') && 
-            !e.target.closest('.change-tag-btn') && 
-            !e.target.closest('.change-arc-btn')) {
-                
-            menuActivo.remove();
+            // Limpiar el visor 3D al cerrar
+            if (personajeActivo.miniViewer) {
+                personajeActivo.miniViewer.cleanup();
+                personajeActivo.miniViewer = null;
+                const canvas = personajeActivo.querySelector('.edit-3d-canvas');
+                const img = personajeActivo.querySelector('.edit-preview-image');
+                if(canvas) canvas.style.display = 'none';
+                if(img) img.style.display = 'block';
+            }
         }
     }, true);
 }
@@ -738,6 +769,13 @@ function agregarPersonajeDesdeDatos(personajeData = {}) {
     const previewImage = document.createElement('img');
     previewImage.className = 'edit-preview-image';
     previewContainer.appendChild(previewImage);
+
+const editorCanvas3D = document.createElement('canvas');
+    editorCanvas3D.className = 'edit-3d-canvas';
+    editorCanvas3D.style.display = 'none'; // Oculto hasta que se active
+ 
+    previewContainer.appendChild(editorCanvas3D);
+
     const editorCanvasEl = document.createElement('canvas');
     editorCanvasEl.className = 'edit-svg-canvas';
     editorCanvasEl.style.display = 'none';
@@ -2419,8 +2457,24 @@ function inicializarPrevisualizacion3DEnVivo() {
 function debouncedInputHandler(event) {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
+        // Primero, la lógica existente que genera la imagen estática
         handleVisualPromptInput(event);
-    }, 750); // Espera 750ms después de la última pulsación antes de renderizar
+        
+        // Ahora, la nueva lógica para actualizar el visor interactivo si está activo
+        const textarea = event.target;
+        const personajeDIV = textarea.closest('.personaje');
+
+        if (personajeDIV && personajeDIV.classList.contains('editing') && personajeDIV.miniViewer) {
+            try {
+                const newModelData = JSON.parse(textarea.value.trim());
+                 if (newModelData && typeof newModelData === 'object' && (Array.isArray(newModelData.objects))) {
+                    personajeDIV.miniViewer.updateModel(newModelData);
+                 }
+            } catch (e) {
+                // El JSON no es válido mientras se escribe, no hacemos nada.
+            }
+        }
+    }, 750); 
 }
 
  

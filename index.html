@@ -750,6 +750,7 @@ editor de datos -->
                 </div>
                 
                 <button id="r-preview-button">🚀 Previsualizar</button>
+ 
                      <button onclick="exportStandaloneHTML()" > Exportar Juego Completo </button>
                 <!-- BOTÓN DE GUARDADO ACTUALIZADO -->
                 <button id="r-save-button">💾 Guardar Mundo</button>
@@ -778,6 +779,9 @@ editor de datos -->
         <div id="r-preview-modal" class="modal-overlay2">
             <div class="modal-content2">
                 <span class="modal-close-button1">&times;</span>
+                   <button id="r-toggle-view-btn" style="padding: 8px 12px; background-color: #333; color: white; border: 1px solid #555; border-radius: 5px; cursor: pointer; visibility: visible; position: fixed; bottom: 10px; right: 50px; z-index: 1000000;">
+            Vista 1ª Persona
+        </button>
                 <h3>Previsualización 3D</h3>
                 <div id="r-game-container">
                     <!-- El canvas de Three.js se insertará aquí -->
@@ -1945,6 +1949,7 @@ Ejemplo 2: Un caballero valiente llamado Arthur, su espada mágica Excalibur, el
 <script src="escenas/generacion2d.js"></script>
 
  This was a duplicate load and has been removed -->
+<script src="mini3d.js"></script>
 
 <script src="momentos-generacion.js"></script>
 <script src="momentos-core.js"></script>
