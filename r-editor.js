@@ -457,7 +457,9 @@ document.addEventListener('DOMContentLoaded', () => {
         editorDOM.saveToCharacterButton.addEventListener('click', saveWorldToCharacter);
     }
     editorDOM.previewButton.addEventListener('click', startPreview);
+    
     editorDOM.previewModalCloseBtn.addEventListener('click', stopPreview);
+    
     if (editorDOM.loadWorldSelect) {
         editorDOM.loadWorldSelect.addEventListener('change', (event) => {
             loadWorldData(event.target.value);

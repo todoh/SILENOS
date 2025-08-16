@@ -7,8 +7,23 @@ const CHUNK_SIZE = 32;
 const SUB_CELL_SIZE = CHUNK_SIZE / SUBGRID_SIZE;
 const textureColors = { grass: 0x7C9C4A, sand: 0xEDC9AF, stone: 0x615953, water: 0x3B698B, forest: 0x3E7C4F };
 const playerController = { height: 1.8, speed: 18.0, radius: 0.5, mesh: null, targetPosition: null };
-const cameraController = { distance: 18, angle: Math.PI / 4, offset: new THREE.Vector3(), minZoom: 5, maxZoom: 50 };
+
+// MODIFICADO: Añadimos propiedades para el modo de cámara y control FPS
+const cameraController = { 
+    distance: 18, 
+    angle: Math.PI / 4, 
+    offset: new THREE.Vector3(), 
+    minZoom: 5, 
+    maxZoom: 50,
+    mode: 'thirdPerson', // 'thirdPerson' o 'firstPerson'
+    pitch: 0, // Rotación vertical para FPS
+    yaw: 0,   // Rotación horizontal para FPS
+};
 const INTERACTION_DISTANCE = 5; // Distancia máxima para interactuar
+
+// NUEVO: Estado para las teclas presionadas (para control WASD)
+const keyState = {};
+
 
 function startPreview() {
     if (previewState.isActive) return;
@@ -59,8 +74,20 @@ function startPreview() {
         handlePreviewResize();
         window.addEventListener('resize', handlePreviewResize, false);
         container.addEventListener('click', handlePreviewClick, false);
-        // NUEVO: Listener para la rueda del ratón (zoom)
         container.addEventListener('wheel', handleMouseWheel, false);
+        
+        // ============================================
+        // INICIO: NUEVOS LISTENERS
+        // ============================================
+        document.getElementById('r-toggle-view-btn').addEventListener('click', toggleCameraView);
+        window.addEventListener('keydown', handleKeyDown, false);
+        window.addEventListener('keyup', handleKeyUp, false);
+        container.addEventListener('mousemove', handleMouseMove, false);
+        document.addEventListener('pointerlockchange', handlePointerLockChange, false);
+        // ============================================
+        // FIN: NUEVOS LISTENERS
+        // ============================================
+
         previewState.isActive = true;
         animatePreview();
     }, 0);
@@ -72,11 +99,33 @@ function stopPreview() {
     const container = document.getElementById('r-game-container');
     window.removeEventListener('resize', handlePreviewResize, false);
     container.removeEventListener('click', handlePreviewClick, false);
-    // NUEVO: Eliminar listener de la rueda del ratón
     container.removeEventListener('wheel', handleMouseWheel, false);
+
+    // ============================================
+    // INICIO: ELIMINAR NUEVOS LISTENERS
+    // ============================================
+    const toggleBtn = document.getElementById('r-toggle-view-btn');
+    if(toggleBtn) toggleBtn.removeEventListener('click', toggleCameraView);
+    window.removeEventListener('keydown', handleKeyDown, false);
+    window.removeEventListener('keyup', handleKeyUp, false);
+    container.removeEventListener('mousemove', handleMouseMove, false);
+    document.removeEventListener('pointerlockchange', handlePointerLockChange, false);
+    
+    // Salir del pointer lock si está activo
+    if (document.pointerLockElement === container) {
+        document.exitPointerLock();
+    }
+    // ============================================
+    // FIN: ELIMINAR NUEVOS LISTENERS
+    // ============================================
+
     if (previewState.renderer) previewState.renderer.dispose();
     container.innerHTML = '';
     previewState = { isActive: false, scene: null, camera: null, renderer: null, clock: null, animationFrameId: null, groundMeshes: [], collidableObjects: [], interactiveObjects: [] };
+    
+    // MODIFICADO: Resetear el modo de la cámara al default
+    cameraController.mode = 'thirdPerson';
+    
     document.getElementById('r-preview-modal').style.display = 'none';
 }
 
@@ -91,18 +140,75 @@ function handlePreviewResize() {
     previewState.renderer.setSize(width, height);
 }
 
-// NUEVO: Función para manejar el zoom con la rueda del ratón
 function handleMouseWheel(event) {
     event.preventDefault();
+    // El zoom solo funciona en 3ra persona
+    if(cameraController.mode !== 'thirdPerson') return;
     const zoomSpeed = 0.5;
     cameraController.distance += event.deltaY * 0.05 * zoomSpeed;
-    // Limitar el zoom para que no se aleje ni se acerque demasiado
     cameraController.distance = Math.max(cameraController.minZoom, Math.min(cameraController.maxZoom, cameraController.distance));
 }
 
+// ============================================
+// INICIO: NUEVAS FUNCIONES PARA CONTROL FPS
+// ============================================
+
+function toggleCameraView() {
+    const container = document.getElementById('r-game-container');
+    const toggleBtn = document.getElementById('r-toggle-view-btn');
+
+    if (cameraController.mode === 'thirdPerson') {
+        cameraController.mode = 'firstPerson';
+        toggleBtn.textContent = 'Vista 3ª Persona';
+        playerController.mesh.visible = false; // Ocultamos el jugador
+        container.requestPointerLock(); // Capturamos el ratón
+    } else {
+        cameraController.mode = 'thirdPerson';
+        toggleBtn.textContent = 'Vista 1ª Persona';
+        playerController.mesh.visible = true; // Mostramos el jugador
+        document.exitPointerLock(); // Liberamos el ratón
+        // Detenemos el movimiento al salir del modo FPS
+        playerController.targetPosition = playerController.mesh.position.clone(); 
+    }
+}
+
+function handleKeyDown(event) {
+    if (!previewState.isActive || cameraController.mode !== 'firstPerson') return;
+    keyState[event.code] = true;
+}
+
+function handleKeyUp(event) {
+    if (!previewState.isActive || cameraController.mode !== 'firstPerson') return;
+    keyState[event.code] = false;
+}
+
+function handleMouseMove(event) {
+    if (!previewState.isActive || cameraController.mode !== 'firstPerson' || document.pointerLockElement !== document.getElementById('r-game-container')) return;
+    
+    const sensitivity = 0.002;
+    cameraController.yaw -= event.movementX * sensitivity;
+    cameraController.pitch -= event.movementY * sensitivity;
+
+    // Limitar la rotación vertical para no dar la vuelta
+    cameraController.pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cameraController.pitch));
+}
+
+function handlePointerLockChange() {
+    const container = document.getElementById('r-game-container');
+    if (document.pointerLockElement !== container && cameraController.mode === 'firstPerson') {
+        // Si el usuario escapa del pointer lock (ej. con ESC), volvemos a 3a persona
+        toggleCameraView();
+    }
+}
+// ============================================
+// FIN: NUEVAS FUNCIONES PARA CONTROL FPS
+// ============================================
+
 
 function handlePreviewClick(event) {
-    if (!previewState.isActive) return;
+    // MODIFICADO: El clic para mover solo funciona en 3ª persona
+    if (!previewState.isActive || cameraController.mode === 'firstPerson') return;
+    
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     const container = document.getElementById('r-game-container');
@@ -179,39 +285,88 @@ function checkCollision(proposedPosition) {
     return null;
 }
 
+// MODIFICADO: updatePlayer ahora gestiona ambos modos de movimiento
 function updatePlayer(deltaTime) {
-    if (!playerController.targetPosition || !playerController.mesh) return;
-    const direction = playerController.targetPosition.clone().sub(playerController.mesh.position);
-    direction.y = 0;
-    const distanceToTarget = direction.length();
-    if (distanceToTarget > 0.1) {
-        const moveDistance = playerController.speed * deltaTime;
-        let moveVector = direction.normalize().multiplyScalar(Math.min(moveDistance, distanceToTarget));
-        let proposedPosition = playerController.mesh.position.clone().add(moveVector);
-        const collisionNormal = checkCollision(proposedPosition);
-        if (collisionNormal) {
-            collisionNormal.y = 0;
-            const dotProduct = moveVector.dot(collisionNormal);
-            const projection = collisionNormal.clone().multiplyScalar(dotProduct);
-            moveVector.sub(projection);
-            proposedPosition = playerController.mesh.position.clone().add(moveVector);
-            if (checkCollision(proposedPosition)) {
-                moveVector.set(0, 0, 0);
+    if (!playerController.mesh) return;
+
+    if (cameraController.mode === 'thirdPerson') {
+        // Lógica de movimiento con clic (existente)
+        if (!playerController.targetPosition) return;
+        const direction = playerController.targetPosition.clone().sub(playerController.mesh.position);
+        direction.y = 0;
+        const distanceToTarget = direction.length();
+        if (distanceToTarget > 0.1) {
+            const moveDistance = playerController.speed * deltaTime;
+            let moveVector = direction.normalize().multiplyScalar(Math.min(moveDistance, distanceToTarget));
+            let proposedPosition = playerController.mesh.position.clone().add(moveVector);
+            const collisionNormal = checkCollision(proposedPosition);
+            if (collisionNormal) {
+                collisionNormal.y = 0;
+                const dotProduct = moveVector.dot(collisionNormal);
+                const projection = collisionNormal.clone().multiplyScalar(dotProduct);
+                moveVector.sub(projection);
+                proposedPosition = playerController.mesh.position.clone().add(moveVector);
+                if (checkCollision(proposedPosition)) {
+                    moveVector.set(0, 0, 0);
+                }
             }
+            playerController.mesh.position.add(moveVector);
+            const targetQuaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
+            playerController.mesh.quaternion.slerp(targetQuaternion, 10 * deltaTime);
         }
-        playerController.mesh.position.add(moveVector);
-        const targetQuaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
-        playerController.mesh.quaternion.slerp(targetQuaternion, 10 * deltaTime);
+    } else { // firstPerson
+        // Lógica de movimiento con WASD (nueva)
+        const fpsSpeed = playerController.speed / 2.5; // Ajustar velocidad para FPS
+        const moveDirection = new THREE.Vector3();
+
+        if (keyState['KeyW'] || keyState['ArrowUp']) moveDirection.z = -1;
+        if (keyState['KeyS'] || keyState['ArrowDown']) moveDirection.z = 1;
+        if (keyState['KeyA'] || keyState['ArrowLeft']) moveDirection.x = -1;
+        if (keyState['KeyD'] || keyState['ArrowRight']) moveDirection.x = 1;
+
+        if (moveDirection.lengthSq() > 0) {
+            // Aplicar rotación de la cámara al movimiento
+            moveDirection.normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraController.yaw);
+            let moveVector = moveDirection.multiplyScalar(fpsSpeed * deltaTime);
+            let proposedPosition = playerController.mesh.position.clone().add(moveVector);
+
+            const collisionNormal = checkCollision(proposedPosition);
+            if (collisionNormal) {
+                collisionNormal.y = 0;
+                const dotProduct = moveVector.dot(collisionNormal);
+                const projection = collisionNormal.clone().multiplyScalar(dotProduct);
+                moveVector.sub(projection);
+                proposedPosition = playerController.mesh.position.clone().add(moveVector);
+                if (checkCollision(proposedPosition)) {
+                    moveVector.set(0, 0, 0);
+                }
+            }
+            playerController.mesh.position.add(moveVector);
+        }
     }
 }
 
+// MODIFICADO: updateCamera ahora gestiona ambas vistas
 function updateCamera() {
     if (!playerController.mesh) return;
-    cameraController.offset.set(0, Math.sin(cameraController.angle), Math.cos(cameraController.angle));
-    cameraController.offset.multiplyScalar(cameraController.distance);
-    const cameraPosition = playerController.mesh.position.clone().add(cameraController.offset);
-    previewState.camera.position.copy(cameraPosition);
-    previewState.camera.lookAt(playerController.mesh.position.clone());
+    
+    if (cameraController.mode === 'thirdPerson') {
+        cameraController.offset.set(0, Math.sin(cameraController.angle), Math.cos(cameraController.angle));
+        cameraController.offset.multiplyScalar(cameraController.distance);
+        const cameraPosition = playerController.mesh.position.clone().add(cameraController.offset);
+        previewState.camera.position.copy(cameraPosition);
+        previewState.camera.lookAt(playerController.mesh.position.clone());
+    } else { // firstPerson
+        // Posicionamos la cámara a la altura de los "ojos" del jugador
+        const eyePosition = playerController.mesh.position.clone();
+        eyePosition.y += playerController.height * 0.4;
+        previewState.camera.position.copy(eyePosition);
+        
+        // Aplicamos la rotación del ratón
+        previewState.camera.rotation.order = 'YXZ'; // Orden importante para FPS
+        previewState.camera.rotation.y = cameraController.yaw;
+        previewState.camera.rotation.x = cameraController.pitch;
+    }
 }
 
 function findCharacterImageSrc(dataRefName) {
@@ -227,6 +382,7 @@ function findCharacterImageSrc(dataRefName) {
     }
     return null;
 }
+
 function loadWorldFromData(data) {
     const textureLoader = new THREE.TextureLoader();
     for (const chunkId in data) {
@@ -262,8 +418,8 @@ function loadWorldFromData(data) {
                 }
 
                 if (!entityData) return;
-const objX = (chunkX * CHUNK_SIZE) + obj.x;
-        const objZ = (chunkZ * CHUNK_SIZE) + obj.z;
+                const objX = (chunkX * CHUNK_SIZE) + obj.x;
+                const objZ = (chunkZ * CHUNK_SIZE) + obj.z;
 
                 if (isCustom) {
                     let objectMesh = null;
@@ -304,8 +460,6 @@ const objX = (chunkX * CHUNK_SIZE) + obj.x;
                     }
 
                     if (objectMesh) {
-                        // --- LA CORRECCIÓN ESTÁ AQUÍ ---
-                        // Posicionamos la base del modelo en el suelo (y=0)
                         objectMesh.position.set(objX, 0, objZ); 
 
                         if (gameProps.rotacionY) {
@@ -396,10 +550,7 @@ const objX = (chunkX * CHUNK_SIZE) + obj.x;
         }
     }
 }
-/**
- * Actualiza la posición de todos los objetos con rutas de movimiento.
- * @param {number} deltaTime - El tiempo transcurrido desde el último fotograma.
- */
+
 function updateObjectMovements(deltaTime) {
     const velocidad = 5.0; // Velocidad de movimiento de los NPCs
 
@@ -409,10 +560,8 @@ function updateObjectMovements(deltaTime) {
 
         let pasoActual = state.ruta[state.indicePasoActual];
 
-        // --- Lógica del paso actual ---
         if (pasoActual.tipo === 'aleatorio') {
             if (state.destino === null) {
-                // Generar un nuevo destino aleatorio cerca del objeto
                 const radioMovimiento = 15;
                 const angulo = Math.random() * Math.PI * 2;
                 state.destino = new THREE.Vector3(
@@ -428,15 +577,14 @@ function updateObjectMovements(deltaTime) {
             }
         }
 
-        // --- Mover el objeto hacia el destino ---
         if (state.destino) {
             const direccion = state.destino.clone().sub(obj.position);
             direccion.y = 0;
             const distancia = direccion.length();
             
-            if (distancia < 0.5) { // Si ya ha llegado al destino
-                state.destino = null; // Limpiamos el destino para que se procese el siguiente paso
-                if (pasoActual.tipo !== 'aleatorio') { // En aleatorio, el cambio de paso lo controla el temporizador
+            if (distancia < 0.5) {
+                state.destino = null; 
+                if (pasoActual.tipo !== 'aleatorio') {
                      state.indicePasoActual = (state.indicePasoActual + 1) % state.ruta.length;
                 }
             } else {
@@ -445,18 +593,16 @@ function updateObjectMovements(deltaTime) {
             }
         }
         
-        // --- Actualizar temporizador para pasos de tipo 'aleatorio' ---
         if (pasoActual.tipo === 'aleatorio' && pasoActual.duracion !== null) {
             state.temporizadorPaso -= deltaTime;
             if (state.temporizadorPaso <= 0) {
-                state.destino = null; // Forzamos un nuevo destino
+                state.destino = null; 
                 state.indicePasoActual = (state.indicePasoActual + 1) % state.ruta.length;
             }
         }
     });
 }
 
-// Modifica animatePreview para que llame a la nueva función
 function animatePreview() {
     if (!previewState.isActive) return;
     previewState.animationFrameId = requestAnimationFrame(animatePreview);
@@ -464,7 +610,7 @@ function animatePreview() {
     const deltaTime = previewState.clock.getDelta();
     
     updatePlayer(deltaTime);
-    updateObjectMovements(deltaTime); // <-- LLAMADA A LA NUEVA FUNCIÓN
+    updateObjectMovements(deltaTime); 
     
     updateCamera();
     previewState.renderer.render(previewState.scene, previewState.camera);
