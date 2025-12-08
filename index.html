@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -15,15 +16,18 @@
     <link rel="stylesheet" href="styles.css">    
     <link rel="stylesheet" href="stylesioia.css">
     <link rel="stylesheet" href="stylesdatos.css">
-    <link rel="stylesheet" href="stylestutorial.css"> <link rel="icon" type="image/png" href="logo.png">
+    <link rel="stylesheet" href="stylestutorial.css">
+    <link rel="stylesheet" href="stylesgamebook.css">
+    <link rel="icon" type="image/png" href="logo.png">
 </head>
 <body>
 
     <input type="radio" id="tab1" name="tab-control" checked>
     <input type="radio" id="tab2" name="tab-control">
     <input type="radio" id="tab3" name="tab-control">
-    <input type="radio" id="tab4" name="tab-control">
+    <input type="radio" id="tab6" name="tab-control">
     <input type="radio" id="tab5" name="tab-control">
+    <input type="radio" id="tab4" name="tab-control">
     
     <input type="file" id="image-input" name="image_upload_book" accept="image/*" style="display: none;">
     <input type="file" id="script-image-input" name="image_upload_script" accept="image/*" style="display: none;">
@@ -35,6 +39,7 @@
             <label for="tab1">Datos</label>
             <label for="tab2">Guion</label>
             <label for="tab3">Biblioteca</label>
+            <label for="tab6">Juego</label>
             <label for="tab5">IA</label>
             <label for="tab4">IO</label>
         </nav>
@@ -43,7 +48,6 @@
             
             <div id="section-datos" class="section" style="padding: 0;">
                 <div class="data-layout">
-                    
                     <div class="data-sidebar" id="data-sidebar-view">
                         <div class="data-header">
                             <input type="text" id="universe-name-input" class="universe-title-input" placeholder="S I L E N O S" oninput="updateUniverseName()">
@@ -51,12 +55,8 @@
                         </div>
                         <div id="cards-container" class="cards-list"></div>
                     </div>
-
                     <div class="data-editor" id="data-editor-view">
-                        <div class="editor-empty-state">
-                            <p>. . .</p>
-                        </div>
-                        
+                        <div class="editor-empty-state"><p>. . .</p></div>
                         <div class="editor-content hidden">
                             <div class="editor-toolbar">
                                 <button class="btn-icon back-btn-mobile" onclick="closeDataEditor()">
@@ -67,7 +67,6 @@
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                                 </button>
                             </div>
-
                             <div class="editor-main">
                                 <input type="text" id="card-category" class="input-category" placeholder="ETIQUETA" list="category-suggestions" oninput="updateCardData()">
                                 <datalist id="category-suggestions"></datalist>
@@ -137,19 +136,73 @@
                 </div>
             </div>
 
+            <div id="section-gamebook" class="section" style="padding: 0; overflow: hidden;">
+                
+                <div id="gb-canvas" class="gb-canvas-area">
+                    <div id="gb-viewport" style="transform-origin: 0 0; width:100%; height:100%;">
+                        <svg id="gb-connections-layer"></svg>
+                        <div id="gb-nodes-container"></div>
+                    </div>
+                    
+                    <div class="gb-canvas-controls">
+                        <button class="gb-float-btn action" onclick="createNewNode()" title="Nuevo Nodo">+</button>
+                        <button class="gb-float-btn" onclick="togglePlayMode()" title="Probar Juego">▶</button>
+                        <button class="gb-float-btn" onclick="organizeGraph()" title="Organizar Jerarquía">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 9l9-6 9 6M3 15l9 6 9-6"/></svg>
+                        </button>
+                        <button class="gb-float-btn" onclick="centerCanvas()" title="Centrar">⊙</button>
+                    </div>
+                </div>
+
+                <div id="gb-editor-modal" class="modal-overlay">
+                    <div class="modal-content glass-container" style="max-width: 600px; height: 80vh;">
+                        <div class="modal-header">
+                            <div class="gb-start-toggle">
+                                <input type="checkbox" id="gb-is-start" onchange="updateNodeData()">
+                                <label for="gb-is-start">Inicio</label>
+                            </div>
+                            <div class="gb-id-display" id="gb-node-id">ID: 000</div>
+                            <button class="btn-icon danger" onclick="deleteCurrentNode()">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            </button>
+                            <button class="btn-icon" onclick="closeNodeEditor()" style="margin-left:10px;">✕</button>
+                        </div>
+                        <div class="modal-body" style="display:flex; flex-direction:column;">
+                            <input type="text" id="gb-node-title" class="input-title" placeholder="TÍTULO DE ESCENA" oninput="updateNodeData()">
+                            <textarea id="gb-node-text" class="input-body" placeholder="Describe la situación..." oninput="updateNodeData()" style="min-height: 150px;"></textarea>
+                            <div class="gb-choices-section">
+                                <div class="gb-choices-header">
+                                    <span>DECISIONES (CONEXIONES)</span>
+                                    <button class="btn-icon-new small" onclick="addChoice()">+</button>
+                                </div>
+                                <div id="gb-choices-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="gb-player-overlay" class="hidden">
+                    <div class="gb-player-content">
+                        <div id="player-text"></div>
+                        <div id="player-choices" class="gb-choices-container"></div>
+                        <button class="gb-reset-btn" onclick="resetGame()">Reiniciar</button>
+                        <button class="gb-close-player" onclick="togglePlayMode()">✕ Editar</button>
+                    </div>
+                </div>
+
+            </div>
+
             <div id="section-io" class="section">
                 <div class="io-container">
                     <h2>Input / Output</h2>
-                    
                     <div class="io-card" style="border-left: 3px solid #666;">
                         <h3>Empezar Nuevo Proyecto</h3>
                         <p>Inicia un universo desde cero. Ten cuidado, esto borrará los datos actuales.</p>
                         <button class="io-btn" onclick="openNewProjectModal()">Crear Nuevo Proyecto</button>
                     </div>
-
                     <div class="io-card">
                         <h3>Copia de Seguridad Completa</h3>
-                        <p>Guarda el estado del proyecto (Datos + Guiones + Libros).</p>
+                        <p>Guarda el estado del proyecto (Datos + Guiones + Libros + Juegos).</p>
                         <button class="io-btn" onclick="saveProjectBackup()">Guardar Proyecto (JSON)</button>
                     </div>
                     <div class="io-card">
@@ -168,10 +221,8 @@
             <div id="section-ia" class="section">
                 <div class="ia-container">
                     <h2>Inteligencia Artificial</h2>
-                    
                     <div class="io-card">
                         <h3>Crear Guion</h3>
-                        
                         <div class="ia-row-toggle">
                             <span class="label-toggle">Leer Datos del Universo</span>
                             <label class="switch">
@@ -179,11 +230,9 @@
                                 <span class="slider round"></span>
                             </label>
                         </div>
-                        
                         <textarea id="ia-guion-prompt" class="ia-textarea" placeholder="Describe tu idea..."></textarea>
                         <input type="number" id="ia-guion-chapters" class="ia-input" placeholder="Número de capítulos" value="5" min="1" max="35">
                         <button id="btn-gen-guion" class="io-btn" onclick="generateScriptFromText()">Generar Guion</button>
-
                         <div id="guion-progress" class="progress-wrapper">
                             <div class="progress-info">
                                 <span class="progress-text">Procesando...</span>
@@ -194,17 +243,13 @@
                             </div>
                         </div>
                     </div>
-
                     <div class="io-card">
                         <h3>Crear Libro</h3>
                         <select id="ia-script-selector" class="ia-select"></select>
                         <button class="io-btn" onclick="refreshScriptSelector()" style="margin-bottom:10px;">Actualizar Lista</button>
                         <textarea id="ia-libro-nuance" class="ia-textarea" placeholder="Matices de estilo..."></textarea>
-                        
                         <input type="number" id="ia-book-paragraphs" class="ia-input" placeholder="Párrafos por capítulo (aprox. 5)" value="5" min="1" max="35">
-                        
                         <button id="btn-gen-libro" class="io-btn" onclick="generateBookFromText()">Generar Libro</button>
-
                         <div id="libro-progress" class="progress-wrapper">
                             <div class="progress-info">
                                 <span class="progress-text">Inicializando...</span>
@@ -217,10 +262,6 @@
                     </div>
                     <div class="io-card" style="border-left: 3px solid #4285F4; display: none;">
                         <h3>Configuración Google API</h3>
-                        <p style="font-size:0.8rem; margin-bottom:10px; color:#666;">
-                            Usa una API Key de Google AI Studio (Gemini/Gemma).<br>
-                            <strong>Modo Metralleta:</strong> Puedes pegar varias Keys separadas por comas (Key1, Key2, Key3...).
-                        </p>
                         <input type="password" id="google-api-key" class="ia-input" placeholder="Pegar Keys aquí (Key1, Key2...)">
                         <button class="io-btn action" onclick="saveGoogleApiKey()">Guardar Key</button>
                     </div>
@@ -265,17 +306,11 @@
             </div>
             <div class="modal-body">
                 <p style="margin-bottom: 20px; font-size: 0.95rem; line-height: 1.5;">
-                    Estás a punto de borrar todos los <strong>Datos, Guiones y Libros</strong> actuales para empezar un universo nuevo.
-                    <br><br>
-                    ¿Qué quieres hacer antes de borrar?
+                    Estás a punto de borrar todos los <strong>Datos, Guiones, Libros y Juegos</strong> actuales para empezar un universo nuevo.
                 </p>
                 <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <button class="io-btn action" onclick="createNewProject(true)" style="text-align: center;">
-                        ⬇️ Guardar Copia y Empezar Nuevo
-                    </button>
-                    <button class="io-btn" onclick="createNewProject(false)" style="text-align: center; color: #a00; border: 1px solid rgba(200,0,0,0.2);">
-                        ⚠️ Borrar todo sin guardar
-                    </button>
+                    <button class="io-btn action" onclick="createNewProject(true)" style="text-align: center;">⬇️ Guardar Copia y Empezar Nuevo</button>
+                    <button class="io-btn" onclick="createNewProject(false)" style="text-align: center; color: #a00; border: 1px solid rgba(200,0,0,0.2);">⚠️ Borrar todo sin guardar</button>
                 </div>
             </div>
             <div class="modal-footer">
@@ -287,10 +322,12 @@
 <script type="module" src="libro_ui.js"></script>
 <script type="module" src="guion_ui.js"></script>
 <script type="module" src="datos_ui.js"></script>
+<script type="module" src="librojuego_controles.js"></script>
+<script type="module" src="librojuego_ui.js"></script>
 <script type="module" src="io.js"></script>
- 
 <script type="module" src="apikey.js"></script>
 <script type="module" src="ia_guiones.js"></script>
 <script type="module" src="ia_libros.js"></script>
-<script type="module" src="tutorial_ui.js"></script> </body>
+<script type="module" src="tutorial_ui.js"></script> 
+</body>
 </html>
