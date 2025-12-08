@@ -1,7 +1,7 @@
+// --- LÓGICA LIBRO-JUEGO UI v2.6 (Mobile Performance Fix) ---
+// T → Tramo (Gestión visual optimizada)
 
-// --- LÓGICA LIBRO-JUEGO UI v2.4 (Soporte Táctil & Mouse) ---
-
-console.log("Sistema Gamebook Visual Cargado (v2.4 - Touch Enabled)");
+console.log("Sistema Gamebook Visual Cargado (v2.6 - Mobile Butter Smooth)");
 
 let gameNodes = JSON.parse(localStorage.getItem('minimal_gamebook_nodes')) || [];
 let currentNodeId = null;
@@ -38,7 +38,6 @@ if (nodesContainer) {
     document.addEventListener('mouseup', onGlobalDragEnd);
 
     // EVENTOS TÁCTILES (MÓVIL)
-    // Passive: false es vital para poder hacer e.preventDefault() y evitar scroll
     document.addEventListener('touchmove', onGlobalTouchMove, { passive: false });
     document.addEventListener('touchend', onGlobalDragEnd);
 }
@@ -69,17 +68,19 @@ function renderGraph() {
         el.className = `gb-node-circle ${node.isStart ? 'is-start' : ''}`;
         el.style.left = `${node.x}px`;
         el.style.top = `${node.y}px`;
+        // IMPORTANTE: Añadimos un data-id para encontrarlo rápido sin redibujar
+        el.dataset.id = node.id; 
         el.innerHTML = `<span>${node.title || 'Vacío'}</span>`;
         
         // 1. MOUSE DOWN (PC)
         el.addEventListener('mousedown', (e) => {
-            e.stopPropagation(); // Evita que se mueva la cámara
+            e.stopPropagation(); 
             startDrag(e, node);
         });
 
         // 2. TOUCH START (MOVIL)
         el.addEventListener('touchstart', (e) => {
-            e.stopPropagation(); // CRÍTICO: Evita que el control de cámara capture este toque
+            e.stopPropagation(); 
             startDrag(e, node);
         }, { passive: false });
 
@@ -88,21 +89,17 @@ function renderGraph() {
             if (!isDraggingNode) openNode(node.id);
         });
 
-        // En móvil el click a veces es tricky si hubo micro-arrastre, 
-        // así que el touchend gestiona la limpieza, y el click nativo se dispara después.
-        
         nodesContainer.appendChild(el);
     });
 }
 
 function drawConnections() {
-    const nodeMap = {};
-    gameNodes.forEach(n => nodeMap[n.id] = n);
-
+    // Nota: Esta función asume que svgLayer ya está limpio si se llama desde renderGraph
+    // Si se llama desde drag, hay que limpiarlo antes manualmente.
+    
     gameNodes.forEach(sourceNode => {
         if (sourceNode.choices && sourceNode.choices.length > 0) {
             sourceNode.choices.forEach(choice => {
-                // Loose equality por si ID es string
                 const targetNode = gameNodes.find(n => n.id == choice.targetId);
                 if (targetNode) {
                     createSvgLine(sourceNode, targetNode);
@@ -133,7 +130,6 @@ function startDrag(e, node) {
     isDraggingNode = false; 
     draggedNodeId = node.id;
     
-    // Detectar si es toque o ratón
     if (e.touches && e.touches.length > 0) {
         initialMouseX = e.touches[0].clientX;
         initialMouseY = e.touches[0].clientY;
@@ -146,10 +142,9 @@ function startDrag(e, node) {
     initialNodeY = node.y;
 }
 
-// Función central que calcula el movimiento
 function handleDragMove(clientX, clientY) {
     if (draggedNodeId !== null) {
-        // Umbral de movimiento para diferenciar "Click" de "Drag"
+        // Umbral pequeño para detectar arrastre vs click
         if (Math.abs(clientX - initialMouseX) > 5 || Math.abs(clientY - initialMouseY) > 5) {
             isDraggingNode = true;
         }
@@ -157,7 +152,6 @@ function handleDragMove(clientX, clientY) {
         if (isDraggingNode) {
             const node = gameNodes.find(n => n.id === draggedNodeId);
             
-            // Compensar Zoom
             let currentScale = 1;
             if (window.gamebookControls && window.gamebookControls.getCameraState) {
                 currentScale = window.gamebookControls.getCameraState().scale;
@@ -166,15 +160,25 @@ function handleDragMove(clientX, clientY) {
             const deltaX = (clientX - initialMouseX) / currentScale;
             const deltaY = (clientY - initialMouseY) / currentScale;
 
+            // Actualizamos datos en memoria
             node.x = initialNodeX + deltaX;
             node.y = initialNodeY + deltaY;
 
-            renderGraph();
+            // --- OPTIMIZACIÓN VISUAL (NO usar renderGraph) ---
+            // 1. Mover solo el DIV afectado
+            const el = document.querySelector(`.gb-node-circle[data-id="${draggedNodeId}"]`);
+            if (el) {
+                el.style.left = `${node.x}px`;
+                el.style.top = `${node.y}px`;
+            }
+
+            // 2. Redibujar solo las líneas (SVG es rápido de limpiar y rehacer)
+            svgLayer.innerHTML = ''; 
+            drawConnections();
         }
     }
 }
 
-// Handler PC
 function onGlobalMouseMove(e) {
     if (draggedNodeId !== null) {
         e.preventDefault();
@@ -182,23 +186,22 @@ function onGlobalMouseMove(e) {
     }
 }
 
-// Handler Móvil
 function onGlobalTouchMove(e) {
     if (draggedNodeId !== null) {
-        e.preventDefault(); // IMPORTANTE: Evita que la pantalla haga scroll/pull-refresh
+        e.preventDefault(); 
         handleDragMove(e.touches[0].clientX, e.touches[0].clientY);
     }
 }
 
-// Handler Final (Común)
 function onGlobalDragEnd(e) {
     if (draggedNodeId !== null) {
         if (isDraggingNode) {
             saveGameData();
-            // Pequeño delay para que el evento 'click' no se dispare inmediatamente después de soltar
             setTimeout(() => { 
                 isDraggingNode = false; 
                 draggedNodeId = null; 
+                // Renderizado completo al final para asegurar limpieza
+                renderGraph();
             }, 50);
         } else {
             draggedNodeId = null;
@@ -270,6 +273,9 @@ function updateNodeData() {
         node.isStart = false;
     }
     saveGameData();
+    // Actualizamos visualmente el borde de inicio sin borrar todo si es posible,
+    // pero aquí renderGraph está bien porque no es drag continuo.
+    renderGraph(); 
 }
 
 function deleteCurrentNode() {
@@ -361,7 +367,7 @@ function organizeGraph() {
         }
     }
 
-    // 3. Huérfanos
+    // 3. Huérfanos (Nodos inconexos)
     const maxLevel = Math.max(...Object.keys(levels).map(Number)) || 0;
     const visitedIds = Array.from(visited).map(id => String(id));
     const orphans = gameNodes.filter(n => !visitedIds.includes(String(n.id)));
@@ -408,7 +414,7 @@ window.togglePlayMode = function() {
         overlay.classList.remove('hidden');
         const start = gameNodes.find(n => n.isStart);
         if(start) loadPlayerNode(start.id);
-        else alert("Define un nodo de inicio");
+        else alert("Define un nodo de inicio (K → Falta dirección)");
     } else {
         overlay.classList.add('hidden');
     }
@@ -417,7 +423,7 @@ window.togglePlayMode = function() {
 window.loadPlayerNode = function(id) {
      const node = gameNodes.find(n => n.id == id);
      if(!node) return;
-     document.getElementById('player-text').textContent = node.text;
+     document.getElementById('player-text').innerHTML = `<strong>${node.title}</strong><br><br>${node.text}`;
      const cont = document.getElementById('player-choices');
      cont.innerHTML = '';
      node.choices.forEach(c => {
@@ -440,4 +446,4 @@ window.deleteCurrentNode = deleteCurrentNode;
 window.addChoice = addChoice;
 window.updateChoice = updateChoice;
 window.deleteChoice = deleteChoice;
-window.organizeGraph = organizeGraph; 
+window.organizeGraph = organizeGraph;
