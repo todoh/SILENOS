@@ -1,0 +1,87 @@
+/* --- STYLES TUTORIAL (Spotlight Method Fixed) --- */
+
+.tutorial-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: transparent; 
+    z-index: 9990; 
+    display: none;
+}
+.tutorial-overlay.active { display: block; }
+
+/* FOCO */
+.tutorial-spotlight {
+    position: fixed;
+    z-index: 9991;
+    border-radius: 8px;
+    pointer-events: none; 
+    box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.75); 
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    opacity: 0;
+}
+.tutorial-spotlight.active { opacity: 1; }
+
+/* CAJA DE TEXTO MEJORADA */
+.tutorial-box {
+    position: fixed;
+    /* Anchura dinámica: 320px en PC, pero nunca más del 90% de la pantalla en móvil */
+    width: 320px;
+    max-width: 90vw; 
+    
+    background: rgba(255, 255, 255, 0.98); /* Más opaco para leer mejor */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.8);
+    padding: 20px; /* Un poco menos de padding para ahorrar espacio en móvil */
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    z-index: 9995; 
+    
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease, top 0.4s ease, left 0.4s ease; /* Transiciones suaves al moverse */
+    
+    display: none;
+}
+
+.tutorial-box.active { 
+    opacity: 1; 
+    transform: translateY(0); 
+    display: block;
+}
+
+.t-title { font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: #111; }
+.t-text { font-size: 0.9rem; line-height: 1.4; color: #444; margin-bottom: 15px; }
+
+.t-footer { display: flex; justify-content: space-between; align-items: center; }
+.t-steps { font-size: 0.7rem; color: #888; font-weight: 600; text-transform: uppercase; }
+
+.t-btn {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.t-btn-next { background: #111; color: #fff; }
+.t-btn-next:hover { background: #333; }
+.t-btn-skip { background: transparent; color: #666; }
+
+.btn-help-float {
+    position: fixed;
+    bottom: 25px; right: 25px;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: #fff;
+    color: #000;
+    font-size: 0.82rem;
+    font-weight: bold;
+    border: 1px solid rgba(0,0,0,0.1);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    cursor: pointer;
+    z-index: 9000;
+    display: flex; align-items: center; justify-content: center;
+}

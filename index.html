@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="styles.css">    
     <link rel="stylesheet" href="stylesioia.css">
     <link rel="stylesheet" href="stylesdatos.css">
-    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="stylesheet" href="stylestutorial.css"> <link rel="icon" type="image/png" href="logo.png">
 </head>
 <body>
 
@@ -181,7 +181,7 @@
                         </div>
                         
                         <textarea id="ia-guion-prompt" class="ia-textarea" placeholder="Describe tu idea..."></textarea>
-                        <input type="number" id="ia-guion-chapters" class="ia-input" placeholder="Número de capítulos" value="5">
+                        <input type="number" id="ia-guion-chapters" class="ia-input" placeholder="Número de capítulos" value="5" min="1" max="35">
                         <button id="btn-gen-guion" class="io-btn" onclick="generateScriptFromText()">Generar Guion</button>
 
                         <div id="guion-progress" class="progress-wrapper">
@@ -201,7 +201,7 @@
                         <button class="io-btn" onclick="refreshScriptSelector()" style="margin-bottom:10px;">Actualizar Lista</button>
                         <textarea id="ia-libro-nuance" class="ia-textarea" placeholder="Matices de estilo..."></textarea>
                         
-                        <input type="number" id="ia-book-paragraphs" class="ia-input" placeholder="Párrafos por capítulo (aprox. 5)" value="5">
+                        <input type="number" id="ia-book-paragraphs" class="ia-input" placeholder="Párrafos por capítulo (aprox. 5)" value="5" min="1" max="35">
                         
                         <button id="btn-gen-libro" class="io-btn" onclick="generateBookFromText()">Generar Libro</button>
 
@@ -288,10 +288,9 @@
 <script type="module" src="guion_ui.js"></script>
 <script type="module" src="datos_ui.js"></script>
 <script type="module" src="io.js"></script>
-<script type="module" src="main.js"></script>
+ 
 <script type="module" src="apikey.js"></script>
 <script type="module" src="ia_guiones.js"></script>
 <script type="module" src="ia_libros.js"></script>
-
-</body>
+<script type="module" src="tutorial_ui.js"></script> </body>
 </html>
