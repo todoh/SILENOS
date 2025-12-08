@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S I L E N O S</title>
+    <link rel="stylesheet" href="styles.css">    
+    <link rel="stylesheet" href="stylesioia.css">
+    <link rel="stylesheet" href="stylesdatos.css">
+    <link rel="icon" type="image/png" href="logo.png">
+</head>
+<body>
+
+    <input type="radio" id="tab1" name="tab-control" checked>
+    <input type="radio" id="tab2" name="tab-control">
+    <input type="radio" id="tab3" name="tab-control">
+    <input type="radio" id="tab4" name="tab-control">
+    <input type="radio" id="tab5" name="tab-control">
+    
+    <input type="file" id="image-input" name="image_upload_book" accept="image/*" style="display: none;">
+    <input type="file" id="script-image-input" name="image_upload_script" accept="image/*" style="display: none;">
+    <input type="file" id="io-file-input" name="io_upload_json" accept=".json" style="display: none;">
+
+    <div class="glass-container">
+        
+        <nav class="nav-header">
+            <label for="tab1">Datos</label>
+            <label for="tab2">Guion</label>
+            <label for="tab3">Biblioteca</label>
+            <label for="tab5">IA</label>
+            <label for="tab4">IO</label>
+        </nav>
+
+        <div class="content-area">
+            
+            <div id="section-datos" class="section" style="padding: 0;">
+                <div class="data-layout">
+                    
+                    <div class="data-sidebar" id="data-sidebar-view">
+                        <div class="data-header">
+                            <input type="text" id="universe-name-input" class="universe-title-input" placeholder="S I L E N O S" oninput="updateUniverseName()">
+                            <button class="btn-icon-new" onclick="createNewCard()">+</button>
+                        </div>
+                        <div id="cards-container" class="cards-list"></div>
+                    </div>
+
+                    <div class="data-editor" id="data-editor-view">
+                        <div class="editor-empty-state">
+                            <p>. . .</p>
+                        </div>
+                        
+                        <div class="editor-content hidden">
+                            <div class="editor-toolbar">
+                                <button class="btn-icon back-btn-mobile" onclick="closeDataEditor()">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                                </button>
+                                <div style="flex:1;"></div>
+                                <button class="btn-icon danger" onclick="deleteCurrentCard()" title="Eliminar Dato">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                </button>
+                            </div>
+
+                            <div class="editor-main">
+                                <input type="text" id="card-category" class="input-category" placeholder="ETIQUETA" list="category-suggestions" oninput="updateCardData()">
+                                <datalist id="category-suggestions"></datalist>
+                                <input type="text" id="card-title" class="input-title" placeholder="TÍTULO / CLAVE" oninput="updateCardData()">
+                                <textarea id="card-body" class="input-body" placeholder="Escribe aquí el contenido..." oninput="updateCardData()"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-guion" class="section" style="padding: 0;">
+                <div id="script-list-view" style="padding: 40px;">
+                    <div style="margin-bottom: 40px; display: flex; justify-content: space-between; align-items: baseline;">
+                        <h2 style="margin: 0;">Mis Guiones</h2>
+                        <button class="btn-new-chapter" onclick="createNewScript()">+ Crear</button>
+                    </div>
+                    <div id="scripts-container" class="book-list"></div>
+                </div>
+                <div id="script-detail-view" style="display: none; flex-direction: column; height: 100%;">
+                    <div class="detail-header">
+                        <button class="btn-icon back-btn" onclick="goBackScript()" title="Volver">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                        </button>
+                        <div style="flex: 1; padding: 0 20px;">
+                            <input type="text" id="script-detail-title" name="script_main_title" class="book-main-title-input" placeholder="TÍTULO DEL GUION" oninput="updateScriptTitle()">
+                        </div>
+                        <button class="btn-icon danger" onclick="deleteCurrentScript()" title="Eliminar Guion">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                    <div class="book-content-scroll" id="script-editor-scroll-area">
+                        <div id="scenes-container"></div>
+                        <div class="add-chapter-area">
+                            <button class="btn-new-chapter" onclick="addScene()">+ Nueva Escena</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-libro" class="section" style="padding: 0;">
+                <div id="book-list-view" style="padding: 40px;">
+                    <div style="margin-bottom: 40px; display: flex; justify-content: space-between; align-items: baseline;">
+                        <h2 style="margin: 0;">Mis Libros</h2>
+                        <button class="btn-new-chapter" onclick="createNewBook()">+ Crear</button>
+                    </div>
+                    <div id="books-container" class="book-list"></div>
+                </div>
+                <div id="book-detail-view">
+                    <div class="detail-header">
+                        <button class="btn-icon back-btn" onclick="goBack()" title="Volver">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                        </button>
+                        <div style="flex: 1; padding: 0 20px;">
+                            <input type="text" id="detail-title" name="book_main_title" class="book-main-title-input" placeholder="TÍTULO DEL LIBRO" oninput="updateBookTitle()">
+                        </div>
+                        <button class="btn-icon danger" onclick="deleteCurrentBook()" title="Eliminar Libro">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                    <div class="book-content-scroll" id="editor-scroll-area">
+                        <div id="chapters-container"></div>
+                        <div class="add-chapter-area">
+                            <button class="btn-new-chapter" onclick="addChapter()">+ Nuevo Capítulo</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-io" class="section">
+                <div class="io-container">
+                    <h2>Input / Output</h2>
+                    
+                    <div class="io-card" style="border-left: 3px solid #666;">
+                        <h3>Empezar Nuevo Proyecto</h3>
+                        <p>Inicia un universo desde cero. Ten cuidado, esto borrará los datos actuales.</p>
+                        <button class="io-btn" onclick="openNewProjectModal()">Crear Nuevo Proyecto</button>
+                    </div>
+
+                    <div class="io-card">
+                        <h3>Copia de Seguridad Completa</h3>
+                        <p>Guarda el estado del proyecto (Datos + Guiones + Libros).</p>
+                        <button class="io-btn" onclick="saveProjectBackup()">Guardar Proyecto (JSON)</button>
+                    </div>
+                    <div class="io-card">
+                        <h3>Restaurar</h3>
+                        <p>Carga un archivo JSON. <br><strong>¡Sobrescribirá los datos actuales!</strong></p>
+                        <button class="io-btn" onclick="triggerLoadProject()">Cargar Proyecto (JSON)</button>
+                    </div>
+                    <div class="io-card">
+                        <h3>Exportar Selección</h3>
+                        <p>Elige qué exportar a formatos legibles.</p>
+                        <button class="io-btn action" onclick="openExportModal()">Exportar...</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-ia" class="section">
+                <div class="ia-container">
+                    <h2>Inteligencia Artificial</h2>
+                    
+                    <div class="io-card">
+                        <h3>Crear Guion</h3>
+                        
+                        <div class="ia-row-toggle">
+                            <span class="label-toggle">Leer Datos del Universo</span>
+                            <label class="switch">
+                                <input type="checkbox" id="ia-use-data">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        
+                        <textarea id="ia-guion-prompt" class="ia-textarea" placeholder="Describe tu idea..."></textarea>
+                        <input type="number" id="ia-guion-chapters" class="ia-input" placeholder="Número de capítulos" value="5">
+                        <button id="btn-gen-guion" class="io-btn" onclick="generateScriptFromText()">Generar Guion</button>
+
+                        <div id="guion-progress" class="progress-wrapper">
+                            <div class="progress-info">
+                                <span class="progress-text">Procesando...</span>
+                                <span class="progress-percent">0%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="io-card">
+                        <h3>Crear Libro</h3>
+                        <select id="ia-script-selector" class="ia-select"></select>
+                        <button class="io-btn" onclick="refreshScriptSelector()" style="margin-bottom:10px;">Actualizar Lista</button>
+                        <textarea id="ia-libro-nuance" class="ia-textarea" placeholder="Matices de estilo..."></textarea>
+                        
+                        <input type="number" id="ia-book-paragraphs" class="ia-input" placeholder="Párrafos por capítulo (aprox. 5)" value="5">
+                        
+                        <button id="btn-gen-libro" class="io-btn" onclick="generateBookFromText()">Generar Libro</button>
+
+                        <div id="libro-progress" class="progress-wrapper">
+                            <div class="progress-info">
+                                <span class="progress-text">Inicializando...</span>
+                                <span class="progress-percent">0%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="io-card" style="border-left: 3px solid #4285F4;">
+                        <h3>Configuración Google API</h3>
+                        <p style="font-size:0.8rem; margin-bottom:10px; color:#666;">
+                            Usa una API Key de Google AI Studio (Gemini/Gemma).<br>
+                            <strong>Modo Metralleta:</strong> Puedes pegar varias Keys separadas por comas (Key1, Key2, Key3...).
+                        </p>
+                        <input type="password" id="google-api-key" class="ia-input" placeholder="Pegar Keys aquí (Key1, Key2...)">
+                        <button class="io-btn action" onclick="saveGoogleApiKey()">Guardar Key</button>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <div id="export-modal" class="modal-overlay">
+        <div class="modal-content glass-container">
+            <div class="modal-header">
+                <h3>Opciones de Exportación</h3>
+                <button class="btn-icon" onclick="closeExportModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="export-group">
+                    <label>Selecciona los elementos:</label>
+                    <div id="export-selection-container" class="export-list-scroll"></div>
+                </div>
+                <div class="export-group" style="margin-top: 20px;">
+                    <label>Formato de salida</label>
+                    <div class="checkbox-row">
+                        <label><input type="radio" name="export-format" value="html" checked> HTML</label>
+                        <label><input type="radio" name="export-format" value="txt"> TXT</label>
+                        <label><input type="radio" name="export-format" value="doc"> DOC</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="io-btn" onclick="closeExportModal()">Cancelar</button>
+                <button class="io-btn action" onclick="executeExport()">Descargar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="new-project-modal" class="modal-overlay">
+        <div class="modal-content glass-container">
+            <div class="modal-header">
+                <h3>Empezar Nuevo Proyecto</h3>
+                <button class="btn-icon" onclick="closeNewProjectModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 20px; font-size: 0.95rem; line-height: 1.5;">
+                    Estás a punto de borrar todos los <strong>Datos, Guiones y Libros</strong> actuales para empezar un universo nuevo.
+                    <br><br>
+                    ¿Qué quieres hacer antes de borrar?
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button class="io-btn action" onclick="createNewProject(true)" style="text-align: center;">
+                        ⬇️ Guardar Copia y Empezar Nuevo
+                    </button>
+                    <button class="io-btn" onclick="createNewProject(false)" style="text-align: center; color: #a00; border: 1px solid rgba(200,0,0,0.2);">
+                        ⚠️ Borrar todo sin guardar
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="io-btn" onclick="closeNewProjectModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+<script type="module" src="libro_ui.js"></script>
+<script type="module" src="guion_ui.js"></script>
+<script type="module" src="datos_ui.js"></script>
+<script type="module" src="io.js"></script>
+<script type="module" src="main.js"></script>
+<script type="module" src="apikey.js"></script>
+<script type="module" src="ia_guiones.js"></script>
+<script type="module" src="ia_libros.js"></script>
+
+</body>
+</html>
