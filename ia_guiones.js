@@ -2,13 +2,20 @@
 import { getApiKeysList } from './apikey.js';
 import { callGoogleAPI, cleanAndParseJSON, delay } from './ia_koreh.js';
 
-console.log("Módulo IA Guiones Cargado (v2.0 - Strict Data Mode)");
+console.log("Módulo IA Guiones Cargado (v2.1 - Event Listener Fixed)");
 
 const guionPromptInput = document.getElementById('ia-guion-prompt');
 const chaptersInput = document.getElementById('ia-guion-chapters');
 const btnGenGuion = document.getElementById('btn-gen-guion');
 const useDataToggle = document.getElementById('ia-use-data');
 const progressContainer = document.getElementById('guion-progress');
+
+// --- CORRECCIÓN DE EVENTOS (FIX REFERENCE ERROR) ---
+// Vinculamos el evento directamente en JS para no depender del HTML onclick
+if (btnGenGuion) {
+    btnGenGuion.onclick = null; // Eliminamos la referencia rota del HTML
+    btnGenGuion.addEventListener('click', generateScriptFromText);
+}
 
 // --- HELPERS UI ---
 function updateProgress(percent, text) {
@@ -37,7 +44,7 @@ function getUniverseContext() {
 // --- LÓGICA PRINCIPAL ---
 
 async function generateScriptFromText() {
-    // CORRECCIÓN CRÍTICA: Añadido 'await' para asegurar la sincronización con el servidor
+    // Verificamos llaves antes de nada
     const keys = await getApiKeysList();
     
     if (!keys || keys.length === 0) return alert("El sistema no pudo recuperar las llaves del servidor y no hay ninguna configurada manualmente.");
@@ -281,4 +288,5 @@ function saveGeneratedScript(title, plot, chaptersArr) {
     localStorage.setItem('minimal_scripts_v1', JSON.stringify(scripts));
 }
 
+// Mantenemos la exportación por compatibilidad, aunque el listener ya se encarga
 window.generateScriptFromText = generateScriptFromText;
