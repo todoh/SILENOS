@@ -60,6 +60,7 @@ body {
 input[name="tab-control"] { display: none; }
 
 .nav-header {
+    overflow-x: scroll;
     display: flex;
     justify-content: center;
     gap: 40px;
@@ -67,6 +68,8 @@ input[name="tab-control"] { display: none; }
     border-bottom: 1px solid var(--glass-border);
     background: rgba(255,255,255,0.5);
     z-index: 10;
+    padding-left: 140px;
+    padding-right: 40px;
 }
 
 .nav-header label {
