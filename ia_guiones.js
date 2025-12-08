@@ -1,20 +1,16 @@
-// --- IA: GENERACIÓN DE GUIONES (Google Gemma 3 - MODO METRALLETA) ---
+// --- IA: GENERACIÓN DE GUIONES (Controlador UI) ---
 import { getApiKeysList } from './apikey.js';
+import { callGoogleAPI, cleanAndParseJSON, delay } from './ia_koreh.js';
 
-console.log("Módulo IA Guiones Cargado (Rotación de Keys Activa)");
+console.log("Módulo IA Guiones Cargado (v2.0 - Strict Data Mode)");
 
 const guionPromptInput = document.getElementById('ia-guion-prompt');
 const chaptersInput = document.getElementById('ia-guion-chapters');
 const btnGenGuion = document.getElementById('btn-gen-guion');
 const useDataToggle = document.getElementById('ia-use-data');
-
-// Referencias a UI de progreso
 const progressContainer = document.getElementById('guion-progress');
 
-// Helper de espera
-const delay = ms => new Promise(res => setTimeout(res, ms));
-
-// Helper UI Progreso
+// --- HELPERS UI ---
 function updateProgress(percent, text) {
     if(!progressContainer) return;
     const fill = progressContainer.querySelector('.progress-fill');
@@ -32,127 +28,29 @@ function showProgress(show) {
     else progressContainer.classList.remove('active');
 }
 
-// Helper para limpiar respuesta JSON
-function cleanAndParseJSON(str) {
-    try {
-        const firstBrace = str.indexOf('{');
-        const lastBrace = str.lastIndexOf('}');
-        
-        if (firstBrace !== -1 && lastBrace !== -1) {
-            str = str.substring(firstBrace, lastBrace + 1);
-        }
-
-        let clean = str.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(clean);
-    } catch (e) {
-        console.error("Fallo parseando JSON:", e);
-        console.log("Raw string recibida:", str);
-        return null;
-    }
-}
-
 function getUniverseContext() {
     const rawData = JSON.parse(localStorage.getItem('minimal_universal_data')) || [];
-    if (rawData.length === 0) return "No hay datos definidos en el Universo.";
-    return rawData.map(d => `[CATEGORÍA: ${d.category || 'GENERAL'}] TÍTULO: ${d.title}\nCONTENIDO: ${d.content}`).join('\n\n');
+    if (rawData.length === 0) return "No hay datos definidos en el Universo. Usa el input del usuario como única fuente.";
+    return rawData.map(d => `[DATO: ${d.category || 'GENERAL'}] TÍTULO: ${d.title}\nCONTENIDO: ${d.content}`).join('\n\n');
 }
 
-// --- FUNCIÓN PRINCIPAL DE LLAMADA A GOOGLE (MODO METRALLETA) ---
-async function callGoogleAPI(systemPrompt, userPrompt, temperature = 0.7) {
-    
-    const keyList = getApiKeysList();
-    if (!keyList || keyList.length === 0) throw new Error("No hay API Keys configuradas.");
-
-    const MODEL_NAME = "gemma-3-12b-it"; 
-    const MAX_RETRIES = 27; // Límite de intentos total
-    let lastError = null;
-
-    // Bucle de rotación
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-        
-        // Selección de Key rotativa: 0%3=0, 1%3=1, 2%3=2, 3%3=0...
-        const currentKey = keyList[attempt % keyList.length];
-        
-        // Log discreto para depuración
-        console.log(`Intento ${attempt + 1}/${MAX_RETRIES} usando Key finalizada en ...${currentKey.slice(-4)}`);
-
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${currentKey}`;
-
-        const combinedPrompt = `
-        === INSTRUCCIONES DEL SISTEMA ===
-        ${systemPrompt}
-        
-        === ENTRADA DEL USUARIO ===
-        ${userPrompt}
-        `;
-
-        const payload = {
-            contents: [{ role: "user", parts: [{ text: combinedPrompt }] }],
-            generationConfig: {
-                temperature: temperature,
-                maxOutputTokens: 8192
-            }
-        };
-
-        try {
-            const response = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-
-            // Si la respuesta NO es ok, lanzamos error para que lo capture el catch y rote
-            if (!response.ok) {
-                const errData = await response.json().catch(() => ({}));
-                const status = response.status;
-                const msg = errData.error?.message || response.statusText;
-                
-                // Errores "Retryables": 429 (Too Many Requests), 503 (Service Unavailable), 500 (Internal)
-                // En realidad, en modo metralleta, ante CUALQUIER error probamos la siguiente llave.
-                throw new Error(`Error API (${status}): ${msg}`);
-            }
-            
-            const data = await response.json();
-            
-            if (!data.candidates || data.candidates.length === 0) {
-                // Si devuelve 200 pero vacío, es un fallo lógico, quizás no merezca la pena rotar, 
-                // pero por seguridad, rotamos.
-                throw new Error("La IA no devolvió candidatos de texto (Respuesta vacía).");
-            }
-
-            // ÉXITO: Retornamos el texto inmediatamente y rompemos el bucle
-            return data.candidates[0].content.parts[0].text;
-
-        } catch (error) {
-            lastError = error;
-            console.warn(`Fallo en intento ${attempt + 1}: ${error.message}. Cambiando cargador...`);
-            
-            // Pequeña pausa antes de recargar (opcional, ayuda a no saturar CPU local)
-            // Si es el último intento, no esperamos
-            if (attempt < MAX_RETRIES - 1) {
-                await delay(500); // 0.5s de tiempo de recarga
-            }
-        }
-    }
-
-    // Si llegamos aquí, han fallado los 27 intentos
-    throw new Error(`Fallo total tras ${MAX_RETRIES} intentos. Último error: ${lastError.message}`);
-}
+// --- LÓGICA PRINCIPAL ---
 
 async function generateScriptFromText() {
-    // Verificación inicial de existencia de keys
-    const keys = getApiKeysList();
-    if (keys.length === 0) return alert("Configura al menos una Google API Key.");
+    // CORRECCIÓN CRÍTICA: Añadido 'await' para asegurar la sincronización con el servidor
+    const keys = await getApiKeysList();
+    
+    if (!keys || keys.length === 0) return alert("El sistema no pudo recuperar las llaves del servidor y no hay ninguna configurada manualmente.");
 
     const promptText = guionPromptInput ? guionPromptInput.value.trim() : "";
     const numChapters = chaptersInput ? parseInt(chaptersInput.value) : 5;
     const useDeepData = useDataToggle ? useDataToggle.checked : false;
 
-    if (!promptText) return alert("Escribe una descripción.");
+    if (!promptText) return alert("Escribe una descripción o pega tu índice de capítulos.");
 
     if(btnGenGuion) btnGenGuion.disabled = true;
     showProgress(true);
-    updateProgress(5, "Iniciando secuencia de disparo...");
+    updateProgress(5, "Analizando instrucciones...");
 
     try {
         if (useDeepData) {
@@ -161,138 +59,208 @@ async function generateScriptFromText() {
             await generateFastScript(promptText, numChapters);
         }
 
-        updateProgress(100, "¡Objetivo Neutralizado (Completado)!");
+        updateProgress(100, "¡Guion Terminado!");
         await delay(500);
         alert("¡Guion generado correctamente!");
-        if(guionPromptInput) guionPromptInput.value = "";
+        // No borramos el prompt por si el usuario quiere reajustar algo
         
         if (window.renderScriptList) window.renderScriptList();
         if (window.refreshScriptSelector) window.refreshScriptSelector();
 
     } catch (err) {
-        alert("Error Crítico: " + err.message);
-        updateProgress(0, "Misión Fallida");
+        console.error(err);
+        alert("Error en el proceso: " + err.message);
+        updateProgress(0, "Proceso Detenido");
     } finally {
         if(btnGenGuion) {
             btnGenGuion.innerText = "Generar Guion";
             btnGenGuion.disabled = false;
         }
-        setTimeout(() => showProgress(false), 2000);
+        setTimeout(() => showProgress(false), 3000);
     }
 }
 
-// --- MODO 1: RÁPIDO ---
+// --- MODO 1: RÁPIDO (Estructura Simple) ---
 async function generateFastScript(promptText, numChapters) {
-    if(btnGenGuion) btnGenGuion.innerText = "Creando Estructura...";
-    updateProgress(30, "Generando estructura completa...");
+    if(btnGenGuion) btnGenGuion.innerText = "Estructurando...";
+    updateProgress(30, "Creando esqueleto del guion...");
 
     const jsonTemplate = {
         "title": "Título del Guion",
-        "plot_summary": "Resumen general de toda la historia (Planteamiento General)",
-        "chapters": [ { "number": 1, "summary": "Resumen específico de lo que pasa en este capítulo" } ]
+        "plot_summary": "Resumen o Tesis del documento",
+        "chapters": [ { "number": 1, "summary": "Descripción precisa del contenido..." } ]
     };
 
-    const systemPrompt = `Eres un guionista experto. 
-    Genera una estructura narrativa de ${numChapters} capítulos basada en la idea del usuario.
+    // Prompt ajustado para OBEDECER estructuras
+    const systemPrompt = `Eres un Arquitecto de Contenidos y Guionista Experto.
+    TAREA: Crear una estructura de ${numChapters} capítulos basada ESTRICTAMENTE en la entrada del usuario.
     
-    ESTRUCTURA DE SALIDA:
-    1. Un "plot_summary" que sirva como visión global.
-    2. Una lista de "chapters", donde cada uno tiene su resumen específico.
+    DIRECTRICES CRÍTICAS:
+    1. SI EL USUARIO DA UN ÍNDICE/ESQUEMA: Úsalo tal cual. Tu trabajo es formatearlo a JSON, no inventar una historia nueva.
+    2. SI ES NO-FICCIÓN (Ensayo, Tesis): Mantén el rigor, los temas y la estructura lógica. No inventes personajes ni drama.
+    3. SI ES FICCIÓN (Idea vaga): Crea una estructura narrativa clásica.
     
-    Responde SOLO con JSON válido siguiendo este esquema: ${JSON.stringify(jsonTemplate)}`;
+    Tu salida debe ser un JSON válido que represente fielmente la voluntad del usuario.
+    FORMATO: ${JSON.stringify(jsonTemplate)}`;
 
-    const userPrompt = `Idea: ${promptText}.`;
+    const userPrompt = `[INSTRUCCIONES / ESQUEMA DEL USUARIO]:\n${promptText}`;
 
-    // Ya no pasamos apiKey individual, la función callGoogleAPI gestiona la lista
-    const jsonRaw = await callGoogleAPI(systemPrompt, userPrompt);
-    updateProgress(80, "Procesando respuesta...");
+    const jsonRaw = await callGoogleAPI(systemPrompt, userPrompt, {
+        model: "gemma-3-12b-it",
+        temperature: 0.7 // Temperatura más baja para ser más fiel a las instrucciones
+    });
+
+    updateProgress(80, "Guardando estructura...");
     
     const scriptData = cleanAndParseJSON(jsonRaw);
-
-    if (!scriptData) throw new Error("Gemma no devolvió un JSON válido tras múltiples intentos.");
+    if (!scriptData) throw new Error("La IA no devolvió un JSON válido.");
 
     saveGeneratedScript(scriptData.title, scriptData.plot_summary, scriptData.chapters);
 }
 
-// --- MODO 2: PROFUNDO (Contexto Universo) ---
+// --- MODO 2: PROFUNDO (Plan + Ejecución) ---
 async function generateDeepScript(promptText, numChapters) {
     const universeContext = getUniverseContext();
     
-    // Total steps = 1 (Plot) + numChapters
-    const totalSteps = 1 + numChapters;
-    let currentStep = 0;
-
-    // Paso 1: Trama General
-    if(btnGenGuion) btnGenGuion.innerText = "Consultando Universo...";
-    updateProgress(10, "Creando trama maestra...");
+    // FASE 1: EL PLAN MAESTRO
+    if(btnGenGuion) btnGenGuion.innerText = "Planificando...";
+    updateProgress(10, "Interpretando estructura del usuario...");
     
-    const systemPromptPlot = `Eres un Arquitecto Narrativo experto usando la 'Biblia de Universo' proporcionada.
-    Crea una trama sólida de ${numChapters} capítulos.
-    Responde ÚNICAMENTE con un JSON crudo: { "title": "Título", "plot_summary": "Resumen detallado de toda la obra..." }`;
+    const systemPromptPlan = `Eres un Editor Jefe y Arquitecto Narrativo.
+    TU OBJETIVO: Analizar la solicitud del usuario y crear un PLAN DE CAPÍTULOS DETALLADO.
     
-    const userPromptPlot = `[DATOS DEL UNIVERSO]:\n${universeContext}\n\n[IDEA USUARIO]:\n${promptText}`;
-
-    const plotJsonRaw = await callGoogleAPI(systemPromptPlot, userPromptPlot);
-    const plotData = cleanAndParseJSON(plotJsonRaw);
+    REGLA DE ORO (STRICT MODE):
+    - Si el input del usuario contiene un ÍNDICE, LISTA DE TEMAS o ESQUEMA DE CAPÍTULOS: ¡COPIA Y ADAPTA ESA ESTRUCTURA! No inventes nada fuera de ella.
+    - Si el input es abstracto, entonces propón una estructura creativa.
+    - Diferencia claramente entre FICCIÓN (Narrativa) y NO-FICCIÓN (Ensayo, Documental).
     
-    currentStep++;
-    let percent = (currentStep / totalSteps) * 100;
-    updateProgress(percent, "Trama maestra lista. Diseñando capítulos...");
+    Debes generar una lista 'chapter_plan' con EXACTAMENTE ${numChapters} elementos (o los que dicte el esquema del usuario si es explícito).
+    
+    FORMATO JSON: 
+    { 
+        "title": "Título del Proyecto", 
+        "global_context": "Contexto general o Tesis central", 
+        "chapter_plan": [
+            "Instrucción detallada para el Cap 1",
+            "Instrucción detallada para el Cap 2",
+            ...
+        ] 
+    }`;
+    
+    const userPromptPlan = `
+    [CONTEXTO DEL UNIVERSO/DATOS]:
+    ${universeContext}
+    
+    [INPUT DEL USUARIO (ESTRUCTURA BASE)]:
+    ${promptText}
+    `;
 
-    const generatedChapters = [];
-    const title = plotData?.title || "Guion IA";
-    const generalPlotFull = plotData?.plot_summary || "Trama generada...";
+    const planJsonRaw = await callGoogleAPI(systemPromptPlan, userPromptPlan, {
+        model: "gemma-3-27b-it", // Usamos modelo mayor para mejor comprensión lectora
+        temperature: 0.7 
+    });
 
-    // Paso 2: Loop de Capítulos
-    for (let i = 1; i <= numChapters; i++) {
-        if(btnGenGuion) btnGenGuion.innerText = `Diseñando Cap ${i}/${numChapters}...`;
-        if (i > 1) await delay(1000); 
-
-        const summariesSoFar = generatedChapters.map(c => `Cap ${c.number}: ${c.summary}`).join('\n');
-
-        const systemPromptChap = `Eres un Guionista Técnico detallando el Capítulo ${i} de ${numChapters}.
-        Responde ÚNICAMENTE con un JSON crudo: { "summary": "Acción específica y detalles de este capítulo..." }`;
-
-        const userPromptChap = `
-        [TRAMA GLOBAL]: ${generalPlotFull}
-        [CAPÍTULOS ANTERIORES]: ${summariesSoFar || "Inicio"}
-        [CONTEXTO UNIVERSO]: ${universeContext}
-        `;
-
-        const chapJsonRaw = await callGoogleAPI(systemPromptChap, userPromptChap);
-        const chapData = cleanAndParseJSON(chapJsonRaw);
-
-        generatedChapters.push({
-            number: i,
-            summary: chapData?.summary || "Error generando capítulo."
-        });
-
-        currentStep++;
-        percent = (currentStep / totalSteps) * 100;
-        updateProgress(percent, `Capítulo ${i} diseñado...`);
+    const planData = cleanAndParseJSON(planJsonRaw);
+    if (!planData || !planData.chapter_plan || !Array.isArray(planData.chapter_plan)) {
+        throw new Error("La IA no pudo interpretar el esquema. Intenta simplificar el input o usa el modo rápido.");
     }
 
-    saveGeneratedScript(title, generalPlotFull, generatedChapters);
+    const planList = planData.chapter_plan;
+    const totalSteps = planList.length;
+    const generatedChapters = [];
+    
+    // FASE 2: EJECUCIÓN DEL PLAN
+    updateProgress(20, "Plan aprobado. Escribiendo contenidos...");
+
+    for (let i = 0; i < totalSteps; i++) {
+        const currentStepNum = i + 1;
+        const currentInstruction = planList[i];
+        
+        if(btnGenGuion) btnGenGuion.innerText = `Escribiendo Cap ${currentStepNum}/${totalSteps}...`;
+        const percent = 20 + ((currentStepNum / totalSteps) * 80);
+        updateProgress(percent, `Redactando Capítulo ${currentStepNum}: ${currentInstruction.substring(0, 20)}...`);
+
+        // Pausa técnica
+        if (i > 0) await delay(800);
+
+        let chapterContent = "";
+        let retries = 0;
+        let success = false;
+
+        while (!success && retries < 3) {
+            const systemPromptWrite = `Eres un Redactor Profesional (Ghostwriter).
+            ESTAMOS EN: Capítulo ${currentStepNum} de ${totalSteps}.
+            CONTEXTO GLOBAL: ${planData.global_context}
+            
+            TU ORDEN: Escribe el contenido COMPLETO para este capítulo basándote ÚNICAMENTE en la instrucción específica del plan.
+            - Si la instrucción pide teoría/ensayo: Escribe teoría profunda.
+            - Si la instrucción pide escena/diálogo: Escribe narrativa.
+            - NO te desvíes del tema asignado a este capítulo.
+            - NO repitas introducciones, ve al grano.
+            
+            OUTPUT: JSON estricto { "content": "Texto del contenido..." }`;
+
+            const userPromptWrite = `
+            [PLAN DE CAPÍTULO ACTUAL]: "${currentInstruction}"
+            
+            [RESUMEN DE LO ANTERIOR]:
+            ${generatedChapters.length > 0 ? generatedChapters[generatedChapters.length - 1].summary.substring(0, 200) + "..." : "Inicio del documento."}
+            `;
+
+            try {
+                const chapJsonRaw = await callGoogleAPI(systemPromptWrite, userPromptWrite, {
+                    model: "gemma-3-27b-it",
+                    temperature: 0.8
+                });
+
+                const chapData = cleanAndParseJSON(chapJsonRaw);
+                
+                if (chapData && chapData.content) {
+                    chapterContent = chapData.content;
+                    success = true;
+                } else {
+                    // Fallback texto plano si falla JSON
+                    if (chapJsonRaw && chapJsonRaw.length > 20) {
+                        chapterContent = chapJsonRaw;
+                        success = true;
+                    } else {
+                        retries++;
+                    }
+                }
+            } catch (e) {
+                console.error(`Error cap ${currentStepNum}`, e);
+                retries++;
+                await delay(1000);
+            }
+        }
+
+        generatedChapters.push({
+            number: currentStepNum,
+            summary: chapterContent || "[Error: La IA no pudo generar contenido para este punto]"
+        });
+    }
+
+    saveGeneratedScript(planData.title, planData.global_context, generatedChapters);
 }
 
-// --- FUNCIÓN DE GUARDADO ESTRUCTURAL ---
+// --- GUARDADO ---
 function saveGeneratedScript(title, plot, chaptersArr) {
     const scenes = [];
 
-    // ESCENA 1: PLANTEAMIENTO GENERAL
+    // Escena 0: Planteamiento / Contexto
     scenes.push({
-        title: "ESCENA 1: PLANTEAMIENTO GENERAL",
+        title: "INTRODUCCIÓN / CONTEXTO GLOBAL",
         paragraphs: [{ 
             text: plot || "Sin resumen general.", 
             image: null 
         }]
     });
 
-    // ESCENAS 2...N: PLANTEAMIENTOS DE CAPÍTULO
+    // Escenas de Capítulos
     if (chaptersArr && Array.isArray(chaptersArr)) {
         chaptersArr.forEach(chap => {
             scenes.push({ 
-                title: `ESCENA ${parseInt(chap.number) + 1}: PLANTEAMIENTO CAPÍTULO ${chap.number}`, 
+                title: `CAPÍTULO ${chap.number}`, 
                 paragraphs: [{ 
                     text: chap.summary || "Contenido pendiente.", 
                     image: null 
@@ -303,7 +271,7 @@ function saveGeneratedScript(title, plot, chaptersArr) {
 
     const newScript = {
         id: Date.now(),
-        title: title || "Guion Estructurado IA",
+        title: title || "Guion Generado (IA)",
         isAI: true,
         scenes: scenes
     };
@@ -313,5 +281,4 @@ function saveGeneratedScript(title, plot, chaptersArr) {
     localStorage.setItem('minimal_scripts_v1', JSON.stringify(scripts));
 }
 
-// Exportar funciones
 window.generateScriptFromText = generateScriptFromText;

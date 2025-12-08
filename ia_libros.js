@@ -1,19 +1,16 @@
-// --- IA: GENERACIÓN DE LIBROS (Google Gemma 3 - MODO METRALLETA) ---
+// --- IA: GENERACIÓN DE LIBROS (Controlador UI) ---
 import { getApiKeysList } from './apikey.js';
+import { callGoogleAPI, cleanAndParseJSON, delay } from './ia_koreh.js';
 
-console.log("Módulo IA Libros Cargado (Rotación de Keys Activa)");
+console.log("Módulo IA Libros Cargado (Conectado a Koreh)");
 
 const scriptSelector = document.getElementById('ia-script-selector');
 const nuanceInput = document.getElementById('ia-libro-nuance');
 const paragraphsInput = document.getElementById('ia-book-paragraphs');
 const btnGenLibro = document.getElementById('btn-gen-libro');
-
-// Referencias a UI de progreso
 const progressContainer = document.getElementById('libro-progress');
 
-const delay = ms => new Promise(res => setTimeout(res, ms));
-
-// Helper UI Progreso
+// --- HELPERS UI ---
 function updateProgress(percent, text) {
     if(!progressContainer) return;
     const fill = progressContainer.querySelector('.progress-fill');
@@ -29,91 +26,6 @@ function showProgress(show) {
     if(!progressContainer) return;
     if(show) progressContainer.classList.add('active');
     else progressContainer.classList.remove('active');
-}
-
-function cleanAndParseJSON(str) {
-    try {
-        const firstBrace = str.indexOf('{');
-        const lastBrace = str.lastIndexOf('}');
-        
-        if (firstBrace !== -1 && lastBrace !== -1) {
-            str = str.substring(firstBrace, lastBrace + 1);
-        }
-
-        let clean = str.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(clean);
-    } catch (e) {
-        console.error("Error parseando JSON libro:", e);
-        console.log("Raw string recibida:", str);
-        return { chapter_title: "Borrador (Raw)", content: [str] };
-    }
-}
-
-// --- FUNCIÓN DE LLAMADA API CON ROTACIÓN DE KEYS ---
-async function callGoogleAPI(systemPrompt, userPrompt) {
-    
-    const keyList = getApiKeysList();
-    if (!keyList || keyList.length === 0) throw new Error("No hay API Keys configuradas.");
-
-    const MODEL_NAME = "gemma-3-27b-it"; // Modelo más potente para prosa
-    const MAX_RETRIES = 27;
-    let lastError = null;
-
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-        
-        const currentKey = keyList[attempt % keyList.length];
-        
-        // Debug
-        // console.log(`[Libros] Intento ${attempt+1} con Key ...${currentKey.slice(-4)}`);
-
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${currentKey}`;
-
-        const combinedPrompt = `
-        === ROL Y TAREA (SYSTEM) ===
-        ${systemPrompt}
-        
-        === CONTEXTO Y PETICIÓN (USER) ===
-        ${userPrompt}
-        `;
-
-        const payload = {
-            contents: [{ role: "user", parts: [{ text: combinedPrompt }] }],
-            generationConfig: {
-                temperature: 0.8,
-                maxOutputTokens: 8192
-            }
-        };
-
-        try {
-            const response = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                const errData = await response.json().catch(() => ({}));
-                const status = response.status;
-                const msg = errData.error?.message || response.statusText;
-                throw new Error(`Error API (${status}): ${msg}`);
-            }
-            
-            const data = await response.json();
-            if (!data.candidates || data.candidates.length === 0) throw new Error("IA no devolvió texto.");
-            
-            return data.candidates[0].content.parts[0].text;
-
-        } catch (error) {
-            lastError = error;
-            console.warn(`[Libros] Error Intento ${attempt + 1}: ${error.message}. Rotando...`);
-            
-            if (attempt < MAX_RETRIES - 1) {
-                await delay(1000); // Espera un poco más generosa para libros (modelos grandes)
-            }
-        }
-    }
-
-    throw new Error(`Fallo masivo tras ${MAX_RETRIES} intentos. Último: ${lastError.message}`);
 }
 
 function refreshScriptSelector() {
@@ -132,10 +44,13 @@ function refreshScriptSelector() {
 
 document.addEventListener('DOMContentLoaded', refreshScriptSelector);
 
+// --- LÓGICA PRINCIPAL ---
+
 async function generateBookFromText() {
-    // Verificación de Keys
-    const keys = getApiKeysList();
-    if (keys.length === 0) return alert("Configura la API Key de Google (soporta múltiples separadas por coma).");
+    // CORRECCIÓN CRÍTICA: Añadido 'await' para asegurar la sincronización con el servidor
+    const keys = await getApiKeysList();
+    
+    if (!keys || keys.length === 0) return alert("El sistema no pudo recuperar las llaves del servidor y no hay ninguna configurada manualmente.");
 
     const scriptId = scriptSelector.value;
     if (!scriptId) return alert("Selecciona un guion.");
@@ -149,6 +64,7 @@ async function generateBookFromText() {
     if (!sourceScript) return;
     if (!sourceScript.scenes || sourceScript.scenes.length === 0) return alert("El guion está vacío.");
 
+    // Preparación del Contexto
     let globalContext = "";
     let chapterScenes = [];
 
@@ -175,7 +91,7 @@ async function generateBookFromText() {
 
     try {
         for (let i = 0; i < totalChapters; i++) {
-            // Actualizar progreso UI
+            
             const percent = ((i) / totalChapters) * 100;
             updateProgress(percent, `Redactando Capítulo ${i+1}/${totalChapters}...`);
             if(btnGenLibro) btnGenLibro.innerText = `Cap ${i+1}/${totalChapters}...`;
@@ -184,6 +100,7 @@ async function generateBookFromText() {
             const sceneContent = sceneData.paragraphs.map(p => p.text).join('\n');
             const sceneTitle = sceneData.title;
 
+            // Contexto narrativo deslizante
             const narrativePrev = previousChapterText.length > 1500 
                 ? "..." + previousChapterText.slice(-1500) 
                 : previousChapterText;
@@ -203,8 +120,20 @@ async function generateBookFromText() {
             [LO QUE HA PASADO ANTES]: ${narrativePrev || "Inicio de la novela."}
             [INSTRUCCIÓN CAPÍTULO (${sceneTitle})]: ${sceneContent}`;
 
-            const jsonRaw = await callGoogleAPI(systemPrompt, userPrompt);
-            const chapterData = cleanAndParseJSON(jsonRaw);
+            // LLAMADA A KOREH
+            // Usamos el modelo 27b para libros porque escribe mejor prosa
+            const jsonRaw = await callGoogleAPI(systemPrompt, userPrompt, {
+                model: "gemma-3-27b-it",
+                temperature: 0.8
+            });
+            
+            // Si callGoogleAPI falla lanza error y va al catch, si no, devuelve texto
+            let chapterData = cleanAndParseJSON(jsonRaw);
+
+            // Fallback si la IA devolvió texto plano en vez de JSON
+            if (!chapterData) {
+                chapterData = { chapter_title: sceneTitle, content: [jsonRaw] };
+            }
 
             const structuredParagraphs = Array.isArray(chapterData.content) 
                 ? chapterData.content.map(p => ({ text: p, image: null }))
@@ -217,6 +146,7 @@ async function generateBookFromText() {
             
             previousChapterText = Array.isArray(chapterData.content) ? chapterData.content.join(" ") : jsonRaw;
 
+            // Pausa de cortesía para no saturar tras generar un capítulo largo
             if (i < totalChapters - 1) await delay(2000);
         }
 
