@@ -1,8 +1,7 @@
+// --- CONTROLES DE CAMARA (PAN & ZOOM) v2.0 ---
+// Gestiona el movimiento del lienzo infinito y el sistema de enfoque
 
-// --- CONTROLES DE CAMARA (PAN & ZOOM) ---
-// Gestiona el movimiento del lienzo infinito
-
-console.log("Módulo Controles Gamebook Cargado (v1.0)");
+console.log("Módulo Controles Gamebook Cargado (v2.0 - Focus System)");
 
 // Estado de la cámara
 let cameraState = {
@@ -11,23 +10,16 @@ let cameraState = {
     scale: 1
 };
 
-// Configuración
 const ZOOM_SPEED = 0.1;
-const MIN_SCALE = 0.1;
-const MAX_SCALE = 5;
+const MIN_SCALE = 0.2;
+const MAX_SCALE = 3;
 
-// Referencias
 let canvasArea = null;
 let viewport = null;
 
-// Variables internas de arrastre
 let isPanning = false;
-let startX = 0;
-let startY = 0;
-let lastX = 0;
-let lastY = 0;
-
-// Variables internas de touch (Móvil)
+let startX = 0, startY = 0;
+let lastX = 0, lastY = 0;
 let initialPinchDistance = null;
 let lastScale = 1;
 
@@ -37,11 +29,13 @@ function initControls() {
     canvasArea = document.getElementById('gb-canvas');
     viewport = document.getElementById('gb-viewport');
 
-    if (!canvasArea || !viewport) return;
+    if (!canvasArea || !viewport) {
+        // Reintentar por si el DOM no estaba listo (especialmente en recargas dinámicas)
+        setTimeout(initControls, 500);
+        return;
+    }
 
-    // --- RATÓN (DESKTOP) ---
-    
-    // Zoom con rueda
+    // --- RATÓN ---
     canvasArea.addEventListener('wheel', (e) => {
         e.preventDefault();
         const delta = -Math.sign(e.deltaY);
@@ -49,9 +43,7 @@ function initControls() {
         zoomToPoint(factor, e.clientX, e.clientY);
     }, { passive: false });
 
-    // Pan (Arrastrar fondo)
     canvasArea.addEventListener('mousedown', (e) => {
-        // Solo iniciar si pulsamos directamente en el fondo, no en un nodo o botón
         if (e.target === canvasArea || e.target === viewport || e.target.id === 'gb-connections-layer') {
             isPanning = true;
             startX = e.clientX;
@@ -76,11 +68,9 @@ function initControls() {
         if(canvasArea) canvasArea.style.cursor = 'grab';
     });
 
-    // --- TÁCTIL (MÓVIL) ---
-
+    // --- TÁCTIL ---
     canvasArea.addEventListener('touchstart', (e) => {
         if (e.touches.length === 1) {
-            // Un dedo: Pan
             if (e.target === canvasArea || e.target === viewport || e.target.id === 'gb-connections-layer') {
                 isPanning = true;
                 startX = e.touches[0].clientX;
@@ -89,16 +79,14 @@ function initControls() {
                 lastY = cameraState.y;
             }
         } else if (e.touches.length === 2) {
-            // Dos dedos: Zoom Pinch
-            isPanning = false; // Cancelamos pan
+            isPanning = false;
             initialPinchDistance = getDistance(e.touches);
             lastScale = cameraState.scale;
         }
     }, { passive: false });
 
     canvasArea.addEventListener('touchmove', (e) => {
-        e.preventDefault(); // Evitar scroll nativo del navegador
-
+        e.preventDefault();
         if (isPanning && e.touches.length === 1) {
             const dx = e.touches[0].clientX - startX;
             const dy = e.touches[0].clientY - startY;
@@ -108,18 +96,8 @@ function initControls() {
         } else if (e.touches.length === 2 && initialPinchDistance) {
             const currentDistance = getDistance(e.touches);
             const factor = currentDistance / initialPinchDistance;
-            
-            // Zoom centrado (aproximado al centro de los dedos)
-            const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-            const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-
-            // Calculamos nuevo scale temporal
             let newScale = lastScale * factor;
             newScale = Math.min(Math.max(newScale, MIN_SCALE), MAX_SCALE);
-            
-            // Aplicamos zoom (simplificado para evitar saltos bruscos en móvil)
-            // Para un zoom perfecto al punto exacto en touch se requiere más matemática de matriz,
-            // aquí usamos un enfoque directo sobre el scale.
             cameraState.scale = newScale;
             updateTransform();
         }
@@ -131,23 +109,15 @@ function initControls() {
     });
 }
 
-// --- LÓGICA DE ZOOM ---
-
 function zoomToPoint(factor, mouseX, mouseY) {
     const oldScale = cameraState.scale;
     let newScale = oldScale * factor;
-    
-    // Limitar
     newScale = Math.min(Math.max(newScale, MIN_SCALE), MAX_SCALE);
 
-    // Ajustar posición para que el zoom sea hacia el ratón
     const rect = canvasArea.getBoundingClientRect();
-    const xRel = mouseX - rect.left; // Posición ratón relativa al canvas
+    const xRel = mouseX - rect.left;
     const yRel = mouseY - rect.top;
 
-    // Fórmula mágica de zoom offset
-    // (Posición actual - Ratón) * (NuevoFactor / ViejoFactor) + Ratón
-    // Simplificado: movemos el mundo para compensar el escalado
     cameraState.x = xRel - (xRel - cameraState.x) * (newScale / oldScale);
     cameraState.y = yRel - (yRel - cameraState.y) * (newScale / oldScale);
     cameraState.scale = newScale;
@@ -167,20 +137,41 @@ function getDistance(touches) {
     return Math.sqrt(dx * dx + dy * dy);
 }
 
-// Helpers para otros módulos
+// --- API PÚBLICA PARA UI ---
+
 function getCameraState() {
     return { ...cameraState };
 }
 
-function centerCanvas() {
+// Reseteo básico a 0,0
+function resetCamera() {
     cameraState.x = 0;
     cameraState.y = 0;
     cameraState.scale = 1;
     updateTransform();
 }
 
-// Exportamos globalmente para que librojuego_ui.js pueda leer el zoom actual
+// Nuevo: Centrar en un punto específico (x, y) manteniendo el contenido en el centro de la pantalla
+function focusPoint(targetX, targetY) {
+    if (!canvasArea) return;
+    const rect = canvasArea.getBoundingClientRect();
+    const screenCX = rect.width / 2;
+    const screenCY = rect.height / 2;
+    
+    // Fórmula: Queremos que (targetX * scale + camX) = screenCX
+    // Asumimos escala 1 para ver todo mejor, o mantenemos la actual si prefieres
+    const scale = 1; 
+    
+    cameraState.scale = scale;
+    cameraState.x = screenCX - (targetX * scale);
+    cameraState.y = screenCY - (targetY * scale);
+    
+    updateTransform();
+}
+
+// Exportar globalmente
 window.gamebookControls = {
     getCameraState,
-    centerCanvas
+    resetCamera,
+    focusPoint
 };

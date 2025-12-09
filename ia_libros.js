@@ -1,8 +1,8 @@
-// --- IA: GENERACIÓN DE LIBROS (Arquitectura Pipeline v3.1 - Bugfix & Continuity) ---
+// --- IA: GENERACIÓN DE LIBROS (Arquitectura Pipeline v3.2 - Listener Fixed) ---
 import { getApiKeysList } from './apikey.js';
 import { callGoogleAPI, cleanAndParseJSON, delay } from './ia_koreh.js';
 
-console.log("Módulo IA Libros Cargado (v3.1 - Silent Editor & Deep Memory)");
+console.log("Módulo IA Libros Cargado (v3.2 - Event Link Fixed)");
 
 const scriptSelector = document.getElementById('ia-script-selector');
 const nuanceInput = document.getElementById('ia-libro-nuance');
@@ -11,6 +11,13 @@ const btnGenLibro = document.getElementById('btn-gen-libro');
 const progressContainer = document.getElementById('libro-progress');
 
 const PARAGRAPHS_PER_CHUNK = 5; 
+
+// --- CORRECCIÓN CRÍTICA DE EVENTOS ---
+// Vinculamos el evento directamente en JS para asegurar la conexión
+if (btnGenLibro) {
+    btnGenLibro.onclick = null; // Limpieza por seguridad
+    btnGenLibro.addEventListener('click', generateBookFromText);
+}
 
 // --- HELPERS UI ---
 function updateProgress(percent, text) {

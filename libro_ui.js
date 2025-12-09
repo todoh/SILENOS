@@ -1,402 +1,315 @@
- 
-// --- LÓGICA LIBRO-JUEGO UI v2.5 (Editor Visual - Cleaned) ---
-// T → Tramo (Gestión de nodos y conexiones visuales)
+// --- LÓGICA DE LIBROS UI (Novelas) ---
+console.log("Sistema de Libros Iniciado (v2.0)");
 
-console.log("Sistema Gamebook Visual Cargado (v2.5 - Editor Only)");
+let books = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
+let currentBookId = null;
+let bookUploadContext = { chapterIdx: null, paragraphIdx: null };
 
-let gameNodes = JSON.parse(localStorage.getItem('minimal_gamebook_nodes')) || [];
-let currentNodeId = null;
+// DOM Elements
+const booksContainer = document.getElementById('books-container');
+const bookListView = document.getElementById('book-list-view');
+const bookDetailView = document.getElementById('book-detail-view');
+const bookDetailTitle = document.getElementById('detail-title');
+const chaptersContainer = document.getElementById('chapters-container');
+const bookImageInput = document.getElementById('image-input');
 
-// Drag variables
-let isDraggingNode = false;
-let draggedNodeId = null;
-let initialMouseX = 0;
-let initialMouseY = 0;
-let initialNodeX = 0;
-let initialNodeY = 0;
+// --- INICIO ---
+if (booksContainer) {
+    books = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
+    renderBookList();
+}
 
-// DOM References
-const nodesContainer = document.getElementById('gb-nodes-container');
-const svgLayer = document.getElementById('gb-connections-layer');
-const editorModal = document.getElementById('gb-editor-modal');
+// --- FUNCIONES DE ALMACENAMIENTO ---
+function saveBookData() {
+    try {
+        localStorage.setItem('minimal_books_v4', JSON.stringify(books));
+    } catch (e) {
+        alert("Espacio lleno. Reduce el tamaño de las imágenes.");
+    }
+}
 
-const inputTitle = document.getElementById('gb-node-title');
-const inputText = document.getElementById('gb-node-text');
-const inputIsStart = document.getElementById('gb-is-start');
-const choicesList = document.getElementById('gb-choices-list');
-const nodeIdDisplay = document.getElementById('gb-node-id');
-
-if (nodesContainer) {
-    ensureCoordinates();
-    renderGraph();
+// --- GESTIÓN DE LISTA DE LIBROS ---
+function renderBookList() {
+    books = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
     
-    editorModal.addEventListener('click', (e) => {
-        if (e.target === editorModal) closeNodeEditor();
-    });
+    if (!booksContainer) return;
+    booksContainer.innerHTML = '';
+    
+    if (books.length === 0) {
+        booksContainer.innerHTML = '<div style="text-align:center; padding: 40px; color:#ccc; font-weight:300;">No hay libros creados.</div>';
+        return;
+    }
 
-    // EVENTOS RATÓN (PC)
-    document.addEventListener('mousemove', onGlobalMouseMove);
-    document.addEventListener('mouseup', onGlobalDragEnd);
-
-    // EVENTOS TÁCTILES (MÓVIL)
-    document.addEventListener('touchmove', onGlobalTouchMove, { passive: false });
-    document.addEventListener('touchend', onGlobalDragEnd);
-}
-
-function saveGameData() {
-    localStorage.setItem('minimal_gamebook_nodes', JSON.stringify(gameNodes));
-}
-
-function ensureCoordinates() {
-    gameNodes.forEach((node, index) => {
-        if (typeof node.x === 'undefined') {
-            node.x = 100 + (index * 120) % 800;
-            node.y = 100 + Math.floor(index / 7) * 120;
-        }
-    });
-}
-
-// --- RENDERIZADO ---
-
-function renderGraph() {
-    nodesContainer.innerHTML = '';
-    svgLayer.innerHTML = '';
-
-    drawConnections();
-
-    gameNodes.forEach(node => {
-        const el = document.createElement('div');
-        el.className = `gb-node-circle ${node.isStart ? 'is-start' : ''}`;
-        el.style.left = `${node.x}px`;
-        el.style.top = `${node.y}px`;
-        el.innerHTML = `<span>${node.title || 'Vacío'}</span>`;
+    books.slice().reverse().forEach(book => {
+        const item = document.createElement('div');
+        item.className = 'book-item';
         
-        // 1. MOUSE DOWN (PC)
-        el.addEventListener('mousedown', (e) => {
-            e.stopPropagation(); 
-            startDrag(e, node);
-        });
+        item.onclick = function() { 
+            openBook(book.id); 
+        };
 
-        // 2. TOUCH START (MOVIL)
-        el.addEventListener('touchstart', (e) => {
-            e.stopPropagation(); 
-            startDrag(e, node);
-        }, { passive: false });
+        const chapCount = book.chapters ? book.chapters.length : 0;
+        const aiTag = book.isAI ? '<span class="tag-ai">IA</span>' : '';
 
-        // 3. CLICK (Abrir Editor)
-        el.addEventListener('click', (e) => {
-            if (!isDraggingNode) openNode(node.id);
-        });
-
-        nodesContainer.appendChild(el);
-    });
-}
-
-function drawConnections() {
-    const nodeMap = {};
-    gameNodes.forEach(n => nodeMap[n.id] = n);
-
-    gameNodes.forEach(sourceNode => {
-        if (sourceNode.choices && sourceNode.choices.length > 0) {
-            sourceNode.choices.forEach(choice => {
-                const targetNode = gameNodes.find(n => n.id == choice.targetId);
-                if (targetNode) {
-                    createSvgLine(sourceNode, targetNode);
-                }
-            });
-        }
-    });
-}
-
-function createSvgLine(n1, n2) {
-    const x1 = n1.x + 40;
-    const y1 = n1.y + 40;
-    const x2 = n2.x + 40;
-    const y2 = n2.y + 40;
-
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', x1);
-    line.setAttribute('y1', y1);
-    line.setAttribute('x2', x2);
-    line.setAttribute('y2', y2);
-    line.setAttribute('class', 'connection-line');
-    svgLayer.appendChild(line);
-}
-
-// --- LÓGICA UNIFICADA DE DRAG (TOUCH & MOUSE) ---
-
-function startDrag(e, node) {
-    isDraggingNode = false; 
-    draggedNodeId = node.id;
-    
-    if (e.touches && e.touches.length > 0) {
-        initialMouseX = e.touches[0].clientX;
-        initialMouseY = e.touches[0].clientY;
-    } else {
-        initialMouseX = e.clientX;
-        initialMouseY = e.clientY;
-    }
-    
-    initialNodeX = node.x;
-    initialNodeY = node.y;
-}
-
-function handleDragMove(clientX, clientY) {
-    if (draggedNodeId !== null) {
-        if (Math.abs(clientX - initialMouseX) > 5 || Math.abs(clientY - initialMouseY) > 5) {
-            isDraggingNode = true;
-        }
-
-        if (isDraggingNode) {
-            const node = gameNodes.find(n => n.id === draggedNodeId);
-            
-            let currentScale = 1;
-            if (window.gamebookControls && window.gamebookControls.getCameraState) {
-                currentScale = window.gamebookControls.getCameraState().scale;
-            }
-
-            const deltaX = (clientX - initialMouseX) / currentScale;
-            const deltaY = (clientY - initialMouseY) / currentScale;
-
-            node.x = initialNodeX + deltaX;
-            node.y = initialNodeY + deltaY;
-
-            renderGraph();
-        }
-    }
-}
-
-function onGlobalMouseMove(e) {
-    if (draggedNodeId !== null) {
-        e.preventDefault();
-        handleDragMove(e.clientX, e.clientY);
-    }
-}
-
-function onGlobalTouchMove(e) {
-    if (draggedNodeId !== null) {
-        e.preventDefault(); 
-        handleDragMove(e.touches[0].clientX, e.touches[0].clientY);
-    }
-}
-
-function onGlobalDragEnd(e) {
-    if (draggedNodeId !== null) {
-        if (isDraggingNode) {
-            saveGameData();
-            setTimeout(() => { 
-                isDraggingNode = false; 
-                draggedNodeId = null; 
-            }, 50);
-        } else {
-            draggedNodeId = null;
-        }
-    }
-}
-
-// --- CRUD ---
-
-function createNewNode() {
-    let spawnX = 400; 
-    let spawnY = 300;
-    
-    if (window.gamebookControls && window.gamebookControls.getCameraState) {
-        const cam = window.gamebookControls.getCameraState();
-        spawnX = -cam.x / cam.scale + 400; 
-        spawnY = -cam.y / cam.scale + 300;
-    }
-
-    const newNode = {
-        id: Date.now(),
-        title: "Nueva Escena",
-        text: "",
-        x: spawnX,
-        y: spawnY,
-        choices: [],
-        isStart: gameNodes.length === 0
-    };
-    gameNodes.push(newNode);
-    saveGameData();
-    renderGraph();
-    openNode(newNode.id);
-}
-
-function openNode(id) {
-    currentNodeId = id;
-    const node = gameNodes.find(n => n.id === id);
-    if (!node) return;
-
-    editorModal.classList.add('active');
-    editorModal.style.display = 'flex';
-
-    inputTitle.value = node.title;
-    inputText.value = node.text || "";
-    inputIsStart.checked = node.isStart;
-    nodeIdDisplay.textContent = "ID: " + node.id.toString().slice(-4);
-    
-    renderChoicesEditor();
-}
-
-function closeNodeEditor() {
-    editorModal.classList.remove('active');
-    setTimeout(() => {
-        editorModal.style.display = 'none';
-        renderGraph();
-    }, 200);
-}
-
-function updateNodeData() {
-    if (!currentNodeId) return;
-    const node = gameNodes.find(n => n.id === currentNodeId);
-    node.title = inputTitle.value;
-    node.text = inputText.value;
-    
-    if (inputIsStart.checked) {
-        gameNodes.forEach(n => n.isStart = false);
-        node.isStart = true;
-    } else {
-        node.isStart = false;
-    }
-    saveGameData();
-    renderGraph(); // Importante refrescar visualmente (borde de inicio)
-}
-
-function deleteCurrentNode() {
-    if (confirm("¿Borrar este nodo?")) {
-        gameNodes = gameNodes.filter(n => n.id !== currentNodeId);
-        gameNodes.forEach(n => {
-            n.choices = n.choices.filter(c => c.targetId != currentNodeId); 
-        });
-        saveGameData();
-        closeNodeEditor();
-        renderGraph();
-    }
-}
-
-function renderChoicesEditor() {
-    choicesList.innerHTML = '';
-    const node = gameNodes.find(n => n.id === currentNodeId);
-    
-    node.choices.forEach((choice, index) => {
-        const row = document.createElement('div');
-        row.className = 'gb-choice-item';
-        
-        row.innerHTML = `
-            <input class="gb-choice-text" value="${choice.text}" placeholder="Acción..." oninput="updateChoice(${index}, 'text', this.value)">
-            <select class="gb-choice-target" onchange="updateChoice(${index}, 'targetId', this.value)">
-                <option value="">Destino...</option>
-                ${gameNodes.map(n => `<option value="${n.id}" ${n.id == choice.targetId ? 'selected' : ''}>${n.title}</option>`).join('')}
-            </select>
-            <button class="btn-icon danger" onclick="deleteChoice(${index})">×</button>
+        item.innerHTML = `
+            <div class="book-info" style="pointer-events: none;"> 
+                <div class="book-title">${book.title || 'Libro Sin Título'} ${aiTag}</div>
+                <div class="book-meta">${chapCount} ${chapCount === 1 ? 'Capítulo' : 'Capítulos'}</div>
+            </div>
+            <div style="opacity:0.2; pointer-events: none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
         `;
-        choicesList.appendChild(row);
+        booksContainer.appendChild(item);
     });
 }
 
-function addChoice() {
-    const node = gameNodes.find(n => n.id === currentNodeId);
-    node.choices.push({ text: "", targetId: "" });
-    saveGameData();
-    renderChoicesEditor();
-}
+function createNewBook() {
+    console.log("Creando nuevo libro manual...");
+    // 1. Recuperar lista actual
+    books = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
 
-function updateChoice(index, field, val) {
-    const node = gameNodes.find(n => n.id === currentNodeId);
-    node.choices[index][field] = val;
-    saveGameData();
-}
-
-function deleteChoice(index) {
-    const node = gameNodes.find(n => n.id === currentNodeId);
-    node.choices.splice(index, 1);
-    saveGameData();
-    renderChoicesEditor();
-}
-
-// --- ORGANIZACIÓN JERÁRQUICA ---
-
-function organizeGraph() {
-    if (gameNodes.length === 0) return;
-
-    // 1. Encontrar Inicio
-    const startNode = gameNodes.find(n => n.isStart) || gameNodes[0];
-    
-    // 2. BFS para niveles
-    const levels = {}; 
-    const visited = new Set();
-    const queue = [{ id: startNode.id, level: 0 }];
-
-    visited.add(startNode.id);
-
-    while (queue.length > 0) {
-        const { id, level } = queue.shift();
-        const node = gameNodes.find(n => n.id == id);
-        
-        if (node) {
-            if (!levels[level]) levels[level] = [];
-            levels[level].push(node.id);
-
-            if (node.choices) {
-                node.choices.forEach(choice => {
-                    if (choice.targetId) {
-                        const targetExists = gameNodes.some(n => n.id == choice.targetId);
-                        if (targetExists && !visited.has(choice.targetId)) {
-                            visited.add(choice.targetId);
-                            queue.push({ id: choice.targetId, level: level + 1 });
-                        }
-                    }
-                });
+    // 2. Definir objeto libro
+    const newBook = {
+        id: Date.now(),
+        title: 'Nueva Novela',
+        isAI: false,
+        chapters: [
+            { 
+                title: "Capítulo 1", 
+                paragraphs: [{ text: "", image: null }] 
             }
-        }
-    }
+        ]
+    };
 
-    // 3. Huérfanos (Nodos inconexos)
-    const maxLevel = Math.max(...Object.keys(levels).map(Number)) || 0;
-    const visitedIds = Array.from(visited).map(id => String(id));
-    const orphans = gameNodes.filter(n => !visitedIds.includes(String(n.id)));
+    // 3. Guardar
+    books.push(newBook);
+    saveBookData();
+
+    // 4. Actualizar UI
+    renderBookList(); 
     
-    if (orphans.length > 0) {
-        levels[maxLevel + 2] = orphans.map(n => n.id);
+    // 5. Abrir
+    openBook(newBook.id);
+}
+
+function deleteCurrentBook() {
+    if (confirm("¿Eliminar este libro y todo su contenido?")) {
+        books = books.filter(b => b.id !== currentBookId);
+        saveBookData();
+        goBack();
     }
+}
 
-    // 4. Posicionar
-    const SPACING_X = 140; 
-    const SPACING_Y = 180; 
-    const START_Y = 100;
-    const CENTER_X = 400; 
+// --- VISTA DE EDICIÓN ---
+function openBook(id) {
+    books = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
+    currentBookId = id;
+    const book = books.find(b => b.id === id);
+    if (!book) return;
 
-    Object.keys(levels).forEach(lvlKey => {
-        const level = parseInt(lvlKey);
-        const ids = levels[level];
-        const rowWidth = ids.length * SPACING_X;
-        const startX = CENTER_X - (rowWidth / 2) + (SPACING_X / 2); 
+    bookListView.style.display = 'none';
+    bookDetailView.classList.add('active'); // Usamos clase active para display flex
 
-        ids.forEach((id, index) => {
-            const node = gameNodes.find(n => n.id == id);
-            if (node) {
-                node.x = startX + (index * SPACING_X);
-                node.y = START_Y + (level * SPACING_Y);
+    bookDetailTitle.value = book.title;
+    renderBookContent();
+}
+
+function goBack() {
+    currentBookId = null;
+    bookDetailView.classList.remove('active');
+    bookListView.style.display = 'block';
+    renderBookList();
+}
+
+function updateBookTitle() {
+    const book = books.find(b => b.id === currentBookId);
+    if (book) {
+        book.title = bookDetailTitle.value;
+        saveBookData();
+    }
+}
+
+// --- RENDERIZADO DE CONTENIDO ---
+function renderBookContent() {
+    const book = books.find(b => b.id === currentBookId);
+    if (!book) return;
+
+    chaptersContainer.innerHTML = '';
+
+    book.chapters.forEach((chap, cIndex) => {
+        const chapDiv = document.createElement('div');
+        chapDiv.className = 'chapter-block';
+
+        // Header Capítulo
+        const header = document.createElement('div');
+        header.className = 'chapter-header';
+        header.innerHTML = `
+            <input class="chapter-title" type="text" value="${chap.title}" placeholder="Título del Capítulo">
+            <div class="chapter-actions">
+                <button class="btn-icon danger" title="Borrar Capítulo">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" color="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+        `;
+
+        const titleInput = header.querySelector('.chapter-title');
+        titleInput.oninput = (e) => updateChapterTitle(cIndex, e.target.value);
+        header.querySelector('.btn-icon.danger').onclick = () => deleteChapter(cIndex);
+
+        chapDiv.appendChild(header);
+
+        // Párrafos
+        chap.paragraphs.forEach((para, pIndex) => {
+            const pDiv = document.createElement('div');
+            pDiv.className = 'paragraph-item';
+
+            const controls = document.createElement('div');
+            controls.className = 'paragraph-controls';
+            controls.innerHTML = `
+                <button class="btn-icon" title="Imagen"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg></button>
+                <button class="btn-icon" title="Insertar bloque debajo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+                <button class="btn-icon danger" title="Eliminar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+            `;
+
+            controls.querySelector('button[title="Imagen"]').onclick = () => triggerBookImageUpload(cIndex, pIndex);
+            controls.querySelector('button[title="Insertar bloque debajo"]').onclick = () => insertBookParagraphAfter(cIndex, pIndex);
+            controls.querySelector('button[title="Eliminar"]').onclick = () => deleteBookParagraph(cIndex, pIndex);
+
+            pDiv.appendChild(controls);
+
+            if (para.image) {
+                const imgCont = document.createElement('div');
+                imgCont.className = 'paragraph-image-container';
+                imgCont.innerHTML = `<img src="${para.image}" class="paragraph-image"><button class="remove-image-btn">×</button>`;
+                imgCont.querySelector('button').onclick = () => removeBookImage(cIndex, pIndex);
+                pDiv.appendChild(imgCont);
             }
+
+            const textarea = document.createElement('textarea');
+            textarea.className = 'paragraph-content';
+            textarea.rows = 1;
+            textarea.value = para.text;
+            textarea.placeholder = "Escribe aquí la narrativa...";
+            textarea.oninput = (e) => {
+                autoResize(e.target);
+                updateBookParagraphText(cIndex, pIndex, e.target.value);
+            };
+
+            pDiv.appendChild(textarea);
+            chapDiv.appendChild(pDiv);
+            setTimeout(() => autoResize(textarea), 0);
         });
-    });
 
-    saveGameData();
-    renderGraph();
-    if (window.centerCanvas) window.centerCanvas();
+        const addPBtn = document.createElement('button');
+        addPBtn.className = 'add-p-btn';
+        addPBtn.innerHTML = '<span class="add-p-symbol">+</span>';
+        addPBtn.onclick = () => addBookParagraph(cIndex);
+        chapDiv.appendChild(addPBtn);
+
+        chaptersContainer.appendChild(chapDiv);
+    });
 }
 
+// --- ACTUALIZACIONES Y CRUD ---
 
-// Helpers globales
-window.centerCanvas = function() {
-    if(window.gamebookControls) window.gamebookControls.centerCanvas();
-};
+function addChapter() {
+    const book = books.find(b => b.id === currentBookId);
+    if (book) {
+        book.chapters.push({
+            title: "Nuevo Capítulo",
+            paragraphs: [{ text: "", image: null }]
+        });
+        saveBookData();
+        renderBookContent();
+        setTimeout(() => {
+            const scrollArea = document.getElementById('editor-scroll-area');
+            if(scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
+        }, 100);
+    }
+}
 
-// Exportar
-window.createNewNode = createNewNode;
-window.closeNodeEditor = closeNodeEditor;
-window.updateNodeData = updateNodeData;
-window.deleteCurrentNode = deleteCurrentNode;
-window.addChoice = addChoice;
-window.updateChoice = updateChoice;
-window.deleteChoice = deleteChoice;
-window.organizeGraph = organizeGraph; 
+function updateChapterTitle(cIndex, newTitle) {
+    const book = books.find(b => b.id === currentBookId);
+    book.chapters[cIndex].title = newTitle;
+    saveBookData();
+}
+
+function deleteChapter(cIndex) {
+    if (confirm("¿Borrar capítulo completo?")) {
+        const book = books.find(b => b.id === currentBookId);
+        book.chapters.splice(cIndex, 1);
+        saveBookData();
+        renderBookContent();
+    }
+}
+
+function addBookParagraph(cIndex) {
+    const book = books.find(b => b.id === currentBookId);
+    book.chapters[cIndex].paragraphs.push({ text: "", image: null });
+    saveBookData();
+    renderBookContent();
+}
+
+function insertBookParagraphAfter(cIndex, pIndex) {
+    const book = books.find(b => b.id === currentBookId);
+    book.chapters[cIndex].paragraphs.splice(pIndex + 1, 0, { text: "", image: null });
+    saveBookData();
+    renderBookContent();
+}
+
+function updateBookParagraphText(cIndex, pIndex, text) {
+    const book = books.find(b => b.id === currentBookId);
+    book.chapters[cIndex].paragraphs[pIndex].text = text;
+    saveBookData();
+}
+
+function deleteBookParagraph(cIndex, pIndex) {
+    const book = books.find(b => b.id === currentBookId);
+    book.chapters[cIndex].paragraphs.splice(pIndex, 1);
+    saveBookData();
+    renderBookContent();
+}
+
+// --- IMÁGENES ---
+function triggerBookImageUpload(cIndex, pIndex) {
+    bookUploadContext = { chapterIdx: cIndex, paragraphIdx: pIndex };
+    if(bookImageInput) bookImageInput.click();
+}
+
+if(bookImageInput) {
+    bookImageInput.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0] && bookUploadContext.chapterIdx !== null) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const book = books.find(b => b.id === currentBookId);
+                book.chapters[bookUploadContext.chapterIdx].paragraphs[bookUploadContext.paragraphIdx].image = event.target.result;
+                saveBookData();
+                renderBookContent();
+                bookImageInput.value = ''; 
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+}
+
+function removeBookImage(cIndex, pIndex) {
+    const book = books.find(b => b.id === currentBookId);
+    book.chapters[cIndex].paragraphs[pIndex].image = null;
+    saveBookData();
+    renderBookContent();
+}
+
+function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+}
+
+// EXPORTAR A WINDOW
+window.createNewBook = createNewBook;
+window.deleteCurrentBook = deleteCurrentBook;
+window.goBack = goBack;
+window.updateBookTitle = updateBookTitle;
+window.addChapter = addChapter;
+window.renderBookList = renderBookList;
+window.openBook = openBook; // Importante para que funcione desde createNewBook

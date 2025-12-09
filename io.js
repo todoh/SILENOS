@@ -1,45 +1,44 @@
-// --- LÓGICA DE ENTRADA/SALIDA (IO) v3.1 (New Project) ---
+// --- LÓGICA DE ENTRADA/SALIDA (IO) v3.2 (Game Projects Support) ---
 
-console.log("Módulo IO Cargado (v3.1 - Universo)");
+console.log("Módulo IO Cargado (v3.2 - Universo Completo)");
 
 const ioFileInput = document.getElementById('io-file-input');
 const exportModal = document.getElementById('export-modal');
 const newProjectModal = document.getElementById('new-project-modal');
 const formatRadios = document.getElementsByName('export-format');
 
-// Helper para formato fecha: YYYY-MM-DD_HH-mm
 function getFormattedDate() {
     const now = new Date();
     const pad = n => n.toString().padStart(2, '0');
     return `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}`;
 }
 
-// Helper para limpiar nombre archivo
 function sanitizeFilename(name) {
     if (!name) return 'proyecto';
     return name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
 }
 
-// --- 1. GUARDAR PROYECTO (BACKUP JSON COMPLETO) ---
+// --- 1. GUARDAR PROYECTO ---
 function saveProjectBackup() {
-    // Recuperar nombre del universo para el archivo
     const universeName = localStorage.getItem('silenos_universe_name') || 'sin_titulo';
     const filename = `${sanitizeFilename(universeName)}_${getFormattedDate()}.json`;
 
     const backupData = {
-        version: "2.0", // Subimos versión por estructura de universo
+        version: "3.0", 
         timestamp: new Date().toISOString(),
-        universeName: universeName, // Guardamos el nombre explícitamente
+        universeName: universeName,
         universalData: JSON.parse(localStorage.getItem('minimal_universal_data')) || [],
         books: JSON.parse(localStorage.getItem('minimal_books_v4')) || [],
-        scripts: JSON.parse(localStorage.getItem('minimal_scripts_v1')) || []
+        scripts: JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [],
+        // AHORA GUARDAMOS LISTA DE JUEGOS
+        games: JSON.parse(localStorage.getItem('minimal_games_v1')) || [] 
     };
 
     const dataStr = JSON.stringify(backupData, null, 2);
     downloadFile(dataStr, filename, 'application/json');
 }
 
-// --- 2. CARGAR PROYECTO (RESTORE JSON) ---
+// --- 2. CARGAR PROYECTO ---
 function triggerLoadProject() {
     if(ioFileInput) ioFileInput.click();
 }
@@ -54,27 +53,28 @@ if(ioFileInput) {
             try {
                 const data = JSON.parse(event.target.result);
                 
-                // Verificación básica
-                if (data.books || data.scripts || data.universalData) {
-                    if(confirm("Esto sobrescribirá TODO: Universo, libros y guiones. ¿Proceder?")) {
+                if (data.books || data.scripts || data.universalData || data.games) {
+                    if(confirm("Esto sobrescribirá TODO. ¿Proceder?")) {
                         
-                        // 1. Restaurar Libros
                         if(data.books) localStorage.setItem('minimal_books_v4', JSON.stringify(data.books));
-                        
-                        // 2. Restaurar Guiones
                         if(data.scripts) localStorage.setItem('minimal_scripts_v1', JSON.stringify(data.scripts));
-                        
-                        // 3. Restaurar Universo (Datos)
                         if(data.universalData) localStorage.setItem('minimal_universal_data', JSON.stringify(data.universalData));
-
-                        // 4. Restaurar Nombre del Universo
                         if(data.universeName) localStorage.setItem('silenos_universe_name', data.universeName);
                         
+                        // RESTAURAR JUEGOS
+                        if(data.games) {
+                            localStorage.setItem('minimal_games_v1', JSON.stringify(data.games));
+                        } else if (data.nodes) {
+                             // Soporte retrocompatibilidad backup antiguo
+                             const legacyGame = [{ id: Date.now(), title: "Juego Restaurado", nodes: data.nodes }];
+                             localStorage.setItem('minimal_games_v1', JSON.stringify(legacyGame));
+                        }
+                        
                         alert("Proyecto cargado correctamente.");
-                        location.reload(); // Recarga para refrescar todas las UIs
+                        location.reload(); 
                     }
                 } else {
-                    alert("El archivo no es un backup válido de Silenos.");
+                    alert("Archivo no válido.");
                 }
             } catch (err) {
                 console.error(err);
@@ -86,8 +86,7 @@ if(ioFileInput) {
     });
 }
 
-// --- 3. NUEVO PROYECTO (LIMPIEZA) ---
-
+// --- 3. NUEVO PROYECTO ---
 function openNewProjectModal() {
     if(newProjectModal) {
         newProjectModal.style.display = 'flex';
@@ -104,32 +103,23 @@ function closeNewProjectModal() {
 
 function createNewProject(withBackup) {
     if (withBackup) {
-        // Lanzar descarga
         saveProjectBackup();
-        
-        // Dar un pequeño tiempo de gracia para que el navegador inicie la descarga
-        // antes de recargar la página (lo cual cancelaría scripts pendientes).
-        setTimeout(() => {
-            wipeAndReload();
-        }, 1500); 
+        setTimeout(() => { wipeAndReload(); }, 1500); 
     } else {
         wipeAndReload();
     }
 }
 
 function wipeAndReload() {
-    // Borrar claves específicas de contenido, manteniendo configuraciones (como API Key si la hubiera aparte)
     localStorage.removeItem('minimal_universal_data');
     localStorage.removeItem('minimal_books_v4');
     localStorage.removeItem('minimal_scripts_v1');
+    localStorage.removeItem('minimal_games_v1'); // Limpiar juegos
     localStorage.removeItem('silenos_universe_name');
-    
-    // Recargar para reiniciar la interfaz
     location.reload();
 }
 
-// --- 4. EXPORTACIÓN (MODAL) ---
-
+// --- 4. EXPORTACIÓN ---
 function openExportModal() {
     if(exportModal) {
         renderExportOptions();
@@ -152,57 +142,65 @@ function renderExportOptions() {
     
     const books = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
     const scripts = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
+    const games = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
 
-    if (books.length === 0 && scripts.length === 0) {
+    if (books.length === 0 && scripts.length === 0 && games.length === 0) {
         container.innerHTML = '<p class="empty-msg">Nada para exportar.</p>';
         return;
     }
 
     if (books.length > 0) {
-        const h4 = document.createElement('h4');
-        h4.textContent = 'Libros';
-        h4.className = 'export-section-title';
-        container.appendChild(h4);
-        books.forEach(book => {
-            const label = document.createElement('label');
-            label.className = 'export-item-row';
-            label.innerHTML = `<input type="checkbox" class="export-check-book" value="${book.id}"> <span class="truncate">${book.title || 'Sin Título'}</span>`;
-            container.appendChild(label);
-        });
+        appendSection(container, 'Libros', books, 'book');
     }
-
     if (scripts.length > 0) {
-        const h4 = document.createElement('h4');
-        h4.textContent = 'Guiones';
-        h4.className = 'export-section-title';
-        container.appendChild(h4);
-        scripts.forEach(script => {
-            const label = document.createElement('label');
-            label.className = 'export-item-row';
-            label.innerHTML = `<input type="checkbox" class="export-check-script" value="${script.id}"> <span class="truncate">${script.title || 'Sin Título'}</span>`;
-            container.appendChild(label);
-        });
+        appendSection(container, 'Guiones', scripts, 'script');
     }
+    if (games.length > 0) {
+        appendSection(container, 'Juegos (Solo Texto)', games, 'game');
+    }
+}
+
+function appendSection(container, title, items, type) {
+    const h4 = document.createElement('h4');
+    h4.textContent = title;
+    h4.className = 'export-section-title';
+    container.appendChild(h4);
+    items.forEach(item => {
+        const label = document.createElement('label');
+        label.className = 'export-item-row';
+        label.innerHTML = `<input type="checkbox" class="export-check-${type}" value="${item.id}"> <span class="truncate">${item.title || 'Sin Título'}</span>`;
+        container.appendChild(label);
+    });
 }
 
 function executeExport() {
     const selectedBookChecks = document.querySelectorAll('.export-check-book:checked');
     const selectedScriptChecks = document.querySelectorAll('.export-check-script:checked');
+    const selectedGameChecks = document.querySelectorAll('.export-check-game:checked');
 
-    if (selectedBookChecks.length === 0 && selectedScriptChecks.length === 0) return alert("Selecciona algo.");
+    if (selectedBookChecks.length === 0 && selectedScriptChecks.length === 0 && selectedGameChecks.length === 0) return alert("Selecciona algo.");
 
-    const selectedBookIds = Array.from(selectedBookChecks).map(cb => parseInt(cb.value));
-    const selectedScriptIds = Array.from(selectedScriptChecks).map(cb => parseInt(cb.value));
+    const allBooks = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
+    const allScripts = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
+    const allGames = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
 
     let format = 'html';
     for (const radio of formatRadios) if (radio.checked) format = radio.value;
 
     let contentToExport = "";
-    const allBooks = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
-    const allScripts = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
 
-    allBooks.filter(b => selectedBookIds.includes(b.id)).forEach(b => contentToExport += formatContent(b, 'book', format));
-    allScripts.filter(s => selectedScriptIds.includes(s.id)).forEach(s => contentToExport += formatContent(s, 'script', format));
+    Array.from(selectedBookChecks).forEach(cb => {
+        const item = allBooks.find(b => b.id == cb.value);
+        if(item) contentToExport += formatContent(item, 'book', format);
+    });
+    Array.from(selectedScriptChecks).forEach(cb => {
+        const item = allScripts.find(s => s.id == cb.value);
+        if(item) contentToExport += formatContent(item, 'script', format);
+    });
+    Array.from(selectedGameChecks).forEach(cb => {
+        const item = allGames.find(g => g.id == cb.value);
+        if(item) contentToExport += formatContent(item, 'game', format);
+    });
 
     let finalOutput = contentToExport;
     let mime = 'text/html';
@@ -214,7 +212,6 @@ function executeExport() {
         finalOutput = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'><head><meta charset="utf-8"></head><body>${contentToExport}</body></html>`;
         mime = 'application/msword'; ext = 'doc';
     } else {
-        // HTML wrapper
         finalOutput = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:sans-serif;max-width:800px;margin:20px auto;padding:20px;line-height:1.6;}</style></head><body>${contentToExport}</body></html>`;
     }
 
@@ -222,18 +219,32 @@ function executeExport() {
     closeExportModal();
 }
 
-// Utils
 function formatContent(item, type, format) {
     const title = item.title || "Sin Título";
     if (format === 'txt') {
         let txt = `\n--- ${type.toUpperCase()}: ${title.toUpperCase()} ---\n\n`;
         if(type==='book') item.chapters.forEach(c => { txt += `[${c.title}]\n`; c.paragraphs.forEach(p=> txt+= p.text+'\n\n'); });
         if(type==='script') item.scenes.forEach(s => { txt += `[${s.title}]\n`; s.paragraphs.forEach(p=> txt+= p.text+'\n'); });
+        if(type==='game') {
+             // Exportación lineal básica de juego
+             (item.nodes || []).forEach(n => {
+                 txt += `[${n.title}] (ID: ${n.id})\n${n.text}\n`;
+                 n.choices.forEach(c => txt += `  -> ${c.text} (Ir a: ${c.targetId})\n`);
+                 txt += '\n';
+             });
+        }
         return txt;
     } else {
         let html = `<h1>${title}</h1>`;
         if(type==='book') item.chapters.forEach(c => { html += `<h3>${c.title}</h3>`; c.paragraphs.forEach(p=> html+= `<p>${p.text}</p>`); });
         if(type==='script') item.scenes.forEach(s => { html += `<h3>${s.title}</h3>`; s.paragraphs.forEach(p=> html+= `<p>${p.text}</p>`); });
+        if(type==='game') {
+             (item.nodes || []).forEach(n => {
+                 html += `<h3>${n.title} <small>#${n.id}</small></h3><p>${n.text}</p><ul>`;
+                 n.choices.forEach(c => html += `<li>${c.text} (Ir a #${c.targetId})</li>`);
+                 html += '</ul><hr>';
+             });
+        }
         return html + '<hr>';
     }
 }
@@ -247,14 +258,11 @@ function downloadFile(content, fileName, contentType) {
     URL.revokeObjectURL(a.href);
 }
 
-// Exportar global
 window.saveProjectBackup = saveProjectBackup;
 window.triggerLoadProject = triggerLoadProject;
 window.openExportModal = openExportModal;
 window.closeExportModal = closeExportModal;
 window.executeExport = executeExport;
-
-// Nuevas exportaciones
 window.openNewProjectModal = openNewProjectModal;
 window.closeNewProjectModal = closeNewProjectModal;
 window.createNewProject = createNewProject;

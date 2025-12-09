@@ -4,7 +4,7 @@ console.log("Módulo Tutorial Cargado (v3.0 Anti-Overflow)");
 
 const steps = [
     {
-        title: "Bienvenido a SILENOS",
+        title: "Bienvenid@ a S I L E N O S",
         text: "Silenos es tu entorno creativo asistido por IA. Este tutorial rápido te enseñará cómo organizar tu universo y escribir tus libros.",
         target: null, 
         tab: "tab1" 

@@ -76,7 +76,7 @@ function createNewScript() {
         title: 'Nuevo Guion',
         isAI: false, // Flag manual
         scenes: [
-            { title: "Escena 1: INT. LUGAR - DÍA", paragraphs: [{ text: "", image: null }] }
+            { title: "Planteamiento General", paragraphs: [{ text: "", image: null }] }
         ]
     };
     scripts.push(newScript);
@@ -215,7 +215,7 @@ function addScene() {
     const script = scripts.find(s => s.id === currentScriptId);
     if (script) {
         script.scenes.push({
-            title: "INT/EXT. NUEVA ESCENA",
+            title: "Planteamiento por Capítulo",
             paragraphs: [{ text: "", image: null }]
         });
         saveScriptData();
