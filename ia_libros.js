@@ -11,7 +11,10 @@ const btnGenLibro = document.getElementById('btn-gen-libro');
 const progressContainer = document.getElementById('libro-progress');
 
 const PARAGRAPHS_PER_CHUNK = 5; 
-
+if (btnGenLibro) {
+    btnGenLibro.onclick = null; 
+    btnGenLibro.addEventListener('click', generateBookFromText);
+}
 // --- HELPERS UI ---
 function updateProgress(percent, text) {
     if(!progressContainer) return;
