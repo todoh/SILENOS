@@ -1,8 +1,8 @@
-// --- IA: GENERACIÓN DE LIBROS (Arquitectura Pipeline v3.1 - Bugfix & Continuity) ---
+// --- IA: GENERACIÓN DE LIBROS (Arquitectura Pipeline v3.2 - High Fidelity) ---
 import { getApiKeysList } from './apikey.js';
 import { callGoogleAPI, cleanAndParseJSON, delay } from './ia_koreh.js';
 
-console.log("Módulo IA Libros Cargado (v3.1 - Silent Editor & Deep Memory)");
+console.log("Módulo IA Libros Cargado (v3.2 - Adhesión Estricta al Guion)");
 
 const scriptSelector = document.getElementById('ia-script-selector');
 const nuanceInput = document.getElementById('ia-libro-nuance');
@@ -10,11 +10,14 @@ const paragraphsInput = document.getElementById('ia-book-paragraphs');
 const btnGenLibro = document.getElementById('btn-gen-libro');
 const progressContainer = document.getElementById('libro-progress');
 
+// Agrupamos párrafos para no saturar, pero mantenemos granularidad
 const PARAGRAPHS_PER_CHUNK = 5; 
+
 if (btnGenLibro) {
     btnGenLibro.onclick = null; 
     btnGenLibro.addEventListener('click', generateBookFromText);
 }
+
 // --- HELPERS UI ---
 function updateProgress(percent, text) {
     if(!progressContainer) return;
@@ -48,12 +51,11 @@ function refreshScriptSelector() {
 // Limpiador agresivo para eliminar cabeceras y comentarios de la IA
 function cleanOutputText(text) {
     if (!text) return "";
-    // Elimina bloques tipo === SISTEMA ===
     text = text.replace(/===.*?===/g, '');
-    // Elimina frases introductorias comunes
-    text = text.replace(/^(Aquí está|He aquí|El texto|Texto pulido).*?:/i, '');
-    // Elimina bloques de "Notas sobre cambios" si aparecen al final
-    const notesIndex = text.toLowerCase().indexOf('notas sobre los cambios');
+    text = text.replace(/^(Aquí está|He aquí|El texto|Texto pulido|Borrador).*?:/i, '');
+    
+    // Elimina bloques de notas finales si existen
+    const notesIndex = text.toLowerCase().indexOf('notas sobre');
     if (notesIndex !== -1) {
         text = text.substring(0, notesIndex);
     }
@@ -71,7 +73,7 @@ async function generateBookFromText() {
     const scriptId = scriptSelector.value;
     if (!scriptId) return alert("Selecciona un guion.");
     
-    const nuanceText = nuanceInput ? nuanceInput.value.trim() : "Narrativa estándar";
+    const nuanceText = nuanceInput ? nuanceInput.value.trim() : "Narrativa inmersiva y fiel";
     let targetParagraphs = paragraphsInput ? parseInt(paragraphsInput.value) : 15;
     if (targetParagraphs < 5) targetParagraphs = 5;
 
@@ -84,11 +86,12 @@ async function generateBookFromText() {
     let globalContext = "";
     let chapterScenes = [];
 
+    // Preparamos el contexto global
     if (sourceScript.scenes.length > 1) {
         globalContext = sourceScript.scenes[0].paragraphs.map(p => p.text).join('\n');
         chapterScenes = sourceScript.scenes.slice(1);
     } else {
-        globalContext = "Trama basada en desarrollo secuencial.";
+        globalContext = "Trama basada en desarrollo secuencial del guion.";
         chapterScenes = sourceScript.scenes;
     }
 
@@ -96,28 +99,29 @@ async function generateBookFromText() {
 
     if(btnGenLibro) {
         btnGenLibro.disabled = true;
-        btnGenLibro.innerText = "Iniciando Pipeline...";
+        btnGenLibro.innerText = "Procesando...";
     }
     showProgress(true);
 
     const newBookChapters = [];
     
-    // MEMORIA PERSISTENTE: Guarda el final del capítulo anterior para guiar al siguiente
-    let narrativeHistory = "Inicio de la novela."; 
+    // MEMORIA DE CONTINUIDAD (Últimos párrafos generados)
+    let narrativeHistory = "Inicio de la historia."; 
 
     try {
         for (let i = 0; i < totalChapters; i++) {
             const sceneData = chapterScenes[i];
             const sceneTitle = sceneData.title;
+            // Unimos todo el texto de la escena del guion
             const sceneContent = sceneData.paragraphs.map(p => p.text).join('\n');
             
-            updateProgress((i / totalChapters) * 100, `Capítulo ${i+1}: Planificando...`);
+            updateProgress((i / totalChapters) * 100, `Cap ${i+1}: Estructurando fidelidad...`);
 
-            // FASE 1: ARQUITECTO (Con memoria de lo anterior)
+            // FASE 1: ARQUITECTO (Planificación Estricta)
             const chapterPlan = await phaseArchitect(sceneTitle, sceneContent, globalContext, narrativeHistory, totalBlocksPerChapter);
             
             let fullChapterText = [];
-            // La ventana deslizante empieza con la historia previa para no perder el hilo
+            // Ventana deslizante de contexto (últimos ~2000 caracteres)
             let slidingWindowContext = narrativeHistory.slice(-2000); 
 
             for (let b = 0; b < chapterPlan.length; b++) {
@@ -126,29 +130,29 @@ async function generateBookFromText() {
                 
                 const baseProg = (i / totalChapters) * 100;
                 const chunkProg = (blockNum / chapterPlan.length) * (100 / totalChapters);
-                updateProgress(baseProg + chunkProg, `Cap ${i+1} [Bloque ${blockNum}/${chapterPlan.length}]: Escribiendo...`);
+                updateProgress(baseProg + chunkProg, `Cap ${i+1} [Bloque ${blockNum}]: Escribiendo...`);
 
-                // FASE 2: ESCRITOR
+                // FASE 2: ESCRITOR (Redacción Fiel)
                 const draftText = await phaseWriter(blockNum, chapterPlan.length, currentBeat, slidingWindowContext);
 
-                updateProgress(baseProg + chunkProg, `Cap ${i+1} [Bloque ${blockNum}/${chapterPlan.length}]: Editando estilo...`);
+                updateProgress(baseProg + chunkProg, `Cap ${i+1} [Bloque ${blockNum}]: Pulido final...`);
 
-                // FASE 3: EDITOR (Silencioso)
-                let polishedText = await phaseEditor(draftText, nuanceText, blockNum === 1);
+                // FASE 3: EDITOR (Limpieza)
+                let polishedText = await phaseEditor(draftText, nuanceText);
                 
-                // Limpieza de seguridad por si la IA habla
                 polishedText = cleanOutputText(polishedText);
-
                 fullChapterText.push(polishedText);
 
-                // Actualizar contexto deslizante
-                slidingWindowContext = polishedText.slice(-2000); // Aumentamos memoria a 2000 caracteres
-                await delay(800);
+                // Actualizar contexto para el siguiente bloque
+                slidingWindowContext = polishedText.slice(-2000); 
+                
+                // Pequeña pausa para no saturar API
+                await delay(500);
             }
 
             const finalChapterContent = fullChapterText.join("\n\n");
             
-            // Actualizamos la historia global con el final de este capítulo
+            // Guardamos el final de este capítulo para que el siguiente empiece bien
             narrativeHistory = finalChapterContent.slice(-3000);
 
             const structuredParagraphs = finalChapterContent.split('\n\n')
@@ -161,7 +165,7 @@ async function generateBookFromText() {
             });
         }
 
-        updateProgress(100, "Guardando Libro...");
+        updateProgress(100, "Finalizando Libro...");
         
         const newBook = {
             id: Date.now(),
@@ -175,13 +179,13 @@ async function generateBookFromText() {
         localStorage.setItem('minimal_books_v4', JSON.stringify(books));
 
         await delay(500);
-        alert("¡Libro completado con éxito!");
+        alert("¡Libro generado con éxito! Se ha respetado la estructura del guion.");
         if (window.renderBookList) window.renderBookList();
 
     } catch (err) {
         console.error(err);
         alert("Error en el proceso: " + err.message);
-        updateProgress(0, "Error crítico");
+        updateProgress(0, "Proceso Detenido");
     } finally {
         if(btnGenLibro) {
             btnGenLibro.disabled = false;
@@ -191,69 +195,75 @@ async function generateBookFromText() {
     }
 }
 
-// --- FASE 1: ARQUITECTO ---
+// --- FASE 1: ARQUITECTO TÉCNICO (Cero Invención) ---
 async function phaseArchitect(title, rawContent, globalContext, prevHistory, numBlocks) {
-    const systemPrompt = `Eres un Arquitecto Narrativo.
-    TAREA: Crear una escaleta de ${numBlocks} puntos ("beats") para la escena actual.
+    // Aumentamos el límite de lectura para que la IA vea la escena ENTERA del guion
+    const safeContent = rawContent.substring(0, 4000); 
+    
+    const systemPrompt = `Eres un Arquitecto Narrativo Técnico.
+    TU OBJETIVO: Desglosar la escena proporcionada en ${numBlocks} puntos ("beats") lógicos y secuenciales.
     
     CONTEXTO GLOBAL: ${globalContext.substring(0,500)}...
-    LO QUE ACABA DE PASAR (CAPÍTULO ANTERIOR): "${prevHistory.substring(0,800)}..."
-    ESCENA ACTUAL A DESARROLLAR: ${title} - ${rawContent.substring(0,500)}...
+    HISTORIA PREVIA (FINAL CAP ANTERIOR): "${prevHistory.substring(0,800)}..."
+    MATERIAL BASE (ESCENA DEL GUION A ADAPTAR): 
+    TÍTULO: "${title}"
+    CONTENIDO: "${safeContent}"
     
-    OBJETIVO: Asegurar continuidad. Si el capítulo anterior terminó con X personajes, el beat 1 debe incluirlos o explicar la transición.
+    REGLAS DE FIDELIDAD (STRICT MODE):
+    1. NO INVENTES TRAMA: Tu trabajo es ESTRUCTURAR únicamente lo que ya está escrito en el "MATERIAL BASE". No añadas eventos, personajes o giros que no existan ahí.
+    2. SI EL MATERIAL ES CORTO: Divide la acción existente en micro-pasos (observación, reacción interna, diálogo, acción física) para cumplir con los ${numBlocks} bloques, pero JAMÁS inventes escenas nuevas.
+    3. CONTINUIDAD: Asegura que el primer beat conecte lógicamente con la "HISTORIA PREVIA".
     
-    FORMATO JSON ESTRICTO: { "beats": ["Instrucción 1", "Instrucción 2", ...] }`;
+    FORMATO JSON ESTRICTO: { "beats": ["Instrucción paso 1", "Instrucción paso 2", ...] }`;
 
-    const userPrompt = `Genera la escaleta de ${numBlocks} pasos.`;
+    const userPrompt = `Genera la escaleta estricta de ${numBlocks} pasos basada EXCLUSIVAMENTE en el material base.`;
 
     try {
-        const raw = await callGoogleAPI(systemPrompt, userPrompt, { temperature: 0.7 });
+        // Temperatura baja (0.3) para máxima lógica y mínima creatividad
+        const raw = await callGoogleAPI(systemPrompt, userPrompt, { temperature: 0.3 });
         const data = cleanAndParseJSON(raw);
         if (data && data.beats && Array.isArray(data.beats)) return data.beats; 
         else throw new Error("Fallo JSON Arquitecto");
     } catch (e) {
-        return Array(numBlocks).fill("Continúa la historia manteniendo la coherencia con lo anterior.");
+        console.warn("Fallo en Arquitecto, usando fallback lineal.", e);
+        // Fallback simple si falla el JSON
+        return Array(numBlocks).fill("Narra la escena basándote estrictamente en el guion proporcionado, expandiendo las descripciones.");
     }
 }
 
-// --- FASE 2: ESCRITOR ---
+// --- FASE 2: ESCRITOR DE ADAPTACIÓN (Fidelidad Extrema) ---
 async function phaseWriter(blockIndex, totalBlocks, beatInstruction, prevContext) {
-    const roleInstruction = blockIndex === 1 
-        ? "Inicia esta sección conectando suavemente con lo anterior." 
-        : "Continúa la acción inmediatamente.";
-
-    const systemPrompt = `Eres un Novelista. Escribe el BORRADOR del bloque ${blockIndex}/${totalBlocks}.
+    const systemPrompt = `Eres un Redactor de Novelizaciones (Ghostwriter).
+    ESTAMOS EN: Bloque ${blockIndex} de ${totalBlocks}.
     
-    INSTRUCCIÓN DE TRAMA: "${beatInstruction}"
-    CONTEXTO INMEDIATO (TEXTO PREVIO): "...${prevContext}"
+    INSTRUCCIÓN DEL PASO: "${beatInstruction}"
+    CONTEXTO INMEDIATO (TEXTO ANTERIOR): "...${prevContext}"
     
-    REGLAS:
-    1. Mantén la continuidad absoluta de personajes y lugar. NO inventes personajes nuevos si no están en la instrucción.
-    2. Escribe solo la historia.`;
+    MANDAMIENTOS DE ESCRITURA:
+    1. FIDELIDAD TOTAL: Estás "novelizando" un guion existente. Tu tarea es expandir descripciones, sensaciones y pensamientos de LO QUE SE INDICA en la instrucción. NO avances la trama más allá de ese punto.
+    2. PROHIBIDO INVENTAR EVENTOS: No agregues personajes sorpresa, explosiones, flashbacks o giros que no estén explícitos en la instrucción.
+    3. RITMO Y ESTILO: Si la instrucción es breve, detente en el ambiente, la atmósfera o la introspección del personaje. "Show, don't tell".
+    4. CONEXIÓN FLUIDA: Usa el "Contexto Inmediato" para que la primera frase de tu texto encaje perfectamente con la anterior (sin repetir palabras).`;
 
-    const userPrompt = `Redacta el texto.`;
-    return await callGoogleAPI(systemPrompt, userPrompt, { model: "gemma-3-27b-it", temperature: 0.80 });
+    const userPrompt = `Escribe el texto narrativo para este bloque.`;
+    
+    // Temperatura media (0.65) para prosa fluida pero contenida en los hechos
+    return await callGoogleAPI(systemPrompt, userPrompt, { model: "gemma-3-27b-it", temperature: 0.65 });
 }
 
-// --- FASE 3: EDITOR (CORREGIDO) ---
-async function phaseEditor(draftText, styleNuance, isStart) {
-    const systemPrompt = `Eres un Editor Literario y Corrector de Estilo.
+// --- FASE 3: EDITOR (Pulido) ---
+async function phaseEditor(draftText, styleNuance) {
+    const systemPrompt = `Eres un Editor Literario.
     TU MISIÓN: Pulir el siguiente texto para que tenga calidad de publicación.
-    ESTILO: ${styleNuance}
+    ESTILO DESEADO: ${styleNuance}
     
-    REGLAS ABSOLUTAS DE SALIDA (CRÍTICO):
-    1. Devuelve SOLAMENTE el texto narrativo pulido.
-    2. PROHIBIDO poner títulos, cabeceras como "=== SISTEMA ===", o frases como "Aquí está el texto".
-    3. PROHIBIDO incluir listas de cambios, notas o explicaciones.
-    4. El output debe ser puro texto de novela, listo para pegar en el libro.
-    
-    INSTRUCCIONES DE EDICIÓN:
-    - Mejora la prosa, elimina repeticiones.
-    - Mantén la fidelidad a los hechos del borrador.`;
+    REGLAS:
+    1. Devuelve SOLAMENTE el texto narrativo pulido. Nada más.
+    2. Mantén la fidelidad absoluta a los hechos narrados en el borrador. Mejora la forma, no cambies el fondo.
+    3. Elimina repeticiones de palabras cercanas.`;
 
-    const userPrompt = `Pule este texto (SOLO NARRATIVA):\n${draftText}`;
+    const userPrompt = `Pule este texto:\n${draftText}`;
 
-    // Bajamos temperatura para que sea obediente y no creativo con el formato
     return await callGoogleAPI(systemPrompt, userPrompt, { model: "gemma-3-27b-it", temperature: 0.5 });
 }
 
