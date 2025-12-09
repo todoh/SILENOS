@@ -56,7 +56,7 @@ export async function callGoogleAPI(systemPrompt, userPrompt, config = {}) {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${settings.model}:generateContent?key=${currentKey}`;
 
         const combinedPrompt = `
-        === SISTEMA (KOREH SYSTEM) ===
+        === SISTEMA (SYSTEM) ===
         ${systemPrompt}
         
         === USUARIO (INPUT) ===

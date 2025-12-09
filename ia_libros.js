@@ -1,8 +1,8 @@
-// --- IA: GENERACIÓN DE LIBROS (Arquitectura Pipeline v3.2 - Listener Fixed) ---
+// --- IA: GENERACIÓN DE LIBROS (Arquitectura Pipeline v3.1 - Bugfix & Continuity) ---
 import { getApiKeysList } from './apikey.js';
 import { callGoogleAPI, cleanAndParseJSON, delay } from './ia_koreh.js';
 
-console.log("Módulo IA Libros Cargado (v3.2 - Event Link Fixed)");
+console.log("Módulo IA Libros Cargado (v3.1 - Silent Editor & Deep Memory)");
 
 const scriptSelector = document.getElementById('ia-script-selector');
 const nuanceInput = document.getElementById('ia-libro-nuance');
@@ -11,13 +11,6 @@ const btnGenLibro = document.getElementById('btn-gen-libro');
 const progressContainer = document.getElementById('libro-progress');
 
 const PARAGRAPHS_PER_CHUNK = 5; 
-
-// --- CORRECCIÓN CRÍTICA DE EVENTOS ---
-// Vinculamos el evento directamente en JS para asegurar la conexión
-if (btnGenLibro) {
-    btnGenLibro.onclick = null; // Limpieza por seguridad
-    btnGenLibro.addEventListener('click', generateBookFromText);
-}
 
 // --- HELPERS UI ---
 function updateProgress(percent, text) {
@@ -233,8 +226,7 @@ async function phaseWriter(blockIndex, totalBlocks, beatInstruction, prevContext
     
     REGLAS:
     1. Mantén la continuidad absoluta de personajes y lugar. NO inventes personajes nuevos si no están en la instrucción.
-    2. Si el contexto previo menciona a "Taumante", sigue con él. No cambies a "Elara" aleatoriamente.
-    3. Escribe solo la historia.`;
+    2. Escribe solo la historia.`;
 
     const userPrompt = `Redacta el texto.`;
     return await callGoogleAPI(systemPrompt, userPrompt, { model: "gemma-3-27b-it", temperature: 0.80 });
