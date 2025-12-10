@@ -1,5 +1,7 @@
-// --- LÓGICA DE LIBROS UI (Novelas) ---
-console.log("Sistema de Libros Iniciado (v2.0)");
+// --- LÓGICA DE LIBROS UI (Novelas) v2.1 (Sync) ---
+import { broadcastSync, isRemoteUpdate } from './project_share.js'; // IMPORTAR
+
+console.log("Sistema de Libros Iniciado (v2.1 - Sync)");
 
 let books = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
 let currentBookId = null;
@@ -65,11 +67,11 @@ function renderBookList() {
 }
 
 function createNewBook() {
+    if (isRemoteUpdate) return;
+
     console.log("Creando nuevo libro manual...");
-    // 1. Recuperar lista actual
     books = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
 
-    // 2. Definir objeto libro
     const newBook = {
         id: Date.now(),
         title: 'Nueva Novela',
@@ -82,22 +84,24 @@ function createNewBook() {
         ]
     };
 
-    // 3. Guardar
     books.push(newBook);
     saveBookData();
-
-    // 4. Actualizar UI
     renderBookList(); 
-    
-    // 5. Abrir
     openBook(newBook.id);
+
+    // 📡 EMITIR CREACIÓN
+    broadcastSync('BOOK_CREATE', newBook);
 }
 
 function deleteCurrentBook() {
+    if (isRemoteUpdate) return;
     if (confirm("¿Eliminar este libro y todo su contenido?")) {
+        const idToDelete = currentBookId;
         books = books.filter(b => b.id !== currentBookId);
         saveBookData();
         goBack();
+        // 📡 EMITIR BORRADO
+        broadcastSync('BOOK_DELETE', { id: idToDelete });
     }
 }
 
@@ -123,10 +127,13 @@ function goBack() {
 }
 
 function updateBookTitle() {
+    if (isRemoteUpdate) return;
     const book = books.find(b => b.id === currentBookId);
     if (book) {
         book.title = bookDetailTitle.value;
         saveBookData();
+        // 📡 EMITIR
+        broadcastSync('BOOK_UPDATE', book);
     }
 }
 
@@ -211,9 +218,10 @@ function renderBookContent() {
     });
 }
 
-// --- ACTUALIZACIONES Y CRUD ---
+// --- ACTUALIZACIONES Y CRUD CON SYNC ---
 
 function addChapter() {
+    if (isRemoteUpdate) return;
     const book = books.find(b => b.id === currentBookId);
     if (book) {
         book.chapters.push({
@@ -226,49 +234,69 @@ function addChapter() {
             const scrollArea = document.getElementById('editor-scroll-area');
             if(scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
         }, 100);
+        // 📡 EMITIR
+        broadcastSync('BOOK_UPDATE', book);
     }
 }
 
 function updateChapterTitle(cIndex, newTitle) {
+    if (isRemoteUpdate) return;
     const book = books.find(b => b.id === currentBookId);
     book.chapters[cIndex].title = newTitle;
     saveBookData();
+    // 📡 EMITIR
+    broadcastSync('BOOK_UPDATE', book);
 }
 
 function deleteChapter(cIndex) {
+    if (isRemoteUpdate) return;
     if (confirm("¿Borrar capítulo completo?")) {
         const book = books.find(b => b.id === currentBookId);
         book.chapters.splice(cIndex, 1);
         saveBookData();
         renderBookContent();
+        // 📡 EMITIR
+        broadcastSync('BOOK_UPDATE', book);
     }
 }
 
 function addBookParagraph(cIndex) {
+    if (isRemoteUpdate) return;
     const book = books.find(b => b.id === currentBookId);
     book.chapters[cIndex].paragraphs.push({ text: "", image: null });
     saveBookData();
     renderBookContent();
+    // 📡 EMITIR
+    broadcastSync('BOOK_UPDATE', book);
 }
 
 function insertBookParagraphAfter(cIndex, pIndex) {
+    if (isRemoteUpdate) return;
     const book = books.find(b => b.id === currentBookId);
     book.chapters[cIndex].paragraphs.splice(pIndex + 1, 0, { text: "", image: null });
     saveBookData();
     renderBookContent();
+    // 📡 EMITIR
+    broadcastSync('BOOK_UPDATE', book);
 }
 
 function updateBookParagraphText(cIndex, pIndex, text) {
+    if (isRemoteUpdate) return;
     const book = books.find(b => b.id === currentBookId);
     book.chapters[cIndex].paragraphs[pIndex].text = text;
     saveBookData();
+    // 📡 EMITIR
+    broadcastSync('BOOK_UPDATE', book);
 }
 
 function deleteBookParagraph(cIndex, pIndex) {
+    if (isRemoteUpdate) return;
     const book = books.find(b => b.id === currentBookId);
     book.chapters[cIndex].paragraphs.splice(pIndex, 1);
     saveBookData();
     renderBookContent();
+    // 📡 EMITIR
+    broadcastSync('BOOK_UPDATE', book);
 }
 
 // --- IMÁGENES ---
@@ -286,6 +314,10 @@ if(bookImageInput) {
                 book.chapters[bookUploadContext.chapterIdx].paragraphs[bookUploadContext.paragraphIdx].image = event.target.result;
                 saveBookData();
                 renderBookContent();
+                
+                // 📡 EMITIR (Cuidado con peso)
+                broadcastSync('BOOK_UPDATE', book);
+                
                 bookImageInput.value = ''; 
             };
             reader.readAsDataURL(e.target.files[0]);
@@ -294,16 +326,69 @@ if(bookImageInput) {
 }
 
 function removeBookImage(cIndex, pIndex) {
+    if (isRemoteUpdate) return;
     const book = books.find(b => b.id === currentBookId);
     book.chapters[cIndex].paragraphs[pIndex].image = null;
     saveBookData();
     renderBookContent();
+    // 📡 EMITIR
+    broadcastSync('BOOK_UPDATE', book);
 }
 
 function autoResize(el) {
     el.style.height = 'auto';
     el.style.height = el.scrollHeight + 'px';
 }
+
+// --- API RECEPTORA ---
+window.applyRemoteBookUpdate = function(payload) {
+    // Nota: project_share.js puede enviar 'BOOK_UPDATE' como action, o puede que lo hayamos simplificado.
+    // Si viene solo el payload (el libro) o { action: '...', payload: ... } depende de project_share.
+    // Asumimos que project_share llama a esta función pasando (payload) o (action, payload).
+    // Para seguridad, chequeamos argumentos.
+    
+    let action = 'BOOK_UPDATE';
+    let data = payload;
+    
+    // Si el primer argumento es string, es el action
+    if (arguments.length === 2 && typeof arguments[0] === 'string') {
+        action = arguments[0];
+        data = arguments[1];
+    }
+
+    books = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
+
+    if (action === 'BOOK_UPDATE') {
+        const index = books.findIndex(b => b.id === data.id);
+        if (index !== -1) {
+            books[index] = data;
+            saveBookData();
+            
+            if (currentBookId === data.id) {
+                 if(document.activeElement !== bookDetailTitle) {
+                    bookDetailTitle.value = data.title;
+                }
+                if (document.activeElement.tagName !== 'TEXTAREA') {
+                    renderBookContent();
+                }
+            }
+            renderBookList();
+        }
+    } else if (action === 'BOOK_CREATE') {
+        if (!books.find(b => b.id === data.id)) {
+            books.unshift(data);
+            saveBookData();
+            renderBookList();
+        }
+    } else if (action === 'BOOK_DELETE') {
+        books = books.filter(b => b.id !== data.id);
+        saveBookData();
+        if (currentBookId === data.id) {
+            goBack();
+        }
+        renderBookList();
+    }
+};
 
 // EXPORTAR A WINDOW
 window.createNewBook = createNewBook;
@@ -312,4 +397,4 @@ window.goBack = goBack;
 window.updateBookTitle = updateBookTitle;
 window.addChapter = addChapter;
 window.renderBookList = renderBookList;
-window.openBook = openBook; // Importante para que funcione desde createNewBook
+window.openBook = openBook;

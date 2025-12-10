@@ -3,9 +3,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebas
 import { getDatabase, ref, get, set, update, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { currentUser } from './auth_ui.js';
 import { showRequestNotification } from './notification_ui.js';
-import { startVideoCall, initVideoSystem } from './video_call.js'; // <--- IMPORTACIÓN NUEVA
+// MODIFICADO: Importamos también shareProject
+import { startVideoCall, initVideoSystem, shareProject } from './video_call.js';
 
-console.log("Módulo Cooperación Cargado (v2.1 - Video & Actions)");
+console.log("Módulo Cooperación Cargado (v2.2 - Share Project)");
 
 const firebaseConfig = {
   apiKey: "AIzaSyBxlmzjYjOEAwc_DVtFpt9DnN7XnuRkbKw",
@@ -31,7 +32,7 @@ export async function initCoopSystem(user) {
     if (!user) return;
     
     // Iniciar sistema de video (listeners de llamadas entrantes)
-    initVideoSystem(); // <--- NUEVO
+    initVideoSystem(); 
 
     // Iniciar el Polling de notificaciones (cada 3 segundos)
     startNotificationPoller(user.uid);
@@ -336,6 +337,14 @@ function renderFriendItem(profile) {
     actionsDiv.style.display = "flex";
     actionsDiv.style.gap = "8px";
 
+    // NUEVO BOTÓN: Compartir Proyecto (Cloud Icon)
+    const shareBtn = document.createElement('button');
+    shareBtn.className = 'btn-icon small';
+    shareBtn.title = "Compartir Proyecto Actual (Sincronizar)";
+    shareBtn.style.color = "#0984e3";
+    shareBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.2 15c.7 0 1.3-1.4 1.3-3s-.6-3-1.3-3S19.9 10.4 19.9 12s.6 3 1.3 3zM2.8 15c-.7 0-1.3-1.4-1.3-3s.6-3 1.3-3 1.3 1.4 1.3 3-.6 3-1.3 3z"/><path d="M7.5 4.6l-3 3 3 3M16.5 4.6l3 3-3 3"/><path d="M4.5 7.6h15"/></svg>`;
+    shareBtn.onclick = () => shareProject(profile.uid, profile.displayName);
+
     // Botón Videollamada
     const callBtn = document.createElement('button');
     callBtn.className = 'btn-icon small';
@@ -351,6 +360,7 @@ function renderFriendItem(profile) {
     delBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
     delBtn.onclick = () => confirmDeleteFriend(profile.uid, profile.displayName);
 
+    actionsDiv.appendChild(shareBtn);
     actionsDiv.appendChild(callBtn);
     actionsDiv.appendChild(delBtn);
 

@@ -1,13 +1,12 @@
-// --- LÓGICA LIBRO-JUEGO UI v3.1 (Fix: Comunicación con IA) ---
-// T → Tramo (Gestión visual optimizada)
+// --- LÓGICA LIBRO-JUEGO UI v3.2 (Real-Time Sync) ---
+import { broadcastSync, isRemoteUpdate } from './project_share.js'; // IMPORTACIÓN NUEVA
 
-console.log("Sistema Gamebook Visual Cargado (v3.1 - Project Manager)");
+console.log("Sistema Gamebook Visual Cargado (v3.2 - Real Time)");
 
-// NUEVA ESTRUCTURA DE DATOS: Lista de Juegos
 let games = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
 let currentGameId = null;
 
-// Variables de Drag (Interfaz visual)
+// Variables de Drag
 let isDraggingNode = false;
 let draggedNodeId = null;
 let initialMouseX = 0;
@@ -20,11 +19,11 @@ const gameListView = document.getElementById('game-list-view');
 const gameEditorView = document.getElementById('game-editor-view');
 const gamesContainer = document.getElementById('games-container');
 const gameMainTitleInput = document.getElementById('game-main-title');
-
 const nodesContainer = document.getElementById('gb-nodes-container');
 const svgLayer = document.getElementById('gb-connections-layer');
 const editorModal = document.getElementById('gb-editor-modal');
 
+// Inputs Editor
 const inputTitle = document.getElementById('gb-node-title');
 const inputText = document.getElementById('gb-node-text');
 const inputIsStart = document.getElementById('gb-is-start');
@@ -33,102 +32,76 @@ const nodeIdDisplay = document.getElementById('gb-node-id');
 
 // --- INICIALIZACIÓN ---
 if (gamesContainer) {
-    // Migración simple si existía la versión anterior (un solo juego)
     checkAndMigrateLegacy();
-    
     renderGameList();
     
-    // Eventos del modal
     editorModal.addEventListener('click', (e) => {
         if (e.target === editorModal) closeNodeEditor();
     });
 
-    // Eventos Ratón Globales (Para drag and drop)
     document.addEventListener('mousemove', onGlobalMouseMove);
     document.addEventListener('mouseup', onGlobalDragEnd);
     document.addEventListener('touchmove', onGlobalTouchMove, { passive: false });
     document.addEventListener('touchend', onGlobalDragEnd);
 }
 
-// --- MIGRACIÓN DE LEGADO ---
 function checkAndMigrateLegacy() {
     const legacyNodes = localStorage.getItem('minimal_gamebook_nodes');
     if (legacyNodes) {
         try {
             const nodes = JSON.parse(legacyNodes);
             if (nodes.length > 0) {
-                // Crear un proyecto nuevo con estos nodos
-                const migratedGame = {
-                    id: Date.now(),
-                    title: "Juego Migrado (Legacy)",
-                    nodes: nodes
-                };
+                const migratedGame = { id: Date.now(), title: "Juego Migrado (Legacy)", nodes: nodes };
                 games.push(migratedGame);
                 saveAllGames();
-                // Limpiar legacy para no repetir
                 localStorage.removeItem('minimal_gamebook_nodes');
             }
-        } catch (e) { console.error("Error migrando legacy", e); }
+        } catch (e) {}
     }
 }
 
-// --- GESTIÓN DE ALMACENAMIENTO ---
 function saveAllGames() {
+    // Si es una actualización remota, guardamos pero NO re-transmitimos
+    // (El guardado local es necesario para mantener la sincronía en disco)
     try {
         localStorage.setItem('minimal_games_v1', JSON.stringify(games));
     } catch (e) {
-        alert("Espacio lleno. Reduce contenido.");
+        console.warn("Espacio lleno");
     }
 }
 
-// --- GESTIÓN DE LA LISTA DE JUEGOS ---
+// --- GESTIÓN LISTA ---
 
 function renderGameList() {
     games = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
-    
     if (!gamesContainer) return;
     gamesContainer.innerHTML = '';
 
     if (games.length === 0) {
-        gamesContainer.innerHTML = '<div style="text-align:center; padding: 40px; color:#ccc; font-weight:300;">No hay juegos creados.</div>';
+        gamesContainer.innerHTML = '<div style="text-align:center; padding: 40px; color:#ccc;">No hay juegos.</div>';
         return;
     }
 
     games.slice().reverse().forEach(game => {
         const item = document.createElement('div');
-        item.className = 'book-item'; // Reutilizamos estilo de tarjeta
-        
-        item.onclick = function() { 
-            openGame(game.id); 
-        };
-
+        item.className = 'book-item'; 
+        item.onclick = function() { openGame(game.id); };
         const nodeCount = game.nodes ? game.nodes.length : 0;
-
         item.innerHTML = `
             <div class="book-info" style="pointer-events: none;"> 
                 <div class="book-title">${game.title || 'Juego Sin Título'}</div>
-                <div class="book-meta">${nodeCount} ${nodeCount === 1 ? 'Escena' : 'Escenas'}</div>
-            </div>
-            <div style="opacity:0.2; pointer-events: none;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            </div>
-        `;
+                <div class="book-meta">${nodeCount} Escenas</div>
+            </div>`;
         gamesContainer.appendChild(item);
     });
 }
 
 function createNewGame() {
-    const newGame = {
-        id: Date.now(),
-        title: "Nuevo Juego",
-        nodes: [] // Empieza vacío
-    };
+    const newGame = { id: Date.now(), title: "Nuevo Juego", nodes: [] };
     games.push(newGame);
     saveAllGames();
     renderGameList();
     openGame(newGame.id);
-    
-    // Crear nodo inicial automáticamente
     createNewNode(); 
 }
 
@@ -137,20 +110,13 @@ function openGame(id) {
     const game = games.find(g => g.id === id);
     if (!game) return;
 
-    // Cambiar vista
     gameListView.style.display = 'none';
     gameEditorView.style.display = 'block';
-
-    // Cargar datos en UI
     gameMainTitleInput.value = game.title;
     
     ensureCoordinates(game.nodes);
     renderGraph();
-    
-    // Centrar cámara (opcional)
-    if (window.gamebookControls && window.gamebookControls.centerCanvas) {
-        window.gamebookControls.centerCanvas();
-    }
+    if (window.centerCanvas) window.centerCanvas();
 }
 
 function goBackToGames() {
@@ -161,7 +127,7 @@ function goBackToGames() {
 }
 
 function deleteCurrentGame() {
-    if (confirm("¿Eliminar este juego completo?")) {
+    if (confirm("¿Eliminar este juego?")) {
         games = games.filter(g => g.id !== currentGameId);
         saveAllGames();
         goBackToGames();
@@ -173,17 +139,17 @@ function updateGameTitle() {
     if (game) {
         game.title = gameMainTitleInput.value;
         saveAllGames();
+        // Sincronizar cambio de título (opcional, requeriría otro evento SYNC)
     }
 }
 
-// --- HELPER PARA OBTENER NODOS ACTUALES ---
 function getCurrentNodes() {
     if (!currentGameId) return [];
     const game = games.find(g => g.id === currentGameId);
     return game ? game.nodes : [];
 }
 
-// --- RENDERIZADO DEL GRAFO (Igual que antes pero usando getCurrentNodes) ---
+// --- RENDERIZADO VISUAL ---
 
 function ensureCoordinates(nodes) {
     if (!nodes) return;
@@ -199,18 +165,17 @@ function renderGraph() {
     const nodes = getCurrentNodes();
     nodesContainer.innerHTML = '';
     svgLayer.innerHTML = '';
-
     drawConnections(nodes);
 
     nodes.forEach(node => {
         const el = document.createElement('div');
-        // Estilo Neoformista aplicado en CSS
         el.className = `gb-node-circle ${node.isStart ? 'is-start' : ''}`;
         el.style.left = `${node.x}px`;
         el.style.top = `${node.y}px`;
         el.dataset.id = node.id; 
         el.innerHTML = `<span>${node.title || 'Vacío'}</span>`;
         
+        // Eventos
         el.addEventListener('mousedown', (e) => { e.stopPropagation(); startDrag(e, node); });
         el.addEventListener('touchstart', (e) => { e.stopPropagation(); startDrag(e, node); }, { passive: false });
         el.addEventListener('click', (e) => { if (!isDraggingNode) openNode(node.id); });
@@ -224,44 +189,33 @@ function drawConnections(nodes) {
         if (sourceNode.choices && sourceNode.choices.length > 0) {
             sourceNode.choices.forEach(choice => {
                 const targetNode = nodes.find(n => n.id == choice.targetId);
-                if (targetNode) {
-                    createSvgLine(sourceNode, targetNode);
-                }
+                if (targetNode) createSvgLine(sourceNode, targetNode);
             });
         }
     });
 }
 
 function createSvgLine(n1, n2) {
-    const x1 = n1.x + 45; // Ajustado para nuevo tamaño (90px/2)
-    const y1 = n1.y + 45;
-    const x2 = n2.x + 45;
-    const y2 = n2.y + 45;
-
+    const x1 = n1.x + 45; const y1 = n1.y + 45;
+    const x2 = n2.x + 45; const y2 = n2.y + 45;
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', x1);
-    line.setAttribute('y1', y1);
-    line.setAttribute('x2', x2);
-    line.setAttribute('y2', y2);
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
     line.setAttribute('class', 'connection-line');
     svgLayer.appendChild(line);
 }
 
-// --- LÓGICA DE DRAG ---
+// --- LOGICA DRAG & DROP (CON SYNC) ---
 
 function startDrag(e, node) {
     isDraggingNode = false; 
     draggedNodeId = node.id;
-    
     if (e.touches && e.touches.length > 0) {
-        initialMouseX = e.touches[0].clientX;
-        initialMouseY = e.touches[0].clientY;
+        initialMouseX = e.touches[0].clientX; initialMouseY = e.touches[0].clientY;
     } else {
-        initialMouseX = e.clientX;
-        initialMouseY = e.clientY;
+        initialMouseX = e.clientX; initialMouseY = e.clientY;
     }
-    initialNodeX = node.x;
-    initialNodeY = node.y;
+    initialNodeX = node.x; initialNodeY = node.y;
 }
 
 function handleDragMove(clientX, clientY) {
@@ -269,7 +223,6 @@ function handleDragMove(clientX, clientY) {
         if (Math.abs(clientX - initialMouseX) > 5 || Math.abs(clientY - initialMouseY) > 5) {
             isDraggingNode = true;
         }
-
         if (isDraggingNode) {
             const nodes = getCurrentNodes();
             const node = nodes.find(n => n.id === draggedNodeId);
@@ -285,33 +238,38 @@ function handleDragMove(clientX, clientY) {
             node.x = initialNodeX + deltaX;
             node.y = initialNodeY + deltaY;
 
+            // Actualización visual local rápida (sin render completo)
             const el = document.querySelector(`.gb-node-circle[data-id="${draggedNodeId}"]`);
-            if (el) {
-                el.style.left = `${node.x}px`;
-                el.style.top = `${node.y}px`;
-            }
+            if (el) { el.style.left = `${node.x}px`; el.style.top = `${node.y}px`; }
             svgLayer.innerHTML = ''; 
             drawConnections(nodes);
+            
+            // Opcional: Emitir movimiento en tiempo real (puede saturar la red, mejor al soltar)
+            // broadcastSync('GAME_NODE_MOVE', { gameId: currentGameId, nodeId: node.id, x: node.x, y: node.y });
         }
     }
 }
 
-function onGlobalMouseMove(e) {
-    if (draggedNodeId !== null) { e.preventDefault(); handleDragMove(e.clientX, e.clientY); }
-}
-
-function onGlobalTouchMove(e) {
-    if (draggedNodeId !== null) { e.preventDefault(); handleDragMove(e.touches[0].clientX, e.touches[0].clientY); }
-}
+function onGlobalMouseMove(e) { if (draggedNodeId !== null) { e.preventDefault(); handleDragMove(e.clientX, e.clientY); } }
+function onGlobalTouchMove(e) { if (draggedNodeId !== null) { e.preventDefault(); handleDragMove(e.touches[0].clientX, e.touches[0].clientY); } }
 
 function onGlobalDragEnd(e) {
     if (draggedNodeId !== null) {
         if (isDraggingNode) {
-            saveAllGames(); // Guardar cambios de posición en el juego actual
+            saveAllGames(); 
+            const nodes = getCurrentNodes();
+            const node = nodes.find(n => n.id === draggedNodeId);
+            
+            // 📡 EMITIR CAMBIO FINAL
+            broadcastSync('GAME_NODE_MOVE', { 
+                gameId: currentGameId, 
+                nodeId: node.id, 
+                x: node.x, 
+                y: node.y 
+            });
+
             setTimeout(() => { 
-                isDraggingNode = false; 
-                draggedNodeId = null; 
-                renderGraph();
+                isDraggingNode = false; draggedNodeId = null; renderGraph(); 
             }, 50);
         } else {
             draggedNodeId = null;
@@ -319,20 +277,17 @@ function onGlobalDragEnd(e) {
     }
 }
 
-// --- CRUD DE NODOS (Operan sobre getCurrentNodes) ---
+// --- CRUD DE NODOS (CON SYNC) ---
 
-// Variable global interna para el nodo que se está editando
 let editingNodeId = null;
 
 function createNewNode() {
     const nodes = getCurrentNodes();
-    let spawnX = 400; 
-    let spawnY = 300;
+    let spawnX = 400; let spawnY = 300;
     
     if (window.gamebookControls && window.gamebookControls.getCameraState) {
         const cam = window.gamebookControls.getCameraState();
-        spawnX = -cam.x / cam.scale + 400; 
-        spawnY = -cam.y / cam.scale + 300;
+        spawnX = -cam.x / cam.scale + 400; spawnY = -cam.y / cam.scale + 300;
     }
 
     const newNode = {
@@ -347,6 +302,9 @@ function createNewNode() {
     nodes.push(newNode);
     saveAllGames();
     renderGraph();
+
+    // 📡 EMITIR CREACIÓN
+    broadcastSync('GAME_NODE_CREATE', { gameId: currentGameId, node: newNode });
 }
 
 function openNode(id) {
@@ -379,6 +337,10 @@ function updateNodeData() {
     const nodes = getCurrentNodes();
     const node = nodes.find(n => n.id === editingNodeId);
     
+    // Si la actualización es remota, esta función NO se dispara por input del usuario,
+    // pero si el usuario escribe, dispararemos el broadcast.
+    if (isRemoteUpdate) return; 
+
     node.title = inputTitle.value;
     node.text = inputText.value;
     
@@ -389,7 +351,21 @@ function updateNodeData() {
         node.isStart = false;
     }
     saveAllGames();
-    renderGraph(); 
+    // Renderizado parcial o total? Total es seguro.
+    // Para evitar lag al escribir, no hacemos renderGraph() aquí, solo guardamos datos.
+    // Pero si cambiamos título, necesitamos actualizar visualmente el nodo.
+    // Optimizacion: Solo actualizar texto del nodo en el DOM
+    const elText = document.querySelector(`.gb-node-circle[data-id="${node.id}"] span`);
+    if(elText) elText.textContent = node.title;
+
+    // 📡 EMITIR ACTUALIZACIÓN DE DATOS
+    broadcastSync('GAME_NODE_DATA', { 
+        gameId: currentGameId, 
+        nodeId: node.id, 
+        title: node.title, 
+        text: node.text,
+        isStart: node.isStart 
+    });
 }
 
 function deleteCurrentNode() {
@@ -400,6 +376,10 @@ function deleteCurrentNode() {
             n.choices = n.choices.filter(c => c.targetId != editingNodeId); 
         });
         saveAllGames();
+        
+        // 📡 EMITIR BORRADO
+        broadcastSync('GAME_NODE_DELETE', { gameId: currentGameId, nodeId: editingNodeId });
+
         closeNodeEditor();
         renderGraph();
     }
@@ -413,9 +393,8 @@ function renderChoicesEditor() {
     node.choices.forEach((choice, index) => {
         const row = document.createElement('div');
         row.className = 'gb-choice-item';
-        
         row.innerHTML = `
-            <input class="gb-choice-text" value="${choice.text}" placeholder="Texto de la opción..." oninput="updateChoice(${index}, 'text', this.value)">
+            <input class="gb-choice-text" value="${choice.text}" placeholder="Opción..." oninput="updateChoice(${index}, 'text', this.value)">
             <select class="gb-choice-target" onchange="updateChoice(${index}, 'targetId', this.value)">
                 <option value="">Destino...</option>
                 ${nodes.map(n => `<option value="${n.id}" ${n.id == choice.targetId ? 'selected' : ''}>${n.title}</option>`).join('')}
@@ -432,6 +411,9 @@ function addChoice() {
     node.choices.push({ text: "", targetId: "" });
     saveAllGames();
     renderChoicesEditor();
+    
+    // 📡 EMITIR CAMBIO DE CONEXIONES
+    broadcastSync('GAME_CONNECTION', { gameId: currentGameId, nodeId: node.id, choices: node.choices });
 }
 
 function updateChoice(index, field, val) {
@@ -439,6 +421,9 @@ function updateChoice(index, field, val) {
     const node = nodes.find(n => n.id === editingNodeId);
     node.choices[index][field] = val;
     saveAllGames();
+    
+    // 📡 EMITIR CAMBIO
+    broadcastSync('GAME_CONNECTION', { gameId: currentGameId, nodeId: node.id, choices: node.choices });
 }
 
 function deleteChoice(index) {
@@ -447,95 +432,108 @@ function deleteChoice(index) {
     node.choices.splice(index, 1);
     saveAllGames();
     renderChoicesEditor();
+
+    // 📡 EMITIR CAMBIO
+    broadcastSync('GAME_CONNECTION', { gameId: currentGameId, nodeId: node.id, choices: node.choices });
 }
 
-// --- ORGANIZACIÓN JERÁRQUICA ---
-function organizeGraph() {
-    const nodes = getCurrentNodes();
-    if (nodes.length === 0) return;
+// --- API DE RECEPCIÓN (EL RECEPTOR) ---
+// Esta función es llamada por project_share.js cuando llegan datos
 
-    // Lógica BFS (sin cambios significativos, solo usa 'nodes')
-    const startNode = nodes.find(n => n.isStart) || nodes[0];
-    const levels = {}; 
-    const visited = new Set();
-    const queue = [{ id: startNode.id, level: 0 }];
-    visited.add(startNode.id);
+window.applyRemoteGameUpdate = function(action, payload) {
+    // Si no tenemos el mismo juego abierto (o la lista no existe), 
+    // primero deberíamos asegurarnos que tenemos los datos.
+    // Asumimos que la Sync Inicial ya nos dio el objeto 'games'.
+    games = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
+    
+    // Buscamos el juego afectado
+    // Nota: payload.gameId debe coincidir. Si no, podríamos buscar por ID similar o asumir el actual.
+    // Para simplificar, si payload.gameId coincide con currentGameId, actualizamos la vista.
+    // Si no, solo actualizamos memoria (localStorage).
 
-    while (queue.length > 0) {
-        const { id, level } = queue.shift();
-        const node = nodes.find(n => n.id == id);
+    const game = games.find(g => g.id === payload.gameId);
+    if (!game) {
+        // Puede que sea un juego nuevo creado remotamente y no sincronizado? 
+        // Si hicimos sync inicial, deberíamos tenerlo.
+        return; 
+    }
+
+    if (action === 'GAME_NODE_MOVE') {
+        const node = game.nodes.find(n => n.id === payload.nodeId);
         if (node) {
-            if (!levels[level]) levels[level] = [];
-            levels[level].push(node.id);
-            if (node.choices) {
-                node.choices.forEach(choice => {
-                    if (choice.targetId) {
-                        const targetExists = nodes.some(n => n.id == choice.targetId);
-                        if (targetExists && !visited.has(choice.targetId)) {
-                            visited.add(choice.targetId);
-                            queue.push({ id: choice.targetId, level: level + 1 });
-                        }
-                    }
-                });
+            node.x = payload.x;
+            node.y = payload.y;
+            // Si lo estamos viendo, actualizamos DOM
+            if (currentGameId === payload.gameId) {
+                const el = document.querySelector(`.gb-node-circle[data-id="${payload.nodeId}"]`);
+                if (el) {
+                    el.style.left = `${node.x}px`;
+                    el.style.top = `${node.y}px`;
+                    // Redibujar líneas
+                    const currentNodes = getCurrentNodes();
+                    const svgLayer = document.getElementById('gb-connections-layer');
+                    if(svgLayer) { svgLayer.innerHTML = ''; drawConnections(currentNodes); }
+                }
             }
         }
     }
-    const maxLevel = Math.max(...Object.keys(levels).map(Number)) || 0;
-    const visitedIds = Array.from(visited).map(id => String(id));
-    const orphans = nodes.filter(n => !visitedIds.includes(String(n.id)));
-    if (orphans.length > 0) levels[maxLevel + 2] = orphans.map(n => n.id);
-
-    const SPACING_X = 150; // Más ancho para nodos más grandes
-    const SPACING_Y = 200; 
-    const START_Y = 100;
-    const CENTER_X = 400; 
-
-    Object.keys(levels).forEach(lvlKey => {
-        const level = parseInt(lvlKey);
-        const ids = levels[level];
-        const rowWidth = ids.length * SPACING_X;
-        const startX = CENTER_X - (rowWidth / 2) + (SPACING_X / 2); 
-        ids.forEach((id, index) => {
-            const node = nodes.find(n => n.id == id);
-            if (node) {
-                node.x = startX + (index * SPACING_X);
-                node.y = START_Y + (level * SPACING_Y);
-            }
-        });
-    });
-
-    saveAllGames();
-    renderGraph();
-    if (window.centerCanvas) window.centerCanvas();
-}
-
-window.centerCanvas = function() {
-    if (!window.gamebookControls) return;
-
-    const nodes = getCurrentNodes();
     
-    // Si no hay nodos, resetear a 0,0
-    if (nodes.length === 0) {
-        window.gamebookControls.resetCamera();
-        return;
+    else if (action === 'GAME_NODE_DATA') {
+        const node = game.nodes.find(n => n.id === payload.nodeId);
+        if (node) {
+            node.title = payload.title;
+            node.text = payload.text;
+            node.isStart = payload.isStart;
+            
+            if (currentGameId === payload.gameId) {
+                // Actualizar titulo en el nodo visual
+                const elText = document.querySelector(`.gb-node-circle[data-id="${payload.nodeId}"] span`);
+                if(elText) elText.textContent = node.title;
+                
+                // Si justo tengo el modal abierto de ESTE nodo, actualizo los inputs
+                if (editingNodeId === payload.nodeId) {
+                    const inpT = document.getElementById('gb-node-title');
+                    const inpTx = document.getElementById('gb-node-text');
+                    if(inpT) inpT.value = node.title;
+                    if(inpTx) inpTx.value = node.text;
+                }
+            }
+        }
     }
 
-    // Calcular la caja delimitadora (Bounding Box) de todos los nodos
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    
-    nodes.forEach(node => {
-        if (node.x < minX) minX = node.x;
-        if (node.x > maxX) maxX = node.x;
-        if (node.y < minY) minY = node.y;
-        if (node.y > maxY) maxY = node.y;
-    });
+    else if (action === 'GAME_NODE_CREATE') {
+        // Evitar duplicados
+        if (!game.nodes.find(n => n.id === payload.node.id)) {
+            game.nodes.push(payload.node);
+            if (currentGameId === payload.gameId) renderGraph();
+        }
+    }
 
-    // Calcular el punto central de esa caja + el tamaño del nodo (90px)
-    const centerX = minX + (maxX - minX) / 2 + 45;
-    const centerY = minY + (maxY - minY) / 2 + 45;
+    else if (action === 'GAME_NODE_DELETE') {
+        game.nodes = game.nodes.filter(n => n.id !== payload.nodeId);
+        // Limpiar conexiones
+        game.nodes.forEach(n => {
+            n.choices = n.choices.filter(c => c.targetId != payload.nodeId); 
+        });
+        if (currentGameId === payload.gameId) {
+            if (editingNodeId === payload.nodeId) closeNodeEditor();
+            renderGraph();
+        }
+    }
 
-    // Ordenar a los controles enfocar ese punto
-    window.gamebookControls.focusPoint(centerX, centerY);
+    else if (action === 'GAME_CONNECTION') {
+        const node = game.nodes.find(n => n.id === payload.nodeId);
+        if (node) {
+            node.choices = payload.choices;
+            if (currentGameId === payload.gameId) {
+                renderGraph(); // Redibujar líneas
+                if (editingNodeId === payload.nodeId) renderChoicesEditor();
+            }
+        }
+    }
+
+    // Guardar en disco el estado actualizado
+    saveAllGames();
 };
 
 // EXPORTACIONES A WINDOW
@@ -546,15 +544,10 @@ window.deleteCurrentNode = deleteCurrentNode;
 window.addChoice = addChoice;
 window.updateChoice = updateChoice;
 window.deleteChoice = deleteChoice;
-window.organizeGraph = organizeGraph;
-
-// Nuevas exportaciones del gestor
 window.createNewGame = createNewGame;
 window.openGame = openGame;
 window.goBackToGames = goBackToGames;
 window.deleteCurrentGame = deleteCurrentGame;
 window.updateGameTitle = updateGameTitle;
 window.getCurrentGameNodes = getCurrentNodes;
-
-// FIX: EXPORTAMOS LA FUNCIÓN DE RENDERIZAR LISTA PARA QUE LA IA PUEDA LLAMARLA
 window.renderGameList = renderGameList;

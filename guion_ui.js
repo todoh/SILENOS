@@ -1,5 +1,7 @@
-// --- LÓGICA GESTOR GUIONES v1.3 (IA Aware) ---
-console.log("Sistema de Guiones Iniciado (v1.3)");
+// --- LÓGICA GESTOR GUIONES v1.4 (Real-Time Sync) ---
+import { broadcastSync, isRemoteUpdate } from './project_share.js'; // IMPORTACIÓN
+
+console.log("Sistema de Guiones Iniciado (v1.4 - Sync)");
 
 let scripts = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
 let currentScriptId = null;
@@ -70,6 +72,9 @@ function renderScriptList() {
 }
 
 function createNewScript() {
+    // Evitar duplicación si viene de remoto
+    if (isRemoteUpdate) return;
+
     console.log("Creando nuevo guion manual...");
     const newScript = {
         id: Date.now(),
@@ -83,13 +88,22 @@ function createNewScript() {
     saveScriptData();
     renderScriptList(); 
     openScript(newScript.id);
+
+    // 📡 EMITIR CREACIÓN
+    broadcastSync('SCRIPT_CREATE', newScript);
 }
 
 function deleteCurrentScript() {
+    if (isRemoteUpdate) return;
+
     if (confirm("¿Eliminar este guion y todas sus escenas?")) {
+        const idToDelete = currentScriptId;
         scripts = scripts.filter(s => s.id !== currentScriptId);
         saveScriptData();
         goBackScript();
+
+        // 📡 EMITIR BORRADO
+        broadcastSync('SCRIPT_DELETE', { id: idToDelete });
     }
 }
 
@@ -116,10 +130,14 @@ function goBackScript() {
 }
 
 function updateScriptTitle() {
+    if (isRemoteUpdate) return;
+
     const script = scripts.find(s => s.id === currentScriptId);
     if (script) {
         script.title = scriptDetailTitle.value;
         saveScriptData();
+        // 📡 EMITIR ACTUALIZACIÓN (Objeto completo para asegurar consistencia)
+        broadcastSync('SCRIPT_UPDATE', script);
     }
 }
 
@@ -209,9 +227,10 @@ function renderScriptContent() {
     });
 }
 
-// --- FUNCIONES DE ACTUALIZACIÓN ---
+// --- FUNCIONES DE ACTUALIZACIÓN CON SYNC ---
 
 function addScene() {
+    if (isRemoteUpdate) return;
     const script = scripts.find(s => s.id === currentScriptId);
     if (script) {
         script.scenes.push({
@@ -224,49 +243,70 @@ function addScene() {
             const scrollArea = document.getElementById('script-editor-scroll-area');
             if(scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
         }, 100);
+        
+        // 📡 EMITIR
+        broadcastSync('SCRIPT_UPDATE', script);
     }
 }
 
 function updateSceneTitle(sIndex, newTitle) {
+    if (isRemoteUpdate) return;
     const script = scripts.find(s => s.id === currentScriptId);
     script.scenes[sIndex].title = newTitle;
     saveScriptData();
+    // 📡 EMITIR
+    broadcastSync('SCRIPT_UPDATE', script);
 }
 
 function deleteScene(sIndex) {
+    if (isRemoteUpdate) return;
     if (confirm("¿Borrar escena completa?")) {
         const script = scripts.find(s => s.id === currentScriptId);
         script.scenes.splice(sIndex, 1);
         saveScriptData();
         renderScriptContent();
+        // 📡 EMITIR
+        broadcastSync('SCRIPT_UPDATE', script);
     }
 }
 
 function addScriptParagraph(sIndex) {
+    if (isRemoteUpdate) return;
     const script = scripts.find(s => s.id === currentScriptId);
     script.scenes[sIndex].paragraphs.push({ text: "", image: null });
     saveScriptData();
     renderScriptContent();
+    // 📡 EMITIR
+    broadcastSync('SCRIPT_UPDATE', script);
 }
 
 function insertScriptParagraphAfter(sIndex, pIndex) {
+    if (isRemoteUpdate) return;
     const script = scripts.find(s => s.id === currentScriptId);
     script.scenes[sIndex].paragraphs.splice(pIndex + 1, 0, { text: "", image: null });
     saveScriptData();
     renderScriptContent();
+    // 📡 EMITIR
+    broadcastSync('SCRIPT_UPDATE', script);
 }
 
 function updateScriptParagraphText(sIndex, pIndex, text) {
+    if (isRemoteUpdate) return;
     const script = scripts.find(s => s.id === currentScriptId);
     script.scenes[sIndex].paragraphs[pIndex].text = text;
     saveScriptData();
+    // 📡 EMITIR (Nota: Puede generar mucho tráfico, pero asegura consistencia)
+    broadcastSync('SCRIPT_UPDATE', script);
 }
 
 function deleteScriptParagraph(sIndex, pIndex) {
+    if (isRemoteUpdate) return;
     const script = scripts.find(s => s.id === currentScriptId);
     script.scenes[sIndex].paragraphs.splice(pIndex, 1);
     saveScriptData();
     renderScriptContent();
+    // 📡 EMITIR
+    broadcastSync('SCRIPT_UPDATE', script);
 }
 
 // --- IMÁGENES ---
@@ -284,6 +324,10 @@ if(scriptImageInput) {
                 script.scenes[scriptUploadContext.sceneIdx].paragraphs[scriptUploadContext.paragraphIdx].image = event.target.result;
                 saveScriptData();
                 renderScriptContent();
+                
+                // 📡 EMITIR IMAGEN (Cuidado con el tamaño)
+                broadcastSync('SCRIPT_UPDATE', script);
+                
                 scriptImageInput.value = ''; 
             };
             reader.readAsDataURL(e.target.files[0]);
@@ -292,10 +336,13 @@ if(scriptImageInput) {
 }
 
 function removeScriptImage(sIndex, pIndex) {
+    if (isRemoteUpdate) return;
     const script = scripts.find(s => s.id === currentScriptId);
     script.scenes[sIndex].paragraphs[pIndex].image = null;
     saveScriptData();
     renderScriptContent();
+    // 📡 EMITIR
+    broadcastSync('SCRIPT_UPDATE', script);
 }
 
 function autoResize(el) {
@@ -303,10 +350,54 @@ function autoResize(el) {
     el.style.height = el.scrollHeight + 'px';
 }
 
+// --- API RECEPTORA (Llamada desde project_share.js) ---
+window.applyRemoteScriptUpdate = function(action, payload) {
+    scripts = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
+
+    if (action === 'SCRIPT_UPDATE') {
+        const index = scripts.findIndex(s => s.id === payload.id);
+        if (index !== -1) {
+            scripts[index] = payload;
+            saveScriptData();
+            
+            // Si estamos viendo este guion, actualizar UI
+            if (currentScriptId === payload.id) {
+                // Actualizar título si cambió
+                if(document.activeElement !== scriptDetailTitle) {
+                    scriptDetailTitle.value = payload.title;
+                }
+                // Re-renderizar contenido completo
+                // (Para evitar perder foco al escribir, idealmente solo actualizaríamos el DOM diff,
+                // pero por consistencia recreamos la vista salvo que estemos escribiendo en un textarea)
+                if (document.activeElement.tagName !== 'TEXTAREA') {
+                    renderScriptContent();
+                } else {
+                    // Si estamos escribiendo, quizás no renderizar todo para no perder el foco
+                    // pero actualizamos datos en background.
+                }
+            }
+            renderScriptList();
+        }
+    } else if (action === 'SCRIPT_CREATE') {
+        if (!scripts.find(s => s.id === payload.id)) {
+            scripts.unshift(payload);
+            saveScriptData();
+            renderScriptList();
+        }
+    } else if (action === 'SCRIPT_DELETE') {
+        scripts = scripts.filter(s => s.id !== payload.id);
+        saveScriptData();
+        if (currentScriptId === payload.id) {
+            goBackScript();
+        }
+        renderScriptList();
+    }
+};
+
 // EXPORTAR A WINDOW
 window.createNewScript = createNewScript;
 window.deleteCurrentScript = deleteCurrentScript;
 window.goBackScript = goBackScript;
 window.updateScriptTitle = updateScriptTitle;
 window.addScene = addScene;
-window.renderScriptList = renderScriptList; // Necesario para refrescar desde otros modulos
+window.renderScriptList = renderScriptList;
