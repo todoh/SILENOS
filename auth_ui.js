@@ -1,12 +1,13 @@
-// --- MÓDULO DE AUTENTICACIÓN Y PERFIL v2.6 ---
-// Actualizado: Lógica del Modal Configuración con API Keys personales.
+// --- MÓDULO DE AUTENTICACIÓN Y PERFIL v2.7 (Cooperación Added) ---
+// Actualizado: Integración del sistema de códigos de amigo.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { getUserStats } from './usage_tracker.js'; 
-import { getGoogleApiKey, saveUserKeys, getUserKeyCount } from './apikey.js'; // Importamos funciones de key
+import { getGoogleApiKey, saveUserKeys, getUserKeyCount } from './apikey.js';
+import { initCoopSystem, openCoopModal } from './coop_manager.js'; // <--- IMPORTACIÓN NUEVA
 
-console.log("Módulo Auth UI Cargado (v2.6 - Settings Logic)");
+console.log("Módulo Auth UI Cargado (v2.7 - Coop Menu)");
 
 const authConfig = {
     apiKey: "AIzaSyBxlmzjYjOEAwc_DVtFpt9DnN7XnuRkbKw",
@@ -53,12 +54,15 @@ function renderGuestState() {
 function renderUserState(user) {
     if (!userDock) return;
     const photoURL = user.photoURL || 'https://via.placeholder.com/40';
+    
+    // --- NUEVO ITEM: COOPERACIÓN ---
     userDock.innerHTML = `
         <div class="user-profile-container">
             <div class="user-menu-popup" id="user-menu">
                 <div class="menu-header">Hola, ${user.displayName || 'Viajero'}</div>
                 <div class="menu-item disabled"><span class="menu-icon">📂</span> <span id="current-project-name">Proyecto Local</span></div>
                 <div class="menu-item" onclick="window.openSettingsModal()"><span class="menu-icon">⚙️</span> Configuración</div>
+                <div class="menu-item" onclick="window.openCoopModal()"><span class="menu-icon">🤝</span> Cooperación</div>
                 <div class="menu-divider"></div>
                 <div class="menu-item" onclick="window.openDriveSelector()"><span class="menu-icon">☁️</span> Abrir Drive...</div>
                 <div class="menu-item" onclick="window.saveToDriveManual()"><span class="menu-icon">💾</span> Guardar Drive</div>
@@ -82,7 +86,6 @@ window.openSettingsModal = async () => {
     modal.style.display = 'flex';
     setTimeout(() => modal.classList.add('active'), 10);
 
-    // 1. Cargar Estadísticas
     const stats = await getUserStats();
     if (stats) {
         document.getElementById('stat-total-script').textContent = stats.total.script;
@@ -93,7 +96,6 @@ window.openSettingsModal = async () => {
         updateBar('game', stats.daily.game, stats.limits.game);
     }
 
-    // 2. Cargar API Key Personal
     const savedKey = getGoogleApiKey();
     const input = document.getElementById('settings-api-input');
     if (input) input.value = savedKey || '';
@@ -104,15 +106,11 @@ window.openSettingsModal = async () => {
 window.saveSettingsApiKey = () => {
     const input = document.getElementById('settings-api-input');
     if (!input) return;
-    
     const count = saveUserKeys(input.value);
-    
-    // Feedback visual minimalista
-    const btn = input.nextElementSibling; // El botón de guardar
+    const btn = input.nextElementSibling;
     const originalText = btn.textContent;
     btn.textContent = "✓";
     setTimeout(() => btn.textContent = originalText, 1500);
-    
     updateApiStatusUI();
 };
 
@@ -120,17 +118,15 @@ function updateApiStatusUI() {
     const count = getUserKeyCount();
     const indicator = document.getElementById('api-active-indicator');
     const badge = document.getElementById('api-key-count-badge');
-    const limitsBars = document.querySelectorAll('.progress-fill'); // Barras de progreso
+    const limitsBars = document.querySelectorAll('.progress-fill'); 
 
     if (count > 0) {
         if(indicator) indicator.style.display = 'flex';
         if(badge) badge.textContent = count;
-        
-        // Efecto visual: Poner las barras de límite en verde o gris para indicar que no importan
-        limitsBars.forEach(bar => bar.style.backgroundColor = '#00b894'); // Verde "Libre"
+        limitsBars.forEach(bar => bar.style.backgroundColor = '#00b894'); 
     } else {
         if(indicator) indicator.style.display = 'none';
-        limitsBars.forEach(bar => bar.style.backgroundColor = ''); // Restaurar color CSS
+        limitsBars.forEach(bar => bar.style.backgroundColor = ''); 
     }
 }
 
@@ -141,7 +137,6 @@ function updateBar(type, current, max) {
     if (bar) {
         const pct = Math.min((current / max) * 100, 100);
         bar.style.width = `${pct}%`;
-        // Si hay custom keys, ignoramos el rojo. Si no, rojo al 100%
         if (getUserKeyCount() === 0 && pct >= 100) {
             bar.style.backgroundColor = '#d63031';
         } else if (getUserKeyCount() > 0) {
@@ -160,7 +155,6 @@ window.closeSettingsModal = () => {
     }
 };
 
-// --- VISIBILIDAD IA ---
 function updateIAVisibility(user) {
     const guestMsg = document.getElementById('ia-guest-warning');
     const loggedContent = document.getElementById('ia-logged-content');
@@ -175,7 +169,6 @@ function updateIAVisibility(user) {
     }
 }
 
-// --- EXPORTS ---
 export const silenosLogin = async () => {
     try {
         const result = await signInWithPopup(auth, provider);
@@ -207,6 +200,9 @@ function initAuthListener() {
         if (user) {
             renderUserState(user);
             if (window.onSilenosUserLogged) window.onSilenosUserLogged(user);
+            
+            // --- NUEVO: INICIALIZAR SISTEMA COOP ---
+            initCoopSystem(user);
         } else {
             renderGuestState();
         }
