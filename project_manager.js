@@ -1,10 +1,11 @@
-// --- PROJECT MANAGER v1.0 (CLOUD SYNC) ---
+// --- PROJECT MANAGER v2.1 (UX FIX) ---
 // Coordina la carga/guardado entre LocalStorage y Google Drive API.
+// MEJORA: Flujo de confirmación con botones (Confirm) en lugar de texto (Prompt).
 
 import { initDriveFolder, listDriveProjects, loadProjectFile, saveProjectToDrive } from './drive_api.js';
 import { currentUser } from './auth_ui.js';
 
-console.log("Project Manager Cargado (Autosave System)");
+console.log("Project Manager Cargado (v2.1 - UX Improved)");
 
 // Claves de Sistema
 const STORAGE_KEYS = [
@@ -18,13 +19,11 @@ const SESSION_FILE_ID_KEY = 'silenos_active_drive_id';
 const SESSION_FILE_NAME_KEY = 'silenos_active_project_name';
 
 // Estado
-let isDirty = false;
 let autosaveTimer = null;
-let lastSnapshot = ""; // Para detectar cambios reales
+let lastSnapshot = ""; 
 
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', () => {
-    // Restaurar estado de sesión si venimos de un reload
     const activeId = sessionStorage.getItem(SESSION_FILE_ID_KEY);
     const activeName = sessionStorage.getItem(SESSION_FILE_NAME_KEY);
 
@@ -37,17 +36,26 @@ document.addEventListener('DOMContentLoaded', () => {
         updateProjectUI("Proyecto Local", "Local");
     }
 
-    // Engancharse a eventos de UI (Exponer funciones globales)
     window.openDriveSelector = openDriveSelector;
     window.saveToDriveManual = saveToDriveManual;
     window.createNewCloudProject = createNewCloudProject;
 });
 
+// --- HELPER: VERIFICAR DUPLICADOS ---
+async function checkIfFileExists(folderId, nameToCheck) {
+    const files = await listDriveProjects(folderId);
+    const cleanName = nameToCheck.trim().toLowerCase();
+    const existing = files.find(f => {
+        const fName = f.name.replace('.json', '').trim().toLowerCase();
+        return fName === cleanName;
+    });
+    return existing ? existing : null;
+}
+
 // --- UI: SELECTOR DE PROYECTOS ---
 async function openDriveSelector() {
     if (!currentUser) return alert("Debes iniciar sesión primero.");
     
-    // Crear Modal dinámicamente si no existe
     let modal = document.getElementById('drive-modal');
     if (!modal) {
         createDriveModal();
@@ -55,42 +63,37 @@ async function openDriveSelector() {
     }
 
     const listContainer = document.getElementById('drive-file-list');
-    listContainer.innerHTML = '<div style="text-align:center; padding:20px;">Buscando en Drive...</div>';
+    listContainer.innerHTML = '<div style="text-align:center; padding:20px;">Conectando con Drive...</div>';
     
-    modal.classList.add('active'); // Mostrar modal
+    modal.classList.add('active'); 
     modal.style.display = 'flex';
 
-    // 1. Inicializar carpeta (por si no existe)
     const folderId = await initDriveFolder();
     if (!folderId) {
         listContainer.innerHTML = '<div style="color:red; padding:20px;">Error conectando con Drive.</div>';
         return;
     }
 
-    // 2. Listar archivos
     const files = await listDriveProjects(folderId);
-    
     renderFileList(files, listContainer);
 }
 
 function renderFileList(files, container) {
     container.innerHTML = '';
     
-    if (files.length === 0) {
-        container.innerHTML = `
-            <div style="text-align:center; padding:30px; color:#888;">
-                No hay proyectos en la carpeta 'Silenos_Projects'.<br>
-                <button class="io-btn action" onclick="window.createNewCloudProject()" style="margin-top:15px;">Crear el Primero</button>
-            </div>`;
-        return;
-    }
-
-    // Botón crear nuevo siempre visible
     const newBtn = document.createElement('div');
     newBtn.className = 'drive-file-item new-project';
     newBtn.innerHTML = `<span>+ Crear Nuevo Proyecto Vacío</span>`;
     newBtn.onclick = createNewCloudProject;
     container.appendChild(newBtn);
+
+    if (files.length === 0) {
+        const msg = document.createElement('div');
+        msg.style.textAlign = 'center'; msg.style.padding = '20px'; msg.style.color = '#888';
+        msg.innerText = "Carpeta vacía.";
+        container.appendChild(msg);
+        return;
+    }
 
     files.forEach(file => {
         const div = document.createElement('div');
@@ -113,9 +116,9 @@ function closeDriveModal() {
 }
 window.closeDriveModal = closeDriveModal;
 
-// --- LÓGICA DE CARGA (DESCARGA -> LOCALSTORAGE -> RELOAD) ---
+// --- CARGA DE PROYECTO ---
 async function loadCloudProject(fileId, fileName) {
-    if(!confirm(`¿Cargar "${fileName}"? Esto sobrescribirá los datos locales actuales.`)) return;
+    if(!confirm(`¿Cargar "${fileName}"?\n\nSe reemplazarán los datos actuales de la pantalla.`)) return;
 
     const listContainer = document.getElementById('drive-file-list');
     listContainer.innerHTML = '<div style="text-align:center; padding:20px;">Descargando...</div>';
@@ -123,34 +126,32 @@ async function loadCloudProject(fileId, fileName) {
     const projectData = await loadProjectFile(fileId);
     
     if (!projectData) {
-        alert("Error al descargar el archivo.");
+        alert("Error al descargar.");
         closeDriveModal();
         return;
     }
 
-    // 1. Limpieza Total
     localStorage.clear();
 
-    // 2. Inyección de Datos (Mapping inverso del backup)
     if (projectData.universalData) localStorage.setItem('minimal_universal_data', JSON.stringify(projectData.universalData));
     if (projectData.books) localStorage.setItem('minimal_books_v4', JSON.stringify(projectData.books));
     if (projectData.scripts) localStorage.setItem('minimal_scripts_v1', JSON.stringify(projectData.scripts));
     if (projectData.games) localStorage.setItem('minimal_games_v1', JSON.stringify(projectData.games));
-    if (projectData.universeName) localStorage.setItem('silenos_universe_name', projectData.universeName);
+    
+    const cleanName = fileName.replace('.json','');
+    localStorage.setItem('silenos_universe_name', projectData.universeName || cleanName);
 
-    // 3. Establecer Sesión Activa
     sessionStorage.setItem(SESSION_FILE_ID_KEY, fileId);
-    sessionStorage.setItem(SESSION_FILE_NAME_KEY, fileName.replace('.json',''));
+    sessionStorage.setItem(SESSION_FILE_NAME_KEY, cleanName);
 
-    // 4. Recarga Táctica
-    alert("Proyecto cargado. Recargando entorno...");
+    alert("Proyecto cargado. Recargando...");
     location.reload();
 }
 
-// --- LÓGICA DE GUARDADO ---
+// --- DATOS ---
 function gatherProjectData() {
     return {
-        version: "3.0",
+        version: "3.1",
         timestamp: new Date().toISOString(),
         universeName: localStorage.getItem('silenos_universe_name') || 'Proyecto Sin Nombre',
         universalData: JSON.parse(localStorage.getItem('minimal_universal_data')) || [],
@@ -160,92 +161,176 @@ function gatherProjectData() {
     };
 }
 
+// --- GUARDADO MANUAL (LÓGICA CORREGIDA) ---
 async function saveToDriveManual() {
-    const fileId = sessionStorage.getItem(SESSION_FILE_ID_KEY);
-    if (!fileId) return alert("No estás trabajando en un proyecto de la nube. Usa 'Crear Nuevo' o 'Abrir'.");
+    const sessionFileId = sessionStorage.getItem(SESSION_FILE_ID_KEY);
+    
+    // Si no hay sesión, es local puro. Forzamos subida.
+    if (!sessionFileId) {
+        alert("Proyecto local detectado. Se subirá a la nube.");
+        return createNewCloudProjectFromCurrent();
+    }
 
-    const data = gatherProjectData();
-    const currentName = sessionStorage.getItem(SESSION_FILE_NAME_KEY);
-    const folderId = await initDriveFolder(); // Aseguramos folder
+    const currentLocalName = (localStorage.getItem('silenos_universe_name') || 'Sin Nombre').trim();
+    const sessionCloudName = (sessionStorage.getItem(SESSION_FILE_NAME_KEY) || '').trim();
+    const folderId = await initDriveFolder();
 
-    // Feedback Visual
-    const dockName = document.getElementById('current-project-name');
-    if(dockName) dockName.textContent = "Guardando...";
-
-    try {
-        await saveProjectToDrive(folderId, currentName, data, fileId);
+    // --- DETECCIÓN DE CAMBIO DE NOMBRE (SIN PROMPTS CONFUSOS) ---
+    if (currentLocalName !== sessionCloudName) {
         
-        // Actualizar Snapshot para el autosave
-        lastSnapshot = JSON.stringify(data);
-        if(dockName) dockName.textContent = currentName;
-        alert("¡Guardado en Drive correctamente!");
-    } catch (e) {
-        alert("Error al guardar: " + e.message);
-        if(dockName) dockName.textContent = currentName + " (Error)";
+        // 1. Preguntar si quiere crear NUEVO ARCHIVO
+        const wantNewFile = confirm(
+            `DETECTADO CAMBIO DE NOMBRE:\n` +
+            `Original: "${sessionCloudName}" -> Nuevo: "${currentLocalName}"\n\n` +
+            `¿Quieres guardar esto como un ARCHIVO NUEVO?\n` +
+            `(Aceptar = Nuevo Archivo | Cancelar = Ver opciones de renombrado)`
+        );
+
+        if (wantNewFile) {
+            // CHEQUEO DE DUPLICADOS
+            const duplicate = await checkIfFileExists(folderId, currentLocalName);
+            if (duplicate) {
+                alert(`Error: Ya existe un archivo llamado "${currentLocalName}". Cambia el nombre antes de guardar.`);
+                return;
+            }
+
+            const newId = await performSave(folderId, currentLocalName, null, "Creando copia nueva...");
+            if (newId) {
+                sessionStorage.setItem(SESSION_FILE_ID_KEY, newId);
+                sessionStorage.setItem(SESSION_FILE_NAME_KEY, currentLocalName);
+                alert(`¡Guardado como NUEVO proyecto: "${currentLocalName}"!`);
+            }
+            return;
+        }
+
+        // 2. Si dijo CANCELAR, preguntamos si quiere RENOMBRAR el actual
+        const wantRename = confirm(
+            `¿Entonces quieres RENOMBRAR el archivo original en la nube?\n\n` +
+            `El archivo "${sessionCloudName}" pasará a llamarse "${currentLocalName}" y se sobrescribirá.`
+        );
+
+        if (wantRename) {
+            await performSave(folderId, currentLocalName, sessionFileId, "Renombrando...");
+            sessionStorage.setItem(SESSION_FILE_NAME_KEY, currentLocalName);
+            // alert("Archivo renombrado y guardado."); // Opcional
+            return;
+        }
+        
+        // Si cancela todo, no hacemos nada
+        return;
+
+    } else {
+        // Nombre idéntico, guardado normal
+        await performSave(folderId, currentLocalName, sessionFileId, "Guardando...");
     }
 }
 
-async function createNewCloudProject() {
-    const name = prompt("Nombre del nuevo proyecto:");
-    if (!name) return;
+async function performSave(folderId, fileName, fileIdToUpdate, statusMessage) {
+    const data = gatherProjectData();
+    const dockName = document.getElementById('current-project-name');
+    
+    if(dockName) dockName.textContent = statusMessage;
 
-    // 1. Preparar datos actuales (o vacíos si limpiamos antes, pero mejor guardar lo que hay en pantalla)
-    // Opción: Empezar de cero real
+    try {
+        const savedId = await saveProjectToDrive(folderId, fileName, data, fileIdToUpdate);
+        lastSnapshot = JSON.stringify(data); 
+        if(dockName) dockName.textContent = fileName;
+        return savedId;
+    } catch (e) {
+        alert("Error al guardar: " + e.message);
+        if(dockName) dockName.textContent = fileName + " (Error)";
+        return null;
+    }
+}
+
+// --- CREAR NUEVO (VACÍO) ---
+async function createNewCloudProject() {
+    const folderId = await initDriveFolder();
+    let name = prompt("Nombre del nuevo proyecto (Debe ser único):");
+    if (!name) return;
+    name = name.trim();
+
+    const listContainer = document.getElementById('drive-file-list');
+    listContainer.innerHTML = 'Verificando nombre...';
+
+    const duplicate = await checkIfFileExists(folderId, name);
+    if (duplicate) {
+        alert(`Ya existe "${name}". Elige otro nombre.`);
+        openDriveSelector();
+        return;
+    }
+
+    // Limpieza y creación
     localStorage.clear();
     localStorage.setItem('silenos_universe_name', name);
-    
-    // Guardamos estado inicial vacío
     const emptyData = gatherProjectData();
     
-    const listContainer = document.getElementById('drive-file-list');
     listContainer.innerHTML = 'Creando...';
 
-    const folderId = await initDriveFolder();
     const newId = await saveProjectToDrive(folderId, name, emptyData, null);
-
     if (newId) {
         sessionStorage.setItem(SESSION_FILE_ID_KEY, newId);
         sessionStorage.setItem(SESSION_FILE_NAME_KEY, name);
+        alert("Proyecto creado. Entrando...");
         location.reload();
     }
 }
 
-// --- SISTEMA AUTOSAVE (OBSERVADOR) ---
-function startAutosaveSystem() {
-    // Tomar foto inicial
-    lastSnapshot = JSON.stringify(gatherProjectData());
+// --- SUBIR LOCAL A NUBE ---
+async function createNewCloudProjectFromCurrent() {
+    const folderId = await initDriveFolder();
+    const currentName = localStorage.getItem('silenos_universe_name') || 'Mi Proyecto';
+    
+    let name = prompt("Nombre para guardar en la nube:", currentName);
+    if (!name) return;
+    name = name.trim();
 
-    // Chequeo cada 10 segundos (menos agresivo que 5s para ahorrar API calls)
+    const duplicate = await checkIfFileExists(folderId, name);
+    if (duplicate) {
+        alert(`Ya existe "${name}". Elige otro.`);
+        return createNewCloudProjectFromCurrent();
+    }
+
+    const newId = await performSave(folderId, name, null, "Subiendo...");
+    if (newId) {
+        sessionStorage.setItem(SESSION_FILE_ID_KEY, newId);
+        sessionStorage.setItem(SESSION_FILE_NAME_KEY, name);
+        alert("¡Proyecto vinculado a Drive!");
+        localStorage.setItem('silenos_universe_name', name);
+        updateProjectUI(name, "Nube");
+    }
+}
+
+// --- AUTOSAVE ---
+function startAutosaveSystem() {
+    lastSnapshot = JSON.stringify(gatherProjectData());
+    if (autosaveTimer) clearInterval(autosaveTimer);
+
     autosaveTimer = setInterval(async () => {
+        const fileId = sessionStorage.getItem(SESSION_FILE_ID_KEY);
+        const currentLocalName = localStorage.getItem('silenos_universe_name');
+        const sessionCloudName = sessionStorage.getItem(SESSION_FILE_NAME_KEY);
+
+        // Solo autoguardar si el nombre no ha cambiado (para evitar conflictos silenciosos)
+        if (!fileId || currentLocalName !== sessionCloudName) return;
+
         const currentData = gatherProjectData();
         const currentString = JSON.stringify(currentData);
 
         if (currentString !== lastSnapshot) {
-            console.log("Autosave: Cambios detectados. Subiendo...");
-            
-            const fileId = sessionStorage.getItem(SESSION_FILE_ID_KEY);
-            const fileName = sessionStorage.getItem(SESSION_FILE_NAME_KEY);
             const folderId = await initDriveFolder();
-
-            // Feedback discreto
             const dockName = document.getElementById('current-project-name');
-            if(dockName) dockName.innerHTML = `${fileName} <span style="font-size:0.7em; opacity:0.7">☁️</span>`;
-
+            if(dockName) dockName.innerHTML = `${sessionCloudName} <span style="font-size:0.8em; opacity:0.7">↻</span>`;
             try {
-                await saveProjectToDrive(folderId, fileName, currentData, fileId);
-                lastSnapshot = currentString; // Actualizar foto
-                
-                if(dockName) dockName.textContent = fileName;
-                console.log("Autosave: Éxito.");
-            } catch (e) {
-                console.warn("Autosave: Falló", e);
-                if(dockName) dockName.textContent = `${fileName} (!)` ;
-            }
+                await saveProjectToDrive(folderId, sessionCloudName, currentData, fileId);
+                lastSnapshot = currentString;
+                if(dockName) dockName.textContent = sessionCloudName;
+            } catch (e) { console.warn("Autosave fail", e); }
         }
-    }, 10000); // 10 segundos
+    }, 15000);
 }
 
-// --- UTILIDADES UI ---
+// --- UTILIDADES ---
 function createDriveModal() {
     const div = document.createElement('div');
     div.id = 'drive-modal';
@@ -257,8 +342,7 @@ function createDriveModal() {
                 <button class="btn-icon" onclick="window.closeDriveModal()">×</button>
             </div>
             <div class="modal-body">
-                <div id="drive-file-list" class="drive-list-container">
-                    </div>
+                <div id="drive-file-list" class="drive-list-container"></div>
             </div>
         </div>
     `;
@@ -266,8 +350,6 @@ function createDriveModal() {
 }
 
 function updateProjectUI(name, type) {
-    // Intentamos actualizar el texto del menú si ya está renderizado
-    // Si no, AuthUI lo hará al renderizar el usuario
     const el = document.getElementById('current-project-name');
     if (el) el.textContent = name;
 }
