@@ -1,8 +1,9 @@
 // --- IA: GENERACIÓN DE LIBROS (Arquitectura Pipeline v3.2 - High Fidelity) ---
 import { getApiKeysList } from './apikey.js';
 import { callGoogleAPI, cleanAndParseJSON, delay } from './ia_koreh.js';
+import { checkUsageLimit, registerUsage } from './usage_tracker.js'; // <--- IMPORTANTE
 
-console.log("Módulo IA Libros Cargado (v3.2 - Adhesión Estricta al Guion)");
+console.log("Módulo IA Libros Cargado (v3.3 - Usage Limits)");
 
 const scriptSelector = document.getElementById('ia-script-selector');
 const nuanceInput = document.getElementById('ia-libro-nuance');
@@ -10,7 +11,7 @@ const paragraphsInput = document.getElementById('ia-book-paragraphs');
 const btnGenLibro = document.getElementById('btn-gen-libro');
 const progressContainer = document.getElementById('libro-progress');
 
-// Agrupamos párrafos para no saturar, pero mantenemos granularidad
+// Agrupamos párrafos para no saturar
 const PARAGRAPHS_PER_CHUNK = 5; 
 
 if (btnGenLibro) {
@@ -48,13 +49,10 @@ function refreshScriptSelector() {
     });
 }
 
-// Limpiador agresivo para eliminar cabeceras y comentarios de la IA
 function cleanOutputText(text) {
     if (!text) return "";
     text = text.replace(/===.*?===/g, '');
     text = text.replace(/^(Aquí está|He aquí|El texto|Texto pulido|Borrador).*?:/i, '');
-    
-    // Elimina bloques de notas finales si existen
     const notesIndex = text.toLowerCase().indexOf('notas sobre');
     if (notesIndex !== -1) {
         text = text.substring(0, notesIndex);
@@ -67,6 +65,10 @@ document.addEventListener('DOMContentLoaded', refreshScriptSelector);
 // --- LÓGICA PRINCIPAL (PIPELINE) ---
 
 async function generateBookFromText() {
+    // 1. CHEQUEO DE LÍMITE
+    const canProceed = await checkUsageLimit('book');
+    if (!canProceed) return;
+
     const keys = await getApiKeysList();
     if (!keys || keys.length === 0) return alert("Error: No hay API Keys disponibles.");
 
@@ -86,7 +88,6 @@ async function generateBookFromText() {
     let globalContext = "";
     let chapterScenes = [];
 
-    // Preparamos el contexto global
     if (sourceScript.scenes.length > 1) {
         globalContext = sourceScript.scenes[0].paragraphs.map(p => p.text).join('\n');
         chapterScenes = sourceScript.scenes.slice(1);
@@ -104,24 +105,20 @@ async function generateBookFromText() {
     showProgress(true);
 
     const newBookChapters = [];
-    
-    // MEMORIA DE CONTINUIDAD (Últimos párrafos generados)
     let narrativeHistory = "Inicio de la historia."; 
 
     try {
         for (let i = 0; i < totalChapters; i++) {
             const sceneData = chapterScenes[i];
             const sceneTitle = sceneData.title;
-            // Unimos todo el texto de la escena del guion
             const sceneContent = sceneData.paragraphs.map(p => p.text).join('\n');
             
             updateProgress((i / totalChapters) * 100, `Cap ${i+1}: Estructurando fidelidad...`);
 
-            // FASE 1: ARQUITECTO (Planificación Estricta)
+            // FASE 1: ARQUITECTO
             const chapterPlan = await phaseArchitect(sceneTitle, sceneContent, globalContext, narrativeHistory, totalBlocksPerChapter);
             
             let fullChapterText = [];
-            // Ventana deslizante de contexto (últimos ~2000 caracteres)
             let slidingWindowContext = narrativeHistory.slice(-2000); 
 
             for (let b = 0; b < chapterPlan.length; b++) {
@@ -132,27 +129,22 @@ async function generateBookFromText() {
                 const chunkProg = (blockNum / chapterPlan.length) * (100 / totalChapters);
                 updateProgress(baseProg + chunkProg, `Cap ${i+1} [Bloque ${blockNum}]: Escribiendo...`);
 
-                // FASE 2: ESCRITOR (Redacción Fiel)
+                // FASE 2: ESCRITOR
                 const draftText = await phaseWriter(blockNum, chapterPlan.length, currentBeat, slidingWindowContext);
 
                 updateProgress(baseProg + chunkProg, `Cap ${i+1} [Bloque ${blockNum}]: Pulido final...`);
 
-                // FASE 3: EDITOR (Limpieza)
+                // FASE 3: EDITOR
                 let polishedText = await phaseEditor(draftText, nuanceText);
                 
                 polishedText = cleanOutputText(polishedText);
                 fullChapterText.push(polishedText);
-
-                // Actualizar contexto para el siguiente bloque
                 slidingWindowContext = polishedText.slice(-2000); 
                 
-                // Pequeña pausa para no saturar API
                 await delay(500);
             }
 
             const finalChapterContent = fullChapterText.join("\n\n");
-            
-            // Guardamos el final de este capítulo para que el siguiente empiece bien
             narrativeHistory = finalChapterContent.slice(-3000);
 
             const structuredParagraphs = finalChapterContent.split('\n\n')
@@ -164,6 +156,9 @@ async function generateBookFromText() {
                 paragraphs: structuredParagraphs
             });
         }
+
+        // 2. REGISTRO DE USO
+        await registerUsage('book'); 
 
         updateProgress(100, "Finalizando Libro...");
         
@@ -195,9 +190,8 @@ async function generateBookFromText() {
     }
 }
 
-// --- FASE 1: ARQUITECTO TÉCNICO (Cero Invención) ---
+// --- FASE 1: ARQUITECTO TÉCNICO ---
 async function phaseArchitect(title, rawContent, globalContext, prevHistory, numBlocks) {
-    // Aumentamos el límite de lectura para que la IA vea la escena ENTERA del guion
     const safeContent = rawContent.substring(0, 4000); 
     
     const systemPrompt = `Eres un Arquitecto Narrativo Técnico.
@@ -210,8 +204,8 @@ async function phaseArchitect(title, rawContent, globalContext, prevHistory, num
     CONTENIDO: "${safeContent}"
     
     REGLAS DE FIDELIDAD (STRICT MODE):
-    1. NO INVENTES TRAMA: Tu trabajo es ESTRUCTURAR únicamente lo que ya está escrito en el "MATERIAL BASE". No añadas eventos, personajes o giros que no existan ahí.
-    2. SI EL MATERIAL ES CORTO: Divide la acción existente en micro-pasos (observación, reacción interna, diálogo, acción física) para cumplir con los ${numBlocks} bloques, pero JAMÁS inventes escenas nuevas.
+    1. NO INVENTES TRAMA: Tu trabajo es ESTRUCTURAR únicamente lo que ya está escrito en el "MATERIAL BASE".
+    2. SI EL MATERIAL ES CORTO: Divide la acción existente en micro-pasos para cumplir con los ${numBlocks} bloques.
     3. CONTINUIDAD: Asegura que el primer beat conecte lógicamente con la "HISTORIA PREVIA".
     
     FORMATO JSON ESTRICTO: { "beats": ["Instrucción paso 1", "Instrucción paso 2", ...] }`;
@@ -219,19 +213,17 @@ async function phaseArchitect(title, rawContent, globalContext, prevHistory, num
     const userPrompt = `Genera la escaleta estricta de ${numBlocks} pasos basada EXCLUSIVAMENTE en el material base.`;
 
     try {
-        // Temperatura baja (0.3) para máxima lógica y mínima creatividad
         const raw = await callGoogleAPI(systemPrompt, userPrompt, { temperature: 0.3 });
         const data = cleanAndParseJSON(raw);
         if (data && data.beats && Array.isArray(data.beats)) return data.beats; 
         else throw new Error("Fallo JSON Arquitecto");
     } catch (e) {
         console.warn("Fallo en Arquitecto, usando fallback lineal.", e);
-        // Fallback simple si falla el JSON
         return Array(numBlocks).fill("Narra la escena basándote estrictamente en el guion proporcionado, expandiendo las descripciones.");
     }
 }
 
-// --- FASE 2: ESCRITOR DE ADAPTACIÓN (Fidelidad Extrema) ---
+// --- FASE 2: ESCRITOR DE ADAPTACIÓN ---
 async function phaseWriter(blockIndex, totalBlocks, beatInstruction, prevContext) {
     const systemPrompt = `Eres un Redactor de Novelizaciones (Ghostwriter).
     ESTAMOS EN: Bloque ${blockIndex} de ${totalBlocks}.
@@ -240,14 +232,12 @@ async function phaseWriter(blockIndex, totalBlocks, beatInstruction, prevContext
     CONTEXTO INMEDIATO (TEXTO ANTERIOR): "...${prevContext}"
     
     MANDAMIENTOS DE ESCRITURA:
-    1. FIDELIDAD TOTAL: Estás "novelizando" un guion existente. Tu tarea es expandir descripciones, sensaciones y pensamientos de LO QUE SE INDICA en la instrucción. NO avances la trama más allá de ese punto.
-    2. PROHIBIDO INVENTAR EVENTOS: No agregues personajes sorpresa, explosiones, flashbacks o giros que no estén explícitos en la instrucción.
-    3. RITMO Y ESTILO: Si la instrucción es breve, detente en el ambiente, la atmósfera o la introspección del personaje. "Show, don't tell".
-    4. CONEXIÓN FLUIDA: Usa el "Contexto Inmediato" para que la primera frase de tu texto encaje perfectamente con la anterior (sin repetir palabras).`;
+    1. FIDELIDAD TOTAL: Estás "novelizando" un guion existente.
+    2. PROHIBIDO INVENTAR EVENTOS: No agregues personajes sorpresa o giros que no estén explícitos.
+    3. RITMO Y ESTILO: Si la instrucción es breve, detente en el ambiente o la introspección. "Show, don't tell".
+    4. CONEXIÓN FLUIDA: Usa el "Contexto Inmediato".`;
 
     const userPrompt = `Escribe el texto narrativo para este bloque.`;
-    
-    // Temperatura media (0.65) para prosa fluida pero contenida en los hechos
     return await callGoogleAPI(systemPrompt, userPrompt, { model: "gemma-3-27b-it", temperature: 0.65 });
 }
 
@@ -259,11 +249,9 @@ async function phaseEditor(draftText, styleNuance) {
     
     REGLAS:
     1. Devuelve SOLAMENTE el texto narrativo pulido. Nada más.
-    2. Mantén la fidelidad absoluta a los hechos narrados en el borrador. Mejora la forma, no cambies el fondo.
-    3. Elimina repeticiones de palabras cercanas.`;
+    2. Mantén la fidelidad absoluta a los hechos narrados en el borrador. Mejora la forma, no cambies el fondo.`;
 
     const userPrompt = `Pule este texto:\n${draftText}`;
-
     return await callGoogleAPI(systemPrompt, userPrompt, { model: "gemma-3-27b-it", temperature: 0.5 });
 }
 

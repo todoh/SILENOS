@@ -1,14 +1,16 @@
-// --- MÓDULO DE AUTENTICACIÓN Y PERFIL (USER DOCK) v2.1 ---
-// Actualizado: Añadida opción "Importar Datos" en el menú.
+// --- MÓDULO DE AUTENTICACIÓN Y PERFIL (USER DOCK) v2.4 ---
+// Actualizado: Corrección de imports para estadísticas.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getUserStats } from './usage_tracker.js'; // <--- IMPORTANTE: ESTA LÍNEA FALTABA
 
-console.log("Módulo Auth UI Cargado (v2.1 - Import Data)");
+console.log("Módulo Auth UI Cargado (v2.4 - Stats Fix)");
 
 const authConfig = {
     apiKey: "AIzaSyBxlmzjYjOEAwc_DVtFpt9DnN7XnuRkbKw",
     authDomain: "silenos-fc5e5.firebaseapp.com",
+    databaseURL: "https://silenos-fc5e5-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "silenos-fc5e5",
     storageBucket: "silenos-fc5e5.firebasestorage.app",
     messagingSenderId: "314671855826",
@@ -41,6 +43,7 @@ function createUserDockUI() {
 }
 
 function renderGuestState() {
+    if (!userDock) return;
     userDock.innerHTML = `
         <button class="user-auth-btn" onclick="window.silenosLogin()">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="margin-right:8px;">
@@ -55,6 +58,7 @@ function renderGuestState() {
 }
 
 function renderUserState(user) {
+    if (!userDock) return;
     const photoURL = user.photoURL || 'https://via.placeholder.com/40';
     userDock.innerHTML = `
         <div class="user-profile-container">
@@ -63,6 +67,12 @@ function renderUserState(user) {
                 <div class="menu-item disabled">
                     <span class="menu-icon">📂</span> <span id="current-project-name">Proyecto Local</span>
                 </div>
+                
+                <div class="menu-item" onclick="window.openSettingsModal()">
+                    <span class="menu-icon">⚙️</span> Configuración
+                </div>
+                <div class="menu-divider"></div>
+
                  <div class="menu-item" onclick="window.openDriveSelector()">
                     <span class="menu-icon">☁️</span> Abrir desde Drive...
                 </div>
@@ -82,14 +92,84 @@ function renderUserState(user) {
     `;
 }
 
-window.silenosLogin = async () => {
+// --- LÓGICA DEL MODAL DE CONFIGURACIÓN ---
+
+window.openSettingsModal = async () => {
+    // Cerrar menú usuario
+    const menu = document.getElementById('user-menu');
+    if (menu) menu.classList.remove('active');
+
+    const modal = document.getElementById('settings-modal');
+    if (!modal) return;
+    
+    // Mostrar modal cargando
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('active'), 10);
+
+    // Obtener datos
+    const stats = await getUserStats();
+    if (!stats) return;
+
+    // Renderizar Totales
+    document.getElementById('stat-total-script').textContent = stats.total.script;
+    document.getElementById('stat-total-book').textContent = stats.total.book;
+    document.getElementById('stat-total-game').textContent = stats.total.game;
+
+    // Renderizar Diarios (Función helper)
+    updateBar('script', stats.daily.script, stats.limits.script);
+    updateBar('book', stats.daily.book, stats.limits.book);
+    updateBar('game', stats.daily.game, stats.limits.game);
+};
+
+function updateBar(type, current, max) {
+    const label = document.getElementById(`label-daily-${type}`);
+    const bar = document.getElementById(`bar-daily-${type}`);
+    
+    if (label) label.textContent = `${current} / ${max}`;
+    if (bar) {
+        const pct = Math.min((current / max) * 100, 100);
+        bar.style.width = `${pct}%`;
+        // Cambiar color si está lleno
+        bar.style.backgroundColor = pct >= 100 ? '#d63031' : 'var(--ai-color)';
+    }
+}
+
+window.closeSettingsModal = () => {
+    const modal = document.getElementById('settings-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => modal.style.display = 'none', 300);
+    }
+};
+
+// --- NUEVA FUNCIÓN: CONTROL VISIBILIDAD IA ---
+function updateIAVisibility(user) {
+    const guestMsg = document.getElementById('ia-guest-warning');
+    const loggedContent = document.getElementById('ia-logged-content');
+
+    // Si no existen los elementos (ej. estamos en otra página o no cargó el HTML), salimos
+    if (!guestMsg || !loggedContent) return;
+
+    if (user) {
+        // Usuario Logueado: Ocultar aviso, mostrar herramientas
+        guestMsg.style.display = 'none';
+        loggedContent.style.display = 'block';
+    } else {
+        // Usuario Invitado: Mostrar aviso, ocultar herramientas
+        guestMsg.style.display = 'block';
+        loggedContent.style.display = 'none';
+    }
+}
+
+// --- FUNCIONES EXPORTABLES ---
+
+export const silenosLogin = async () => {
     try {
         const result = await signInWithPopup(auth, provider);
         const credential = GoogleAuthProvider.credentialFromResult(result);
         const token = credential.accessToken;
         
         sessionStorage.setItem('google_drive_token', token);
-        
         console.log("Login exitoso. Token de Drive capturado.");
     } catch (error) {
         console.error("Error en login:", error);
@@ -97,16 +177,20 @@ window.silenosLogin = async () => {
     }
 };
 
-window.silenosLogout = async () => {
+export const silenosLogout = async () => {
     try {
         await signOut(auth);
         sessionStorage.removeItem('google_drive_token');
         console.log("Sesión cerrada");
-        location.reload(); 
+        location.reload(); // ESTO REINICIA LA PÁGINA VISUALMENTE
     } catch (error) {
         console.error("Error al salir:", error);
     }
 };
+
+// Vinculación a window para uso en HTML onclick
+window.silenosLogin = silenosLogin;
+window.silenosLogout = silenosLogout;
 
 window.toggleUserMenu = () => {
     const menu = document.getElementById('user-menu');
@@ -124,6 +208,10 @@ document.addEventListener('click', (e) => {
 function initAuthListener() {
     onAuthStateChanged(auth, (user) => {
         currentUser = user;
+        
+        // Actualizamos la visibilidad de la sección IA inmediatamente
+        updateIAVisibility(user);
+
         if (user) {
             renderUserState(user);
             if (window.onSilenosUserLogged) window.onSilenosUserLogged(user);

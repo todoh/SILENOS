@@ -1,8 +1,9 @@
 // --- IA: GENERACIÓN DE GUIONES (Controlador UI) ---
 import { getApiKeysList } from './apikey.js';
 import { callGoogleAPI, cleanAndParseJSON, delay } from './ia_koreh.js';
+import { checkUsageLimit, registerUsage } from './usage_tracker.js'; // <--- IMPORTANTE
 
-console.log("Módulo IA Guiones Cargado (v2.1 - Event Listener Fixed)");
+console.log("Módulo IA Guiones Cargado (v2.2 - Usage Limits)");
 
 const guionPromptInput = document.getElementById('ia-guion-prompt');
 const chaptersInput = document.getElementById('ia-guion-chapters');
@@ -10,10 +11,9 @@ const btnGenGuion = document.getElementById('btn-gen-guion');
 const useDataToggle = document.getElementById('ia-use-data');
 const progressContainer = document.getElementById('guion-progress');
 
-// --- CORRECCIÓN DE EVENTOS (FIX REFERENCE ERROR) ---
-// Vinculamos el evento directamente en JS para no depender del HTML onclick
+// --- CORRECCIÓN DE EVENTOS ---
 if (btnGenGuion) {
-    btnGenGuion.onclick = null; // Eliminamos la referencia rota del HTML
+    btnGenGuion.onclick = null;
     btnGenGuion.addEventListener('click', generateScriptFromText);
 }
 
@@ -44,9 +44,11 @@ function getUniverseContext() {
 // --- LÓGICA PRINCIPAL ---
 
 async function generateScriptFromText() {
-    // Verificamos llaves antes de nada
+    // 1. CHEQUEO DE LÍMITES ANTES DE EMPEZAR
+    const canProceed = await checkUsageLimit('script');
+    if (!canProceed) return; 
+
     const keys = await getApiKeysList();
-    
     if (!keys || keys.length === 0) return alert("El sistema no pudo recuperar las llaves del servidor y no hay ninguna configurada manualmente.");
 
     const promptText = guionPromptInput ? guionPromptInput.value.trim() : "";
@@ -66,10 +68,12 @@ async function generateScriptFromText() {
             await generateFastScript(promptText, numChapters);
         }
 
+        // 2. REGISTRO DE USO AL FINALIZAR CON ÉXITO
+        await registerUsage('script');
+
         updateProgress(100, "¡Guion Terminado!");
         await delay(500);
         alert("¡Guion generado correctamente!");
-        // No borramos el prompt por si el usuario quiere reajustar algo
         
         if (window.renderScriptList) window.renderScriptList();
         if (window.refreshScriptSelector) window.refreshScriptSelector();
@@ -98,7 +102,6 @@ async function generateFastScript(promptText, numChapters) {
         "chapters": [ { "number": 1, "summary": "Descripción precisa del contenido..." } ]
     };
 
-    // Prompt ajustado para OBEDECER estructuras
     const systemPrompt = `Eres un Arquitecto de Contenidos y Guionista Experto.
     TAREA: Crear una estructura de ${numChapters} capítulos basada ESTRICTAMENTE en la entrada del usuario.
     
@@ -114,7 +117,7 @@ async function generateFastScript(promptText, numChapters) {
 
     const jsonRaw = await callGoogleAPI(systemPrompt, userPrompt, {
         model: "gemma-3-12b-it",
-        temperature: 0.7 // Temperatura más baja para ser más fiel a las instrucciones
+        temperature: 0.7 
     });
 
     updateProgress(80, "Guardando estructura...");
@@ -163,7 +166,7 @@ async function generateDeepScript(promptText, numChapters) {
     `;
 
     const planJsonRaw = await callGoogleAPI(systemPromptPlan, userPromptPlan, {
-        model: "gemma-3-27b-it", // Usamos modelo mayor para mejor comprensión lectora
+        model: "gemma-3-27b-it",
         temperature: 0.7 
     });
 
@@ -187,7 +190,6 @@ async function generateDeepScript(promptText, numChapters) {
         const percent = 20 + ((currentStepNum / totalSteps) * 80);
         updateProgress(percent, `Redactando Capítulo ${currentStepNum}: ${currentInstruction.substring(0, 20)}...`);
 
-        // Pausa técnica
         if (i > 0) await delay(800);
 
         let chapterContent = "";
@@ -226,7 +228,6 @@ async function generateDeepScript(promptText, numChapters) {
                     chapterContent = chapData.content;
                     success = true;
                 } else {
-                    // Fallback texto plano si falla JSON
                     if (chapJsonRaw && chapJsonRaw.length > 20) {
                         chapterContent = chapJsonRaw;
                         success = true;
@@ -288,5 +289,4 @@ function saveGeneratedScript(title, plot, chaptersArr) {
     localStorage.setItem('minimal_scripts_v1', JSON.stringify(scripts));
 }
 
-// Mantenemos la exportación por compatibilidad, aunque el listener ya se encarga
 window.generateScriptFromText = generateScriptFromText;

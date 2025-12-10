@@ -228,6 +228,7 @@ input:checked + .slider:before {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    height: 100%;
 }
 
 .modal-footer {

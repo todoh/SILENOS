@@ -1,11 +1,12 @@
 // --- IA: GENERADOR DE JUEGOS NARRATIVOS (Estructura Ramificada Pura) ---
 import { getApiKeysList } from './apikey.js';
 import { callGoogleAPI, cleanAndParseJSON, delay } from './ia_koreh.js';
+import { checkUsageLimit, registerUsage } from './usage_tracker.js'; // <--- IMPORTANTE
 
-console.log("Módulo IA Juegos Cargado (Arquitecto de Finales v2.1 - Conexiones Robustas)");
+console.log("Módulo IA Juegos Cargado (v2.2 - Usage Limits)");
 
 const promptInput = document.getElementById('ia-game-prompt');
-const metricInput = document.getElementById('ia-game-metric'); // Ej: Honor, Supervivencia
+const metricInput = document.getElementById('ia-game-metric'); 
 const useDataCheck = document.getElementById('ia-game-use-data');
 const btnGen = document.getElementById('btn-gen-game');
 const progressContainer = document.getElementById('game-progress');
@@ -42,6 +43,10 @@ function getUniversalData() {
 // --- LÓGICA DE GENERACIÓN ---
 
 async function startStoryGeneration() {
+    // 1. CHEQUEO DE LÍMITE
+    const canProceed = await checkUsageLimit('game');
+    if (!canProceed) return;
+
     const keys = await getApiKeysList();
     if (!keys || keys.length === 0) return alert("Error: No hay API Keys disponibles.");
 
@@ -56,7 +61,7 @@ async function startStoryGeneration() {
     try {
         const universeContext = useDataCheck.checked ? getUniversalData() : "";
 
-        // PASO 1: DISEÑO DE FINALES (0 a 100)
+        // PASO 1: DISEÑO DE FINALES
         updateProgress(15, "Diseñando el espectro de finales (0-100)...");
         const endings = await phaseDesignEndings(topic, metric, universeContext);
         
@@ -69,6 +74,9 @@ async function startStoryGeneration() {
         const fullGame = assembleGame(topic, gameNodes, endings);
 
         saveGame(fullGame);
+
+        // 2. REGISTRO DE USO
+        await registerUsage('game');
 
         updateProgress(100, "¡Juego Completado!");
         await delay(500);
@@ -106,9 +114,7 @@ async function phaseDesignEndings(topic, metric, context) {
     {
         "endings": [
             { "score": 0, "title": "Título del Final", "text": "Descripción narrativa del desenlace..." },
-            { "score": 15, "title": "...", "text": "..." },
             ...
-            { "score": 100, "title": "...", "text": "..." }
         ]
     }`;
 
@@ -121,7 +127,6 @@ async function phaseDesignEndings(topic, metric, context) {
 
 // --- FASE 2: TEJEDOR DE HISTORIAS (Weaver) ---
 async function phaseBuildNarrative(topic, metric, endings, context) {
-    // Convertimos los finales en un texto de referencia claro
     const endingsRef = endings.map(e => `[FINAL_ID_${e.score}]: ${e.title} (Valor: ${e.score})`).join('\n');
 
     const systemPrompt = `Eres un Escritor de Librojuegos (Choose Your Own Adventure).
@@ -138,12 +143,11 @@ async function phaseBuildNarrative(topic, metric, endings, context) {
     - Crea una estructura ramificada interesante (10-15 nodos intermedios).
     - IMPORTANTE: Cuando una decisión lleve a un final, pon en "targetId" el VALOR del final (ej: 0, 50, 100) o el string "FINAL_ID_100".
     
-    OUTPUT JSON (Estructura de grafo):
+    OUTPUT JSON:
     {
         "title": "Título del juego",
         "nodes": [
             { "id": 1, "title": "Inicio", "text": "...", "choices": [{ "text": "Ir a la cueva", "targetId": 2 }, ...] },
-            { "id": 2, "title": "Intermedio", "text": "...", "choices": [{ "text": "Final malo", "targetId": 0 }, {"text": "Seguir", "targetId": 3}] },
             ...
         ]
     }`;
@@ -162,28 +166,25 @@ async function phaseBuildNarrative(topic, metric, endings, context) {
     return data;
 }
 
-// --- FASE 3: ENSAMBLAJE FINAL (LÓGICA CORREGIDA) ---
+// --- FASE 3: ENSAMBLAJE FINAL ---
 function assembleGame(topic, narrativeData, endings) {
     let narrativeNodes = narrativeData.nodes;
     
-    // 1. Crear los nodos finales reales con IDs altos y seguros
-    // Usaremos 9000 + score para evitar conflictos con IDs normales (1, 2, 3...)
+    // 1. Crear los nodos finales reales
     const finalNodes = endings.map(end => {
         return {
-            id: 9000 + end.score, // ID Único y predecible
+            id: 9000 + end.score, 
             title: `FINAL: ${end.title}`,
             text: `${end.text}\n\n<strong style="color:#00bcd4">― VALORACIÓN: ${end.score} / ${metricInput.value || '100'} ―</strong>`,
-            choices: [], // Sin salida
+            choices: [],
             isFinal: true
         };
     });
 
-    // 2. RECABLEADO INTELIGENTE (Smart Rewiring)
-    // Recorremos los nodos narrativos y corregimos los "targetId" que apuntan a finales
+    // 2. RECABLEADO INTELIGENTE
     const narrativeIds = new Set(narrativeNodes.map(n => n.id));
 
     narrativeNodes.forEach(node => {
-        // Aseguramos que x,y existan para layout
         node.x = node.x || 0;
         node.y = node.y || 0;
 
@@ -191,18 +192,13 @@ function assembleGame(topic, narrativeData, endings) {
             node.choices.forEach(choice => {
                 let target = choice.targetId;
 
-                // Caso A: La IA puso un string tipo "FINAL_ID_100"
                 if (typeof target === 'string' && target.includes('FINAL_ID_')) {
-                    const score = parseInt(target.replace(/\D/g, '')); // Extraer solo números
+                    const score = parseInt(target.replace(/\D/g, ''));
                     if (!isNaN(score)) {
                         choice.targetId = 9000 + score;
                     }
                 }
-                // Caso B: La IA puso directamente el número del score (ej: 100 o 0)
-                // Si el target NO existe en los nodos narrativos Y es un número bajo (<=100), asumimos que es un final.
                 else if (!narrativeIds.has(target) && target <= 100) {
-                    // Buscamos el final más cercano disponible
-                    // (Por si la IA puso 99 y solo tenemos final 100)
                     const closestEnd = endings.reduce((prev, curr) => {
                         return (Math.abs(curr.score - target) < Math.abs(prev.score - target) ? curr : prev);
                     });
@@ -212,15 +208,13 @@ function assembleGame(topic, narrativeData, endings) {
         }
     });
 
-    // 3. ESTABLECER EL NODO DE INICIO (CRÍTICO)
-    // Buscamos el nodo con ID 1, o el primero de la lista si no existe
+    // 3. ESTABLECER EL NODO DE INICIO
     let startNode = narrativeNodes.find(n => n.id === 1);
     if (!startNode && narrativeNodes.length > 0) {
         startNode = narrativeNodes[0];
     }
     
     if (startNode) {
-        // Limpiamos cualquier flag previo y marcamos este
         narrativeNodes.forEach(n => n.isStart = false);
         startNode.isStart = true;
         startNode.title = `(INICIO) ${startNode.title}`;
@@ -229,17 +223,13 @@ function assembleGame(topic, narrativeData, endings) {
     // 4. UNIR Y POSICIONAR VISUALMENTE
     const allNodes = [...narrativeNodes, ...finalNodes];
 
-    // Layout automático simple (Árbol vertical)
     const levels = {}; 
-    // Mapeo simple por ID para distribuir verticalmente si no hay algo mejor
     allNodes.forEach((n, i) => {
-        // Si es final, lo mandamos al fondo
         if (n.id >= 9000) {
-            const indexInFinals = (n.id - 9000) / 20; // Espaciado
+            const indexInFinals = (n.id - 9000) / 20; 
             n.x = 200 + (indexInFinals * 250);
-            n.y = 1000; // Muy abajo
+            n.y = 1000; 
         } else {
-            // Nodos normales en matriz
             const col = i % 5;
             const row = Math.floor(i / 5);
             n.x = 100 + (col * 300);
@@ -247,7 +237,6 @@ function assembleGame(topic, narrativeData, endings) {
         }
     });
     
-    // Si tenemos al nodo start, lo ponemos arriba al centro
     if (startNode) {
         startNode.x = 600;
         startNode.y = 50;

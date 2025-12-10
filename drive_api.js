@@ -1,14 +1,28 @@
-// --- CLIENTE API GOOGLE DRIVE v1.1 (CORS FIX) ---
+// --- CLIENTE API GOOGLE DRIVE v2.1 (Auto-Logout) ---
 // Gestiona la conexión REST con Drive para guardar/cargar proyectos.
-// Actualización: Solución al error CORS en PATCH usando Override Header.
+// Actualización: Si el token caduca (401), cierra sesión automáticamente.
 
-import { getDriveToken } from './auth_ui.js';
+import { getDriveToken, silenosLogout } from './auth_ui.js';
 
-console.log("Módulo Drive API Cargado (v1.1 - CORS Patch Fix)");
+console.log("Módulo Drive API Cargado (v2.1 - Auto Logout)");
 
 const FOLDER_NAME = 'Silenos_Projects';
 const FOLDER_MIME = 'application/vnd.google-apps.folder';
 const JSON_MIME = 'application/json';
+
+// --- HELPER DE SEGURIDAD ---
+async function handleApiResponse(response, context) {
+    if (response.ok) return response.json();
+    
+    // Si la respuesta es 401 (No autorizado), el token murió.
+    if (response.status === 401) {
+        console.warn(`Drive API 401 en ${context}: Token caducado.`);
+        throw new Error("AUTH_EXPIRED");
+    }
+
+    const text = await response.text();
+    throw new Error(`API Error (${response.status}) en ${context}: ${text}`);
+}
 
 // --- FUNCIONES PÚBLICAS ---
 
@@ -18,18 +32,20 @@ export async function initDriveFolder() {
     if (!token) return null;
 
     try {
-        // Buscar carpeta existente
+        // PASO 1: Búsqueda
         const q = `mimeType='${FOLDER_MIME}' and name='${FOLDER_NAME}' and trashed=false`;
         const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
-        const data = await searchRes.json();
+
+        // Verificamos respuesta
+        const data = await handleApiResponse(searchRes, "Buscar Carpeta");
 
         if (data.files && data.files.length > 0) {
             console.log("Carpeta Silenos encontrada:", data.files[0].id);
             return data.files[0].id;
         } else {
-            // Crear carpeta si no existe
+            // PASO 2: Creación (Solo si búsqueda OK y 0 resultados)
             console.log("Creando carpeta Silenos...");
             const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
                 method: 'POST',
@@ -42,10 +58,15 @@ export async function initDriveFolder() {
                     mimeType: FOLDER_MIME
                 })
             });
-            const folderData = await createRes.json();
+            const folderData = await handleApiResponse(createRes, "Crear Carpeta");
             return folderData.id;
         }
     } catch (e) {
+        if (e.message === "AUTH_EXPIRED") {
+            alert("⚠️ Tu sesión ha caducado. Desconectando por seguridad...");
+            silenosLogout(); // <--- CIERRE DE SESIÓN AUTOMÁTICO
+            return null;
+        }
         console.error("Error Drive Init:", e);
         return null;
     }
@@ -61,9 +82,15 @@ export async function listDriveProjects(folderId) {
         const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id, name, modifiedTime)`, {
             headers: { Authorization: `Bearer ${token}` }
         });
-        const data = await res.json();
+        
+        const data = await handleApiResponse(res, "Listar Proyectos");
         return data.files || [];
     } catch (e) {
+        if (e.message === "AUTH_EXPIRED") {
+            alert("⚠️ Sesión caducada.");
+            silenosLogout(); // <--- CIERRE DE SESIÓN AUTOMÁTICO
+            return [];
+        }
         console.error("Error Listando Proyectos:", e);
         return [];
     }
@@ -78,9 +105,14 @@ export async function loadProjectFile(fileId) {
         const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
             headers: { Authorization: `Bearer ${token}` }
         });
-        const json = await res.json();
-        return json;
+        
+        return await handleApiResponse(res, "Descargar Archivo");
     } catch (e) {
+        if (e.message === "AUTH_EXPIRED") {
+            alert("⚠️ Sesión caducada.");
+            silenosLogout(); // <--- CIERRE DE SESIÓN AUTOMÁTICO
+            return null;
+        }
         console.error("Error Descargando Proyecto:", e);
         return null;
     }
@@ -99,12 +131,10 @@ export async function saveProjectToDrive(folderId, fileName, jsonData, existingF
         mimeType: JSON_MIME
     };
 
-    // Si es nuevo, añadimos el padre. Si es actualización, no hace falta.
     if (!existingFileId) {
         metadata.parents = [folderId];
     }
 
-    // Construimos el cuerpo multipart (Metadata + Content)
     const boundary = '-------314159265358979323846';
     const delimiter = `\r\n--${boundary}\r\n`;
     const closeDelim = `\r\n--${boundary}--`;
@@ -119,9 +149,6 @@ export async function saveProjectToDrive(folderId, fileName, jsonData, existingF
         closeDelim;
 
     try {
-        // --- FIX CORS: USAR SIEMPRE POST CON OVERRIDE ---
-        // El navegador bloquea PATCH en cross-origin para uploads.
-        // Google permite enviar POST y especificar el método real en la cabecera.
         const method = 'POST'; 
         
         const url = existingFileId 
@@ -133,7 +160,6 @@ export async function saveProjectToDrive(folderId, fileName, jsonData, existingF
             'Content-Type': `multipart/related; boundary=${boundary}`
         };
 
-        // Si estamos actualizando, inyectamos la cabecera mágica
         if (existingFileId) {
             headers['X-HTTP-Method-Override'] = 'PATCH';
         }
@@ -144,16 +170,16 @@ export async function saveProjectToDrive(folderId, fileName, jsonData, existingF
             body: body
         });
 
-        if (!res.ok) {
-            const errText = await res.text();
-            throw new Error(`Google API Error (${res.status}): ${errText}`);
-        }
-
-        const data = await res.json();
+        const data = await handleApiResponse(res, "Guardar Proyecto");
         console.log("Proyecto guardado en Drive:", data.id);
         return data.id;
 
     } catch (e) {
+        if (e.message === "AUTH_EXPIRED") {
+            alert("⚠️ Sesión caducada. No se pudo guardar.");
+            silenosLogout(); // <--- CIERRE DE SESIÓN AUTOMÁTICO
+            throw e;
+        }
         console.error("Error Guardando en Drive:", e);
         throw e;
     }
