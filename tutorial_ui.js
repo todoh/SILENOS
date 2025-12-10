@@ -1,6 +1,6 @@
-// --- TUTORIAL UI LOGIC (v3.0 - Smart Positioning & Clamping) ---
+// --- TUTORIAL UI LOGIC (v3.1 - Games Added) ---
 
-console.log("Módulo Tutorial Cargado (v3.0 Anti-Overflow)");
+console.log("Módulo Tutorial Cargado (v3.1 - Crystal UI)");
 
 const steps = [
     {
@@ -11,7 +11,7 @@ const steps = [
     },
     {
         title: "Navegación Principal",
-        text: "Usa esta barra para cambiar entre tus Datos, Guiones, Biblioteca y la configuración de IA.",
+        text: "Usa esta barra para cambiar entre tus Datos, Guiones, Biblioteca, Juegos y la configuración de IA.",
         target: ".nav-header",
         tab: "tab1"
     },
@@ -34,6 +34,12 @@ const steps = [
         tab: "tab3"
     },
     {
+        title: "Diseñador de Juegos",
+        text: "Crea narrativas no lineales y librojuegos interactivos. Conecta nodos visualmente en el lienzo infinito y prueba tus historias ramificadas.",
+        target: "#section-gamebook",
+        tab: "tab6"
+    },
+    {
         title: "El Cerebro (IA)",
         text: "Configura tu API Key de Google aquí. Es el motor que impulsa la generación de texto.",
         target: ".ia-container",
@@ -41,7 +47,7 @@ const steps = [
     },
     {
         title: "Copias de Seguridad",
-        text: "¡Importante! Silenos no guarda en la nube. Descarga tu archivo JSON regularmente aquí.",
+        text: "¡Importante! Silenos no guarda en la nube automáticamente. Descarga tu archivo JSON regularmente aquí.",
         target: ".io-container",
         tab: "tab4"
     }
@@ -78,14 +84,14 @@ function createElements() {
     box = document.createElement('div');
     box.className = 'tutorial-box';
     box.innerHTML = `
-        <div class="t-title" id="t-title"></div>
+        <div class="t-header-row">
+            <div class="t-title" id="t-title"></div>
+            <div class="t-steps" id="t-steps"></div>
+        </div>
         <div class="t-text" id="t-text"></div>
         <div class="t-footer">
-            <span class="t-steps" id="t-steps"></span>
-            <div style="display:flex; gap:10px;">
-                <button class="t-btn t-btn-skip" onclick="window.endTutorial()">Salir</button>
-                <button class="t-btn t-btn-next" onclick="window.nextStep()">Siguiente</button>
-            </div>
+            <button class="t-btn t-btn-skip" onclick="window.endTutorial()">Saltar</button>
+            <button class="t-btn t-btn-next" onclick="window.nextStep()">Siguiente</button>
         </div>
     `;
     document.body.appendChild(box);
@@ -129,10 +135,10 @@ function showStep(index) {
 
     document.getElementById('t-title').textContent = step.title;
     document.getElementById('t-text').textContent = step.text;
-    document.getElementById('t-steps').textContent = `${index + 1} / ${steps.length}`;
+    document.getElementById('t-steps').textContent = `${index + 1}/${steps.length}`;
     
     const nextBtn = box.querySelector('.t-btn-next');
-    nextBtn.textContent = index === steps.length - 1 ? "Finalizar" : "Siguiente";
+    nextBtn.textContent = index === steps.length - 1 ? "Finalizar" : "Siguiente →";
 
     if (step.target) {
         setTimeout(() => {
@@ -147,7 +153,7 @@ function showStep(index) {
                 spotlight.style.left = `${rect.left - 5}px`;
                 spotlight.classList.add('active');
 
-                // Mover Caja (Lógica Nueva)
+                // Mover Caja (Lógica Smart)
                 positionSmart(rect);
             } else {
                 centerView();
@@ -169,7 +175,6 @@ function centerView() {
     box.style.transform = 'translate(-50%, -50%)';
 }
 
-// --- FUNCIÓN MATEMÁTICA CORREGIDA ---
 function positionSmart(targetRect) {
     const boxRect = box.getBoundingClientRect();
     const margin = 20;
@@ -178,45 +183,28 @@ function positionSmart(targetRect) {
 
     let top, left;
 
-    // 1. Decidir si ponemos la caja Arriba o Abajo (Prioridad Vertical)
-    // Espacio disponible abajo
+    // 1. Decidir si ponemos la caja Arriba o Abajo
     const spaceBelow = windowH - targetRect.bottom;
-    // Espacio disponible arriba
     const spaceAbove = targetRect.top;
 
-    // Preferimos abajo si cabe
     if (spaceBelow > boxRect.height + margin) {
         top = targetRect.bottom + margin;
-    } 
-    // Si no cabe abajo, probamos arriba
-    else if (spaceAbove > boxRect.height + margin) {
+    } else if (spaceAbove > boxRect.height + margin) {
         top = targetRect.top - boxRect.height - margin;
-    } 
-    // Si no cabe en ninguno (el elemento es enorme), lo ponemos abajo flotando sobre el elemento
-    else {
+    } else {
         top = windowH - boxRect.height - margin;
     }
 
-    // 2. Calcular posición horizontal (Intentar centrar con respecto al objetivo)
+    // 2. Calcular posición horizontal (Centrado)
     left = targetRect.left + (targetRect.width / 2) - (boxRect.width / 2);
 
-    // 3. CLAMPING (Seguridad para que no se salga de la pantalla)
-    // Límite Izquierdo
-    if (left < margin) {
-        left = margin;
-    }
-    // Límite Derecho
-    if (left + boxRect.width > windowW - margin) {
-        left = windowW - boxRect.width - margin;
-    }
-
-    // Límite Superior (Por si acaso la lógica de arriba falló)
-    if (top < margin) {
-        top = margin;
-    }
+    // 3. Clamping (No salir de pantalla)
+    if (left < margin) left = margin;
+    if (left + boxRect.width > windowW - margin) left = windowW - boxRect.width - margin;
+    if (top < margin) top = margin;
 
     // Aplicar coordenadas
-    box.style.transform = 'none'; // Quitar centrado automático
+    box.style.transform = 'none'; 
     box.style.top = `${top}px`;
     box.style.left = `${left}px`;
 }

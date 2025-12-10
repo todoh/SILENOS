@@ -1,9 +1,9 @@
-// --- IA: GENERACIÓN DE LIBROS (Arquitectura Pipeline v3.2 - High Fidelity) ---
+// --- IA: GENERACIÓN DE LIBROS (Arquitectura Pipeline v3.3 - Auto Titulado) ---
 import { getApiKeysList } from './apikey.js';
 import { callGoogleAPI, cleanAndParseJSON, delay } from './ia_koreh.js';
 import { checkUsageLimit, registerUsage } from './usage_tracker.js'; // <--- IMPORTANTE
 
-console.log("Módulo IA Libros Cargado (v3.3 - Usage Limits)");
+console.log("Módulo IA Libros Cargado (v3.3 - Auto Title Update)");
 
 const scriptSelector = document.getElementById('ia-script-selector');
 const nuanceInput = document.getElementById('ia-libro-nuance');
@@ -121,6 +121,7 @@ async function generateBookFromText() {
             let fullChapterText = [];
             let slidingWindowContext = narrativeHistory.slice(-2000); 
 
+            // BUCLE DE BLOQUES (ESCRITURA)
             for (let b = 0; b < chapterPlan.length; b++) {
                 const currentBeat = chapterPlan[b];
                 const blockNum = b + 1;
@@ -145,6 +146,12 @@ async function generateBookFromText() {
             }
 
             const finalChapterContent = fullChapterText.join("\n\n");
+            
+            // FASE 4: TITULADOR AUTOMÁTICO (NUEVO)
+            // Ejecutamos en "paralelo" lógico al cierre del capítulo
+            updateProgress(((i + 1) / totalChapters) * 100, `Cap ${i+1}: Generando título...`);
+            const generatedTitle = await phaseTitleGenerator(finalChapterContent, sceneTitle);
+
             narrativeHistory = finalChapterContent.slice(-3000);
 
             const structuredParagraphs = finalChapterContent.split('\n\n')
@@ -152,7 +159,7 @@ async function generateBookFromText() {
                 .map(p => ({ text: p.trim(), image: null }));
 
             newBookChapters.push({
-                title: sceneTitle,
+                title: generatedTitle || sceneTitle, // Usamos el título generado si existe
                 paragraphs: structuredParagraphs
             });
         }
@@ -174,7 +181,7 @@ async function generateBookFromText() {
         localStorage.setItem('minimal_books_v4', JSON.stringify(books));
 
         await delay(500);
-        alert("¡Libro generado con éxito! Se ha respetado la estructura del guion.");
+        alert("¡Libro generado con éxito! Títulos y contenido creados.");
         if (window.renderBookList) window.renderBookList();
 
     } catch (err) {
@@ -253,6 +260,34 @@ async function phaseEditor(draftText, styleNuance) {
 
     const userPrompt = `Pule este texto:\n${draftText}`;
     return await callGoogleAPI(systemPrompt, userPrompt, { model: "gemma-3-27b-it", temperature: 0.5 });
+}
+
+// --- FASE 4: TITULADOR AUTOMÁTICO (NUEVO) ---
+async function phaseTitleGenerator(chapterContent, originalTitle) {
+    const systemPrompt = `Eres un Editor de Títulos experto en la industria editorial.
+    TU MISIÓN: Leer el texto de un capítulo recién escrito y generar un TÍTULO ÚNICO, corto, evocador y literario.
+    
+    INPUTS:
+    - Título provisional (del guion): "${originalTitle}"
+    - Contenido (extracto): Ver abajo.
+    
+    REGLAS:
+    1. El título debe tener máximo 6-7 palabras.
+    2. Debe capturar la esencia, emoción o evento principal del texto.
+    3. Devuelve SOLAMENTE el título limpio, sin comillas, sin "Título:", sin markdown.
+    4. Estilo: Elegante, misterioso o épico según el texto.`;
+
+    const userPrompt = `Texto del capítulo (Primeros 3000 carácteres):\n${chapterContent.substring(0, 3000)}...`; 
+    
+    try {
+        let title = await callGoogleAPI(systemPrompt, userPrompt, { model: "gemma-3-27b-it", temperature: 0.7 });
+        // Limpieza extra por si acaso la IA es habladora
+        title = title.replace(/^Título:\s*/i, '').replace(/["']/g, '').replace(/\.$/, '').trim();
+        return title;
+    } catch (e) {
+        console.warn("Fallo generando título, usando original.", e);
+        return originalTitle;
+    }
 }
 
 window.refreshScriptSelector = refreshScriptSelector;

@@ -1,4 +1,4 @@
-/* --- STYLES TUTORIAL (Spotlight Method Fixed) --- */
+/* --- STYLES TUTORIAL (Crystal Neumorphic Update) --- */
 
 .tutorial-overlay {
     position: fixed;
@@ -13,75 +13,161 @@
 .tutorial-spotlight {
     position: fixed;
     z-index: 9991;
-    border-radius: 8px;
+    border-radius: 12px;
     pointer-events: none; 
-    box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.75); 
-    border: 2px solid rgba(255, 255, 255, 0.8);
+    /* Sombra muy difusa para suavizar el foco */
+    box-shadow: 0 0 0 4000px rgba(95, 95, 95, 0.65); 
+    border: 2px solid rgba(255, 255, 255, 0.4);
     transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
     opacity: 0;
 }
 .tutorial-spotlight.active { opacity: 1; }
 
-/* CAJA DE TEXTO MEJORADA */
+/* CAJA DE CRISTAL (Crystal Neumorphic) */
 .tutorial-box {
     position: fixed;
-    /* Anchura dinámica: 320px en PC, pero nunca más del 90% de la pantalla en móvil */
-    width: 320px;
+    width: 340px;
     max-width: 90vw; 
     
-    background: rgba(255, 255, 255, 0.98); /* Más opaco para leer mejor */
+    /* EFECTO CRISTAL */
+    background: linear-gradient(
+        135deg, 
+        rgba(255, 255, 255, 0.856), 
+        rgba(255, 255, 255, 0.699)
+    );
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,0.8);
-    padding: 20px; /* Un poco menos de padding para ahorrar espacio en móvil */
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    
+    /* BORDES BRILLANTES (Reflejo de luz) */
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-top: 1px solid rgba(255, 255, 255, 0.9);
+    border-left: 1px solid rgba(255, 255, 255, 0.9);
+    
+    padding: 25px;
+    border-radius: 24px;
+    
+    /* SOMBRA SUAVE PERO PROFUNDA */
+    box-shadow: 
+        0 8px 32px 0 rgba(31, 38, 135, 0.15),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+
     z-index: 9995; 
     
     opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 0.3s ease, transform 0.3s ease, top 0.4s ease, left 0.4s ease; /* Transiciones suaves al moverse */
+    transform: translateY(10px) scale(0.95);
+    transition: opacity 0.3s ease, transform 0.3s ease, top 0.4s ease, left 0.4s ease;
     
     display: none;
 }
 
 .tutorial-box.active { 
     opacity: 1; 
-    transform: translateY(0); 
+    transform: translateY(0) scale(1); 
     display: block;
 }
 
-.t-title { font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: #111; }
-.t-text { font-size: 0.9rem; line-height: 1.4; color: #444; margin-bottom: 15px; }
-
-.t-footer { display: flex; justify-content: space-between; align-items: center; }
-.t-steps { font-size: 0.7rem; color: #888; font-weight: 600; text-transform: uppercase; }
-
-.t-btn {
-    padding: 6px 14px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.8rem;
-    font-weight: 600;
+.t-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding-bottom: 10px;
 }
 
-.t-btn-next { background: #111; color: #fff; }
-.t-btn-next:hover { background: #333; }
-.t-btn-skip { background: transparent; color: #666; }
+.t-title { 
+    font-size: 1.1rem; 
+    font-weight: 800; 
+    color: #222; 
+    text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+}
 
+.t-steps { 
+    font-size: 0.7rem; 
+    color: var(--ai-color); 
+    font-weight: 800; 
+    background: rgba(255,255,255,0.5);
+    padding: 4px 8px;
+    border-radius: 10px;
+}
+
+.t-text { 
+    font-size: 0.95rem; 
+    line-height: 1.6; 
+    color: #444; 
+    margin-bottom: 25px; 
+    font-weight: 500;
+}
+
+.t-footer { 
+    display: flex; 
+    justify-content: flex-end; 
+    align-items: center; 
+    gap: 12px;
+}
+
+/* BOTONES DE CRISTAL */
+.t-btn {
+    padding: 10px 20px;
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 700;
+    transition: all 0.2s;
+    background: rgba(255,255,255,0.3);
+    backdrop-filter: blur(4px);
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+    color: #555;
+}
+
+.t-btn-next { 
+    background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.5));
+    color: var(--ai-color);
+    box-shadow: 4px 4px 10px rgba(0,0,0,0.1);
+}
+
+.t-btn-next:hover { 
+    transform: translateY(-2px);
+    background: #fff;
+    box-shadow: 4px 4px 15px rgba(0,172,193,0.2); /* Resplandor cyan suave */
+}
+
+.t-btn-skip { 
+    background: transparent; 
+    border-color: transparent;
+    box-shadow: none;
+}
+.t-btn-skip:hover { color: #000; }
+
+/* Botón Flotante de Ayuda (?) */
 .btn-help-float {
     position: fixed;
     bottom: 25px; right: 25px;
-    width: 40px; height: 40px;
+    width: 45px; height: 45px;
     border-radius: 50%;
-    background: #fff;
-    color: #000;
-    font-size: 0.82rem;
-    font-weight: bold;
-    border: 1px solid rgba(0,0,0,0.1);
-    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    
+    /* Crystal Style */
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.8);
+    box-shadow: 
+        0 8px 32px 0 rgba(31, 38, 135, 0.15),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+
+    color: #444;
+    font-size: 1rem;
+    font-weight: 800;
     cursor: pointer;
     z-index: 9000;
     display: flex; align-items: center; justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.btn-help-float:hover {
+    transform: scale(1.1) rotate(15deg);
+    background: #fff;
+    color: var(--ai-color);
+    box-shadow: 0 10px 40px rgba(0, 172, 193, 0.3);
 }
