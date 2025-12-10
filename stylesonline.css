@@ -1,0 +1,188 @@
+/* --- SISTEMA DE NOTIFICACIONES (Bottom-Right) --- */
+
+.notification-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column-reverse; /* Las nuevas aparecen abajo */
+    gap: 15px;
+    z-index: 10000;
+    width: 320px;
+    max-width: 90vw;
+    pointer-events: none; /* Dejar pasar clicks fuera de las notas */
+}
+
+.silenos-notification {
+    background: var(--bg-color);
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 
+        10px 10px 20px rgba(0,0,0,0.1), 
+        -5px -5px 15px rgba(255,255,255,0.8);
+    border: 1px solid rgba(255,255,255,0.5);
+    pointer-events: auto;
+    animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOutRight {
+    to { transform: translateX(100%); opacity: 0; }
+}
+
+.notif-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--ai-color);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.notif-body {
+    font-size: 0.9rem;
+    color: #555;
+    line-height: 1.4;
+}
+
+.notif-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.notif-btn {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    background: var(--bg-color);
+    box-shadow: var(--neumo-out);
+    transition: all 0.2s;
+    text-transform: uppercase;
+}
+
+.notif-btn:hover { transform: translateY(-2px); }
+.notif-btn:active { transform: translateY(0); box-shadow: var(--neumo-in); }
+
+.notif-btn.accept { color: #00b894; }
+.notif-btn.accept:hover { background: #00b894; color: white; }
+
+.notif-btn.decline { color: var(--danger); }
+.notif-btn.decline:hover { background: var(--danger); color: white; }
+
+/* --- MODAL VIDEOLLAMADA (PANTALLA COMPLETA ESTILO CRISTAL) --- */
+.video-container {
+    width: 95%;
+    max-width: 900px;
+    height: 80vh;
+    background: #000;
+    border-radius: 24px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.video-grid {
+    flex: 1;
+    position: relative;
+    background: #1a1a1a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#remote-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#local-video {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 150px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.2);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    z-index: 10;
+    background: #000;
+}
+
+.video-controls {
+    height: 80px;
+    background: rgba(255,255,255,0.05); /* Cristal oscuro */
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    position: relative;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.call-status {
+    position: absolute;
+    left: 20px;
+    color: #aaa;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.video-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.video-btn.danger {
+    background: #ff4757;
+    color: white;
+}
+.video-btn.danger:hover { background: #ff6b81; transform: scale(1.1); }
+
+/* --- AJUSTES LISTA AMIGOS --- */
+.friend-item {
+    padding: 12px 20px; /* Un poco más compacto */
+}
+
+.btn-icon.small {
+    width: 32px; height: 32px;
+}
+.btn-icon.small svg {
+    width: 14px; height: 14px;
+}
+
+/* Modal Delicado (reutiliza dialog-box) */
+.modal-overlay.active .dialog-box {
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes popIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
