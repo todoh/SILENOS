@@ -300,3 +300,177 @@ input[name="tab-control"] { display: none; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; border: 3px solid var(--bg-color); }
 ::-webkit-scrollbar-thumb:hover { background: #bbb; }
+
+
+/* --- USER DOCK (AUTH UI) --- */
+.user-dock {
+    position: fixed;
+    bottom: 25px;
+    left: 25px; /* Esquina opuesta a la ayuda */
+    z-index: 9000;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* Botón de Conectar (Estado Guest) */
+.user-auth-btn {
+    background: var(--bg-color);
+    border: none;
+    padding: 10px 18px;
+    border-radius: 25px;
+    font-weight: 700;
+    color: #555;
+    font-size: 0.85rem;
+    cursor: pointer;
+    box-shadow: 
+        5px 5px 10px #d1d1d1, 
+        -5px -5px 10px #ffffff;
+    display: flex;
+    align-items: center;
+    transition: transform 0.2s ease, color 0.2s;
+}
+
+.user-auth-btn:hover {
+    transform: translateY(-2px);
+    color: #333;
+}
+
+.user-auth-btn:active {
+    transform: translateY(0);
+    box-shadow: inset 3px 3px 6px #d9d9d9, inset -3px -3px 6px #ffffff;
+}
+
+/* Avatar de Usuario (Estado Logged) */
+.user-profile-container {
+    position: relative;
+}
+
+.user-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-color);
+    box-shadow: 
+        4px 4px 8px #d1d1d1, 
+        -4px -4px 8px #ffffff;
+    cursor: pointer;
+    transition: transform 0.2s;
+    object-fit: cover;
+}
+
+.user-avatar:hover {
+    transform: scale(1.05);
+}
+
+/* Menú Desplegable (Popup hacia arriba) */
+.user-menu-popup {
+    position: absolute;
+    bottom: 60px; /* Encima del avatar */
+    left: 0;
+    width: 200px;
+    background: var(--bg-color);
+    border-radius: 16px;
+    padding: 10px 0;
+    box-shadow: 
+        10px 10px 30px rgba(0,0,0,0.1), 
+        -10px -10px 30px rgba(255,255,255,0.8);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255,255,255,0.5);
+    display: flex;
+    flex-direction: column;
+}
+
+.user-menu-popup.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.menu-header {
+    padding: 10px 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--ai-color);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.menu-item {
+    padding: 12px 20px;
+    font-size: 0.9rem;
+    color: #444;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: background 0.2s;
+}
+
+.menu-item:hover {
+    background: rgba(0,0,0,0.03);
+}
+
+.menu-item.disabled {
+    color: #aaa;
+    cursor: default;
+}
+
+.menu-item.danger {
+    color: var(--danger);
+}
+.menu-item.danger:hover {
+    background: rgba(214, 48, 49, 0.05);
+}
+
+.menu-icon {
+    margin-right: 10px;
+    font-size: 1rem;
+}
+
+.menu-divider {
+    height: 1px;
+    background: rgba(0,0,0,0.05);
+    margin: 5px 0;
+}
+
+/* --- ESTILOS GESTOR DRIVE --- */
+
+.drive-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 5px;
+}
+
+.drive-file-item {
+    padding: 15px;
+    background: var(--bg-color);
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: var(--neumo-out);
+    transition: transform 0.2s;
+    border: 1px solid transparent;
+}
+
+.drive-file-item:hover {
+    transform: translateY(-2px);
+    border-color: rgba(0,0,0,0.05);
+}
+
+.drive-file-item.new-project {
+    background: #fff;
+    color: var(--ai-color);
+    font-weight: bold;
+    justify-content: center;
+    box-shadow: none;
+    border: 1px dashed var(--ai-color);
+}
+
+.drive-name { font-weight: 700; color: #333; }
+.drive-date { font-size: 0.75rem; color: #999; }
