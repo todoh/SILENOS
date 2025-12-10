@@ -1,7 +1,7 @@
-// --- LÓGICA LIBRO-JUEGO UI v3.0 (Gestor de Proyectos + Neoformismo) ---
+// --- LÓGICA LIBRO-JUEGO UI v3.1 (Fix: Comunicación con IA) ---
 // T → Tramo (Gestión visual optimizada)
 
-console.log("Sistema Gamebook Visual Cargado (v3.0 - Project Manager)");
+console.log("Sistema Gamebook Visual Cargado (v3.1 - Project Manager)");
 
 // NUEVA ESTRUCTURA DE DATOS: Lista de Juegos
 let games = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
@@ -508,6 +508,7 @@ function organizeGraph() {
     renderGraph();
     if (window.centerCanvas) window.centerCanvas();
 }
+
 window.centerCanvas = function() {
     if (!window.gamebookControls) return;
 
@@ -536,6 +537,7 @@ window.centerCanvas = function() {
     // Ordenar a los controles enfocar ese punto
     window.gamebookControls.focusPoint(centerX, centerY);
 };
+
 // EXPORTACIONES A WINDOW
 window.createNewNode = createNewNode;
 window.closeNodeEditor = closeNodeEditor;
@@ -552,6 +554,7 @@ window.openGame = openGame;
 window.goBackToGames = goBackToGames;
 window.deleteCurrentGame = deleteCurrentGame;
 window.updateGameTitle = updateGameTitle;
-
-// Helper para juego_game.js
 window.getCurrentGameNodes = getCurrentNodes;
+
+// FIX: EXPORTAMOS LA FUNCIÓN DE RENDERIZAR LISTA PARA QUE LA IA PUEDA LLAMARLA
+window.renderGameList = renderGameList;

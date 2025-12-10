@@ -19,7 +19,6 @@
     flex-direction: column;
     padding: 0;
     z-index: 2;
-    /* Sombra muy sutil */
     box-shadow: 2px 0 10px rgba(0,0,0,0.03);
 }
 
@@ -56,7 +55,7 @@
     flex: 1; 
 }
 
-/* TARJETA INDIVIDUAL (Tarjeta de papel) */
+/* TARJETA INDIVIDUAL */
 .data-card {
     background: var(--bg-color);
     border: none;
@@ -77,7 +76,6 @@
     box-shadow: 8px 8px 16px #d1d1d1, -8px -8px 16px rgba(255, 255, 255, 0.7);
 }
 
-/* Estado seleccionado */
 .data-card.selected {
     box-shadow: var(--neumo-in);
     color: var(--ai-color);
@@ -117,17 +115,21 @@
 }
 .editor-content.hidden { display: none; }
 
+/* --- BARRA SUPERIOR MODIFICADA --- */
 .editor-toolbar {
-    padding: 20px 40px;
+    padding: 20px 40px; /* Espacio para la barra */
     display: flex;
-    justify-content: space-between;
+    justify-content: space-between; /* Elementos a los extremos */
     align-items: center;
     flex-shrink: 0;
+    gap: 15px; /* Espacio entre input y botones */
 }
 
+/* MAIN AREA */
 .editor-main {
+    /* Quitamos el padding top para subirlo todo */
     padding: 0 50px 50px 50px;
-    gap: 20px;
+    gap: 10px; /* Reducido el gap para que el título suba más */
     display: flex;
     flex-direction: column;
     flex: 1;
@@ -135,21 +137,27 @@
 }
 
 /* Inputs Editor - Limpios y Mate */
+
+/* MODIFICADO: Ahora vive en la barra superior */
 .input-category {
     background: transparent;
     border: none;
     border-radius: 8px;
-    padding: 5px 0;
-    font-size: 0.8rem;
+    padding: 5px 10px;
+    font-size: 0.85rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 2px;
     color: var(--ai-color);
-    width: 100%;
-    flex-shrink: 0;
-    text-shadow: none; /* Sin brillo */
+    
+    /* Para que ocupe el espacio disponible y se alinee a la derecha */
+    flex: 1; 
+    text-align: right; 
+    
+    margin-right: 10px; /* Separación con la papelera */
+    text-shadow: none;
 }
-.input-category:focus { outline: none; opacity: 0.8; }
+.input-category:focus { outline: none; opacity: 0.8; background: rgba(0,0,0,0.02); }
 
 .input-title {
     background: transparent;
@@ -158,10 +166,11 @@
     font-weight: 800;
     color: var(--text-main);
     width: 100%;
-    padding: 5px 0 15px 0;
+    padding: 5px 0 10px 0; /* Padding inferior reducido */
     flex-shrink: 0;
     letter-spacing: -0.5px;
-    text-shadow: none; /* Mate */
+    text-shadow: none;
+    margin-top: -10px; /* Truco visual para subirlo aún más cerca de la barra */
 }
 .input-title:focus { outline: none; }
 
@@ -172,15 +181,12 @@
     border-radius: 18px;
     padding: 40px;
     resize: none;
-    
     flex-grow: 1; 
     height: 100%; 
-    
     font-family: 'Courier New', Courier, monospace; 
     font-size: 1.05rem;
     line-height: 1.6;
     color: #333;
-    /* Hundido suave */
     box-shadow: var(--neumo-in);
     border-bottom: none; 
     overflow-y: auto; 
@@ -209,7 +215,10 @@
     .data-editor { position: absolute; width: 100%; height: 100%; z-index: 1; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
     .data-editor.active { opacity: 1; pointer-events: auto; z-index: 20; }
     .editor-main { padding: 20px; }
-    .back-btn-mobile { display: block; margin-right: 15px; }
+    .back-btn-mobile { display: block; margin-right: 10px; }
+    
+    .editor-toolbar { padding: 15px 20px; } /* Menos padding en móvil */
+    .input-category { font-size: 0.75rem; }
 }
 @media (min-width: 769px) {
     .back-btn-mobile { display: none; }

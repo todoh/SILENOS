@@ -45,7 +45,7 @@
 
         <div class="content-area">
             
-            <div id="section-datos" class="section" style="padding: 0;">
+        <div id="section-datos" class="section" style="padding: 0;">
                 <div class="data-layout">
                     <div class="data-sidebar" id="data-sidebar-view">
                         <div class="data-header">
@@ -61,14 +61,16 @@
                                 <button class="btn-icon back-btn-mobile" onclick="closeDataEditor()">
                                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
                                 </button>
-                                <div style="flex:1;"></div>
+                                
+                                <input type="text" id="card-category" class="input-category" placeholder="ETIQUETA" list="category-suggestions" oninput="updateCardData()">
+                                <datalist id="category-suggestions"></datalist>
+
                                 <button class="btn-icon danger" onclick="deleteCurrentCard()" title="Eliminar Dato">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                                 </button>
                             </div>
+                            
                             <div class="editor-main">
-                                <input type="text" id="card-category" class="input-category" placeholder="ETIQUETA" list="category-suggestions" oninput="updateCardData()">
-                                <datalist id="category-suggestions"></datalist>
                                 <input type="text" id="card-title" class="input-title" placeholder="TÍTULO / CLAVE" oninput="updateCardData()">
                                 <textarea id="card-body" class="input-body" placeholder="Escribe aquí el contenido..." oninput="updateCardData()"></textarea>
                             </div>
@@ -267,6 +269,7 @@
                             </div>
                         </div>
                     </div>
+
                     <div class="io-card">
                         <h3>Crear Libro</h3>
                         <select id="ia-script-selector" class="ia-select"></select>
@@ -288,11 +291,42 @@
                             </div>
                         </div>
                     </div>
+
+<div class="io-card">
+                        <h3>Crear Juego</h3>
+                        <div class="ia-row-toggle">
+                            <span class="label-toggle">Usar Datos</span>
+                            <label class="switch">
+                                <input type="checkbox" id="ia-game-use-data" inchecked>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        
+                        <textarea id="ia-game-prompt" class="ia-textarea" placeholder="¿De qué trata el juego? (ej: Escapar de una estación espacial infestada)"></textarea>
+                        
+                        <div class="ia-action-row">
+                            <input type="text" id="ia-game-metric" class="ia-input" placeholder="Métrica de Éxito (ej: Supervivencia, Honor)" value="Desenlace" style="flex:2; margin-bottom:0;">
+                            <button id="btn-gen-game" class="io-btn">Generar Juego</button>
+                        </div>
+
+                        <div id="game-progress" class="progress-wrapper">
+                            <div class="progress-info">
+                                <span class="progress-text">Esperando...</span>
+                                <span class="progress-percent">0%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="io-card" style="border-left: 3px solid #4285F4; display: none;">
                         <h3>Configuración Google API</h3>
                         <input type="password" id="google-api-key" class="ia-input" placeholder="Pegar Keys aquí (Key1, Key2...)">
                         <button class="io-btn action" onclick="saveGoogleApiKey()">Guardar Key</button>
                     </div>
+
+
                 </div>
             </div>
             
@@ -370,10 +404,12 @@
 <script type="module" src="librojuego_controles.js"></script>
 <script type="module" src="librojuego_ui.js"></script>
 <script type="module" src="juego_game.js"></script>
+<script type="module" src="juego_export.js"></script>
 <script type="module" src="io.js"></script>
 <script type="module" src="apikey.js"></script>
 <script type="module" src="ia_guiones.js"></script>
 <script type="module" src="ia_libros.js"></script>
+<script type="module" src="ia_juegos.js"></script>
 <script type="module" src="tutorial_ui.js"></script> 
 </body>
 </html>

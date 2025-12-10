@@ -1,6 +1,9 @@
-// --- LÓGICA DE ENTRADA/SALIDA (IO) v3.2 (Game Projects Support) ---
+// --- LÓGICA DE ENTRADA/SALIDA (IO) v3.3 (Exportación Avanzada) ---
+// Y → Confluencia (Unión de módulos de exportación)
 
-console.log("Módulo IO Cargado (v3.2 - Universo Completo)");
+import { generateGameExport } from './juego_export.js'; // IMPORTACIÓN DEL NUEVO MÓDULO
+
+console.log("Módulo IO Cargado (v3.3 - Advanced Game Export)");
 
 const ioFileInput = document.getElementById('io-file-input');
 const exportModal = document.getElementById('export-modal');
@@ -18,7 +21,7 @@ function sanitizeFilename(name) {
     return name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
 }
 
-// --- 1. GUARDAR PROYECTO ---
+// --- 1. GUARDAR PROYECTO (JSON RAW) ---
 function saveProjectBackup() {
     const universeName = localStorage.getItem('silenos_universe_name') || 'sin_titulo';
     const filename = `${sanitizeFilename(universeName)}_${getFormattedDate()}.json`;
@@ -30,7 +33,6 @@ function saveProjectBackup() {
         universalData: JSON.parse(localStorage.getItem('minimal_universal_data')) || [],
         books: JSON.parse(localStorage.getItem('minimal_books_v4')) || [],
         scripts: JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [],
-        // AHORA GUARDAMOS LISTA DE JUEGOS
         games: JSON.parse(localStorage.getItem('minimal_games_v1')) || [] 
     };
 
@@ -60,12 +62,8 @@ if(ioFileInput) {
                         if(data.scripts) localStorage.setItem('minimal_scripts_v1', JSON.stringify(data.scripts));
                         if(data.universalData) localStorage.setItem('minimal_universal_data', JSON.stringify(data.universalData));
                         if(data.universeName) localStorage.setItem('silenos_universe_name', data.universeName);
-                        
-                        // RESTAURAR JUEGOS
-                        if(data.games) {
-                            localStorage.setItem('minimal_games_v1', JSON.stringify(data.games));
-                        } else if (data.nodes) {
-                             // Soporte retrocompatibilidad backup antiguo
+                        if(data.games) localStorage.setItem('minimal_games_v1', JSON.stringify(data.games));
+                        else if (data.nodes) {
                              const legacyGame = [{ id: Date.now(), title: "Juego Restaurado", nodes: data.nodes }];
                              localStorage.setItem('minimal_games_v1', JSON.stringify(legacyGame));
                         }
@@ -86,7 +84,7 @@ if(ioFileInput) {
     });
 }
 
-// --- 3. NUEVO PROYECTO ---
+// --- 3. GESTIÓN PROYECTO ---
 function openNewProjectModal() {
     if(newProjectModal) {
         newProjectModal.style.display = 'flex';
@@ -111,15 +109,11 @@ function createNewProject(withBackup) {
 }
 
 function wipeAndReload() {
-    localStorage.removeItem('minimal_universal_data');
-    localStorage.removeItem('minimal_books_v4');
-    localStorage.removeItem('minimal_scripts_v1');
-    localStorage.removeItem('minimal_games_v1'); // Limpiar juegos
-    localStorage.removeItem('silenos_universe_name');
+    localStorage.clear(); // Limpieza total más agresiva
     location.reload();
 }
 
-// --- 4. EXPORTACIÓN ---
+// --- 4. EXPORTACIÓN (FORMATO LECTURA) ---
 function openExportModal() {
     if(exportModal) {
         renderExportOptions();
@@ -149,15 +143,9 @@ function renderExportOptions() {
         return;
     }
 
-    if (books.length > 0) {
-        appendSection(container, 'Libros', books, 'book');
-    }
-    if (scripts.length > 0) {
-        appendSection(container, 'Guiones', scripts, 'script');
-    }
-    if (games.length > 0) {
-        appendSection(container, 'Juegos (Solo Texto)', games, 'game');
-    }
+    if (books.length > 0) appendSection(container, 'Libros', books, 'book');
+    if (scripts.length > 0) appendSection(container, 'Guiones', scripts, 'script');
+    if (games.length > 0) appendSection(container, 'Juegos', games, 'game');
 }
 
 function appendSection(container, title, items, type) {
@@ -189,6 +177,7 @@ function executeExport() {
 
     let contentToExport = "";
 
+    // EXPORTACIÓN NORMAL PARA LIBROS Y GUIONES
     Array.from(selectedBookChecks).forEach(cb => {
         const item = allBooks.find(b => b.id == cb.value);
         if(item) contentToExport += formatContent(item, 'book', format);
@@ -197,11 +186,18 @@ function executeExport() {
         const item = allScripts.find(s => s.id == cb.value);
         if(item) contentToExport += formatContent(item, 'script', format);
     });
+
+    // EXPORTACIÓN ESPECIAL PARA JUEGOS
     Array.from(selectedGameChecks).forEach(cb => {
         const item = allGames.find(g => g.id == cb.value);
-        if(item) contentToExport += formatContent(item, 'game', format);
+        if(item) {
+            // Aquí delegamos a la nueva lógica especializada
+            const gameContent = generateGameExport(item, format);
+            contentToExport += gameContent + (format === 'html' ? '' : '\n\n====================\n\n');
+        }
     });
 
+    // GENERAR ARCHIVO FINAL
     let finalOutput = contentToExport;
     let mime = 'text/html';
     let ext = 'html';
@@ -212,10 +208,19 @@ function executeExport() {
         finalOutput = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'><head><meta charset="utf-8"></head><body>${contentToExport}</body></html>`;
         mime = 'application/msword'; ext = 'doc';
     } else {
-        finalOutput = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:sans-serif;max-width:800px;margin:20px auto;padding:20px;line-height:1.6;}</style></head><body>${contentToExport}</body></html>`;
+        // Si hay juegos HTML, generateGameExport ya devuelve el HTML completo.
+        // Si mezclamos tipos (Libro + Juego) en HTML, habría conflicto de estructura.
+        // ASUMIMOS: Si es HTML y hay un juego, el usuario probablemente exporta solo el juego o aceptamos concatenación simple.
+        if (selectedGameChecks.length > 0 && selectedBookChecks.length === 0 && selectedScriptChecks.length === 0) {
+            // Solo juegos: ya viene formateado full HTML
+            finalOutput = contentToExport; 
+        } else {
+            // Mezcla o solo texto: Envolvemos
+            finalOutput = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:sans-serif;max-width:800px;margin:20px auto;padding:20px;line-height:1.6;}</style></head><body>${contentToExport}</body></html>`;
+        }
     }
 
-    downloadFile(finalOutput, `export_seleccion.${ext}`, mime);
+    downloadFile(finalOutput, `silenos_export.${ext}`, mime);
     closeExportModal();
 }
 
@@ -225,26 +230,11 @@ function formatContent(item, type, format) {
         let txt = `\n--- ${type.toUpperCase()}: ${title.toUpperCase()} ---\n\n`;
         if(type==='book') item.chapters.forEach(c => { txt += `[${c.title}]\n`; c.paragraphs.forEach(p=> txt+= p.text+'\n\n'); });
         if(type==='script') item.scenes.forEach(s => { txt += `[${s.title}]\n`; s.paragraphs.forEach(p=> txt+= p.text+'\n'); });
-        if(type==='game') {
-             // Exportación lineal básica de juego
-             (item.nodes || []).forEach(n => {
-                 txt += `[${n.title}] (ID: ${n.id})\n${n.text}\n`;
-                 n.choices.forEach(c => txt += `  -> ${c.text} (Ir a: ${c.targetId})\n`);
-                 txt += '\n';
-             });
-        }
         return txt;
     } else {
         let html = `<h1>${title}</h1>`;
         if(type==='book') item.chapters.forEach(c => { html += `<h3>${c.title}</h3>`; c.paragraphs.forEach(p=> html+= `<p>${p.text}</p>`); });
         if(type==='script') item.scenes.forEach(s => { html += `<h3>${s.title}</h3>`; s.paragraphs.forEach(p=> html+= `<p>${p.text}</p>`); });
-        if(type==='game') {
-             (item.nodes || []).forEach(n => {
-                 html += `<h3>${n.title} <small>#${n.id}</small></h3><p>${n.text}</p><ul>`;
-                 n.choices.forEach(c => html += `<li>${c.text} (Ir a #${c.targetId})</li>`);
-                 html += '</ul><hr>';
-             });
-        }
         return html + '<hr>';
     }
 }
