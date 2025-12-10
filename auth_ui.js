@@ -1,10 +1,10 @@
-// --- MÓDULO DE AUTENTICACIÓN Y PERFIL (USER DOCK) v2.0 ---
-// Actualizado: Solicita permisos de Drive y guarda el Access Token.
+// --- MÓDULO DE AUTENTICACIÓN Y PERFIL (USER DOCK) v2.1 ---
+// Actualizado: Añadida opción "Importar Datos" en el menú.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-console.log("Módulo Auth UI Cargado (v2.0 - Drive Scope)");
+console.log("Módulo Auth UI Cargado (v2.1 - Import Data)");
 
 const authConfig = {
     apiKey: "AIzaSyBxlmzjYjOEAwc_DVtFpt9DnN7XnuRkbKw",
@@ -66,8 +66,11 @@ function renderUserState(user) {
                  <div class="menu-item" onclick="window.openDriveSelector()">
                     <span class="menu-icon">☁️</span> Abrir desde Drive...
                 </div>
-                 <div class="menu-item" onclick="window.saveToDriveManual()">
+                <div class="menu-item" onclick="window.saveToDriveManual()">
                     <span class="menu-icon">💾</span> Guardar en Drive
+                </div>
+                <div class="menu-item" onclick="window.openImportModal()">
+                    <span class="menu-icon">📥</span> Importar Datos...
                 </div>
                 <div class="menu-divider"></div>
                 <div class="menu-item danger" onclick="window.silenosLogout()">
@@ -85,7 +88,6 @@ window.silenosLogin = async () => {
         const credential = GoogleAuthProvider.credentialFromResult(result);
         const token = credential.accessToken;
         
-        // Guardamos el token de Google (Drive) temporalmente
         sessionStorage.setItem('google_drive_token', token);
         
         console.log("Login exitoso. Token de Drive capturado.");
@@ -100,7 +102,7 @@ window.silenosLogout = async () => {
         await signOut(auth);
         sessionStorage.removeItem('google_drive_token');
         console.log("Sesión cerrada");
-        location.reload(); // Recargar para limpiar estado
+        location.reload(); 
     } catch (error) {
         console.error("Error al salir:", error);
     }
@@ -124,7 +126,6 @@ function initAuthListener() {
         currentUser = user;
         if (user) {
             renderUserState(user);
-            // Notificamos al sistema que hay usuario (para cargar proyectos)
             if (window.onSilenosUserLogged) window.onSilenosUserLogged(user);
         } else {
             renderGuestState();
@@ -132,7 +133,6 @@ function initAuthListener() {
     });
 }
 
-// Helper para obtener el token desde otros módulos
 export function getDriveToken() {
     return sessionStorage.getItem('google_drive_token');
 }

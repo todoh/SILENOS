@@ -1,6 +1,6 @@
-// --- LÓGICA DE DATOS UI v1.2 (Con Nombre de Universo) ---
+// --- LÓGICA DE DATOS UI v1.3 (Exposed for Import) ---
 
-console.log("Sistema Universal Data Cargado (v1.2)");
+console.log("Sistema Universal Data Cargado (v1.3 - Global Access)");
 
 let universalData = JSON.parse(localStorage.getItem('minimal_universal_data')) || [];
 let currentCardId = null;
@@ -47,6 +47,9 @@ function updateUniverseName() {
 
 // RENDERIZADO
 function renderCards() {
+    // IMPORTANTE: Recargar datos frescos del LocalStorage por si hubo una importación externa
+    universalData = JSON.parse(localStorage.getItem('minimal_universal_data')) || [];
+
     if (!cardsContainer) return;
     cardsContainer.innerHTML = '';
     const sorted = [...universalData].sort((a,b) => b.createdAt - a.createdAt);
@@ -71,7 +74,9 @@ function renderCards() {
 
 function updateDatalist() {
     if (!datalist) return;
-    const categories = [...new Set(universalData.map(d => d.category))].sort();
+    // Asegurar datos frescos
+    const currentData = JSON.parse(localStorage.getItem('minimal_universal_data')) || [];
+    const categories = [...new Set(currentData.map(d => d.category))].sort();
     datalist.innerHTML = '';
     categories.forEach(cat => {
         if(cat) {
@@ -84,9 +89,12 @@ function updateDatalist() {
 
 // CRUD
 function createNewCard() {
+    // Recargar antes de modificar para no perder importaciones
+    universalData = JSON.parse(localStorage.getItem('minimal_universal_data')) || [];
     const newCard = { id: Date.now(), category: "", title: "", content: "", createdAt: Date.now() };
     universalData.unshift(newCard);
     saveData();
+    renderCards(); 
     openCard(newCard.id);
 }
 
@@ -140,9 +148,13 @@ function deleteCurrentCard() {
     }
 }
 
-// EXPORTAR
+// EXPORTAR A WINDOW (API PÚBLICA PARA IMPORTADOR)
 window.createNewCard = createNewCard;
 window.closeDataEditor = closeDataEditor;
 window.updateCardData = updateCardData;
 window.deleteCurrentCard = deleteCurrentCard;
-window.updateUniverseName = updateUniverseName; // Nuevo
+window.updateUniverseName = updateUniverseName;
+
+// !! AGREGADO: Necesario para que el importador actualice la lista !!
+window.renderCards = renderCards;
+window.updateDatalist = updateDatalist;
