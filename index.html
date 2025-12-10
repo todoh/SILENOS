@@ -432,7 +432,7 @@
                     </div>
                 </div>
 
-                <div style="margin-bottom: 15px;">
+                <div style="margin-bottom: 25px;">
                     <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:5px;">
                         <span>Juegos</span>
                         <span id="label-daily-game">0 / 8</span>
@@ -440,6 +440,32 @@
                     <div class="progress-track" style="height: 6px;">
                         <div id="bar-daily-game" class="progress-fill" style="width: 0%"></div>
                     </div>
+                </div>
+
+                <div id="personal-api-section" style="border-top: 1px solid rgba(0,0,0,0.05); padding-top: 20px; margin-top: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="font-size: 0.75rem; font-weight: 700; color: #888; text-transform: uppercase;">Tu API Key (Sin límites)</span>
+                        <div id="api-active-indicator" style="display: none; font-size: 0.75rem; color: var(--ai-color); font-weight: 700; align-items: center; gap: 5px;">
+                            <span>⚡ ACTIVO</span>
+                            <span id="api-key-count-badge" style="background: var(--ai-color); color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem;">0</span>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px;">
+                        <input type="password" id="settings-api-input" class="ia-input" placeholder="Pega tu Google AI Key aquí..." style="margin-bottom: 0; font-size: 0.85rem; padding: 10px; flex: 1;">
+                        
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="io-btn" style="width: auto; padding: 0 15px; margin-bottom: 0; display: flex; align-items: center; justify-content: center; text-decoration: none; color: #555;" title="Conseguir API Key en Google">
+                            🔑
+                        </a>
+
+                        <button class="io-btn" onclick="window.saveSettingsApiKey()" style="width: auto; padding: 0 20px; margin-bottom: 0;" title="Guardar Key">
+                            💾
+                        </button>
+                    </div>
+
+                    <p style="font-size: 0.7rem; color: #aaa; margin-top: 8px;">
+                        Si usas tu propia Key, los límites diarios se desactivan. Separa múltiples keys con comas.
+                    </p>
                 </div>
 
             </div>

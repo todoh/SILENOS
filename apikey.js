@@ -1,13 +1,12 @@
-// --- GESTIÓN DE API KEY (GOOGLE GEMINI - MODO HÍBRIDO CON FIREBASE) ---
+// --- GESTIÓN DE API KEY (GOOGLE GEMINI - MODO HÍBRIDO) v2.5 ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-console.log("Módulo API Key Cargado (Soporte Multi-Key + Fallback Server)");
+console.log("Módulo API Key Cargado (v2.5 - User Bypass Support)");
 
-const apiKeyInput = document.getElementById('google-api-key');
 const STORAGE_KEY = 'silenos_google_apikey';
 
-// --- CONFIGURACIÓN FIREBASE (PROPORCIONADA) ---
+// Configuración Firebase (Lectura de keys servidor)
 const firebaseConfig = {
   apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
   authDomain: "enraya-51670.firebaseapp.com",
@@ -19,103 +18,71 @@ const firebaseConfig = {
   measurementId: "G-2G31LLJY1T"
 };
 
-// Variable interna para guardar las keys del servidor (invisibles al usuario)
 let cachedServerKeys = [];
 let firebaseInitialized = false;
 
-// --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Mostrar keys del usuario si existen (visual)
-    const savedKey = localStorage.getItem(STORAGE_KEY);
-    if (savedKey && apiKeyInput) {
-        apiKeyInput.value = savedKey;
-    }
-    
-    // 2. Iniciar carga silenciosa de Firebase en segundo plano
     initFirebaseAndFetch();
+    // Ya no vinculamos el input antiguo automáticamente, lo gestiona auth_ui ahora
 });
 
-// Inicializa Firebase y trae las keys, pero no bloquea la UI
 async function initFirebaseAndFetch() {
     try {
         if (!firebaseInitialized) {
-            const app = initializeApp(firebaseConfig);
+            initializeApp(firebaseConfig);
             firebaseInitialized = true;
         }
-        
-        // Si el usuario YA tiene keys locales, no gastamos lecturas de Firebase innecesariamente
-        // a menos que quieras tenerlas siempre listas por si borra las suyas.
-        // Aquí las cargamos siempre por si acaso.
         const db = getDatabase();
-        const keysRef = ref(db, 'server_api_keys'); // NOMBRE DEL NODO EN TU BD
-        const snapshot = await get(keysRef);
-
+        const snapshot = await get(ref(db, 'server_api_keys'));
         if (snapshot.exists()) {
             const val = snapshot.val();
-            // Asumimos que es un string separado por comas, igual que el input manual
             if (typeof val === 'string') {
                 cachedServerKeys = val.split(',').map(k => k.trim()).filter(k => k.length > 0);
-                console.log("Sistema: Keys del servidor cargadas en memoria (Ocultas).");
             }
-        } else {
-            console.warn("Sistema: No se encontraron keys en el servidor (nodo 'server_api_keys').");
         }
-    } catch (error) {
-        console.error("Error conectando a Firebase:", error);
-    }
+    } catch (error) { console.error("Error Firebase Keys:", error); }
 }
 
-// --- FUNCIONES UI (Usuario) ---
+// --- NUEVAS FUNCIONES DE APOYO ---
 
-function saveGoogleApiKey() {
-    if (!apiKeyInput) return;
-    let keyStr = apiKeyInput.value.trim();
-    
-    if (keyStr.length > 0) {
-        localStorage.setItem(STORAGE_KEY, keyStr);
-        const count = keyStr.split(',').filter(k => k.trim()).length;
-        alert(`Modo Manual: ${count} Key(s) guardada(s). El sistema usará ESTAS keys prioritariamente.`);
+export function hasUserCustomKeys() {
+    const local = localStorage.getItem(STORAGE_KEY);
+    return local && local.trim().length > 0;
+}
+
+export function getUserKeyCount() {
+    const local = localStorage.getItem(STORAGE_KEY);
+    if (!local) return 0;
+    return local.split(',').filter(k => k.trim().length > 0).length;
+}
+
+export function saveUserKeys(keystring) {
+    if (!keystring || keystring.trim() === '') {
+        localStorage.removeItem(STORAGE_KEY);
+        return 0;
     } else {
-        if(confirm("¿Borrar tus API Keys personales? (El sistema intentará usar las del servidor si existen)")) {
-            localStorage.removeItem(STORAGE_KEY);
-            apiKeyInput.value = '';
-        }
+        localStorage.setItem(STORAGE_KEY, keystring.trim());
+        return getUserKeyCount();
     }
 }
 
-function getGoogleApiKey() {
+// --- LÓGICA CORE ---
+
+export function getGoogleApiKey() {
     return localStorage.getItem(STORAGE_KEY);
 }
 
-// --- LÓGICA DE RECUPERACIÓN (HÍBRIDA) ---
-
-// Ahora es ASYNC para asegurar que esperamos a Firebase si es necesario
-async function getApiKeysList() {
-    // 1. Prioridad: LocalStorage (Usuario)
+export async function getApiKeysList() {
+    // 1. Prioridad ABSOLUTA: LocalStorage (Usuario)
     const rawLocal = localStorage.getItem(STORAGE_KEY);
     if (rawLocal && rawLocal.trim().length > 0) {
-        console.log("Usando: Keys del Usuario");
+        console.log("⚡ Usando Keys Personales (Límites desactivados)");
         return rawLocal.split(',').map(k => k.trim()).filter(k => k.length > 0);
     }
 
-    // 2. Fallback: Memoria caché del Servidor
-    if (cachedServerKeys.length > 0) {
-        console.log("Usando: Keys del Servidor (Usuario sin keys)");
-        return cachedServerKeys;
-    }
+    // 2. Fallback: Servidor
+    if (cachedServerKeys.length > 0) return cachedServerKeys;
 
-    // 3. Último intento: Si aún no se han cargado (ej. clic muy rápido), forzamos fetch
-    console.log("Esperando conexión con servidor...");
     await initFirebaseAndFetch();
-    
-    if (cachedServerKeys.length > 0) {
-        return cachedServerKeys;
-    }
-
-    return []; // No hay keys en ningún lado
+    return cachedServerKeys.length > 0 ? cachedServerKeys : [];
 }
-
-// Exponer a window para el HTML
-window.saveGoogleApiKey = saveGoogleApiKey;
-// Exportar para uso en módulos
-export { getGoogleApiKey, getApiKeysList };
