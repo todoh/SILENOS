@@ -4,6 +4,7 @@
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, set, onValue, off, get, child, remove, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { saveFileToDrive } from './drive_api.js'; // <--- IMPORTACIÓN AÑADIDA
 
 // 1. CONFIGURACIÓN (Instancia Compartida)
 const firebaseConfig = {
@@ -34,7 +35,7 @@ const inputChapters = document.getElementById('ia-guion-chapters');
 const useDataToggle = document.getElementById('ia-use-data'); 
 const progressContainer = document.getElementById('guion-progress');
 
-console.log("Módulo IA Guiones Cargado - Sistema Persistente Activo.");
+console.log("Módulo IA Guiones Cargado - Sistema Persistente Activo (Auto-Drive).");
 
 // --- AYUDANTE: OBTENER DATOS (NUEVO) ---
 function getUniversalData() {
@@ -62,11 +63,12 @@ function initResultListener(userId) {
 
         console.log("📦 Guion recibido del servidor:", newScript.title);
 
-        // 1. Guardar en LocalStorage
+        // 1. Guardar en LocalStorage INMEDIATAMENTE para feedback rápido
         const localScripts = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
         
         // Evitar duplicados si ya lo tenemos
-        if (!localScripts.find(s => s.id === newScript.id)) {
+        const existingIndex = localScripts.findIndex(s => s.id === newScript.id);
+        if (existingIndex === -1) {
             localScripts.unshift(newScript);
             localStorage.setItem('minimal_scripts_v1', JSON.stringify(localScripts));
             
@@ -74,6 +76,28 @@ function initResultListener(userId) {
             
             // Actualizar interfaz si existe la función global
             if (window.renderScriptList) window.renderScriptList();
+
+            // --- AUTO-GUARDADO SILENCIOSO EN DRIVE ---
+            try {
+                console.log("☁️ Iniciando auto-guardado en Drive (Script)...");
+                const driveId = await saveFileToDrive('script', newScript.title, newScript);
+                
+                if (driveId) {
+                    // Actualizamos el objeto local con el ID de Drive
+                    newScript.driveFileId = driveId;
+                    // Volvemos a leer y guardar por si hubo cambios concurrentes (aunque es raro aquí)
+                    const updatedScripts = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
+                    const target = updatedScripts.find(s => s.id === newScript.id);
+                    if (target) {
+                        target.driveFileId = driveId;
+                        localStorage.setItem('minimal_scripts_v1', JSON.stringify(updatedScripts));
+                        console.log("✅ Script sincronizado en Drive:", driveId);
+                    }
+                }
+            } catch (driveErr) {
+                console.warn("⚠️ Fallo en auto-guardado Drive:", driveErr);
+            }
+            // -----------------------------------------
         }
 
         // 2. Limpieza: Borrar del servidor

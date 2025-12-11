@@ -5,9 +5,9 @@
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, set, onValue, off, remove, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { loadFileContent } from './drive_api.js'; // <--- IMPORTACIÓN NECESARIA PARA LA DESCARGA
+import { loadFileContent, saveFileToDrive } from './drive_api.js'; // <--- IMPORTACIÓN ACTUALIZADA
 
-console.log("Módulo IA Libros Cargado (v7.1 - Server Queue + Lazy Load)");
+console.log("Módulo IA Libros Cargado (v7.2 - Server Queue + AutoDrive)");
 
 // 1. CONFIGURACIÓN FIREBASE (Instancia Compartida)
 const firebaseConfig = {
@@ -61,6 +61,26 @@ function initResultListener(userId) {
             alert(`✅ ¡Libro Completado!\n"${newBook.title}" se ha guardado en tu biblioteca.`);
             
             if (window.renderBookList) window.renderBookList();
+
+            // --- AUTO-GUARDADO SILENCIOSO EN DRIVE ---
+            try {
+                console.log("☁️ Iniciando auto-guardado en Drive (Libro)...");
+                const driveId = await saveFileToDrive('book', newBook.title, newBook);
+                
+                if (driveId) {
+                    // Actualizamos referencia
+                    const updatedBooks = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
+                    const target = updatedBooks.find(b => b.id === newBook.id);
+                    if (target) {
+                        target.driveFileId = driveId;
+                        localStorage.setItem('minimal_books_v4', JSON.stringify(updatedBooks));
+                        console.log("✅ Libro sincronizado en Drive:", driveId);
+                    }
+                }
+            } catch (driveErr) {
+                console.warn("⚠️ Fallo en auto-guardado Drive:", driveErr);
+            }
+            // -----------------------------------------
         }
 
         // 2. Limpieza del servidor

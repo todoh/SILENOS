@@ -4,8 +4,9 @@
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, set, onValue, off, remove, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { saveFileToDrive } from './drive_api.js'; // <--- IMPORTACIÓN AÑADIDA
 
-console.log("Módulo IA Juegos Cargado (v2.5 - Server Queue)");
+console.log("Módulo IA Juegos Cargado (v2.6 - Server Queue + AutoDrive)");
 
 const firebaseConfig = {
   apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
@@ -56,7 +57,7 @@ function initResultListener(userId) {
         const localGames = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
         
         if (!localGames.find(g => g.id === newGame.id)) {
-            localGames.push(newGame); // Push al final o unshift según prefieras
+            localGames.push(newGame); 
             localStorage.setItem('minimal_games_v1', JSON.stringify(localGames));
             
             alert(`✅ ¡Juego Terminado!\n"${newGame.title}" ha sido añadido a tu lista.`);
@@ -65,6 +66,26 @@ function initResultListener(userId) {
             
             // Opcional: Abrir automáticamente
             if (window.openGame) window.openGame(newGame.id);
+
+            // --- AUTO-GUARDADO SILENCIOSO EN DRIVE ---
+            try {
+                console.log("☁️ Iniciando auto-guardado en Drive (Juego)...");
+                const driveId = await saveFileToDrive('game', newGame.title, newGame);
+                
+                if (driveId) {
+                    // Actualizamos referencia
+                    const updatedGames = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
+                    const target = updatedGames.find(g => g.id === newGame.id);
+                    if (target) {
+                        target.driveFileId = driveId;
+                        localStorage.setItem('minimal_games_v1', JSON.stringify(updatedGames));
+                        console.log("✅ Juego sincronizado en Drive:", driveId);
+                    }
+                }
+            } catch (driveErr) {
+                console.warn("⚠️ Fallo en auto-guardado Drive:", driveErr);
+            }
+            // -----------------------------------------
         }
 
         try {
