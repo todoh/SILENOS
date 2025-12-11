@@ -1,22 +1,148 @@
-// --- IA: GENERADOR DE JUEGOS NARRATIVOS (Estructura Ramificada Pura) ---
-import { getApiKeysList } from './apikey.js';
-import { callGoogleAPI, cleanAndParseJSON, delay } from './ia_koreh.js';
-import { checkUsageLimit, registerUsage } from './usage_tracker.js'; // <--- IMPORTANTE
+// --- IA: GENERADOR DE JUEGOS (Versión Persistente - Queue System) ---
+// J → Juegos (Dinámica procesada en la nube)
 
-console.log("Módulo IA Juegos Cargado (v2.2 - Usage Limits)");
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, push, set, onValue, off, remove, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
+console.log("Módulo IA Juegos Cargado (v2.5 - Server Queue)");
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
+  authDomain: "enraya-51670.firebaseapp.com",
+  databaseURL: "https://enraya-51670-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "enraya-51670",
+  storageBucket: "enraya-51670.firebasestorage.app",
+  messagingSenderId: "103343380727",
+  appId: "1:103343380727:web:b2fa02aee03c9506915bf2",
+  measurementId: "G-2G31LLJY1T"
+};
+
+let app;
+if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+} else {
+    app = getApp();
+}
+
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+// DOM Elements
 const promptInput = document.getElementById('ia-game-prompt');
 const metricInput = document.getElementById('ia-game-metric'); 
 const useDataCheck = document.getElementById('ia-game-use-data');
 const btnGen = document.getElementById('btn-gen-game');
 const progressContainer = document.getElementById('game-progress');
 
-// Event Listener
-if (btnGen) {
-    btnGen.addEventListener('click', startStoryGeneration);
+// --- 1. AYUDANTE DE DATOS ---
+function getUniversalData() {
+    const rawData = JSON.parse(localStorage.getItem('minimal_universal_data')) || [];
+    if (rawData.length === 0) return "";
+    return rawData.map(d => `[${d.category}] ${d.title}: ${d.content}`).join('\n').substring(0, 10000); // Limitamos tamaño
 }
 
-// --- UI HELPERS ---
+// --- 2. SISTEMA DE BANDEJA DE ENTRADA ---
+function initResultListener(userId) {
+    console.log(`🎮 Escuchando juegos terminados para: ${userId}`);
+    const resultsRef = ref(db, `users/${userId}/results/games`);
+
+    onChildAdded(resultsRef, async (snapshot) => {
+        const newGame = snapshot.val();
+        if (!newGame) return;
+
+        console.log("🎲 Juego recibido del servidor:", newGame.title);
+
+        const localGames = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
+        
+        if (!localGames.find(g => g.id === newGame.id)) {
+            localGames.push(newGame); // Push al final o unshift según prefieras
+            localStorage.setItem('minimal_games_v1', JSON.stringify(localGames));
+            
+            alert(`✅ ¡Juego Terminado!\n"${newGame.title}" ha sido añadido a tu lista.`);
+            
+            if (window.renderGameList) window.renderGameList();
+            
+            // Opcional: Abrir automáticamente
+            if (window.openGame) window.openGame(newGame.id);
+        }
+
+        try {
+            await remove(snapshot.ref);
+        } catch (e) { console.error(e); }
+
+        if (btnGen) btnGen.disabled = false;
+        showProgress(false);
+    });
+}
+
+onAuthStateChanged(auth, (user) => {
+    if (user) initResultListener(user.uid);
+});
+
+// --- 3. INICIO DE GENERACIÓN ---
+
+async function startStoryGeneration() {
+    try {
+        const user = auth.currentUser;
+        if (!user) return alert("Inicia sesión para usar la IA.");
+
+        const topic = promptInput.value.trim();
+        const metric = metricInput.value.trim() || "Puntuación Final";
+        
+        if (!topic) return alert("Por favor, define el tema del juego.");
+
+        // Preparar contexto
+        const contextData = useDataCheck.checked ? getUniversalData() : "";
+
+        if (btnGen) btnGen.disabled = true;
+        showProgress(true);
+        updateProgress(5, "Contactando con el Arquitecto de Juegos...");
+
+        // Enviar Job
+        const jobsRef = ref(db, 'queue/games');
+        const newJobRef = push(jobsRef);
+
+        await set(newJobRef, {
+            userId: user.uid,
+            topic: topic,
+            metric: metric,
+            context: contextData,
+            status: "pending",
+            createdAt: Date.now()
+        });
+
+        console.log("🚀 Job de Juego enviado.");
+        updateProgress(10, "En cola de diseño...");
+
+        // Listener de progreso
+        onValue(newJobRef, (snapshot) => {
+            const data = snapshot.val();
+            if (!data) return;
+
+            if (data.msg) updateProgress(data.progress || 20, data.msg);
+
+            if (data.status === "completed") {
+                updateProgress(99, "Finalizando ensamblaje...");
+                off(newJobRef);
+            } 
+            else if (data.status === "error") {
+                alert("Error servidor: " + data.msg);
+                off(newJobRef);
+                showProgress(false);
+                if (btnGen) btnGen.disabled = false;
+            }
+        });
+
+    } catch (e) {
+        console.error(e);
+        alert("Ocurrió un error local: " + e.message);
+        showProgress(false);
+        if (btnGen) btnGen.disabled = false;
+    }
+}
+
+// UI Helpers
 function updateProgress(percent, text) {
     if(!progressContainer) return;
     const fill = progressContainer.querySelector('.progress-fill');
@@ -34,225 +160,6 @@ function showProgress(show) {
     else progressContainer.classList.remove('active');
 }
 
-function getUniversalData() {
-    const rawData = JSON.parse(localStorage.getItem('minimal_universal_data')) || [];
-    if (rawData.length === 0) return "";
-    return rawData.map(d => `[${d.category}] ${d.title}: ${d.content}`).join('\n').substring(0, 4000);
-}
-
-// --- LÓGICA DE GENERACIÓN ---
-
-async function startStoryGeneration() {
-    // 1. CHEQUEO DE LÍMITE
-    const canProceed = await checkUsageLimit('game');
-    if (!canProceed) return;
-
-    const keys = await getApiKeysList();
-    if (!keys || keys.length === 0) return alert("Error: No hay API Keys disponibles.");
-
-    const topic = promptInput.value.trim();
-    const metric = metricInput.value.trim() || "Puntuación Final";
-    
-    if (!topic) return alert("Por favor, define el tema del juego.");
-
-    btnGen.disabled = true;
-    showProgress(true);
-
-    try {
-        const universeContext = useDataCheck.checked ? getUniversalData() : "";
-
-        // PASO 1: DISEÑO DE FINALES
-        updateProgress(15, "Diseñando el espectro de finales (0-100)...");
-        const endings = await phaseDesignEndings(topic, metric, universeContext);
-        
-        // PASO 2: CONSTRUCCIÓN DEL GRAFO NARRATIVO
-        updateProgress(40, "Escribiendo caminos y decisiones...");
-        const gameNodes = await phaseBuildNarrative(topic, metric, endings, universeContext);
-
-        // PASO 3: ENSAMBLAJE INTELIGENTE
-        updateProgress(90, "Conectando nodos y estableciendo inicio...");
-        const fullGame = assembleGame(topic, gameNodes, endings);
-
-        saveGame(fullGame);
-
-        // 2. REGISTRO DE USO
-        await registerUsage('game');
-
-        updateProgress(100, "¡Juego Completado!");
-        await delay(500);
-        alert(`Juego "${fullGame.title}" creado con éxito.\nContiene ${fullGame.nodes.length} escenas conectadas.`);
-        
-        // Abrir automáticamente
-        if (window.openGame) window.openGame(fullGame.id);
-
-    } catch (e) {
-        console.error(e);
-        alert("Ocurrió un error: " + e.message);
-    } finally {
-        btnGen.disabled = false;
-        setTimeout(() => showProgress(false), 3000);
-    }
-}
-
-// --- FASE 1: ARQUITECTO DE FINALES ---
-async function phaseDesignEndings(topic, metric, context) {
-    const systemPrompt = `Eres un Maestro de Juego experto en narrativa ramificada.
-    TU OBJETIVO: Definir una escala de desenlaces para una historia interactiva.
-    
-    TEMA: ${topic}
-    MÉTRICA DE ÉXITO: ${metric} (Escala 0 a 100)
-    CONTEXTO DE UNIVERSO: ${context ? "Basado en estos datos:" : "Inventa los detalles."}
-    ${context}
-
-    TAREA:
-    Genera una lista de EXACTAMENTE 6 a 8 finales posibles que representen todo el espectro de éxito/fracaso.
-    - El final 0 debe ser catastrófico.
-    - El final 100 debe ser perfecto.
-    - Los intermedios (ej: 20, 40, 60, 80) deben tener matices narrativos distintos.
-
-    OUTPUT JSON:
-    {
-        "endings": [
-            { "score": 0, "title": "Título del Final", "text": "Descripción narrativa del desenlace..." },
-            ...
-        ]
-    }`;
-
-    const raw = await callGoogleAPI(systemPrompt, "Genera los finales.", { temperature: 0.8 });
-    const data = cleanAndParseJSON(raw);
-    
-    if (!data || !data.endings) throw new Error("La IA no pudo generar los finales.");
-    return data.endings;
-}
-
-// --- FASE 2: TEJEDOR DE HISTORIAS (Weaver) ---
-async function phaseBuildNarrative(topic, metric, endings, context) {
-    const endingsRef = endings.map(e => `[FINAL_ID_${e.score}]: ${e.title} (Valor: ${e.score})`).join('\n');
-
-    const systemPrompt = `Eres un Escritor de Librojuegos (Choose Your Own Adventure).
-    
-    TEMA: ${topic}
-    MÉTRICA: ${metric}
-    
-    TUS HERRAMIENTAS - LISTA DE FINALES EXISTENTES (No los crees, CONÉCTALOS):
-    ${endingsRef}
-
-    TAREA:
-    Escribe los nodos narrativos (Escenas) que conecten el INICIO con esos FINALES.
-    - Nodo ID 1 es el INICIO.
-    - Crea una estructura ramificada interesante (10-15 nodos intermedios).
-    - IMPORTANTE: Cuando una decisión lleve a un final, pon en "targetId" el VALOR del final (ej: 0, 50, 100) o el string "FINAL_ID_100".
-    
-    OUTPUT JSON:
-    {
-        "title": "Título del juego",
-        "nodes": [
-            { "id": 1, "title": "Inicio", "text": "...", "choices": [{ "text": "Ir a la cueva", "targetId": 2 }, ...] },
-            ...
-        ]
-    }`;
-
-    const userPrompt = `Genera la estructura completa. Asegúrate de que todos los caminos terminen eventualmente apuntando a uno de los IDs de los finales (0, 20, 50, 100, etc).`;
-
-    const raw = await callGoogleAPI(systemPrompt, userPrompt, { 
-        model: "gemma-3-27b-it", 
-        maxOutputTokens: 8192,
-        temperature: 0.7 
-    });
-    
-    const data = cleanAndParseJSON(raw);
-    if (!data || !data.nodes) throw new Error("La IA falló al construir la narrativa.");
-    
-    return data;
-}
-
-// --- FASE 3: ENSAMBLAJE FINAL ---
-function assembleGame(topic, narrativeData, endings) {
-    let narrativeNodes = narrativeData.nodes;
-    
-    // 1. Crear los nodos finales reales
-    const finalNodes = endings.map(end => {
-        return {
-            id: 9000 + end.score, 
-            title: `FINAL: ${end.title}`,
-            text: `${end.text}\n\n<strong style="color:#00bcd4">― VALORACIÓN: ${end.score} / ${metricInput.value || '100'} ―</strong>`,
-            choices: [],
-            isFinal: true
-        };
-    });
-
-    // 2. RECABLEADO INTELIGENTE
-    const narrativeIds = new Set(narrativeNodes.map(n => n.id));
-
-    narrativeNodes.forEach(node => {
-        node.x = node.x || 0;
-        node.y = node.y || 0;
-
-        if (node.choices && node.choices.length > 0) {
-            node.choices.forEach(choice => {
-                let target = choice.targetId;
-
-                if (typeof target === 'string' && target.includes('FINAL_ID_')) {
-                    const score = parseInt(target.replace(/\D/g, ''));
-                    if (!isNaN(score)) {
-                        choice.targetId = 9000 + score;
-                    }
-                }
-                else if (!narrativeIds.has(target) && target <= 100) {
-                    const closestEnd = endings.reduce((prev, curr) => {
-                        return (Math.abs(curr.score - target) < Math.abs(prev.score - target) ? curr : prev);
-                    });
-                    choice.targetId = 9000 + closestEnd.score;
-                }
-            });
-        }
-    });
-
-    // 3. ESTABLECER EL NODO DE INICIO
-    let startNode = narrativeNodes.find(n => n.id === 1);
-    if (!startNode && narrativeNodes.length > 0) {
-        startNode = narrativeNodes[0];
-    }
-    
-    if (startNode) {
-        narrativeNodes.forEach(n => n.isStart = false);
-        startNode.isStart = true;
-        startNode.title = `(INICIO) ${startNode.title}`;
-    }
-
-    // 4. UNIR Y POSICIONAR VISUALMENTE
-    const allNodes = [...narrativeNodes, ...finalNodes];
-
-    const levels = {}; 
-    allNodes.forEach((n, i) => {
-        if (n.id >= 9000) {
-            const indexInFinals = (n.id - 9000) / 20; 
-            n.x = 200 + (indexInFinals * 250);
-            n.y = 1000; 
-        } else {
-            const col = i % 5;
-            const row = Math.floor(i / 5);
-            n.x = 100 + (col * 300);
-            n.y = 100 + (row * 250);
-        }
-    });
-    
-    if (startNode) {
-        startNode.x = 600;
-        startNode.y = 50;
-    }
-
-    return {
-        id: Date.now(),
-        title: narrativeData.title || topic,
-        nodes: allNodes
-    };
-}
-
-function saveGame(gameData) {
-    const games = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
-    games.push(gameData);
-    localStorage.setItem('minimal_games_v1', JSON.stringify(games));
-    
-    if (window.renderGameList) window.renderGameList();
+if (btnGen) {
+    btnGen.addEventListener('click', startStoryGeneration);
 }

@@ -1,105 +1,70 @@
 // --- PROJECT CORE (Lógica de Datos y Estado) ---
-// Responsable de: Snapshots, Importación de JSON y Autoguardado.
+// Adaptado para estructura modular (Data, Script, Book, Game)
 
-import { initDriveFolder, saveProjectToDrive } from './drive_api.js';
+export const STORAGE_KEYS = {
+    DATA: 'minimal_universal_data',
+    BOOKS: 'minimal_books_v4',
+    SCRIPTS: 'minimal_scripts_v1',
+    GAMES: 'minimal_games_v1',
+    PROJECT_NAME: 'silenos_universe_name'
+};
 
-console.log("Project Core Cargado");
+// Claves de sesión para el PROYECTO DE DATOS ACTIVO
+export const SESSION_DATA_ID_KEY = 'silenos_active_data_id';
 
-// Claves de Sistema
-export const STORAGE_KEYS = [
-    'minimal_universal_data',
-    'minimal_books_v4',
-    'minimal_scripts_v1',
-    'minimal_games_v1',
-    'silenos_universe_name'
-];
+// --- GESTIÓN DE DATOS ---
 
-export const SESSION_FILE_ID_KEY = 'silenos_active_drive_id';
-export const SESSION_FILE_NAME_KEY = 'silenos_active_project_name';
-
-let autosaveTimer = null;
-let lastSnapshot = ""; 
-
-// --- GESTIÓN DE DATOS (SNAPSHOTS) ---
-
-export function getProjectSnapshot() {
+export function getUniversalDataSnapshot() {
     return {
-        version: "3.7",
-        timestamp: new Date().toISOString(),
-        universeName: localStorage.getItem('silenos_universe_name') || 'Proyecto Sin Nombre',
-        universalData: JSON.parse(localStorage.getItem('minimal_universal_data')) || [],
-        books: JSON.parse(localStorage.getItem('minimal_books_v4')) || [],
-        scripts: JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [],
-        games: JSON.parse(localStorage.getItem('minimal_games_v1')) || []
+        type: 'data_set',
+        version: "4.0",
+        universeName: localStorage.getItem(STORAGE_KEYS.PROJECT_NAME) || 'Proyecto Sin Nombre',
+        items: JSON.parse(localStorage.getItem(STORAGE_KEYS.DATA)) || []
     };
 }
 
-export function importProjectSnapshot(data) {
-    if (!data) return false;
-    
+// Helpers para obtener items individuales para guardar
+export function getScriptById(id) {
+    const scripts = JSON.parse(localStorage.getItem(STORAGE_KEYS.SCRIPTS)) || [];
+    return scripts.find(s => s.id === id);
+}
+
+export function getBookById(id) {
+    const books = JSON.parse(localStorage.getItem(STORAGE_KEYS.BOOKS)) || [];
+    return books.find(b => b.id === id);
+}
+
+export function getGameById(id) {
+    const games = JSON.parse(localStorage.getItem(STORAGE_KEYS.GAMES)) || [];
+    return games.find(g => g.id === id);
+}
+
+// Importación de DATOS (Solo afecta al worldbuilding)
+export function importDataSnapshot(data) {
+    if (!data || !data.items) return false;
     try {
-        console.log("📥 Inyectando snapshot al núcleo...");
-        // Limpieza preventiva (opcional, dependiendo de si quieres mezclar o reemplazar)
-        // localStorage.clear(); // Cuidado con esto si hay otras keys
-
-        if (data.universalData) localStorage.setItem('minimal_universal_data', JSON.stringify(data.universalData));
-        if (data.books) localStorage.setItem('minimal_books_v4', JSON.stringify(data.books));
-        if (data.scripts) localStorage.setItem('minimal_scripts_v1', JSON.stringify(data.scripts));
-        if (data.games) localStorage.setItem('minimal_games_v1', JSON.stringify(data.games));
-        
-        // Mantener nombre o usar el entrante
-        const newName = data.universeName || "Proyecto Importado";
-        localStorage.setItem('silenos_universe_name', newName);
-
-        // Si viene de P2P, limpiamos la referencia a Drive para no sobrescribir el archivo del otro usuario
-        sessionStorage.removeItem(SESSION_FILE_ID_KEY);
-        sessionStorage.setItem(SESSION_FILE_NAME_KEY, newName);
-
+        localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(data.items));
+        localStorage.setItem(STORAGE_KEYS.PROJECT_NAME, data.universeName || "Proyecto Importado");
         return true;
     } catch (e) {
-        console.error("Error Core Import:", e);
+        console.error("Error Core Import Data:", e);
         return false;
     }
 }
 
-// --- SISTEMA DE AUTOGUARDADO ---
+// --- UTILIDAD DE MERGE (Para cargar librería completa) ---
+export function mergeItemToStorage(storageKey, item, remoteFileId) {
+    let list = JSON.parse(localStorage.getItem(storageKey)) || [];
+    
+    // Inyectamos el ID de Drive para rastreo futuro
+    item.driveFileId = remoteFileId;
 
-export function startAutosaveSystem() {
-    lastSnapshot = JSON.stringify(getProjectSnapshot());
-    if (autosaveTimer) clearInterval(autosaveTimer);
-
-    console.log("💾 Autoguardado iniciado...");
-
-    autosaveTimer = setInterval(async () => {
-        const fileId = sessionStorage.getItem(SESSION_FILE_ID_KEY);
-        const currentLocalName = localStorage.getItem('silenos_universe_name');
-        const sessionCloudName = sessionStorage.getItem(SESSION_FILE_NAME_KEY);
-
-        // Solo guardamos si hay un archivo vinculado y los nombres coinciden
-        if (!fileId || currentLocalName !== sessionCloudName) return;
-
-        const currentData = getProjectSnapshot();
-        const currentString = JSON.stringify(currentData);
-
-        if (currentString !== lastSnapshot) {
-            const folderId = await initDriveFolder();
-            const dockName = document.getElementById('current-project-name');
-            
-            if(dockName) dockName.innerHTML = `${sessionCloudName} <span style="font-size:0.8em; opacity:0.7">↻</span>`;
-            
-            try {
-                await saveProjectToDrive(folderId, sessionCloudName, currentData, fileId);
-                lastSnapshot = currentString;
-                if(dockName) dockName.textContent = sessionCloudName;
-                console.log("Autoguardado exitoso.");
-            } catch (e) { 
-                console.warn("Autosave fail", e); 
-                if(dockName) dockName.innerHTML = `${sessionCloudName} <span style="color:red; font-size:0.8em;">⚠</span>`;
-            }
-        }
-    }, 15000); // Cada 15 segundos
-}
-
-export function stopAutosaveSystem() {
-    if (autosaveTimer) clearInterval(autosaveTimer);
+    const index = list.findIndex(i => i.id === item.id);
+    if (index !== -1) {
+        // Si existe, actualizamos (asumimos que la nube es la verdad al cargar)
+        list[index] = item;
+    } else {
+        list.push(item);
+    }
+    localStorage.setItem(storageKey, JSON.stringify(list));
 }

@@ -1,7 +1,9 @@
-// --- LÓGICA DE LIBROS UI (Novelas) v2.1 (Sync) ---
-import { broadcastSync, isRemoteUpdate } from './project_share.js'; // IMPORTAR
+// SILENOS/libro_ui.js
+// --- LÓGICA DE LIBROS UI (Novelas) v2.3 (Quick Export UI) ---
+import { broadcastSync, isRemoteUpdate } from './project_share.js'; 
+import { loadFileContent } from './drive_api.js'; 
 
-console.log("Sistema de Libros Iniciado (v2.1 - Sync)");
+console.log("Sistema de Libros Iniciado (v2.3 - Quick Export UI)");
 
 let books = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
 let currentBookId = null;
@@ -45,21 +47,29 @@ function renderBookList() {
     books.slice().reverse().forEach(book => {
         const item = document.createElement('div');
         item.className = 'book-item';
+        item.style.position = 'relative'; // Asegurar posicionamiento para los botones
         
-        item.onclick = function() { 
-            openBook(book.id); 
-        };
+        const isCloud = book.isPlaceholder;
+        const cloudIcon = isCloud ? '<span style="font-size:0.8rem; margin-right:5px;">☁️</span>' : '';
+        
+        item.onclick = function() { openBook(book.id); };
 
-        const chapCount = book.chapters ? book.chapters.length : 0;
+        const chapCount = isCloud ? '?' : (book.chapters ? book.chapters.length : 0);
+        const metaText = isCloud ? 'En Nube' : (chapCount === 1 ? 'Capítulo' : 'Capítulos');
+        
         const aiTag = book.isAI ? '<span class="tag-ai">IA</span>' : '';
 
+        // INYECCIÓN DE BOTONES DE EXPORTACIÓN
         item.innerHTML = `
-            <div class="book-info" style="pointer-events: none;"> 
-                <div class="book-title">${book.title || 'Libro Sin Título'} ${aiTag}</div>
-                <div class="book-meta">${chapCount} ${chapCount === 1 ? 'Capítulo' : 'Capítulos'}</div>
+            <div class="book-info" style="pointer-events: none; padding-right: 60px;"> 
+                <div class="book-title">${cloudIcon}${book.title || 'Libro Sin Título'} ${aiTag}</div>
+                <div class="book-meta">${isCloud ? '' : chapCount} ${metaText}</div>
             </div>
-            <div style="opacity:0.2; pointer-events: none;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            
+            <div class="quick-export-bar">
+                <span class="export-badge" onclick="event.stopPropagation(); window.quickExport('book', ${book.id}, 'html')" title="Descargar HTML">HTML</span>
+                <span class="export-badge" onclick="event.stopPropagation(); window.quickExport('book', ${book.id}, 'doc')" title="Descargar DOC">DOC</span>
+                <span class="export-badge" onclick="event.stopPropagation(); window.quickExport('book', ${book.id}, 'txt')" title="Descargar TXT">TXT</span>
             </div>
         `;
         booksContainer.appendChild(item);
@@ -89,7 +99,6 @@ function createNewBook() {
     renderBookList(); 
     openBook(newBook.id);
 
-    // 📡 EMITIR CREACIÓN
     broadcastSync('BOOK_CREATE', newBook);
 }
 
@@ -100,20 +109,48 @@ function deleteCurrentBook() {
         books = books.filter(b => b.id !== currentBookId);
         saveBookData();
         goBack();
-        // 📡 EMITIR BORRADO
         broadcastSync('BOOK_DELETE', { id: idToDelete });
     }
 }
 
-// --- VISTA DE EDICIÓN ---
-function openBook(id) {
+// --- VISTA DE EDICIÓN (LAZY LOAD) ---
+async function openBook(id) {
     books = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
-    currentBookId = id;
-    const book = books.find(b => b.id === id);
+    let book = books.find(b => b.id === id);
     if (!book) return;
 
+    if (book.isPlaceholder) {
+        console.log(`☁️ Descargando libro: ${book.title}`);
+        
+        bookListView.style.display = 'none';
+        bookDetailView.classList.add('active'); 
+        bookDetailTitle.value = "Descargando...";
+        chaptersContainer.innerHTML = '<div style="padding:50px; text-align:center; color:#aaa;">Obteniendo capítulos...</div>';
+
+        try {
+            const fullData = await loadFileContent(book.driveFileId);
+            if (!fullData) throw new Error("Datos vacíos");
+
+            const driveId = book.driveFileId;
+            Object.assign(book, fullData);
+            
+            book.driveFileId = driveId;
+            delete book.isPlaceholder;
+
+            saveBookData();
+            id = book.id;
+
+        } catch (e) {
+            alert("Error descargando libro: " + e.message);
+            goBack();
+            return;
+        }
+    }
+
+    currentBookId = id;
+
     bookListView.style.display = 'none';
-    bookDetailView.classList.add('active'); // Usamos clase active para display flex
+    bookDetailView.classList.add('active'); 
 
     bookDetailTitle.value = book.title;
     renderBookContent();
@@ -132,23 +169,21 @@ function updateBookTitle() {
     if (book) {
         book.title = bookDetailTitle.value;
         saveBookData();
-        // 📡 EMITIR
         broadcastSync('BOOK_UPDATE', book);
     }
 }
 
-// --- RENDERIZADO DE CONTENIDO ---
 function renderBookContent() {
     const book = books.find(b => b.id === currentBookId);
     if (!book) return;
 
     chaptersContainer.innerHTML = '';
+    if (!book.chapters) book.chapters = [];
 
     book.chapters.forEach((chap, cIndex) => {
         const chapDiv = document.createElement('div');
         chapDiv.className = 'chapter-block';
 
-        // Header Capítulo
         const header = document.createElement('div');
         header.className = 'chapter-header';
         header.innerHTML = `
@@ -166,7 +201,6 @@ function renderBookContent() {
 
         chapDiv.appendChild(header);
 
-        // Párrafos
         chap.paragraphs.forEach((para, pIndex) => {
             const pDiv = document.createElement('div');
             pDiv.className = 'paragraph-item';
@@ -218,8 +252,6 @@ function renderBookContent() {
     });
 }
 
-// --- ACTUALIZACIONES Y CRUD CON SYNC ---
-
 function addChapter() {
     if (isRemoteUpdate) return;
     const book = books.find(b => b.id === currentBookId);
@@ -234,7 +266,6 @@ function addChapter() {
             const scrollArea = document.getElementById('editor-scroll-area');
             if(scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
         }, 100);
-        // 📡 EMITIR
         broadcastSync('BOOK_UPDATE', book);
     }
 }
@@ -244,7 +275,6 @@ function updateChapterTitle(cIndex, newTitle) {
     const book = books.find(b => b.id === currentBookId);
     book.chapters[cIndex].title = newTitle;
     saveBookData();
-    // 📡 EMITIR
     broadcastSync('BOOK_UPDATE', book);
 }
 
@@ -255,7 +285,6 @@ function deleteChapter(cIndex) {
         book.chapters.splice(cIndex, 1);
         saveBookData();
         renderBookContent();
-        // 📡 EMITIR
         broadcastSync('BOOK_UPDATE', book);
     }
 }
@@ -266,7 +295,6 @@ function addBookParagraph(cIndex) {
     book.chapters[cIndex].paragraphs.push({ text: "", image: null });
     saveBookData();
     renderBookContent();
-    // 📡 EMITIR
     broadcastSync('BOOK_UPDATE', book);
 }
 
@@ -276,7 +304,6 @@ function insertBookParagraphAfter(cIndex, pIndex) {
     book.chapters[cIndex].paragraphs.splice(pIndex + 1, 0, { text: "", image: null });
     saveBookData();
     renderBookContent();
-    // 📡 EMITIR
     broadcastSync('BOOK_UPDATE', book);
 }
 
@@ -285,7 +312,6 @@ function updateBookParagraphText(cIndex, pIndex, text) {
     const book = books.find(b => b.id === currentBookId);
     book.chapters[cIndex].paragraphs[pIndex].text = text;
     saveBookData();
-    // 📡 EMITIR
     broadcastSync('BOOK_UPDATE', book);
 }
 
@@ -295,11 +321,9 @@ function deleteBookParagraph(cIndex, pIndex) {
     book.chapters[cIndex].paragraphs.splice(pIndex, 1);
     saveBookData();
     renderBookContent();
-    // 📡 EMITIR
     broadcastSync('BOOK_UPDATE', book);
 }
 
-// --- IMÁGENES ---
 function triggerBookImageUpload(cIndex, pIndex) {
     bookUploadContext = { chapterIdx: cIndex, paragraphIdx: pIndex };
     if(bookImageInput) bookImageInput.click();
@@ -315,7 +339,6 @@ if(bookImageInput) {
                 saveBookData();
                 renderBookContent();
                 
-                // 📡 EMITIR (Cuidado con peso)
                 broadcastSync('BOOK_UPDATE', book);
                 
                 bookImageInput.value = ''; 
@@ -331,7 +354,6 @@ function removeBookImage(cIndex, pIndex) {
     book.chapters[cIndex].paragraphs[pIndex].image = null;
     saveBookData();
     renderBookContent();
-    // 📡 EMITIR
     broadcastSync('BOOK_UPDATE', book);
 }
 
@@ -340,25 +362,18 @@ function autoResize(el) {
     el.style.height = el.scrollHeight + 'px';
 }
 
-// --- API RECEPTORA ---
-window.applyRemoteBookUpdate = function(payload) {
-    // Nota: project_share.js puede enviar 'BOOK_UPDATE' como action, o puede que lo hayamos simplificado.
-    // Si viene solo el payload (el libro) o { action: '...', payload: ... } depende de project_share.
-    // Asumimos que project_share llama a esta función pasando (payload) o (action, payload).
-    // Para seguridad, chequeamos argumentos.
-    
-    let action = 'BOOK_UPDATE';
+window.applyRemoteBookUpdate = function(action, payload) {
+    let act = 'BOOK_UPDATE';
     let data = payload;
     
-    // Si el primer argumento es string, es el action
     if (arguments.length === 2 && typeof arguments[0] === 'string') {
-        action = arguments[0];
+        act = arguments[0];
         data = arguments[1];
     }
 
     books = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
 
-    if (action === 'BOOK_UPDATE') {
+    if (act === 'BOOK_UPDATE') {
         const index = books.findIndex(b => b.id === data.id);
         if (index !== -1) {
             books[index] = data;
@@ -374,13 +389,13 @@ window.applyRemoteBookUpdate = function(payload) {
             }
             renderBookList();
         }
-    } else if (action === 'BOOK_CREATE') {
+    } else if (act === 'BOOK_CREATE') {
         if (!books.find(b => b.id === data.id)) {
             books.unshift(data);
             saveBookData();
             renderBookList();
         }
-    } else if (action === 'BOOK_DELETE') {
+    } else if (act === 'BOOK_DELETE') {
         books = books.filter(b => b.id !== data.id);
         saveBookData();
         if (currentBookId === data.id) {
@@ -390,7 +405,6 @@ window.applyRemoteBookUpdate = function(payload) {
     }
 };
 
-// EXPORTAR A WINDOW
 window.createNewBook = createNewBook;
 window.deleteCurrentBook = deleteCurrentBook;
 window.goBack = goBack;

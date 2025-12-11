@@ -1,52 +1,218 @@
-// --- IA: GENERACIÓN DE LIBROS (Arquitectura Pipeline v6.0 - Token Optimized) ---
-import { getApiKeysList } from './apikey.js';
-import { callGoogleAPI, cleanAndParseJSON, delay } from './ia_koreh.js';
-import { checkUsageLimit, registerUsage } from './usage_tracker.js'; 
+// --- IA: GENERACIÓN DE LIBROS (Versión Persistente - Queue System + Lazy Load) ---
+// B → Visión (El servidor procesa la obra completa)
+// S → Contenedor descendente (Recibe el resultado final)
 
-console.log("Módulo IA Libros Cargado (v6.0 - RAG & Memory Optimized)");
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, push, set, onValue, off, remove, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { loadFileContent } from './drive_api.js'; // <--- IMPORTACIÓN NECESARIA PARA LA DESCARGA
 
+console.log("Módulo IA Libros Cargado (v7.1 - Server Queue + Lazy Load)");
+
+// 1. CONFIGURACIÓN FIREBASE (Instancia Compartida)
+const firebaseConfig = {
+  apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
+  authDomain: "enraya-51670.firebaseapp.com",
+  databaseURL: "https://enraya-51670-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "enraya-51670",
+  storageBucket: "enraya-51670.firebasestorage.app",
+  messagingSenderId: "103343380727",
+  appId: "1:103343380727:web:b2fa02aee03c9506915bf2",
+  measurementId: "G-2G31LLJY1T"
+};
+
+let app;
+if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+} else {
+    app = getApp();
+}
+
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+// Referencias DOM
 const scriptSelector = document.getElementById('ia-script-selector');
 const nuanceInput = document.getElementById('ia-libro-nuance');
-const paragraphsInput = document.getElementById('ia-book-paragraphs');
+const paragraphsInput = document.getElementById('ia-book-paragraphs'); 
 const btnGenLibro = document.getElementById('btn-gen-libro');
 const progressContainer = document.getElementById('libro-progress');
 
-// Agrupamos párrafos para no saturar
-const PARAGRAPHS_PER_CHUNK = 5; 
+// --- 2. SISTEMA DE BANDEJA DE ENTRADA (Listener de Resultados) ---
 
-if (btnGenLibro) {
-    btnGenLibro.onclick = null; 
-    btnGenLibro.addEventListener('click', generateBookFromText);
-}
+function initResultListener(userId) {
+    console.log(`📚 Escuchando libros terminados para: ${userId}`);
+    const resultsRef = ref(db, `users/${userId}/results/books`);
 
-// --- HELPERS UI & PARSING ---
+    onChildAdded(resultsRef, async (snapshot) => {
+        const newBook = snapshot.val();
+        if (!newBook) return;
 
-function parseLoreFromText(loreText) {
-    // Convierte el texto plano del Lore en un Mapa { "Nombre": "Definición" }
-    // Asume formato: "**Nombre**: Definición" o simplemente párrafos separados
-    const loreMap = new Map();
-    if (!loreText) return loreMap;
+        console.log("📦 Libro recibido del servidor:", newBook.title);
 
-    // Dividimos por saltos de línea dobles (párrafos generados en guiones)
-    const blocks = loreText.split(/\n\s*\n/);
-    
-    blocks.forEach(block => {
-        const cleanBlock = block.trim();
-        if (cleanBlock.length < 5) return;
-
-        // Intentar extraer el nombre entre asteriscos **Nombre**
-        const match = cleanBlock.match(/^\*\*(.*?)\*\*/);
-        if (match && match[1]) {
-            loreMap.set(match[1].toUpperCase(), cleanBlock);
-        } else {
-            // Si no tiene formato negrita, usamos las primeras 5 palabras como key (fallback)
-            const fallbackKey = cleanBlock.split(' ').slice(0, 5).join(' ').toUpperCase();
-            loreMap.set(fallbackKey, cleanBlock);
+        // 1. Guardar en LocalStorage
+        const localBooks = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
+        
+        // Evitar duplicados por ID
+        if (!localBooks.find(b => b.id === newBook.id)) {
+            localBooks.unshift(newBook);
+            localStorage.setItem('minimal_books_v4', JSON.stringify(localBooks));
+            
+            alert(`✅ ¡Libro Completado!\n"${newBook.title}" se ha guardado en tu biblioteca.`);
+            
+            if (window.renderBookList) window.renderBookList();
         }
+
+        // 2. Limpieza del servidor
+        try {
+            await remove(snapshot.ref);
+            console.log("🧹 Copia del servidor eliminada.");
+        } catch (e) {
+            console.error("Error limpiando servidor:", e);
+        }
+
+        // 3. Reset UI
+        if (btnGenLibro) {
+            btnGenLibro.disabled = false;
+            btnGenLibro.innerText = "Generar Libro";
+        }
+        showProgress(false);
     });
-    return loreMap;
 }
 
+// Inicializar listener al loguear
+onAuthStateChanged(auth, (user) => {
+    if (user) initResultListener(user.uid);
+});
+
+
+// --- 3. LÓGICA DE ENVÍO A LA COLA (CON LAZY LOAD) ---
+
+function refreshScriptSelector() {
+    if (!scriptSelector) return;
+    const scripts = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
+    scriptSelector.innerHTML = '<option value="">-- Selecciona un Guion Base --</option>';
+    
+    // Mostrar scripts (indicando si están en la nube visualmente)
+    scripts.slice().reverse().forEach(s => {
+        const option = document.createElement('option');
+        option.value = s.id;
+        const cloudMark = s.isPlaceholder ? "☁️ " : "";
+        option.textContent = cloudMark + s.title;
+        scriptSelector.appendChild(option);
+    });
+}
+
+async function generateBookFromText() {
+    try {
+        const user = auth.currentUser;
+        if (!user) return alert("Inicia sesión para usar la IA.");
+
+        const scriptId = scriptSelector.value;
+        if (!scriptId) return alert("Selecciona un guion para adaptar.");
+
+        // Obtener el guion localmente
+        const scripts = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
+        const sourceScript = scripts.find(s => s.id == scriptId);
+        
+        if (!sourceScript) return alert("Error: No se encuentra el guion en memoria.");
+
+        if (btnGenLibro) {
+            btnGenLibro.disabled = true;
+            btnGenLibro.innerText = "Verificando...";
+        }
+        showProgress(true);
+
+        // --- INICIO BLOQUE LAZY LOAD ---
+        // Si el guion es un placeholder (solo índice), lo descargamos ahora mismo
+        if (sourceScript.isPlaceholder) {
+            updateProgress(5, "☁️ Descargando guion original desde Drive...");
+            console.log("Detectado placeholder. Iniciando descarga...");
+
+            try {
+                if (!sourceScript.driveFileId) throw new Error("El guion no tiene ID de Drive asociado.");
+                
+                const fullData = await loadFileContent(sourceScript.driveFileId);
+                
+                if (!fullData || !fullData.scenes) {
+                    throw new Error("El archivo descargado está vacío o corrupto.");
+                }
+
+                // Fusionamos los datos descargados con el objeto local
+                Object.assign(sourceScript, fullData);
+                delete sourceScript.isPlaceholder;
+
+                // Guardamos en LocalStorage para no tener que descargarlo la próxima vez
+                localStorage.setItem('minimal_scripts_v1', JSON.stringify(scripts));
+                console.log("Guion descargado y cacheado localmente.");
+
+                // Actualizamos el selector visualmente (quitamos la nube)
+                refreshScriptSelector();
+                scriptSelector.value = scriptId; 
+
+            } catch (downloadError) {
+                console.error(downloadError);
+                throw new Error("Fallo al descargar el guion original: " + downloadError.message);
+            }
+        }
+        // --- FIN BLOQUE LAZY LOAD ---
+
+        const nuance = nuanceInput ? nuanceInput.value.trim() : "Narrativa estándar";
+        
+        if (btnGenLibro) btnGenLibro.innerText = "Enviando...";
+        updateProgress(10, "Empaquetando guion y enviando al servidor...");
+
+        // Preparar payload con las escenas ya cargadas
+        const cleanScenes = sourceScript.scenes.map(s => ({
+            title: s.title,
+            content: s.paragraphs.map(p => p.text).join('\n')
+        }));
+
+        // Enviar Job a la Cola
+        const jobsRef = ref(db, 'queue/books');
+        const newJobRef = push(jobsRef);
+
+        await set(newJobRef, {
+            userId: user.uid,
+            sourceTitle: sourceScript.title,
+            scenes: cleanScenes, 
+            styleNuance: nuance,
+            status: "pending",
+            createdAt: Date.now()
+        });
+
+        console.log("🚀 Job de Libro enviado. Scenes:", cleanScenes.length);
+        updateProgress(15, "En cola de procesamiento...");
+
+        // Listener de progreso específico de este Job
+        onValue(newJobRef, (snapshot) => {
+            const data = snapshot.val();
+            if (!data) return;
+
+            if (data.msg) updateProgress(data.progress || 20, data.msg);
+            
+            if (data.status === "completed") {
+                updateProgress(99, "Finalizando descarga...");
+                off(newJobRef); 
+            } 
+            else if (data.status === "error") {
+                alert("Error en el servidor: " + data.msg);
+                off(newJobRef);
+                showProgress(false);
+                if (btnGenLibro) btnGenLibro.disabled = false;
+            }
+        });
+
+    } catch (error) {
+        console.error("Error local:", error);
+        alert("Error: " + error.message);
+        showProgress(false);
+        if (btnGenLibro) btnGenLibro.disabled = false;
+        if (btnGenLibro) btnGenLibro.innerText = "Generar Libro";
+    }
+}
+
+// UI Helpers
 function updateProgress(percent, text) {
     if(!progressContainer) return;
     const fill = progressContainer.querySelector('.progress-fill');
@@ -64,382 +230,12 @@ function showProgress(show) {
     else progressContainer.classList.remove('active');
 }
 
-function refreshScriptSelector() {
-    if (!scriptSelector) return;
-    const scripts = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
-    scriptSelector.innerHTML = '<option value="">-- Selecciona un Guion Base --</option>';
-    scripts.slice().reverse().forEach(s => {
-        const option = document.createElement('option');
-        option.value = s.id;
-        option.textContent = s.title;
-        scriptSelector.appendChild(option);
-    });
-}
-
-// --- FUNCIÓN DE LIMPIEZA MEJORADA ---
-function cleanOutputText(text) {
-    if (!text) return "";
-
-    // 1. Eliminar eco de instrucciones del sistema
-    text = text.replace(/^(Eres un|Actúa como) (Editor|Asistente|Redactor|Escritor).*?(\n|$)/gim, '');
-    text = text.replace(/^ESTILO:.*?(\n|$)/gim, '');
-    text = text.replace(/^REGLA:.*?(\n|$)/gim, '');
-    text = text.replace(/^TAREA:.*?(\n|$)/gim, '');
-
-    // 2. Eliminar cabeceras conversacionales
-    text = text.replace(/^(\#\#\s*)?(Aquí (tienes|está)|He aquí|El texto|Texto pulido|Borrador|Propuesta|Versión mejorada).*?[:\n]/gmi, '');
-    
-    // 3. Eliminar repetición del input
-    text = text.replace(/^Texto a pulir:[\s\S]*?(\n\n|\r\n\r\n)/mi, ''); 
-
-    // 4. Eliminar meta-comentarios al final
-    const metaMarkers = [
-        'Cambios realizados', 'Justificación', 'Notas sobre', 'Comentarios:', 
-        'Cambios y justificación', '## Títulos propuestos', 'Opción 1:', 'Nota del editor:'
-    ];
-
-    let cutIndex = text.length;
-    metaMarkers.forEach(marker => {
-        const idx = text.toLowerCase().indexOf(marker.toLowerCase());
-        if (idx !== -1 && idx < cutIndex) {
-            const linesBefore = text.substring(0, idx).split('\n');
-            const lastLine = linesBefore[linesBefore.length -1].trim();
-            if (lastLine === '' || lastLine.length < 5) cutIndex = idx;
-        }
-    });
-    text = text.substring(0, cutIndex);
-
-    // 5. Limpieza final
-    text = text.replace(/===.*?===/g, '');
-    text = text.replace(/\-\-\-+/g, '');
-    
-    return text.trim();
+// Event Listeners
+if (btnGenLibro) {
+    btnGenLibro.onclick = null; 
+    btnGenLibro.addEventListener('click', generateBookFromText);
 }
 
 document.addEventListener('DOMContentLoaded', refreshScriptSelector);
-
-// --- PIPELINE PRINCIPAL OPTIMIZADO ---
-
-async function generateBookFromText() {
-    // 1. CHEQUEO DE LÍMITE
-    const canProceed = await checkUsageLimit('book');
-    if (!canProceed) return;
-
-    const keys = await getApiKeysList();
-    if (!keys || keys.length === 0) return alert("Error: No hay API Keys disponibles.");
-
-    const scriptId = scriptSelector.value;
-    if (!scriptId) return alert("Selecciona un guion.");
-    
-    const nuanceText = nuanceInput ? nuanceInput.value.trim() : "Narrativa inmersiva y fiel";
-    let targetParagraphs = paragraphsInput ? parseInt(paragraphsInput.value) : 15;
-    if (targetParagraphs < 5) targetParagraphs = 5;
-
-    const totalBlocksPerChapter = Math.ceil(targetParagraphs / PARAGRAPHS_PER_CHUNK);
-
-    const scripts = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
-    const sourceScript = scripts.find(s => s.id == scriptId);
-    if (!sourceScript) return;
-    
-    // --- PREPARACIÓN DEL LORE (MODO SMART RAG) ---
-    let globalContext = "Trama general.";
-    let loreMap = new Map(); // Mapa JS local para RAG eficiente
-    let chapterScenes = [];
-
-    const lastScene = sourceScript.scenes[sourceScript.scenes.length - 1];
-    const hasLore = lastScene && (lastScene.title.includes("LORE") || lastScene.title.includes("DATOS CLAVE"));
-
-    if (sourceScript.scenes.length > 0) {
-        globalContext = sourceScript.scenes[0].paragraphs.map(p => p.text).join('\n');
-        
-        if (hasLore) {
-            const rawLoreText = lastScene.paragraphs.map(p => p.text).join('\n');
-            // Parseamos el Lore una sola vez en memoria
-            loreMap = parseLoreFromText(rawLoreText); 
-            chapterScenes = sourceScript.scenes.slice(1, sourceScript.scenes.length - 1);
-            console.log(`📚 Lore Parseado: ${loreMap.size} entradas indexadas.`);
-        } else {
-            chapterScenes = sourceScript.scenes.slice(1);
-        }
-    }
-
-    const totalChapters = chapterScenes.length;
-
-    if(btnGenLibro) {
-        btnGenLibro.disabled = true;
-        btnGenLibro.innerText = "Procesando...";
-    }
-    showProgress(true);
-
-    const newBookChapters = [];
-    let narrativeHistory = "Inicio de la historia."; 
-    let previousSummaries = []; 
-
-    try {
-        for (let i = 0; i < totalChapters; i++) {
-            const sceneData = chapterScenes[i];
-            const sceneTitle = sceneData.title;
-            const sceneContent = sceneData.paragraphs.map(p => p.text).join('\n');
-            
-            // Previsión del futuro
-            let nextChapterPreview = "Fin de la obra.";
-            if (i + 1 < totalChapters) {
-                 const nextSceneData = chapterScenes[i + 1];
-                 const nextText = nextSceneData.paragraphs.map(p => p.text).join('\n');
-                 nextChapterPreview = nextText.substring(0, 500); // Solo el inicio
-            }
-
-            // --- FASE 0: SELECCIÓN DE LORE (RAG OPTIMIZADO) ---
-            // Solo enviamos las KEYS a la IA, no el texto completo.
-            updateProgress((i / totalChapters) * 100, `Cap ${i+1}: Filtrando Lore (Smart Keys)...`);
-            
-            let activeLoreContent = "";
-            if (loreMap.size > 0) {
-                const loreKeys = Array.from(loreMap.keys());
-                // IA decide qué claves son relevantes
-                const selectedKeys = await phaseLoreSelector(sceneTitle, sceneContent, loreKeys);
-                
-                // JS reconstruye el texto completo solo de las claves elegidas
-                activeLoreContent = selectedKeys
-                    .map(key => loreMap.get(key) || "")
-                    .filter(t => t.length > 0)
-                    .join("\n\n");
-                
-                console.log(`Cap ${i+1}: Lore seleccionado (${selectedKeys.length} items)`);
-            }
-
-            // --- FASE 1: ARQUITECTO ---
-            updateProgress((i / totalChapters) * 100, `Cap ${i+1}: Estructurando trama...`);
-            
-            // OPTIMIZACIÓN DE MEMORIA: Solo últimos 3 resúmenes
-            const memoryContext = previousSummaries.slice(-3).join("\n");
-
-            const chapterPlan = await phaseArchitect(
-                sceneTitle, 
-                sceneContent, 
-                globalContext, 
-                narrativeHistory, 
-                totalBlocksPerChapter, 
-                activeLoreContent, // Lore ya filtrado
-                memoryContext, 
-                nextChapterPreview
-            );
-            
-            let fullChapterText = [];
-            let slidingWindowContext = narrativeHistory.slice(-1500); 
-
-            // --- BUCLE DE ESCRITURA ---
-            for (let b = 0; b < chapterPlan.length; b++) {
-                const currentBeat = chapterPlan[b];
-                const blockNum = b + 1;
-                
-                const baseProg = (i / totalChapters) * 100;
-                const chunkProg = (blockNum / chapterPlan.length) * (100 / totalChapters);
-                updateProgress(baseProg + chunkProg, `Cap ${i+1} [Bloque ${blockNum}]: Escribiendo...`);
-
-                // Delay dinámico basado en carga (simple)
-                await delay(300); 
-
-                // FASE 2: ESCRITOR
-                const draftText = await phaseWriter(blockNum, chapterPlan.length, currentBeat, slidingWindowContext, activeLoreContent);
-
-                updateProgress(baseProg + chunkProg, `Cap ${i+1} [Bloque ${blockNum}]: Pulido final...`);
-
-                // FASE 3: EDITOR
-                let polishedText = await phaseEditor(draftText, nuanceText);
-                
-                polishedText = cleanOutputText(polishedText);
-                fullChapterText.push(polishedText);
-                slidingWindowContext = polishedText.slice(-1500); 
-            }
-
-            const finalChapterContent = fullChapterText.join("\n\n");
-
-            // --- FASE DE RESUMEN OPTIMIZADA ---
-            // Resumimos la ESCALETA (Plan), no el texto final masivo. Ahorra tokens.
-            updateProgress(((i + 1) / totalChapters) * 100, `Cap ${i+1}: Sintetizando memoria...`);
-            const compressedPlan = chapterPlan.join("\n");
-            const chapterSummary = await phaseSummarizer(compressedPlan);
-            previousSummaries.push(`[RESUMEN CAPÍTULO ${i+1}]: ${chapterSummary}`);
-            
-            // FASE 4: TITULADOR
-            const generatedTitle = await phaseTitleGenerator(finalChapterContent, sceneTitle);
-
-            // Actualizar buffer inmediato
-            narrativeHistory = finalChapterContent.slice(-2000);
-
-            const structuredParagraphs = finalChapterContent.split('\n\n')
-                .filter(p => p.trim().length > 0)
-                .map(p => ({ text: p.trim(), image: null }));
-
-            newBookChapters.push({
-                title: generatedTitle || sceneTitle,
-                paragraphs: structuredParagraphs
-            });
-        }
-
-        // 2. REGISTRO DE USO
-        await registerUsage('book'); 
-
-        updateProgress(100, "Finalizando Libro...");
-        
-        const newBook = {
-            id: Date.now(),
-            title: sourceScript.title.replace(/^(Guion|Estructura)\s*/i, '').trim() + " (Novela)",
-            isAI: true,
-            chapters: newBookChapters
-        };
-
-        const books = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
-        books.push(newBook);
-        localStorage.setItem('minimal_books_v4', JSON.stringify(books));
-
-        await delay(500);
-        alert("¡Libro completado con arquitectura optimizada!");
-        if (window.renderBookList) window.renderBookList();
-
-    } catch (err) {
-        console.error(err);
-        alert("Error en el proceso: " + err.message);
-        updateProgress(0, "Proceso Detenido");
-    } finally {
-        if(btnGenLibro) {
-            btnGenLibro.disabled = false;
-            btnGenLibro.innerText = "Generar Libro";
-        }
-        setTimeout(() => showProgress(false), 3000);
-    }
-}
-
-// --- FASE 0: SELECTOR DE LORE (Input: Lista de Keys, Output: JSON lista seleccionada) ---
-async function phaseLoreSelector(chapTitle, chapSummary, allKeys) {
-    // Enviamos solo las claves, coste de token mínimo.
-    const keysBlock = allKeys.join(", ");
-    
-    const systemPrompt = `Eres un Bibliotecario Experto.
-    Tienes un INDICE de temas del Lore y un resumen de un capítulo.
-    Tu tarea es identificar qué temas del índice son CRÍTICOS para este capítulo.
-    
-    INDICE: [${keysBlock}]
-    
-    REGLA: Devuelve un JSON con un array de strings exactos del índice.
-    Ejemplo: { "selected": ["MERLIN", "EXCALIBUR"] }
-    Selecciona máximo 6 temas.`;
-
-    const userPrompt = `Capítulo: "${chapTitle}"\nResumen: ${chapSummary.substring(0, 800)}`;
-
-    try {
-        const raw = await callGoogleAPI(systemPrompt, userPrompt, { model: "gemma-3-12b-it", temperature: 0.2 });
-        const data = cleanAndParseJSON(raw);
-        return data.selected || [];
-    } catch (e) {
-        return [];
-    }
-}
-
-// --- FASE 1: ARQUITECTO TÉCNICO ---
-async function phaseArchitect(title, rawContent, globalContext, prevHistory, numBlocks, specificLore, memory, nextPreview) {
-    const safeContent = rawContent.substring(0, 4000); 
-    
-    const systemPrompt = `Eres un Arquitecto Narrativo Técnico.
-    TU OBJETIVO: Desglosar la escena proporcionada en ${numBlocks} puntos ("beats") lógicos.
-    
-    MEMORIA (Resumen Caps Anteriores):
-    ${memory || "Inicio."}
-    
-    CONTEXTO RECIENTE: "...${prevHistory.substring(0,300)}"
-    LORE ACTIVO: ${specificLore ? "Datos disponibles." : "N/A"}
-    FUTURO: "${nextPreview}..."
-    
-    MATERIAL BASE (ESTE CAPÍTULO): 
-    TÍTULO: "${title}"
-    CONTENIDO: "${safeContent}"
-    
-    DIRECTRICES:
-    - ESTRUCTURA: Crea una transición fluida desde el 'PASADO'.
-    - DESARROLLO: Adapta fielmente el 'MATERIAL BASE' integrando el 'LORE'.
-    - CIERRE: Prepara el final del capítulo para que conecte lógicamente con el 'FUTURO INMEDIATO'.
-    
-    FORMATO JSON ESTRICTO: { "beats": ["Instrucción paso 1", "Instrucción paso 2", ...] }`;
-
-    const userPrompt = `Genera la escaleta de ${numBlocks} pasos conectando pasado, presente y futuro.`;
-
-    try {
-        const raw = await callGoogleAPI(systemPrompt, userPrompt, { temperature: 0.3 });
-        const data = cleanAndParseJSON(raw);
-        if (data && data.beats && Array.isArray(data.beats)) return data.beats; 
-        else throw new Error("Fallo JSON Arquitecto");
-    } catch (e) {
-        console.warn("Fallo Arquitecto, fallback.", e);
-        return Array(numBlocks).fill("Narra la escena integrando el lore y preparando el siguiente capítulo.");
-    }
-}
-
-// --- FASE 2: ESCRITOR DE ADAPTACIÓN ---
-async function phaseWriter(blockIndex, totalBlocks, beatInstruction, prevContext, specificLore) {
-    const systemPrompt = `Eres un Redactor de Novelizaciones.
-    ESTAMOS EN: Bloque ${blockIndex} de ${totalBlocks}.
-    LORE ACTIVO: ${specificLore ? specificLore.substring(0, 2000) : "N/A"}
-    
-    INSTRUCCIÓN: "${beatInstruction}"
-    TEXTO PREVIO: "...${prevContext}"
-    
-    REGLAS:
-    1. Usa el LORE proporcionado.
-    2. Mantén coherencia con el TEXTO PREVIO.
-    3. NO incluyas introducciones ni notas. SOLO NARRATIVA.`;
-
-    const userPrompt = `Escribe el bloque.`;
-    return await callGoogleAPI(systemPrompt, userPrompt, { model: "gemma-3-27b-it", temperature: 0.7 });
-}
-
-// --- FASE 3: EDITOR (Pulido con Strict Output) ---
-async function phaseEditor(draftText, styleNuance) {
-    const systemPrompt = `Eres un Editor Literario. Pule el texto para publicación.
-    ESTILO: ${styleNuance}
-    REGLAS ESTRICTAS:
-    1. No cambies los hechos ni nombres del LORE.
-    2. OUTPUT: ÚNICAMENTE el texto narrativo final.
-    3. PROHIBIDO: Incluir notas del editor, listas de cambios o repetir la instrucción.
-    4. PROHIBIDO: Usar frases como "Aquí está el texto pulido".`;
-
-    const userPrompt = `Texto a pulir:\n${draftText}`;
-    return await callGoogleAPI(systemPrompt, userPrompt, { model: "gemma-3-27b-it", temperature: 0.5 });
-}
-
-// --- FASE DE RESUMEN OPTIMIZADA (Resume BEATS, no TEXTO) ---
-async function phaseSummarizer(beatsText) {
-    const systemPrompt = `Eres un Analista de Archivo.
-    Resume esta ESCALETA de eventos en 3 frases clave.`;
-
-    const userPrompt = `Escaleta:\n${beatsText}`; // Entrada muy ligera
-    
-    try {
-        return await callGoogleAPI(systemPrompt, userPrompt, { model: "gemma-3-12b-it", temperature: 0.3 });
-    } catch (e) {
-        return "Capítulo procesado.";
-    }
-}
-
-// --- FASE 4: TITULADOR AUTOMÁTICO (Un solo título) ---
-async function phaseTitleGenerator(chapterContent, originalTitle) {
-    const systemPrompt = `Genera UN (1) título literario corto (max 6 palabras) para este texto.
-    INPUT: Título provisional "${originalTitle}".
-    REGLA: Devuelve SOLAMENTE el título final. NO hagas una lista. NO uses comillas.`;
-    
-    const userPrompt = `Texto:\n${chapterContent.substring(0, 1000)}...`; 
-    
-    try {
-        let title = await callGoogleAPI(systemPrompt, userPrompt, { model: "gemma-3-27b-it", temperature: 0.7 });
-        title = title.split('\n')[0]; 
-        title = title.replace(/^\d+[\.\)]\s*/, ''); 
-        title = title.replace(/^[-*]\s*/, '');
-        title = title.replace(/^Título:\s*/i, '').replace(/["']/g, '').replace(/\.$/, '').trim();
-        return title;
-    } catch (e) {
-        return originalTitle;
-    }
-}
-
 window.refreshScriptSelector = refreshScriptSelector;
 window.generateBookFromText = generateBookFromText;

@@ -1,9 +1,9 @@
-// --- PROJECT UI (Interfaz Visual y Diálogos) ---
+// --- PROJECT UI (Interfaz Visual y Diálogos) v5.1 (Fix Imports) ---
 // Responsable de: Modales, Alertas, Árboles de selección DOM.
 
-import { loadProjectFile } from './drive_api.js';
+import { loadFileContent } from './drive_api.js'; // CORREGIDO: Usar nueva función
 
-console.log("Project UI Cargado");
+console.log("Project UI Cargado (v5.1 - Fix)");
 
 // --- DIÁLOGOS GLOBALES (Alerts, Confirms) ---
 
@@ -80,6 +80,11 @@ export function showDialog({ title, message, type = 'alert', placeholder = '' })
             actionsEl.appendChild(createBtn('✏️ Renombrar Original', '', 'rename'));
             actionsEl.appendChild(createBtn('Cancelar', 'danger', 'cancel'));
         }
+        else if (type === 'custom_save_menu') {
+            // Soporte para menú genérico si fuera necesario, aunque el manager usa detección de pestañas
+            actionsEl.appendChild(createBtn('Continuar', 'primary', true));
+            actionsEl.appendChild(createBtn('Cancelar', 'danger', false));
+        }
 
         overlay.style.display = 'flex';
         setTimeout(() => overlay.classList.add('active'), 10);
@@ -113,7 +118,7 @@ export function createDriveModal() {
     div.innerHTML = `
         <div class="modal-content glass-container" style="max-width: 500px; max-height: 80vh;">
             <div class="modal-header">
-                <h3>Proyectos en Drive</h3>
+                <h3>Silenos Drive</h3>
                 <button class="btn-icon" onclick="window.closeDriveModal()">
                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
@@ -160,7 +165,7 @@ export function renderImportTree(files, container) {
     container.innerHTML = '';
     
     if (files.length === 0) {
-        container.innerHTML = '<div style="padding:20px;">No hay proyectos en la nube.</div>';
+        container.innerHTML = '<div style="padding:20px;">No hay proyectos disponibles.</div>';
         return;
     }
 
@@ -215,15 +220,17 @@ window.toggleProjectExpand = async (fileId, fileName, titleEl, autoSelect = fals
         childContainer.innerHTML = '<div style="padding:10px; font-size:0.8rem; color:#aaa;">Cargando datos...</div>';
         
         try {
-            const projectData = await loadProjectFile(fileId);
+            // CORREGIDO: Usar loadFileContent en vez de loadProjectFile
+            const fileData = await loadFileContent(fileId);
             childContainer.innerHTML = ''; 
 
-            const universalData = projectData.universalData || [];
+            // Adaptador para leer formato nuevo (items) o antiguo (universalData)
+            const items = fileData.items || fileData.universalData || [];
             
-            if (universalData.length === 0) {
+            if (items.length === 0) {
                 childContainer.innerHTML = '<div style="padding:10px; font-size:0.8rem; font-style:italic; opacity:0.6;">Sin datos.</div>';
             } else {
-                universalData.forEach(item => {
+                items.forEach(item => {
                     const itemRow = document.createElement('div');
                     itemRow.className = 'tree-data-item';
                     itemRow.innerHTML = `

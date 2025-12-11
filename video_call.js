@@ -1,26 +1,30 @@
-// --- SISTEMA DE VIDEOLLAMADA (WebRTC Pura) v4.5 ---
-// Fix: Separación visual total entre Llamada y Sincronización.
-// Fix: "isDataOnlyCall" evita que se active la cámara o el indicador de video.
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+// --- SISTEMA DE VIDEOLLAMADA (WebRTC Pura) v4.6 (Shared Instance Fix) ---
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, remove, push, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { currentUser } from './auth_ui.js';
 import { handleIncomingData, sendProjectData, registerDataChannel, setSyncState } from './project_share.js'; 
 
-console.log("Módulo Video Call Cargado (v4.5 - Strict Data Mode)");
+console.log("Módulo Video Call Cargado (v4.6 - Shared Instance)");
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBxlmzjYjOEAwc_DVtFpt9DnN7XnuRkbKw",
-  authDomain: "silenos-fc5e5.firebaseapp.com",
-  databaseURL: "https://silenos-fc5e5-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "silenos-fc5e5",
-  storageBucket: "silenos-fc5e5.firebasestorage.app",
-  messagingSenderId: "314671855826",
-  appId: "1:314671855826:web:ea0af5cd962baa1fd6150b",
-  measurementId: "G-V636CRYZ8X"
+   apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
+  authDomain: "enraya-51670.firebaseapp.com",
+  databaseURL: "https://enraya-51670-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "enraya-51670",
+  storageBucket: "enraya-51670.firebasestorage.app",
+  messagingSenderId: "103343380727",
+  appId: "1:103343380727:web:b2fa02aee03c9506915bf2",
+  measurementId: "G-2G31LLJY1T"
 };
 
-const app = initializeApp(firebaseConfig, "SilenosVideo");
+// FIX: Usar instancia única compartida (Sin nombre "SilenosVideo")
+let app;
+if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+} else {
+    app = getApp(); 
+}
+
 const db = getDatabase(app); 
 
 let localStream = null;
@@ -33,7 +37,7 @@ let callTimeout = null;
 
 // ESTADOS
 let pendingProjectShare = false;
-let isDataOnlyCall = false; // <--- NUEVO: Control estricto de tipo de conexión
+let isDataOnlyCall = false; 
 
 const servers = {
     iceServers: [
@@ -54,7 +58,6 @@ export function initVideoSystem() {
     onValue(myCallRef, async (snapshot) => {
         const data = snapshot.val();
         if (data && data.type === 'offer' && !peerConnection) {
-            // Recibimos llamada: detectamos si es de solo datos
             showIncomingCallUI(data.fromName, data.fromUid, data.offer, data.isProjectShare);
         } else if (!data && peerConnection && !currentCallId) {
             endCall(false); 
@@ -62,7 +65,6 @@ export function initVideoSystem() {
     });
 }
 
-// --- DOM INDICADORES FLOTANTES ---
 function createStatusIndicatorsDOM() {
     if (document.getElementById('status-indicators')) return;
     const div = document.createElement('div');
@@ -89,7 +91,6 @@ function updateVideoIndicator(active) {
     }
 }
 
-// --- NOTIFICACIONES ---
 function showIncomingCallUI(name, uid, offer, isProjectShare) {
     let container = document.querySelector('.notification-container');
     if (!container) {
@@ -129,7 +130,6 @@ function showIncomingCallUI(name, uid, offer, isProjectShare) {
     container.appendChild(notif);
 }
 
-// --- DOM MODAL VIDEO ---
 function createVideoModalDOM() {
     if (document.getElementById('video-modal')) return;
     const div = document.createElement('div');
@@ -203,17 +203,12 @@ function createVideoModalDOM() {
     window.hangUpCall = () => endCall(true);
 }
 
-// --- CONEXIÓN ---
 export async function shareProject(targetUid, targetName) {
     if (!currentUser) return;
-    
-    // Si ya estamos conectados en video, enviamos datos directamente
     if (peerConnection && peerConnection.connectionState === 'connected') {
         sendProjectData(dataChannel);
     } else {
-        // Nueva conexión específica para compartir
         pendingProjectShare = true;
-        // IMPORTANTE: Marcamos true para isProjectShare
         startVideoCall(targetUid, targetName, true);
     }
 }
@@ -221,18 +216,13 @@ export async function shareProject(targetUid, targetName) {
 export async function startVideoCall(targetUid, targetName, isProjectShare = false) {
     if (!currentUser) return;
     currentCallId = targetUid;
-    
-    // Configurar estado global de la llamada
     isDataOnlyCall = isProjectShare;
     
-    // Resetear Sync si es una llamada nueva normal
     if (!isProjectShare) setSyncState(false);
     
-    // Solo abrimos el modal "visible" si es video real, si es sync lo manejamos discreto
-    // Pero necesitamos el DOM para el overlay de transferencia
     openVideoModal(
         isProjectShare ? `Conectando con ${targetName}...` : `Llamando a ${targetName}...`,
-        isProjectShare // Pasar flag para no activar vista de video
+        isProjectShare 
     );
     
     if (callTimeout) clearTimeout(callTimeout);
@@ -244,10 +234,8 @@ export async function startVideoCall(targetUid, targetName, isProjectShare = fal
     }, 30000); 
 
     if (isProjectShare) {
-        // MODO DATOS: Solo overlay, sin cámara
         document.getElementById('transfer-overlay').style.display = 'flex';
     } else {
-        // MODO VIDEO: Cámara
         await setupLocalMedia();
     }
 
@@ -267,10 +255,7 @@ export async function startVideoCall(targetUid, targetName, isProjectShare = fal
         const data = snap.val();
         if (data && data.type === 'answer' && !peerConnection.currentRemoteDescription) {
             await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-            
             document.getElementById('call-status-text').textContent = "Conectado";
-            
-            // SOLO activar indicador de video si NO es solo datos
             if (!isDataOnlyCall) {
                 updateVideoIndicator(true);
             }
@@ -282,9 +267,7 @@ export async function startVideoCall(targetUid, targetName, isProjectShare = fal
 
 async function acceptCall(callerUid, remoteOffer, isProjectShare) {
     currentCallId = callerUid;
-    isDataOnlyCall = isProjectShare; // Marcar estado
-
-    // Resetear sync si es llamada normal
+    isDataOnlyCall = isProjectShare;
     if (!isProjectShare) setSyncState(false);
 
     openVideoModal("Conectando...", isProjectShare);
@@ -304,7 +287,6 @@ async function acceptCall(callerUid, remoteOffer, isProjectShare) {
         type: 'answer', answer: { type: answer.type, sdp: answer.sdp }
     });
     
-    // Solo activar indicador video si es llamada normal
     if (!isDataOnlyCall) {
         updateVideoIndicator(true);
     }
@@ -312,7 +294,6 @@ async function acceptCall(callerUid, remoteOffer, isProjectShare) {
     listenForIceCandidates(callerUid);
 }
 
-// --- WEBRTC CORE ---
 async function setupLocalMedia() {
     try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -331,7 +312,6 @@ function createPeerConnection() {
         }
     };
     peerConnection.ontrack = (event) => {
-        // Solo mostrar video remoto si NO es solo datos
         if (!isDataOnlyCall) {
             remoteStream = event.streams[0];
             remoteVideo.srcObject = remoteStream;
@@ -341,11 +321,8 @@ function createPeerConnection() {
         if(['disconnected', 'failed'].includes(peerConnection.connectionState)) endCall(false);
     };
     peerConnection.ondatachannel = (event) => {
-        console.log("Canal remoto recibido");
         setupDataChannelEvents(event.channel);
     };
-    
-    // Añadir tracks locales solo si existen (si setupLocalMedia se ejecutó)
     if (localStream) localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 }
 
@@ -359,12 +336,9 @@ function setupDataChannelEvents(channel) {
     registerDataChannel(dataChannel); 
     dataChannel.onopen = () => {
         document.getElementById('call-status-text').textContent = "P2P Activo";
-        
-        // SOLO si es llamada de video real, encendemos el indicador
         if (!isDataOnlyCall) updateVideoIndicator(true);
-
         if (pendingProjectShare) {
-            sendProjectData(dataChannel); // Activa el Sync indicator internamente
+            sendProjectData(dataChannel); 
             pendingProjectShare = false;
         }
     };
@@ -388,21 +362,14 @@ function openVideoModal(status, isDataMode = false) {
     document.getElementById('transfer-overlay').style.display = 'none';
     
     if (isDataMode) {
-        // Si es modo datos, ocultamos el grid de video y mostramos solo la barra de estado minimizada
-        // pero asegurando que el overlay de transferencia se pueda ver
         const grid = document.getElementById('video-grid-area');
         if(grid && grid.style.display !== 'none') {
-             // Forzar modo minimizado pero manteniendo capacidad de ver el overlay
-             // En realidad, para transferir necesitamos ver el overlay.
-             // Truco: No minimizamos, pero ocultamos los videos.
              localVideo.style.display = 'none';
              remoteVideo.style.display = 'none';
         }
     } else {
-        // Modo video normal: asegurar videos visibles
         localVideo.style.display = 'block';
         remoteVideo.style.display = 'block';
-        // Asegurar maximizado por defecto
         const grid = document.getElementById('video-grid-area');
         if(grid && grid.style.display === 'none') window.toggleVideoMode(); 
     }
@@ -415,7 +382,6 @@ export function endCall(notifyRemote) {
         setTimeout(() => videoModal.style.display = 'none', 300);
     }
     
-    // Apagar indicadores
     updateVideoIndicator(false);
     setSyncState(false);
     isDataOnlyCall = false;

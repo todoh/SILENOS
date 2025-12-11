@@ -1,3 +1,4 @@
+ 
 /* --- ESTILOS DE DATOS: PAPEL MATE --- */
 
 .data-layout {
@@ -22,32 +23,107 @@
     box-shadow: 2px 0 10px rgba(0,0,0,0.03);
 }
 
-.data-header {
-    padding: 25px;
+/* --- NUEVA CABECERA DE GESTIÓN (DATASET MANAGER) --- */
+.data-header-container {
+    padding: 20px 25px 15px 25px;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border: none;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--bg-color);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
     flex-shrink: 0;
 }
 
-/* Botón flotante */
+.data-manager-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Dropdown Estilizado */
+.dataset-dropdown {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: none;
+    background: var(--bg-color);
+    box-shadow: var(--neumo-in);
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: var(--text-main);
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+}
+.dataset-dropdown:focus {
+    box-shadow: inset 3px 3px 6px #d1d1d1, inset -3px -3px 6px #ffffff;
+}
+
+.data-title-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.universe-title-input {
+    background: var(--bg-color);
+    border: none;
+    box-shadow: var(--neumo-in);
+    padding: 10px 15px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-main);
+    flex: 1;
+    text-align: left; /* Alineado izq para que quepa más texto */
+    letter-spacing: 0.5px;
+}
+
+/* Botón Añadir Tarjeta (Ancho completo) */
+.btn-new-card-wide {
+    width: 100%;
+    padding: 8px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    border: 1px dashed rgba(0,0,0,0.1);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-new-card-wide:hover {
+    border-color: var(--ai-color);
+    color: var(--ai-color);
+    background: rgba(0,0,0,0.02);
+}
+
+/* Reutilizamos btn-icon pero con clase small para ajustes */
+.btn-icon.small {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+}
 .btn-icon-new {
+    /* Mantenemos el estilo para compatibilidad si se usa en otro lado, 
+       pero en este diseño usamos btn-icon small */
     background: var(--bg-color);
     color: var(--text-main);
-    width: 42px; height: 42px;
-    border-radius: 50%;
+    width: 34px; height: 34px;
+    border-radius: 10px;
     border: none;
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     cursor: pointer;
     box-shadow: var(--neumo-out);
     display: flex; align-items: center; justify-content: center;
     transition: all 0.2s ease;
     flex-shrink: 0;
 }
-.btn-icon-new:hover { transform: scale(1.05) rotate(90deg); color: var(--ai-color); }
-.btn-icon-new:active { box-shadow: var(--neumo-in); }
+.btn-icon-new:hover { transform: translateY(-1px); color: var(--ai-color); }
+.btn-icon-new:active { box-shadow: var(--neumo-in); transform: translateY(1px); }
 
+/* --- LISTA DE TARJETAS --- */
 .cards-list {
     padding: 10px 25px;
     gap: 15px;
@@ -192,21 +268,6 @@
     overflow-y: auto; 
 }
 .input-body:focus { outline: none; background: #f9f9f9; }
-
-.universe-title-input {
-    background: var(--bg-color);
-    border: none;
-    box-shadow: var(--neumo-in);
-    padding: 10px 20px;
-    border-radius: 10px;
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--text-main);
-    width: 100%;
-    margin-right: 15px;
-    text-align: center;
-    letter-spacing: 1px;
-}
 
 /* MÓVIL */
 @media (max-width: 768px) {

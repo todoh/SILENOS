@@ -1,9 +1,10 @@
-// --- LÓGICA DE ENTRADA/SALIDA (IO) v3.3 (Exportación Avanzada) ---
-// Y → Confluencia (Unión de módulos de exportación)
+// SILENOS/io.js
+// --- LÓGICA DE ENTRADA/SALIDA (IO) v3.5 (Quick Export Added) ---
 
-import { generateGameExport } from './juego_export.js'; // IMPORTACIÓN DEL NUEVO MÓDULO
+import { generateGameExport } from './juego_export.js';
+import { STORAGE_KEYS, getUniversalDataSnapshot, importDataSnapshot } from './project_core.js';
 
-console.log("Módulo IO Cargado (v3.3 - Advanced Game Export)");
+console.log("Módulo IO Cargado (v3.5 - Quick Export)");
 
 const ioFileInput = document.getElementById('io-file-input');
 const exportModal = document.getElementById('export-modal');
@@ -21,26 +22,25 @@ function sanitizeFilename(name) {
     return name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
 }
 
-// --- 1. GUARDAR PROYECTO (JSON RAW) ---
+// --- 1. GUARDAR BACKUP COMPLETO (JSON RAW) ---
 function saveProjectBackup() {
-    const universeName = localStorage.getItem('silenos_universe_name') || 'sin_titulo';
+    const universeName = localStorage.getItem(STORAGE_KEYS.PROJECT_NAME) || 'sin_titulo';
     const filename = `${sanitizeFilename(universeName)}_${getFormattedDate()}.json`;
 
     const backupData = {
-        version: "3.0", 
+        version: "4.0",
         timestamp: new Date().toISOString(),
-        universeName: universeName,
-        universalData: JSON.parse(localStorage.getItem('minimal_universal_data')) || [],
-        books: JSON.parse(localStorage.getItem('minimal_books_v4')) || [],
-        scripts: JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [],
-        games: JSON.parse(localStorage.getItem('minimal_games_v1')) || [] 
+        dataSnapshot: getUniversalDataSnapshot(),
+        books: JSON.parse(localStorage.getItem(STORAGE_KEYS.BOOKS)) || [],
+        scripts: JSON.parse(localStorage.getItem(STORAGE_KEYS.SCRIPTS)) || [],
+        games: JSON.parse(localStorage.getItem(STORAGE_KEYS.GAMES)) || [] 
     };
 
     const dataStr = JSON.stringify(backupData, null, 2);
     downloadFile(dataStr, filename, 'application/json');
 }
 
-// --- 2. CARGAR PROYECTO ---
+// --- 2. CARGAR BACKUP ---
 function triggerLoadProject() {
     if(ioFileInput) ioFileInput.click();
 }
@@ -55,24 +55,26 @@ if(ioFileInput) {
             try {
                 const data = JSON.parse(event.target.result);
                 
-                if (data.books || data.scripts || data.universalData || data.games) {
-                    if(confirm("Esto sobrescribirá TODO. ¿Proceder?")) {
-                        
-                        if(data.books) localStorage.setItem('minimal_books_v4', JSON.stringify(data.books));
-                        if(data.scripts) localStorage.setItem('minimal_scripts_v1', JSON.stringify(data.scripts));
-                        if(data.universalData) localStorage.setItem('minimal_universal_data', JSON.stringify(data.universalData));
-                        if(data.universeName) localStorage.setItem('silenos_universe_name', data.universeName);
-                        if(data.games) localStorage.setItem('minimal_games_v1', JSON.stringify(data.games));
-                        else if (data.nodes) {
-                             const legacyGame = [{ id: Date.now(), title: "Juego Restaurado", nodes: data.nodes }];
-                             localStorage.setItem('minimal_games_v1', JSON.stringify(legacyGame));
-                        }
-                        
-                        alert("Proyecto cargado correctamente.");
-                        location.reload(); 
+                if (confirm("Esto sobrescribirá los datos locales con el contenido del backup. ¿Proceder?")) {
+                    
+                    if(data.books) localStorage.setItem(STORAGE_KEYS.BOOKS, JSON.stringify(data.books));
+                    if(data.scripts) localStorage.setItem(STORAGE_KEYS.SCRIPTS, JSON.stringify(data.scripts));
+                    if(data.games) localStorage.setItem(STORAGE_KEYS.GAMES, JSON.stringify(data.games));
+                    
+                    if (data.dataSnapshot) {
+                        importDataSnapshot(data.dataSnapshot);
+                    } else {
+                        if(data.universalData) localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(data.universalData));
+                        if(data.universeName) localStorage.setItem(STORAGE_KEYS.PROJECT_NAME, data.universeName);
                     }
-                } else {
-                    alert("Archivo no válido.");
+                    
+                    if (!data.games && data.nodes) {
+                         const legacyGame = [{ id: Date.now(), title: "Juego Restaurado", nodes: data.nodes }];
+                         localStorage.setItem(STORAGE_KEYS.GAMES, JSON.stringify(legacyGame));
+                    }
+                    
+                    alert("Proyecto restaurado correctamente.");
+                    location.reload(); 
                 }
             } catch (err) {
                 console.error(err);
@@ -109,11 +111,12 @@ function createNewProject(withBackup) {
 }
 
 function wipeAndReload() {
-    localStorage.clear(); // Limpieza total más agresiva
+    localStorage.clear();
     location.reload();
 }
 
-// --- 4. EXPORTACIÓN (FORMATO LECTURA) ---
+// --- 4. EXPORTACIÓN (MODAL Y RÁPIDA) ---
+
 function openExportModal() {
     if(exportModal) {
         renderExportOptions();
@@ -134,9 +137,9 @@ function renderExportOptions() {
     if (!container) return;
     container.innerHTML = '';
     
-    const books = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
-    const scripts = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
-    const games = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
+    const books = JSON.parse(localStorage.getItem(STORAGE_KEYS.BOOKS)) || [];
+    const scripts = JSON.parse(localStorage.getItem(STORAGE_KEYS.SCRIPTS)) || [];
+    const games = JSON.parse(localStorage.getItem(STORAGE_KEYS.GAMES)) || [];
 
     if (books.length === 0 && scripts.length === 0 && games.length === 0) {
         container.innerHTML = '<p class="empty-msg">Nada para exportar.</p>';
@@ -168,16 +171,15 @@ function executeExport() {
 
     if (selectedBookChecks.length === 0 && selectedScriptChecks.length === 0 && selectedGameChecks.length === 0) return alert("Selecciona algo.");
 
-    const allBooks = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
-    const allScripts = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
-    const allGames = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
+    const allBooks = JSON.parse(localStorage.getItem(STORAGE_KEYS.BOOKS)) || [];
+    const allScripts = JSON.parse(localStorage.getItem(STORAGE_KEYS.SCRIPTS)) || [];
+    const allGames = JSON.parse(localStorage.getItem(STORAGE_KEYS.GAMES)) || [];
 
     let format = 'html';
     for (const radio of formatRadios) if (radio.checked) format = radio.value;
 
     let contentToExport = "";
 
-    // EXPORTACIÓN NORMAL PARA LIBROS Y GUIONES
     Array.from(selectedBookChecks).forEach(cb => {
         const item = allBooks.find(b => b.id == cb.value);
         if(item) contentToExport += formatContent(item, 'book', format);
@@ -186,42 +188,68 @@ function executeExport() {
         const item = allScripts.find(s => s.id == cb.value);
         if(item) contentToExport += formatContent(item, 'script', format);
     });
-
-    // EXPORTACIÓN ESPECIAL PARA JUEGOS
     Array.from(selectedGameChecks).forEach(cb => {
         const item = allGames.find(g => g.id == cb.value);
         if(item) {
-            // Aquí delegamos a la nueva lógica especializada
             const gameContent = generateGameExport(item, format);
             contentToExport += gameContent + (format === 'html' ? '' : '\n\n====================\n\n');
         }
     });
 
-    // GENERAR ARCHIVO FINAL
-    let finalOutput = contentToExport;
-    let mime = 'text/html';
-    let ext = 'html';
+    finalizeDownload(contentToExport, `silenos_export.${format}`, format);
+    closeExportModal();
+}
 
-    if (format === 'txt') {
-        mime = 'text/plain'; ext = 'txt';
-    } else if (format === 'doc') {
-        finalOutput = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'><head><meta charset="utf-8"></head><body>${contentToExport}</body></html>`;
-        mime = 'application/msword'; ext = 'doc';
+// --- NUEVA FUNCIÓN DE EXPORTACIÓN RÁPIDA ---
+function quickExport(type, id, format) {
+    let item = null;
+    let storageKey = '';
+
+    if (type === 'book') storageKey = STORAGE_KEYS.BOOKS;
+    else if (type === 'script') storageKey = STORAGE_KEYS.SCRIPTS;
+    else if (type === 'game') storageKey = STORAGE_KEYS.GAMES;
+
+    const list = JSON.parse(localStorage.getItem(storageKey)) || [];
+    item = list.find(i => i.id === id);
+
+    if (!item) return alert("Error: Elemento no encontrado.");
+    
+    // Check de Lazy Load
+    if (item.isPlaceholder) {
+        return alert("⚠️ Este archivo está en la nube.\nÁbrelo primero para descargar su contenido y luego intenta exportar.");
+    }
+
+    let content = "";
+    if (type === 'game') {
+        content = generateGameExport(item, format);
     } else {
-        // Si hay juegos HTML, generateGameExport ya devuelve el HTML completo.
-        // Si mezclamos tipos (Libro + Juego) en HTML, habría conflicto de estructura.
-        // ASUMIMOS: Si es HTML y hay un juego, el usuario probablemente exporta solo el juego o aceptamos concatenación simple.
-        if (selectedGameChecks.length > 0 && selectedBookChecks.length === 0 && selectedScriptChecks.length === 0) {
-            // Solo juegos: ya viene formateado full HTML
-            finalOutput = contentToExport; 
-        } else {
-            // Mezcla o solo texto: Envolvemos
-            finalOutput = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:sans-serif;max-width:800px;margin:20px auto;padding:20px;line-height:1.6;}</style></head><body>${contentToExport}</body></html>`;
+        content = formatContent(item, type, format);
+    }
+
+    const safeTitle = sanitizeFilename(item.title || 'export');
+    finalizeDownload(content, `${safeTitle}.${format}`, format);
+}
+
+// --- HELPERS DE FORMATO Y DESCARGA ---
+
+function finalizeDownload(content, filename, format) {
+    let finalOutput = content;
+    let mime = 'text/plain';
+
+    if (format === 'html') {
+        mime = 'text/html';
+        if (!content.trim().startsWith('<!DOCTYPE html>')) {
+             finalOutput = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:sans-serif;max-width:800px;margin:20px auto;padding:20px;line-height:1.6;}</style></head><body>${content}</body></html>`;
+        }
+    } else if (format === 'doc') {
+        mime = 'application/msword';
+        // Envolver para que Word lo interprete mejor como HTML-Doc
+        if (!content.trim().startsWith('<html')) {
+            finalOutput = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'><head><meta charset="utf-8"></head><body>${content}</body></html>`;
         }
     }
 
-    downloadFile(finalOutput, `silenos_export.${ext}`, mime);
-    closeExportModal();
+    downloadFile(finalOutput, filename, mime);
 }
 
 function formatContent(item, type, format) {
@@ -248,6 +276,7 @@ function downloadFile(content, fileName, contentType) {
     URL.revokeObjectURL(a.href);
 }
 
+// Exportar al objeto window para onclicks
 window.saveProjectBackup = saveProjectBackup;
 window.triggerLoadProject = triggerLoadProject;
 window.openExportModal = openExportModal;
@@ -256,3 +285,4 @@ window.executeExport = executeExport;
 window.openNewProjectModal = openNewProjectModal;
 window.closeNewProjectModal = closeNewProjectModal;
 window.createNewProject = createNewProject;
+window.quickExport = quickExport; // <--- NUEVO

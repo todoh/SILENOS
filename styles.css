@@ -44,6 +44,39 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+/* --- NUEVO: PANTALLA DE LOGIN --- */
+.login-screen {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: var(--bg-color);
+    z-index: 100000; /* Por encima de todo, incluso notificaciones */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.login-content {
+    text-align: center;
+    padding: 40px;
+    border-radius: 30px;
+    box-shadow: var(--neumo-flat);
+    background: var(--bg-color);
+}
+
+/* Ocultar botón de ayuda hasta el login */
+.btn-help-float {
+    display: none !important;
+}
+
+/* Clase para mostrar UI cuando hay login */
+body.is-logged-in .btn-help-float {
+    display: flex !important;
+}
+
+/* -------------------------------- */
+
 .glass-container {
     width: 100%; height: 100%; max-width: 1100px; max-height: 95vh;
     background: var(--bg-color);
@@ -760,4 +793,49 @@ input[name="tab-control"] { display: none; }
     top: 2px;
     width: 3px;
     height: 7px;
+}
+
+/* --- SILENOS/styles.css (Añadir al final) --- */
+
+/* Contenedor de botones de exportación rápida en las tarjetas */
+.quick-export-bar {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    display: flex;
+    gap: 6px;
+    z-index: 5; /* Por encima del contenido base */
+}
+
+/* Estilo de los "Badges" o botones pequeños */
+.export-badge {
+    font-size: 0.6rem;
+    font-weight: 800;
+    color: #999;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 4px 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid rgba(0,0,0,0.05);
+    transition: all 0.2s;
+    backdrop-filter: blur(2px);
+}
+
+.export-badge:hover {
+    transform: translateY(-2px);
+    background: var(--ai-color);
+    color: white;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+    border-color: transparent;
+}
+
+/* Ajuste para móvil: Asegurar que no se solape con el título si es muy largo */
+@media (max-width: 600px) {
+    .quick-export-bar {
+        position: relative;
+        top: auto; right: auto;
+        margin-top: 10px;
+        margin-left: -2px;
+        justify-content: flex-start;
+    }
 }

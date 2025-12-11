@@ -68,7 +68,7 @@ export function initTutorial() {
     document.body.appendChild(btn);
 
     // Auto-inicio
-    setTimeout(startTutorial, 1000);
+   // setTimeout(startTutorial, 1000);
 }
 
 function createElements() {

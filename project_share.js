@@ -1,7 +1,7 @@
-// --- PROJECT SHARE (Hub de Sincronización P2P en Tiempo Real) ---
-import { getProjectSnapshot, importProjectSnapshot } from './project_core.js';
+// --- PROJECT SHARE (Hub de Sincronización P2P en Tiempo Real) v6.2 (Atomized Fix) ---
+import { getUniversalDataSnapshot, importDataSnapshot, STORAGE_KEYS } from './project_core.js';
 
-console.log("Project Share Module Cargado (v6.1 - Router Updated)");
+console.log("Project Share Module Cargado (v6.2 - Atomized Fix)");
 
 const CHUNK_SIZE = 16384; 
 let receivedChunks = [];
@@ -17,12 +17,10 @@ export function registerDataChannel(channel) {
     console.log("🔗 Canal P2P Registrado");
 }
 
-// Activar/Desactivar Sincronización explícitamente y controlar indicador visual
 export function setSyncState(enabled) {
     isSyncEnabled = enabled;
     console.log(`📡 Estado de Sincronización: ${enabled ? 'ACTIVO' : 'INACTIVO'}`);
     
-    // Actualizar UI del icono flotante
     const syncPill = document.getElementById('status-pill-sync');
     if (syncPill) {
         if (enabled) syncPill.classList.add('active');
@@ -34,13 +32,21 @@ export async function sendProjectData(dataChannel) {
     if (!dataChannel || dataChannel.readyState !== 'open') return alert("Error de conexión P2P.");
     registerDataChannel(dataChannel);
     
-    // Al iniciar un envío masivo, ACTIVAMOS el estado de sync
     setSyncState(true);
     
-    const projectData = getProjectSnapshot();
-    const jsonStr = JSON.stringify(projectData);
+    // RECONSTRUCCIÓN DEL SNAPSHOT COMPLETO PARA ENVÍO
+    // Como ahora todo está separado, lo juntamos solo para la transferencia P2P inicial
+    const fullPackage = {
+        type: 'full_sync_package',
+        dataSnapshot: getUniversalDataSnapshot(), // Worldbuilding y nombre proyecto
+        books: JSON.parse(localStorage.getItem(STORAGE_KEYS.BOOKS)) || [],
+        scripts: JSON.parse(localStorage.getItem(STORAGE_KEYS.SCRIPTS)) || [],
+        games: JSON.parse(localStorage.getItem(STORAGE_KEYS.GAMES)) || []
+    };
+
+    const jsonStr = JSON.stringify(fullPackage);
     
-    updateOverlay(true, "Enviando entorno...");
+    updateOverlay(true, "Enviando entorno completo...");
     const totalSize = jsonStr.length;
     let offset = 0;
     
@@ -64,10 +70,7 @@ export async function sendProjectData(dataChannel) {
 }
 
 export function broadcastSync(action, payload) {
-    // 1. Si viene de remoto, NO reenviar (eco)
     if (isRemoteUpdate) return; 
-    
-    // 2. IMPORTANTE: Si la sincronización no está activa explícitamente, NO enviar nada.
     if (!isSyncEnabled) return;
 
     if (activeDataChannel && activeDataChannel.readyState === 'open') {
@@ -91,22 +94,13 @@ export function handleIncomingData(event) {
         else if (msg.type === 'FILE_END' && isReceivingFile) {
             updateOverlay(true, "Procesando...");
             const fullStr = receivedChunks.join('');
-            const projectObj = JSON.parse(fullStr);
-            const success = importProjectSnapshot(projectObj);
+            const packageObj = JSON.parse(fullStr);
+            
+            // PROCESAR PAQUETE ATOMIZADO
+            processIncomingPackage(packageObj);
+
             isReceivingFile = false;
             updateOverlay(false);
-            if (success) {
-                if (event.target) registerDataChannel(event.target);
-                setSyncState(true); // Activar modo sync tras recibir datos
-                
-                alert("Entorno sincronizado. ¡Edición colaborativa activada!");
-                // Recargar todas las vistas visualmente
-                if (window.renderCards) window.renderCards();
-                if (window.renderBookList) window.renderBookList();
-                if (window.renderScriptList) window.renderScriptList();
-                if (window.renderGameList) window.renderGameList();
-                if (window.loadUniverseName) window.loadUniverseName(); // Recargar nombre proyecto
-            }
         }
         else if (msg.type === 'SYNC_UPDATE') {
             handleRealTimeUpdate(msg.action, msg.payload);
@@ -114,33 +108,57 @@ export function handleIncomingData(event) {
     } catch (e) { console.error("Error P2P:", e); }
 }
 
+function processIncomingPackage(pkg) {
+    try {
+        // 1. Datos del Universo (Worldbuilding)
+        if (pkg.dataSnapshot) {
+            importDataSnapshot(pkg.dataSnapshot);
+        }
+        // 2. Colecciones (Libros, Guiones, Juegos)
+        if (pkg.books) localStorage.setItem(STORAGE_KEYS.BOOKS, JSON.stringify(pkg.books));
+        if (pkg.scripts) localStorage.setItem(STORAGE_KEYS.SCRIPTS, JSON.stringify(pkg.scripts));
+        if (pkg.games) localStorage.setItem(STORAGE_KEYS.GAMES, JSON.stringify(pkg.games));
+
+        if (activeDataChannel) registerDataChannel(activeDataChannel);
+        setSyncState(true);
+        
+        alert("Entorno sincronizado. ¡Edición colaborativa activada!");
+        
+        // Refrescar Vistas
+        if (window.renderCards) window.renderCards();
+        if (window.renderBookList) window.renderBookList();
+        if (window.renderScriptList) window.renderScriptList();
+        if (window.renderGameList) window.renderGameList();
+        if (window.loadUniverseName) window.loadUniverseName();
+
+    } catch (e) {
+        console.error("Error procesando paquete:", e);
+        alert("Error al integrar los datos recibidos.");
+    }
+}
+
 function handleRealTimeUpdate(action, payload) {
-    isRemoteUpdate = true; // Bloqueo temporal para evitar re-emisión (Eco)
+    isRemoteUpdate = true; 
     try {
         switch (action) {
-            // --- NOMBRE DEL PROYECTO ---
             case 'PROJECT_NAME_UPDATE':
                  if (window.applyRemoteDataUpdate) window.applyRemoteDataUpdate(action, payload);
                  break;
 
-            // --- JUEGOS ---
             case 'GAME_CREATE': case 'GAME_DELETE': case 'GAME_UPDATE':
             case 'GAME_NODE_MOVE': case 'GAME_NODE_DATA':
             case 'GAME_NODE_CREATE': case 'GAME_NODE_DELETE': case 'GAME_CONNECTION':
                 if (window.applyRemoteGameUpdate) window.applyRemoteGameUpdate(action, payload);
                 break;
             
-            // --- DATOS ---
             case 'DATA_CARD_UPDATE': case 'DATA_CARD_CREATE': case 'DATA_CARD_DELETE':
                 if (window.applyRemoteDataUpdate) window.applyRemoteDataUpdate(action, payload);
                 break;
 
-            // --- LIBROS ---
             case 'BOOK_CREATE': case 'BOOK_UPDATE': case 'BOOK_DELETE':
                 if (window.applyRemoteBookUpdate) window.applyRemoteBookUpdate(action, payload);
                 break;
 
-            // --- GUIONES ---
             case 'SCRIPT_CREATE': case 'SCRIPT_UPDATE': case 'SCRIPT_DELETE':
                 if (window.applyRemoteScriptUpdate) window.applyRemoteScriptUpdate(action, payload);
                 break;
