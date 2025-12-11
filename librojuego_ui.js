@@ -1,7 +1,7 @@
-// --- LÓGICA LIBRO-JUEGO UI v3.2 (Real-Time Sync) ---
-import { broadcastSync, isRemoteUpdate } from './project_share.js'; // IMPORTACIÓN NUEVA
+// --- LÓGICA LIBRO-JUEGO UI v3.3 (Sync Fixed) ---
+import { broadcastSync, isRemoteUpdate } from './project_share.js'; 
 
-console.log("Sistema Gamebook Visual Cargado (v3.2 - Real Time)");
+console.log("Sistema Gamebook Visual Cargado (v3.3 - Sync Fix)");
 
 let games = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
 let currentGameId = null;
@@ -61,8 +61,6 @@ function checkAndMigrateLegacy() {
 }
 
 function saveAllGames() {
-    // Si es una actualización remota, guardamos pero NO re-transmitimos
-    // (El guardado local es necesario para mantener la sincronía en disco)
     try {
         localStorage.setItem('minimal_games_v1', JSON.stringify(games));
     } catch (e) {
@@ -97,11 +95,18 @@ function renderGameList() {
 }
 
 function createNewGame() {
+    if (isRemoteUpdate) return; // Evitar bucles
+
     const newGame = { id: Date.now(), title: "Nuevo Juego", nodes: [] };
     games.push(newGame);
     saveAllGames();
     renderGameList();
     openGame(newGame.id);
+    
+    // 📡 EMITIR CREACIÓN DEL JUEGO (Faltaba esto)
+    broadcastSync('GAME_CREATE', newGame);
+
+    // Creamos el primer nodo (esto emitirá su propio evento GAME_NODE_CREATE)
     createNewNode(); 
 }
 
@@ -127,19 +132,29 @@ function goBackToGames() {
 }
 
 function deleteCurrentGame() {
+    if (isRemoteUpdate) return;
+
     if (confirm("¿Eliminar este juego?")) {
+        const idToDelete = currentGameId;
         games = games.filter(g => g.id !== currentGameId);
         saveAllGames();
         goBackToGames();
+
+        // 📡 EMITIR BORRADO (Faltaba esto)
+        broadcastSync('GAME_DELETE', { id: idToDelete });
     }
 }
 
 function updateGameTitle() {
+    if (isRemoteUpdate) return;
+
     const game = games.find(g => g.id === currentGameId);
     if (game) {
         game.title = gameMainTitleInput.value;
         saveAllGames();
-        // Sincronizar cambio de título (opcional, requeriría otro evento SYNC)
+        
+        // 📡 EMITIR ACTUALIZACIÓN DE TÍTULO
+        broadcastSync('GAME_UPDATE', game);
     }
 }
 
@@ -238,14 +253,10 @@ function handleDragMove(clientX, clientY) {
             node.x = initialNodeX + deltaX;
             node.y = initialNodeY + deltaY;
 
-            // Actualización visual local rápida (sin render completo)
             const el = document.querySelector(`.gb-node-circle[data-id="${draggedNodeId}"]`);
             if (el) { el.style.left = `${node.x}px`; el.style.top = `${node.y}px`; }
             svgLayer.innerHTML = ''; 
             drawConnections(nodes);
-            
-            // Opcional: Emitir movimiento en tiempo real (puede saturar la red, mejor al soltar)
-            // broadcastSync('GAME_NODE_MOVE', { gameId: currentGameId, nodeId: node.id, x: node.x, y: node.y });
         }
     }
 }
@@ -337,8 +348,6 @@ function updateNodeData() {
     const nodes = getCurrentNodes();
     const node = nodes.find(n => n.id === editingNodeId);
     
-    // Si la actualización es remota, esta función NO se dispara por input del usuario,
-    // pero si el usuario escribe, dispararemos el broadcast.
     if (isRemoteUpdate) return; 
 
     node.title = inputTitle.value;
@@ -351,14 +360,11 @@ function updateNodeData() {
         node.isStart = false;
     }
     saveAllGames();
-    // Renderizado parcial o total? Total es seguro.
-    // Para evitar lag al escribir, no hacemos renderGraph() aquí, solo guardamos datos.
-    // Pero si cambiamos título, necesitamos actualizar visualmente el nodo.
-    // Optimizacion: Solo actualizar texto del nodo en el DOM
+
     const elText = document.querySelector(`.gb-node-circle[data-id="${node.id}"] span`);
     if(elText) elText.textContent = node.title;
 
-    // 📡 EMITIR ACTUALIZACIÓN DE DATOS
+    // 📡 EMITIR
     broadcastSync('GAME_NODE_DATA', { 
         gameId: currentGameId, 
         nodeId: node.id, 
@@ -377,7 +383,7 @@ function deleteCurrentNode() {
         });
         saveAllGames();
         
-        // 📡 EMITIR BORRADO
+        // 📡 EMITIR
         broadcastSync('GAME_NODE_DELETE', { gameId: currentGameId, nodeId: editingNodeId });
 
         closeNodeEditor();
@@ -412,7 +418,7 @@ function addChoice() {
     saveAllGames();
     renderChoicesEditor();
     
-    // 📡 EMITIR CAMBIO DE CONEXIONES
+    // 📡 EMITIR
     broadcastSync('GAME_CONNECTION', { gameId: currentGameId, nodeId: node.id, choices: node.choices });
 }
 
@@ -422,7 +428,7 @@ function updateChoice(index, field, val) {
     node.choices[index][field] = val;
     saveAllGames();
     
-    // 📡 EMITIR CAMBIO
+    // 📡 EMITIR
     broadcastSync('GAME_CONNECTION', { gameId: currentGameId, nodeId: node.id, choices: node.choices });
 }
 
@@ -433,30 +439,49 @@ function deleteChoice(index) {
     saveAllGames();
     renderChoicesEditor();
 
-    // 📡 EMITIR CAMBIO
+    // 📡 EMITIR
     broadcastSync('GAME_CONNECTION', { gameId: currentGameId, nodeId: node.id, choices: node.choices });
 }
 
-// --- API DE RECEPCIÓN (EL RECEPTOR) ---
-// Esta función es llamada por project_share.js cuando llegan datos
+// --- API DE RECEPCIÓN (SYNC RECEPTOR) ---
 
 window.applyRemoteGameUpdate = function(action, payload) {
-    // Si no tenemos el mismo juego abierto (o la lista no existe), 
-    // primero deberíamos asegurarnos que tenemos los datos.
-    // Asumimos que la Sync Inicial ya nos dio el objeto 'games'.
     games = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
     
-    // Buscamos el juego afectado
-    // Nota: payload.gameId debe coincidir. Si no, podríamos buscar por ID similar o asumir el actual.
-    // Para simplificar, si payload.gameId coincide con currentGameId, actualizamos la vista.
-    // Si no, solo actualizamos memoria (localStorage).
-
-    const game = games.find(g => g.id === payload.gameId);
-    if (!game) {
-        // Puede que sea un juego nuevo creado remotamente y no sincronizado? 
-        // Si hicimos sync inicial, deberíamos tenerlo.
-        return; 
+    // --- 1. MANEJO DE JUEGOS COMPLETOS ---
+    if (action === 'GAME_CREATE') {
+        if (!games.find(g => g.id === payload.id)) {
+            games.push(payload);
+            saveAllGames();
+            renderGameList();
+        }
+        return;
     }
+    else if (action === 'GAME_DELETE') {
+        games = games.filter(g => g.id !== payload.id);
+        saveAllGames();
+        if (currentGameId === payload.id) goBackToGames();
+        renderGameList();
+        return;
+    }
+    else if (action === 'GAME_UPDATE') {
+        // Actualización de título u otras propiedades del juego raíz
+        const index = games.findIndex(g => g.id === payload.id);
+        if (index !== -1) {
+            games[index].title = payload.title; // Aseguramos título
+            saveAllGames();
+            if (currentGameId === payload.id) {
+                if (gameMainTitleInput) gameMainTitleInput.value = payload.title;
+            }
+            renderGameList();
+        }
+        return;
+    }
+
+    // --- 2. MANEJO DE NODOS Y CONTENIDO ---
+    // Buscar el juego afectado. Payload debe traer gameId.
+    const game = games.find(g => g.id === payload.gameId);
+    if (!game) return; // Si no tengo el juego, ignorar updates de sus nodos
 
     if (action === 'GAME_NODE_MOVE') {
         const node = game.nodes.find(n => n.id === payload.nodeId);
@@ -486,11 +511,9 @@ window.applyRemoteGameUpdate = function(action, payload) {
             node.isStart = payload.isStart;
             
             if (currentGameId === payload.gameId) {
-                // Actualizar titulo en el nodo visual
                 const elText = document.querySelector(`.gb-node-circle[data-id="${payload.nodeId}"] span`);
                 if(elText) elText.textContent = node.title;
                 
-                // Si justo tengo el modal abierto de ESTE nodo, actualizo los inputs
                 if (editingNodeId === payload.nodeId) {
                     const inpT = document.getElementById('gb-node-title');
                     const inpTx = document.getElementById('gb-node-text');
@@ -502,7 +525,6 @@ window.applyRemoteGameUpdate = function(action, payload) {
     }
 
     else if (action === 'GAME_NODE_CREATE') {
-        // Evitar duplicados
         if (!game.nodes.find(n => n.id === payload.node.id)) {
             game.nodes.push(payload.node);
             if (currentGameId === payload.gameId) renderGraph();
@@ -511,7 +533,6 @@ window.applyRemoteGameUpdate = function(action, payload) {
 
     else if (action === 'GAME_NODE_DELETE') {
         game.nodes = game.nodes.filter(n => n.id !== payload.nodeId);
-        // Limpiar conexiones
         game.nodes.forEach(n => {
             n.choices = n.choices.filter(c => c.targetId != payload.nodeId); 
         });
@@ -526,13 +547,12 @@ window.applyRemoteGameUpdate = function(action, payload) {
         if (node) {
             node.choices = payload.choices;
             if (currentGameId === payload.gameId) {
-                renderGraph(); // Redibujar líneas
+                renderGraph();
                 if (editingNodeId === payload.nodeId) renderChoicesEditor();
             }
         }
     }
 
-    // Guardar en disco el estado actualizado
     saveAllGames();
 };
 

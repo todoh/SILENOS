@@ -1,13 +1,13 @@
-// --- SISTEMA DE VIDEOLLAMADA (WebRTC Pura) v4.3 ---
-// Fix: Minimizar ahora libera la pantalla correctamente (pointer-events).
-// Fix: Estilos de la barra minimizada ajustados.
+// --- SISTEMA DE VIDEOLLAMADA (WebRTC Pura) v4.5 ---
+// Fix: Separación visual total entre Llamada y Sincronización.
+// Fix: "isDataOnlyCall" evita que se active la cámara o el indicador de video.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, remove, push, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { currentUser } from './auth_ui.js';
-import { handleIncomingData, sendProjectData, registerDataChannel } from './project_share.js'; 
+import { handleIncomingData, sendProjectData, registerDataChannel, setSyncState } from './project_share.js'; 
 
-console.log("Módulo Video Call Cargado (v4.3 - Fixed UI)");
+console.log("Módulo Video Call Cargado (v4.5 - Strict Data Mode)");
 
 const firebaseConfig = {
   apiKey: "AIzaSyBxlmzjYjOEAwc_DVtFpt9DnN7XnuRkbKw",
@@ -30,7 +30,10 @@ let dataChannel = null;
 let currentCallId = null;
 let unsubscribeSignal = null;
 let callTimeout = null;
+
+// ESTADOS
 let pendingProjectShare = false;
+let isDataOnlyCall = false; // <--- NUEVO: Control estricto de tipo de conexión
 
 const servers = {
     iceServers: [
@@ -44,11 +47,14 @@ let remoteVideo = null;
 
 export function initVideoSystem() {
     createVideoModalDOM();
+    createStatusIndicatorsDOM();
+    
     if (!currentUser) return;
     const myCallRef = ref(db, `users/${currentUser.uid}/incoming_call`);
     onValue(myCallRef, async (snapshot) => {
         const data = snapshot.val();
         if (data && data.type === 'offer' && !peerConnection) {
+            // Recibimos llamada: detectamos si es de solo datos
             showIncomingCallUI(data.fromName, data.fromUid, data.offer, data.isProjectShare);
         } else if (!data && peerConnection && !currentCallId) {
             endCall(false); 
@@ -56,7 +62,34 @@ export function initVideoSystem() {
     });
 }
 
-// --- NOTIFICACIONES VISUALES ---
+// --- DOM INDICADORES FLOTANTES ---
+function createStatusIndicatorsDOM() {
+    if (document.getElementById('status-indicators')) return;
+    const div = document.createElement('div');
+    div.id = 'status-indicators';
+    div.className = 'status-indicator-bar';
+    div.innerHTML = `
+        <div id="status-pill-video" class="status-pill video">
+            <div class="status-dot"></div>
+            <span>En Llamada</span>
+        </div>
+        <div id="status-pill-sync" class="status-pill sync">
+            <div class="status-dot"></div>
+            <span>Sincronizando</span>
+        </div>
+    `;
+    document.body.appendChild(div);
+}
+
+function updateVideoIndicator(active) {
+    const el = document.getElementById('status-pill-video');
+    if (el) {
+        if (active) el.classList.add('active');
+        else el.classList.remove('active');
+    }
+}
+
+// --- NOTIFICACIONES ---
 function showIncomingCallUI(name, uid, offer, isProjectShare) {
     let container = document.querySelector('.notification-container');
     if (!container) {
@@ -96,7 +129,7 @@ function showIncomingCallUI(name, uid, offer, isProjectShare) {
     container.appendChild(notif);
 }
 
-// --- DOM MODAL ---
+// --- DOM MODAL VIDEO ---
 function createVideoModalDOM() {
     if (document.getElementById('video-modal')) return;
     const div = document.createElement('div');
@@ -104,7 +137,6 @@ function createVideoModalDOM() {
     div.className = 'modal-overlay';
     div.style.zIndex = '10000';
     
-    // Contenido del Modal
     div.innerHTML = `
         <div class="video-container glass-container" id="video-main-container">
             <div class="video-grid" id="video-grid-area">
@@ -133,16 +165,12 @@ function createVideoModalDOM() {
     localVideo = document.getElementById('local-video');
     remoteVideo = document.getElementById('remote-video');
     
-    // --- LÓGICA DE MINIMIZAR CORREGIDA ---
     window.toggleVideoMode = () => {
         const grid = document.getElementById('video-grid-area');
         const container = document.getElementById('video-main-container');
         
         if (grid.style.display === 'none') {
-            // RESTAURAR (Maximizar)
             grid.style.display = 'flex';
-            
-            // Restaurar estilos del contenedor
             container.style.height = '80vh';
             container.style.width = '95%';
             container.style.maxWidth = '900px';
@@ -150,35 +178,24 @@ function createVideoModalDOM() {
             container.style.position = 'relative'; 
             container.style.bottom = 'auto';
             container.style.right = 'auto';
-
-            // Restaurar overlay bloqueante
-            videoModal.style.background = 'rgba(242, 242, 242, 0.9)'; // Tu color de fondo original
+            videoModal.style.background = 'rgba(242, 242, 242, 0.9)';
             videoModal.style.pointerEvents = 'auto'; 
             videoModal.style.backdropFilter = 'blur(5px)';
-            videoModal.style.alignItems = 'center'; // Centrar de nuevo
+            videoModal.style.alignItems = 'center';
         } else {
-            // MINIMIZAR
             grid.style.display = 'none';
-            
-            // Convertir contenedor en barra pequeña
             container.style.height = 'auto';
             container.style.width = 'auto';
             container.style.minWidth = '250px';
             container.style.background = 'rgba(30, 30, 30, 0.9)';
-            
-            // Posicionar abajo
             container.style.position = 'fixed'; 
-            container.style.bottom = '80px'; // Encima del dock de usuario
+            container.style.bottom = '80px';
             container.style.right = '20px';
-            container.style.transform = 'none'; // Quitar transformaciones de centrado si las hubiera
-            
-            // HACER TRANSPARENTE EL OVERLAY PARA PODER CLICAR DETRÁS
+            container.style.transform = 'none';
             videoModal.style.background = 'transparent';
             videoModal.style.backdropFilter = 'none';
-            videoModal.style.pointerEvents = 'none'; // IMPORTANTE: Deja pasar clics al fondo
-            videoModal.style.alignItems = 'flex-end'; // Alinear al fondo para gestión de layout
-            
-            // Pero reactivar clics en la barra flotante
+            videoModal.style.pointerEvents = 'none'; 
+            videoModal.style.alignItems = 'flex-end';
             container.style.pointerEvents = 'auto'; 
         }
     };
@@ -189,10 +206,14 @@ function createVideoModalDOM() {
 // --- CONEXIÓN ---
 export async function shareProject(targetUid, targetName) {
     if (!currentUser) return;
+    
+    // Si ya estamos conectados en video, enviamos datos directamente
     if (peerConnection && peerConnection.connectionState === 'connected') {
         sendProjectData(dataChannel);
     } else {
+        // Nueva conexión específica para compartir
         pendingProjectShare = true;
+        // IMPORTANTE: Marcamos true para isProjectShare
         startVideoCall(targetUid, targetName, true);
     }
 }
@@ -201,7 +222,18 @@ export async function startVideoCall(targetUid, targetName, isProjectShare = fal
     if (!currentUser) return;
     currentCallId = targetUid;
     
-    openVideoModal(isProjectShare ? `Conectando con ${targetName}...` : `Llamando a ${targetName}...`);
+    // Configurar estado global de la llamada
+    isDataOnlyCall = isProjectShare;
+    
+    // Resetear Sync si es una llamada nueva normal
+    if (!isProjectShare) setSyncState(false);
+    
+    // Solo abrimos el modal "visible" si es video real, si es sync lo manejamos discreto
+    // Pero necesitamos el DOM para el overlay de transferencia
+    openVideoModal(
+        isProjectShare ? `Conectando con ${targetName}...` : `Llamando a ${targetName}...`,
+        isProjectShare // Pasar flag para no activar vista de video
+    );
     
     if (callTimeout) clearTimeout(callTimeout);
     callTimeout = setTimeout(() => {
@@ -211,8 +243,13 @@ export async function startVideoCall(targetUid, targetName, isProjectShare = fal
         }
     }, 30000); 
 
-    if (!isProjectShare) await setupLocalMedia();
-    else document.getElementById('transfer-overlay').style.display = 'flex';
+    if (isProjectShare) {
+        // MODO DATOS: Solo overlay, sin cámara
+        document.getElementById('transfer-overlay').style.display = 'flex';
+    } else {
+        // MODO VIDEO: Cámara
+        await setupLocalMedia();
+    }
 
     createPeerConnection();
     setupDataChannel(); 
@@ -230,9 +267,13 @@ export async function startVideoCall(targetUid, targetName, isProjectShare = fal
         const data = snap.val();
         if (data && data.type === 'answer' && !peerConnection.currentRemoteDescription) {
             await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-            document.getElementById('call-status-text').textContent = "P2P Activo";
-            // Minimizar auto si es solo datos
-            if(isProjectShare) setTimeout(() => window.toggleVideoMode(), 1000);
+            
+            document.getElementById('call-status-text').textContent = "Conectado";
+            
+            // SOLO activar indicador de video si NO es solo datos
+            if (!isDataOnlyCall) {
+                updateVideoIndicator(true);
+            }
         }
     });
 
@@ -241,9 +282,18 @@ export async function startVideoCall(targetUid, targetName, isProjectShare = fal
 
 async function acceptCall(callerUid, remoteOffer, isProjectShare) {
     currentCallId = callerUid;
-    openVideoModal("Conectando...");
-    if (!isProjectShare) await setupLocalMedia();
-    else document.getElementById('transfer-overlay').style.display = 'flex';
+    isDataOnlyCall = isProjectShare; // Marcar estado
+
+    // Resetear sync si es llamada normal
+    if (!isProjectShare) setSyncState(false);
+
+    openVideoModal("Conectando...", isProjectShare);
+
+    if (isProjectShare) {
+        document.getElementById('transfer-overlay').style.display = 'flex';
+    } else {
+        await setupLocalMedia();
+    }
 
     createPeerConnection(); 
     await peerConnection.setRemoteDescription(new RTCSessionDescription(remoteOffer));
@@ -253,7 +303,12 @@ async function acceptCall(callerUid, remoteOffer, isProjectShare) {
     await set(ref(db, `users/${callerUid}/call_answer`), {
         type: 'answer', answer: { type: answer.type, sdp: answer.sdp }
     });
-
+    
+    // Solo activar indicador video si es llamada normal
+    if (!isDataOnlyCall) {
+        updateVideoIndicator(true);
+    }
+    
     listenForIceCandidates(callerUid);
 }
 
@@ -276,8 +331,11 @@ function createPeerConnection() {
         }
     };
     peerConnection.ontrack = (event) => {
-        remoteStream = event.streams[0];
-        remoteVideo.srcObject = remoteStream;
+        // Solo mostrar video remoto si NO es solo datos
+        if (!isDataOnlyCall) {
+            remoteStream = event.streams[0];
+            remoteVideo.srcObject = remoteStream;
+        }
     };
     peerConnection.onconnectionstatechange = () => {
         if(['disconnected', 'failed'].includes(peerConnection.connectionState)) endCall(false);
@@ -286,6 +344,8 @@ function createPeerConnection() {
         console.log("Canal remoto recibido");
         setupDataChannelEvents(event.channel);
     };
+    
+    // Añadir tracks locales solo si existen (si setupLocalMedia se ejecutó)
     if (localStream) localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 }
 
@@ -299,8 +359,12 @@ function setupDataChannelEvents(channel) {
     registerDataChannel(dataChannel); 
     dataChannel.onopen = () => {
         document.getElementById('call-status-text').textContent = "P2P Activo";
+        
+        // SOLO si es llamada de video real, encendemos el indicador
+        if (!isDataOnlyCall) updateVideoIndicator(true);
+
         if (pendingProjectShare) {
-            sendProjectData(dataChannel);
+            sendProjectData(dataChannel); // Activa el Sync indicator internamente
             pendingProjectShare = false;
         }
     };
@@ -316,15 +380,32 @@ function listenForIceCandidates(remoteUid) {
     });
 }
 
-function openVideoModal(status) {
+function openVideoModal(status, isDataMode = false) {
     if(!videoModal) createVideoModalDOM();
     videoModal.classList.add('active');
     videoModal.style.display = 'flex';
     document.getElementById('call-status-text').textContent = status;
     document.getElementById('transfer-overlay').style.display = 'none';
-    // Resetear a estado maximizado por defecto
-    const grid = document.getElementById('video-grid-area');
-    if(grid && grid.style.display === 'none') window.toggleVideoMode(); 
+    
+    if (isDataMode) {
+        // Si es modo datos, ocultamos el grid de video y mostramos solo la barra de estado minimizada
+        // pero asegurando que el overlay de transferencia se pueda ver
+        const grid = document.getElementById('video-grid-area');
+        if(grid && grid.style.display !== 'none') {
+             // Forzar modo minimizado pero manteniendo capacidad de ver el overlay
+             // En realidad, para transferir necesitamos ver el overlay.
+             // Truco: No minimizamos, pero ocultamos los videos.
+             localVideo.style.display = 'none';
+             remoteVideo.style.display = 'none';
+        }
+    } else {
+        // Modo video normal: asegurar videos visibles
+        localVideo.style.display = 'block';
+        remoteVideo.style.display = 'block';
+        // Asegurar maximizado por defecto
+        const grid = document.getElementById('video-grid-area');
+        if(grid && grid.style.display === 'none') window.toggleVideoMode(); 
+    }
 }
 
 export function endCall(notifyRemote) {
@@ -333,6 +414,12 @@ export function endCall(notifyRemote) {
         videoModal.classList.remove('active');
         setTimeout(() => videoModal.style.display = 'none', 300);
     }
+    
+    // Apagar indicadores
+    updateVideoIndicator(false);
+    setSyncState(false);
+    isDataOnlyCall = false;
+
     if (localStream) { localStream.getTracks().forEach(track => track.stop()); localStream = null; }
     if (dataChannel) { dataChannel.close(); dataChannel = null; }
     if (peerConnection) { peerConnection.close(); peerConnection = null; }

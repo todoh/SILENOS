@@ -1,7 +1,7 @@
-// --- LÓGICA DE DATOS UI v1.4 (Real-Time Sync) ---
-import { broadcastSync, isRemoteUpdate } from './project_share.js'; // IMPORTAR
+// --- LÓGICA DE DATOS UI v1.7 (Sync Fixed & Visual Feedback) ---
+import { broadcastSync, isRemoteUpdate } from './project_share.js'; 
 
-console.log("Sistema Universal Data Cargado (v1.4 - Sync)");
+console.log("Sistema Universal Data Cargado (v1.7 - Visual Sync)");
 
 let universalData = JSON.parse(localStorage.getItem('minimal_universal_data')) || [];
 let currentCardId = null;
@@ -28,20 +28,38 @@ function saveData() {
 }
 
 function loadUniverseName() {
-    if(universeNameInput) {
-        const savedName = localStorage.getItem('silenos_universe_name');
-        if(savedName) universeNameInput.value = savedName;
+    const savedName = localStorage.getItem('silenos_universe_name');
+    
+    // 1. Actualizar el Input de la vista de Datos
+    if(universeNameInput && savedName) {
+        universeNameInput.value = savedName;
+    }
+
+    // 2. Actualizar el Dock de Usuario (Etiqueta inferior)
+    // Esto asegura que al recibir una sync masiva, el nombre cambie sin necesitar interacción
+    const dockName = document.getElementById('current-project-name');
+    if(dockName && savedName) {
+        dockName.textContent = savedName;
     }
 }
 
 function updateUniverseName() {
     if(universeNameInput) {
+        // 1. Guardar local
         localStorage.setItem('silenos_universe_name', universeNameInput.value);
+        
+        // 2. ACTUALIZACIÓN VISUAL INMEDIATA
+        const dockName = document.getElementById('current-project-name');
+        if(dockName) dockName.textContent = universeNameInput.value || "Sin Título";
+
+        // 3. Emitir cambio
+        if (!isRemoteUpdate) {
+            broadcastSync('PROJECT_NAME_UPDATE', { name: universeNameInput.value });
+        }
     }
 }
 
 function renderCards() {
-    // Recargar fresco
     universalData = JSON.parse(localStorage.getItem('minimal_universal_data')) || [];
     if (!cardsContainer) return;
     cardsContainer.innerHTML = '';
@@ -80,6 +98,7 @@ function updateDatalist() {
 }
 
 function createNewCard() {
+    if (isRemoteUpdate) return;
     universalData = JSON.parse(localStorage.getItem('minimal_universal_data')) || [];
     const newCard = { id: Date.now(), category: "", title: "", content: "", createdAt: Date.now() };
     universalData.unshift(newCard);
@@ -112,7 +131,7 @@ function closeDataEditor() {
 
 function updateCardData() {
     if (!currentCardId) return;
-    if (isRemoteUpdate) return; // Si viene de remoto, no re-emitir
+    if (isRemoteUpdate) return; 
 
     const card = universalData.find(d => d.id === currentCardId);
     card.category = inputCategory.value.toUpperCase(); 
@@ -120,7 +139,6 @@ function updateCardData() {
     card.content = inputBody.value;
     saveData();
     
-    // Quick DOM update local
     const cardEl = document.querySelector(`.data-card.selected`);
     if(cardEl) {
         if(cardEl.querySelector('.card-cat')) cardEl.querySelector('.card-cat').textContent = card.category || 'Sin Etiqueta';
@@ -134,6 +152,8 @@ function updateCardData() {
 
 function deleteCurrentCard() {
     if (!currentCardId) return;
+    if (isRemoteUpdate) return;
+
     if (confirm("¿Borrar?")) {
         const idToDelete = currentCardId;
         universalData = universalData.filter(d => d.id !== currentCardId);
@@ -149,17 +169,32 @@ function deleteCurrentCard() {
     }
 }
 
-// --- API RECEPTORA (Se llama desde project_share.js) ---
+// --- API RECEPTORA ---
 window.applyRemoteDataUpdate = function(action, payload) {
     universalData = JSON.parse(localStorage.getItem('minimal_universal_data')) || [];
 
+    // --- MANEJO DE NOMBRE DE PROYECTO (VISUAL FIX) ---
+    if (action === 'PROJECT_NAME_UPDATE') {
+        localStorage.setItem('silenos_universe_name', payload.name);
+        
+        // 1. Actualizar el Input (si existe)
+        const inp = document.getElementById('universe-name-input');
+        if (inp) inp.value = payload.name;
+
+        // 2. Actualizar la Barra Inferior (si existe)
+        const dock = document.getElementById('current-project-name');
+        if (dock) dock.textContent = payload.name;
+        
+        return;
+    }
+
+    // --- MANEJO DE DATOS ---
     if (action === 'DATA_CARD_UPDATE') {
         const index = universalData.findIndex(d => d.id === payload.id);
         if (index !== -1) {
             universalData[index] = payload;
             saveData();
             
-            // Si lo tengo abierto, actualizo inputs
             if (currentCardId === payload.id) {
                 if (document.activeElement !== inputBody && document.activeElement !== inputTitle) {
                     inputCategory.value = payload.category;
@@ -170,7 +205,6 @@ window.applyRemoteDataUpdate = function(action, payload) {
             renderCards();
         }
     } else if (action === 'DATA_CARD_CREATE') {
-        // Evitar duplicados
         if (!universalData.find(d => d.id === payload.id)) {
             universalData.unshift(payload);
             saveData();
@@ -195,3 +229,4 @@ window.deleteCurrentCard = deleteCurrentCard;
 window.updateUniverseName = updateUniverseName;
 window.renderCards = renderCards;
 window.updateDatalist = updateDatalist;
+window.loadUniverseName = loadUniverseName;
