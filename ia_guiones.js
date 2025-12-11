@@ -3,7 +3,7 @@ import { getApiKeysList } from './apikey.js';
 import { callGoogleAPI, cleanAndParseJSON, delay } from './ia_koreh.js';
 import { checkUsageLimit, registerUsage } from './usage_tracker.js'; // <--- IMPORTANTE
 
-console.log("Módulo IA Guiones Cargado (v2.2 - Usage Limits)");
+console.log("Módulo IA Guiones Cargado (v3.0 - PARALLEL LORE RAG)");
 
 const guionPromptInput = document.getElementById('ia-guion-prompt');
 const chaptersInput = document.getElementById('ia-guion-chapters');
@@ -128,7 +128,7 @@ async function generateFastScript(promptText, numChapters) {
     saveGeneratedScript(scriptData.title, scriptData.plot_summary, scriptData.chapters);
 }
 
-// --- MODO 2: PROFUNDO (Plan + Ejecución) ---
+// --- MODO 2: PROFUNDO (Plan + Ejecución + RAG Paralelo) ---
 async function generateDeepScript(promptText, numChapters) {
     const universeContext = getUniverseContext();
     
@@ -179,7 +179,7 @@ async function generateDeepScript(promptText, numChapters) {
     const totalSteps = planList.length;
     const generatedChapters = [];
     
-    // FASE 2: EJECUCIÓN DEL PLAN
+    // FASE 2: EJECUCIÓN DEL PLAN (Escritura Secuencial)
     updateProgress(20, "Plan aprobado. Escribiendo contenidos...");
 
     for (let i = 0; i < totalSteps; i++) {
@@ -187,7 +187,7 @@ async function generateDeepScript(promptText, numChapters) {
         const currentInstruction = planList[i];
         
         if(btnGenGuion) btnGenGuion.innerText = `Escribiendo Cap ${currentStepNum}/${totalSteps}...`;
-        const percent = 20 + ((currentStepNum / totalSteps) * 80);
+        const percent = 20 + ((currentStepNum / totalSteps) * 60); // Reservamos 20% final para el LORE masivo
         updateProgress(percent, `Redactando Capítulo ${currentStepNum}: ${currentInstruction.substring(0, 20)}...`);
 
         if (i > 0) await delay(800);
@@ -248,6 +248,107 @@ async function generateDeepScript(promptText, numChapters) {
         });
     }
 
+    // --- FASE 3: GENERACIÓN MASIVA Y PARALELA DE LORE (RAG PURO) ---
+    // 1. RECONOCIMIENTO
+    if(btnGenGuion) btnGenGuion.innerText = "Escaneando Entidades...";
+    updateProgress(85, "Analizando guion para extraer lista de entidades...");
+
+    const fullScriptSummary = generatedChapters.map(c => 
+        `[Cap ${c.number}]: ${c.summary.substring(0, 800)}...` // Más contexto para el análisis
+    ).join('\n\n');
+
+    const systemPromptList = `Eres un Analista de Continuidad y Worldbuilding.
+    TAREA: Analiza el resumen del guion y lista TODAS las entidades, personajes, lugares, objetos mágicos, facciones o conceptos teóricos que aparecen o son relevantes.
+    
+    NO IMPORTA SI LA LISTA ES LARGA (10, 60 elementos). Queremos exhaustividad.
+    Devuelve un JSON con un array de strings.
+    
+    FORMATO JSON: { "entities": ["Nombre Personaje 1", "La Espada de Fuego", "Ciudadela Norte", ...] }`;
+
+    const userPromptList = `
+    [CONTEXTO GLOBAL]: ${planData.global_context}
+    [CONTENIDO DEL GUION]:
+    ${fullScriptSummary}
+    
+    Genera la lista COMPLETA de entidades para el RAG.
+    `;
+
+    let entityList = [];
+    try {
+        const listRaw = await callGoogleAPI(systemPromptList, userPromptList, {
+            model: "gemma-3-27b-it", // Modelo grande para buen análisis
+            temperature: 0.3 // Baja temperatura para precisión
+        });
+        const listData = cleanAndParseJSON(listRaw);
+        if (listData && Array.isArray(listData.entities)) {
+            entityList = listData.entities;
+        } else {
+            throw new Error("Formato de lista inválido");
+        }
+    } catch (e) {
+        console.warn("Fallo al extraer lista, usando fallback.", e);
+        entityList = ["Personajes Principales", "Lugares Clave", "Trama Central"];
+    }
+
+    // 2. PROCESAMIENTO PARALELO EN LOTES (CHUNK 10)
+    const BATCH_SIZE = 10;
+    const totalEntities = entityList.length;
+    let loreResults = [];
+
+    if(btnGenGuion) btnGenGuion.innerText = `Generando Lore (${totalEntities} ítems)...`;
+    updateProgress(90, `Iniciando generación paralela de ${totalEntities} entradas de LORE...`);
+
+    // Dividir en chunks
+    const chunks = [];
+    for (let i = 0; i < totalEntities; i += BATCH_SIZE) {
+        chunks.push(entityList.slice(i, i + BATCH_SIZE));
+    }
+
+    // Función Worker para cada chunk
+    const processChunk = async (chunkItems, index) => {
+        const chunkPromptSystem = `Eres un Enciclopedista del Universo del Guion.
+        TU MISIÓN: Escribir una entrada de diccionario DETALLADA y DEFINITIVA para cada uno de los siguientes ítems.
+        
+        ITEMS A DEFINIR: ${JSON.stringify(chunkItems)}
+        
+        REGLAS:
+        1. Escribe UN PÁRRAFO por ítem.
+        2. Empieza cada párrafo con "**Nombre del Ítem**: ...".
+        3. Sé detallado y coherente, teniendo en cuenta el contexto global.
+        4. NO inventes ítems nuevos, cíñete a la lista.
+        
+        OUTPUT: Texto plano con las definiciones separadas por saltos de línea.`;
+
+        const chunkPromptUser = `[CONTEXTO]: ${planData.global_context}\n\nDefine los ítems de la lista proporcionada.`;
+
+        try {
+            // Paralelismo real: Cada llamada es independiente
+            const result = await callGoogleAPI(chunkPromptSystem, chunkPromptUser, {
+                model: "gemma-3-27b-it",
+                temperature: 0.7 
+            });
+            return result;
+        } catch (e) {
+            console.error(`Error en chunk ${index}`, e);
+            return `[Error generando lote ${index}: ${chunkItems.join(', ')}]`;
+        }
+    };
+
+    // Ejecutar todas las promesas en paralelo
+    const promises = chunks.map((chunk, idx) => processChunk(chunk, idx));
+    const resultsArray = await Promise.all(promises);
+
+    // Unir resultados
+    const finalLoreContent = resultsArray.join('\n\n');
+
+    // Añadir el LORE al guion
+    generatedChapters.push({
+        number: totalSteps + 1,
+        summary: finalLoreContent,
+        title: "LORE / DATOS CLAVE (RAG EXTENDIDO)" 
+    });
+    
+    updateProgress(98, "Guardando Guion Completo...");
     saveGeneratedScript(planData.title, planData.global_context, generatedChapters);
 }
 
@@ -267,8 +368,11 @@ function saveGeneratedScript(title, plot, chaptersArr) {
     // Escenas de Capítulos
     if (chaptersArr && Array.isArray(chaptersArr)) {
         chaptersArr.forEach(chap => {
+            // Se usa el título personalizado (para el LORE) o la convención de Capítulo
+            const sceneTitle = chap.title || `CAPÍTULO ${chap.number}`;
+            
             scenes.push({ 
-                title: `CAPÍTULO ${chap.number}`, 
+                title: sceneTitle, 
                 paragraphs: [{ 
                     text: chap.summary || "Contenido pendiente.", 
                     image: null 
