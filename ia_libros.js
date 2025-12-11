@@ -1,9 +1,9 @@
-// --- IA: GENERACIÓN DE LIBROS (Arquitectura Pipeline v5.1 - Clean Output Fix) ---
+// --- IA: GENERACIÓN DE LIBROS (Arquitectura Pipeline v6.0 - Token Optimized) ---
 import { getApiKeysList } from './apikey.js';
 import { callGoogleAPI, cleanAndParseJSON, delay } from './ia_koreh.js';
 import { checkUsageLimit, registerUsage } from './usage_tracker.js'; 
 
-console.log("Módulo IA Libros Cargado (v5.1 - Strict Cleaning)");
+console.log("Módulo IA Libros Cargado (v6.0 - RAG & Memory Optimized)");
 
 const scriptSelector = document.getElementById('ia-script-selector');
 const nuanceInput = document.getElementById('ia-libro-nuance');
@@ -19,7 +19,34 @@ if (btnGenLibro) {
     btnGenLibro.addEventListener('click', generateBookFromText);
 }
 
-// --- HELPERS UI ---
+// --- HELPERS UI & PARSING ---
+
+function parseLoreFromText(loreText) {
+    // Convierte el texto plano del Lore en un Mapa { "Nombre": "Definición" }
+    // Asume formato: "**Nombre**: Definición" o simplemente párrafos separados
+    const loreMap = new Map();
+    if (!loreText) return loreMap;
+
+    // Dividimos por saltos de línea dobles (párrafos generados en guiones)
+    const blocks = loreText.split(/\n\s*\n/);
+    
+    blocks.forEach(block => {
+        const cleanBlock = block.trim();
+        if (cleanBlock.length < 5) return;
+
+        // Intentar extraer el nombre entre asteriscos **Nombre**
+        const match = cleanBlock.match(/^\*\*(.*?)\*\*/);
+        if (match && match[1]) {
+            loreMap.set(match[1].toUpperCase(), cleanBlock);
+        } else {
+            // Si no tiene formato negrita, usamos las primeras 5 palabras como key (fallback)
+            const fallbackKey = cleanBlock.split(' ').slice(0, 5).join(' ').toUpperCase();
+            loreMap.set(fallbackKey, cleanBlock);
+        }
+    });
+    return loreMap;
+}
+
 function updateProgress(percent, text) {
     if(!progressContainer) return;
     const fill = progressContainer.querySelector('.progress-fill');
@@ -49,62 +76,49 @@ function refreshScriptSelector() {
     });
 }
 
-// --- FUNCIÓN DE LIMPIEZA MEJORADA (FIX PRINCIPAL) ---
+// --- FUNCIÓN DE LIMPIEZA MEJORADA ---
 function cleanOutputText(text) {
     if (!text) return "";
 
-    // 1. Eliminar eco de instrucciones del sistema (System Prompt Leaks)
-    // Detecta patrones como "Eres un Editor...", "ESTILO:...", "REGLA:..."
+    // 1. Eliminar eco de instrucciones del sistema
     text = text.replace(/^(Eres un|Actúa como) (Editor|Asistente|Redactor|Escritor).*?(\n|$)/gim, '');
     text = text.replace(/^ESTILO:.*?(\n|$)/gim, '');
     text = text.replace(/^REGLA:.*?(\n|$)/gim, '');
     text = text.replace(/^TAREA:.*?(\n|$)/gim, '');
 
-    // 2. Eliminar cabeceras conversacionales de la IA
+    // 2. Eliminar cabeceras conversacionales
     text = text.replace(/^(\#\#\s*)?(Aquí (tienes|está)|He aquí|El texto|Texto pulido|Borrador|Propuesta|Versión mejorada).*?[:\n]/gmi, '');
     
-    // 3. Eliminar repetición del input (ej: "Texto a pulir: ...")
-    // Busca "Texto a pulir:" y borra hasta el siguiente salto de línea doble
+    // 3. Eliminar repetición del input
     text = text.replace(/^Texto a pulir:[\s\S]*?(\n\n|\r\n\r\n)/mi, ''); 
 
-    // 4. Eliminar secciones de meta-comentarios al final (Explicaciones, Notas, Cambios)
+    // 4. Eliminar meta-comentarios al final
     const metaMarkers = [
-        'Cambios realizados',
-        'Justificación',
-        'Notas sobre',
-        'Comentarios:',
-        'Cambios y justificación',
-        '## Títulos propuestos', // Por si se cuela una lista de títulos
-        'Opción 1:',
-        'Nota del editor:'
+        'Cambios realizados', 'Justificación', 'Notas sobre', 'Comentarios:', 
+        'Cambios y justificación', '## Títulos propuestos', 'Opción 1:', 'Nota del editor:'
     ];
 
-    // Cortar el texto donde empiece cualquiera de estas secciones
     let cutIndex = text.length;
     metaMarkers.forEach(marker => {
         const idx = text.toLowerCase().indexOf(marker.toLowerCase());
         if (idx !== -1 && idx < cutIndex) {
-            // Verificamos que no sea parte de la narrativa (ej: "Hizo cambios realizados con esfuerzo")
-            // Asumimos que si aparece es una cabecera, chequeando si hay un salto de línea antes o está al inicio
             const linesBefore = text.substring(0, idx).split('\n');
             const lastLine = linesBefore[linesBefore.length -1].trim();
-            if (lastLine === '' || lastLine.length < 5) { // Es probable que sea una cabecera
-                 cutIndex = idx;
-            }
+            if (lastLine === '' || lastLine.length < 5) cutIndex = idx;
         }
     });
     text = text.substring(0, cutIndex);
 
-    // 5. Limpieza final de Markdown residual y espacios
+    // 5. Limpieza final
     text = text.replace(/===.*?===/g, '');
-    text = text.replace(/\-\-\-+/g, ''); // Líneas divisorias
+    text = text.replace(/\-\-\-+/g, '');
     
     return text.trim();
 }
 
 document.addEventListener('DOMContentLoaded', refreshScriptSelector);
 
-// --- LÓGICA PRINCIPAL (PIPELINE) ---
+// --- PIPELINE PRINCIPAL OPTIMIZADO ---
 
 async function generateBookFromText() {
     // 1. CHEQUEO DE LÍMITE
@@ -127,12 +141,11 @@ async function generateBookFromText() {
     const sourceScript = scripts.find(s => s.id == scriptId);
     if (!sourceScript) return;
     
-    // --- EXTRACCIÓN DE CONTEXTO ---
+    // --- PREPARACIÓN DEL LORE (MODO SMART RAG) ---
     let globalContext = "Trama general.";
-    let fullLoreContent = ""; 
+    let loreMap = new Map(); // Mapa JS local para RAG eficiente
     let chapterScenes = [];
 
-    // Detectar si hay LORE en la última escena (Estándar v3.0 de Guiones)
     const lastScene = sourceScript.scenes[sourceScript.scenes.length - 1];
     const hasLore = lastScene && (lastScene.title.includes("LORE") || lastScene.title.includes("DATOS CLAVE"));
 
@@ -140,9 +153,11 @@ async function generateBookFromText() {
         globalContext = sourceScript.scenes[0].paragraphs.map(p => p.text).join('\n');
         
         if (hasLore) {
-            fullLoreContent = lastScene.paragraphs.map(p => p.text).join('\n');
+            const rawLoreText = lastScene.paragraphs.map(p => p.text).join('\n');
+            // Parseamos el Lore una sola vez en memoria
+            loreMap = parseLoreFromText(rawLoreText); 
             chapterScenes = sourceScript.scenes.slice(1, sourceScript.scenes.length - 1);
-            console.log("📚 Lore detectado e integrado en el pipeline.");
+            console.log(`📚 Lore Parseado: ${loreMap.size} entradas indexadas.`);
         } else {
             chapterScenes = sourceScript.scenes.slice(1);
         }
@@ -157,8 +172,8 @@ async function generateBookFromText() {
     showProgress(true);
 
     const newBookChapters = [];
-    let narrativeHistory = "Inicio de la historia."; // Últimos caracteres (Buffer inmediato)
-    let previousSummaries = []; // Lista acumulativa de resúmenes (Memoria a largo plazo)
+    let narrativeHistory = "Inicio de la historia."; 
+    let previousSummaries = []; 
 
     try {
         for (let i = 0; i < totalChapters; i++) {
@@ -166,40 +181,54 @@ async function generateBookFromText() {
             const sceneTitle = sceneData.title;
             const sceneContent = sceneData.paragraphs.map(p => p.text).join('\n');
             
-            // --- NUEVO: PREVISIÓN DEL SIGUIENTE CAPÍTULO ---
+            // Previsión del futuro
             let nextChapterPreview = "Fin de la obra.";
             if (i + 1 < totalChapters) {
                  const nextSceneData = chapterScenes[i + 1];
                  const nextText = nextSceneData.paragraphs.map(p => p.text).join('\n');
-                 nextChapterPreview = nextText.substring(0, 900); // 900 primeros caracteres
+                 nextChapterPreview = nextText.substring(0, 500); // Solo el inicio
             }
 
-            // FASE 0: RAG CONTEXTUAL (FILTRO DE LORE)
-            updateProgress((i / totalChapters) * 100, `Cap ${i+1}: Analizando Lore y Contexto...`);
-            let specificChapterLore = "";
+            // --- FASE 0: SELECCIÓN DE LORE (RAG OPTIMIZADO) ---
+            // Solo enviamos las KEYS a la IA, no el texto completo.
+            updateProgress((i / totalChapters) * 100, `Cap ${i+1}: Filtrando Lore (Smart Keys)...`);
             
-            if (fullLoreContent && fullLoreContent.length > 10) {
-                specificChapterLore = await phaseContextFilter(sceneTitle, sceneContent, fullLoreContent);
+            let activeLoreContent = "";
+            if (loreMap.size > 0) {
+                const loreKeys = Array.from(loreMap.keys());
+                // IA decide qué claves son relevantes
+                const selectedKeys = await phaseLoreSelector(sceneTitle, sceneContent, loreKeys);
+                
+                // JS reconstruye el texto completo solo de las claves elegidas
+                activeLoreContent = selectedKeys
+                    .map(key => loreMap.get(key) || "")
+                    .filter(t => t.length > 0)
+                    .join("\n\n");
+                
+                console.log(`Cap ${i+1}: Lore seleccionado (${selectedKeys.length} items)`);
             }
 
-            // FASE 1: ARQUITECTO (Ahora con Conciencia Temporal Completa)
+            // --- FASE 1: ARQUITECTO ---
             updateProgress((i / totalChapters) * 100, `Cap ${i+1}: Estructurando trama...`);
             
+            // OPTIMIZACIÓN DE MEMORIA: Solo últimos 3 resúmenes
+            const memoryContext = previousSummaries.slice(-3).join("\n");
+
             const chapterPlan = await phaseArchitect(
                 sceneTitle, 
                 sceneContent, 
                 globalContext, 
                 narrativeHistory, 
                 totalBlocksPerChapter, 
-                specificChapterLore,
-                previousSummaries.join("\n"), // Pasamos todos los resúmenes anteriores
-                nextChapterPreview            // Pasamos el inicio del siguiente capítulo
+                activeLoreContent, // Lore ya filtrado
+                memoryContext, 
+                nextChapterPreview
             );
             
             let fullChapterText = [];
-            let slidingWindowContext = narrativeHistory.slice(-2000); 
+            let slidingWindowContext = narrativeHistory.slice(-1500); 
 
-            // BUCLE DE BLOQUES (ESCRITURA)
+            // --- BUCLE DE ESCRITURA ---
             for (let b = 0; b < chapterPlan.length; b++) {
                 const currentBeat = chapterPlan[b];
                 const blockNum = b + 1;
@@ -208,33 +237,36 @@ async function generateBookFromText() {
                 const chunkProg = (blockNum / chapterPlan.length) * (100 / totalChapters);
                 updateProgress(baseProg + chunkProg, `Cap ${i+1} [Bloque ${blockNum}]: Escribiendo...`);
 
+                // Delay dinámico basado en carga (simple)
+                await delay(300); 
+
                 // FASE 2: ESCRITOR
-                const draftText = await phaseWriter(blockNum, chapterPlan.length, currentBeat, slidingWindowContext, specificChapterLore);
+                const draftText = await phaseWriter(blockNum, chapterPlan.length, currentBeat, slidingWindowContext, activeLoreContent);
 
                 updateProgress(baseProg + chunkProg, `Cap ${i+1} [Bloque ${blockNum}]: Pulido final...`);
 
-                // FASE 3: EDITOR (Prompt Reforzado)
+                // FASE 3: EDITOR
                 let polishedText = await phaseEditor(draftText, nuanceText);
                 
                 polishedText = cleanOutputText(polishedText);
                 fullChapterText.push(polishedText);
-                slidingWindowContext = polishedText.slice(-2000); 
-                
-                await delay(500);
+                slidingWindowContext = polishedText.slice(-1500); 
             }
 
             const finalChapterContent = fullChapterText.join("\n\n");
 
-            // --- NUEVO: FASE DE RESUMEN (Generar memoria para el futuro) ---
+            // --- FASE DE RESUMEN OPTIMIZADA ---
+            // Resumimos la ESCALETA (Plan), no el texto final masivo. Ahorra tokens.
             updateProgress(((i + 1) / totalChapters) * 100, `Cap ${i+1}: Sintetizando memoria...`);
-            const chapterSummary = await phaseSummarizer(finalChapterContent);
+            const compressedPlan = chapterPlan.join("\n");
+            const chapterSummary = await phaseSummarizer(compressedPlan);
             previousSummaries.push(`[RESUMEN CAPÍTULO ${i+1}]: ${chapterSummary}`);
             
-            // FASE 4: TITULADOR AUTOMÁTICO (Prompt Reforzado)
+            // FASE 4: TITULADOR
             const generatedTitle = await phaseTitleGenerator(finalChapterContent, sceneTitle);
 
-            // Actualizar buffer inmediato (solo texto final para continuidad de estilo)
-            narrativeHistory = finalChapterContent.slice(-3000);
+            // Actualizar buffer inmediato
+            narrativeHistory = finalChapterContent.slice(-2000);
 
             const structuredParagraphs = finalChapterContent.split('\n\n')
                 .filter(p => p.trim().length > 0)
@@ -263,7 +295,7 @@ async function generateBookFromText() {
         localStorage.setItem('minimal_books_v4', JSON.stringify(books));
 
         await delay(500);
-        alert("¡Libro generado! La IA ha mantenido la coherencia usando memoria a largo plazo y visión del futuro.");
+        alert("¡Libro completado con arquitectura optimizada!");
         if (window.renderBookList) window.renderBookList();
 
     } catch (err) {
@@ -279,45 +311,49 @@ async function generateBookFromText() {
     }
 }
 
-// --- FASE 0: FILTRO DE CONTEXTO (RAG) ---
-async function phaseContextFilter(chapTitle, chapSummary, fullLore) {
-    const systemPrompt = `Eres un Asistente de Continuidad Narrativa.
-    Extrae del LORE COMPLETO únicamente los datos (nombres, lugares, objetos) relevantes para el CAPÍTULO ACTUAL.
-    OUTPUT: Lista concisa de hechos/datos.`;
+// --- FASE 0: SELECTOR DE LORE (Input: Lista de Keys, Output: JSON lista seleccionada) ---
+async function phaseLoreSelector(chapTitle, chapSummary, allKeys) {
+    // Enviamos solo las claves, coste de token mínimo.
+    const keysBlock = allKeys.join(", ");
+    
+    const systemPrompt = `Eres un Bibliotecario Experto.
+    Tienes un INDICE de temas del Lore y un resumen de un capítulo.
+    Tu tarea es identificar qué temas del índice son CRÍTICOS para este capítulo.
+    
+    INDICE: [${keysBlock}]
+    
+    REGLA: Devuelve un JSON con un array de strings exactos del índice.
+    Ejemplo: { "selected": ["MERLIN", "EXCALIBUR"] }
+    Selecciona máximo 6 temas.`;
 
-    const userPrompt = `
-    [CAPÍTULO A ESCRIBIR]: "${chapTitle}"
-    ${chapSummary}
-
-    [LORE COMPLETO]:
-    ${fullLore.substring(0, 15000)}
-
-    LISTA EL LORE APLICABLE AHORA:`;
+    const userPrompt = `Capítulo: "${chapTitle}"\nResumen: ${chapSummary.substring(0, 800)}`;
 
     try {
-        return await callGoogleAPI(systemPrompt, userPrompt, { model: "gemma-3-27b-it", temperature: 0.3 });
+        const raw = await callGoogleAPI(systemPrompt, userPrompt, { model: "gemma-3-12b-it", temperature: 0.2 });
+        const data = cleanAndParseJSON(raw);
+        return data.selected || [];
     } catch (e) {
-        return "";
+        return [];
     }
 }
 
 // --- FASE 1: ARQUITECTO TÉCNICO ---
-async function phaseArchitect(title, rawContent, globalContext, prevHistory, numBlocks, specificLore, prevSummaries, nextPreview) {
+async function phaseArchitect(title, rawContent, globalContext, prevHistory, numBlocks, specificLore, memory, nextPreview) {
     const safeContent = rawContent.substring(0, 4000); 
     
     const systemPrompt = `Eres un Arquitecto Narrativo Técnico.
     TU OBJETIVO: Desglosar la escena proporcionada en ${numBlocks} puntos ("beats") lógicos.
     
-    INFORMACIÓN TEMPORAL:
-    1. PASADO (Resúmenes): ${prevSummaries ? prevSummaries : "Inicio de novela."}
-    2. PRESENTE (Buffer anterior): "...${prevHistory.substring(0,500)}"
-    3. FUTURO INMEDIATO (Siguiente Cap): "${nextPreview}..."
+    MEMORIA (Resumen Caps Anteriores):
+    ${memory || "Inicio."}
+    
+    CONTEXTO RECIENTE: "...${prevHistory.substring(0,300)}"
+    LORE ACTIVO: ${specificLore ? "Datos disponibles." : "N/A"}
+    FUTURO: "${nextPreview}..."
     
     MATERIAL BASE (ESTE CAPÍTULO): 
     TÍTULO: "${title}"
     CONTENIDO: "${safeContent}"
-    
-    LORE OBLIGATORIO: ${specificLore || "N/A"}
     
     DIRECTRICES:
     - ESTRUCTURA: Crea una transición fluida desde el 'PASADO'.
@@ -343,7 +379,7 @@ async function phaseArchitect(title, rawContent, globalContext, prevHistory, num
 async function phaseWriter(blockIndex, totalBlocks, beatInstruction, prevContext, specificLore) {
     const systemPrompt = `Eres un Redactor de Novelizaciones.
     ESTAMOS EN: Bloque ${blockIndex} de ${totalBlocks}.
-    LORE ACTIVO: ${specificLore ? specificLore : "N/A"}
+    LORE ACTIVO: ${specificLore ? specificLore.substring(0, 2000) : "N/A"}
     
     INSTRUCCIÓN: "${beatInstruction}"
     TEXTO PREVIO: "...${prevContext}"
@@ -359,7 +395,6 @@ async function phaseWriter(blockIndex, totalBlocks, beatInstruction, prevContext
 
 // --- FASE 3: EDITOR (Pulido con Strict Output) ---
 async function phaseEditor(draftText, styleNuance) {
-    // MODIFICADO: Instrucción explícita de NO incluir metadatos
     const systemPrompt = `Eres un Editor Literario. Pule el texto para publicación.
     ESTILO: ${styleNuance}
     REGLAS ESTRICTAS:
@@ -372,39 +407,34 @@ async function phaseEditor(draftText, styleNuance) {
     return await callGoogleAPI(systemPrompt, userPrompt, { model: "gemma-3-27b-it", temperature: 0.5 });
 }
 
-// --- NUEVO: FASE DE RESUMEN (MEMORIA) ---
-async function phaseSummarizer(chapterText) {
+// --- FASE DE RESUMEN OPTIMIZADA (Resume BEATS, no TEXTO) ---
+async function phaseSummarizer(beatsText) {
     const systemPrompt = `Eres un Analista de Archivo.
-    Resume el siguiente capítulo en 3-4 frases concisas.
-    Destaca: Eventos clave, cambios en personajes y objetos obtenidos/perdidos.`;
+    Resume esta ESCALETA de eventos en 3 frases clave.`;
 
-    const userPrompt = `Capítulo a resumir:\n${chapterText.substring(0, 8000)}`; // Límite seguro
+    const userPrompt = `Escaleta:\n${beatsText}`; // Entrada muy ligera
     
     try {
-        return await callGoogleAPI(systemPrompt, userPrompt, { model: "gemma-3-27b-it", temperature: 0.4 });
+        return await callGoogleAPI(systemPrompt, userPrompt, { model: "gemma-3-12b-it", temperature: 0.3 });
     } catch (e) {
-        return "Capítulo procesado (Resumen no disponible).";
+        return "Capítulo procesado.";
     }
 }
 
 // --- FASE 4: TITULADOR AUTOMÁTICO (Un solo título) ---
 async function phaseTitleGenerator(chapterContent, originalTitle) {
-    // MODIFICADO: Pedir explícitamente UN solo título
     const systemPrompt = `Genera UN (1) título literario corto (max 6 palabras) para este texto.
     INPUT: Título provisional "${originalTitle}".
     REGLA: Devuelve SOLAMENTE el título final. NO hagas una lista. NO uses comillas.`;
     
-    const userPrompt = `Texto:\n${chapterContent.substring(0, 2000)}...`; 
+    const userPrompt = `Texto:\n${chapterContent.substring(0, 1000)}...`; 
     
     try {
         let title = await callGoogleAPI(systemPrompt, userPrompt, { model: "gemma-3-27b-it", temperature: 0.7 });
-        
-        // Limpieza extra por si la IA desobedece y manda lista
-        title = title.split('\n')[0]; // Tomar solo la primera línea
-        title = title.replace(/^\d+[\.\)]\s*/, ''); // Quitar "1. " o "1) "
-        title = title.replace(/^[-*]\s*/, ''); // Quitar bullets
+        title = title.split('\n')[0]; 
+        title = title.replace(/^\d+[\.\)]\s*/, ''); 
+        title = title.replace(/^[-*]\s*/, '');
         title = title.replace(/^Título:\s*/i, '').replace(/["']/g, '').replace(/\.$/, '').trim();
-        
         return title;
     } catch (e) {
         return originalTitle;

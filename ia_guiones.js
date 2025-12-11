@@ -3,7 +3,7 @@ import { getApiKeysList } from './apikey.js';
 import { callGoogleAPI, cleanAndParseJSON, delay } from './ia_koreh.js';
 import { checkUsageLimit, registerUsage } from './usage_tracker.js'; // <--- IMPORTANTE
 
-console.log("Módulo IA Guiones Cargado (v3.0 - PARALLEL LORE RAG)");
+console.log("Módulo IA Guiones Cargado (v3.2 - Optimized Lore Formatting)");
 
 const guionPromptInput = document.getElementById('ia-guion-prompt');
 const chaptersInput = document.getElementById('ia-guion-chapters');
@@ -290,10 +290,9 @@ async function generateDeepScript(promptText, numChapters) {
         entityList = ["Personajes Principales", "Lugares Clave", "Trama Central"];
     }
 
-    // 2. PROCESAMIENTO PARALELO EN LOTES (CHUNK 10)
+    // 2. PROCESAMIENTO PARALELO EN LOTES
     const BATCH_SIZE = 10;
     const totalEntities = entityList.length;
-    let loreResults = [];
 
     if(btnGenGuion) btnGenGuion.innerText = `Generando Lore (${totalEntities} ítems)...`;
     updateProgress(90, `Iniciando generación paralela de ${totalEntities} entradas de LORE...`);
@@ -311,11 +310,11 @@ async function generateDeepScript(promptText, numChapters) {
         
         ITEMS A DEFINIR: ${JSON.stringify(chunkItems)}
         
-        REGLAS:
-        1. Escribe UN PÁRRAFO por ítem.
-        2. Empieza cada párrafo con "**Nombre del Ítem**: ...".
-        3. Sé detallado y coherente, teniendo en cuenta el contexto global.
-        4. NO inventes ítems nuevos, cíñete a la lista.
+        REGLAS CRÍTICAS DE FORMATO:
+        1. Escribe UN PÁRRAFO SÓLIDO por cada ítem.
+        2. IMPORTANTE: Empieza cada definición EXACTAMENTE así: "**NOMBRE_DEL_ITEM**: Definición...".
+        3. NO uses listas con guiones, ni viñetas. Solo bloques de texto.
+        4. Sé detallado y coherente, teniendo en cuenta el contexto global.
         
         OUTPUT: Texto plano con las definiciones separadas por saltos de línea.`;
 
@@ -330,7 +329,7 @@ async function generateDeepScript(promptText, numChapters) {
             return result;
         } catch (e) {
             console.error(`Error en chunk ${index}`, e);
-            return `[Error generando lote ${index}: ${chunkItems.join(', ')}]`;
+            return ``;
         }
     };
 
@@ -338,7 +337,7 @@ async function generateDeepScript(promptText, numChapters) {
     const promises = chunks.map((chunk, idx) => processChunk(chunk, idx));
     const resultsArray = await Promise.all(promises);
 
-    // Unir resultados
+    // Unir resultados con DOBLE SALTO DE LÍNEA para facilitar el parseo posterior
     const finalLoreContent = resultsArray.join('\n\n');
 
     // Añadir el LORE al guion
