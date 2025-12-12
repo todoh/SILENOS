@@ -35,7 +35,7 @@ const inputChapters = document.getElementById('ia-guion-chapters');
 const useDataToggle = document.getElementById('ia-use-data'); 
 const progressContainer = document.getElementById('guion-progress');
 
-console.log("Módulo IA Guiones Cargado (v3.2 - Smart Storage Protection)");
+console.log("Módulo IA Guiones Cargado (v3.3 - Zero Data Loss Protocol)");
 
 // --- MONITOR DE COLA EN TIEMPO REAL ---
 function initQueueMonitor(userId) {
@@ -62,7 +62,7 @@ function getUniversalData() {
     } catch (e) { return ""; }
 }
 
-// --- FUNCIÓN CORREGIDA: RECEPCIÓN INTELIGENTE ---
+// --- FUNCIÓN CORREGIDA: RECEPCIÓN SEGURA ---
 function initResultListener(userId) {
     console.log(`📡 Escuchando resultados (Guiones) para: ${userId}`);
     const resultsRef = ref(db, `users/${userId}/results/scripts`);
@@ -74,6 +74,8 @@ function initResultListener(userId) {
         console.log("📦 Guion recibido:", newScript.title);
         const localScripts = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
         
+        let isDataSecured = false;
+
         // Evitar duplicados
         if (localScripts.findIndex(s => s.id === newScript.id) === -1) {
             
@@ -87,7 +89,7 @@ function initResultListener(userId) {
                 alert(`✅ ¡Guion recibido!\n"${newScript.title}" guardado.`);
                 if (window.renderScriptList) window.renderScriptList();
 
-                // Backup silencioso en Drive (si hubo espacio local)
+                // Backup silencioso en Drive
                 try {
                     const driveId = await saveFileToDrive('script', newScript.title, newScript);
                     if (driveId) {
@@ -97,6 +99,8 @@ function initResultListener(userId) {
                             t.driveFileId = driveId; 
                             localStorage.setItem('minimal_scripts_v1', JSON.stringify(updated)); 
                         }
+                        // Confirmación Drive exitosa
+                        isDataSecured = true;
                     }
                 } catch (e) { console.warn("Error backup drive background:", e); }
 
@@ -122,7 +126,6 @@ function initResultListener(userId) {
                             };
 
                             // 3. Sustituir el objeto pesado por el ligero en la lista
-                            // (localScripts[0] es el nuevo porque hicimos unshift antes)
                             localScripts[0] = placeholder;
 
                             // 4. Reintentar guardado local (ahora pesa mucho menos)
@@ -130,6 +133,8 @@ function initResultListener(userId) {
                             
                             alert(`⚠️ Memoria local llena.\n"${newScript.title}" se ha guardado en la NUBE ☁️ y se ha creado un acceso directo.`);
                             if (window.renderScriptList) window.renderScriptList();
+                            
+                            isDataSecured = true;
 
                         } else {
                             throw new Error("No se pudo obtener ID de Drive al intentar liberar espacio.");
@@ -144,10 +149,17 @@ function initResultListener(userId) {
                     alert("Error al guardar: " + e.message);
                 }
             }
+        } else {
+            // Ya existe localmente
+            isDataSecured = true;
         }
 
-        // Limpiar cola de Firebase (solo si se procesó o se intentó)
-        try { await remove(snapshot.ref); } catch (e) {}
+        // Limpiar cola de Firebase SOLO si está asegurado
+        if (isDataSecured) {
+             try { await remove(snapshot.ref); console.log("🗑️ Guion eliminado del servidor (Confirmado en Drive)."); } catch (e) {}
+        } else {
+             console.warn("🔒 Guion mantenido en servidor (Fallo de backup Drive).");
+        }
 
         if (btnGenGuion) {
             btnGenGuion.disabled = false;

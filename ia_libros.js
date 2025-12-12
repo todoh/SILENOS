@@ -7,7 +7,7 @@ import { loadFileContent, saveFileToDrive } from './drive_api.js';
 import { updateQueueState } from './project_ui.js';
 import { checkUsageLimit, registerUsage } from './usage_tracker.js'; 
 
-console.log("Módulo IA Libros Cargado (v8.0 - Smart Storage Protection)");
+console.log("Módulo IA Libros Cargado (v8.1 - Zero Data Loss Protocol)");
 
 const firebaseConfig = {
   apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
@@ -53,7 +53,7 @@ function initQueueMonitor(userId) {
     });
 }
 
-// --- FUNCIÓN CORREGIDA: RECEPCIÓN INTELIGENTE (LIBROS) ---
+// --- FUNCIÓN CORREGIDA: RECEPCIÓN SEGURA (ZERO DATA LOSS) ---
 function initResultListener(userId) {
     const resultsRef = ref(db, `users/${userId}/results/books`);
     
@@ -64,6 +64,9 @@ function initResultListener(userId) {
         console.log("📦 Libro recibido:", newBook.title);
         const localBooks = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
         
+        // Variable de control de seguridad
+        let isDataSecured = false;
+
         // Evitar duplicados
         if (!localBooks.find(b => b.id === newBook.id)) {
             
@@ -74,10 +77,11 @@ function initResultListener(userId) {
                 // 2. Intentamos guardar en LocalStorage
                 localStorage.setItem('minimal_books_v4', JSON.stringify(localBooks));
                 
+                // Si llegamos aquí, está a salvo localmente al menos
                 alert(`✅ ¡Libro Completado!\n"${newBook.title}" añadido.`);
                 if (window.renderBookList) window.renderBookList();
 
-                // 3. Backup silencioso en Drive (si hubo espacio local)
+                // 3. Backup en Drive (OBLIGATORIO para marcar como seguro total)
                 try {
                     const driveId = await saveFileToDrive('book', newBook.title, newBook);
                     if (driveId) {
@@ -87,8 +91,13 @@ function initResultListener(userId) {
                             t.driveFileId = driveId; 
                             localStorage.setItem('minimal_books_v4', JSON.stringify(updated)); 
                         }
+                        // ¡CONFIRMACIÓN DE DRIVE RECIBIDA!
+                        isDataSecured = true; 
                     }
-                } catch (e) { console.warn("Error backup drive background:", e); }
+                } catch (e) { 
+                    console.warn("⚠️ Error backup drive (Se mantiene en servidor por seguridad):", e); 
+                    // NO marcamos isDataSecured como true si falla Drive, para que no se borre del servidor
+                }
 
             } catch (e) {
                 // --- MANEJO DE ERROR: QUOTA EXCEEDED (Memoria Llena) ---
@@ -119,6 +128,9 @@ function initResultListener(userId) {
                             
                             alert(`⚠️ Memoria local llena.\n"${newBook.title}" se ha guardado en la NUBE ☁️ y se ha creado un acceso directo.`);
                             if (window.renderBookList) window.renderBookList();
+                            
+                            // Si logramos subirlo y guardar el placeholder, está seguro.
+                            isDataSecured = true;
 
                         } else {
                             throw new Error("No se pudo obtener ID de Drive al intentar liberar espacio.");
@@ -131,10 +143,19 @@ function initResultListener(userId) {
                     console.error("Error desconocido localStorage:", e);
                 }
             }
+        } else {
+            // Si ya lo tenemos en local (duplicado), asumimos que está seguro y podemos borrar la copia del servidor
+            // para limpiar la cola.
+            isDataSecured = true;
         }
         
-        // Limpieza de la cola en Firebase
-        try { await remove(snapshot.ref); } catch (e) {}
+        // --- MOMENTO DE LA VERDAD ---
+        // Solo eliminamos del servidor si tenemos confirmación de seguridad
+        if (isDataSecured) {
+            try { await remove(snapshot.ref); console.log("🗑️ Copia del servidor eliminada (Datos asegurados)."); } catch (e) {}
+        } else {
+            console.warn("🔒 [PROTOCOL ZERO LOSS] El archivo se mantiene en el servidor hasta confirmar guardado en Drive.");
+        }
         
         // Reset UI
         if (btnGenLibro) btnGenLibro.disabled = false;

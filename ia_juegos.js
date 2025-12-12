@@ -7,7 +7,7 @@ import { saveFileToDrive } from './drive_api.js';
 import { updateQueueState } from './project_ui.js';
 import { checkUsageLimit, registerUsage } from './usage_tracker.js'; // <--- IMPORTANTE: Tracker
 
-console.log("Módulo IA Juegos Cargado (v3.0 - Con Límites)");
+console.log("Módulo IA Juegos Cargado (v3.1 - Zero Data Loss Protocol)");
 
 const firebaseConfig = {
   apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
@@ -60,6 +60,7 @@ function getUniversalData() {
     return rawData.map(d => `[${d.category}] ${d.title}: ${d.content}`).join('\n').substring(0, 10000);
 }
 
+// --- FUNCIÓN CORREGIDA: RECEPCIÓN SEGURA ---
 function initResultListener(userId) {
     const resultsRef = ref(db, `users/${userId}/results/games`);
     onChildAdded(resultsRef, async (snapshot) => {
@@ -68,21 +69,37 @@ function initResultListener(userId) {
         console.log("🎲 Juego recibido:", newGame.title);
         const localGames = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
         
+        let isDataSecured = false;
+
         if (!localGames.find(g => g.id === newGame.id)) {
             localGames.push(newGame); 
             localStorage.setItem('minimal_games_v1', JSON.stringify(localGames));
             alert(`✅ ¡Juego Terminado!\n"${newGame.title}" añadido.`);
             if (window.renderGameList) window.renderGameList();
+            
             try {
+                // BACKUP DRIVE OBLIGATORIO PARA CONFIRMAR BORRADO
                 const driveId = await saveFileToDrive('game', newGame.title, newGame);
                 if (driveId) {
                     const updated = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
                     const t = updated.find(g => g.id === newGame.id);
                     if (t) { t.driveFileId = driveId; localStorage.setItem('minimal_games_v1', JSON.stringify(updated)); }
+                    
+                    isDataSecured = true;
                 }
-            } catch (e) {}
+            } catch (e) { console.warn("Fallo backup drive juegos", e); }
+        } else {
+            // Ya existe localmente
+            isDataSecured = true;
         }
-        try { await remove(snapshot.ref); } catch (e) {}
+
+        // Solo borrar si está asegurado
+        if (isDataSecured) {
+            try { await remove(snapshot.ref); console.log("🗑️ Juego eliminado del servidor (Backup Drive OK)."); } catch (e) {}
+        } else {
+            console.warn("🔒 Juego mantenido en servidor (Fallo Drive).");
+        }
+
         if (btnGen) btnGen.disabled = false;
         showProgress(false);
     });
