@@ -1,12 +1,11 @@
-
-// --- MÓDULO DE AUTENTICACIÓN Y PERFIL v2.9 (Trigger Sync) ---
+// --- MÓDULO DE AUTENTICACIÓN Y PERFIL v3.0 (Persistence Fix) ---
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { getUserStats } from './usage_tracker.js'; 
 import { getGoogleApiKey, saveUserKeys, getUserKeyCount } from './apikey.js';
 import { initCoopSystem, openCoopModal } from './coop_manager.js';
 
-console.log("Módulo Auth UI Cargado (v2.9 - Trigger Sync)");
+console.log("Módulo Auth UI Cargado (v3.0 - Persistence Fix)");
 
 const authConfig = {
   apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
@@ -28,6 +27,12 @@ if (!getApps().length) {
 }
 
 const auth = getAuth(authApp);
+
+// --- NUEVO: FORZAR PERSISTENCIA LOCAL (NO SE CIERRA AL CERRAR NAVEGADOR) ---
+setPersistence(auth, browserLocalPersistence)
+    .then(() => console.log("🔐 Persistencia de sesión activada: LOCAL"))
+    .catch((error) => console.error("Error setting persistence:", error));
+
 const provider = new GoogleAuthProvider();
 provider.addScope('https://www.googleapis.com/auth/drive.file');
 
@@ -223,10 +228,7 @@ function initAuthListener() {
             renderUserState(user);
             initCoopSystem(user);
             
-            // >>> AQUÍ ESTÁ EL CAMBIO IMPORTANTE <<<
-            // Al detectar login, forzamos la función de Project Manager que:
-            // 1. Borra datos locales.
-            // 2. Descarga de Drive.
+            // Si hay login, forzamos sincronización inicial de librería
             if (window.syncLibrary) {
                 setTimeout(() => window.syncLibrary(), 500);
             }

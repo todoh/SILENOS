@@ -1,12 +1,7 @@
 
-// --- CLIENTE API GOOGLE DRIVE v3.4 (Search & Destroy Fix) ---
-// Estructura: SILEN_SYSTEM/ [Silenos_Data, Silenos_Scripts, ...]
-// FIX: Estrategia de guardado robusta que busca por nombre para eliminar duplicados reales,
-// evitando errores 404 por IDs locales obsoletos.
-
 import { getDriveToken, silenosLogout } from './auth_ui.js';
 
-console.log("Módulo Drive API Cargado (v3.4 - Clean Save)");
+console.log("Módulo Drive API Cargado (v3.6 - No-AutoLogout)");
 
 // Configuración de Carpetas
 const PARENT_SYSTEM_FOLDER = 'SILEN_SYSTEM';
@@ -30,11 +25,19 @@ let folderIds = {
 
 // --- HELPER DE SEGURIDAD ---
 async function handleApiResponse(response, context) {
-    if (response.ok) return response.json();
+    if (response.ok) {
+        // DELETE devuelve 204 No Content, que no tiene JSON
+        if (response.status === 204) return null;
+        return response.json();
+    }
     if (response.status === 401) {
         console.warn(`Drive API 401 en ${context}: Token caducado.`);
-        silenosLogout(); // Auto-logout
-        throw new Error("AUTH_EXPIRED");
+        // MODIFICACIÓN: YA NO CERRAMOS SESIÓN AUTOMÁTICAMENTE
+        // silenosLogout(); 
+        
+        // Simplemente lanzamos el error para que la UI avise, pero no recargue.
+        alert("⚠️ Tu sesión de conexión con Drive ha caducado (Seguridad Google 1h).\n\nPara volver a guardar o descargar, haz clic en tu avatar y vuelve a 'Conectar' o recarga la página.");
+        throw new Error("AUTH_EXPIRED_MANUAL_REFRESH_NEEDED");
     }
     const text = await response.text();
     throw new Error(`API Error (${response.status}) en ${context}: ${text}`);
@@ -124,6 +127,7 @@ export async function listFilesByType(type) {
 
     try {
         const q = `'${targetFolderId}' in parents and mimeType='${JSON_MIME}' and trashed=false`;
+        // Traemos ID y Name para comparar
         const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id, name, modifiedTime)`, {
             headers: { Authorization: `Bearer ${token}` }
         });
@@ -153,7 +157,6 @@ export async function loadFileContent(fileId) {
 }
 
 // 4. Guardar Archivo (Estrategia Robusta: Buscar y Destruir)
-// Ignora existingFileId si falla, priorizando la búsqueda por nombre para limpiar duplicados.
 export async function saveFileToDrive(type, fileName, jsonData, existingFileId = null) {
     const token = getDriveToken();
     if (!token) return null;
@@ -165,8 +168,7 @@ export async function saveFileToDrive(type, fileName, jsonData, existingFileId =
     const fileContent = JSON.stringify(jsonData, null, 2);
     const safeName = fileName.endsWith('.json') ? fileName : `${fileName}.json`;
 
-    // 1. ESCANEO PREVIO: Buscar archivos existentes con el MISMO nombre en la carpeta
-    // Esto detecta duplicados reales y archivos con IDs desincronizados.
+    // 1. ESCANEO PREVIO
     let filesToDelete = [];
     try {
         const q = `'${folderId}' in parents and name = '${safeName}' and trashed = false`;
@@ -215,18 +217,10 @@ export async function saveFileToDrive(type, fileName, jsonData, existingFileId =
         const newFile = await handleApiResponse(res, `Guardar ${type}`);
         console.log(`💾 Guardado exitoso:`, newFile.name);
 
-        // 3. LIMPIEZA: Borrar TODOS los archivos antiguos encontrados (Search & Destroy)
-        // Esto elimina el archivo "oficial" anterior Y cualquier duplicado huérfano.
+        // 3. LIMPIEZA: Borrar versiones antiguas
         if (filesToDelete.length > 0) {
             console.log(`🧹 Limpiando ${filesToDelete.length} versiones antiguas...`);
-            
-            // Usamos Promise.allSettled para que un fallo individual no pare el resto
-            await Promise.allSettled(filesToDelete.map(f => 
-                fetch(`https://www.googleapis.com/drive/v3/files/${f.id}`, {
-                    method: 'DELETE',
-                    headers: { Authorization: `Bearer ${token}` }
-                })
-            ));
+            await Promise.allSettled(filesToDelete.map(f => deleteFile(f.id)));
         }
 
         return newFile.id;
@@ -234,5 +228,21 @@ export async function saveFileToDrive(type, fileName, jsonData, existingFileId =
     } catch (e) {
         console.error(`Error crítico guardando en ${type}:`, e);
         throw e;
+    }
+}
+
+// 5. Eliminar Archivo (NUEVO: Para sincronización de borrado)
+export async function deleteFile(fileId) {
+    const token = getDriveToken();
+    if (!token || !fileId) return;
+
+    try {
+        console.log(`🔥 Eliminando archivo remoto: ${fileId}`);
+        await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` }
+        });
+    } catch (e) {
+        console.error(`Error eliminando archivo ${fileId}:`, e);
     }
 }
