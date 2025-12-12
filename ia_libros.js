@@ -1,4 +1,4 @@
-// IA: GENERACIÓN DE LIBROS (Versión Persistente - SERVER HOLD PROTOCOL)
+// IA: GENERACIÓN DE LIBROS (Versión Fire & Forget)
 
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, set, onValue, off, remove, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
@@ -7,7 +7,7 @@ import { loadFileContent, saveFileToDrive } from './drive_api.js';
 import { updateQueueState } from './project_ui.js';
 import { checkUsageLimit, registerUsage } from './usage_tracker.js'; 
 
-console.log("Módulo IA Libros Cargado (v8.3 - Title Fix)");
+console.log("Módulo IA Libros Cargado (v8.4 - Fire & Forget)");
 
 const firebaseConfig = {
   apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
@@ -34,9 +34,8 @@ const scriptSelector = document.getElementById('ia-script-selector');
 const nuanceInput = document.getElementById('ia-libro-nuance');
 const paragraphsInput = document.getElementById('ia-book-paragraphs'); 
 const btnGenLibro = document.getElementById('btn-gen-libro');
-const progressContainer = document.getElementById('libro-progress');
 
-// --- MONITOR DE COLA (FIX: Título correcto) ---
+// --- MONITOR DE COLA ---
 function initQueueMonitor(userId) {
     const queueRef = ref(db, 'queue/books');
     onValue(queueRef, (snapshot) => {
@@ -44,14 +43,11 @@ function initQueueMonitor(userId) {
         if (snapshot.exists()) {
             snapshot.forEach((childSnapshot) => {
                 const job = childSnapshot.val();
-                
-                // Permitimos estados finales para que la UI cierre la notificación
                 const relevantStatuses = ['pending', 'processing', 'completed', 'error'];
 
                 if (job.userId === userId && relevantStatuses.includes(job.status)) {
                   myJobs.push({ 
                         id: childSnapshot.key,
-                        // CORRECCIÓN AQUÍ: Usamos sourceTitle que es lo que guardamos al generar
                         title: job.sourceTitle || job.title || "Libro en Proceso", 
                         status: job.status,
                         progress: job.progress,
@@ -64,7 +60,7 @@ function initQueueMonitor(userId) {
     });
 }
 
-// --- FUNCIÓN CORREGIDA: RECEPCIÓN SEGURA + HOLD ---
+// --- RECEPCIÓN DE RESULTADOS ---
 function initResultListener(userId) {
     const resultsRef = ref(db, `users/${userId}/results/books`);
     
@@ -75,23 +71,18 @@ function initResultListener(userId) {
         console.log("📦 Libro recibido:", newBook.title);
         const localBooks = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
         
-        // Evitar duplicados
         if (!localBooks.find(b => b.id === newBook.id)) {
             
-            // [SERVER HOLD]
             newBook.firebaseKey = snapshot.key;
 
-            // 1. Intentamos añadir el libro completo al array en memoria
             localBooks.unshift(newBook);
             
             try {
-                // 2. Intentamos guardar en LocalStorage
                 localStorage.setItem('minimal_books_v4', JSON.stringify(localBooks));
                 
-                alert(`✅ ¡Libro Completado!\n"${newBook.title}" añadido.\n(Respaldo en servidor activo hasta apertura).`);
+                alert(`✅ ¡Libro Completado!\n"${newBook.title}" añadido.`);
                 if (window.renderBookList) window.renderBookList();
 
-                // 3. Backup en Drive
                 try {
                     const driveId = await saveFileToDrive('book', newBook.title, newBook);
                     if (driveId) {
@@ -107,7 +98,6 @@ function initResultListener(userId) {
                 }
 
             } catch (e) {
-                // --- MANEJO DE ERROR: QUOTA EXCEEDED ---
                 if (e.name === 'QuotaExceededError') {
                     console.warn("⚠️ LocalStorage lleno. Activando protocolo 'Cloud-First'.");
                     
@@ -131,7 +121,6 @@ function initResultListener(userId) {
                             alert(`⚠️ Memoria llena.\n"${newBook.title}" guardado en NUBE ☁️.`);
                             if (window.renderBookList) window.renderBookList();
                             
-                            // [EXCEPCIÓN] Si está en Drive, podemos borrar del server para liberar
                             try { await remove(snapshot.ref); console.log("🗑️ Borrado por Full Disk (Drive OK)."); } catch (e) {}
 
                         } else {
@@ -143,10 +132,6 @@ function initResultListener(userId) {
                 }
             }
         }
-        // [IMPORTANTE]: NO BORRAMOS DEL SERVIDOR AQUÍ.
-
-        if (btnGenLibro) btnGenLibro.disabled = false;
-        showProgress(false);
     });
 }
 
@@ -184,15 +169,14 @@ async function generateBookFromText() {
         const sourceScript = scripts.find(s => s.id == scriptId);
         if (!sourceScript) return alert("Error guion.");
 
+        // 1. Feedback visual inicial
         if (btnGenLibro) {
             btnGenLibro.disabled = true;
-            btnGenLibro.innerText = "Verificando...";
+            btnGenLibro.innerText = "Preparando...";
         }
-        showProgress(true);
 
         // Lazy Load Logic
         if (sourceScript.isPlaceholder) {
-            updateProgress(5, "☁️ Descargando guion base...");
             try {
                 if (!sourceScript.driveFileId) throw new Error("Sin ID Drive.");
                 const fullData = await loadFileContent(sourceScript.driveFileId);
@@ -213,17 +197,17 @@ async function generateBookFromText() {
         const paragraphsPerChapter = paragraphsInput ? parseInt(paragraphsInput.value) : 15;
         
         if (btnGenLibro) btnGenLibro.innerText = "Enviando...";
-        updateProgress(10, "Enviando...");
 
         const cleanScenes = rawScenes.map(s => ({
             title: s.title || "Sin Título",
             paragraphs: (s.paragraphs || []).map(p => ({ text: p.text || "" }))
         }));
 
+        // 2. Enviar Job
         const newJobRef = push(ref(db, 'queue/books'));
         await set(newJobRef, {
             userId: user.uid,
-            sourceTitle: sourceScript.title, // <--- ESTO ES LO QUE LEEMOS EN EL MONITOR
+            sourceTitle: sourceScript.title, 
             scenes: cleanScenes, 
             styleNuance: nuance,
             paragraphsPerChapter: paragraphsPerChapter,
@@ -233,46 +217,24 @@ async function generateBookFromText() {
 
         registerUsage('book');
 
-        console.log("🚀 Job Libro enviado.");
-        updateProgress(15, "En cola...");
-
-        onValue(newJobRef, (snapshot) => {
-            const data = snapshot.val();
-            if (!data) return;
-            if (data.msg) updateProgress(data.progress || 20, data.msg);
-            if (data.status === "completed") {
-                updateProgress(99, "Listo.");
-                off(newJobRef); 
-            } 
-            else if (data.status === "error") {
-                alert("Error: " + data.msg);
-                off(newJobRef);
-                showProgress(false);
-                if (btnGenLibro) btnGenLibro.disabled = false;
-            }
-        });
+        console.log("🚀 Job Libro enviado. Limpiando UI.");
+        
+        // 3. Limpieza y Restauración
+        if (nuanceInput) nuanceInput.value = "";
+        
+        if (btnGenLibro) {
+            btnGenLibro.disabled = false;
+            btnGenLibro.innerText = "Generar Libro";
+        }
 
     } catch (error) {
         console.error(error);
         alert("Error: " + error.message);
-        showProgress(false);
-        if (btnGenLibro) btnGenLibro.disabled = false;
+        if (btnGenLibro) {
+            btnGenLibro.disabled = false;
+            btnGenLibro.innerText = "Generar Libro";
+        }
     }
-}
-
-function updateProgress(percent, text) {
-    if(!progressContainer) return;
-    const fill = progressContainer.querySelector('.progress-fill');
-    const textEl = progressContainer.querySelector('.progress-text');
-    const percentEl = progressContainer.querySelector('.progress-percent');
-    if(fill) fill.style.width = `${percent}%`;
-    if(textEl) textEl.textContent = text;
-    if(percentEl) percentEl.textContent = `${Math.floor(percent)}%`;
-}
-function showProgress(show) {
-    if(!progressContainer) return;
-    if(show) progressContainer.classList.add('active');
-    else progressContainer.classList.remove('active');
 }
 
 if (btnGenLibro) {
