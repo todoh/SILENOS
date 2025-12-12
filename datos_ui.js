@@ -63,7 +63,7 @@ function initLibrarySystem() {
 
     if (library.length === 0) {
         const legacyData = JSON.parse(localStorage.getItem(STORAGE_KEY_ACTIVE_DATA)) || [];
-        const legacyName = localStorage.getItem(STORAGE_KEY_ACTIVE_NAME) || "Proyecto Principal";
+        const legacyName = localStorage.getItem(STORAGE_KEY_ACTIVE_NAME) || "";
         
         const newId = 'ds_' + Date.now();
         const newProject = {
@@ -106,7 +106,10 @@ function loadProjectIntoMemory(projectId, forceData = null) {
     // Si pasamos forceData (recién descargado), lo usamos. Si no, usamos lo que haya en library.
     universalData = forceData || project.data || [];
     
-    const projectName = project.name || "Sin Nombre";
+   let projectName = project.name || "";
+    if (projectName === "Proyecto Principal" || projectName === "Nuevo Proyecto") {
+        projectName = ""; 
+    }
 
     localStorage.setItem(STORAGE_KEY_ACTIVE_DATA, JSON.stringify(universalData));
     localStorage.setItem(STORAGE_KEY_ACTIVE_NAME, projectName);
@@ -255,7 +258,15 @@ window.deleteActiveDataset = function() {
 // --- CRUD UI ---
 
 function updateUIHeader() {
-    const savedName = localStorage.getItem(STORAGE_KEY_ACTIVE_NAME);
+    let savedName = localStorage.getItem(STORAGE_KEY_ACTIVE_NAME);
+    
+    // --- CAMBIO AQUÍ ---
+    // Filtro de limpieza para nombres legacy
+    if (savedName === "Proyecto Principal" || savedName === "Nuevo Proyecto") {
+        savedName = "";
+    }
+    // -------------------
+
     if(universeNameInput) universeNameInput.value = savedName || "";
 }
 
@@ -290,7 +301,7 @@ function renderCards() {
     const sorted = [...universalData].sort((a,b) => b.createdAt - a.createdAt);
 
     if (sorted.length === 0) {
-        cardsContainer.innerHTML = '<div style="text-align:center; padding:30px; color:#ccc; font-size:0.9rem;">Proyecto Vacío.<br>Crea una tarjeta nueva.</div>';
+        cardsContainer.innerHTML = '<div style="text-align:center; padding:30px; color:#ccc; font-size:0.9rem;">Proyecto Vacío.<br>Crea una carta nueva.</div>';
         return;
     }
 
@@ -373,7 +384,7 @@ function deleteCurrentCard() {
     if (!currentCardId) return;
     if (isRemoteUpdate) return;
 
-    if (confirm("¿Borrar tarjeta?")) {
+    if (confirm("¿Borrar carta?")) {
         const idToDelete = currentCardId;
         universalData = universalData.filter(d => d.id !== currentCardId);
         saveData();

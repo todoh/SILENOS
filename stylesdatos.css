@@ -284,3 +284,11 @@
 @media (min-width: 769px) {
     .back-btn-mobile { display: none; }
 }
+/* --- AÑADIR AL FINAL DE stylesdatos.css --- */
+
+.universe-title-input::placeholder {
+    color: #cccccc; /* Gris claro */
+    opacity: 1;
+    letter-spacing: 2px; /* Para que quede espaciado S I L E N O S */
+    font-weight: 600;
+}

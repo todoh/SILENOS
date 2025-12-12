@@ -177,7 +177,7 @@ function createCoopModalDOM() {
                     <input type="text" id="friend-code-input" class="ia-input" placeholder="Introduce código (ej: SIL-X9Y2)" style="margin-bottom: 0; text-transform: uppercase;">
                     <button class="io-btn action" onclick="window.addFriendByCode()" style="margin-bottom: 0;">Enviar Solicitud</button>
                 </div>
-                <h4 style="margin-bottom: 10px; color: #555; font-size: 0.9rem;">Tus Aliados</h4>
+                <h4 style="margin-bottom: 10px; color: #555; font-size: 0.9rem;">Tus Compas</h4>
                 <div id="friend-list-container" class="export-list-scroll" style="height: 100%; background: rgba(0,0,0,0.02);"></div>
             </div>
         </div>`;
@@ -247,11 +247,11 @@ function resetInput() {
 // --- 6. LISTA AMIGOS ---
 
 async function loadFriendsList() {
-    friendListContainer.innerHTML = '<div style="padding:20px; text-align:center; color:#999;">Cargando aliados...</div>';
+    friendListContainer.innerHTML = '<div style="padding:20px; text-align:center; color:#999;">Cargando compas...</div>';
     try {
         const friendsSnap = await get(ref(db, `users/${currentUser.uid}/friends`));
         if (!friendsSnap.exists()) {
-            friendListContainer.innerHTML = '<div style="padding:20px; text-align:center; color:#ccc;">Aún no tienes aliados.</div>';
+            friendListContainer.innerHTML = '<div style="padding:20px; text-align:center; color:#ccc;">Aún no tienes compas.</div>';
             return;
         }
         const friendUids = Object.keys(friendsSnap.val());
