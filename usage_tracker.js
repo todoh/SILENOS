@@ -26,7 +26,7 @@ if (!getApps().length) {
 }
 
 const db = getDatabase(app);
-const LIMITS = { script: 14, book: 12, game: 8 };
+const LIMITS = { script: 14, book: 42, game: 8 };
 
 function getTodayKey() { return new Date().toISOString().split('T')[0]; }
 

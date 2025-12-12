@@ -7,7 +7,7 @@ import { loadFileContent, saveFileToDrive } from './drive_api.js';
 import { updateQueueState } from './project_ui.js';
 import { checkUsageLimit, registerUsage } from './usage_tracker.js'; 
 
-console.log("Módulo IA Libros Cargado (v8.2 - Server Hold Protocol)");
+console.log("Módulo IA Libros Cargado (v8.3 - Title Fix)");
 
 const firebaseConfig = {
   apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
@@ -36,7 +36,7 @@ const paragraphsInput = document.getElementById('ia-book-paragraphs');
 const btnGenLibro = document.getElementById('btn-gen-libro');
 const progressContainer = document.getElementById('libro-progress');
 
-// --- MONITOR DE COLA  
+// --- MONITOR DE COLA (FIX: Título correcto) ---
 function initQueueMonitor(userId) {
     const queueRef = ref(db, 'queue/books');
     onValue(queueRef, (snapshot) => {
@@ -45,13 +45,14 @@ function initQueueMonitor(userId) {
             snapshot.forEach((childSnapshot) => {
                 const job = childSnapshot.val();
                 
-                // [FIX] Permitimos estados finales para que la UI cierre la notificación
+                // Permitimos estados finales para que la UI cierre la notificación
                 const relevantStatuses = ['pending', 'processing', 'completed', 'error'];
 
                 if (job.userId === userId && relevantStatuses.includes(job.status)) {
                   myJobs.push({ 
                         id: childSnapshot.key,
-                        title: job.prompt, 
+                        // CORRECCIÓN AQUÍ: Usamos sourceTitle que es lo que guardamos al generar
+                        title: job.sourceTitle || job.title || "Libro en Proceso", 
                         status: job.status,
                         progress: job.progress,
                         msg: job.msg
@@ -222,7 +223,7 @@ async function generateBookFromText() {
         const newJobRef = push(ref(db, 'queue/books'));
         await set(newJobRef, {
             userId: user.uid,
-            sourceTitle: sourceScript.title,
+            sourceTitle: sourceScript.title, // <--- ESTO ES LO QUE LEEMOS EN EL MONITOR
             scenes: cleanScenes, 
             styleNuance: nuance,
             paragraphsPerChapter: paragraphsPerChapter,

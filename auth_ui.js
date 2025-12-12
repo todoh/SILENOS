@@ -1,11 +1,11 @@
-// --- MÓDULO DE AUTENTICACIÓN Y PERFIL v3.0 (Persistence Fix) ---
+// --- MÓDULO DE AUTENTICACIÓN Y PERFIL v3.1 (Token Persistence Fix) ---
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { getUserStats } from './usage_tracker.js'; 
 import { getGoogleApiKey, saveUserKeys, getUserKeyCount } from './apikey.js';
 import { initCoopSystem, openCoopModal } from './coop_manager.js';
 
-console.log("Módulo Auth UI Cargado (v3.0 - Persistence Fix)");
+console.log("Módulo Auth UI Cargado (v3.1 - Token Persistence Fix)");
 
 const authConfig = {
   apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
@@ -192,13 +192,18 @@ export const silenosLogin = async () => {
         const result = await signInWithPopup(auth, provider);
         const credential = GoogleAuthProvider.credentialFromResult(result);
         const token = credential.accessToken;
-        sessionStorage.setItem('google_drive_token', token);
+        
+        // [FIX] Cambiado de sessionStorage a localStorage para persistencia real
+        localStorage.setItem('google_drive_token', token);
+        
     } catch (error) { alert("Error login: " + error.message); }
 };
 
 export const silenosLogout = async () => {
     await signOut(auth);
-    sessionStorage.removeItem('google_drive_token');
+    
+    // [FIX] Limpieza en localStorage
+    localStorage.removeItem('google_drive_token');
     
     // Al salir, también limpiamos visualmente para evitar datos fantasma
     localStorage.removeItem('minimal_scripts_v1');
@@ -238,5 +243,6 @@ function initAuthListener() {
     });
 }
 
-export function getDriveToken() { return sessionStorage.getItem('google_drive_token'); }
+// [FIX] Lectura desde localStorage
+export function getDriveToken() { return localStorage.getItem('google_drive_token'); }
 export { auth, currentUser };
