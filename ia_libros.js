@@ -1,13 +1,13 @@
-// IA: GENERACIÓN DE LIBROS (Versión Persistente - Realtime HUD)
+// IA: GENERACIÓN DE LIBROS (Versión Persistente - Realtime HUD + Smart Storage)
 
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, set, onValue, off, remove, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { loadFileContent, saveFileToDrive } from './drive_api.js'; 
 import { updateQueueState } from './project_ui.js';
-import { checkUsageLimit, registerUsage } from './usage_tracker.js'; // <--- IMPORTANTE: Tracker
+import { checkUsageLimit, registerUsage } from './usage_tracker.js'; 
 
-console.log("Módulo IA Libros Cargado (v7.9 - Con Límites)");
+console.log("Módulo IA Libros Cargado (v8.0 - Smart Storage Protection)");
 
 const firebaseConfig = {
   apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
@@ -45,7 +45,6 @@ function initQueueMonitor(userId) {
             snapshot.forEach((childSnapshot) => {
                 const job = childSnapshot.val();
                 if (job.userId === userId && (job.status === 'pending' || job.status === 'processing')) {
-                    // Usamos sourceTitle para identificar el libro
                     myJobs.push({ title: job.sourceTitle, status: job.status });
                 }
             });
@@ -54,8 +53,10 @@ function initQueueMonitor(userId) {
     });
 }
 
+// --- FUNCIÓN CORREGIDA: RECEPCIÓN INTELIGENTE (LIBROS) ---
 function initResultListener(userId) {
     const resultsRef = ref(db, `users/${userId}/results/books`);
+    
     onChildAdded(resultsRef, async (snapshot) => {
         const newBook = snapshot.val();
         if (!newBook) return;
@@ -63,21 +64,79 @@ function initResultListener(userId) {
         console.log("📦 Libro recibido:", newBook.title);
         const localBooks = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
         
+        // Evitar duplicados
         if (!localBooks.find(b => b.id === newBook.id)) {
+            
+            // 1. Intentamos añadir el libro completo al array en memoria
             localBooks.unshift(newBook);
-            localStorage.setItem('minimal_books_v4', JSON.stringify(localBooks));
-            alert(`✅ ¡Libro Completado!\n"${newBook.title}" añadido.`);
-            if (window.renderBookList) window.renderBookList();
+            
             try {
-                const driveId = await saveFileToDrive('book', newBook.title, newBook);
-                if (driveId) {
-                    const updated = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
-                    const t = updated.find(b => b.id === newBook.id);
-                    if (t) { t.driveFileId = driveId; localStorage.setItem('minimal_books_v4', JSON.stringify(updated)); }
+                // 2. Intentamos guardar en LocalStorage
+                localStorage.setItem('minimal_books_v4', JSON.stringify(localBooks));
+                
+                alert(`✅ ¡Libro Completado!\n"${newBook.title}" añadido.`);
+                if (window.renderBookList) window.renderBookList();
+
+                // 3. Backup silencioso en Drive (si hubo espacio local)
+                try {
+                    const driveId = await saveFileToDrive('book', newBook.title, newBook);
+                    if (driveId) {
+                        const updated = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
+                        const t = updated.find(b => b.id === newBook.id);
+                        if (t) { 
+                            t.driveFileId = driveId; 
+                            localStorage.setItem('minimal_books_v4', JSON.stringify(updated)); 
+                        }
+                    }
+                } catch (e) { console.warn("Error backup drive background:", e); }
+
+            } catch (e) {
+                // --- MANEJO DE ERROR: QUOTA EXCEEDED (Memoria Llena) ---
+                if (e.name === 'QuotaExceededError') {
+                    console.warn("⚠️ LocalStorage lleno. Activando protocolo 'Cloud-First' para libros.");
+                    
+                    try {
+                        // A) Forzar subida a Drive inmediatamente (Salvar el contenido)
+                        const driveId = await saveFileToDrive('book', newBook.title, newBook);
+                        
+                        if (driveId) {
+                            // B) Crear Placeholder (Versión ultraligera sin capítulos)
+                            const placeholder = {
+                                id: newBook.id,
+                                title: newBook.title,
+                                isAI: true,
+                                driveFileId: driveId,
+                                isPlaceholder: true, // Activa Lazy Load
+                                chapters: [], // Vaciamos contenido pesado
+                                timestamp: Date.now()
+                            };
+
+                            // C) Sustituir el objeto pesado por el ligero en la lista
+                            localBooks[0] = placeholder;
+
+                            // D) Reintentar guardado local
+                            localStorage.setItem('minimal_books_v4', JSON.stringify(localBooks));
+                            
+                            alert(`⚠️ Memoria local llena.\n"${newBook.title}" se ha guardado en la NUBE ☁️ y se ha creado un acceso directo.`);
+                            if (window.renderBookList) window.renderBookList();
+
+                        } else {
+                            throw new Error("No se pudo obtener ID de Drive al intentar liberar espacio.");
+                        }
+                    } catch (criticalError) {
+                        console.error("Fallo crítico:", criticalError);
+                        alert(`❌ ERROR CRÍTICO DE ESPACIO\nTu navegador está lleno y falló la conexión con Drive.\nLibera espacio borrando libros antiguos.`);
+                    }
+                } else {
+                    console.error("Error desconocido localStorage:", e);
                 }
-            } catch (e) {}
+            }
         }
+        
+        // Limpieza de la cola en Firebase
         try { await remove(snapshot.ref); } catch (e) {}
+        
+        // Reset UI
         if (btnGenLibro) btnGenLibro.disabled = false;
         showProgress(false);
     });
@@ -124,9 +183,9 @@ async function generateBookFromText() {
         }
         showProgress(true);
 
-        // Lazy Load Logic
+        // Lazy Load Logic (Si el guion origen es un placeholder, lo descargamos primero)
         if (sourceScript.isPlaceholder) {
-            updateProgress(5, "☁️ Descargando guion...");
+            updateProgress(5, "☁️ Descargando guion base...");
             try {
                 if (!sourceScript.driveFileId) throw new Error("Sin ID Drive.");
                 const fullData = await loadFileContent(sourceScript.driveFileId);

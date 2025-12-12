@@ -1,11 +1,12 @@
-// IA GUIONES - VERSIÓN PERSISTENTE (INBOX SYSTEM + REALTIME HUD)
+// SILENOS/ia_guiones.js
+// IA GUIONES - VERSIÓN PERSISTENTE (INBOX SYSTEM + REALTIME HUD + SMART STORAGE)
 
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, set, onValue, off, remove, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { saveFileToDrive } from './drive_api.js';  
 import { updateQueueState } from './project_ui.js'; 
-import { checkUsageLimit, registerUsage } from './usage_tracker.js'; // <--- IMPORTANTE: Tracker
+import { checkUsageLimit, registerUsage } from './usage_tracker.js'; 
 
 const firebaseConfig = {
   apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
@@ -34,24 +35,21 @@ const inputChapters = document.getElementById('ia-guion-chapters');
 const useDataToggle = document.getElementById('ia-use-data'); 
 const progressContainer = document.getElementById('guion-progress');
 
-console.log("Módulo IA Guiones Cargado (v3.1 - Con Límites)");
+console.log("Módulo IA Guiones Cargado (v3.2 - Smart Storage Protection)");
 
 // --- MONITOR DE COLA EN TIEMPO REAL ---
 function initQueueMonitor(userId) {
     const queueRef = ref(db, 'queue/scripts');
-    // Escucha constante: Se actualiza si añades, si el servidor procesa, o si termina.
     onValue(queueRef, (snapshot) => {
         const myJobs = [];
         if (snapshot.exists()) {
             snapshot.forEach((childSnapshot) => {
                 const job = childSnapshot.val();
                 if (job.userId === userId && (job.status === 'pending' || job.status === 'processing')) {
-                    // Extraemos título y estado para la UI
                     myJobs.push({ title: job.prompt, status: job.status });
                 }
             });
         }
-        // Actualiza el HUD con la lista de nombres
         updateQueueState('script', myJobs);
     });
 }
@@ -64,6 +62,7 @@ function getUniversalData() {
     } catch (e) { return ""; }
 }
 
+// --- FUNCIÓN CORREGIDA: RECEPCIÓN INTELIGENTE ---
 function initResultListener(userId) {
     console.log(`📡 Escuchando resultados (Guiones) para: ${userId}`);
     const resultsRef = ref(db, `users/${userId}/results/scripts`);
@@ -75,25 +74,79 @@ function initResultListener(userId) {
         console.log("📦 Guion recibido:", newScript.title);
         const localScripts = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
         
+        // Evitar duplicados
         if (localScripts.findIndex(s => s.id === newScript.id) === -1) {
-            localScripts.unshift(newScript);
-            localStorage.setItem('minimal_scripts_v1', JSON.stringify(localScripts));
             
-            alert(`✅ ¡Guion recibido!\n"${newScript.title}" guardado.`);
-            if (window.renderScriptList) window.renderScriptList();
-
-            // Auto-Drive
+            // Paso 1: Intentamos añadirlo al array local
+            localScripts.unshift(newScript);
+            
             try {
-                const driveId = await saveFileToDrive('script', newScript.title, newScript);
-                if (driveId) {
-                    newScript.driveFileId = driveId;
-                    const updated = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
-                    const t = updated.find(s => s.id === newScript.id);
-                    if (t) { t.driveFileId = driveId; localStorage.setItem('minimal_scripts_v1', JSON.stringify(updated)); }
+                // INTENTO 1: Guardado estándar
+                localStorage.setItem('minimal_scripts_v1', JSON.stringify(localScripts));
+                
+                alert(`✅ ¡Guion recibido!\n"${newScript.title}" guardado.`);
+                if (window.renderScriptList) window.renderScriptList();
+
+                // Backup silencioso en Drive (si hubo espacio local)
+                try {
+                    const driveId = await saveFileToDrive('script', newScript.title, newScript);
+                    if (driveId) {
+                        const updated = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
+                        const t = updated.find(s => s.id === newScript.id);
+                        if (t) { 
+                            t.driveFileId = driveId; 
+                            localStorage.setItem('minimal_scripts_v1', JSON.stringify(updated)); 
+                        }
+                    }
+                } catch (e) { console.warn("Error backup drive background:", e); }
+
+            } catch (e) {
+                // --- MANEJO DEL ERROR: MEMORIA LLENA ---
+                if (e.name === 'QuotaExceededError') {
+                    console.warn("⚠️ LocalStorage lleno. Activando protocolo 'Cloud-First'.");
+                    
+                    try {
+                        // 1. Forzar subida a Drive inmediatamente
+                        const driveId = await saveFileToDrive('script', newScript.title, newScript);
+                        
+                        if (driveId) {
+                            // 2. Crear Placeholder (Versión ultraligera para el índice)
+                            const placeholder = {
+                                id: newScript.id,
+                                title: newScript.title,
+                                isAI: true,
+                                driveFileId: driveId,
+                                isPlaceholder: true, // Esto activa el Lazy Load al abrirlo
+                                scenes: [], // Eliminamos el contenido pesado
+                                timestamp: Date.now()
+                            };
+
+                            // 3. Sustituir el objeto pesado por el ligero en la lista
+                            // (localScripts[0] es el nuevo porque hicimos unshift antes)
+                            localScripts[0] = placeholder;
+
+                            // 4. Reintentar guardado local (ahora pesa mucho menos)
+                            localStorage.setItem('minimal_scripts_v1', JSON.stringify(localScripts));
+                            
+                            alert(`⚠️ Memoria local llena.\n"${newScript.title}" se ha guardado en la NUBE ☁️ y se ha creado un acceso directo.`);
+                            if (window.renderScriptList) window.renderScriptList();
+
+                        } else {
+                            throw new Error("No se pudo obtener ID de Drive al intentar liberar espacio.");
+                        }
+                    } catch (criticalError) {
+                        console.error("Fallo crítico:", criticalError);
+                        alert(`❌ ERROR CRÍTICO DE ESPACIO\nNo hay espacio local y falló la conexión con Drive.\n\nPor favor, libera espacio eliminando proyectos antiguos.`);
+                    }
+                } else {
+                    // Otros errores
+                    console.error("Error desconocido localStorage:", e);
+                    alert("Error al guardar: " + e.message);
                 }
-            } catch (e) {}
+            }
         }
 
+        // Limpiar cola de Firebase (solo si se procesó o se intentó)
         try { await remove(snapshot.ref); } catch (e) {}
 
         if (btnGenGuion) {
@@ -113,9 +166,8 @@ onAuthStateChanged(auth, (user) => {
 
 async function generateScriptFromText() {
     try {
-        // 1. CHEQUEO DE LÍMITES ANTES DE EMPEZAR
         const canProceed = await checkUsageLimit('script');
-        if (!canProceed) return; // Si retorna false, el tracker ya mostró la alerta.
+        if (!canProceed) return; 
 
         const theme = inputScriptTheme ? inputScriptTheme.value.trim() : "";
         const chapters = inputChapters ? parseInt(inputChapters.value) : 5;
@@ -135,7 +187,6 @@ async function generateScriptFromText() {
         showProgress(true);
         updateProgress(5, "Contactando servidor...");
 
-        // 2. ENVÍO A LA COLA
         const newJobRef = push(ref(db, 'queue/scripts'));
         await set(newJobRef, {
             userId: user.uid,
@@ -147,13 +198,11 @@ async function generateScriptFromText() {
             createdAt: Date.now()
         });
 
-        // 3. REGISTRO DEL CONSUMO
         registerUsage('script');
 
         console.log("🚀 Job enviado.");
         updateProgress(15, "En cola...");
 
-        // Listener de progreso individual (Solo para barra de progreso)
         onValue(newJobRef, (snapshot) => {
             const data = snapshot.val();
             if (!data) return;
