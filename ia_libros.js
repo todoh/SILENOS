@@ -1,4 +1,5 @@
 // IA: GENERACIÓN DE LIBROS (Versión Fire & Forget)
+// FIX: Limpieza automática de resultados procesados.
 
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, set, onValue, off, remove, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
@@ -7,7 +8,7 @@ import { loadFileContent, saveFileToDrive } from './drive_api.js';
 import { updateQueueState } from './project_ui.js';
 import { checkUsageLimit, registerUsage } from './usage_tracker.js'; 
 
-console.log("Módulo IA Libros Cargado (v8.4 - Fire & Forget)");
+console.log("Módulo IA Libros Cargado (v8.5 - AutoClean Fix)");
 
 const firebaseConfig = {
   apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
@@ -60,7 +61,7 @@ function initQueueMonitor(userId) {
     });
 }
 
-// --- RECEPCIÓN DE RESULTADOS ---
+// --- RECEPCIÓN DE RESULTADOS (MODIFICADO) ---
 function initResultListener(userId) {
     const resultsRef = ref(db, `users/${userId}/results/books`);
     
@@ -68,67 +69,76 @@ function initResultListener(userId) {
         const newBook = snapshot.val();
         if (!newBook) return;
 
-        console.log("📦 Libro recibido:", newBook.title);
         const localBooks = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
         
-        if (!localBooks.find(b => b.id === newBook.id)) {
-            
-            newBook.firebaseKey = snapshot.key;
+        // 1. Limpieza de duplicados
+        const exists = localBooks.some(b => b.id === newBook.id);
+        if (exists) {
+            console.log(`🧹 Limpiando libro duplicado del servidor: ${newBook.title}`);
+            try { await remove(snapshot.ref); } catch(e) {}
+            return;
+        }
 
+        console.log("📦 Libro NUEVO recibido:", newBook.title);
+        
+        try {
+            // Guardar Localmente
             localBooks.unshift(newBook);
+            localStorage.setItem('minimal_books_v4', JSON.stringify(localBooks));
             
-            try {
-                localStorage.setItem('minimal_books_v4', JSON.stringify(localBooks));
-                
-                alert(`✅ ¡Libro Completado!\n"${newBook.title}" añadido.`);
-                if (window.renderBookList) window.renderBookList();
+            alert(`✅ ¡Libro Completado!\n"${newBook.title}" añadido.`);
+            if (window.renderBookList) window.renderBookList();
 
+            // Backup Drive
+            saveFileToDrive('book', newBook.title, newBook).then(driveId => {
+                if (driveId) {
+                    const updated = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
+                    const t = updated.find(b => b.id === newBook.id);
+                    if (t) { 
+                        t.driveFileId = driveId; 
+                        localStorage.setItem('minimal_books_v4', JSON.stringify(updated)); 
+                    }
+                }
+            }).catch(e => console.warn("Backup Drive Error:", e));
+
+            // 2. LIMPIEZA DEL SERVIDOR
+            try {
+                await remove(snapshot.ref);
+                console.log("🗑️ Libro eliminado del servidor (Limpieza).");
+            } catch (e) { console.error("Error limpiando Firebase:", e); }
+
+        } catch (e) {
+            if (e.name === 'QuotaExceededError') {
+                console.warn("⚠️ LocalStorage lleno. Activando protocolo 'Cloud-First'.");
+                
                 try {
                     const driveId = await saveFileToDrive('book', newBook.title, newBook);
-                    if (driveId) {
-                        const updated = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
-                        const t = updated.find(b => b.id === newBook.id);
-                        if (t) { 
-                            t.driveFileId = driveId; 
-                            localStorage.setItem('minimal_books_v4', JSON.stringify(updated)); 
-                        }
-                    }
-                } catch (e) { 
-                    console.warn("⚠️ Error backup drive:", e); 
-                }
-
-            } catch (e) {
-                if (e.name === 'QuotaExceededError') {
-                    console.warn("⚠️ LocalStorage lleno. Activando protocolo 'Cloud-First'.");
                     
-                    try {
-                        const driveId = await saveFileToDrive('book', newBook.title, newBook);
+                    if (driveId) {
+                        const placeholder = {
+                            id: newBook.id,
+                            title: newBook.title,
+                            isAI: true,
+                            driveFileId: driveId,
+                            isPlaceholder: true,
+                            chapters: [],
+                            timestamp: Date.now()
+                        };
+
+                        localBooks[0] = placeholder;
+                        localStorage.setItem('minimal_books_v4', JSON.stringify(localBooks));
                         
-                        if (driveId) {
-                            const placeholder = {
-                                id: newBook.id,
-                                title: newBook.title,
-                                isAI: true,
-                                driveFileId: driveId,
-                                isPlaceholder: true,
-                                chapters: [],
-                                timestamp: Date.now()
-                            };
+                        alert(`⚠️ Memoria llena.\n"${newBook.title}" guardado en NUBE ☁️.`);
+                        if (window.renderBookList) window.renderBookList();
+                        
+                        // Si está seguro en drive, borrar de firebase
+                        await remove(snapshot.ref);
 
-                            localBooks[0] = placeholder;
-                            localStorage.setItem('minimal_books_v4', JSON.stringify(localBooks));
-                            
-                            alert(`⚠️ Memoria llena.\n"${newBook.title}" guardado en NUBE ☁️.`);
-                            if (window.renderBookList) window.renderBookList();
-                            
-                            try { await remove(snapshot.ref); console.log("🗑️ Borrado por Full Disk (Drive OK)."); } catch (e) {}
-
-                        } else {
-                            throw new Error("No Drive ID.");
-                        }
-                    } catch (criticalError) {
-                        alert(`❌ ERROR CRÍTICO DE ESPACIO.\nLibro mantenido en servidor.`);
+                    } else {
+                        throw new Error("No Drive ID.");
                     }
+                } catch (criticalError) {
+                    alert(`❌ ERROR CRÍTICO DE ESPACIO.\nLibro mantenido en servidor.`);
                 }
             }
         }

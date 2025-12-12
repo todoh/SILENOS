@@ -1,5 +1,6 @@
 // SILENOS/ia_guiones.js
 // IA GUIONES - VERSIÓN PERSISTENTE (SERVER HOLD PROTOCOL) - FIRE & FORGET
+// FIX: Limpieza automática de resultados procesados para evitar duplicados.
 
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, set, onValue, off, remove, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
@@ -34,7 +35,7 @@ const inputScriptTheme = document.getElementById('ia-guion-prompt');
 const inputChapters = document.getElementById('ia-guion-chapters'); 
 const useDataToggle = document.getElementById('ia-use-data'); 
 
-console.log("Módulo IA Guiones Cargado (v3.5 - Fire & Forget)");
+console.log("Módulo IA Guiones Cargado (v3.6 - AutoClean Fix)");
 
 // --- MONITOR DE COLA EN TIEMPO REAL (MICRO-TARJETAS) ---
 function initQueueMonitor(userId) {
@@ -70,7 +71,7 @@ function getUniversalData() {
     } catch (e) { return ""; }
 }
 
-// --- RECEPCIÓN DE RESULTADOS ---
+// --- RECEPCIÓN DE RESULTADOS (MODIFICADO) ---
 function initResultListener(userId) {
     console.log(`📡 Escuchando resultados (Guiones) para: ${userId}`);
     const resultsRef = ref(db, `users/${userId}/results/scripts`);
@@ -79,66 +80,81 @@ function initResultListener(userId) {
         const newScript = snapshot.val();
         if (!newScript) return;
 
-        console.log("📦 Guion recibido:", newScript.title);
         const localScripts = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
         
-        if (localScripts.findIndex(s => s.id === newScript.id) === -1) {
-            
-            newScript.firebaseKey = snapshot.key;
+        // 1. CHEQUEO DE SEGURIDAD: ¿Ya lo tenemos?
+        const exists = localScripts.some(s => s.id === newScript.id);
 
+        if (exists) {
+            console.log(`🧹 Limpiando guion ya existente del servidor: ${newScript.title}`);
+            try { await remove(snapshot.ref); } catch(e) {}
+            return; // No hacemos nada más, ya lo tenemos.
+        }
+        
+        // 2. PROCESAMIENTO: Es nuevo
+        console.log("📦 Guion NUEVO recibido:", newScript.title);
+        
+        try {
+            // Guardar Localmente
             localScripts.unshift(newScript);
+            localStorage.setItem('minimal_scripts_v1', JSON.stringify(localScripts));
             
-            try {
-                localStorage.setItem('minimal_scripts_v1', JSON.stringify(localScripts));
-                
-                alert(`✅ ¡Guion recibido!\n"${newScript.title}" guardado localmente.`);
-                if (window.renderScriptList) window.renderScriptList();
+            alert(`✅ ¡Guion recibido!\n"${newScript.title}" guardado localmente.`);
+            if (window.renderScriptList) window.renderScriptList();
 
+            // Backup Drive (Segundo plano)
+            saveFileToDrive('script', newScript.title, newScript).then(driveId => {
+                if (driveId) {
+                    const updated = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
+                    const t = updated.find(s => s.id === newScript.id);
+                    if (t) { 
+                        t.driveFileId = driveId; 
+                        localStorage.setItem('minimal_scripts_v1', JSON.stringify(updated)); 
+                    }
+                }
+            }).catch(e => console.warn("Backup Drive Error:", e));
+
+            // 3. LIMPIEZA FINAL: Borrar del servidor porque ya está seguro en local
+            try {
+                await remove(snapshot.ref);
+                console.log("🗑️ Guion eliminado de la cola de resultados (Limpieza).");
+            } catch (e) { console.error("Error limpiando Firebase:", e); }
+
+        } catch (e) {
+            // Manejo de LocalStorage Lleno
+            if (e.name === 'QuotaExceededError') {
+                console.warn("⚠️ LocalStorage lleno. Protocolo de emergencia.");
                 try {
                     const driveId = await saveFileToDrive('script', newScript.title, newScript);
+                    
                     if (driveId) {
-                        const updated = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
-                        const t = updated.find(s => s.id === newScript.id);
-                        if (t) { 
-                            t.driveFileId = driveId; 
-                            localStorage.setItem('minimal_scripts_v1', JSON.stringify(updated)); 
-                        }
-                    }
-                } catch (e) { console.warn("Error backup drive background:", e); }
+                        const placeholder = {
+                            id: newScript.id,
+                            title: newScript.title,
+                            isAI: true,
+                            driveFileId: driveId,
+                            isPlaceholder: true, 
+                            scenes: [], 
+                            timestamp: Date.now()
+                        };
 
-            } catch (e) {
-                if (e.name === 'QuotaExceededError') {
-                    console.warn("⚠️ LocalStorage lleno. Activando protocolo 'Cloud-First'.");
-                    try {
-                        const driveId = await saveFileToDrive('script', newScript.title, newScript);
+                        localScripts[0] = placeholder; // Reemplazamos el intento fallido si se metió algo
+                        localStorage.setItem('minimal_scripts_v1', JSON.stringify(localScripts));
                         
-                        if (driveId) {
-                            const placeholder = {
-                                id: newScript.id,
-                                title: newScript.title,
-                                isAI: true,
-                                driveFileId: driveId,
-                                isPlaceholder: true, 
-                                scenes: [], 
-                                timestamp: Date.now()
-                            };
+                        alert(`⚠️ Memoria llena.\n"${newScript.title}" guardado en NUBE ☁️.`);
+                        if (window.renderScriptList) window.renderScriptList();
+                        
+                        // Si se guardó en Drive, podemos borrarlo de Firebase
+                        await remove(snapshot.ref);
 
-                            localScripts[0] = placeholder;
-                            localStorage.setItem('minimal_scripts_v1', JSON.stringify(localScripts));
-                            
-                            alert(`⚠️ Memoria llena.\n"${newScript.title}" guardado en NUBE ☁️.`);
-                            if (window.renderScriptList) window.renderScriptList();
-                            
-                            try { await remove(snapshot.ref); console.log("🗑️ Borrado de servidor (Force Cloud Save)."); } catch(e){}
-
-                        } else {
-                            throw new Error("Fallo Drive Full Disk");
-                        }
-                    } catch (criticalError) {
-                        alert(`❌ ERROR CRÍTICO\nNo hay espacio y falló Drive. El archivo sigue seguro en el servidor.`);
+                    } else {
+                        throw new Error("Fallo Drive Full Disk");
                     }
-                } 
-            }
+                } catch (criticalError) {
+                    alert(`❌ ERROR CRÍTICO\nNo hay espacio local ni en Drive. El archivo se mantiene en el servidor por seguridad.`);
+                    // AQUÍ NO BORRAMOS DE FIREBASE para no perderlo
+                }
+            } 
         } 
     });
 }

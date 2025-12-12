@@ -1,4 +1,5 @@
 // IA: GENERADOR DE JUEGOS (Versión Fire & Forget)
+// FIX: Limpieza automática de resultados procesados.
 
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, set, onValue, off, remove, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
@@ -7,7 +8,7 @@ import { saveFileToDrive } from './drive_api.js';
 import { updateQueueState } from './project_ui.js';
 import { checkUsageLimit, registerUsage } from './usage_tracker.js'; 
 
-console.log("Módulo IA Juegos Cargado (v3.3 - Fire & Forget)");
+console.log("Módulo IA Juegos Cargado (v3.4 - AutoClean Fix)");
 
 const firebaseConfig = {
   apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
@@ -66,33 +67,53 @@ function getUniversalData() {
     return rawData.map(d => `[${d.category}] ${d.title}: ${d.content}`).join('\n').substring(0, 10000);
 }
 
-// --- RECEPCIÓN DE RESULTADOS ---
+// --- RECEPCIÓN DE RESULTADOS (MODIFICADO) ---
 function initResultListener(userId) {
     const resultsRef = ref(db, `users/${userId}/results/games`);
     onChildAdded(resultsRef, async (snapshot) => {
         const newGame = snapshot.val();
         if (!newGame) return;
-        console.log("🎲 Juego recibido:", newGame.title);
+        
         const localGames = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
         
-        if (!localGames.find(g => g.id === newGame.id)) {
-            
-            newGame.firebaseKey = snapshot.key;
+        // 1. Limpieza de duplicados
+        const exists = localGames.some(g => g.id === newGame.id);
+        if (exists) {
+            console.log(`🧹 Limpiando juego duplicado del servidor: ${newGame.title}`);
+            try { await remove(snapshot.ref); } catch(e) {}
+            return;
+        }
 
+        console.log("🎲 Juego NUEVO recibido:", newGame.title);
+        
+        try {
+            // Guardar Local
             localGames.push(newGame); 
             localStorage.setItem('minimal_games_v1', JSON.stringify(localGames));
+            
             alert(`✅ ¡Juego Terminado!\n"${newGame.title}" añadido.`);
             if (window.renderGameList) window.renderGameList();
             
-            try {
-                // Backup Drive
-                const driveId = await saveFileToDrive('game', newGame.title, newGame);
+            // Backup Drive
+            saveFileToDrive('game', newGame.title, newGame).then(driveId => {
                 if (driveId) {
                     const updated = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
                     const t = updated.find(g => g.id === newGame.id);
-                    if (t) { t.driveFileId = driveId; localStorage.setItem('minimal_games_v1', JSON.stringify(updated)); }
+                    if (t) { 
+                        t.driveFileId = driveId; 
+                        localStorage.setItem('minimal_games_v1', JSON.stringify(updated)); 
+                    }
                 }
-            } catch (e) { console.warn("Fallo backup drive juegos", e); }
+            }).catch(e => console.warn("Fallo backup drive juegos", e));
+
+            // 2. LIMPIEZA SERVIDOR
+            try {
+                await remove(snapshot.ref);
+                console.log("🗑️ Juego eliminado del servidor (Limpieza).");
+            } catch (e) { console.error("Error limpiando Firebase:", e); }
+
+        } catch (e) {
+            console.error("Error procesando juego:", e);
         }
     });
 }
