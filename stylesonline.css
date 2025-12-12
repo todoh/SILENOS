@@ -1,107 +1,243 @@
-/* --- SISTEMA DE NOTIFICACIONES (Bottom-Right) --- */
+/* SILENOS/stylesonline.css */
+/* --- ESTILOS ONLINE: NOTIFICACIONES, COLA Y VIDEO (NEUMORPHIC CLEAN) --- */
+
+/* ------------------------------------------------ */
+/* 1. CONTENEDOR DE NOTIFICACIONES (STACK)          */
+/* ------------------------------------------------ */
 
 .notification-container {
     position: fixed;
-    bottom: 20px;
+    bottom: 80px;
     right: 20px;
     display: flex;
-    flex-direction: column-reverse; /* Las nuevas aparecen abajo */
+    flex-direction: column-reverse; /* Las nuevas empujan hacia arriba */
     gap: 15px;
     z-index: 10000;
-    width: 320px;
+    width: 300px;
     max-width: 90vw;
-    pointer-events: none; /* Dejar pasar clicks fuera de las notas */
+    pointer-events: none; /* Permite clic a través de los huecos */
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
 }
 
-.silenos-notification {
+/* Estado oculto (cuando se pulsa el toggle) */
+.notification-container.minimized {
+    transform: translateX(120%);
+    opacity: 0;
+    pointer-events: none !important;
+}
+
+/* ------------------------------------------------ */
+/* 2. BOTÓN TOGGLE DE LA COLA (OJO/HISTORIAL)       */
+/* ------------------------------------------------ */
+
+.queue-toggle-btn {
+    position: fixed;
+    bottom: 20px; 
+    right: 80px; /* A la izquierda del botón de ayuda */
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    
+    /* Neumorfismo Saliente */
     background: var(--bg-color);
-    padding: 20px;
-    border-radius: 16px;
+    box-shadow: var(--neumo-out);
+    border: none;
+    color: var(--text-muted);
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10001; 
+    transition: all 0.2s ease;
+}
+
+.queue-toggle-btn:hover {
+    transform: translateY(-2px);
+    color: var(--ai-color);
     box-shadow: 
         10px 10px 20px rgba(0,0,0,0.1), 
-        -5px -5px 15px rgba(255,255,255,0.8);
-    border: 1px solid rgba(255,255,255,0.5);
-    pointer-events: auto;
-    animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+        -5px -5px 10px rgba(255,255,255,0.8);
 }
 
-@keyframes slideInRight {
+.queue-toggle-btn.active {
+    color: var(--text-main);
+    /* Efecto presionado al estar activo/oculto */
+    box-shadow: var(--neumo-in);
+    transform: translateY(1px);
+}
+
+/* ------------------------------------------------ */
+/* 3. MICRO-TARJETAS (PROCESOS EN TIEMPO REAL)      */
+/* ------------------------------------------------ */
+
+.micro-card {
+    background: var(--bg-color);
+    padding: 15px 20px;
+    border-radius: 16px;
+    
+    /* Neumorfismo Flotante */
+    box-shadow: var(--neumo-out);
+    border: 1px solid rgba(255,255,255,0.2);
+    
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    
+    animation: slideInMicro 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.micro-card:hover {
+    transform: translateX(-5px);
+}
+
+@keyframes slideInMicro {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
 }
 
-@keyframes slideOutRight {
+@keyframes slideOutMicro {
     to { transform: translateX(100%); opacity: 0; }
 }
 
-.notif-header {
+.mc-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 10px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--ai-color);
+    letter-spacing: 1px;
+}
+
+.mc-percent {
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
+.mc-title {
     font-size: 0.9rem;
     font-weight: 700;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mc-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Barra de Progreso Inferior */
+.mc-progress-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    background: var(--ai-color);
+    width: 0%;
+    transition: width 0.3s ease;
+    opacity: 0.7;
+}
+
+.micro-card.completed .mc-progress-bar { background: #00b894; }
+.micro-card.error .mc-progress-bar { background: var(--danger); }
+.micro-card.error .mc-title { color: var(--danger); }
+
+/* ------------------------------------------------ */
+/* 4. NOTIFICACIONES INTERACTIVAS (SOLICITUDES)     */
+/* ------------------------------------------------ */
+
+/* Reutiliza la base de .micro-card pero con acciones */
+.silenos-notification {
+    background: var(--bg-color);
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: var(--neumo-out);
+    border: 1px solid rgba(255,255,255,0.2);
+    pointer-events: auto;
+    animation: slideInMicro 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.notif-header {
+    font-size: 0.75rem;
+    font-weight: 800;
     color: var(--ai-color);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
 }
 
 .notif-body {
     font-size: 0.9rem;
-    color: #555;
+    color: var(--text-main);
     line-height: 1.4;
 }
 
 .notif-actions {
     display: flex;
-    gap: 10px;
+    gap: 15px;
     margin-top: 5px;
 }
 
 .notif-btn {
     flex: 1;
-    padding: 8px;
+    padding: 10px;
     border: none;
-    border-radius: 8px;
-    font-size: 0.8rem;
+    border-radius: 10px;
+    font-size: 0.75rem;
     font-weight: 700;
     cursor: pointer;
     background: var(--bg-color);
     box-shadow: var(--neumo-out);
     transition: all 0.2s;
     text-transform: uppercase;
+    color: var(--text-muted);
 }
 
 .notif-btn:hover { transform: translateY(-2px); }
 .notif-btn:active { transform: translateY(0); box-shadow: var(--neumo-in); }
 
-.notif-btn.accept { color: #00b894; }
-.notif-btn.accept:hover { background: #00b894; color: white; }
+.notif-btn.accept:hover { color: #00b894; }
+.notif-btn.decline:hover { color: var(--danger); }
 
-.notif-btn.decline { color: var(--danger); }
-.notif-btn.decline:hover { background: var(--danger); color: white; }
 
-/* --- MODAL VIDEOLLAMADA (PANTALLA COMPLETA ESTILO CRISTAL) --- */
+/* ------------------------------------------------ */
+/* 5. MODAL DE VIDEOLLAMADA (CRISTAL + NEUMORFISMO) */
+/* ------------------------------------------------ */
+
 .video-container {
     width: 95%;
     max-width: 900px;
     height: 80vh;
-    background: #000;
+    background: #1a1a1a; /* El video necesita fondo oscuro */
     border-radius: 24px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    /* Sombra profunda para elevarlo sobre la app */
+    box-shadow: 
+        20px 20px 60px rgba(0,0,0,0.4), 
+        -20px -20px 60px rgba(255,255,255,0.1);
     position: relative;
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 4px solid var(--bg-color); /* Borde grueso que simula el marco del dispositivo */
 }
 
 .video-grid {
     flex: 1;
     position: relative;
-    background: #1a1a1a;
+    background: #000;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -117,380 +253,107 @@
     position: absolute;
     bottom: 20px;
     right: 20px;
-    width: 150px;
-    height: 200px;
+    width: 140px;
+    height: 190px;
     object-fit: cover;
-    border-radius: 12px;
-    border: 2px solid rgba(255,255,255,0.2);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    border-radius: 16px;
+    border: 2px solid rgba(255,255,255,0.1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     z-index: 10;
-    background: #000;
+    background: #222;
 }
 
+/* Controles de Video: Panel Flotante Neumórfico (Dentro de lo oscuro) */
 .video-controls {
-    height: 80px;
-    background: rgba(255,255,255,0.05); /* Cristal oscuro */
-    backdrop-filter: blur(10px);
+    height: 90px;
+    background: var(--bg-color); /* Vuelta al color claro para controles */
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 20px;
+    gap: 25px;
     position: relative;
-    border-top: 1px solid rgba(255,255,255,0.1);
+    border-top: 1px solid rgba(0,0,0,0.05);
 }
 
 .call-status {
     position: absolute;
-    left: 20px;
-    color: #aaa;
-    font-size: 0.8rem;
-    font-weight: 700;
+    left: 30px;
+    color: var(--ai-color);
+    font-size: 0.75rem;
+    font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
 .video-btn {
-    width: 50px;
-    height: 50px;
+    width: 55px;
+    height: 55px;
     border-radius: 50%;
     border: none;
     cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     transition: all 0.2s;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    
+    /* Neumorfismo Botones Video */
+    background: var(--bg-color);
+    box-shadow: var(--neumo-out);
+    color: var(--text-main);
+}
+
+.video-btn:hover { 
+    transform: translateY(-2px); 
+    color: var(--ai-color);
+}
+
+.video-btn:active {
+    box-shadow: var(--neumo-in);
+    transform: translateY(0);
 }
 
 .video-btn.danger {
-    background: #ff4757;
-    color: white;
+    color: var(--danger);
 }
-.video-btn.danger:hover { background: #ff6b81; transform: scale(1.1); }
-
-/* --- AJUSTES LISTA AMIGOS --- */
-.friend-item {
-    padding: 12px 20px; /* Un poco más compacto */
+.video-btn.danger:hover {
+    background: var(--bg-color); /* Mantener fondo, cambiar icono */
+    box-shadow: inset 3px 3px 6px #d9d9d9, inset -3px -3px 6px #ffffff; /* Hundido rojo */
 }
 
-.btn-icon.small {
-    width: 32px; height: 32px;
-}
-.btn-icon.small svg {
-    width: 14px; height: 14px;
-}
+/* ------------------------------------------------ */
+/* 6. INDICADORES DE ESTADO (TOP LEFT)              */
+/* ------------------------------------------------ */
 
-/* Modal Delicado (reutiliza dialog-box) */
-.modal-overlay.active .dialog-box {
-    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-@keyframes popIn {
-    from { transform: scale(0.8); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-}
-
-/* --- SISTEMA DE NOTIFICACIONES (Bottom-Right) --- */
-
-.notification-container {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    display: flex;
-    flex-direction: column-reverse; /* Las nuevas aparecen abajo */
-    gap: 15px;
-    z-index: 10000;
-    width: 320px;
-    max-width: 90vw;
-    pointer-events: none; /* Dejar pasar clicks fuera de las notas */
-}
-
-.silenos-notification {
-    background: var(--bg-color);
-    padding: 20px;
-    border-radius: 16px;
-    box-shadow: 
-        10px 10px 20px rgba(0,0,0,0.1), 
-        -5px -5px 15px rgba(255,255,255,0.8);
-    border: 1px solid rgba(255,255,255,0.5);
-    pointer-events: auto;
-    animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-@keyframes slideInRight {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes slideOutRight {
-    to { transform: translateX(100%); opacity: 0; }
-}
-
-.notif-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--ai-color);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.notif-body {
-    font-size: 0.9rem;
-    color: #555;
-    line-height: 1.4;
-}
-
-.notif-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 5px;
-}
-
-.notif-btn {
-    flex: 1;
-    padding: 8px;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    cursor: pointer;
-    background: var(--bg-color);
-    box-shadow: var(--neumo-out);
-    transition: all 0.2s;
-    text-transform: uppercase;
-}
-
-.notif-btn:hover { transform: translateY(-2px); }
-.notif-btn:active { transform: translateY(0); box-shadow: var(--neumo-in); }
-
-.notif-btn.accept { color: #00b894; }
-.notif-btn.accept:hover { background: #00b894; color: white; }
-
-.notif-btn.decline { color: var(--danger); }
-.notif-btn.decline:hover { background: var(--danger); color: white; }
-
-/* --- MODAL VIDEOLLAMADA (PANTALLA COMPLETA ESTILO CRISTAL) --- */
-/* --- SISTEMA DE NOTIFICACIONES (Bottom-Right) --- */
-
-.notification-container {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    display: flex;
-    flex-direction: column-reverse; /* Las nuevas aparecen abajo */
-    gap: 15px;
-    z-index: 10000;
-    width: 320px;
-    max-width: 90vw;
-    pointer-events: none; /* Dejar pasar clicks fuera de las notas */
-}
-
-.silenos-notification {
-    background: var(--bg-color);
-    padding: 20px;
-    border-radius: 16px;
-    box-shadow: 
-        10px 10px 20px rgba(0,0,0,0.1), 
-        -5px -5px 15px rgba(255,255,255,0.8);
-    border: 1px solid rgba(255,255,255,0.5);
-    pointer-events: auto;
-    animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-@keyframes slideInRight {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes slideOutRight {
-    to { transform: translateX(100%); opacity: 0; }
-}
-
-.notif-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--ai-color);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.notif-body {
-    font-size: 0.9rem;
-    color: #555;
-    line-height: 1.4;
-}
-
-.notif-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 5px;
-}
-
-.notif-btn {
-    flex: 1;
-    padding: 8px;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    cursor: pointer;
-    background: var(--bg-color);
-    box-shadow: var(--neumo-out);
-    transition: all 0.2s;
-    text-transform: uppercase;
-}
-
-.notif-btn:hover { transform: translateY(-2px); }
-.notif-btn:active { transform: translateY(0); box-shadow: var(--neumo-in); }
-
-.notif-btn.accept { color: #00b894; }
-.notif-btn.accept:hover { background: #00b894; color: white; }
-
-.notif-btn.decline { color: var(--danger); }
-.notif-btn.decline:hover { background: var(--danger); color: white; }
-
-/* --- MODAL VIDEOLLAMADA (PANTALLA COMPLETA ESTILO CRISTAL) --- */
-.video-container {
-    width: 95%;
-    max-width: 900px;
-    height: 80vh;
-    background: #000;
-    border-radius: 24px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-    position: relative;
-    border: 1px solid rgba(255,255,255,0.1);
-}
-
-.video-grid {
-    flex: 1;
-    position: relative;
-    background: #1a1a1a;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-#remote-video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-#local-video {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    width: 150px;
-    height: 200px;
-    object-fit: cover;
-    border-radius: 12px;
-    border: 2px solid rgba(255,255,255,0.2);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    z-index: 10;
-    background: #000;
-}
-
-.video-controls {
-    height: 80px;
-    background: rgba(255,255,255,0.05); /* Cristal oscuro */
-    backdrop-filter: blur(10px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-    position: relative;
-    border-top: 1px solid rgba(255,255,255,0.1);
-}
-
-.call-status {
-    position: absolute;
-    left: 20px;
-    color: #aaa;
-    font-size: 0.8rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.video-btn {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-}
-
-.video-btn.danger {
-    background: #ff4757;
-    color: white;
-}
-.video-btn.danger:hover { background: #ff6b81; transform: scale(1.1); }
-
-/* --- AJUSTES LISTA AMIGOS --- */
-.friend-item {
-    padding: 12px 20px; /* Un poco más compacto */
-}
-
-.btn-icon.small {
-    width: 32px; height: 32px;
-}
-.btn-icon.small svg {
-    width: 14px; height: 14px;
-}
-
-/* Modal Delicado (reutiliza dialog-box) */
-.modal-overlay.active .dialog-box {
-    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-@keyframes popIn {
-    from { transform: scale(0.8); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-}
-
-/* --- INDICADORES DE ESTADO (TOP LEFT) --- */
 .status-indicator-bar {
     position: fixed;
-    top: 20px;
-    left: 20px;
-    z-index: 11000; /* Por encima de casi todo */
+    top: 25px;
+    left: 25px;
+    z-index: 11000;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    pointer-events: none; /* Dejar pasar clics */
+    gap: 12px;
+    pointer-events: none;
 }
 
 .status-pill {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(10px);
-    padding: 8px 15px;
+    background: var(--bg-color);
+    padding: 10px 20px;
     border-radius: 20px;
-    box-shadow: 5px 5px 15px rgba(0,0,0,0.05), -5px -5px 15px rgba(255,255,255,0.8);
+    
+    box-shadow: var(--neumo-out);
+    border: 1px solid rgba(255,255,255,0.2);
+    
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 0.75rem;
-    font-weight: 700;
+    gap: 12px;
+    
+    font-size: 0.7rem;
+    font-weight: 800;
     text-transform: uppercase;
-    color: #555;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    
     opacity: 0;
-    transform: translateX(-20px);
+    transform: translateX(-30px);
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    border: 1px solid rgba(255,255,255,0.5);
 }
 
 .status-pill.active {
@@ -502,11 +365,13 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
+    box-shadow: var(--neumo-in); /* Dot hundido por defecto */
 }
 
+/* Animaciones de estado activo */
 .status-pill.video .status-dot {
     background-color: #00b894;
-    box-shadow: 0 0 10px #00b894;
+    box-shadow: 0 0 10px #00b894; /* Brillante cuando activo */
     animation: pulseGreen 2s infinite;
 }
 
@@ -516,13 +381,5 @@
     animation: pulseBlue 1.5s infinite;
 }
 
-@keyframes pulseGreen {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-}
-@keyframes pulseBlue {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.3); }
-    100% { transform: scale(1); }
-}
+@keyframes pulseGreen { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+@keyframes pulseBlue { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }

@@ -1,13 +1,13 @@
-// IA: GENERADOR DE JUEGOS (Versión Persistente - Realtime HUD)
+// IA: GENERADOR DE JUEGOS (Versión Persistente - Server Hold)
 
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, set, onValue, off, remove, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { saveFileToDrive } from './drive_api.js'; 
 import { updateQueueState } from './project_ui.js';
-import { checkUsageLimit, registerUsage } from './usage_tracker.js'; // <--- IMPORTANTE: Tracker
+import { checkUsageLimit, registerUsage } from './usage_tracker.js'; 
 
-console.log("Módulo IA Juegos Cargado (v3.1 - Zero Data Loss Protocol)");
+console.log("Módulo IA Juegos Cargado (v3.2 - Server Hold Protocol)");
 
 const firebaseConfig = {
   apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
@@ -37,6 +37,7 @@ const btnGen = document.getElementById('btn-gen-game');
 const progressContainer = document.getElementById('game-progress');
 
 // --- MONITOR DE COLA ---
+ 
 function initQueueMonitor(userId) {
     const queueRef = ref(db, 'queue/games');
     onValue(queueRef, (snapshot) => {
@@ -44,23 +45,31 @@ function initQueueMonitor(userId) {
         if (snapshot.exists()) {
             snapshot.forEach((childSnapshot) => {
                 const job = childSnapshot.val();
-                if (job.userId === userId && (job.status === 'pending' || job.status === 'processing')) {
-                    // Usamos topic como título
-                    myJobs.push({ title: job.topic, status: job.status });
+                
+                // [FIX] Permitimos estados finales para limpiar la UI correctamente
+                const relevantStatuses = ['pending', 'processing', 'completed', 'error'];
+
+                if (job.userId === userId && relevantStatuses.includes(job.status)) {
+                  myJobs.push({ 
+                        id: childSnapshot.key, 
+                        title: job.prompt, 
+                        status: job.status,
+                        progress: job.progress,
+                        msg: job.msg
+                    });
                 }
             });
         }
         updateQueueState('game', myJobs);
     });
 }
-
 function getUniversalData() {
     const rawData = JSON.parse(localStorage.getItem('minimal_universal_data')) || [];
     if (rawData.length === 0) return "";
     return rawData.map(d => `[${d.category}] ${d.title}: ${d.content}`).join('\n').substring(0, 10000);
 }
 
-// --- FUNCIÓN CORREGIDA: RECEPCIÓN SEGURA ---
+// --- FUNCIÓN CORREGIDA: RECEPCIÓN SEGURA + HOLD ---
 function initResultListener(userId) {
     const resultsRef = ref(db, `users/${userId}/results/games`);
     onChildAdded(resultsRef, async (snapshot) => {
@@ -69,36 +78,27 @@ function initResultListener(userId) {
         console.log("🎲 Juego recibido:", newGame.title);
         const localGames = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
         
-        let isDataSecured = false;
-
         if (!localGames.find(g => g.id === newGame.id)) {
+            
+            // [SERVER HOLD]
+            newGame.firebaseKey = snapshot.key;
+
             localGames.push(newGame); 
             localStorage.setItem('minimal_games_v1', JSON.stringify(localGames));
-            alert(`✅ ¡Juego Terminado!\n"${newGame.title}" añadido.`);
+            alert(`✅ ¡Juego Terminado!\n"${newGame.title}" añadido.\n(Respaldo en servidor activo).`);
             if (window.renderGameList) window.renderGameList();
             
             try {
-                // BACKUP DRIVE OBLIGATORIO PARA CONFIRMAR BORRADO
+                // Backup Drive
                 const driveId = await saveFileToDrive('game', newGame.title, newGame);
                 if (driveId) {
                     const updated = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
                     const t = updated.find(g => g.id === newGame.id);
                     if (t) { t.driveFileId = driveId; localStorage.setItem('minimal_games_v1', JSON.stringify(updated)); }
-                    
-                    isDataSecured = true;
                 }
             } catch (e) { console.warn("Fallo backup drive juegos", e); }
-        } else {
-            // Ya existe localmente
-            isDataSecured = true;
         }
-
-        // Solo borrar si está asegurado
-        if (isDataSecured) {
-            try { await remove(snapshot.ref); console.log("🗑️ Juego eliminado del servidor (Backup Drive OK)."); } catch (e) {}
-        } else {
-            console.warn("🔒 Juego mantenido en servidor (Fallo Drive).");
-        }
+        // [IMPORTANTE]: NO BORRAMOS DEL SERVIDOR AQUÍ.
 
         if (btnGen) btnGen.disabled = false;
         showProgress(false);
@@ -114,7 +114,6 @@ onAuthStateChanged(auth, (user) => {
 
 async function startStoryGeneration() {
     try {
-        // 1. CHEQUEO DE LÍMITES
         const canProceed = await checkUsageLimit('game');
         if (!canProceed) return; 
 
@@ -130,7 +129,6 @@ async function startStoryGeneration() {
         showProgress(true);
         updateProgress(5, "Contactando...");
 
-        // 2. ENVÍO A COLA
         const newJobRef = push(ref(db, 'queue/games'));
         await set(newJobRef, {
             userId: user.uid,
@@ -141,7 +139,6 @@ async function startStoryGeneration() {
             createdAt: Date.now()
         });
 
-        // 3. REGISTRO CONSUMO
         registerUsage('game');
 
         console.log("🚀 Job Juego enviado.");

@@ -1,4 +1,4 @@
-// IA: GENERACIÓN DE LIBROS (Versión Persistente - Realtime HUD + Smart Storage)
+// IA: GENERACIÓN DE LIBROS (Versión Persistente - SERVER HOLD PROTOCOL)
 
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, set, onValue, off, remove, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
@@ -7,7 +7,7 @@ import { loadFileContent, saveFileToDrive } from './drive_api.js';
 import { updateQueueState } from './project_ui.js';
 import { checkUsageLimit, registerUsage } from './usage_tracker.js'; 
 
-console.log("Módulo IA Libros Cargado (v8.1 - Zero Data Loss Protocol)");
+console.log("Módulo IA Libros Cargado (v8.2 - Server Hold Protocol)");
 
 const firebaseConfig = {
   apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
@@ -36,7 +36,7 @@ const paragraphsInput = document.getElementById('ia-book-paragraphs');
 const btnGenLibro = document.getElementById('btn-gen-libro');
 const progressContainer = document.getElementById('libro-progress');
 
-// --- MONITOR DE COLA ---
+// --- MONITOR DE COLA  
 function initQueueMonitor(userId) {
     const queueRef = ref(db, 'queue/books');
     onValue(queueRef, (snapshot) => {
@@ -44,8 +44,18 @@ function initQueueMonitor(userId) {
         if (snapshot.exists()) {
             snapshot.forEach((childSnapshot) => {
                 const job = childSnapshot.val();
-                if (job.userId === userId && (job.status === 'pending' || job.status === 'processing')) {
-                    myJobs.push({ title: job.sourceTitle, status: job.status });
+                
+                // [FIX] Permitimos estados finales para que la UI cierre la notificación
+                const relevantStatuses = ['pending', 'processing', 'completed', 'error'];
+
+                if (job.userId === userId && relevantStatuses.includes(job.status)) {
+                  myJobs.push({ 
+                        id: childSnapshot.key,
+                        title: job.prompt, 
+                        status: job.status,
+                        progress: job.progress,
+                        msg: job.msg
+                    });
                 }
             });
         }
@@ -53,7 +63,7 @@ function initQueueMonitor(userId) {
     });
 }
 
-// --- FUNCIÓN CORREGIDA: RECEPCIÓN SEGURA (ZERO DATA LOSS) ---
+// --- FUNCIÓN CORREGIDA: RECEPCIÓN SEGURA + HOLD ---
 function initResultListener(userId) {
     const resultsRef = ref(db, `users/${userId}/results/books`);
     
@@ -64,12 +74,12 @@ function initResultListener(userId) {
         console.log("📦 Libro recibido:", newBook.title);
         const localBooks = JSON.parse(localStorage.getItem('minimal_books_v4')) || [];
         
-        // Variable de control de seguridad
-        let isDataSecured = false;
-
         // Evitar duplicados
         if (!localBooks.find(b => b.id === newBook.id)) {
             
+            // [SERVER HOLD]
+            newBook.firebaseKey = snapshot.key;
+
             // 1. Intentamos añadir el libro completo al array en memoria
             localBooks.unshift(newBook);
             
@@ -77,11 +87,10 @@ function initResultListener(userId) {
                 // 2. Intentamos guardar en LocalStorage
                 localStorage.setItem('minimal_books_v4', JSON.stringify(localBooks));
                 
-                // Si llegamos aquí, está a salvo localmente al menos
-                alert(`✅ ¡Libro Completado!\n"${newBook.title}" añadido.`);
+                alert(`✅ ¡Libro Completado!\n"${newBook.title}" añadido.\n(Respaldo en servidor activo hasta apertura).`);
                 if (window.renderBookList) window.renderBookList();
 
-                // 3. Backup en Drive (OBLIGATORIO para marcar como seguro total)
+                // 3. Backup en Drive
                 try {
                     const driveId = await saveFileToDrive('book', newBook.title, newBook);
                     if (driveId) {
@@ -91,73 +100,50 @@ function initResultListener(userId) {
                             t.driveFileId = driveId; 
                             localStorage.setItem('minimal_books_v4', JSON.stringify(updated)); 
                         }
-                        // ¡CONFIRMACIÓN DE DRIVE RECIBIDA!
-                        isDataSecured = true; 
                     }
                 } catch (e) { 
-                    console.warn("⚠️ Error backup drive (Se mantiene en servidor por seguridad):", e); 
-                    // NO marcamos isDataSecured como true si falla Drive, para que no se borre del servidor
+                    console.warn("⚠️ Error backup drive:", e); 
                 }
 
             } catch (e) {
-                // --- MANEJO DE ERROR: QUOTA EXCEEDED (Memoria Llena) ---
+                // --- MANEJO DE ERROR: QUOTA EXCEEDED ---
                 if (e.name === 'QuotaExceededError') {
-                    console.warn("⚠️ LocalStorage lleno. Activando protocolo 'Cloud-First' para libros.");
+                    console.warn("⚠️ LocalStorage lleno. Activando protocolo 'Cloud-First'.");
                     
                     try {
-                        // A) Forzar subida a Drive inmediatamente (Salvar el contenido)
                         const driveId = await saveFileToDrive('book', newBook.title, newBook);
                         
                         if (driveId) {
-                            // B) Crear Placeholder (Versión ultraligera sin capítulos)
                             const placeholder = {
                                 id: newBook.id,
                                 title: newBook.title,
                                 isAI: true,
                                 driveFileId: driveId,
-                                isPlaceholder: true, // Activa Lazy Load
-                                chapters: [], // Vaciamos contenido pesado
+                                isPlaceholder: true,
+                                chapters: [],
                                 timestamp: Date.now()
                             };
 
-                            // C) Sustituir el objeto pesado por el ligero en la lista
                             localBooks[0] = placeholder;
-
-                            // D) Reintentar guardado local
                             localStorage.setItem('minimal_books_v4', JSON.stringify(localBooks));
                             
-                            alert(`⚠️ Memoria local llena.\n"${newBook.title}" se ha guardado en la NUBE ☁️ y se ha creado un acceso directo.`);
+                            alert(`⚠️ Memoria llena.\n"${newBook.title}" guardado en NUBE ☁️.`);
                             if (window.renderBookList) window.renderBookList();
                             
-                            // Si logramos subirlo y guardar el placeholder, está seguro.
-                            isDataSecured = true;
+                            // [EXCEPCIÓN] Si está en Drive, podemos borrar del server para liberar
+                            try { await remove(snapshot.ref); console.log("🗑️ Borrado por Full Disk (Drive OK)."); } catch (e) {}
 
                         } else {
-                            throw new Error("No se pudo obtener ID de Drive al intentar liberar espacio.");
+                            throw new Error("No Drive ID.");
                         }
                     } catch (criticalError) {
-                        console.error("Fallo crítico:", criticalError);
-                        alert(`❌ ERROR CRÍTICO DE ESPACIO\nTu navegador está lleno y falló la conexión con Drive.\nLibera espacio borrando libros antiguos.`);
+                        alert(`❌ ERROR CRÍTICO DE ESPACIO.\nLibro mantenido en servidor.`);
                     }
-                } else {
-                    console.error("Error desconocido localStorage:", e);
                 }
             }
-        } else {
-            // Si ya lo tenemos en local (duplicado), asumimos que está seguro y podemos borrar la copia del servidor
-            // para limpiar la cola.
-            isDataSecured = true;
         }
-        
-        // --- MOMENTO DE LA VERDAD ---
-        // Solo eliminamos del servidor si tenemos confirmación de seguridad
-        if (isDataSecured) {
-            try { await remove(snapshot.ref); console.log("🗑️ Copia del servidor eliminada (Datos asegurados)."); } catch (e) {}
-        } else {
-            console.warn("🔒 [PROTOCOL ZERO LOSS] El archivo se mantiene en el servidor hasta confirmar guardado en Drive.");
-        }
-        
-        // Reset UI
+        // [IMPORTANTE]: NO BORRAMOS DEL SERVIDOR AQUÍ.
+
         if (btnGenLibro) btnGenLibro.disabled = false;
         showProgress(false);
     });
@@ -185,7 +171,6 @@ function refreshScriptSelector() {
 
 async function generateBookFromText() {
     try {
-        // 1. CHEQUEO DE LÍMITES
         const canProceed = await checkUsageLimit('book');
         if (!canProceed) return; 
 
@@ -204,7 +189,7 @@ async function generateBookFromText() {
         }
         showProgress(true);
 
-        // Lazy Load Logic (Si el guion origen es un placeholder, lo descargamos primero)
+        // Lazy Load Logic
         if (sourceScript.isPlaceholder) {
             updateProgress(5, "☁️ Descargando guion base...");
             try {
@@ -234,7 +219,6 @@ async function generateBookFromText() {
             paragraphs: (s.paragraphs || []).map(p => ({ text: p.text || "" }))
         }));
 
-        // 2. ENVÍO A COLA
         const newJobRef = push(ref(db, 'queue/books'));
         await set(newJobRef, {
             userId: user.uid,
@@ -246,7 +230,6 @@ async function generateBookFromText() {
             createdAt: Date.now()
         });
 
-        // 3. REGISTRO CONSUMO
         registerUsage('book');
 
         console.log("🚀 Job Libro enviado.");

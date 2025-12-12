@@ -1,9 +1,10 @@
-// --- PROJECT UI (Interfaz Visual y Diálogos) v6.3 (Queue List) ---
+// --- PROJECT UI (Interfaz Visual y Diálogos) v6.5 (Toggle Queue) ---
 // Responsable de: Modales, Alertas, Árboles de selección DOM y HUD de Cola Detallado.
 
 import { loadFileContent } from './drive_api.js'; 
+import { updateMicroCard } from './notification_ui.js'; 
 
-console.log("Project UI Cargado (v6.3 - Queue List)");
+console.log("Project UI Cargado (v6.5 - Toggle Queue)");
 
 // --- DIÁLOGOS GLOBALES (Alerts, Confirms) ---
 
@@ -22,8 +23,8 @@ export function createGlobalDialogUI() {
     `;
     document.body.appendChild(overlay);
     
-    // Iniciamos también el HUD de cola
-    createQueueHUD();
+    // Iniciamos los controles de la cola (Botón Mostrar/Ocultar)
+    createQueueControls();
 }
 
 export function showDialog({ title, message, type = 'alert', placeholder = '' }) {
@@ -269,7 +270,7 @@ export function updateImportCount() {
 }
 
 
-// --- QUEUE HUD SYSTEM (VISUALIZADOR DE COLA AVANZADO) ---
+// --- QUEUE CONTROLS (NUEVO: BOTÓN TOGGLE) ---
 
 const queueState = {
     script: [],
@@ -277,114 +278,47 @@ const queueState = {
     game: []
 };
 
-function createQueueHUD() {
-    if (document.getElementById('queue-hud')) return;
+// Reemplaza a createQueueHUD
+function createQueueControls() {
+    if (document.getElementById('queue-toggle-btn')) return;
 
-    // INYECCIÓN CSS PARA EL LISTADO (TOOLTIP)
-    const style = document.createElement('style');
-    style.innerHTML = `
-        .queue-list-popover {
-            position: absolute;
-            bottom: 40px;
-            right: 0;
-            width: 220px;
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            padding: 10px;
-            display: none;
-            flex-direction: column;
-            gap: 5px;
-            pointer-events: none;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.2s;
-            border: 1px solid rgba(0,0,0,0.05);
-            z-index: 10000;
-        }
-        .queue-pill:hover .queue-list-popover {
-            display: flex;
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .q-item {
-            font-size: 0.75rem;
-            color: #444;
-            padding: 6px 0;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-        .q-item:last-child { border-bottom: none; }
-        .q-icon { font-size: 0.9rem; }
-        .q-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; flex: 1; }
-    `;
-    document.head.appendChild(style);
-
-    const container = document.createElement('div');
-    container.id = 'queue-hud';
-    container.className = 'queue-hud';
+    const btn = document.createElement('button');
+    btn.id = 'queue-toggle-btn';
+    btn.className = 'queue-toggle-btn';
+    btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>`;
+    btn.title = "Mostrar/Ocultar Cola";
     
-    ['script', 'book', 'game'].forEach(type => {
-        const pill = document.createElement('div');
-        pill.id = `queue-pill-${type}`;
-        pill.className = 'queue-pill'; 
-        
-        let label = 'GEN';
-        if(type === 'script') label = 'GUION';
-        if(type === 'book') label = 'LIBRO';
-        if(type === 'game') label = 'JUEGO';
+    // Lógica de Toggle
+    btn.onclick = () => {
+        const container = document.querySelector('.notification-container');
+        if (container) {
+            container.classList.toggle('minimized');
+            btn.classList.toggle('active');
+        }
+    };
 
-        pill.innerHTML = `
-            <div class="queue-dot"></div>
-            <span class="queue-label">${label}</span>
-            <span id="queue-count-${type}">0</span>
-            <div class="queue-list-popover" id="queue-list-${type}"></div>
-        `;
-        container.appendChild(pill);
-    });
-
-    document.body.appendChild(container);
+    document.body.appendChild(btn);
 }
 
-// Nueva función de Estado Completo (Reemplaza al antiguo updateQueueCount para mayor detalle)
 export function updateQueueState(type, jobs) {
-    // jobs = [{ title, status }, ...]
-    const count = jobs.length;
+    // jobs = [{ id, title, status, progress, msg }, ...]
     queueState[type] = jobs;
     
-    const pill = document.getElementById(`queue-pill-${type}`);
-    const countEl = document.getElementById(`queue-count-${type}`);
-    const listEl = document.getElementById(`queue-list-${type}`);
+    // Ahora solo usamos MicroCards (Sistema Nuevo)
+    // El sistema viejo de "pills" ha sido eliminado
     
-    if (pill && countEl) {
-        countEl.textContent = count;
-        if (count > 0) {
-            pill.classList.add('active');
-            
-            // Renderizar Lista
-            if(listEl) {
-                listEl.innerHTML = '';
-                jobs.forEach(job => {
-                    const div = document.createElement('div');
-                    div.className = 'q-item';
-                    const icon = job.status === 'processing' ? '⚙️' : '⏳';
-                    const safeTitle = job.title || 'Sin Título';
-                    div.innerHTML = `<span class="q-icon">${icon}</span><span class="q-title" title="${safeTitle}">${safeTitle}</span>`;
-                    listEl.appendChild(div);
-                });
-            }
-
-        } else {
-            pill.classList.remove('active');
-            if(listEl) listEl.innerHTML = '';
+    jobs.forEach(job => {
+        if (job.id) {
+            updateMicroCard(job.id, {
+                type: type,
+                title: job.title,
+                status: job.status,
+                progress: job.progress || 0,
+                msg: job.msg
+            });
         }
-    }
+    });
 }
 
-// Mantener compatibilidad simple si se usa en otros lados, aunque ahora preferimos updateQueueState
-export function updateQueueCount(type, delta) {
-   // Deprecated for direct state update, but kept for safety
-}
+// Deprecated stub
+export function updateQueueCount(type, delta) {}

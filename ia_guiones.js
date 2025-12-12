@@ -1,5 +1,5 @@
 // SILENOS/ia_guiones.js
-// IA GUIONES - VERSIÓN PERSISTENTE (INBOX SYSTEM + REALTIME HUD + SMART STORAGE)
+// IA GUIONES - VERSIÓN PERSISTENTE (SERVER HOLD PROTOCOL)
 
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, set, onValue, off, remove, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
@@ -35,9 +35,10 @@ const inputChapters = document.getElementById('ia-guion-chapters');
 const useDataToggle = document.getElementById('ia-use-data'); 
 const progressContainer = document.getElementById('guion-progress');
 
-console.log("Módulo IA Guiones Cargado (v3.3 - Zero Data Loss Protocol)");
+console.log("Módulo IA Guiones Cargado (v3.4 - Server Hold Protocol)");
 
-// --- MONITOR DE COLA EN TIEMPO REAL ---
+ 
+// --- MONITOR DE COLA EN TIEMPO REAL  -
 function initQueueMonitor(userId) {
     const queueRef = ref(db, 'queue/scripts');
     onValue(queueRef, (snapshot) => {
@@ -45,8 +46,19 @@ function initQueueMonitor(userId) {
         if (snapshot.exists()) {
             snapshot.forEach((childSnapshot) => {
                 const job = childSnapshot.val();
-                if (job.userId === userId && (job.status === 'pending' || job.status === 'processing')) {
-                    myJobs.push({ title: job.prompt, status: job.status });
+                
+                // [FIX] Ahora incluimos 'completed' y 'error' para que la UI reciba el evento final
+                // y pueda cerrar la tarjeta. Antes se quedaba "zombie" al filtrarlos.
+                const relevantStatuses = ['pending', 'processing', 'completed', 'error'];
+                
+                if (job.userId === userId && relevantStatuses.includes(job.status)) {
+                    myJobs.push({ 
+                        id: childSnapshot.key, 
+                        title: job.prompt, 
+                        status: job.status,
+                        progress: job.progress,
+                        msg: job.msg
+                    });
                 }
             });
         }
@@ -62,7 +74,7 @@ function getUniversalData() {
     } catch (e) { return ""; }
 }
 
-// --- FUNCIÓN CORREGIDA: RECEPCIÓN SEGURA ---
+// --- FUNCIÓN CORREGIDA: RECEPCIÓN SEGURA + SERVER HOLD ---
 function initResultListener(userId) {
     console.log(`📡 Escuchando resultados (Guiones) para: ${userId}`);
     const resultsRef = ref(db, `users/${userId}/results/scripts`);
@@ -74,11 +86,12 @@ function initResultListener(userId) {
         console.log("📦 Guion recibido:", newScript.title);
         const localScripts = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
         
-        let isDataSecured = false;
-
         // Evitar duplicados
         if (localScripts.findIndex(s => s.id === newScript.id) === -1) {
             
+            // [SERVER HOLD]: Inyectamos la Key de Firebase para borrarlo LUEGO (al abrir)
+            newScript.firebaseKey = snapshot.key;
+
             // Paso 1: Intentamos añadirlo al array local
             localScripts.unshift(newScript);
             
@@ -86,10 +99,10 @@ function initResultListener(userId) {
                 // INTENTO 1: Guardado estándar
                 localStorage.setItem('minimal_scripts_v1', JSON.stringify(localScripts));
                 
-                alert(`✅ ¡Guion recibido!\n"${newScript.title}" guardado.`);
+                alert(`✅ ¡Guion recibido!\n"${newScript.title}" guardado localmente.\n(Se mantiene copia en servidor hasta que lo abras).`);
                 if (window.renderScriptList) window.renderScriptList();
 
-                // Backup silencioso en Drive
+                // Backup silencioso en Drive (Opcional, pero bueno tenerlo)
                 try {
                     const driveId = await saveFileToDrive('script', newScript.title, newScript);
                     if (driveId) {
@@ -99,8 +112,6 @@ function initResultListener(userId) {
                             t.driveFileId = driveId; 
                             localStorage.setItem('minimal_scripts_v1', JSON.stringify(updated)); 
                         }
-                        // Confirmación Drive exitosa
-                        isDataSecured = true;
                     }
                 } catch (e) { console.warn("Error backup drive background:", e); }
 
@@ -114,53 +125,41 @@ function initResultListener(userId) {
                         const driveId = await saveFileToDrive('script', newScript.title, newScript);
                         
                         if (driveId) {
-                            // 2. Crear Placeholder (Versión ultraligera para el índice)
+                            // 2. Crear Placeholder
                             const placeholder = {
                                 id: newScript.id,
                                 title: newScript.title,
                                 isAI: true,
                                 driveFileId: driveId,
-                                isPlaceholder: true, // Esto activa el Lazy Load al abrirlo
-                                scenes: [], // Eliminamos el contenido pesado
+                                isPlaceholder: true, 
+                                scenes: [], 
                                 timestamp: Date.now()
                             };
 
-                            // 3. Sustituir el objeto pesado por el ligero en la lista
+                            // 3. Sustituir
                             localScripts[0] = placeholder;
 
-                            // 4. Reintentar guardado local (ahora pesa mucho menos)
+                            // 4. Reintentar guardado
                             localStorage.setItem('minimal_scripts_v1', JSON.stringify(localScripts));
                             
-                            alert(`⚠️ Memoria local llena.\n"${newScript.title}" se ha guardado en la NUBE ☁️ y se ha creado un acceso directo.`);
+                            alert(`⚠️ Memoria llena.\n"${newScript.title}" guardado en NUBE ☁️.`);
                             if (window.renderScriptList) window.renderScriptList();
                             
-                            isDataSecured = true;
+                            // [EXCEPCIÓN]: Si tuvimos que convertirlo a placeholder por falta de espacio,
+                            // SI podemos borrarlo del servidor porque ya está en Drive seguro.
+                            try { await remove(snapshot.ref); console.log("🗑️ Borrado de servidor (Force Cloud Save)."); } catch(e){}
 
                         } else {
-                            throw new Error("No se pudo obtener ID de Drive al intentar liberar espacio.");
+                            throw new Error("Fallo Drive Full Disk");
                         }
                     } catch (criticalError) {
-                        console.error("Fallo crítico:", criticalError);
-                        alert(`❌ ERROR CRÍTICO DE ESPACIO\nNo hay espacio local y falló la conexión con Drive.\n\nPor favor, libera espacio eliminando proyectos antiguos.`);
+                        alert(`❌ ERROR CRÍTICO\nNo hay espacio y falló Drive. El archivo sigue seguro en el servidor.`);
                     }
-                } else {
-                    // Otros errores
-                    console.error("Error desconocido localStorage:", e);
-                    alert("Error al guardar: " + e.message);
-                }
+                } 
             }
-        } else {
-            // Ya existe localmente
-            isDataSecured = true;
-        }
-
-        // Limpiar cola de Firebase SOLO si está asegurado
-        if (isDataSecured) {
-             try { await remove(snapshot.ref); console.log("🗑️ Guion eliminado del servidor (Confirmado en Drive)."); } catch (e) {}
-        } else {
-             console.warn("🔒 Guion mantenido en servidor (Fallo de backup Drive).");
-        }
-
+        } 
+        // [IMPORTANTE]: YA NO BORRAMOS DEL SERVIDOR AQUÍ (excepto en el caso de memoria llena arriba)
+        
         if (btnGenGuion) {
             btnGenGuion.disabled = false;
             btnGenGuion.innerText = "Generar Guion";
