@@ -839,3 +839,62 @@ input[name="tab-control"] { display: none; }
         justify-content: flex-start;
     }
 }
+
+/* --- HUD COLA DE GENERACIÓN (Minimalista) --- */
+.queue-hud {
+    position: fixed;
+    bottom: 20px;
+    right: 80px; /* A la izquierda del botón flotante de ayuda/dock */
+    display: flex;
+    gap: 8px;
+    z-index: 9900;
+    pointer-events: none; /* Dejar pasar clics */
+    align-items: center;
+}
+
+.queue-pill {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #555;
+    box-shadow: 
+        5px 5px 10px rgba(0,0,0,0.05), 
+        -2px -2px 5px rgba(255,255,255,0.8);
+    border: 1px solid rgba(255,255,255,0.4);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.queue-pill.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Indicador pulsante (punto de estado) */
+.queue-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--ai-color);
+    box-shadow: 0 0 5px var(--ai-color);
+    animation: pulseQueue 1.5s infinite;
+}
+
+.queue-label {
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+@keyframes pulseQueue {
+    0% { opacity: 0.5; transform: scale(0.9); }
+    50% { opacity: 1; transform: scale(1.2); }
+    100% { opacity: 0.5; transform: scale(0.9); }
+}

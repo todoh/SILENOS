@@ -44,13 +44,8 @@ const steps = [
         text: "Configura tu API Key de Google aquí. Es el motor que impulsa la generación de texto.",
         target: ".ia-container",
         tab: "tab5"
-    },
-    {
-        title: "Copias de Seguridad",
-        text: "¡Importante! Silenos no guarda en la nube automáticamente. Descarga tu archivo JSON regularmente aquí.",
-        target: ".io-container",
-        tab: "tab4"
     }
+     
 ];
 
 let currentStep = 0;

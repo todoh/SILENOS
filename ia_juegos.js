@@ -1,12 +1,13 @@
-// --- IA: GENERADOR DE JUEGOS (Versión Persistente - Queue System) ---
-// J → Juegos (Dinámica procesada en la nube)
+// IA: GENERADOR DE JUEGOS (Versión Persistente - Realtime HUD)
 
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, set, onValue, off, remove, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { saveFileToDrive } from './drive_api.js'; // <--- IMPORTACIÓN AÑADIDA
+import { saveFileToDrive } from './drive_api.js'; 
+import { updateQueueState } from './project_ui.js';
+import { checkUsageLimit, registerUsage } from './usage_tracker.js'; // <--- IMPORTANTE: Tracker
 
-console.log("Módulo IA Juegos Cargado (v2.6 - Server Queue + AutoDrive)");
+console.log("Módulo IA Juegos Cargado (v3.0 - Con Límites)");
 
 const firebaseConfig = {
   apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
@@ -29,101 +30,91 @@ if (!getApps().length) {
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-// DOM Elements
 const promptInput = document.getElementById('ia-game-prompt');
 const metricInput = document.getElementById('ia-game-metric'); 
 const useDataCheck = document.getElementById('ia-game-use-data');
 const btnGen = document.getElementById('btn-gen-game');
 const progressContainer = document.getElementById('game-progress');
 
-// --- 1. AYUDANTE DE DATOS ---
+// --- MONITOR DE COLA ---
+function initQueueMonitor(userId) {
+    const queueRef = ref(db, 'queue/games');
+    onValue(queueRef, (snapshot) => {
+        const myJobs = [];
+        if (snapshot.exists()) {
+            snapshot.forEach((childSnapshot) => {
+                const job = childSnapshot.val();
+                if (job.userId === userId && (job.status === 'pending' || job.status === 'processing')) {
+                    // Usamos topic como título
+                    myJobs.push({ title: job.topic, status: job.status });
+                }
+            });
+        }
+        updateQueueState('game', myJobs);
+    });
+}
+
 function getUniversalData() {
     const rawData = JSON.parse(localStorage.getItem('minimal_universal_data')) || [];
     if (rawData.length === 0) return "";
-    return rawData.map(d => `[${d.category}] ${d.title}: ${d.content}`).join('\n').substring(0, 10000); // Limitamos tamaño
+    return rawData.map(d => `[${d.category}] ${d.title}: ${d.content}`).join('\n').substring(0, 10000);
 }
 
-// --- 2. SISTEMA DE BANDEJA DE ENTRADA ---
 function initResultListener(userId) {
-    console.log(`🎮 Escuchando juegos terminados para: ${userId}`);
     const resultsRef = ref(db, `users/${userId}/results/games`);
-
     onChildAdded(resultsRef, async (snapshot) => {
         const newGame = snapshot.val();
         if (!newGame) return;
-
-        console.log("🎲 Juego recibido del servidor:", newGame.title);
-
+        console.log("🎲 Juego recibido:", newGame.title);
         const localGames = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
         
         if (!localGames.find(g => g.id === newGame.id)) {
             localGames.push(newGame); 
             localStorage.setItem('minimal_games_v1', JSON.stringify(localGames));
-            
-            alert(`✅ ¡Juego Terminado!\n"${newGame.title}" ha sido añadido a tu lista.`);
-            
+            alert(`✅ ¡Juego Terminado!\n"${newGame.title}" añadido.`);
             if (window.renderGameList) window.renderGameList();
-            
-            // Opcional: Abrir automáticamente
-            if (window.openGame) window.openGame(newGame.id);
-
-            // --- AUTO-GUARDADO SILENCIOSO EN DRIVE ---
             try {
-                console.log("☁️ Iniciando auto-guardado en Drive (Juego)...");
                 const driveId = await saveFileToDrive('game', newGame.title, newGame);
-                
                 if (driveId) {
-                    // Actualizamos referencia
-                    const updatedGames = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
-                    const target = updatedGames.find(g => g.id === newGame.id);
-                    if (target) {
-                        target.driveFileId = driveId;
-                        localStorage.setItem('minimal_games_v1', JSON.stringify(updatedGames));
-                        console.log("✅ Juego sincronizado en Drive:", driveId);
-                    }
+                    const updated = JSON.parse(localStorage.getItem('minimal_games_v1')) || [];
+                    const t = updated.find(g => g.id === newGame.id);
+                    if (t) { t.driveFileId = driveId; localStorage.setItem('minimal_games_v1', JSON.stringify(updated)); }
                 }
-            } catch (driveErr) {
-                console.warn("⚠️ Fallo en auto-guardado Drive:", driveErr);
-            }
-            // -----------------------------------------
+            } catch (e) {}
         }
-
-        try {
-            await remove(snapshot.ref);
-        } catch (e) { console.error(e); }
-
+        try { await remove(snapshot.ref); } catch (e) {}
         if (btnGen) btnGen.disabled = false;
         showProgress(false);
     });
 }
 
 onAuthStateChanged(auth, (user) => {
-    if (user) initResultListener(user.uid);
+    if (user) {
+        initResultListener(user.uid);
+        initQueueMonitor(user.uid);
+    }
 });
-
-// --- 3. INICIO DE GENERACIÓN ---
 
 async function startStoryGeneration() {
     try {
+        // 1. CHEQUEO DE LÍMITES
+        const canProceed = await checkUsageLimit('game');
+        if (!canProceed) return; 
+
         const user = auth.currentUser;
-        if (!user) return alert("Inicia sesión para usar la IA.");
+        if (!user) return alert("Inicia sesión.");
 
         const topic = promptInput.value.trim();
         const metric = metricInput.value.trim() || "Puntuación Final";
-        
-        if (!topic) return alert("Por favor, define el tema del juego.");
-
-        // Preparar contexto
+        if (!topic) return alert("Define tema.");
         const contextData = useDataCheck.checked ? getUniversalData() : "";
 
         if (btnGen) btnGen.disabled = true;
         showProgress(true);
-        updateProgress(5, "Contactando con el Arquitecto de Juegos...");
+        updateProgress(5, "Contactando...");
 
-        // Enviar Job
-        const jobsRef = ref(db, 'queue/games');
-        const newJobRef = push(jobsRef);
-
+        // 2. ENVÍO A COLA
+        const newJobRef = push(ref(db, 'queue/games'));
         await set(newJobRef, {
             userId: user.uid,
             topic: topic,
@@ -133,22 +124,22 @@ async function startStoryGeneration() {
             createdAt: Date.now()
         });
 
-        console.log("🚀 Job de Juego enviado.");
-        updateProgress(10, "En cola de diseño...");
+        // 3. REGISTRO CONSUMO
+        registerUsage('game');
 
-        // Listener de progreso
+        console.log("🚀 Job Juego enviado.");
+        updateProgress(10, "En cola...");
+
         onValue(newJobRef, (snapshot) => {
             const data = snapshot.val();
             if (!data) return;
-
             if (data.msg) updateProgress(data.progress || 20, data.msg);
-
             if (data.status === "completed") {
-                updateProgress(99, "Finalizando ensamblaje...");
+                updateProgress(99, "Finalizando...");
                 off(newJobRef);
             } 
             else if (data.status === "error") {
-                alert("Error servidor: " + data.msg);
+                alert("Error: " + data.msg);
                 off(newJobRef);
                 showProgress(false);
                 if (btnGen) btnGen.disabled = false;
@@ -157,24 +148,21 @@ async function startStoryGeneration() {
 
     } catch (e) {
         console.error(e);
-        alert("Ocurrió un error local: " + e.message);
+        alert("Error: " + e.message);
         showProgress(false);
         if (btnGen) btnGen.disabled = false;
     }
 }
 
-// UI Helpers
 function updateProgress(percent, text) {
     if(!progressContainer) return;
     const fill = progressContainer.querySelector('.progress-fill');
     const textEl = progressContainer.querySelector('.progress-text');
     const percentEl = progressContainer.querySelector('.progress-percent');
-    
     if(fill) fill.style.width = `${percent}%`;
     if(textEl) textEl.textContent = text;
     if(percentEl) percentEl.textContent = `${Math.floor(percent)}%`;
 }
-
 function showProgress(show) {
     if(!progressContainer) return;
     if(show) progressContainer.classList.add('active');
