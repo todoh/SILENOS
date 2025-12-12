@@ -1,19 +1,18 @@
-// --- PROJECT MANAGER v6.0 (Lazy Load Optimization) ---
-// Sincroniza ÍNDICES ligeros. El contenido se descarga solo al abrir (Lazy Loading).
+// --- PROJECT MANAGER v6.2 (Full Data Pruning) ---
+// Sincroniza ÍNDICES y realiza limpieza espejo completa (incluyendo Datasets eliminados).
 
-import { initDriveSystem, listFilesByType, loadFileContent, saveFileToDrive } from './drive_api.js';
+import { initDriveSystem, listFilesByType, saveFileToDrive, deleteFile } from './drive_api.js';
 import { currentUser } from './auth_ui.js';
-import { getUniversalDataSnapshot, importDataSnapshot, mergeItemToStorage, SESSION_DATA_ID_KEY, STORAGE_KEYS } from './project_core.js';
-import { createGlobalDialogUI, silenosAlert, silenosConfirm, silenosPrompt } from './project_ui.js';
+import { STORAGE_KEYS } from './project_core.js';
+import { createGlobalDialogUI, silenosAlert, silenosConfirm } from './project_ui.js';
 
-console.log("Project Manager Cargado (v6.0 - Lazy Sync)");
+console.log("Project Manager Cargado (v6.2 - Full Data Pruning)");
 
-// CLAVE DE LIBRERÍA (Debe coincidir con datos_ui.js)
+// CLAVE DE LIBRERÍA
 const STORAGE_KEY_LIBRARY = 'silenos_datasets_library_v2';
 
 document.addEventListener('DOMContentLoaded', () => {
     createGlobalDialogUI();
-    // Exportar funciones globales
     window.openDriveSelector = openDataSelector; 
     window.saveToDriveManual = openSaveMenu;     
     window.syncLibrary = syncLibrary;            
@@ -23,10 +22,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function wipeLocalData() {
     console.log("🧹 Limpiando índices locales...");
-    // Borramos para reconstruir el índice limpio desde la nube
     localStorage.removeItem(STORAGE_KEYS.SCRIPTS);
     localStorage.removeItem(STORAGE_KEYS.BOOKS);
     localStorage.removeItem(STORAGE_KEYS.GAMES);
+    // Nota: No borramos la librería de datos aquí para no perder el dataset activo si falla la red,
+    // pero se sobrescribirá al bajar los índices.
     
     if (window.renderScriptList) window.renderScriptList();
     if (window.renderBookList) window.renderBookList();
@@ -43,7 +43,6 @@ async function syncLibrary() {
         wipeLocalData();
         await initDriveSystem();
 
-        // DESCARGA PARALELA DE ÍNDICES (Lightweight)
         await Promise.all([
             indexRemoteFiles('script', STORAGE_KEYS.SCRIPTS),
             indexRemoteFiles('book', STORAGE_KEYS.BOOKS),
@@ -51,13 +50,11 @@ async function syncLibrary() {
             indexDatasetsLibrary() 
         ]);
 
-        // Restaurar nombre del proyecto activo
         const activeName = localStorage.getItem('silenos_universe_name');
         if(dockName) dockName.textContent = activeName || "Silenos Conectado";
         
         console.log("✅ Índices sincronizados. Contenido bajo demanda.");
         
-        // Refrescar vistas (Mostrarán los placeholders)
         if (window.renderScriptList) window.renderScriptList();
         if (window.renderBookList) window.renderBookList();
         if (window.renderGameList) window.renderGameList();
@@ -68,15 +65,14 @@ async function syncLibrary() {
     }
 }
 
-// Nueva función: Crea "Placeholders" en lugar de descargar todo el JSON
 async function indexRemoteFiles(type, storageKey) {
-    const files = await listFilesByType(type); // Solo obtiene ID, Name, ModifiedTime
+    const files = await listFilesByType(type); 
     const placeholders = files.map(f => {
         return {
-            id: f.id, // Usamos el ID de Drive temporalmente como ID local
-            title: f.name.replace('.json', ''), // Título derivado del nombre de archivo
-            driveFileId: f.id, // Enlace crítico para la descarga posterior
-            isPlaceholder: true, // BANDERA: Indica que está vacío
+            id: f.id, 
+            title: f.name.replace('.json', ''), 
+            driveFileId: f.id, 
+            isPlaceholder: true, 
             timestamp: Date.parse(f.modifiedTime) || Date.now()
         };
     });
@@ -86,7 +82,6 @@ async function indexRemoteFiles(type, storageKey) {
     }
 }
 
-// Versión especial para Datasets
 async function indexDatasetsLibrary() {
     console.log("📥 Indexando Datasets...");
     const files = await listFilesByType('data');
@@ -95,7 +90,7 @@ async function indexDatasetsLibrary() {
             id: f.id,
             name: f.name.replace('.json', ''),
             driveFileId: f.id,
-            isPlaceholder: true, // No tiene .data aún
+            isPlaceholder: true, 
             timestamp: Date.parse(f.modifiedTime) || Date.now()
         };
     });
@@ -128,22 +123,22 @@ async function openDataSelector() {
         div.className = 'drive-file-item';
         div.innerHTML = `<span class="drive-name">${file.name.replace('.json','')}</span>`;
         div.onclick = async () => {
-            await indexDatasetsLibrary(); // Refrescar índice
-            if(window.switchDataset) window.switchDataset(file.id); // switchDataset ahora manejará la descarga
+            await indexDatasetsLibrary(); 
+            if(window.switchDataset) window.switchDataset(file.id); 
             window.closeDriveModal();
         };
         listContainer.appendChild(div);
     });
 }
 
-// --- 3. SISTEMA DE GUARDADO COMPLETO ---
+// --- 3. SISTEMA DE GUARDADO COMPLETO (MIRROR SYNC) ---
 
 async function openSaveMenu() {
     if (!currentUser) return silenosAlert("Debes iniciar sesión.");
 
     const confirmed = await silenosConfirm(
-        "¿Subir cambios a Drive?\nSe actualizará el proyecto activo y todos los guiones, libros y juegos.", 
-        "Sincronizar Nube"
+        "¿Sincronizar con Drive?\nSe subirán tus cambios y SE BORRARÁN de la nube los archivos que hayas eliminado aquí.", 
+        "Sincronizar Espejo"
     );
 
     if (confirmed) {
@@ -154,62 +149,109 @@ async function openSaveMenu() {
 async function saveFullProjectToDrive() {
     const dockName = document.getElementById('current-project-name');
     const originalName = dockName ? dockName.textContent : "";
-    if(dockName) dockName.innerHTML = `Subiendo...`;
+    if(dockName) dockName.innerHTML = `Sincronizando...`;
 
     try {
         await initDriveSystem(); 
-        let total = 0;
+        let totalUpdated = 0;
+        let totalDeleted = 0;
 
-        // 1. Guardar Dataset Activo
+        // ---------------------------------------------------------
+        // A. GUARDAR LIBRERÍA DE DATASETS (CON PRUNING)
+        // ---------------------------------------------------------
+        
+        // 1. Asegurar que el dataset activo actual está actualizado en la librería local
         const activeName = localStorage.getItem('silenos_universe_name');
-        const activeData = JSON.parse(localStorage.getItem('minimal_universal_data'));
+        const activeData = JSON.parse(localStorage.getItem('minimal_universal_data')) || [];
+        const activeId = localStorage.getItem('silenos_active_dataset_id');
         
-        // Recuperar ID de Drive si existe en la librería actual
-        let activeDriveId = null;
-        const lib = JSON.parse(localStorage.getItem(STORAGE_KEY_LIBRARY)) || [];
-        // Intentar buscar por ID activo o por nombre
-        const currentProjectEntry = lib.find(p => p.id === localStorage.getItem('silenos_active_dataset_id')) || lib.find(p => p.name === activeName);
-        if (currentProjectEntry) activeDriveId = currentProjectEntry.driveFileId;
-
-        const newDsId = await saveFileToDrive('data', activeName, { 
-            type: 'data_set', 
-            version: '4.0', 
-            universeName: activeName, 
-            items: activeData 
-        }, activeDriveId);
+        let library = JSON.parse(localStorage.getItem(STORAGE_KEY_LIBRARY)) || [];
         
-        // Actualizar ID local
-        if (newDsId && currentProjectEntry) {
-            currentProjectEntry.driveFileId = newDsId;
-            localStorage.setItem(STORAGE_KEY_LIBRARY, JSON.stringify(lib));
+        // Actualizar el activo en el array antes de subir
+        const activeIndex = library.findIndex(p => p.id === activeId);
+        if (activeIndex !== -1) {
+            library[activeIndex].name = activeName;
+            library[activeIndex].data = activeData;
+            library[activeIndex].timestamp = Date.now();
+            delete library[activeIndex].isPlaceholder;
         }
-        total++;
 
-        // 2. Guardar Colecciones (Solo las cargadas completamente o creadas nuevas)
-        const bulkSave = async (storageKey, typeFolder) => {
+        // 2. Procesar la librería completa (Mirror Sync)
+        const remoteDataFiles = await listFilesByType('data');
+        const validDataDriveIds = [];
+
+        for (const item of library) {
+            // Solo subimos si NO es placeholder (si es placeholder, no tenemos los datos para subir)
+            if (!item.isPlaceholder) {
+                // Formato específico para Datasets
+                const payload = {
+                    type: 'data_set',
+                    version: '4.0',
+                    universeName: item.name,
+                    items: item.data // Aquí va el array de cartas
+                };
+
+                const newId = await saveFileToDrive('data', item.name || 'SinTitulo', payload, item.driveFileId);
+                if (newId) {
+                    item.driveFileId = newId;
+                    validDataDriveIds.push(newId);
+                    totalUpdated++;
+                }
+            } else {
+                // Si es placeholder, conservamos su ID existente como válido para no borrarlo
+                if (item.driveFileId) validDataDriveIds.push(item.driveFileId);
+            }
+        }
+
+        // Guardar librería actualizada con nuevos IDs
+        localStorage.setItem(STORAGE_KEY_LIBRARY, JSON.stringify(library));
+
+        // 3. Limpieza de Datasets Huérfanos en Drive
+        const dataOrphans = remoteDataFiles.filter(remote => !validDataDriveIds.includes(remote.id));
+        if (dataOrphans.length > 0) {
+            console.log(`🗑️ Eliminando ${dataOrphans.length} datasets obsoletos...`);
+            await Promise.all(dataOrphans.map(o => deleteFile(o.id)));
+            totalDeleted += dataOrphans.length;
+        }
+
+        // ---------------------------------------------------------
+        // B. GUARDAR COLECCIONES (SCRIPTS, BOOKS, GAMES)
+        // ---------------------------------------------------------
+        const bulkSaveAndPrune = async (storageKey, typeFolder) => {
             const items = JSON.parse(localStorage.getItem(storageKey)) || [];
+            
+            // Subida
             for (const item of items) {
-                // IMPORTANTE: Si es placeholder y NO ha sido modificado, NO lo guardamos (ahorra tiempo y ancho de banda)
-                // A menos que queramos forzar actualización. Por ahora, solo guardamos lo que no es placeholder (o sea, cargado/creado).
                 if (!item.isPlaceholder) {
                     const newId = await saveFileToDrive(typeFolder, item.title || 'SinTitulo', item, item.driveFileId);
                     if(newId) item.driveFileId = newId;
-                    total++;
+                    totalUpdated++;
                 }
             }
             localStorage.setItem(storageKey, JSON.stringify(items));
+
+            // Limpieza
+            const remoteFiles = await listFilesByType(typeFolder);
+            const validDriveIds = items.map(i => i.driveFileId).filter(id => id);
+            const orphans = remoteFiles.filter(remote => !validDriveIds.includes(remote.id));
+
+            if (orphans.length > 0) {
+                console.log(`🗑️ Eliminando ${orphans.length} archivos huérfanos en ${typeFolder}...`);
+                await Promise.all(orphans.map(orphan => deleteFile(orphan.id)));
+                totalDeleted += orphans.length;
+            }
         };
 
-        await bulkSave(STORAGE_KEYS.SCRIPTS, 'script');
-        await bulkSave(STORAGE_KEYS.BOOKS, 'book');
-        await bulkSave(STORAGE_KEYS.GAMES, 'game');
+        await bulkSaveAndPrune(STORAGE_KEYS.SCRIPTS, 'script');
+        await bulkSaveAndPrune(STORAGE_KEYS.BOOKS, 'book');
+        await bulkSaveAndPrune(STORAGE_KEYS.GAMES, 'game');
 
         if(dockName) dockName.textContent = originalName;
-        await silenosAlert(`✅ Guardado inteligente completado (${total} archivos actualizados).`);
+        await silenosAlert(`✅ Sincronización Completa.\n⬆️ Actualizados: ${totalUpdated}\n🗑️ Eliminados: ${totalDeleted}`);
         
     } catch (e) {
         console.error("Full Save Error:", e);
         if(dockName) dockName.textContent = "Error";
-        await silenosAlert("Error guardando: " + e.message);
+        await silenosAlert("Error sincronizando: " + e.message);
     }
 }
