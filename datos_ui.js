@@ -1,10 +1,11 @@
-// --- LÓGICA DE DATOS UI v3.2 (Lazy Load Datasets) ---
+// SILENOS/datos_ui.js
+// --- LÓGICA DE DATOS UI v3.3 (Fix Initialization Bug) ---
 // Descarga el contenido del universo solo cuando se selecciona.
 
 import { broadcastSync, isRemoteUpdate } from './project_share.js'; 
-import { loadFileContent } from './drive_api.js'; // <--- IMPORTANTE
+import { loadFileContent } from './drive_api.js'; 
 
-console.log("Sistema Universal Data Cargado (v3.2 - Lazy)");
+console.log("Sistema Universal Data Cargado (v3.3 - Init Fix)");
 
 // CLAVES DE ALMACENAMIENTO
 const STORAGE_KEY_ACTIVE_DATA = 'minimal_universal_data'; 
@@ -83,9 +84,15 @@ function initLibrarySystem() {
         activeDatasetId = library[0].id;
     }
 
-    // Cargamos sin forzar descarga inmediata (se asume que el activo ya está en localStorage 'minimal_universal_data')
-    // Si no lo está, switchDataset lo arreglará.
-    
+    // --- FIX INICIALIZACIÓN: Cargar datos en memoria al arrancar ---
+    try {
+        // Recuperamos los datos "calientes" de la sesión anterior directamente del Storage
+        universalData = JSON.parse(localStorage.getItem(STORAGE_KEY_ACTIVE_DATA)) || [];
+    } catch(e) { 
+        universalData = []; 
+    }
+    // -------------------------------------------------------------
+
     renderDatasetSelector();
 }
 
@@ -151,7 +158,9 @@ function renderDatasetSelector() {
 
 // ACCIÓN: CAMBIAR PROYECTO (CON LAZY LOAD)
 window.switchDataset = async function(newId) {
-    if (!newId || newId === activeDatasetId) return;
+    // FIX: Permitir recarga si el ID es el mismo PERO la memoria está vacía (universalData.length === 0)
+    // Esto soluciona el bug de "clickar en el activo no hace nada" cuando falló la carga inicial.
+    if (!newId || (newId === activeDatasetId && universalData.length > 0)) return;
 
     console.log(`🔄 Cambiando dataset...`);
 
@@ -260,12 +269,10 @@ window.deleteActiveDataset = function() {
 function updateUIHeader() {
     let savedName = localStorage.getItem(STORAGE_KEY_ACTIVE_NAME);
     
-    // --- CAMBIO AQUÍ ---
     // Filtro de limpieza para nombres legacy
     if (savedName === "Proyecto Principal" || savedName === "Nuevo Proyecto") {
         savedName = "";
     }
-    // -------------------
 
     if(universeNameInput) universeNameInput.value = savedName || "";
 }
