@@ -1,13 +1,15 @@
 // SILENOS/ia_guiones.js
-// IA GUIONES - VERSIÓN PERSISTENTE (SERVER HOLD PROTOCOL) - FIRE & FORGET
-// FIX: Limpieza automática de resultados procesados para evitar duplicados.
+// IA GUIONES - PROTOCOLO DE ENTREGA GARANTIZADA (DB HOLD)
+// El archivo permanece en Firebase DB hasta que el usuario confirma la recepción en la UI.
 
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, push, set, onValue, off, remove, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, push, set, onValue, remove, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { saveFileToDrive } from './drive_api.js';  
 import { updateQueueState } from './project_ui.js'; 
+import { showResultNotification } from './notification_ui.js'; // Importamos la nueva notificación
 import { checkUsageLimit, registerUsage } from './usage_tracker.js'; 
+import { getDriveToken } from './auth_ui.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
@@ -35,9 +37,8 @@ const inputScriptTheme = document.getElementById('ia-guion-prompt');
 const inputChapters = document.getElementById('ia-guion-chapters'); 
 const useDataToggle = document.getElementById('ia-use-data'); 
 
-console.log("Módulo IA Guiones Cargado (v3.6 - AutoClean Fix)");
+console.log("Módulo IA Guiones Cargado (v6.0 - DB Hold Protocol)");
 
-// --- MONITOR DE COLA EN TIEMPO REAL (MICRO-TARJETAS) ---
 function initQueueMonitor(userId) {
     const queueRef = ref(db, 'queue/scripts');
     onValue(queueRef, (snapshot) => {
@@ -45,9 +46,7 @@ function initQueueMonitor(userId) {
         if (snapshot.exists()) {
             snapshot.forEach((childSnapshot) => {
                 const job = childSnapshot.val();
-                
                 const relevantStatuses = ['pending', 'processing', 'completed', 'error'];
-                
                 if (job.userId === userId && relevantStatuses.includes(job.status)) {
                     myJobs.push({ 
                         id: childSnapshot.key, 
@@ -71,92 +70,87 @@ function getUniversalData() {
     } catch (e) { return ""; }
 }
 
-// --- RECEPCIÓN DE RESULTADOS (MODIFICADO) ---
+// --- RECEPCIÓN SEGURA ---
 function initResultListener(userId) {
-    console.log(`📡 Escuchando resultados (Guiones) para: ${userId}`);
     const resultsRef = ref(db, `users/${userId}/results/scripts`);
 
-    onChildAdded(resultsRef, async (snapshot) => {
+    onChildAdded(resultsRef, (snapshot) => {
         const newScript = snapshot.val();
         if (!newScript) return;
 
+        // 1. Verificar si ya lo tenemos guardado (para evitar notificaciones repetidas si ya se descargó)
         const localScripts = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
-        
-        // 1. CHEQUEO DE SEGURIDAD: ¿Ya lo tenemos?
-        const exists = localScripts.some(s => s.id === newScript.id);
+        const exists = localScripts.find(s => s.id === newScript.id);
 
-        if (exists) {
-            console.log(`🧹 Limpiando guion ya existente del servidor: ${newScript.title}`);
-            try { await remove(snapshot.ref); } catch(e) {}
-            return; // No hacemos nada más, ya lo tenemos.
+        if (exists && exists.driveFileId) {
+            // Si existe local y en drive, es seguro borrar del servidor automáticamente (limpieza)
+            remove(snapshot.ref).catch(e => console.warn(e));
+            return;
         }
-        
-        // 2. PROCESAMIENTO: Es nuevo
-        console.log("📦 Guion NUEVO recibido:", newScript.title);
-        
-        try {
-            // Guardar Localmente
-            localScripts.unshift(newScript);
-            localStorage.setItem('minimal_scripts_v1', JSON.stringify(localScripts));
-            
-            alert(`✅ ¡Guion recibido!\n"${newScript.title}" guardado localmente.`);
-            if (window.renderScriptList) window.renderScriptList();
 
-            // Backup Drive (Segundo plano)
-            saveFileToDrive('script', newScript.title, newScript).then(driveId => {
-                if (driveId) {
-                    const updated = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
-                    const t = updated.find(s => s.id === newScript.id);
-                    if (t) { 
-                        t.driveFileId = driveId; 
-                        localStorage.setItem('minimal_scripts_v1', JSON.stringify(updated)); 
-                    }
-                }
-            }).catch(e => console.warn("Backup Drive Error:", e));
+        console.log("📥 Guion disponible en DB. Solicitando confirmación al usuario:", newScript.title);
 
-            // 3. LIMPIEZA FINAL: Borrar del servidor porque ya está seguro en local
+        // 2. MOSTRAR NOTIFICACIÓN INTERACTIVA
+        // No guardamos nada todavía. Esperamos al usuario.
+        showResultNotification(newScript.title, 'script', async () => {
             try {
-                await remove(snapshot.ref);
-                console.log("🗑️ Guion eliminado de la cola de resultados (Limpieza).");
-            } catch (e) { console.error("Error limpiando Firebase:", e); }
-
-        } catch (e) {
-            // Manejo de LocalStorage Lleno
-            if (e.name === 'QuotaExceededError') {
-                console.warn("⚠️ LocalStorage lleno. Protocolo de emergencia.");
-                try {
-                    const driveId = await saveFileToDrive('script', newScript.title, newScript);
-                    
-                    if (driveId) {
-                        const placeholder = {
-                            id: newScript.id,
-                            title: newScript.title,
-                            isAI: true,
-                            driveFileId: driveId,
-                            isPlaceholder: true, 
-                            scenes: [], 
-                            timestamp: Date.now()
-                        };
-
-                        localScripts[0] = placeholder; // Reemplazamos el intento fallido si se metió algo
-                        localStorage.setItem('minimal_scripts_v1', JSON.stringify(localScripts));
-                        
-                        alert(`⚠️ Memoria llena.\n"${newScript.title}" guardado en NUBE ☁️.`);
-                        if (window.renderScriptList) window.renderScriptList();
-                        
-                        // Si se guardó en Drive, podemos borrarlo de Firebase
-                        await remove(snapshot.ref);
-
-                    } else {
-                        throw new Error("Fallo Drive Full Disk");
-                    }
-                } catch (criticalError) {
-                    alert(`❌ ERROR CRÍTICO\nNo hay espacio local ni en Drive. El archivo se mantiene en el servidor por seguridad.`);
-                    // AQUÍ NO BORRAMOS DE FIREBASE para no perderlo
-                }
-            } 
-        } 
+                return await processScriptSave(newScript, snapshot.ref);
+            } catch (e) {
+                console.error("Error al guardar:", e);
+                alert("Error al guardar: " + e.message + "\n\nEl archivo sigue seguro en el servidor. Inténtalo de nuevo.");
+                return false; // Indica fallo a la notificación para que no se cierre
+            }
+        });
     });
+}
+
+async function processScriptSave(scriptData, dbRef) {
+    // A. GUARDAR LOCAL
+    const localScripts = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
+    
+    // Evitar duplicados si el usuario da click muchas veces
+    const index = localScripts.findIndex(s => s.id === scriptData.id);
+    if (index !== -1) localScripts[index] = scriptData;
+    else localScripts.unshift(scriptData);
+    
+    try {
+        localStorage.setItem('minimal_scripts_v1', JSON.stringify(localScripts));
+    } catch (e) {
+        // Fallback si LocalStorage está lleno: intentamos subir a Drive directamente más abajo
+        console.warn("LocalStorage lleno, intentando modo 'Solo Nube'");
+    }
+
+    // B. GUARDAR EN DRIVE (Si hay token)
+    const token = getDriveToken();
+    if (token) {
+        try {
+            const driveId = await saveFileToDrive('script', scriptData.title, scriptData);
+            if (driveId) {
+                // Actualizar referencia local
+                scriptData.driveFileId = driveId;
+                const updatedList = JSON.parse(localStorage.getItem('minimal_scripts_v1')) || [];
+                const t = updatedList.find(s => s.id === scriptData.id);
+                if (t) { 
+                    t.driveFileId = driveId;
+                    localStorage.setItem('minimal_scripts_v1', JSON.stringify(updatedList));
+                }
+            }
+        } catch (driveErr) {
+            console.error("Error subiendo a Drive:", driveErr);
+            if (!confirm("No se pudo guardar en Drive (Error de red). ¿Quieres borrarlo del servidor de todos modos y quedarte solo con la copia local?")) {
+                return false; // Usuario cancela borrado, mantenemos en servidor
+            }
+        }
+    } else {
+        alert("Guardado en navegador. (No conectado a Drive)");
+    }
+
+    // C. BORRAR DEL SERVIDOR (Solo si llegamos aquí)
+    await remove(dbRef);
+    console.log("✅ Guion guardado y eliminado del servidor.");
+    
+    if (window.renderScriptList) window.renderScriptList();
+    return true;
 }
 
 onAuthStateChanged(auth, (user) => {
@@ -182,13 +176,11 @@ async function generateScriptFromText() {
         let dataContext = "";
         if (useDeepData) dataContext = getUniversalData();
 
-        // 1. Deshabilitar brevemente para evitar doble click
         if (btnGenGuion) {
             btnGenGuion.disabled = true;
             btnGenGuion.innerText = "Enviando...";
         }
 
-        // 2. Enviar a Cola
         const newJobRef = push(ref(db, 'queue/scripts'));
         await set(newJobRef, {
             userId: user.uid,
@@ -202,9 +194,6 @@ async function generateScriptFromText() {
 
         registerUsage('script');
 
-        console.log("🚀 Job enviado. Limpiando interfaz.");
-        
-        // 3. Limpieza inmediata (Fire & Forget)
         if (inputScriptTheme) inputScriptTheme.value = "";
         
         if (btnGenGuion) {
