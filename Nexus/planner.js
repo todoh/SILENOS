@@ -4,7 +4,7 @@ import { PlannerAI } from './planner_ai.js';
 // (planner_ui.js, planner_structure.js, planner_export.js)
 
 /**
- * PLANNER MANAGER (CORE) V4.1 - CON SOPORTE DE LORE
+ * PLANNER MANAGER (CORE) V4.2 - FIX CACHE VACÍA
  * Orquestador principal.
  */
 
@@ -15,11 +15,13 @@ class PlannerManager {
         this.notify = notifyCallback;
         
         // Inicialización de estructura de datos
-        if (!this.sagaData.plannerProjects) {
+        // FIX: Comprobamos si no existe O si está vacío (length === 0) para evitar el error de índice 0
+        if (!this.sagaData.plannerProjects || this.sagaData.plannerProjects.length === 0) {
             this.sagaData.plannerProjects = [];
             this.createProject("Proyecto Principal");
         }
 
+        // Ahora es seguro acceder a [0] porque createProject lo garantiza arriba
         this.activeProjectId = this.sagaData.activePlannerProjectId || this.sagaData.plannerProjects[0].id;
         this.container = null;
         
