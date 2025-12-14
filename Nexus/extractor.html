@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extractor Neumórfico de Personajes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
+        
+        /* Base de color "Papel Chino" */
+        :root {
+            --bg-color: #ecf0f3;
+            --text-main: #4a5568;
+            --text-light: #a0aec0;
+            --shadow-light: #ffffff;
+            --shadow-dark: #d1d9e6;
+        }
+
+        body { 
+            font-family: 'Nunito', sans-serif; 
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        /* Utilidades Neumórficas */
+        .neu-up {
+            background: var(--bg-color);
+            box-shadow: 9px 9px 16px var(--shadow-dark), 
+                       -9px -9px 16px var(--shadow-light);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .neu-down, .neu-btn:active {
+            background: var(--bg-color);
+            box-shadow: inset 6px 6px 10px var(--shadow-dark), 
+                       inset -6px -6px 10px var(--shadow-light);
+            border-radius: 20px;
+        }
+
+        .neu-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .neu-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 12px 12px 20px var(--shadow-dark), 
+                       -12px -12px 20px var(--shadow-light);
+        }
+
+        /* Efecto Modal */
+        .modal-overlay {
+            background: rgba(236, 240, 243, 0.6);
+            backdrop-filter: blur(8px); /* Efecto cristal/papel traslúcido */
+            -webkit-backdrop-filter: blur(8px);
+        }
+        
+        /* Scrollbar minimalista */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 10px; }
+    </style>
+</head>
+<body class="min-h-screen p-6 flex flex-col items-center justify-center transition-all">
+
+    <div class="max-w-6xl w-full space-y-8">
+        
+        <div class="neu-up p-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full neu-down flex items-center justify-center text-indigo-500">
+                    <i data-lucide="ghost" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-700 tracking-wide">Extractor Zen</h1>
+                    <p class="text-slate-500 text-sm">Sube tu JSON para materializar las entidades.</p>
+                </div>
+            </div>
+            
+            <button id="download-btn" class="hidden neu-up neu-btn px-6 py-3 rounded-xl text-indigo-600 font-bold flex items-center gap-2 text-sm uppercase tracking-wider">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                Guardar JSON
+            </button>
+        </div>
+
+        <div id="upload-area" class="neu-up p-10 text-center cursor-pointer relative group transition-all duration-300">
+            <input type="file" id="file-input" accept=".json" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50">
+            <div class="flex flex-col items-center gap-4 pointer-events-none transition-transform group-hover:scale-105">
+                <div class="w-20 h-20 rounded-full neu-down flex items-center justify-center text-slate-400 mb-2">
+                    <i data-lucide="upload-cloud" class="w-8 h-8"></i>
+                </div>
+                <h3 class="font-bold text-xl text-slate-600">Suelta tu archivo aquí</h3>
+                <p class="text-slate-400 text-sm">El sistema extraerá la esencia de tus personajes.</p>
+            </div>
+        </div>
+
+        <div id="status-area" class="hidden neu-down p-4 text-sm font-mono text-slate-500 space-y-1 max-h-32 overflow-y-auto">
+            </div>
+
+        <div id="cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 hidden pb-10">
+            </div>
+
+    </div>
+
+    <div id="char-modal" class="fixed inset-0 z-[100] hidden modal-overlay flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="neu-up w-full max-w-2xl transform scale-95 transition-transform duration-300 relative overflow-hidden flex flex-col max-h-[90vh]" id="modal-content">
+            
+            <div class="p-8 pb-4 flex justify-between items-start border-b border-slate-200/50">
+                <div>
+                    <span id="m-role" class="text-xs font-bold text-indigo-500 uppercase tracking-widest bg-indigo-50/50 px-2 py-1 rounded-lg">Rol Desconocido</span>
+                    <h2 id="m-name" class="text-3xl font-bold text-slate-800 mt-2">Nombre del Personaje</h2>
+                    <p id="m-id" class="text-xs text-slate-400 font-mono mt-1">ID: ---</p>
+                </div>
+                <button onclick="closeModal()" class="w-10 h-10 rounded-full neu-up neu-btn flex items-center justify-center text-slate-400 hover:text-red-500">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-8 overflow-y-auto space-y-8">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="neu-down p-5 rounded-xl">
+                        <div class="flex items-center gap-2 mb-2 text-indigo-500">
+                            <i data-lucide="target" class="w-4 h-4"></i>
+                            <span class="text-xs font-bold uppercase">Objetivo</span>
+                        </div>
+                        <p id="m-goal" class="text-slate-600 text-sm leading-relaxed">Sin datos...</p>
+                    </div>
+                    <div class="neu-down p-5 rounded-xl">
+                        <div class="flex items-center gap-2 mb-2 text-pink-500">
+                            <i data-lucide="zap" class="w-4 h-4"></i>
+                            <span class="text-xs font-bold uppercase">Miedo / Debilidad</span>
+                        </div>
+                        <p id="m-fear" class="text-slate-600 text-sm leading-relaxed">Sin datos...</p>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-sm font-bold text-slate-500 uppercase mb-3 flex items-center gap-2">
+                        <i data-lucide="file-text" class="w-4 h-4"></i> Notas
+                    </h3>
+                    <div class="neu-down p-5 rounded-xl min-h-[100px]">
+                        <p id="m-notes" class="text-slate-600 text-sm whitespace-pre-wrap">Sin notas adicionales.</p>
+                    </div>
+                </div>
+
+                 <div>
+                    <h3 class="text-sm font-bold text-slate-500 uppercase mb-3 flex items-center gap-2">
+                        <i data-lucide="network" class="w-4 h-4"></i> Relaciones
+                    </h3>
+                    <div id="m-relationships" class="flex flex-wrap gap-2">
+                        </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Iconos y Elementos ---
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) lucide.createIcons();
+        });
+
+        const fileInput = document.getElementById('file-input');
+        const uploadArea = document.getElementById('upload-area');
+        const statusArea = document.getElementById('status-area');
+        const cardsGrid = document.getElementById('cards-grid');
+        const downloadBtn = document.getElementById('download-btn');
+        const modal = document.getElementById('char-modal');
+        const modalContent = document.getElementById('modal-content');
+
+        let extractedData = null;
+
+        // --- Manejo de Archivos ---
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('neu-down'); // Efecto hundido al arrastrar
+            uploadArea.classList.remove('neu-up');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.add('neu-up');
+            uploadArea.classList.remove('neu-down');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('neu-up');
+            uploadArea.classList.remove('neu-down');
+            if (e.dataTransfer.files.length) processFile(e.dataTransfer.files[0]);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) processFile(e.target.files[0]);
+        });
+
+        function log(msg) {
+            statusArea.classList.remove('hidden');
+            const p = document.createElement('div');
+            p.textContent = `> ${msg}`;
+            statusArea.appendChild(p);
+            statusArea.scrollTop = statusArea.scrollHeight;
+        }
+
+        function processFile(file) {
+            statusArea.innerHTML = ''; // Limpiar logs
+            log(`Analizando: ${file.name}...`);
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    extractCharacters(json);
+                } catch (err) {
+                    log('Error: JSON inválido.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- Lógica de Extracción (Misma lógica robusta anterior) ---
+        function extractCharacters(data) {
+            const keys = ['personajes', 'entidades', 'characters', 'entities', 'fichas', 'actors'];
+            let list = [];
+
+            // Buscar en raíz
+            for (const k of keys) if (Array.isArray(data[k])) { list = data[k]; break; }
+
+            // Buscar anidado
+            if (!list.length) {
+                for (const v of Object.values(data)) {
+                    if (typeof v === 'object' && v) {
+                        for (const k of keys) if (Array.isArray(v[k])) { list = v[k]; break; }
+                    }
+                    if (list.length) break;
+                }
+            }
+
+            if (!list.length) {
+                log('No se encontraron listas de personajes compatibles.');
+                return;
+            }
+
+            // Normalizar
+            const normalized = list.map(item => ({
+                id: item.id || `id_${Math.random().toString(36).substr(2,9)}`,
+                name: item.name || item.nombre || "Sin Nombre",
+                role: item.role || item.rol || item.ocupacion || "Sin rol definido",
+                goal: item.goal || item.objetivo || item.meta || "No especificado",
+                fear: item.fear || item.miedo || item.temor || "No especificado",
+                notes: item.notes || item.notas || item.descripcion || "...",
+                relationships: item.relationships || item.relaciones || []
+            }));
+
+            extractedData = { characters: normalized };
+            renderCards(normalized);
+            
+            // Configurar descarga
+            downloadBtn.classList.remove('hidden');
+            downloadBtn.onclick = () => {
+                const blob = new Blob([JSON.stringify(extractedData, null, 2)], {type : 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'personajes_neu.json';
+                a.click();
+            };
+        }
+
+        // --- Renderizado de Tarjetas ---
+        function renderCards(chars) {
+            cardsGrid.innerHTML = '';
+            cardsGrid.classList.remove('hidden');
+            log(`Materializando ${chars.length} entidades.`);
+
+            // Ocultar zona de carga visualmente (opcional)
+            uploadArea.style.display = 'none';
+
+            chars.forEach((char, index) => {
+                const card = document.createElement('div');
+                card.className = 'neu-up neu-btn p-6 cursor-pointer flex flex-col justify-between h-48 group';
+                card.onclick = () => openModal(char);
+
+                // Animación escalonada de entrada
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+
+                const roleText = char.role.length > 30 ? char.role.substring(0,27)+'...' : char.role;
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="w-10 h-10 rounded-full neu-down flex items-center justify-center text-slate-400 group-hover:text-indigo-500 transition-colors">
+                            <span class="font-bold text-sm">${char.name.charAt(0).toUpperCase()}</span>
+                        </div>
+                        <i data-lucide="maximize-2" class="w-4 h-4 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg text-slate-700 leading-tight mb-1">${char.name}</h3>
+                        <p class="text-xs font-semibold text-indigo-400 uppercase tracking-wider">${roleText}</p>
+                    </div>
+                `;
+                cardsGrid.appendChild(card);
+            });
+            
+            lucide.createIcons();
+        }
+
+        // --- Lógica del Modal ---
+        function openModal(char) {
+            // Rellenar datos
+            document.getElementById('m-name').textContent = char.name;
+            document.getElementById('m-role').textContent = char.role;
+            document.getElementById('m-id').textContent = `ID: ${char.id}`;
+            document.getElementById('m-goal').textContent = char.goal;
+            document.getElementById('m-fear').textContent = char.fear;
+            document.getElementById('m-notes').textContent = char.notes;
+
+            // Relaciones
+            const relContainer = document.getElementById('m-relationships');
+            relContainer.innerHTML = '';
+            if (Array.isArray(char.relationships) && char.relationships.length > 0) {
+                char.relationships.forEach(rel => {
+                    const tag = document.createElement('span');
+                    tag.className = 'px-3 py-1 rounded-full neu-down text-xs font-semibold text-slate-500';
+                    // Manejo simple de string u objeto
+                    const text = typeof rel === 'string' ? rel : (rel.name || rel.target || JSON.stringify(rel));
+                    tag.textContent = text;
+                    relContainer.appendChild(tag);
+                });
+            } else {
+                relContainer.innerHTML = '<span class="text-slate-400 text-xs italic">Sin relaciones registradas</span>';
+            }
+
+            // Mostrar
+            modal.classList.remove('hidden');
+            // Timeout pequeño para permitir que el display:block se renderice antes de cambiar la opacidad
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+                modalContent.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            modal.classList.add('opacity-0');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300); // Esperar a que termine la transición
+        }
+
+        // Cerrar con Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+        });
+        
+        // Cerrar al click fuera
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+    </script>
+</body>
+</html>
