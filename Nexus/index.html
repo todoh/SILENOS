@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -204,6 +205,31 @@
             <div class="panel-actions">
                 <button id="btnDeletePlace" class="btn danger">ELIMINAR CARRIL</button>
             </div>
+        </div>
+    </div>
+
+    <div id="groupModal" class="floating-panel hidden">
+        <div class="panel-header">
+            <span class="panel-title">EDITAR TUBERÍA / GRUPO</span>
+            <button class="close-btn" id="closeGroupModal">×</button>
+        </div>
+        <div class="panel-body">
+            <label>NOMBRE DE LA TUBERÍA</label>
+            <input type="text" id="groupName" class="char-input">
+            <label>COLOR DISTINTIVO</label>
+            <input type="color" id="groupColor" class="char-input" style="height: 40px; padding: 2px;">
+            
+            <div style="border-top:1px solid #eee; margin:15px 0;"></div>
+            <label style="color:var(--error); font-weight:bold;">ZONA DE PELIGRO</label>
+            
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button id="btnDissolveGroup" class="btn" style="flex:1; border:1px solid #ccc; font-size: 0.8rem;">LIBERAR CARRILES</button>
+                <button id="btnDeleteGroup" class="btn danger" style="flex:1; font-size: 0.8rem;">ELIMINAR TODO</button>
+            </div>
+            <p style="font-size:0.7rem; color:#666; margin-top:10px; line-height: 1.4;">
+                * <b>Liberar:</b> Borra el grupo pero sus carriles se mantienen como independientes.<br>
+                * <b>Eliminar Todo:</b> Destruye el grupo Y todos los carriles/eventos que contiene.
+            </p>
         </div>
     </div>
 
