@@ -1,10 +1,9 @@
 /* NEXUS SILENOS/nexus_importer.js */
 /**
- * NEXUS BRIDGE - UNIVERSAL IMPORTER
- * Gestiona la detección de tipos de datos JSON e inyección en SagaData.
- * CORREGIDO: Uso de puntero dinámico para evitar pérdida de datos tras recargas de caché.
- * ACTUALIZADO V3: Auto-creación de carriles (Lanes) faltantes al importar eventos.
- * ACTUALIZADO V4: Ejemplo de relaciones en plantilla de personajes.
+ * NEXUS BRIDGE - UNIVERSAL IMPORTER V5.0
+ * - Auto-creación de Carriles.
+ * - Auto-vinculación con Base de Datos de Lugares (Lore).
+ * - Templates enriquecidos.
  */
 
 export class NexusImporter {
@@ -32,32 +31,31 @@ export class NexusImporter {
                 fear: "Miedo / Debilidad",
                 notes: "Notas adicionales...",
                 relationships: [
-                    { 
-                        "targetId": "ID_DEL_OTRO_PJ", 
-                        "type": "Hermano / Rival / Aliado" 
-                    }
+                    { "targetId": "ID_DEL_OTRO_PJ", "type": "Hermano / Rival" }
                 ]
             },
             PLACE_LORE: {
                 id: "place_db_template",
                 name: "Nombre del Lugar",
-                type: "Ciudad / Bosque / Ruina",
+                type: "Ciudad / Bosque",
                 color: "#3498db",
-                desc: "Descripción del lore...",
+                desc: "Lore del lugar...",
                 notes: "Secretos..."
             },
             EVENT: {
                 id: "evt_template",
-                laneId: "ID_CARRIL_DESTINO", // Si este ID no existe, el sistema creará el carril.
+                laneId: "ID_CARRIL_DESTINO (Opcional si usas laneName)",
+                laneName: "Nombre del Carril (Si no existe, se crea)",
+                linkedPlace: "Nombre del Lugar en DB (Para vincular Lore)", 
                 k: 10,
                 title: "Título del Suceso",
-                desc: "Descripción de lo que ocurre...",
-                characters: [],
-                stages: []
+                desc: "Descripción...",
+                characters: []
             },
             TIMELINE: {
                 id: "tl_template",
                 name: "Nueva Línea Temporal",
+                linkedPlace: "Nombre del Lugar a Vincular (Crea uno vacío si falta)",
                 startVal: 0,
                 endVal: 100,
                 events: []
@@ -78,15 +76,7 @@ export class NexusImporter {
                 selectedPlaceIds: [],
                 selectedEventIds: [],
                 aiGeneratedLore: [],
-                chapters: [
-                    {
-                        title: "Capítulo 1",
-                        desc: "Descripción breve...",
-                        focus: "Foco dramático",
-                        povId: "", 
-                        linkedEventIds: []
-                    }
-                ]
+                chapters: []
             }
         };
         return JSON.stringify(templates[type] || {}, null, 2);
@@ -118,7 +108,12 @@ export class NexusImporter {
 
         if (count > 0) {
             this.ui.saveToCache();
+            // Recargar la vista activa si corresponde
             if(this.ui.activeManagerType) this.ui.openManager(this.ui.activeManagerType); 
+            // Si estamos en Chronos (vista principal), forzamos recarga visual si se puede
+            if(window.location.reload && !this.ui.activeManagerType) {
+                 // Opción: Notificar al usuario que recargue o hacerlo auto si es safe
+            }
             return { success: true, msg: `Importados ${count} elementos de tipo ${lastType}.` };
         } else {
             return { success: false, msg: "No se reconoció el tipo de datos." };
@@ -150,10 +145,24 @@ export class NexusImporter {
                 if (!this.sagaData.maps) this.sagaData.maps = [];
                 this._upsert(this.sagaData.maps, item);
                 break;
+            
             case 'TIMELINE':
                 if (!this.sagaData.timelines) this.sagaData.timelines = [];
+                
+                // LÓGICA DE VINCULACIÓN AUTOMÁTICA PARA TIMELINES
+                // 1. Resolver o Crear el Lugar en Base de Datos (Lore)
+                const tlLinkName = item.linkedPlace || item.name || "Lugar Sin Nombre";
+                const tlDbId = this._ensurePlaceLore(tlLinkName, item.linkedPlace ? null : "Generado por Timeline");
+                
+                // 2. Asignar vinculación
+                item.linkedDbId = tlDbId;
+                
+                // Limpieza de propiedad auxiliar
+                delete item.linkedPlace;
+
                 this._upsert(this.sagaData.timelines, item);
                 break;
+
             case 'PROJECT_PLANNER':
                 if (!this.sagaData.plannerProjects) this.sagaData.plannerProjects = [];
                 if (!item.selectedCharIds) item.selectedCharIds = [];
@@ -164,41 +173,97 @@ export class NexusImporter {
                 break;
             
             case 'EVENT':
-                // --- LÓGICA INTELIGENTE DE CARRILES ---
+                // --- LÓGICA INTELIGENTE DE CARRILES Y VINCULACIÓN ---
                 let targetLane = null;
+                const laneId = item.laneId;
+                const laneName = item.laneName || (laneId ? `Carril ${laneId}` : "Bandeja Importada");
 
-                // 1. Si viene con ID de carril
-                if (item.laneId) {
-                    // Buscar carril existente
-                    targetLane = this.sagaData.places.find(p => p.id === item.laneId);
-                    
-                    // SI NO EXISTE: CREARLO AL VUELO
-                    if (!targetLane) {
-                        targetLane = {
-                            id: item.laneId, // Usamos el ID solicitado
-                            name: `Carril Generado (${item.laneId})`, // Nombre provisional para identificarlo
-                            color: this._getRandomColor(), // Color aleatorio para distinguirlo
-                            events: []
-                        };
-                        this.sagaData.places.push(targetLane);
-                        // Opcional: Notificar en consola o UI que se creó un carril
-                        console.log(`[Importador] Carril '${item.laneId}' no existía. Creado automáticamente.`);
-                    }
+                // 1. Buscar Carril Existente
+                if (laneId) {
+                    targetLane = this.sagaData.places.find(p => p.id === laneId);
+                } else if (item.laneName) {
+                    targetLane = this.sagaData.places.find(p => p.name === item.laneName);
                 }
 
-                // 2. Si no venía con laneId, usar Bandeja de Entrada
+                // 2. Si NO existe el Carril, crearlo
                 if (!targetLane) {
-                    targetLane = this.sagaData.places.find(p => p.id === 'inbox_import');
-                    if(!targetLane) {
-                        targetLane = { id: 'inbox_import', name: 'BANDEJA IMPORTADA', color: '#95a5a6', events: [] };
-                        this.sagaData.places.push(targetLane);
+                    targetLane = {
+                        id: laneId || 'lane_' + Date.now() + '_' + Math.floor(Math.random()*1000),
+                        name: laneName,
+                        color: this._getRandomColor(),
+                        events: [],
+                        linkedDbId: null 
+                    };
+                    this.sagaData.places.push(targetLane);
+                    console.log(`[Importador] Carril '${targetLane.name}' creado.`);
+                }
+
+                // 3. VINCULACIÓN AUTOMÁTICA (Magia solicitada)
+                // Si el carril NO tiene vínculo, o el JSON pide uno específico:
+                
+                let loreIdToLink = null;
+
+                if (item.linkedPlace) {
+                    // A: El JSON especifica explícitamente un lugar (Nombre o ID)
+                    loreIdToLink = this._ensurePlaceLore(item.linkedPlace);
+                } else if (!targetLane.linkedDbId) {
+                    // B: El JSON NO dice nada, y el carril está huérfano.
+                    // Creamos un lugar vacío con el nombre del carril para vincularlo.
+                    loreIdToLink = this._ensurePlaceLore(targetLane.name, "Generado automáticamente por evento");
+                }
+
+                // Aplicar el vínculo si encontramos/creamos un ID
+                if (loreIdToLink) {
+                    targetLane.linkedDbId = loreIdToLink;
+                    // Opcional: Si el carril se llamaba "Generado...", actualizar su nombre al del lugar
+                    if (targetLane.name.includes("Carril Generado")) {
+                        const loreEntry = this.sagaData.placeDb.find(x => x.id === loreIdToLink);
+                        if (loreEntry) targetLane.name = loreEntry.name;
                     }
                 }
-                
-                delete item.laneId; // Limpieza
+
+                // Limpieza de campos auxiliares del evento antes de guardar
+                delete item.laneId;
+                delete item.laneName;
+                delete item.linkedPlace;
+
                 this._upsert(targetLane.events, item);
                 break;
         }
+    }
+
+    /**
+     * Busca un lugar en placeDb por ID o Nombre.
+     * Si no existe, LO CREA.
+     * @returns {string} ID del lugar en placeDb
+     */
+    _ensurePlaceLore(identifier, defaultDesc = "") {
+        if (!this.sagaData.placeDb) this.sagaData.placeDb = [];
+        
+        // 1. Buscar por ID exacto
+        let found = this.sagaData.placeDb.find(p => p.id === identifier);
+        
+        // 2. Buscar por Nombre (insensible a mayúsculas)
+        if (!found) {
+            found = this.sagaData.placeDb.find(p => p.name.toLowerCase() === identifier.toLowerCase());
+        }
+
+        if (found) return found.id;
+
+        // 3. Crear Nuevo si no existe
+        const newId = 'place_db_imp_' + Date.now() + '_' + Math.floor(Math.random()*100);
+        const newPlace = {
+            id: newId,
+            name: identifier, // Usamos el identificador como nombre (ej: "Castillo")
+            type: "Lugar Importado",
+            color: this._getRandomColor(),
+            desc: defaultDesc || "Lugar generado automáticamente durante la importación.",
+            notes: ""
+        };
+        
+        this.sagaData.placeDb.push(newPlace);
+        console.log(`[Importador] Lugar Lore '${identifier}' creado y vinculado.`);
+        return newId;
     }
 
     _upsert(array, item) {
