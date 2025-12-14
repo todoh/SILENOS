@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRISTINA LOBO</title>
+
+       <meta property="og:title" content="CRISTINA LOBO">   
+    <meta property="og:description" content="CRISTINA LOBO - Biblioteca Digital de Obras sobre la Antigüedad. Explora nuestra colección curada de libros y recursos sobre Egipto, Grecia y más.">   
+    <meta property="og:image" content="https://todoh.github.io/Cristina-Lobo/preview.png">   
+    <meta property="og:url" content="https://github.com/todoh/Cristina-Lobo/">  
+    <meta property="og:type" content="website">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:type" content="image/jpeg">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* =========================================
+           CORE STYLES (Atmósfera Koreh)
+           ========================================= */
+        :root {
+            /* Paleta Zen / Papel */
+            --bg-paper: #faf9f6;
+            --bg-paper-dark: #eceae4;
+            --ink-primary: #1a1a1a;
+            --ink-secondary: #505050;
+            --ink-light: #a0a0a0;
+            --accent: #d4a373; /* Un tono tierra/oro suave para destacar precios */
+            
+            --font-main: 'Inter', sans-serif;
+            --shadow-soft: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 20px 40px -10px rgba(0, 0, 0, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle at top center, var(--bg-paper) 0%, var(--bg-paper-dark) 100%);
+            color: var(--ink-primary);
+            font-family: var(--font-main);
+            min-height: 100vh;
+        }
+
+        /* --- Header --- */
+        header {
+            text-align: center;
+            padding: 80px 20px 40px;
+            opacity: 0;
+            animation: fadeIn 1.5s ease-out forwards;
+        }
+
+        h1 {
+            font-weight: 300;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--ink-secondary);
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--ink-light);
+            font-style: italic;
+            letter-spacing: 1px;
+        }
+
+        /* --- Contenedor Principal --- */
+        #app {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 40px 100px;
+        }
+
+        /* --- Secciones de Categoría --- */
+        .category-section {
+            margin-bottom: 80px;
+            opacity: 0;
+            animation: slideUp 1s ease-out forwards;
+        }
+
+        .category-title {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            color: var(--ink-primary);
+            display: inline-block;
+            padding-right: 20px;
+        }
+
+        /* --- Grid de Libros --- */
+        .books-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 40px;
+            align-items: start;
+        }
+
+        /* --- Tarjeta del Libro (Minimalista) --- */
+        .book-card {
+            position: relative;
+            width: 100%;
+            /* Ratio típico de libro 2:3 */
+            aspect-ratio: 2 / 3; 
+            border-radius: 4px;
+            overflow: hidden;
+            background-color: #e0e0e0; /* Placeholder gris */
+            box-shadow: var(--shadow-soft);
+            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+            cursor: pointer;
+        }
+
+        .book-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        /* Imagen */
+        .book-cover {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.7s ease;
+            filter: grayscale(10%); /* Un toque desaturado para elegancia */
+        }
+
+        .book-card:hover .book-cover {
+            transform: scale(1.05);
+            filter: grayscale(0%);
+        }
+
+        /* --- Overlay de Información (Hover) --- */
+        .book-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, rgba(250, 249, 246, 0.95) 20%, rgba(250, 249, 246, 0) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 20px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s ease;
+        }
+
+        .book-card:hover .book-overlay {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .book-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            line-height: 1.4;
+            margin-bottom: 8px;
+            color: var(--ink-primary);
+        }
+
+        .book-price {
+            font-size: 0.85rem;
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        /* Enlace invisible que cubre toda la tarjeta */
+        .card-link {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+
+        /* --- Animaciones --- */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 600px) {
+            .books-grid {
+                grid-template-columns: repeat(2, 1fr); /* 2 columnas en móvil */
+                gap: 20px;
+            }
+            #app {
+                padding: 0 20px 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>CRISTINA LOBO</h1>
+        <div class="subtitle">B I B L I O T  E C A</div></div>
+    </header>
+
+    <div id="app">
+        <div id="loading" style="text-align: center; color: #a0a0a0; font-weight: 300; margin-top: 50px;">
+            Cargando colección...
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Renderiza una sección completa de categoría
+         */
+        const renderCategorySection = (categoryName, books) => {
+            const section = document.createElement('section');
+            section.className = 'category-section';
+
+            // Título de la categoría
+            const title = document.createElement('h2');
+            title.className = 'category-title';
+            title.textContent = categoryName;
+            section.appendChild(title);
+
+            // Grid de libros
+            const grid = document.createElement('div');
+            grid.className = 'books-grid';
+
+            books.forEach(book => {
+                const card = document.createElement('div');
+                card.className = 'book-card';
+                
+                // Determinamos el link
+                const linkUrl = book.url || '#';
+
+                // HTML interno de la tarjeta
+                card.innerHTML = `
+                    <a href="${linkUrl}" target="_blank" class="card-link"></a>
+                    <img src="${book.image}" alt="${book.title}" class="book-cover" onerror="this.src='https://via.placeholder.com/300x450/e0e0e0/808080?text=No+Image'">
+                    <div class="book-overlay">
+                        <div class="book-title">${book.title}</div>
+                        <div class="book-price">${book.price || ''}</div>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+
+            section.appendChild(grid);
+            return section;
+        };
+
+        /**
+         * Función Principal (Main)
+         */
+        const initGallery = async () => {
+            const appContainer = document.getElementById('app');
+            const loading = document.getElementById('loading');
+            
+            try {
+                // 1. Carga de datos (paralela)
+                const [resEgipto, resGrecia] = await Promise.all([
+                    fetch('Egipto_backup.json'),
+                    fetch('Grecia_2_backup.json')
+                ]);
+
+                if (!resEgipto.ok || !resGrecia.ok) throw new Error("Error al leer archivos JSON");
+
+                const dataEgipto = await resEgipto.json();
+                const dataGrecia = await resGrecia.json();
+
+                // Unificamos libros
+                const allBooks = [...(dataEgipto.books || []), ...(dataGrecia.books || [])];
+
+                if (allBooks.length === 0) {
+                    loading.textContent = "La colección está vacía.";
+                    return;
+                }
+
+                // 2. Agrupación por Categoría (Lógica de Ordenamiento)
+                const booksByCategory = {};
+
+                allBooks.forEach(book => {
+                    // Normalizamos la categoría (Capitalize) o usamos 'Varios'
+                    let cat = book.category ? book.category.trim() : 'Colección General';
+                    // Primera letra mayúscula, resto igual
+                    cat = cat.charAt(0).toUpperCase() + cat.slice(1);
+
+                    if (!booksByCategory[cat]) {
+                        booksByCategory[cat] = [];
+                    }
+                    booksByCategory[cat].push(book);
+                });
+
+                // Limpiamos cargando
+                loading.remove();
+
+                // 3. Renderizado (Ordenamos las categorías alfabéticamente)
+                const sortedCategories = Object.keys(booksByCategory).sort();
+
+                sortedCategories.forEach((catName, index) => {
+                    const section = renderCategorySection(catName, booksByCategory[catName]);
+                    // Añadimos un pequeño retraso en la animación para cada sección
+                    section.style.animationDelay = `${index * 0.2}s`;
+                    appContainer.appendChild(section);
+                });
+
+            } catch (error) {
+                console.error(error);
+                loading.innerHTML = `<span style="color:#d9534f">No se pudo acceder a la biblioteca.<br><small>${error.message}</small></span>`;
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', initGallery);
+    </script>
+</body>
+</html>
