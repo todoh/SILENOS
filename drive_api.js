@@ -1,7 +1,6 @@
+import { getDriveToken, silenosLogout, refreshGoogleSession } from './auth_ui.js';
 
-import { getDriveToken, silenosLogout } from './auth_ui.js';
-
-console.log("Módulo Drive API Cargado (v3.6 - No-AutoLogout)");
+console.log("Módulo Drive API Cargado (v4.0 - Auto Retry)");
 
 // Configuración de Carpetas
 const PARENT_SYSTEM_FOLDER = 'SILEN_SYSTEM';
@@ -12,9 +11,7 @@ const FOLDER_CONFIG = {
     game:   { name: 'Silenos_Games',   mime: 'application/vnd.google-apps.folder' }
 };
 
-const JSON_MIME = 'application/json';
-
-// Cache de IDs de carpetas para no buscar constantemente
+// Cache de IDs de carpetas
 let folderIds = {
     root: null,
     data: null,
@@ -23,21 +20,51 @@ let folderIds = {
     game: null
 };
 
-// --- HELPER DE SEGURIDAD ---
+// --- CORE: FETCH CON REINTENTO AUTOMÁTICO (WRAPPER) ---
+// Esta función envuelve todas las llamadas a la API de Drive.
+// Si recibe un 401 (Token Caducado), pide renovar y reintenta la petición original.
+async function driveFetch(url, options = {}) {
+    let token = getDriveToken();
+    
+    // Inyectar Authorization si no está
+    if (!options.headers) options.headers = {};
+    options.headers['Authorization'] = `Bearer ${token}`;
+
+    let response = await fetch(url, options);
+
+    // Si el token caducó (Error 401)
+    if (response.status === 401) {
+        console.warn("⚠️ Token de Drive caducado (1h). Iniciando protocolo de renovación...");
+        
+        // 1. Preguntar al usuario (necesario para habilitar el popup de seguridad)
+        // Usamos confirm nativo porque necesitamos bloquear la ejecución hasta que el usuario decida.
+        const userWantsRefresh = confirm("⚠️ Tu sesión de seguridad con Google ha expirado (Límite 1h).\n\nPara no perder tu trabajo, pulsa 'Aceptar' y se renovará la conexión sin recargar la página.\n(Si pulsas Cancelar, la operación fallará).");
+
+        if (userWantsRefresh) {
+            // 2. Intentar renovar (abre popup momentáneo)
+            const newToken = await refreshGoogleSession();
+            
+            if (newToken) {
+                // 3. Reintentar la petición original con el nuevo token
+                console.log("🔄 Reintentando operación con nuevo token...");
+                options.headers['Authorization'] = `Bearer ${newToken}`;
+                response = await fetch(url, options); // Segundo intento
+            } else {
+                throw new Error("AUTH_REFRESH_FAILED: No se pudo renovar el token.");
+            }
+        } else {
+             throw new Error("AUTH_EXPIRED_USER_CANCELLED");
+        }
+    }
+
+    return response;
+}
+
+// --- HELPER DE RESPUESTA ---
 async function handleApiResponse(response, context) {
     if (response.ok) {
-        // DELETE devuelve 204 No Content, que no tiene JSON
         if (response.status === 204) return null;
         return response.json();
-    }
-    if (response.status === 401) {
-        console.warn(`Drive API 401 en ${context}: Token caducado.`);
-        // MODIFICACIÓN: YA NO CERRAMOS SESIÓN AUTOMÁTICAMENTE
-        // silenosLogout(); 
-        
-        // Simplemente lanzamos el error para que la UI avise, pero no recargue.
-        alert("⚠️ Tu sesión de conexión con Drive ha caducado (Seguridad Google 1h).\n\nPara volver a guardar o descargar, haz clic en tu avatar y vuelve a 'Conectar' o recarga la página.");
-        throw new Error("AUTH_EXPIRED_MANUAL_REFRESH_NEEDED");
     }
     const text = await response.text();
     throw new Error(`API Error (${response.status}) en ${context}: ${text}`);
@@ -45,7 +72,6 @@ async function handleApiResponse(response, context) {
 
 // Helper interno para buscar o crear carpetas
 async function getOrCreateFolder(folderName, parentId = null) {
-    const token = getDriveToken();
     const mimeFolder = 'application/vnd.google-apps.folder';
     
     // 1. Buscar
@@ -54,9 +80,7 @@ async function getOrCreateFolder(folderName, parentId = null) {
         q += ` and '${parentId}' in parents`;
     }
 
-    const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}`, {
-        headers: { Authorization: `Bearer ${token}` }
-    });
+    const searchRes = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}`);
     const data = await handleApiResponse(searchRes, `Buscar carpeta ${folderName}`);
 
     if (data.files && data.files.length > 0) {
@@ -73,12 +97,9 @@ async function getOrCreateFolder(folderName, parentId = null) {
         metadata.parents = [parentId];
     }
 
-    const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+    const createRes = await driveFetch('https://www.googleapis.com/drive/v3/files', {
         method: 'POST',
-        headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(metadata)
     });
     const folderData = await handleApiResponse(createRes, `Crear carpeta ${folderName}`);
@@ -87,26 +108,20 @@ async function getOrCreateFolder(folderName, parentId = null) {
 
 // --- FUNCIONES PÚBLICAS ---
 
-// 1. Inicialización del Sistema de Carpetas
 export async function initDriveSystem() {
     const token = getDriveToken();
     if (!token) return null;
     
     try {
-        // 1. Asegurar carpeta PADRE (SILEN_SYSTEM)
         if (!folderIds.root) {
             folderIds.root = await getOrCreateFolder(PARENT_SYSTEM_FOLDER);
         }
-
-        // 2. Asegurar subcarpetas DENTRO de la padre
         const promises = Object.keys(FOLDER_CONFIG).map(async (key) => {
             if (folderIds[key]) return folderIds[key];
-            
             const config = FOLDER_CONFIG[key];
             folderIds[key] = await getOrCreateFolder(config.name, folderIds.root);
             return folderIds[key];
         });
-
         await Promise.all(promises);
         return folderIds;
     } catch (e) {
@@ -115,40 +130,28 @@ export async function initDriveSystem() {
     }
 }
 
-// 2. Listar Archivos
 export async function listFilesByType(type) {
-    const token = getDriveToken();
-    if (!token) return [];
-    
     if (!folderIds[type]) await initDriveSystem();
     const targetFolderId = folderIds[type];
-    
     if (!targetFolderId) return [];
 
     try {
-        const q = `'${targetFolderId}' in parents and mimeType='${JSON_MIME}' and trashed=false`;
-        // Traemos ID y Name para comparar
-        const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id, name, modifiedTime)`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const q = `'${targetFolderId}' in parents and trashed=false`;
+        const res = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id, name, modifiedTime, mimeType)`);
         
         const data = await handleApiResponse(res, `Listar ${type}`);
-        return data.files || [];
+        const files = data.files || [];
+        return files.filter(f => f.name.toLowerCase().endsWith('.json'));
+        
     } catch (e) {
         console.error(`Error listando ${type}:`, e);
         return [];
     }
 }
 
-// 3. Descargar Archivo
 export async function loadFileContent(fileId) {
-    const token = getDriveToken();
-    if (!token) return null;
-
     try {
-        const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await driveFetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
         return await handleApiResponse(res, "Descargar Archivo");
     } catch (e) {
         console.error("Error descarga:", e);
@@ -156,12 +159,7 @@ export async function loadFileContent(fileId) {
     }
 }
 
-// 4. Guardar Archivo (Estrategia Robusta: Buscar y Destruir)
 export async function saveFileToDrive(type, fileName, jsonData, existingFileId = null) {
-    const token = getDriveToken();
-    if (!token) return null;
-
-    // Asegurar carpeta destino
     if (!folderIds[type]) await initDriveSystem();
     const folderId = folderIds[type];
 
@@ -172,18 +170,16 @@ export async function saveFileToDrive(type, fileName, jsonData, existingFileId =
     let filesToDelete = [];
     try {
         const q = `'${folderId}' in parents and name = '${safeName}' and trashed = false`;
-        const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const searchRes = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}`);
         const searchData = await searchRes.json();
         if (searchData.files) {
             filesToDelete = searchData.files;
         }
     } catch (e) {
-        console.warn("Advertencia: No se pudo verificar duplicados antes de guardar.", e);
+        console.warn("Advertencia: No se pudo verificar duplicados.", e);
     }
 
-    // 2. SUBIDA: Crear el archivo nuevo (POST)
+    // 2. SUBIDA MULTIPART
     const metadata = {
         name: safeName,
         mimeType: 'application/json',
@@ -205,10 +201,9 @@ export async function saveFileToDrive(type, fileName, jsonData, existingFileId =
 
     try {
         const url = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
-        const res = await fetch(url, {
+        const res = await driveFetch(url, {
             method: 'POST',
             headers: {
-                Authorization: `Bearer ${token}`,
                 'Content-Type': `multipart/related; boundary=${boundary}`
             },
             body: body
@@ -217,9 +212,7 @@ export async function saveFileToDrive(type, fileName, jsonData, existingFileId =
         const newFile = await handleApiResponse(res, `Guardar ${type}`);
         console.log(`💾 Guardado exitoso:`, newFile.name);
 
-        // 3. LIMPIEZA: Borrar versiones antiguas
         if (filesToDelete.length > 0) {
-            console.log(`🧹 Limpiando ${filesToDelete.length} versiones antiguas...`);
             await Promise.allSettled(filesToDelete.map(f => deleteFile(f.id)));
         }
 
@@ -231,16 +224,12 @@ export async function saveFileToDrive(type, fileName, jsonData, existingFileId =
     }
 }
 
-// 5. Eliminar Archivo (NUEVO: Para sincronización de borrado)
 export async function deleteFile(fileId) {
-    const token = getDriveToken();
-    if (!token || !fileId) return;
-
+    if (!fileId) return;
     try {
         console.log(`🔥 Eliminando archivo remoto: ${fileId}`);
-        await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
-            method: 'DELETE',
-            headers: { Authorization: `Bearer ${token}` }
+        await driveFetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+            method: 'DELETE'
         });
     } catch (e) {
         console.error(`Error eliminando archivo ${fileId}:`, e);

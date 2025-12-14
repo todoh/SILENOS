@@ -1,11 +1,11 @@
-// --- MÓDULO DE AUTENTICACIÓN Y PERFIL v3.1 (Token Persistence Fix) ---
+// --- MÓDULO DE AUTENTICACIÓN Y PERFIL v3.2 (Auto-Refresh Support) ---
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { getUserStats } from './usage_tracker.js'; 
 import { getGoogleApiKey, saveUserKeys, getUserKeyCount } from './apikey.js';
 import { initCoopSystem, openCoopModal } from './coop_manager.js';
 
-console.log("Módulo Auth UI Cargado (v3.1 - Token Persistence Fix)");
+console.log("Módulo Auth UI Cargado (v3.2 - Auto-Refresh Support)");
 
 const authConfig = {
   apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
@@ -28,7 +28,7 @@ if (!getApps().length) {
 
 const auth = getAuth(authApp);
 
-// --- NUEVO: FORZAR PERSISTENCIA LOCAL (NO SE CIERRA AL CERRAR NAVEGADOR) ---
+// Persistencia LOCAL
 setPersistence(auth, browserLocalPersistence)
     .then(() => console.log("🔐 Persistencia de sesión activada: LOCAL"))
     .catch((error) => console.error("Error setting persistence:", error));
@@ -53,14 +53,10 @@ function createUserDockUI() {
 }
 
 function renderGuestState() {
-    // 1. Mostrar pantalla de bloqueo, Ocultar App
     const loginOverlay = document.getElementById('login-overlay-screen');
     if (loginOverlay) loginOverlay.style.display = 'flex';
-    
-    // 2. Limpiar dock
     if (userDock) userDock.innerHTML = '';
 
-    // 3. Renderizar botón en el centro
     const btnContainer = document.getElementById('login-btn-container');
     if (btnContainer) {
         btnContainer.innerHTML = `
@@ -69,7 +65,6 @@ function renderGuestState() {
             Conectar con Google
         </button>`;
     }
-
     document.body.classList.remove('is-logged-in');
 }
 
@@ -185,7 +180,7 @@ function updateIAVisibility(user) {
     }
 }
 
-// --- LOGIN / LOGOUT ---
+// --- LOGIN / LOGOUT / REFRESH ---
 
 export const silenosLogin = async () => {
     try {
@@ -193,23 +188,41 @@ export const silenosLogin = async () => {
         const credential = GoogleAuthProvider.credentialFromResult(result);
         const token = credential.accessToken;
         
-        // [FIX] Cambiado de sessionStorage a localStorage para persistencia real
+        // Guardamos token y timestamp
         localStorage.setItem('google_drive_token', token);
+        localStorage.setItem('google_drive_token_ts', Date.now());
         
     } catch (error) { alert("Error login: " + error.message); }
 };
 
+// [NUEVO] Función para renovar token sin recargar página
+export const refreshGoogleSession = async () => {
+    try {
+        console.log("🔄 Renovando token de Google Drive...");
+        // Re-invoca el popup. Si el usuario ya está logueado en Chrome, suele ser casi instantáneo.
+        // Google no permite refresh tokens silenciosos en cliente puro por seguridad.
+        const result = await signInWithPopup(auth, provider);
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        const token = credential.accessToken;
+        
+        localStorage.setItem('google_drive_token', token);
+        localStorage.setItem('google_drive_token_ts', Date.now());
+        
+        console.log("✅ Token renovado con éxito.");
+        return token;
+    } catch (error) {
+        console.error("Fallo al renovar sesión:", error);
+        return null;
+    }
+};
+
 export const silenosLogout = async () => {
     await signOut(auth);
-    
-    // [FIX] Limpieza en localStorage
     localStorage.removeItem('google_drive_token');
-    
-    // Al salir, también limpiamos visualmente para evitar datos fantasma
+    localStorage.removeItem('google_drive_token_ts'); // Limpieza
     localStorage.removeItem('minimal_scripts_v1');
     localStorage.removeItem('minimal_books_v4');
     localStorage.removeItem('minimal_games_v1');
-    
     location.reload(); 
 };
 
@@ -223,7 +236,6 @@ document.addEventListener('click', (e) => {
 });
 
 // --- LISTENER PRINCIPAL DE ESTADO ---
-
 function initAuthListener() {
     onAuthStateChanged(auth, (user) => {
         currentUser = user;
@@ -232,17 +244,12 @@ function initAuthListener() {
         if (user) {
             renderUserState(user);
             initCoopSystem(user);
-            
-            // Si hay login, forzamos sincronización inicial de librería
-            if (window.syncLibrary) {
-                setTimeout(() => window.syncLibrary(), 500);
-            }
+            if (window.syncLibrary) setTimeout(() => window.syncLibrary(), 500);
         } else {
             renderGuestState();
         }
     });
 }
 
-// [FIX] Lectura desde localStorage
 export function getDriveToken() { return localStorage.getItem('google_drive_token'); }
 export { auth, currentUser };
