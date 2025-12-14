@@ -1,0 +1,195 @@
+/* NEXUS SILENOS/maps.css - V5 GEOMETRY */
+
+.map-editor-wrapper {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+    background: #e0e5ec;
+}
+
+/* --- SIDEBAR IZQUIERDA (LISTAS Y PROPIEDADES) --- */
+.map-sidebar {
+    width: 300px;
+    background: rgba(255,255,255,0.9);
+    border-right: 1px solid rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    z-index: 20;
+    box-shadow: 2px 0 15px rgba(0,0,0,0.05);
+    backdrop-filter: blur(10px);
+}
+
+.sidebar-header {
+    padding: 15px;
+    background: #f8f9fa;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    font-weight: bold;
+    color: var(--text-muted, #666);
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* Lista de Mapas */
+.map-list-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.map-list-item {
+    padding: 12px 15px;
+    margin-bottom: 5px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #333;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    display: flex; justify-content: space-between; align-items: center;
+}
+.map-list-item:hover { background: rgba(0,0,0,0.03); }
+.map-list-item.active { 
+    background: white; 
+    border-color: var(--accent, #00acc1); 
+    box-shadow: 0 4px 10px rgba(0, 172, 193, 0.15);
+    font-weight: 600;
+}
+
+/* Panel de Propiedades (Inspector) */
+.properties-panel {
+    height: 380px; /* Aumentado para botones de capa */
+    background: #fcfcfc;
+    border-top: 1px solid #ddd;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    animation: slideUp 0.3s ease;
+}
+.properties-panel.hidden { display: none; }
+
+.prop-group { display: flex; flex-direction: column; gap: 5px; }
+.prop-label { font-size: 0.7rem; color: #888; font-weight: bold; text-transform: uppercase; }
+.prop-input {max-width: 110px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.9rem;
+}
+.prop-input:focus { border-color: var(--accent, #00acc1); outline: none; }
+
+/* Botones de Capas */
+.layer-actions {
+    display: flex; gap: 5px; margin-top: 5px;
+}
+.layer-btn {
+    flex: 1;
+    padding: 6px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: #555;
+    transition: all 0.2s;
+}
+.layer-btn:hover { background: #eee; color: #000; }
+
+/* --- CANVAS AREA --- */
+.map-canvas-area {
+    flex: 1;
+    position: relative;
+    background: #ccd1d9;
+    cursor: default;
+    overflow: hidden;
+}
+
+#mapEditorCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background-image: radial-gradient(#aaa 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+/* --- TOOLBAR FLOTANTE SUPERIOR --- */
+.map-toolbar {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.95);
+    padding: 10px 20px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255,255,255,0.5);
+    z-index: 50;
+    transition: all 0.2s;
+}
+
+.tool-group { display: flex; gap: 5px; align-items: center; }
+.vr { width: 1px; height: 24px; background: #ddd; margin: 0 8px; }
+
+.tool-btn {
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1.3rem;
+    display: flex; justify-content: center; align-items: center;
+    transition: all 0.2s;
+    color: #555;
+    position: relative;
+}
+
+.tool-btn:hover { background: rgba(0,0,0,0.05); transform: translateY(-2px); }
+.tool-btn.active {
+    background: var(--accent, #00acc1);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 172, 193, 0.3);
+}
+
+.tool-btn::after {
+    content: attr(data-title);
+    position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%);
+    background: #333; color: white; padding: 4px 8px; border-radius: 4px;
+    font-size: 10px; opacity: 0; pointer-events: none; white-space: nowrap; transition: 0.2s;
+}
+.tool-btn:hover::after { opacity: 1; bottom: -35px; }
+
+/* Selector de Terreno */
+.terrain-swatch {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 2px solid white; box-shadow: 0 0 0 1px #ccc;
+    cursor: pointer; transition: transform 0.2s;
+}
+.terrain-swatch:hover { transform: scale(1.1); }
+.terrain-swatch.active { box-shadow: 0 0 0 2px var(--accent, #00acc1); transform: scale(1.2); z-index: 2; }
+
+.bg-plain { background: #fff; }
+.bg-water { background: #a2d9ce; }
+.bg-forest { background: #abebc6; }
+.bg-mountain { background: #d7dbdd; }
+.bg-danger { background: #fadbd8; }
+
+/* --- OVERLAYS --- */
+.map-info-overlay {
+    position: absolute; bottom: 25px; right: 25px;
+    background: rgba(255,255,255,0.9);
+    padding: 8px 15px; border-radius: 8px;
+    font-family: 'Courier New', monospace; font-size: 0.8rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    pointer-events: none; user-select: none;
+    display: flex; gap: 15px;
+}
+
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }

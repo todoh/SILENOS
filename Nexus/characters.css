@@ -1,0 +1,156 @@
+/* NEXUS SILENOS/characters.css */
+/* GESTOR DE PERSONAJES (NODO I - INDIVIDUALIDAD) */
+
+/* Contenedor principal: Ocupa todo el espacio disponible del modal */
+.char-manager-container {
+    display: flex;
+    width: 100%;
+    height: 100%; /* Se adapta al padre (.panel-body) */
+    gap: 25px;
+    font-family: var(--font-stack);
+}
+
+/* --- COLUMNA IZQUIERDA: LISTA --- */
+.char-sidebar {
+    width: 32%;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid rgba(0,0,0,0.06);
+    padding-right: 20px;
+}
+
+.char-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    margin-top: 20px;
+    padding-right: 5px; /* Espacio para scrollbar */
+}
+
+/* Items de la lista */
+.char-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: rgba(255,255,255,0.4);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.char-item:hover {
+    background: rgba(255,255,255,0.8);
+    transform: translateX(3px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+}
+
+.char-item.active {
+    background: white;
+    border-color: var(--accent);
+    box-shadow: 0 4px 12px rgba(0, 172, 193, 0.15);
+}
+
+/* Avatar de iniciales */
+.char-avatar-small {
+    width: 36px; height: 36px;
+    background: var(--text-main);
+    color: white;
+    border-radius: 50%;
+    display: flex; justify-content: center; align-items: center;
+    font-weight: 700; font-size: 0.85rem;
+    flex-shrink: 0;
+}
+.char-item.active .char-avatar-small {
+    background: var(--accent);
+}
+
+.char-info-preview {
+    display: flex; flex-direction: column; overflow: hidden;
+}
+.char-name-preview { 
+    font-weight: 600; font-size: 0.9rem; color: var(--text-main);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+}
+.char-role-preview { 
+    font-size: 0.7rem; color: var(--text-muted); 
+    text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;
+}
+
+
+/* --- COLUMNA DERECHA: EDICIÓN --- */
+.char-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden; /* Contiene el scroll interno */
+}
+
+/* Estado Vacío */
+.char-empty-state {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; justify-content: center; align-items: center;
+    flex-direction: column;
+    color: var(--text-light);
+    border: 2px dashed rgba(0,0,0,0.05);
+    border-radius: var(--radius-xl);
+    background: rgba(255,255,255,0.2);
+}
+
+/* Formulario */
+.char-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    height: 100%;
+    overflow-y: auto;
+    padding: 5px 5px 5px 5px;
+    animation: fadeIn 0.4s ease;
+}
+
+.form-row { display: flex; gap: 20px; }
+.form-group { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+
+/* Labels suavizados */
+.form-group label {
+    font-size: 0.75rem; font-weight: 700;
+    color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 0.5px; margin-left: 2px;
+}
+
+/* Inputs "Soft" */
+.char-input {
+    padding: 12px 15px;
+    border: none;
+    background: rgba(255,255,255,0.5);
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem; color: var(--text-main);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.char-input:focus {
+    background: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05), inset 0 0 0 2px var(--accent);
+    outline: none;
+}
+
+.char-input::placeholder { color: var(--text-light); }
+
+/* Área de acciones inferior */
+.char-actions {
+    margin-top: auto;
+    padding-top: 20px;
+    display: flex; justify-content: flex-end; gap: 15px;
+    border-top: 1px solid rgba(0,0,0,0.06);
+}
+
+@keyframes fadeIn { 
+    from { opacity: 0; transform: translateY(10px); } 
+    to { opacity: 1; transform: translateY(0); } 
+}

@@ -1,1 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUSOS</title>
+    
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="characters.css">
+    <link rel="stylesheet" href="maps.css"> 
+    <link rel="stylesheet" href="timeline.css">
+    <link rel="stylesheet" href="planner.css">
+</head>
+<body>
 
+    <canvas id="chronosCanvas"></canvas>
+
+    <div class="top-bar">
+        <div class="brand">NEXUS<span style="color:#c10000">OS</span></div>
+        <div class="controls">
+            <button id="btnGenTimeline" class="btn primary" style="background: linear-gradient(135deg, #6a11cb, #2575fc); border:none; box-shadow: 0 4px 15px rgba(37, 117, 252, 0.3);">✨ GENERAR (IA)</button>
+            <div class="separator"></div>
+            
+            <div style="display:flex; flex-direction:column; gap:2px; align-items:center;">
+                <label style="font-size:0.6rem; color:#888; font-weight:bold; letter-spacing:1px;">INICIO (T)</label>
+                <input type="number" id="inpTimeStart" class="btn" style="width:70px; background:rgba(0,0,0,0.05); text-align:center; padding:4px;" value="0">
+            </div>
+            <div style="display:flex; flex-direction:column; gap:2px; align-items:center;">
+                <label style="font-size:0.6rem; color:#888; font-weight:bold; letter-spacing:1px;">FIN (T)</label>
+                <input type="number" id="inpTimeEnd" class="btn" style="width:70px; background:rgba(0,0,0,0.05); text-align:center; padding:4px;" value="100">
+            </div>
+            <div class="separator"></div>
+            <button id="btnAddPlace" class="btn primary">＋ AÑADIR CARRIL</button>
+            <button id="btnResetZoom" class="btn">AJUSTAR VISTA</button>
+            <div class="separator"></div>
+            <button id="btnNewProject" class="btn danger" title="Borrar todo e iniciar de cero">NUEVO PROYECTO</button>
+            <div class="separator"></div>
+            <button id="btnDownload" class="btn">GUARDAR PROYECTO (JSON)</button>
+            <input type="file" id="fileInput" style="display:none">
+            <button id="btnLoad" class="btn">CARGAR PROYECTO</button>
+        </div>
+    </div>
+
+    <button id="btnOpenChars" class="fab-btn" style="bottom: 35px;" title="Base de Datos: Personajes">👥</button>
+    <button id="btnOpenPlacesDb" class="fab-btn" style="bottom: 105px;" title="Base de Datos: Lugares (Lore)">🏛️</button>
+    <button id="btnOpenMaps" class="fab-btn" style="bottom: 175px;" title="Cartografía: Mapas">🗺️</button>
+    <button id="btnOpenPlanner" class="fab-btn" style="bottom: 245px; color: #6c5ce7;" title="Planificador de Obras (Silenos)">📖</button>
+    <button id="btnOpenCodex" class="fab-btn" style="bottom: 315px; color: #00acc1;" title="Códice: Reglas del Mundo">⚖️</button>
+    <button id="btnOpenSettings" class="fab-btn" style="bottom: 385px;" title="Configuración IA (Koreh)">⚙️</button>
+
+    <div id="genTimelineModal" class="floating-panel hidden" style="width: 500px;">
+        <div class="panel-header">
+            <span class="panel-title">KOREH: GENERADOR CUÁNTICO</span>
+            <button class="close-btn" id="closeGenModal">×</button>
+        </div>
+        <div class="panel-body" style="gap:15px; padding-bottom:15px;">
+            <p style="font-size:0.9rem; color:#666; margin:0;">
+                Describe tu idea. Koreh creará carriles, eventos y personajes automáticamente.
+            </p>
+            
+            <div style="display:flex; align-items:center; gap:10px; background:rgba(0,0,0,0.03); padding:10px; border-radius:8px;">
+                <label class="switch">
+                    <input type="checkbox" id="genUseContext">
+                    <span class="slider round"></span>
+                </label>
+                <span style="font-size:0.85rem; font-weight:bold; color:#444;">
+                    Leer Memoria del Proyecto (Contexto)
+                </span>
+            </div>
+
+            <textarea id="genPromptInput" rows="5" class="char-input" placeholder="Escribe tu premisa narrativa aquí..."></textarea>
+            <button id="btnRunGen" class="btn primary" style="width:100%; padding:15px; font-size:1rem;">✨ GENERAR REALIDAD</button>
+        </div>
+    </div>
+
+    <div id="charModal" class="floating-panel large hidden">
+        <div class="panel-header">
+            <span class="panel-title">INDIVIDUALIDAD (PERSONAJES)</span>
+            <button class="close-btn" id="closeCharModal">×</button>
+        </div>
+        <div class="panel-body"></div>
+    </div>
+
+    <div id="placesManagerModal" class="floating-panel large hidden">
+        <div class="panel-header">
+            <span class="panel-title">CONTENEDOR (BASE DE LUGARES)</span>
+            <button class="close-btn" id="closePlacesManagerModal">×</button>
+        </div>
+        <div class="panel-body"></div>
+    </div>
+
+    <div id="codexModal" class="floating-panel large hidden">
+        <div class="panel-header">
+            <span class="panel-title" style="color:#00acc1;">CÓDICE (LEYES DEL MUNDO)</span>
+            <button class="close-btn" id="closeCodexModal">×</button>
+        </div>
+        <div class="panel-body"></div>
+    </div>
+
+    <div id="plannerModal" class="floating-panel large hidden" style="width: 90vw; height: 90vh; max-width: 1200px;">
+        <div class="panel-header">
+            <span class="panel-title" style="color: #6c5ce7;">NEXUS PLANNER (EXPORTAR A SILENOS)</span>
+            <button class="close-btn" id="closePlannerModal">×</button>
+        </div>
+        <div class="panel-body" style="padding: 0;"></div>
+    </div>
+
+    <div id="mapModal" class="floating-panel fullscreen hidden">
+        <div class="panel-header">
+            <span class="panel-title">MATERIAL (CARTOGRAFÍA V4)</span>
+            <button class="close-btn" id="closeMapModal">×</button>
+        </div>
+        <div class="panel-body" style="padding:0; overflow:hidden;"> </div>
+    </div>
+
+    <div id="settingsModal" class="floating-panel hidden">
+        <div class="panel-header">
+            <span class="panel-title">NEXO KOREH (CONFIGURACIÓN IA)</span>
+            <button class="close-btn" id="closeSettingsModal">×</button>
+        </div>
+        <div class="panel-body">
+            <div style="padding: 10px;">
+                <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">
+                    Introduce tus API Keys de Google Gemini. El sistema las usará en modo "Metralleta".
+                </p>
+                
+                <label style="font-weight:bold; font-size:0.8rem; color:#444;">API KEYS (Separadas por comas)</label>
+                <textarea id="inputApiKeys" rows="6" class="char-input" style="width:100%; font-family:monospace; font-size:0.8rem;" placeholder="Ej: AIzaSy..., AIzaSy..."></textarea>
+                
+                <div style="display:flex; justify-content:space-between; margin-top:5px; margin-bottom:20px;">
+                    <span id="keyCountLabel" style="font-size:0.8rem; color:var(--accent); font-weight:bold;">0 Keys detectadas</span>
+                    <button id="btnClearKeys" class="btn danger" style="padding: 2px 8px; font-size: 0.7rem;">LIMPIAR TODO</button>
+                </div>
+
+                <label style="font-weight:bold; font-size:0.8rem; color:#444;">MODELO DE IA (ID)</label>
+                <input type="text" id="inputAiModel" class="char-input" style="width:100%;" placeholder="Ej: gemma-3-27b-it" value="gemma-3-27b-it">
+            </div>
+            
+            <div class="panel-actions">
+                <button id="btnSaveSettings" class="btn primary">GUARDAR CONFIGURACIÓN</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="eventModal" class="floating-panel wide hidden">
+        <div class="panel-header">
+            <span class="panel-title">EDITAR SUCESO / ESCENA</span>
+            <button class="close-btn" id="closeEventModal">×</button>
+        </div>
+        <div class="panel-body">
+            <div class="event-editor-grid">
+                <div class="event-col">
+                    <label>TÍTULO DEL SUCESO</label>
+                    <input type="text" id="evtTitle" placeholder="Nombre del evento">
+                    <label>TIEMPO (K) / POSICIÓN</label>
+                    <input type="number" id="evtTime" placeholder="Posición temporal">
+                    <label>DESCRIPCIÓN GENERAL</label>
+                    <textarea id="evtDesc" rows="8" placeholder="¿Qué ocurre en este punto del tiempo?"></textarea>
+                </div>
+                <div class="event-col">
+                    <label>PERSONAJES INVOLUCRADOS</label>
+                    <div id="evtCharsList" class="char-checklist">
+                        <div style="color:#999; text-align:center; padding:10px;">Cargando lista...</div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                        <label>ETAPAS DEL SUCESO</label>
+                        <button id="btnAddStage" class="btn small primary">＋ AÑADIR</button>
+                    </div>
+                    <div id="evtStagesList" class="stages-container"></div>
+                </div>
+            </div>
+            <div class="panel-actions">
+                <button id="btnDeleteEvent" class="btn danger">ELIMINAR SUCESO</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="placeModal" class="floating-panel hidden">
+        <div class="panel-header">
+            <span class="panel-title">EDITAR LUGAR / CARRIL</span>
+            <button class="close-btn" id="closePlaceModal">×</button>
+        </div>
+        <div class="panel-body">
+            <label style="color:var(--accent); font-weight:bold;">VINCULAR CON BASE DE DATOS</label>
+            <select id="placeDbSelect" class="char-input" style="margin-bottom:15px; font-weight:bold;">
+                <option value="">(Sin vincular - Carril libre)</option>
+            </select>
+            
+            <div style="border-top:1px solid #eee; margin-bottom:15px;"></div>
+
+            <label>NOMBRE DEL LUGAR (Visual)</label>
+            <input type="text" id="placeName">
+            <label>COLOR DISTINTIVO</label>
+            <input type="color" id="placeColor" style="height: 40px; padding: 2px;">
+            
+            <div class="panel-actions">
+                <button id="btnDeletePlace" class="btn danger">ELIMINAR CARRIL</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+    <div id="notification" class="toast hidden"></div>
+<style>
+    /* Estilos para el Importador Universal */
+    .importer-grid {
+        display: grid; grid-template-columns: 1fr 2fr; gap: 20px; height: 100%;
+    }
+    .schema-list {
+        display: flex; flex-direction: column; gap: 10px;
+        border-right: 1px solid #eee; padding-right: 15px;
+    }
+    .schema-btn {
+        text-align: left; padding: 12px; border: 1px solid #eee;
+        background: white; border-radius: 8px; cursor: pointer;
+        transition: 0.2s; font-size: 0.85rem; color: #555;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .schema-btn:hover { background: #e3f2fd; border-color: #2196f3; color: #1565c0; }
+    .import-area {
+        display: flex; flex-direction: column; gap: 10px;
+    }
+    .json-paste-box {
+        flex: 1; width: 100%; resize: none;
+        background: #2d3436; color: #a29bfe;
+        font-family: monospace; padding: 15px; border-radius: 12px;
+        border: 2px solid transparent; font-size: 0.85rem;
+    }
+    .json-paste-box:focus { border-color: #6c5ce7; outline: none; }
+</style>
+
+<button id="btnOpenImporter" class="fab-btn" style="bottom: 455px; color: #e67e22;" title="NEXUS BRIDGE: Importar/Exportar JSON">📥</button>
+
+<div id="importerModal" class="floating-panel wide hidden">
+    <div class="panel-header">
+        <span class="panel-title" style="color: #e67e22;">NEXUS BRIDGE (IMPORTACIÓN UNIVERSAL)</span>
+        <button class="close-btn" id="closeImporterModal">×</button>
+    </div>
+    <div class="panel-body">
+        <div class="importer-grid">
+            <div class="schema-list">
+                <div style="font-size:0.75rem; font-weight:bold; color:#888; margin-bottom:5px;">COPIAR ESQUEMAS BASE</div>
+                <button class="schema-btn" onclick="window.NexusBridge.copyTemplate('CHARACTER')">👤 Personaje <span>📋</span></button>
+                <button class="schema-btn" onclick="window.NexusBridge.copyTemplate('PLACE_LORE')">🏛️ Lugar (Lore) <span>📋</span></button>
+                <button class="schema-btn" onclick="window.NexusBridge.copyTemplate('EVENT')">⚡ Evento Temporal <span>📋</span></button>
+                <button class="schema-btn" onclick="window.NexusBridge.copyTemplate('TIMELINE')">⏳ Línea Temporal <span>📋</span></button>
+                <button class="schema-btn" onclick="window.NexusBridge.copyTemplate('MAP')">🗺️ Mapa <span>📋</span></button>
+                <button class="schema-btn" onclick="window.NexusBridge.copyTemplate('PROJECT_PLANNER')">📖 Proyecto Planner <span>📋</span></button>
+                
+                <div style="margin-top:auto; font-size:0.7rem; color:#999; font-style:italic;">
+                    Copia un esquema, edítalo externamente y pégalo a la derecha. El sistema detectará el tipo automáticamente.
+                </div>
+            </div>
+            
+            <div class="import-area">
+                <label style="font-weight:bold; color:#444;">VÓRTICE DE ENTRADA (PEGAR JSON AQUÍ)</label>
+                <textarea id="importTextarea" class="json-paste-box" placeholder='Pega aquí cualquier objeto JSON (Personaje, Mapa, etc)...'></textarea>
+                <button id="btnProcessImport" class="btn primary" style="background: #e67e22; color: white;">⚡ PROCESAR E INTEGRAR</button>
+                <div id="importResult" style="height:30px; font-size:0.8rem; display:flex; align-items:center;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="nexus_importer.js"></script>
+    <script type="module" src="apikey.js"></script> 
+    <script src="characters.js"></script>
+    <script src="places.js"></script> 
+    <script src="codex.js"></script> 
+    
+    <script src="planner_ui.js"></script>
+    <script src="planner_structure.js"></script>
+    <script src="planner_exporter.js"></script> <script type="module" src="planner.js"></script> 
+    
+    <script src="maps_main.js"></script>
+    <script src="maps_ui.js"></script>
+    <script src="maps_edit.js"></script>
+    <script src="maps_io.js"></script> 
+    
+<script type="module" src="ui.js"></script>    
+    <script type="module" src="chronos.js"></script>    
+    
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                if(typeof UIManager !== 'undefined') {
+                    const ui = new UIManager();
+                }
+            }, 100);
+        });
+    </script>
+</body>
+</html>

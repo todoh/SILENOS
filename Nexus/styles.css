@@ -1,0 +1,321 @@
+/* NEXUS SILENOS/styles.css */
+/* DISEÑO GLOBAL - ARMONIZACIÓN V3 */
+
+:root {
+    --bg-color: #f4f4f4;
+    --panel-bg: rgba(255, 255, 255, 0.85); /* Más transparencia para efecto vidrio */
+    --panel-border: rgba(255, 255, 255, 0.6);
+    
+    --text-main: #2c3e50;
+    --text-muted: #636e72;
+    --text-light: #b2bec3;
+    
+    --accent: #00acc1; 
+    --accent-soft: rgba(0, 172, 193, 0.1);
+    --danger: #ff7675;
+    --success: #55efc4;
+    
+    /* Efectos & Espaciado */
+    --shadow-float: 0 20px 50px rgba(0,0,0,0.08), 0 5px 15px rgba(0,0,0,0.05);
+    --radius-xl: 24px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+    
+    --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: var(--bg-color);
+    font-family: var(--font-stack);
+    color: var(--text-main);
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* --- SCROLLBARS GLOBALES (Minimalistas) --- */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* --- CANVAS DE TIEMPO (CHRONOS) --- */
+#chronosCanvas {
+    display: block; position: absolute; top: 0; left: 0;
+    width: 100vw; height: 100vh; z-index: 0;
+    cursor: grab;
+}
+#chronosCanvas:active { cursor: grabbing; }
+
+/* --- BARRA SUPERIOR (CÁPSULA) --- */
+.top-bar {
+    position: fixed; top: 25px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--panel-bg);
+    padding: 8px 25px;
+    border-radius: 50px;
+    display: flex; gap: 20px; align-items: center;
+    box-shadow: var(--shadow-float);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--panel-border);
+    z-index: 100;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.top-bar:hover { box-shadow: 0 25px 60px rgba(0,0,0,0.12); transform: translateX(-50%) translateY(-2px); }
+
+.brand { 
+    font-weight: 800; letter-spacing: -0.5px; 
+    font-size: 0.9rem; color: #444; margin-right: 15px;
+}
+.controls { display: flex; gap: 8px; align-items: center; }
+.separator { width: 1px; height: 20px; background: #e0e0e0; margin: 0 10px; }
+
+/* --- BOTONES --- */
+.btn {
+    background: transparent; border: none;
+    padding: 8px 18px; border-radius: 20px;
+    cursor: pointer; font-weight: 600; font-size: 0.8rem;
+    transition: all 0.2s ease; color: var(--text-muted);
+}
+.btn:hover { background: rgba(0,0,0,0.04); color: var(--text-main); transform: translateY(-1px); }
+.btn:active { transform: scale(0.96); }
+
+.btn.primary { 
+    background: var(--text-main); color: white; 
+    box-shadow: 0 4px 12px rgba(44, 62, 80, 0.2);
+}
+.btn.primary:hover { 
+    background: var(--accent); color: white; 
+    box-shadow: 0 6px 16px rgba(0, 172, 193, 0.3);
+}
+.btn.danger { color: var(--danger); }
+.btn.danger:hover { background: #fff5f5; color: #d63031; }
+.btn.success { color: #27ae60; }
+.btn.success:hover { background: #eafaf1; }
+
+/* --- FAB (Botón Flotante) --- */
+.fab-btn {
+    position: fixed; bottom: 35px; left: 35px;
+    width: 56px; height: 56px;
+    border-radius: 50%; background: white;
+    border: none; font-size: 22px;
+    cursor: pointer; color: var(--text-main);
+    box-shadow: var(--shadow-float); z-index: 100;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex; align-items: center; justify-content: center;
+}
+.fab-btn:hover { transform: scale(1.1) rotate(5deg); color: var(--accent); }
+
+/* --- MODALES / PANELES --- */
+.floating-panel {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--panel-bg);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-float);
+    padding: 30px;
+    z-index: 200;
+    transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid var(--panel-border);
+    display: flex; flex-direction: column;
+    overflow: hidden; /* Importante para bordes redondeados */
+}
+
+.floating-panel.large { width: 960px; height: 80vh; max-width: 960px; max-height: 80vh; }
+.floating-panel.wide { width: 960px; max-width: 960px; height: 80vh; max-height: 80vh; }
+.floating-panel.hidden { opacity: 0; pointer-events: none; transform: translate(-50%, -40%) scale(0.95); }
+
+/* Header Modal */
+.panel-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px; flex-shrink: 0;
+}
+.panel-title { 
+    font-size: 1.1rem; font-weight: 700; 
+    color: var(--text-main); letter-spacing: -0.5px; 
+    opacity: 0.8;
+}
+
+.close-btn { 
+    background: rgba(0,0,0,0.03); border: none; 
+    font-size: 1.2rem; cursor: pointer; color: var(--text-muted); 
+    width: 32px; height: 32px; border-radius: 50%; 
+    display: flex; align-items: center; justify-content: center;
+    transition: 0.2s;
+}
+.close-btn:hover { background: var(--danger); color: white; }
+
+.panel-body {
+    flex-grow: 1; overflow-y: auto;
+    display: flex; flex-direction: column;
+    padding-right: 5px; /* Espacio para scrollbar */
+}
+
+/* --- INPUTS & FORMS GENÉRICOS (Soft UI) --- */
+input, textarea, select { font-family: var(--font-stack); }
+
+.char-input, .stage-input, #evtTitle, #evtDesc, #evtTime, #placeName {
+    transition: all 0.2s ease;
+}
+
+/* Estilos específicos para Chronos Event Editor */
+#evtTitle {
+    font-size: 1.8rem; font-weight: 700; color: var(--text-main);
+    border: none; background: transparent; width: 100%;
+    margin-bottom: 5px; padding: 5px 0;
+}
+#evtTitle:focus { opacity: 0.7; outline: none; }
+#evtTitle::placeholder { color: #ccc; font-weight: 300; }
+
+#evtTime {
+    font-family: 'Courier New', monospace; font-weight: bold;
+    color: var(--accent); background: var(--accent-soft);
+    border: none; padding: 4px 8px; border-radius: 6px;
+    width: 80px; text-align: center; margin-bottom: 20px;
+}
+
+#evtDesc {
+    width: 100%; border: none; background: transparent;
+    font-size: 1rem; line-height: 1.6; color: #555;
+    resize: none; min-height: 100px;
+}
+#evtDesc:focus { background: rgba(255,255,255,0.4); border-radius: var(--radius-sm); outline: none; }
+
+/* Grid del Editor de Eventos */
+.event-editor-grid {
+    display: flex; gap: 40px; height: 100%; overflow: hidden;
+}
+.event-col { 
+    flex: 1; display: flex; flex-direction: column; overflow-y: auto; 
+    padding-bottom: 20px;
+}
+.event-col:first-child { flex: 1.4; } /* Columna izq más ancha */
+
+/* Checklists y Etapas */
+.char-checklist, .stages-container {
+    background: rgba(255,255,255,0.3);
+    border-radius: var(--radius-md);
+    padding: 10px; margin-top: 10px;
+    overflow-y: auto; max-height: 250px;
+}
+.char-check-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px; border-radius: 6px; cursor: pointer;
+    transition: 0.2s;
+}
+.char-check-item:hover { background: white; }
+.char-check-item input { accent-color: var(--accent); cursor: pointer; }
+
+/* Actions Footer */
+.panel-actions {
+    margin-top: auto; padding-top: 20px;
+    display: flex; justify-content: flex-end; gap: 15px;
+    border-top: 1px solid rgba(0,0,0,0.05);
+}
+
+/* Toast Notification */
+.toast {
+    position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+    background: var(--text-main); color: white; 
+    padding: 12px 30px; border-radius: 50px; 
+    font-size: 0.85rem; font-weight: 600;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    z-index: 500; transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.toast.hidden { opacity: 0; transform: translate(-50%, 20px); }
+
+/* AÑADIR AL FINAL DE NEXUS SILENOS/styles.css */
+
+.floating-panel.fullscreen {
+    width: 98vw;
+    height: 96vh;
+    max-width: none;
+    max-height: none;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 8px; /* Menos borde para modo cine */
+}
+
+/* AÑADIR AL FINAL DE NEXUS SILENOS/styles.css */
+
+/* MODAL FULLSCREEN AJUSTE */
+.floating-panel.fullscreen {
+    width: 98vw;
+    height: 96vh;
+    max-width: none;
+    max-height: none;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 8px;
+}
+
+/* INPUT TEXTAREA PARA KEYS (Estilo Código) */
+textarea#inputApiKeys {
+    background: #2d3436;
+    color: #a29bfe;
+    border: 1px solid #444;
+    padding: 10px;
+    border-radius: 8px;
+    resize: vertical;
+    line-height: 1.4;
+    white-space: pre;
+    overflow-x: auto;
+}
+textarea#inputApiKeys::placeholder {
+    color: #636e72;
+}
+textarea#inputApiKeys:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0, 172, 193, 0.2);
+    outline: none;
+}
+
+/* NEXUS SILENOS/styles.css (Añadir al final) */
+
+/* SWITCH TOGGLE */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+}
+
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: var(--accent); /* #00acc1 */
+}
+
+input:checked + .slider:before {
+  transform: translateX(18px);
+}
