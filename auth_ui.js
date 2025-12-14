@@ -1,11 +1,13 @@
-// --- MÓDULO DE AUTENTICACIÓN Y PERFIL v3.2 (Auto-Refresh Support) ---
+// --- MÓDULO DE AUTENTICACIÓN Y PERFIL v3.3 (Import Update) ---
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { getUserStats } from './usage_tracker.js'; 
 import { getGoogleApiKey, saveUserKeys, getUserKeyCount } from './apikey.js';
 import { initCoopSystem, openCoopModal } from './coop_manager.js';
+// Importamos el inicializador (aunque se autoejecuta, es buena práctica tener referencia)
+import { initImportSystem } from './import_logic.js'; 
 
-console.log("Módulo Auth UI Cargado (v3.2 - Auto-Refresh Support)");
+console.log("Módulo Auth UI Cargado (v3.3 - Import & Paste)");
 
 const authConfig = {
   apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
@@ -75,14 +77,31 @@ function renderUserState(user) {
     if (!userDock) return;
     const photoURL = user.photoURL || 'https://via.placeholder.com/40';
     
+    // Inyectamos el menú con la nueva sección de IMPORTACIÓN
     userDock.innerHTML = `
         <div class="user-profile-container">
             <div class="user-menu-popup" id="user-menu">
                 <div class="menu-header">Hola, ${user.displayName || 'Viajero'}</div>
+                
                 <div class="menu-item disabled"><span class="menu-icon">📂</span> <span id="current-project-name">Conectado</span></div>
                 <div class="menu-item" onclick="window.openSettingsModal()"><span class="menu-icon">⚙️</span> Configuración</div>
                 <div class="menu-item" onclick="window.openCoopModal()"><span class="menu-icon">🤝</span> Cooperación</div>
-                <div class="menu-divider"></div>      
+                
+                <div class="menu-divider"></div>
+
+                <div style="padding: 10px 20px;">
+                    <button onclick="window.triggerJSONFileImport()" class="io-btn" style="width:100%; font-size:0.75rem; padding:8px; margin-bottom:8px; display:flex; align-items:center; justify-content:center; gap:8px;">
+                        <span>📥</span> Subir JSON
+                    </button>
+                    <textarea 
+                        placeholder="O pega JSON aquí..." 
+                        class="ia-input" 
+                        oninput="window.handleJSONPaste(this)"
+                        style="width:100%; height:50px; min-height:50px; font-size:0.7rem; padding:8px; margin-bottom:0; resize:none; border-radius:8px; box-shadow:inset 2px 2px 5px rgba(0,0,0,0.05);">
+                    </textarea>
+                </div>
+      
+                <div class="menu-divider"></div>
                 <div class="menu-item" onclick="window.saveToDriveManual()"><span class="menu-icon">💾</span> Sincronizar Todo</div>              
                 <div class="menu-divider"></div>
                 <div class="menu-item danger" onclick="window.silenosLogout()"><span class="menu-icon">✕</span> Cerrar Sesión</div>
@@ -188,19 +207,15 @@ export const silenosLogin = async () => {
         const credential = GoogleAuthProvider.credentialFromResult(result);
         const token = credential.accessToken;
         
-        // Guardamos token y timestamp
         localStorage.setItem('google_drive_token', token);
         localStorage.setItem('google_drive_token_ts', Date.now());
         
     } catch (error) { alert("Error login: " + error.message); }
 };
 
-// [NUEVO] Función para renovar token sin recargar página
 export const refreshGoogleSession = async () => {
     try {
         console.log("🔄 Renovando token de Google Drive...");
-        // Re-invoca el popup. Si el usuario ya está logueado en Chrome, suele ser casi instantáneo.
-        // Google no permite refresh tokens silenciosos en cliente puro por seguridad.
         const result = await signInWithPopup(auth, provider);
         const credential = GoogleAuthProvider.credentialFromResult(result);
         const token = credential.accessToken;
@@ -219,7 +234,7 @@ export const refreshGoogleSession = async () => {
 export const silenosLogout = async () => {
     await signOut(auth);
     localStorage.removeItem('google_drive_token');
-    localStorage.removeItem('google_drive_token_ts'); // Limpieza
+    localStorage.removeItem('google_drive_token_ts'); 
     localStorage.removeItem('minimal_scripts_v1');
     localStorage.removeItem('minimal_books_v4');
     localStorage.removeItem('minimal_games_v1');
