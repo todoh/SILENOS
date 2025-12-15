@@ -1,5 +1,5 @@
 /* NEXUS SILENOS/planner.css */
-/* PLANIFICADOR DE OBRAS V3.0 - MULTI-PROYECTO */
+/* PLANIFICADOR DE OBRAS V3.1 - SCROLL FIX & COLLAPSE UI */
 
 /* LAYOUT PRINCIPAL */
 .planner-wrapper {
@@ -77,7 +77,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    overflow: hidden;
+    overflow: hidden; /* Evita crecimiento infinito */
     position: relative;
     background: #f4f6f8;
 }
@@ -147,6 +147,7 @@
     padding: 20px;
     gap: 20px;
     overflow: hidden; /* Importante para columnas con scroll interno */
+    height: 100%; /* Forzar altura */
 }
 .planner-content.active { display: flex; }
 
@@ -159,7 +160,9 @@
     display: flex;
     flex-direction: column;
     border: 1px solid rgba(0,0,0,0.05);
-    min-width: 250px; /* Evitar colapso */
+    min-width: 250px;
+    height: 100%; /* Forzar altura del padre para que el hijo scrollee */
+    overflow: hidden; 
 }
 
 .col-header {
@@ -169,20 +172,26 @@
     margin-bottom: 10px;
     text-transform: uppercase;
     letter-spacing: 1px;
+    flex-shrink: 0;
 }
 
-.filter-box { margin-bottom: 10px; }
+.filter-box { 
+    margin-bottom: 10px; 
+    flex-shrink: 0;
+}
 .filter-box input {
     width: 90%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.8rem;
 }
 
+/* LA LISTA QUE DEBE HACER SCROLL */
 .entity-list {
     flex: 1;
-    overflow-y: auto;
+    overflow-y: auto; /* Scroll Vertical */
     display: flex;
     flex-direction: column;
     gap: 8px;
     padding-right: 5px;
+    min-height: 0; /* FIX CRUCIAL DE FLEXBOX */
 }
 
 /* TARJETAS DE ENTIDAD */
@@ -195,6 +204,7 @@
     cursor: pointer;
     display: flex; justify-content: space-between; align-items: center;
     transition: all 0.2s;
+    flex-shrink: 0; /* Evita que se aplasten si falta espacio */
 }
 
 .p-card:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.06); }
@@ -225,6 +235,7 @@
     overflow-y: auto;
     padding-right: 10px;
     display: flex; flex-direction: column; gap: 15px;
+    height: 100%;
 }
 
 .event-pool-sidebar {
@@ -233,6 +244,8 @@
     border-radius: 12px;
     padding: 15px;
     display: flex; flex-direction: column;
+    height: 100%;
+    overflow: hidden;
 }
 
 .help-text { font-size: 0.75rem; color: #888; margin-bottom: 10px; font-style: italic; }
@@ -244,6 +257,7 @@
     box-shadow: 0 3px 10px rgba(0,0,0,0.05);
     border-left: 4px solid #6c5ce7;
     display: flex; flex-direction: column; gap: 10px;
+    flex-shrink: 0;
 }
 
 .chap-header { display: flex; align-items: center; gap: 10px; }
