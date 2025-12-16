@@ -1,1 +1,590 @@
 
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS SILENOS | Protocolo de Iniciación</title>
+    <style>
+        /* IMPORTANDO ESTILO SOFT PAPER / NEUMORFISMO DE STYLES.CSS */
+        :root {
+            /* PALETA PAPEL MATE */
+            --bg-color: #f2f2f2; 
+            --text-main: #333333;
+            --text-muted: #888888;
+            --accent: #2d3436;
+            --danger: #d63031;
+            
+            /* ACENTOS ESPECÍFICOS DEL SISTEMA */
+            --ai-color: #00acc1;      /* Cyan - Códice */
+            --char-color: #6c5ce7;    /* Purple - Personajes */
+            --place-color: #e17055;   /* Orange - Lugares */
+
+            /* SOMBRAS NEUMÓRFICAS (MATE) */
+            --neumo-out: 
+                8px 8px 16px #d1d1d194, 
+                -8px -8px 16px rgba(255, 255, 255, 0.6);
+                
+            --neumo-in: 
+                inset 6px 6px 12px #d1d1d1, 
+                inset -6px -6px 12px rgba(255, 255, 255, 0.7);
+
+            --glass-border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', 'Inter', system-ui, sans-serif; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 20px;
+            position: relative;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: var(--bg-color);
+            box-shadow: var(--neumo-in);
+            border-radius: 10px;
+        }
+
+        h1 { margin: 0; letter-spacing: 3px; font-weight: 300; text-transform: uppercase; color: var(--text-main); }
+        h1 b { font-weight: 800; color: var(--ai-color); }
+        .subtitle { color: var(--text-muted); font-size: 0.9rem; margin-top: 10px; font-weight: 500; letter-spacing: 1px; }
+
+        /* SECCIONES / TARJETAS (NEUMORFISMO SALIENTE) */
+        .section-card {
+            background: var(--bg-color);
+            border-radius: 20px;
+            padding: 35px;
+            margin-bottom: 40px;
+            box-shadow: var(--neumo-out);
+            border: var(--glass-border);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        
+        /* Indicadores de color sutiles */
+        .section-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 6px;
+            height: 100%;
+        }
+        .card-codex::before { background: var(--ai-color); }
+        .card-char::before { background: var(--char-color); }
+        .card-place::before { background: var(--place-color); }
+        .card-plot::before { background: var(--text-main); }
+
+        h2 {
+            margin-top: 0;
+            font-size: 1.3rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-main);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        /* FORMULARIOS (NEUMORFISMO HUNDIDO) */
+        .form-group { margin-bottom: 25px; }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 5px;
+        }
+
+        input[type="text"], textarea, select {
+            width: 100%;
+            background: var(--bg-color);
+            border: none;
+            border-radius: 12px;
+            padding: 15px;
+            color: var(--text-main);
+            box-shadow: var(--neumo-in); /* Hundido */
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input:focus, textarea:focus {
+            box-shadow: 
+                inset 2px 2px 5px #d1d1d1, 
+                inset -2px -2px 5px rgba(255, 255, 255, 0.7),
+                0 0 0 1px rgba(0,0,0,0.03);
+            color: #000;
+        }
+        
+        textarea { resize: vertical; min-height: 100px; }
+
+        .row { display: flex; gap: 25px; }
+        .col { flex: 1; }
+
+        /* AXIOMAS */
+        .axiom-input-group {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .btn-add {
+            background: var(--bg-color);
+            color: var(--ai-color);
+            font-weight: bold;
+            border: none;
+            padding: 0 25px;
+            cursor: pointer;
+            border-radius: 12px;
+            box-shadow: var(--neumo-out);
+            transition: all 0.2s;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-add:active {
+            box-shadow: var(--neumo-in);
+            transform: scale(0.95);
+        }
+
+        #axiomList { margin-top: 15px; display: flex; flex-direction: column; gap: 10px; }
+        
+        .axiom-item {
+            background: var(--bg-color);
+            padding: 12px 20px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--neumo-out); /* Saliente */
+            color: var(--text-main);
+            border: var(--glass-border);
+        }
+
+        .btn-del {
+            background: transparent;
+            color: var(--danger);
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.2rem;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        .btn-del:hover { opacity: 1; }
+
+        /* FOOTER & BOTÓN PRINCIPAL */
+        .actions {
+            margin-top: 50px;
+            text-align: center;
+            padding-bottom: 50px;
+        }
+
+        .btn-submit {
+            background: var(--bg-color);
+            color: var(--text-main);
+            border: none;
+            padding: 18px 50px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            border-radius: 50px;
+            cursor: pointer;
+            letter-spacing: 2px;
+            box-shadow: var(--neumo-out);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-3px);
+            color: var(--ai-color);
+            box-shadow: 
+                12px 12px 20px #d1d1d194, 
+                -12px -12px 20px rgba(255, 255, 255, 0.6);
+        }
+
+        .btn-submit:active {
+            transform: translateY(1px);
+            box-shadow: var(--neumo-in);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Status Indicator */
+        #statusMsg {
+            margin-top: 20px;
+            font-weight: bold;
+            min-height: 24px;
+            transition: color 0.3s;
+        }
+
+        /* Mobile */
+        @media (max-width: 600px) {
+            .row { flex-direction: column; gap: 0; }
+            body { padding: 20px 10px; }
+            .section-card { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Nexus <b>Silenos</b></h1>
+            <div class="subtitle">PROTOCOLO DE EXTRACCIÓN DE DATOS | EXTERNO</div>
+        </header>
+
+        <!-- SECCIÓN 1: EL CÓDICE -->
+        <div class="section-card card-codex">
+            <h2 style="color: var(--ai-color);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                1. EL CÓDICE (Mundo y Reglas)
+            </h2>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 25px;">
+                Define las leyes fundamentales del universo donde ocurrirá tu historia.
+            </p>
+
+            <div class="form-group">
+                <label>Género y Ambientación</label>
+                <input type="text" id="worldType" placeholder="Ej: Cyberpunk Noir, Fantasía Medieval Oscura...">
+            </div>
+
+            <div class="row">
+                <div class="col form-group">
+                    <label>Sistema de Magia / Tecnología</label>
+                    <textarea id="magicSystem" placeholder="¿Cómo funciona el poder? ¿Límites? ¿Costes?"></textarea>
+                </div>
+                <div class="col form-group">
+                    <label>Tono y Estilo</label>
+                    <textarea id="tone" placeholder="Ej: Melancólico, violento, humorístico..."></textarea>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Cosmología y Sociedad</label>
+                <textarea id="cosmology" rows="3" placeholder="Gobiernos, dioses, economía, creencias principales..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label style="color: var(--danger);">Axiomas (Reglas Inquebrantables)</label>
+                <div class="axiom-input-group">
+                    <input type="text" id="axiomInput" placeholder="Ej: 'El viaje en el tiempo es imposible'">
+                    <button class="btn-add" id="btnAddAxiom">＋</button>
+                </div>
+                <div id="axiomList"></div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 2: PERSONAJE -->
+        <div class="section-card card-char">
+            <h2 style="color: var(--char-color);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                2. MATRIZ SOCIAL (Tu Avatar)
+            </h2>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 25px;">
+                Diseña al protagonista principal de esta historia.
+            </p>
+
+            <div class="row">
+                <div class="col form-group">
+                    <label>Nombre Completo</label>
+                    <input type="text" id="charName" placeholder="Nombre del personaje">
+                </div>
+                <div class="col form-group">
+                    <label>Arquetipo / Rol</label>
+                    <input type="text" id="charRole" placeholder="Ej: Mercenario cansado, Mago novato...">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Deseo Principal (Objetivo)</label>
+                <textarea id="charGoal" rows="2" placeholder="¿Qué quiere conseguir más que nada en el mundo?"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Miedo o Debilidad</label>
+                <textarea id="charFear" rows="2" placeholder="¿Qué le aterroriza o le impide avanzar?"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Notas de Evolución (Opcional)</label>
+                <textarea id="charNotes" rows="2" placeholder="¿Cómo te gustaría que acabase?"></textarea>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 3: LUGAR -->
+        <div class="section-card card-place">
+            <h2 style="color: var(--place-color);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                3. LORE GEOGRÁFICO (Inicio)
+            </h2>
+            
+            <div class="row">
+                <div class="col form-group">
+                    <label>Nombre del Lugar</label>
+                    <input type="text" id="placeName" placeholder="Ej: La Ciudadela de Hierro">
+                </div>
+                <div class="col form-group">
+                    <label>Tipo / Bioma</label>
+                    <input type="text" id="placeType" placeholder="Ciudad, Ruinas, Estación Espacial...">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Descripción / Atmósfera</label>
+                <textarea id="placeDesc" placeholder="¿A qué huele? ¿Qué se ve? ¿Es peligroso?"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Secreto Oculto (Lore)</label>
+                <textarea id="placeSecret" rows="2" placeholder="Algo que solo tú sabes de este sitio..."></textarea>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 4: TRAMA -->
+        <div class="section-card card-plot">
+            <h2 style="color: var(--text-main);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                4. CHRONOS (La Trama)
+            </h2>
+            
+            <div class="form-group">
+                <label>El Detonante (Conflicto Inicial)</label>
+                <textarea id="plotTrigger" placeholder="¿Qué suceso rompe la normalidad y obliga al personaje a actuar?"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Foco Dramático (Instrucción para la IA)</label>
+                <input type="text" id="plotFocus" placeholder="Ej: Centrarse en el terror psicológico y la falta de recursos.">
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn-submit" id="btnSubmit">
+                <span>ENVIAR FORMULARIO A SILENOS</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+            <div id="statusMsg"></div>
+            <p style="margin-top: 25px; font-size: 0.85rem; color: var(--text-muted);">
+                Los datos se encriptarán y enviarán a la base de datos central de Nexus.
+            </p>
+        </div>
+    </div>
+
+    <!-- FIREBASE MODULES -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // CONFIGURACIÓN PROPORCIONADA
+        const firebaseConfig = {
+            apiKey: "AIzaSyAfK_AOq-Pc2bzgXEzIEZ1ESWvnhMJUvwI",
+            authDomain: "enraya-51670.firebaseapp.com",
+            databaseURL: "https://enraya-51670-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "enraya-51670",
+            storageBucket: "enraya-51670.firebasestorage.app",
+            messagingSenderId: "103343380727",
+            appId: "1:103343380727:web:b2fa02aee03c9506915bf2",
+            measurementId: "G-2G31LLJY1T"
+        };
+
+        // INICIALIZACIÓN
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Identificador de App externo (Para cumplir estructura de base de datos)
+        const appId = "nexus_silenos_external_forms"; 
+        
+        // Autenticación Anónima Inmediata (Silent)
+        let currentUser = null;
+        signInAnonymously(auth)
+            .then((userCredential) => {
+                currentUser = userCredential.user;
+                console.log("Nexus Uplink: Conectado como anónimo:", currentUser.uid);
+            })
+            .catch((error) => {
+                console.error("Error de conexión:", error);
+                document.getElementById('statusMsg').innerText = "⚠ Error de conexión con el servidor.";
+                document.getElementById('statusMsg').style.color = "var(--danger)";
+            });
+
+        // --- LÓGICA DE AXIOMAS ---
+        let axioms = [];
+
+        function addAxiom() {
+            const input = document.getElementById('axiomInput');
+            const val = input.value.trim();
+            if (val) {
+                axioms.push(val);
+                renderAxioms();
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        window.removeAxiom = function(index) {
+            axioms.splice(index, 1);
+            renderAxioms();
+        }
+
+        function renderAxioms() {
+            const list = document.getElementById('axiomList');
+            list.innerHTML = '';
+            axioms.forEach((ax, idx) => {
+                const div = document.createElement('div');
+                div.className = 'axiom-item';
+                div.innerHTML = `
+                    <span>⚖️ ${ax}</span>
+                    <button class="btn-del" onclick="window.removeAxiom(${idx})">×</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        // Listeners UI
+        document.getElementById('btnAddAxiom').addEventListener('click', addAxiom);
+        document.getElementById('axiomInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') addAxiom();
+        });
+
+        // --- ENVÍO A FIREBASE ---
+        document.getElementById('btnSubmit').addEventListener('click', async () => {
+            const btn = document.getElementById('btnSubmit');
+            const status = document.getElementById('statusMsg');
+
+            if (!currentUser) {
+                status.innerText = "⚠ Esperando conexión segura...";
+                status.style.color = "orange";
+                // Reintentar login si falló
+                try {
+                    const cred = await signInAnonymously(auth);
+                    currentUser = cred.user;
+                } catch(e) {
+                    status.innerText = "Error crítico de autenticación.";
+                    return;
+                }
+            }
+
+            // UI Loading
+            btn.disabled = true;
+            btn.innerHTML = `<span>TRANSMITIENDO...</span>`;
+            status.innerText = "Encriptando y enviando paquetes...";
+            status.style.color = "var(--ai-color)";
+
+            // 1. Recopilar Datos
+            const codex = {
+                worldType: document.getElementById('worldType').value,
+                magicSystem: document.getElementById('magicSystem').value,
+                cosmology: document.getElementById('cosmology').value,
+                tone: document.getElementById('tone').value,
+                axioms: axioms
+            };
+
+            const charId = 'char_' + Date.now();
+            const character = {
+                id: charId,
+                name: document.getElementById('charName').value || 'Sin Nombre',
+                role: document.getElementById('charRole').value,
+                goal: document.getElementById('charGoal').value,
+                fear: document.getElementById('charFear').value,
+                notes: document.getElementById('charNotes').value,
+                relationships: []
+            };
+
+            const placeId = 'place_db_' + (Date.now() + 1);
+            const place = {
+                id: placeId,
+                name: document.getElementById('placeName').value || 'Lugar Desconocido',
+                type: document.getElementById('placeType').value,
+                desc: document.getElementById('placeDesc').value,
+                notes: document.getElementById('placeSecret').value,
+                color: '#e17055'
+            };
+
+            const projectMeta = {
+                triggerEvent: document.getElementById('plotTrigger').value,
+                aiFocusInstruction: document.getElementById('plotFocus').value,
+                timestamp: new Date().toISOString()
+            };
+
+            const nexusData = {
+                codex: codex,
+                characters: [character],
+                placeDb: [place],
+                meta: projectMeta,
+                generatedBy: "Nexus External Form v2.0 (Firebase)",
+                uid: currentUser.uid, // Guardamos quien lo envió
+                submittedAt: new Date()
+            };
+
+            // 2. Enviar a Firestore
+            try {
+                // Ruta estructurada: /artifacts/{appId}/public/data/nexus_inbox
+                // Esto mantiene la limpieza si luego integras visualizadores en tu app principal
+                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'nexus_inbox');
+                
+                await addDoc(colRef, nexusData);
+
+                // Success
+                status.innerText = "✅ ¡TRANSMISIÓN COMPLETADA CORRECTAMENTE!";
+                status.style.color = "green";
+                btn.innerHTML = `<span>ENVIADO</span>`;
+                
+                // Opcional: Limpiar o bloquear inputs
+                setTimeout(() => {
+                    alert("Los datos han sido recibidos por el sistema Nexus.");
+                }, 500);
+
+            } catch (error) {
+                console.error("Error enviando:", error);
+                status.innerText = "❌ ERROR EN LA TRANSMISIÓN: " + error.message;
+                status.style.color = "var(--danger)";
+                btn.disabled = false;
+                btn.innerHTML = `<span>REINTENTAR ENVÍO</span>`;
+            }
+        });
+    </script>
+</body>
+</html>
