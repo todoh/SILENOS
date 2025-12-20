@@ -4,14 +4,6 @@
 // Definición de Aplicaciones del Sistema
 const SYSTEM_APPS = [
     {
-        title: "Crear Guion IA",
-        icon: "clapperboard", 
-        desc: "Generador de guiones y libros",
-        action: () => {
-             if (typeof openAICreatorWindow === 'function') openAICreatorWindow();
-             else alert("Módulo IA no cargado.");
-        }
-    },{
         title: "Almacenamiento", // <--- ACTUALIZADO
         icon: "hard-drive", 
         desc: "Copia de Seguridad y Restauración",
@@ -19,16 +11,7 @@ const SYSTEM_APPS = [
              if (typeof openStorageWindow === 'function') openStorageWindow();
              else alert("Módulo Import/Storage no cargado.");
         }
-    },
-    {
-        title: "Crear Libro IA",
-        icon: "book-open-check", 
-        desc: "Acceso directo (Mismo módulo)",
-        action: () => {
-             if (typeof openAICreatorWindow === 'function') openAICreatorWindow();
-             else alert("Módulo IA no cargado.");
-        }
-    },
+    } 
      
 ];
 
@@ -124,9 +107,7 @@ function createLauncherMenu() {
     menu.style.left = `${leftPos}px`;
 
     menu.innerHTML = `
-        <div class="pb-2 border-b border-gray-300/50 mb-1">
-            <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest pl-2">Silenos Apps</h3>
-        </div>
+      
         <div class="flex flex-col gap-2" id="launcher-list">
         </div>
         
