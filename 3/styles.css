@@ -1,0 +1,306 @@
+/* SILENOS 3/styles.css */
+/* --- ESTILOS NEOMORFISTAS --- */
+:root {
+    --bg-color: #e0e5ec;
+    --shadow-light: #b3b3b300;
+    --shadow-dark: #a3b1c6;
+    --selection-blue: rgba(59, 130, 246, 0.5); /* Color de la caja de selección */
+}
+
+body {
+    background-color: var(--bg-color);
+    overflow: hidden; /* Evitar scroll en el body */
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    user-select: none;
+}
+
+/* Botón/Elemento Saliente (Outset) */
+.neumorph-out {
+    background: var(--bg-color);
+    box-shadow: 9px 9px 16px rgba(163,177,198,0.6), 
+               -9px -9px 16px rgba(255, 255, 255, 0);
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* Botón Pequeño */
+.neumorph-btn {
+    background: var(--bg-color);
+    box-shadow: 5px 5px 10px #b8b9be, -5px -5px 10px #ffffff00;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+.neumorph-btn:active, .neumorph-btn.active {
+    box-shadow: inset 5px 5px 10px #b8b9be, inset -5px -5px 10px #ffffff00;
+}
+.neumorph-btn:hover {
+    transform: translateY(-2px);
+}
+
+/* Botones de control de ventana (min/max/close) */
+.neumorph-control {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-color);
+    border-radius: 50%;
+    box-shadow: 3px 3px 6px #b8b9be, -3px -3px 6px #ffffff00;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.neumorph-control:active {
+    box-shadow: inset 2px 2px 5px #b8b9be, inset -2px -2px 5px #ffffff5b;
+}
+
+/* Elemento Hundido (Inset) - Para inputs o estados activos */
+.neumorph-in {
+    background: var(--bg-color);
+    box-shadow: inset 6px 6px 12px #b8b9be, inset -6px -6px 12px #ffffff25;
+    border-radius: 16px;
+}
+
+/* Icono de Escritorio */
+.desktop-icon-btn {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-color);
+    box-shadow: 6px 6px 12px #b8b9be, -6px -6px 12px #ffffff36;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.desktop-icon-btn:active {
+    box-shadow: inset 4px 4px 8px #b8b9be, inset -4px -4px 8px #ffffff;
+    transform: scale(0.95);
+}
+
+/* --- ESTADOS DE SELECCIÓN --- */
+.icon-selected .desktop-icon-btn {
+    box-shadow: inset 4px 4px 8px #b8b9be, inset -4px -4px 8px #ffffff !important;
+    border: 2px solid #3b82f6;
+}
+.icon-selected span {
+    background: rgba(59, 130, 246, 0.2) !important;
+    color: #1d4ed8 !important;
+}
+
+.selection-box {
+    position: absolute;
+    background: rgba(59, 130, 246, 0.2);
+    border: 1px solid rgba(59, 130, 246, 0.6);
+    border-radius: 4px;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+/* Ventanas */
+.window {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-color);
+    overflow: hidden;
+    min-width: 300px;
+    min-height: 200px;
+}
+
+.window.maximized {
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.window-header {
+    cursor: grab;
+}
+.window-header:active {
+    cursor: grabbing;
+}
+
+/* Animaciones */
+.pop-in {
+    animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+@keyframes popIn {
+    0% { transform: scale(0.8) translateY(10px); opacity: 0; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.pop-out {
+    animation: popOut 0.2s ease forwards;
+}
+@keyframes popOut {
+    0% { transform: scale(1) translateY(0); opacity: 1; }
+    100% { transform: scale(0.9) translateY(10px); opacity: 0; }
+}
+
+/* Ocultar scrollbar del iframe container pero permitir scroll */
+.content-area::-webkit-scrollbar {
+    width: 8px;
+}
+.content-area::-webkit-scrollbar-track {
+    background: #e0e5ec; 
+}
+.content-area::-webkit-scrollbar-thumb {
+    background: #a3b1c6; 
+    border-radius: 4px;
+}
+/* --- ESTILOS DE ARCHIVOS Y CARPETAS --- */
+
+#desktop-files-layer {
+    /* Asegura que cubra todo pero permita clicks en sus hijos */
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+}
+
+.folder-window-content {
+    /* Fondo estilo interior carpeta */
+    background: #f0f2f5; 
+}
+
+/* Efecto ghost al arrastrar */
+.ghost-item {
+    pointer-events: none;
+    opacity: 0.7;
+    z-index: 9999;
+}
+
+/* --- ESTILOS DATA VIEWER --- */
+#dv-textarea {
+    font-family: 'Consolas', 'Monaco', monospace;
+    line-height: 1.5;
+}
+#dv-textarea:focus {
+    box-shadow: inset 8px 8px 16px #b8b9be, inset -8px -8px 16px #ffffff;
+}
+
+/* --- ESTILOS APP PROGRAMADOR (Ported from prueba.html) --- */
+.prog-wrapper {
+    display: flex;
+    height: 100%;
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden;
+}
+
+.prog-sidebar {
+    width: 200px;
+    background-color: #252526;
+    border-right: 1px solid #454545;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex-shrink: 0;
+    overflow: scroll;
+}
+
+.prog-draggable {
+    background-color: #333333;
+    border-left: 4px solid #007acc;
+    color: white;
+    padding: 10px;
+    border-radius: 4px;
+    cursor: grab;
+    user-select: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    transition: transform 0.1s;
+    font-size: 0.9rem;
+}
+.prog-draggable:hover { transform: translateX(5px); background-color: #3f3f3f; }
+.prog-draggable:active { cursor: grabbing; }
+
+.prog-main {
+    flex-grow: 1;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    background: radial-gradient(circle at center, #2a2a2a 0%, #1e1e1e 100%);
+    min-width: 0; /* Flexbox fix */
+}
+
+.prog-path {
+    flex-grow: 1;
+    border: 2px dashed #454545;
+    border-radius: 8px;
+    padding: 20px;
+    overflow-y: auto;
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 15px;
+    transition: background 0.3s;
+}
+.prog-path.drag-over { background-color: rgba(0, 122, 204, 0.1); border-color: #007acc; }
+
+/* Bloques */
+.prog-block {
+    background-color: #333;
+    border: 1px solid #454545;
+    border-top: 3px solid #007acc;
+    padding: 10px 12px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    position: relative;
+    animation: popIn 0.2s;
+    min-width: 140px;
+}
+.prog-block::after {
+    content: '→'; position: absolute; right: -22px; top: 50%; transform: translateY(-50%);
+    color: #666; font-weight: bold; font-size: 1.2rem; pointer-events: none;
+}
+.prog-block:last-child::after { display: none; }
+.prog-block.executing {
+    box-shadow: 0 0 15px #007acc; transform: scale(1.05); z-index: 100; background-color: #3c3c3c;
+}
+
+/* Inputs internos de los bloques */
+.prog-block input {
+    background: #222; border: 1px solid #555; color: #eee;
+    padding: 4px 6px; border-radius: 3px; outline: none; font-size: 0.85rem; width: 100px;
+}
+.prog-block input:focus { border-color: #007acc; }
+
+.prog-del-btn {
+    background: transparent; border: none; color: #888; cursor: pointer;
+    font-size: 1.1rem; margin-left: 5px;
+}
+.prog-del-btn:hover { color: #ff5555; }
+
+/* Placeholder Drop */
+.prog-placeholder {
+    width: 4px; background-color: #007acc; border-radius: 2px;
+    box-shadow: 0 0 10px #007acc; margin: 0 5px;
+}
+
+/* Consola */
+.prog-console {
+    margin-top: 15px; height: 120px; background-color: #111; border: 1px solid #333;
+    padding: 10px; font-family: 'Consolas', monospace; font-size: 0.85rem;
+    overflow-y: auto; color: #ccc; border-radius: 4px;
+}
+.prog-log-line { margin-bottom: 4px; border-bottom: 1px solid #222; padding-bottom: 2px; }
+.prog-log-time { color: #666; margin-right: 10px; font-size: 0.8em; }
+
+/* Controles */
+.prog-controls { margin-top: 10px; display: flex; gap: 10px; border-top: 1px solid #454545; padding-top: 10px; }
+.prog-btn {
+    padding: 6px 16px; font-size: 0.9rem; cursor: pointer; border: none; border-radius: 4px; font-weight: 600;
+}
+.prog-btn-run { background-color: #2ea043; color: white; }
+.prog-btn-clear { background-color: #333; color: white; border: 1px solid #555; }
