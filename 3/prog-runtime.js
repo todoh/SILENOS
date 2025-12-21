@@ -93,12 +93,30 @@ class ProgRuntime {
         if (node.element) node.element.classList.remove('executing');
 
         let outConns = this.graph.connections.filter(c => c.fromNode === node.id);
+        
+        // Filtro Legacy para nodos IF/Logic que usan setBranch
         if (selectedBranch) outConns = outConns.filter(c => c.fromPort === selectedBranch);
+        
         if (node.type === 'buffer' && incomingPort === 'add') return;
 
         await Promise.all(outConns.map(c => {
             const next = this.graph.nodes.find(n => n.id === c.toNode);
-            if (next) return this.executeNode(next, outputData, c.toPort);
+            if (!next) return;
+
+            // --- LÓGICA DE ROUTING INTELIGENTE (NUEVO) ---
+            // Si outputData es un objeto y tiene una clave igual al nombre del puerto de salida,
+            // enviamos SOLO ese valor por ese cable.
+            let dataToSend = outputData;
+            
+            if (outputData && typeof outputData === 'object' && !Array.isArray(outputData)) {
+                // Verificamos si existe data específica para este puerto
+                if (c.fromPort in outputData) {
+                    dataToSend = outputData[c.fromPort];
+                }
+            }
+            // ----------------------------------------------
+
+            return this.executeNode(next, dataToSend, c.toPort);
         }));
     }
 
