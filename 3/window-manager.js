@@ -446,6 +446,8 @@ function openProgrammerWindow(fileId = null) {
 
 // --- UTILIDADES DE RENDER ---
 
+/* SILENOS 3/window-manager.js */
+
 function renderFolderContent(windowId, folderId) {
     const winContent = document.querySelector(`#window-${windowId} .content-area`);
     if (!winContent) return;
@@ -465,6 +467,7 @@ function renderFolderContent(windowId, folderId) {
 
     items.forEach(item => {
         const el = document.createElement('div');
+        // Mantenemos el ancho en w-24 para que el texto tenga espacio de envolver
         el.className = `flex flex-col items-center gap-2 w-24 cursor-pointer relative ${item.type === 'folder' ? 'folder-drop-zone' : ''}`;
         el.dataset.id = item.id;
         
@@ -477,7 +480,7 @@ function renderFolderContent(windowId, folderId) {
                 <i data-lucide="${item.icon}" class="${item.color} w-7 h-7"></i>
             </div>
             <span 
-                class="text-xs text-gray-600 text-center truncate w-full hover:bg-black/5 rounded px-1 cursor-text select-none"
+                class="text-xs text-gray-600 text-center line-clamp-2 break-words w-full hover:bg-black/5 rounded px-1 cursor-text select-none"
                 onmousedown="event.stopPropagation()"
                 onclick="showRenameModal(event, '${item.id}', '${item.title}')"
             >
