@@ -35,7 +35,63 @@ function openFolderWindow(folderId) {
     
     renderFolderContent(folderId, folderId);
 }
+function openTerminalWindow(fileId) {
+    const file = FileSystem.getItem(fileId);
+    const winId = 'term-' + fileId;
 
+    const existing = openWindows.find(w => w.id === winId);
+    if (existing) {
+        if (existing.isMinimized) toggleMinimize(winId);
+        focusWindow(winId);
+        return;
+    }
+
+    zIndexCounter++;
+    const winObj = {
+        id: winId,
+        appId: 'terminal-runner',
+        type: 'program-runner', // Reusamos estilos
+        fileId: fileId,
+        title: ">_ " + file.title, // Estilo Terminal
+        icon: 'terminal',
+        zIndex: zIndexCounter,
+        isMinimized: false,
+        isMaximized: false,
+        x: window.innerWidth / 2 - 200,
+        y: window.innerHeight / 2 - 150
+    };
+
+    // Ventana más compacta y oscura
+    createWindowDOM(winObj, { width: 500, height: 350, color: 'text-gray-400' });
+    openWindows.push(winObj);
+    renderDock();
+    if (window.lucide) lucide.createIcons();
+
+    // Inyectar contenido del Terminal
+    const winContent = document.querySelector(`#window-${winId} .content-area`);
+    if (winContent) {
+        winContent.innerHTML = `
+            <div class="flex flex-col h-full bg-black text-green-500 font-mono text-xs p-2">
+                <div class="flex justify-between border-b border-gray-800 pb-2 mb-2">
+                    <span>ESTADO: <span id="runner-status-${winId}" class="text-yellow-500">Iniciando...</span></span>
+                    <span class="opacity-50">AUTO-EXEC</span>
+                </div>
+                <div id="runner-console-${winId}" class="flex-1 overflow-y-auto custom-scrollbar p-1">
+                    <div>> Cargando módulos...</div>
+                </div>
+            </div>
+        `;
+
+        // EJECUCIÓN AUTOMÁTICA
+        setTimeout(() => {
+            if (typeof ProgrammerManager !== 'undefined') {
+                ProgrammerManager.runHeadless(winId, fileId);
+            } else {
+                document.getElementById(`runner-console-${winId}`).innerHTML += "<div class='text-red-500'>Error: ProgrammerManager no encontrado.</div>";
+            }
+        }, 500);
+    }
+}
 // Abrir Ventana de Datos (Central de redirección)
 function openDataWindow(fileId) {
     const file = FileSystem.getItem(fileId);
@@ -45,7 +101,14 @@ function openDataWindow(fileId) {
     if (file.type === 'book') { openBookWindow(fileId); return; }
     if (file.type === 'narrative') { openNarrativeWindow(fileId); return; }
     
-    // CAMBIO: Ahora abre el Runner, no el Editor
+    // [CAMBIO] EJECUCIÓN SILENCIOSA SIN TERMINAL
+    if (file.type === 'executable') { 
+        if (typeof ProgrammerManager !== 'undefined') {
+            ProgrammerManager.runHeadless(null, fileId);
+        }
+        return; 
+    }
+    
     if (file.type === 'program') { openProgramRunnerWindow(fileId); return; }
 
     const existing = openWindows.find(w => w.id === fileId);

@@ -204,3 +204,49 @@
 }
 /* Añadir al final de SILENOS 3/programmer-canvas.css */
 .prog-node[data-type="json-export"] .prog-node-header { border-top: 3px solid #16a34a; }
+
+/* --- AÑADIR AL FINAL DE SILENOS 3/programmer-canvas.css --- */
+
+/* Botones para nodos dinámicos */
+.prog-dynamic-controls {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 5px 5px 5px;
+    margin-top: 5px;
+    border-top: 1px dashed #333;
+    padding-top: 5px;
+}
+
+.prog-btn-add-port {
+    background: transparent;
+    border: 1px dashed #555;
+    color: #666;
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.prog-btn-add-port:hover {
+    border-color: #007acc;
+    color: #007acc;
+    background: rgba(0, 122, 204, 0.1);
+}
+
+.prog-port-remover {
+    display: none; /* Se muestra al hover del puerto */
+    position: absolute;
+    top: -8px;
+    font-size: 10px;
+    color: #ef4444;
+    cursor: pointer;
+    background: #111;
+    border-radius: 50%;
+    width: 12px;
+    height: 12px;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+}
+.prog-port-row:hover .prog-port-remover { display: flex; }

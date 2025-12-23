@@ -1,18 +1,27 @@
 /* SILENOS 3/styles.css */
-/* --- ESTILOS NEOMORFISTAS --- */
+
+/* =========================================
+   1. VARIABLES Y ESTILOS BASE
+   ========================================= */
 :root {
     --bg-color: #e0e5ec;
     --shadow-light: #b3b3b300;
-    --shadow-dark: #a3b1c6;
-    --selection-blue: rgba(59, 130, 246, 0.5); /* Color de la caja de selección */
+    --shadow-dark: #a3b1c600;
+    --selection-blue: rgba(59, 131, 246, 0.171);
+    --sidebar-width: 350px; /* Ancho fijo para las 3 columnas */
 }
 
 body {
     background-color: var(--bg-color);
-    overflow: hidden; /* Evitar scroll en el body */
+    overflow: hidden;
     font-family: 'Segoe UI', system-ui, sans-serif;
     user-select: none;
+    margin: 0;
 }
+
+/* =========================================
+   2. ESTILOS NEOMORFISTAS (UI GENERAL)
+   ========================================= */
 
 /* Botón/Elemento Saliente (Outset) */
 .neumorph-out {
@@ -26,18 +35,18 @@ body {
 /* Botón Pequeño */
 .neumorph-btn {
     background: var(--bg-color);
-    box-shadow: 5px 5px 10px #b8b9be, -5px -5px 10px #ffffff00;
+    box-shadow: 5px 5px 10px #b8b9be00, -5px -5px 10px #ffffff00;
     border-radius: 12px;
     transition: all 0.2s ease;
 }
 .neumorph-btn:active, .neumorph-btn.active {
-    box-shadow: inset 5px 5px 10px #b8b9be, inset -5px -5px 10px #ffffff00;
+    box-shadow: inset 5px 5px 10px #b8b9be00, inset -5px -5px 10px #ffffff00;
 }
 .neumorph-btn:hover {
     transform: translateY(-2px);
 }
 
-/* Botones de control de ventana (min/max/close) */
+/* Controles de ventana (min/max/close) */
 .neumorph-control {
     width: 28px;
     height: 28px;
@@ -46,20 +55,24 @@ body {
     justify-content: center;
     background: var(--bg-color);
     border-radius: 50%;
-    box-shadow: 3px 3px 6px #b8b9be, -3px -3px 6px #ffffff00;
+    box-shadow: 3px 3px 6px #b8b9be00, -3px -3px 6px #ffffff00;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 .neumorph-control:active {
-    box-shadow: inset 2px 2px 5px #b8b9be, inset -2px -2px 5px #ffffff5b;
+    box-shadow: inset 2px 2px 5px #b8b9be00, inset -2px -2px 5px #ffffff5b;
 }
 
-/* Elemento Hundido (Inset) - Para inputs o estados activos */
+/* Elemento Hundido (Inset) */
 .neumorph-in {
     background: var(--bg-color);
-    box-shadow: inset 6px 6px 12px #b8b9be, inset -6px -6px 12px #ffffff25;
+    box-shadow: inset 6px 6px 12px #b8b9be00, inset -6px -6px 12px #ffffff25;
     border-radius: 16px;
 }
+
+/* =========================================
+   3. ESCRITORIO Y VENTANAS
+   ========================================= */
 
 /* Icono de Escritorio */
 .desktop-icon-btn {
@@ -70,24 +83,23 @@ body {
     align-items: center;
     justify-content: center;
     background: var(--bg-color);
-    box-shadow: 6px 6px 12px #b8b9be, -6px -6px 12px #ffffff36;
+    box-shadow: 6px 6px 12px #b8b9be00, -6px -6px 12px #ffffff36;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .desktop-icon-btn:active {
-    box-shadow: inset 4px 4px 8px #b8b9be, inset -4px -4px 8px #ffffff;
+    box-shadow: inset 4px 4px 8px #b8b9be00, inset -4px -4px 8px #ffffff;
     transform: scale(0.95);
 }
 
-/* --- ESTADOS DE SELECCIÓN --- */
+/* Selección */
 .icon-selected .desktop-icon-btn {
     box-shadow: inset 4px 4px 8px #b8b9be, inset -4px -4px 8px #ffffff !important;
-    border: 2px solid #3b82f6;
+    border: 1px solid #3b83f63b;
 }
 .icon-selected span {
     background: rgba(59, 130, 246, 0.2) !important;
     color: #1d4ed8 !important;
 }
-
 .selection-box {
     position: absolute;
     background: rgba(59, 130, 246, 0.2);
@@ -97,7 +109,7 @@ body {
     z-index: 9999;
 }
 
-/* Ventanas */
+/* Estructura Ventana */
 .window {
     position: absolute;
     display: flex;
@@ -107,7 +119,6 @@ body {
     min-width: 300px;
     min-height: 200px;
 }
-
 .window.maximized {
     top: 0 !important;
     left: 0 !important;
@@ -116,191 +127,287 @@ body {
     border-radius: 0;
     box-shadow: none;
 }
-
-.window-header {
-    cursor: grab;
-}
-.window-header:active {
-    cursor: grabbing;
-}
+.window-header { cursor: grab; }
+.window-header:active { cursor: grabbing; }
 
 /* Animaciones */
-.pop-in {
-    animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
+.pop-in { animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 @keyframes popIn {
     0% { transform: scale(0.8) translateY(10px); opacity: 0; }
     100% { transform: scale(1) translateY(0); opacity: 1; }
 }
 
-.pop-out {
-    animation: popOut 0.2s ease forwards;
-}
+.pop-out { animation: popOut 0.2s ease forwards; }
 @keyframes popOut {
     0% { transform: scale(1) translateY(0); opacity: 1; }
     100% { transform: scale(0.9) translateY(10px); opacity: 0; }
 }
 
-/* Ocultar scrollbar del iframe container pero permitir scroll */
-.content-area::-webkit-scrollbar {
-    width: 8px;
-}
-.content-area::-webkit-scrollbar-track {
-    background: #e0e5ec; 
-}
-.content-area::-webkit-scrollbar-thumb {
-    background: #a3b1c6; 
-    border-radius: 4px;
-}
-/* --- ESTILOS DE ARCHIVOS Y CARPETAS --- */
+/* Scrollbars */
+.content-area::-webkit-scrollbar { width: 8px; }
+.content-area::-webkit-scrollbar-track { background: #e0e5ec; }
+.content-area::-webkit-scrollbar-thumb { background: #a3b1c6; border-radius: 4px; }
 
-#desktop-files-layer {
-    /* Asegura que cubra todo pero permita clicks en sus hijos */
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-}
+/* Archivos y Carpetas */
+#desktop-files-layer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+.folder-window-content { background: #f0f2f5; }
+.ghost-item { pointer-events: none; opacity: 0.7; z-index: 9999; }
 
-.folder-window-content {
-    /* Fondo estilo interior carpeta */
-    background: #f0f2f5; 
-}
+/* Data Viewer */
+#dv-textarea { font-family: 'Consolas', 'Monaco', monospace; line-height: 1.5; }
+#dv-textarea:focus { box-shadow: inset 8px 8px 16px #b8b9be, inset -8px -8px 16px #ffffff; }
 
-/* Efecto ghost al arrastrar */
-.ghost-item {
-    pointer-events: none;
-    opacity: 0.7;
-    z-index: 9999;
-}
+/* =========================================
+   4. ESTILOS PROGRAMADOR (LAYOUT & SIDEBAR)
+   ========================================= */
 
-/* --- ESTILOS DATA VIEWER --- */
-#dv-textarea {
-    font-family: 'Consolas', 'Monaco', monospace;
-    line-height: 1.5;
-}
-#dv-textarea:focus {
-    box-shadow: inset 8px 8px 16px #b8b9be, inset -8px -8px 16px #ffffff;
-}
-
-/* --- ESTILOS APP PROGRAMADOR (Ported from prueba.html) --- */
 .prog-wrapper {
     display: flex;
     height: 100%;
+    width: 100%;
     background-color: #1e1e1e;
     color: #d4d4d4;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     overflow: hidden;
 }
 
+/* --- BARRA LATERAL (GRID 3 COLUMNAS) --- */
 .prog-sidebar {
-    width: 200px;
+    width: 25%;
+    max-width: 340px;
+    min-width: 100px;
     background-color: #252526;
     border-right: 1px solid #454545;
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    padding: 10px;
+    display: grid; /* MODO GRID ACTIVADO */
+    grid-template-columns: repeat(2, 1fr); /* 3 COLUMNAS */
+    grid-auto-rows: min-content;
+    gap: 8px;
     flex-shrink: 0;
-    overflow: scroll;
+    overflow-y: auto;
+    align-content: start;
+    z-index: 20;
 }
 
-.prog-draggable {
+/* --- FICHAS DE MÓDULOS EN LA BARRA LATERAL --- */
+/* Unificamos estilos para .prog-draggable y .prog-palette-item por si usas uno u otro */
+.prog-draggable, .prog-palette-item {
     background-color: #333333;
-    border-left: 4px solid #007acc;
+    border-left: 3px solid #007acc;
     color: white;
-    padding: 10px;
+    padding: 8px 4px;
     border-radius: 4px;
     cursor: grab;
     user-select: none;
     font-weight: 500;
+    
+    /* Disposición vertical para que quepan en el grid */
     display: flex;
+    flex-direction: column;
+    justify-content: center;
     align-items: center;
-    transition: transform 0.1s;
-    font-size: 0.9rem;
+    text-align: center;
+    
+    transition: transform 0.1s, background-color 0.1s;
+    font-size: 0.75rem;
+    min-height: 60px; /* Cuadrados */
+    word-break: break-word;
+    margin: 0; /* Reseteamos márgenes antiguos */
 }
-.prog-draggable:hover { transform: translateX(5px); background-color: #3f3f3f; }
-.prog-draggable:active { cursor: grabbing; }
+
+.prog-draggable:hover, .prog-palette-item:hover {
+    transform: translateY(-2px);
+    background-color: #3f3f3f;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.prog-draggable:active, .prog-palette-item:active {
+    cursor: grabbing;
+    transform: scale(0.95);
+}
+
+/* =========================================
+   5. ESTILOS CANVAS (NODOS Y CONEXIONES)
+   ========================================= */
 
 .prog-main {
-    flex-grow: 1;
-    padding: 15px;
+    flex: 1; /* Ocupa el resto del espacio */
+    position: relative;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     background: radial-gradient(circle at center, #2a2a2a 0%, #1e1e1e 100%);
-    min-width: 0; /* Flexbox fix */
 }
 
-.prog-path {
-    flex-grow: 1;
-    border: 2px dashed #454545;
-    border-radius: 8px;
-    padding: 20px;
-    overflow-y: auto;
+.prog-editor-container {
     position: relative;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-content: flex-start;
-    gap: 15px;
-    transition: background 0.3s;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #1e1e1e;
+    /* Patrón de fondo opcional para guiar la vista */
+    background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
 }
-.prog-path.drag-over { background-color: rgba(0, 122, 204, 0.1); border-color: #007acc; }
 
-/* Bloques */
-.prog-block {
-    background-color: #333;
+.prog-world {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform-origin: 0 0;
+}
+
+.prog-connections-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: visible;
+}
+
+/* --- ESTILO DE LOS NODOS EN EL CANVAS --- */
+.prog-node {
+    position: absolute;
+    width: 200px;
+    background: #252526;
     border: 1px solid #454545;
-    border-top: 3px solid #007acc;
-    padding: 10px 12px;
-    border-radius: 6px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+}
+
+.prog-node-header {
+    padding: 6px 10px;
+    background: #333;
+    border-bottom: 1px solid #222;
+    border-radius: 7px 7px 0 0;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #aaa;
+    cursor: grab;
     display: flex;
     align-items: center;
-    gap: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    justify-content: space-between;
+}
+
+.prog-node-close {
+    background: transparent;
+    border: none;
+    color: #666;
+    font-size: 1.2rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 2px;
+}
+.prog-node-close:hover { color: #ff5555; }
+
+.prog-node-body {
+    padding: 8px;
+    font-size: 0.8rem;
+    color: #ccc;
+}
+
+.prog-node input, .prog-node select, .prog-node textarea {
+    width: 100%;
+    background: #111;
+    border: 1px solid #444;
+    color: #eee;
+    padding: 4px;
+    margin-top: 4px;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    box-sizing: border-box; /* Importante para que no se salgan */
+}
+
+/* --- PUERTOS DE CONEXIÓN --- */
+.prog-ports {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 4px 6px 4px;
+    margin-top: auto;
+}
+
+.prog-port {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #555;
+    border: 2px solid #252526;
+    cursor: crosshair;
+    transition: background 0.2s;
     position: relative;
-    animation: popIn 0.2s;
-    min-width: 140px;
-}
-.prog-block::after {
-    content: '→'; position: absolute; right: -22px; top: 50%; transform: translateY(-50%);
-    color: #666; font-weight: bold; font-size: 1.2rem; pointer-events: none;
-}
-.prog-block:last-child::after { display: none; }
-.prog-block.executing {
-    box-shadow: 0 0 15px #007acc; transform: scale(1.05); z-index: 100; background-color: #3c3c3c;
+    z-index: 5;
 }
 
-/* Inputs internos de los bloques */
-.prog-block input {
-    background: #222; border: 1px solid #555; color: #eee;
-    padding: 4px 6px; border-radius: 3px; outline: none; font-size: 0.85rem; width: 100px;
-}
-.prog-block input:focus { border-color: #007acc; }
-
-.prog-del-btn {
-    background: transparent; border: none; color: #888; cursor: pointer;
-    font-size: 1.1rem; margin-left: 5px;
-}
-.prog-del-btn:hover { color: #ff5555; }
-
-/* Placeholder Drop */
-.prog-placeholder {
-    width: 4px; background-color: #007acc; border-radius: 2px;
-    box-shadow: 0 0 10px #007acc; margin: 0 5px;
+.prog-port:hover {
+    background: #fff;
+    transform: scale(1.2);
 }
 
-/* Consola */
-.prog-console {
-    margin-top: 15px; height: 120px; background-color: #111; border: 1px solid #333;
-    padding: 10px; font-family: 'Consolas', monospace; font-size: 0.85rem;
-    overflow-y: auto; color: #ccc; border-radius: 4px;
+.prog-port-in { margin-left: -6px; }  /* Ajuste para que sobresalgan un poco */
+.prog-port-out { margin-right: -6px; }
+
+/* =========================================
+   6. CONSOLA Y HERRAMIENTAS
+   ========================================= */
+
+.prog-console-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 120px;
+    background: rgba(0,0,0,0.9);
+    color: #0f0;
+    font-family: monospace;
+    font-size: 0.7rem;
+    padding: 8px;
+    overflow-y: auto;
+    z-index: 50;
+    border-top: 1px solid #333;
 }
+
 .prog-log-line { margin-bottom: 4px; border-bottom: 1px solid #222; padding-bottom: 2px; }
-.prog-log-time { color: #666; margin-right: 10px; font-size: 0.8em; }
 
-/* Controles */
-.prog-controls { margin-top: 10px; display: flex; gap: 10px; border-top: 1px solid #454545; padding-top: 10px; }
-.prog-btn {
-    padding: 6px 16px; font-size: 0.9rem; cursor: pointer; border: none; border-radius: 4px; font-weight: 600;
+.prog-toolbar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 100;
+    display: flex;
+    gap: 8px;
 }
-.prog-btn-run { background-color: #2ea043; color: white; }
-.prog-btn-clear { background-color: #333; color: white; border: 1px solid #555; }
+
+.prog-btn-float {
+    background: #2ea043;
+    color: white;
+    border: none;
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+/* Modal y Popups */
+.prog-modal-bg { position:absolute; inset:0; background:rgba(0,0,0,0.8); z-index:200; display:flex; justify-content:center; align-items:center; }
+.prog-modal { width: 600px; height: 500px; background: #252526; border: 1px solid #444; border-radius: 8px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 10px 30px #000; }
+.prog-modal-head { padding: 10px; background: #333; font-weight:bold; color:#ddd; display:flex; justify-content:space-between; }
+.prog-modal-body { flex:1; padding:15px; overflow-y:auto; color:#ccc; font-size:0.85rem; }
+.prog-tab-bar { display:flex; gap:10px; margin-bottom:15px; border-bottom:1px solid #444; }
+.prog-tab { padding: 5px 10px; cursor:pointer; opacity:0.6; }
+.prog-tab.active { opacity:1; border-bottom:2px solid #007acc; color:white; }
+
+/* Controles dinámicos en nodos */
+.prog-dynamic-controls { display: flex; justify-content: space-between; padding: 0 5px 5px 5px; margin-top: 5px; border-top: 1px dashed #333; padding-top: 5px; }
+.prog-btn-add-port { background: transparent; border: 1px dashed #555; color: #666; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+.prog-btn-add-port:hover { border-color: #007acc; color: #007acc; background: rgba(0, 122, 204, 0.1); }

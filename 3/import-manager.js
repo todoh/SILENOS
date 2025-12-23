@@ -273,8 +273,9 @@ const ImportManager = {
                         modulesCount++;
                     }
                 } 
-                // B. ITEMS DEL SISTEMA DE ARCHIVOS (Folder, File, Book, Program, Narrative)
-                else if (['folder', 'file', 'program', 'narrative', 'book', 'data'].includes(item.type)) {
+                // B. ITEMS DEL SISTEMA DE ARCHIVOS (AÑADIDO 'executable')
+                // FIX: Añadido 'executable' a la lista para que no se descarten al importar
+                else if (['folder', 'file', 'program', 'narrative', 'book', 'data', 'executable'].includes(item.type)) {
                     // Verificar si existe por ID
                     const existingIdx = FileSystem.data.findIndex(i => i.id === item.id);
                     

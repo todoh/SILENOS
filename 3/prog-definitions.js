@@ -31,7 +31,8 @@ const NODE_REGISTRY = {
             const s = parseFloat(ctx.fields.sec) || 0;
             ctx.log(`Esperando ${s}s...`);
             await new Promise(r => setTimeout(r, s * 1000));
-            return ctx.input;
+            // CORRECCIÓN: Si input es null, devolvemos true para que la señal continúe
+            return (ctx.input !== null && ctx.input !== undefined) ? ctx.input : true;
         }
     },
     "if-logic": {
@@ -186,5 +187,34 @@ const NODE_REGISTRY = {
     "json-export": {
         title: "💾 EXPORTAR JSON", color: "#16a34a", hasIn: false, hasOut: false,
         execute: async (ctx) => { }
+    },/* AÑADIR A NODE_REGISTRY en SILENOS 3/prog-definitions.js */
+
+    "dynamic-script": {
+        title: "⚡ SCRIPT DINÁMICO", 
+        color: "#d946ef", 
+        isDynamic: true, // <--- ESTA BANDERA ACTIVA LA EDICIÓN EN CANVAS
+        inputs: ["in"],  // Inputs por defecto
+        outputs: ["out"], // Outputs por defecto
+        fields: [
+            { name: "code", type: "textarea", placeholder: "return inputs[0] + ' procesado';" }
+        ],
+        execute: async (ctx) => {
+            // Recoger todas las entradas disponibles en el estado del nodo
+            const nodeInputs = ctx.runtime.gateInputs[ctx.nodeId] || {};
+            
+            // Convertir objeto de inputs {in: "val", in2: "val"} a array o usarlo directo
+            const inputValues = Object.values(nodeInputs);
+            
+            // Ejecución segura del código usuario
+            try {
+                // Disponibles: inputs (array), input (el del puerto actual), log, fields
+                const userFunc = new Function('input', 'inputs', 'fields', 'log', ctx.fields.code);
+                const result = userFunc(ctx.input, nodeInputs, ctx.fields, ctx.log);
+                return result;
+            } catch(e) {
+                ctx.log("Error Script: " + e.message);
+                return null;
+            }
+        }
     },
 };

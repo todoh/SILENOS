@@ -1,0 +1,563 @@
+[
+  {
+    "id": "custom-dynamic-form-ui",
+    "title": "Formulario UI Dinámico",
+    "color": "#db2777",
+    "inputs": [
+      "open"
+    ],
+    "outputs": [
+      "data"
+    ],
+    "fields": [
+      {
+        "name": "title",
+        "type": "text",
+        "value": "Ingresar Datos"
+      }
+    ],
+    "isDynamic": true,
+    "code": "\n// --- FORMULARIO DINÁMICO (SOLO ABRE CON 'OPEN') ---\n\n// 1. [CORRECCIÓN] Si la señal no viene por 'open', detenemos la ejecución.\n// Los datos de otros puertos ya se han guardado automáticamente en memoria.\nif (ctx.port !== 'open') return null;\n\n// 2. Detectar puertos definidos en el grafo\nconst nodeDef = ctx.graph.nodes.find(n => n.id === ctx.nodeId);\nconst formFields = nodeDef.inputs.filter(p => p !== 'open');\n\nif (formFields.length === 0) {\n    alert(\"Usa el botón '+ In' en el nodo para añadir los campos.\");\n    return null;\n}\n\nconst formTitle = ctx.fields.title || \"Formulario\";\nconst inputValues = inputs || [];\n\nctx.log(`🖥️ Abriendo formulario '${formTitle}'...`);\n\nreturn new Promise((resolve) => {\n    const winId = 'dyn-form-' + Date.now();\n    \n    // --- CREACIÓN DE VENTANA ---\n    const win = document.createElement('div');\n    win.id = winId;\n    win.className = 'window neumorph-out pop-in pointer-events-auto';\n    win.style.cssText = `\n        position: absolute;\n        top: 150px;\n        left: 150px;\n        width: 350px;\n        height: auto;\n        max-height: 80vh;\n        z-index: 9999;\n        display: flex;\n        flex-direction: column;\n        background: #e0e5ec;\n        border-radius: 20px;\n        overflow: hidden;\n        box-shadow: 10px 10px 30px rgba(0,0,0,0.2);\n        pointer-events: auto !important;\n    `;\n\n    // HEADER\n    const header = document.createElement('div');\n    header.className = 'window-header';\n    header.style.cssText = `\n        padding: 12px 15px;\n        display: flex;\n        justify-content: space-between;\n        align-items: center;\n        background: #e0e5ec;\n        cursor: grab;\n        border-bottom: 1px solid rgba(255,255,255,0.5);\n        user-select: none;\n    `;\n    header.innerHTML = `\n        <div style=\"display:flex; gap:8px; align-items:center;\">\n            <span style=\"font-weight:bold; color:#db2777; font-size:0.9rem;\">📝 ${formTitle}</span>\n        </div>\n        <button id=\"close-${winId}\" style=\"border:none; background:transparent; cursor:pointer; font-size:1.2rem; color:#666;\">×</button>\n    `;\n\n    // BODY\n    const body = document.createElement('div');\n    body.style.cssText = `\n        padding: 20px;\n        background: #e0e5ec;\n        display: flex;\n        flex-direction: column;\n        gap: 15px;\n        overflow-y: auto;\n    `;\n\n    // --- CAMPOS ---\n    formFields.forEach(fieldName => {\n        const portIndex = nodeDef.inputs.indexOf(fieldName);\n        // Aquí recuperamos el valor que se guardó silenciosamente antes\n        const defaultVal = (inputValues[portIndex] !== undefined && inputValues[portIndex] !== null) ? inputValues[portIndex] : \"\";\n\n        const wrapper = document.createElement('div');\n        \n        const lbl = document.createElement('label');\n        lbl.innerText = fieldName;\n        lbl.style.cssText = 'display:block; font-size:0.7rem; font-weight:bold; color:#666; text-transform:uppercase; margin-bottom:5px; margin-left:2px;';\n        \n        const input = document.createElement('input');\n        input.type = 'text'; \n        input.id = `input-${winId}-${fieldName}`;\n        input.value = defaultVal;\n        input.onmousedown = (e) => e.stopPropagation();\n        input.style.cssText = 'width:100%; background:#e0e5ec; box-shadow:inset 3px 3px 6px #b8b9be, inset -3px -3px 6px #ffffff; border:none; padding:10px 12px; border-radius:12px; font-size:0.9rem; color:#333; outline:none; font-family:inherit; transition: all 0.2s;';\n        \n        input.onfocus = () => input.style.boxShadow = 'inset 4px 4px 8px #b8b9be, inset -4px -4px 8px #ffffff';\n        input.onblur = () => input.style.boxShadow = 'inset 3px 3px 6px #b8b9be, inset -3px -3px 6px #ffffff';\n\n        wrapper.appendChild(lbl);\n        wrapper.appendChild(input);\n        body.appendChild(wrapper);\n    });\n\n    // FOOTER\n    const footer = document.createElement('div');\n    footer.style.padding = \"0 20px 20px 20px\";\n\n    const btn = document.createElement('button');\n    btn.innerText = \"ACEPTAR\";\n    btn.style.cssText = `\n        width: 100%;\n        padding: 12px;\n        background: #db2777;\n        border: none;\n        border-radius: 12px;\n        box-shadow: 5px 5px 10px #b8b9be, -5px -5px 10px #ffffff;\n        font-weight: bold;\n        color: white;\n        cursor: pointer;\n        transition: transform 0.1s;\n    `;\n    \n    btn.onmousedown = (e) => { e.stopPropagation(); btn.style.transform = 'scale(0.96)'; };\n    btn.onmouseup = () => btn.style.transform = 'scale(1)';\n\n    btn.onclick = (e) => {\n        e.stopPropagation();\n        const result = {};\n        formFields.forEach(fieldName => {\n            const el = document.getElementById(`input-${winId}-${fieldName}`);\n            if(el) result[fieldName] = el.value;\n        });\n\n        win.remove();\n        window.removeEventListener('mousemove', onMouseMove);\n        window.removeEventListener('mouseup', onMouseUp);\n        \n        ctx.log(\"✅ Datos enviados.\");\n        resolve(result);\n    };\n\n    footer.appendChild(btn);\n    win.appendChild(header);\n    win.appendChild(body);\n    win.appendChild(footer);\n\n    const container = document.getElementById('windows-container') || document.body;\n    container.appendChild(win);\n\n    // --- DRAG & DROP ---\n    let isDragging = false, startX, startY, initLeft, initTop;\n    \n    header.onmousedown = (e) => {\n        if(e.button !== 0) return;\n        isDragging = true;\n        startX = e.clientX;\n        startY = e.clientY;\n        initLeft = win.offsetLeft;\n        initTop = win.offsetTop;\n        win.style.zIndex = 99999;\n        header.style.cursor = 'grabbing';\n        e.preventDefault();\n    };\n\n    const onMouseMove = (e) => {\n        if (!isDragging) return;\n        e.preventDefault();\n        const dx = e.clientX - startX;\n        const dy = e.clientY - startY;\n        win.style.left = (initLeft + dx) + 'px';\n        win.style.top = (initTop + dy) + 'px';\n    };\n\n    const onMouseUp = () => {\n        isDragging = false;\n        header.style.cursor = 'grab';\n    };\n\n    window.addEventListener('mousemove', onMouseMove);\n    window.addEventListener('mouseup', onMouseUp);\n\n    document.getElementById(`close-${winId}`).onclick = (e) => {\n        e.stopPropagation();\n        win.remove();\n        window.removeEventListener('mousemove', onMouseMove);\n        window.removeEventListener('mouseup', onMouseUp);\n        ctx.log(\"❌ Cancelado.\");\n        resolve(null);\n    };\n});\n",
+    "type": "custom-module"
+  },
+  {
+    "id": "custom-ai-multichan-44",
+    "title": "IA Multi-Canal (44)",
+    "color": "#7c3aed",
+    "inputs": [
+      "In 1",
+      "In 2",
+      "In 3",
+      "In 4",
+      "In 5",
+      "In 6",
+      "In 7",
+      "In 8",
+      "In 9",
+      "In 10",
+      "In 11",
+      "In 12",
+      "In 13",
+      "In 14",
+      "In 15",
+      "In 16",
+      "In 17",
+      "In 18",
+      "In 19",
+      "In 20",
+      "In 21",
+      "In 22",
+      "In 23",
+      "In 24",
+      "In 25",
+      "In 26",
+      "In 27",
+      "In 28",
+      "In 29",
+      "In 30",
+      "In 31",
+      "In 32",
+      "In 33",
+      "In 34",
+      "In 35",
+      "In 36",
+      "In 37",
+      "In 38",
+      "In 39",
+      "In 40",
+      "In 41",
+      "In 42",
+      "In 43",
+      "In 44"
+    ],
+    "outputs": [
+      "Out 1",
+      "Out 2",
+      "Out 3",
+      "Out 4",
+      "Out 5",
+      "Out 6",
+      "Out 7",
+      "Out 8",
+      "Out 9",
+      "Out 10",
+      "Out 11",
+      "Out 12",
+      "Out 13",
+      "Out 14",
+      "Out 15",
+      "Out 16",
+      "Out 17",
+      "Out 18",
+      "Out 19",
+      "Out 20",
+      "Out 21",
+      "Out 22",
+      "Out 23",
+      "Out 24",
+      "Out 25",
+      "Out 26",
+      "Out 27",
+      "Out 28",
+      "Out 29",
+      "Out 30",
+      "Out 31",
+      "Out 32",
+      "Out 33",
+      "Out 34",
+      "Out 35",
+      "Out 36",
+      "Out 37",
+      "Out 38",
+      "Out 39",
+      "Out 40",
+      "Out 41",
+      "Out 42",
+      "Out 43",
+      "Out 44"
+    ],
+    "fields": [
+      {
+        "name": "MODELO",
+        "type": "text",
+        "value": "gemini-2.0-flash",
+        "placeholder": "Ej: gemini-1.5-pro"
+      },
+      {
+        "name": "SYSTEM",
+        "type": "textarea",
+        "value": "",
+        "placeholder": "Instrucción común para todos los canales..."
+      }
+    ],
+    "code": "return (async () => {\n  const key = AIService.getApiKey();\n  if (!key) throw new Error(\"Falta API Key\");\n\n  // Detectar qué puerto activó este nodo (ej: \"In 5\")\n  const activePort = ctx.port;\n  if (!activePort || !activePort.startsWith(\"In \")) return null;\n\n  // Calcular puerto de salida correspondiente (ej: \"Out 5\")\n  const channelNum = activePort.replace(\"In \", \"\");\n  const outPort = \"Out \" + channelNum;\n\n  const modelo = ctx.fields.MODELO || \"gemini-2.0-flash\";\n  const sys = ctx.fields.SYSTEM || \"\";\n  const inputData = ctx.input || \"\";\n\n  ctx.log(`Procesando Canal ${channelNum}...`);\n\n  const url = \"https://generativelanguage.googleapis.com/v1beta/models/\" + modelo + \":generateContent?key=\" + key;\n  const payload = {\n    contents: [{\n      role: \"user\",\n      parts: [{ text: (sys ? sys + \"\\n\\n\" : \"\") + String(inputData) }]\n    }]\n  };\n\n  try {\n    const res = await fetch(url, {\n      method: \"POST\",\n      headers: { \"Content-Type\": \"application/json\" },\n      body: JSON.stringify(payload)\n    });\n    const data = await res.json();\n    const txt = data.candidates?.[0]?.content?.parts?.[0]?.text || \"[Error IA]\";\n    \n    // Retornamos un objeto. El Runtime modificado enviará 'txt' SOLO por 'outPort'.\n    return { [outPort]: txt };\n\n  } catch (e) {\n    ctx.log(\"Error Ch \" + channelNum + \": \" + e.message);\n    return { [outPort]: \"Error: \" + e.message };\n  }\n})();",
+    "type": "custom-module"
+  },
+  {
+    "id": "finish-success-node",
+    "title": "🏁 Finalizar (Éxito)",
+    "color": "#10b981",
+    "inputs": [
+      "Dato Final"
+    ],
+    "outputs": [],
+    "fields": [
+      {
+        "name": "MENSAJE",
+        "type": "text",
+        "value": "Programa Finalizado Correctamente",
+        "placeholder": "Mensaje de éxito..."
+      }
+    ],
+    "code": "var msg = ctx.fields.MENSAJE || \"Programa Finalizado Correctamente\";\n\n// 1. Mostrar mensaje de éxito en verde (usando el log del sistema)\nctx.log(\"✅ \" + msg);\n\n// 2. Mostrar el dato final si existe\nif (ctx.input !== undefined && ctx.input !== null) {\n    var val = (typeof ctx.input === 'object') ? JSON.stringify(ctx.input) : String(ctx.input);\n    ctx.log(\"📦 Output Final: \" + val);\n}\n\n// 3. Retornar el valor (aunque visualmente el flujo acaba aquí)\nreturn ctx.input;",
+    "type": "custom-module"
+  },
+  {
+    "id": "narrative-exporter-fixed",
+    "title": "Exportador Narrativo (Fixed)",
+    "color": "#f97316",
+    "inputs": [
+      "Nombre",
+      "Etiqueta",
+      "Contenido"
+    ],
+    "outputs": [
+      "FileID"
+    ],
+    "fields": [],
+    "code": "try {\n    // 1. Obtener Inputs de forma segura\n    const inputs = ctx.runtime.nodeStates[ctx.nodeId] || [];\n    const name = inputs[0] ? String(inputs[0]) : \"Nota Narrativa\";\n    const tag = inputs[1] ? String(inputs[1]) : \"GENERAL\";\n    const content = inputs[2] ? String(inputs[2]) : \"\";\n\n    // 2. Buscar si ya existe en el escritorio para no duplicar\n    // Usamos 'getItems' que SÍ existe en tu filesystem.js\n    const desktopItems = FileSystem.getItems('desktop');\n    let targetItem = desktopItems.find(i => i.title === name && i.type === 'narrative');\n    let targetId = targetItem ? targetItem.id : null;\n\n    // 3. Crear si no existe\n    if (!targetId) {\n        // Usamos 'createNarrative' que SÍ existe en tu filesystem.js\n        const newItem = FileSystem.createNarrative(name, 'desktop');\n        targetId = newItem.id;\n    }\n\n    // 4. Actualizar contenido\n    const file = FileSystem.getItem(targetId);\n    if (file) {\n        file.title = name;\n        file.content = {\n            tag: tag,\n            text: content\n        };\n        \n        // Guardar cambios\n        FileSystem.save();\n\n        // 5. Refrescar ventana si está abierta (Live Update)\n        if (typeof NarrativeManager !== 'undefined' && typeof openWindows !== 'undefined') {\n            const wins = openWindows.filter(w => w.id === targetId || w.fileId === targetId);\n            wins.forEach(win => NarrativeManager.renderInWindow(win.id, targetId));\n        }\n    }\n\n    return targetId;\n\n} catch (e) {\n    ctx.log(\"Error: \" + e.message);\n    throw e;\n}",
+    "type": "custom-module"
+  },
+  {
+    "id": "custom-ai-selector-fixed-v2",
+    "title": "IA (Selector Manual)",
+    "color": "#7c3aed",
+    "inputs": [
+      "prompt"
+    ],
+    "outputs": [
+      "respuesta"
+    ],
+    "fields": [
+      {
+        "name": "MODELO",
+        "type": "text",
+        "value": "gemini-2.0-flash",
+        "placeholder": "Ej: gemini-1.5-pro"
+      },
+      {
+        "name": "SYSTEM",
+        "type": "textarea",
+        "value": "",
+        "placeholder": "Instrucciones de sistema..."
+      }
+    ],
+    "code": "return (async () => {\n  const key = AIService.getApiKey();\n  if (!key) throw new Error(\"Falta API Key en Ajustes\");\n\n  // Obtener inputs\n  const modelo = ctx.fields.MODELO || \"gemini-2.0-flash\";\n  const sys = ctx.fields.SYSTEM || \"\";\n  const userMsg = ctx.input || \"\";\n\n  // Construir URL sin backticks para evitar bugs del importador\n  const url = \"https://generativelanguage.googleapis.com/v1beta/models/\" + modelo + \":generateContent?key=\" + key;\n\n  ctx.log(\"Consultando: \" + modelo);\n\n  const payload = {\n    contents: [{\n      role: \"user\",\n      parts: [{ text: (sys ? sys + \"\\n\\n\" : \"\") + String(userMsg) }]\n    }]\n  };\n\n  try {\n    const res = await fetch(url, {\n      method: \"POST\",\n      headers: { \"Content-Type\": \"application/json\" },\n      body: JSON.stringify(payload)\n    });\n\n    if (!res.ok) {\n       const err = await res.json().catch(() => ({}));\n       throw new Error(\"API Error \" + res.status);\n    }\n\n    const data = await res.json();\n    const txt = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts ? data.candidates[0].content.parts[0].text : \"\";\n    return txt || \"[Sin respuesta]\";\n\n  } catch (e) {\n    ctx.log(\"Error: \" + e.message);\n    throw e;\n  }\n})();",
+    "type": "custom-module"
+  },
+  {
+    "id": "custom-book-export-44",
+    "title": "Exportador Libro (44 Canales)",
+    "color": "#e11d48",
+    "inputs": [
+      "Titulo",
+      "Cap 1",
+      "Cap 2",
+      "Cap 3",
+      "Cap 4",
+      "Cap 5",
+      "Cap 6",
+      "Cap 7",
+      "Cap 8",
+      "Cap 9",
+      "Cap 10",
+      "Cap 11",
+      "Cap 12",
+      "Cap 13",
+      "Cap 14",
+      "Cap 15",
+      "Cap 16",
+      "Cap 17",
+      "Cap 18",
+      "Cap 19",
+      "Cap 20",
+      "Cap 21",
+      "Cap 22",
+      "Cap 23",
+      "Cap 24",
+      "Cap 25",
+      "Cap 26",
+      "Cap 27",
+      "Cap 28",
+      "Cap 29",
+      "Cap 30",
+      "Cap 31",
+      "Cap 32",
+      "Cap 33",
+      "Cap 34",
+      "Cap 35",
+      "Cap 36",
+      "Cap 37",
+      "Cap 38",
+      "Cap 39",
+      "Cap 40",
+      "Cap 41",
+      "Cap 42",
+      "Cap 43",
+      "Cap 44"
+    ],
+    "outputs": [
+      "LibroID"
+    ],
+    "fields": [
+      {
+        "name": "Limite",
+        "type": "number",
+        "value": 10
+      }
+    ],
+    "code": "try {\n    // 1. Obtener Configuración\n    const limite = parseInt(ctx.fields.Limite) || 1;\n    // Obtenemos todos los inputs acumulados hasta el momento\n    const inputs = ctx.runtime.nodeStates[ctx.nodeId] || [];\n    \n    // 2. Gestionar instancia del libro (Persistente durante la ejecución)\n    // Usamos variables de runtime para no crear 100 libros si el flujo se repite\n    const memKey = 'book_export_' + ctx.nodeId;\n    let bookId = ctx.runtime.vars[memKey];\n    \n    // Si no existe el libro en esta sesión, lo creamos\n    if (!bookId) {\n        const titulo = inputs[0] || \"Nuevo Libro (Exportado)\";\n        const book = FileSystem.createBook(titulo, 'desktop');\n        bookId = book.id;\n        ctx.runtime.vars[memKey] = bookId;\n        ctx.log(\"📖 Libro creado con ID: \" + bookId);\n    }\n    \n    // 3. Actualizar Contenido del Libro\n    const book = FileSystem.getItem(bookId);\n    if (book) {\n        // Actualizar Título (Input 0)\n        if (inputs[0]) book.title = String(inputs[0]);\n        \n        // Asegurar que existen los capítulos necesarios según el Límite\n        while (book.content.chapters.length < limite) {\n            book.content.chapters.push({ \n                title: \"Capítulo \" + (book.content.chapters.length + 1), \n                paragraphs: [\"...\"] \n            });\n        }\n        \n        // 4. Llenar los Capítulos con la data de los Inputs\n        // Input 1 corresponde al Capítulo 1 (índice 0 del array de capítulos)\n        for (let i = 1; i <= limite; i++) {\n            // Verificamos si hay data en ese puerto de entrada\n            if (i < inputs.length && inputs[i] !== undefined) {\n                const txt = String(inputs[i]);\n                // Insertamos el texto en el capítulo correspondiente (i-1)\n                if (book.content.chapters[i-1]) {\n                    // Dividimos por saltos de línea para mantener párrafos si vienen formateados\n                    book.content.chapters[i-1].paragraphs = txt.split('\\n\\n');\n                }\n            }\n        }\n        \n        // Guardar cambios en disco\n        FileSystem.save();\n        \n        // Refrescar vistas si es posible (para ver cambios en tiempo real si el libro está abierto)\n        if (typeof refreshSystemViews === 'function') refreshSystemViews();\n        if (typeof BookManager !== 'undefined' && typeof openWindows !== 'undefined') {\n            // Buscar ventanas abiertas de este libro para repintarlas\n            const wins = openWindows.filter(w => w.id === bookId || w.fileId === bookId);\n            wins.forEach(win => BookManager.renderContent(win.id, bookId));\n        }\n    }\n    \n    // Retornamos el ID por si queremos encadenar algo más\n    return bookId;\n    \n} catch (e) {\n    ctx.log(\"❌ Error en Exportador: \" + e.message);\n    return null;\n}",
+    "type": "custom-module"
+  },
+  {
+    "id": "module-content-cleaner",
+    "title": "Limpiador de Texto (H)",
+    "parentId": "desktop",
+    "x": 200,
+    "y": 100,
+    "icon": "filter",
+    "color": "#10b981",
+    "inputs": [
+      "in"
+    ],
+    "outputs": [
+      "out"
+    ],
+    "fields": [],
+    "code": "const text = ctx.input || '';\nif (text.length < 10) return ' [ERROR: Texto insuficiente] ';\n// Limpieza basica de markdown si fuera necesario\nconst clean = text.replace(/\\*\\*/g, '').trim();\nctx.log('Texto procesado: ' + clean.substring(0, 20) + '...');\nreturn clean;",
+    "type": "custom-module"
+  },
+  {
+    "id": "custom-output-switch",
+    "title": "Selector de Salida",
+    "color": "#F59E0B",
+    "inputs": [
+      "entrada"
+    ],
+    "outputs": [
+      "salida"
+    ],
+    "fields": [
+      {
+        "name": "modo",
+        "type": "select",
+        "options": [
+          "Datos + Tic",
+          "Solo Tic"
+        ],
+        "value": "Datos + Tic"
+      }
+    ],
+    "code": "// Obtenemos el modo seleccionado por el usuario\nconst modo = ctx.fields.modo;\n\n// Si el modo es 'Solo Tic', devolvemos true.\n// Esto mantiene viva la ejecución (Tic) pero descarta los datos de entrada.\nif (modo === 'Solo Tic') {\n    return true;\n}\n\n// En caso contrario, pasamos los datos tal cual llegaron (Datos + Tic).\nreturn ctx.input;",
+    "type": "custom-module"
+  },
+  {
+    "id": "custom-extract-chapter-v1",
+    "title": "Extraer Capítulo",
+    "color": "#ea580c",
+    "inputs": [
+      "Numero",
+      "LibroJSON"
+    ],
+    "outputs": [
+      "CapituloJSON"
+    ],
+    "fields": [],
+    "code": "// 1. Verificar que ambas entradas han llegado\nif (!inputs || inputs[0] === undefined || inputs[1] === undefined) {\n    ctx.log(\"Esperando entradas (Num y Libro)...\");\n    return null;\n}\n\nconst capNum = parseInt(inputs[0]);\nlet bookData = inputs[1];\n\n// 2. Parsear libro si llega como texto (String)\nif (typeof bookData === 'string') {\n    try {\n        bookData = JSON.parse(bookData);\n    } catch (e) {\n        ctx.log(\"❌ Error: El Libro no es un JSON válido\");\n        return null;\n    }\n}\n\n// 3. Localizar los capítulos (Soporta estructura de Archivo o Contenido directo)\nlet chapters = [];\nif (bookData.content && Array.isArray(bookData.content.chapters)) {\n    // Es un objeto File completo de Silenos\n    chapters = bookData.content.chapters;\n} else if (bookData.chapters && Array.isArray(bookData.chapters)) {\n    // Es el contenido raw del libro\n    chapters = bookData.chapters;\n} else {\n    ctx.log(\"❌ Error: No se encontró estructura de capítulos\");\n    return null;\n}\n\n// 4. Validar rango\nconst index = capNum - 1; // Convertir a base 0\nif (index < 0 || index >= chapters.length) {\n    ctx.log(`❌ Error: Capítulo ${capNum} no existe (Total: ${chapters.length})`);\n    return null;\n}\n\n// 5. Retornar el objeto intacto\nconst targetChapter = chapters[index];\nctx.log(`✅ Extraído: ${targetChapter.title}`);\n\nreturn targetChapter;",
+    "type": "custom-module"
+  },
+  {
+    "id": "custom-book-exporter-v1",
+    "title": "Exportar a Libro",
+    "color": "#4338ca",
+    "inputs": [
+      "Nombre",
+      "Capitulo",
+      "Contenido"
+    ],
+    "outputs": [
+      "LibroJSON"
+    ],
+    "fields": [],
+    "code": "// 1. Validar entradas\nif (!inputs[0] || !inputs[1]) {\n    ctx.log(\"❌ Faltan datos (Nombre o Número)\");\n    return null;\n}\n\nconst fileName = inputs[0];\nconst capNum = parseInt(inputs[1]);\nconst textContent = inputs[2] || \"\";\n\n// 2. Intentar recuperar el libro existente del sistema de archivos (si existe)\n// Esto evita borrar los capítulos anteriores.\nlet bookObj = null;\n\nif (ctx.fileSystem && ctx.fileSystem.files[fileName]) {\n    // Si el archivo ya existe en memoria, lo clonamos para editarlo\n    try {\n        const existingFile = ctx.fileSystem.files[fileName];\n        // Verificamos si es contenido crudo o un objeto File\n        if (existingFile.content) {\n             bookObj = JSON.parse(JSON.stringify(existingFile.content));\n        } else {\n             bookObj = JSON.parse(JSON.stringify(existingFile));\n        }\n        ctx.log(`📖 Editando libro existente: ${fileName}`);\n    } catch (e) {\n        ctx.log(\"⚠️ Error leyendo existente, creando nuevo.\");\n    }\n}\n\n// 3. Si no existe, crear estructura base\nif (!bookObj) {\n    ctx.log(`✨ Creando nuevo libro: ${fileName}`);\n    bookObj = {\n        title: fileName,\n        author: \"Usuario\",\n        content: {\n            chapters: []\n        }\n    };\n}\n\n// Asegurar estructura interna\nif (!bookObj.content) bookObj.content = { chapters: [] };\nif (!bookObj.content.chapters) bookObj.content.chapters = [];\n\n// 4. Procesar el texto en párrafos (separar por saltos de línea)\nconst paragraphs = textContent.split('\\n').filter(line => line.trim() !== '');\n\n// 5. Insertar en el índice correcto (Restar 1 porque array empieza en 0)\nconst index = capNum - 1;\n\n// Rellenar huecos si saltamos capítulos (ej: crear cap 1 si editamos el 3)\nwhile (bookObj.content.chapters.length <= index) {\n    bookObj.content.chapters.push({\n        title: `Capítulo ${bookObj.content.chapters.length + 1}`,\n        paragraphs: [\"(Pendiente)\"]\n    });\n}\n\n// 6. Actualizar el capítulo objetivo\nbookObj.content.chapters[index] = {\n    title: `Capítulo ${capNum}`,\n    paragraphs: paragraphs\n};\n\nctx.log(`✅ Capítulo ${capNum} insertado en '${fileName}'`);\n\n// 7. Retornar el objeto listo para guardar\nreturn bookObj;",
+    "type": "custom-module"
+  },
+  {
+    "id": "custom-calc-simple-v1",
+    "title": "Calculadora",
+    "color": "#10b981",
+    "inputs": [
+      "Entrada"
+    ],
+    "outputs": [
+      "Resultado"
+    ],
+    "fields": [
+      {
+        "name": "operacion",
+        "label": "Operación",
+        "type": "select",
+        "options": [
+          "Sumar (+)",
+          "Restar (-)",
+          "Multiplicar (*)",
+          "Dividir (/)"
+        ],
+        "default": "Sumar (+)"
+      },
+      {
+        "name": "valorFijo",
+        "label": "Valor a operar",
+        "type": "number",
+        "default": 1
+      }
+    ],
+    "code": "// 1. Validar que hay entrada\nif (inputs[0] === undefined || inputs[0] === null) {\n    return null;\n}\n\n// 2. Obtener valores\n// Convertimos a Float para asegurar que sean números matemáticos\nconst valEntrada = parseFloat(inputs[0]);\nconst valTextbox = parseFloat(fields.valorFijo || 0);\nconst op = fields.operacion || \"Sumar (+)\";\n\n// Validación de seguridad si la entrada no es número\nif (isNaN(valEntrada)) {\n    ctx.log(\"⚠️ Error: La entrada no es un número\");\n    return inputs[0]; // Pasamos el dato sin tocarlo si no es número\n}\n\nlet resultado = 0;\n\n// 3. Ejecutar operación según el desplegable\nif (op.includes(\"+\")) {\n    resultado = valEntrada + valTextbox;\n} else if (op.includes(\"-\")) {\n    resultado = valEntrada - valTextbox;\n} else if (op.includes(\"*\")) {\n    resultado = valEntrada * valTextbox;\n} else if (op.includes(\"/\")) {\n    if (valTextbox === 0) {\n        ctx.log(\"❌ Error: División por cero\");\n        return null;\n    }\n    resultado = valEntrada / valTextbox;\n}\n\n// 4. Salida\n// ctx.log(`🧮 ${valEntrada} ${op[0]} ${valTextbox} = ${resultado}`);\nreturn resultado;",
+    "type": "custom-module"
+  },
+  {
+    "id": "custom-extractor-v1",
+    "title": "Extractor por Índice",
+    "color": "#f59e0b",
+    "inputs": [
+      "json_data",
+      "numero_indice"
+    ],
+    "outputs": [
+      "item_seleccionado"
+    ],
+    "fields": [
+      {
+        "name": "categoria",
+        "type": "text"
+      }
+    ],
+    "code": "/* \n  inputs[0] -> json_data\n  inputs[1] -> numero_indice\n*/\n\nlet data = inputs[0];\nlet index = parseInt(inputs[1]);\n\n// 1. Validación básica\nif (data === undefined || isNaN(index)) return null;\n\n// 2. Parsear si viene como texto\nif (typeof data === 'string') {\n    try { data = JSON.parse(data); } catch(e) {}\n}\n\n// 3. Filtrar por categoría (Textbox) si se ha escrito algo\nconst categoria = ctx.fields.categoria;\nif (categoria && categoria.trim() !== \"\") {\n    if (data[categoria]) {\n        data = data[categoria];\n    } else {\n        ctx.log(\"Categoría '\" + categoria + \"' no encontrada\");\n        return null;\n    }\n}\n\n// 4. Asegurar que es un Array\nif (!Array.isArray(data)) {\n    ctx.log(\"Error: El dato no es una lista\");\n    return null;\n}\n\n// 5. Extraer (Lógica Humana: Input 1 = Index 0)\n// Si entra un 2, queremos el segundo elemento (index 1)\nconst realIndex = index - 1;\n\nif (realIndex >= 0 && realIndex < data.length) {\n    const result = data[realIndex];\n    // Convertir a string si es objeto para visualizar mejor en logs, pero devolver objeto real\n    ctx.log(\"Extradio item #\" + index);\n    return result;\n} else {\n    ctx.log(\"Índice \" + index + \" fuera de rango (Total: \" + data.length + \")\");\n    return null;\n}",
+    "type": "custom-module"
+  },
+  {
+    "id": "custom-deep-search-v1",
+    "title": "Buscador Profundo",
+    "color": "#8b5cf6",
+    "inputs": [
+      "json_data",
+      "numero_indice"
+    ],
+    "outputs": [
+      "resultado"
+    ],
+    "fields": [
+      {
+        "name": "clave_a_buscar",
+        "type": "text",
+        "placeholder": "Ej: paragraphs"
+      }
+    ],
+    "code": "/* \n  Buscador Recursivo Profundo\n  Busca una clave en cualquier nivel del JSON\n*/\n\nlet data = inputs[0];\nlet index = parseInt(inputs[1]);\nconst targetKey = ctx.fields.clave_a_buscar;\n\n// 1. Limpieza y Parseo\nif (!data) return null;\nif (typeof data === 'string') {\n    try { data = JSON.parse(data); } catch(e) { return null; }\n}\n\n// 2. Función Recursiva de Búsqueda\nfunction findDeep(obj, keyToFind) {\n    if (!obj || typeof obj !== 'object') return null;\n    \n    // A. ¿Está aquí mismo?\n    if (obj.hasOwnProperty(keyToFind)) return obj[keyToFind];\n    \n    // B. Buscar en profundidad\n    if (Array.isArray(obj)) {\n        for (let item of obj) {\n            let res = findDeep(item, keyToFind);\n            if (res) return res;\n        }\n    } else {\n        for (let k in obj) {\n            let res = findDeep(obj[k], keyToFind);\n            if (res) return res;\n        }\n    }\n    return null;\n}\n\n// 3. Ejecutar Búsqueda\nlet foundData = data;\n\nif (targetKey && targetKey.trim() !== \"\") {\n    // Si data es array y la clave no está en el array mismo, buscamos dentro\n    if (Array.isArray(data) && !data.hasOwnProperty(targetKey)) {\n         // Buscamos dentro de los elementos del array raíz\n         let found = null;\n         for(let item of data) {\n             found = findDeep(item, targetKey.trim());\n             if(found) break;\n         }\n         foundData = found;\n    } else {\n         // Búsqueda normal\n         foundData = findDeep(data, targetKey.trim());\n    }\n}\n\nif (!foundData) {\n    ctx.log(\"⚠️ Clave '\" + targetKey + \"' no encontrada en ningún nivel.\");\n    return null;\n}\n\n// 4. Procesar Índice (si es una lista)\nif (Array.isArray(foundData)) {\n    if (!isNaN(index)) {\n        // Índice humano (1 = primero)\n        const realIdx = index - 1;\n        if (foundData[realIdx] !== undefined) {\n            ctx.log(\"✅ Encontrado '\" + targetKey + \"' -> Item #\" + index);\n            return foundData[realIdx];\n        } else {\n             ctx.log(\"❌ Índice \" + index + \" fuera de rango en '\" + targetKey + \"'\");\n             return null;\n        }\n    }\n    // Si no hay índice, devolvemos toda la lista\n    return foundData;\n}\n\n// Si no es lista, devolvemos el objeto encontrado tal cual\nctx.log(\"✅ Objeto '\" + targetKey + \"' encontrado.\");\nreturn foundData;",
+    "type": "custom-module"
+  },
+  {
+    "id": "custom-nth-finder-v1",
+    "title": "Buscador N-ésima Ocurrencia",
+    "color": "#db2777",
+    "inputs": [
+      "json_data",
+      "numero_ocurrencia"
+    ],
+    "outputs": [
+      "resultado"
+    ],
+    "fields": [
+      {
+        "name": "clave_a_buscar",
+        "type": "text",
+        "placeholder": "Ej: paragraphs"
+      }
+    ],
+    "code": "/* \n  Buscador Secuencial de Ocurrencias\n  Encuentra la N-ésima vez que aparece una clave.\n*/\n\nlet data = inputs[0];\nlet targetN = parseInt(inputs[1]);\nconst keyToFind = ctx.fields.clave_a_buscar;\n\n// 1. Validaciones\nif (!data) return null;\nif (typeof data === 'string') {\n    try { data = JSON.parse(data); } catch(e) { return null; }\n}\nif (!keyToFind || keyToFind.trim() === \"\") {\n    ctx.log(\"⚠️ Falta indicar la clave a buscar (textbox).\");\n    return null;\n}\nif (isNaN(targetN) || targetN < 1) targetN = 1; // Por defecto el 1º\n\n// 2. Recolector de coincidencias\nlet allMatches = [];\n\nfunction traverseAndCollect(obj) {\n    if (!obj || typeof obj !== 'object') return;\n\n    // Si es array, recorremos sus elementos\n    if (Array.isArray(obj)) {\n        for (let item of obj) {\n            traverseAndCollect(item);\n        }\n        return;\n    }\n\n    // Si es objeto, miramos si tiene la clave\n    // IMPORTANTE: El orden de recorrido depende del motor JS, \n    // pero generalmente es orden de definición.\n    \n    // A. ¿Tiene la clave que buscamos?\n    if (obj.hasOwnProperty(keyToFind)) {\n        allMatches.push(obj[keyToFind]);\n    }\n\n    // B. Seguir buscando en profundidad en todas las propiedades\n    for (let k in obj) {\n        // Evitamos recursión infinita si el objeto se apunta a sí mismo (seguridad básica)\n        if (typeof obj[k] === 'object' && obj[k] !== null) {\n            traverseAndCollect(obj[k]);\n        }\n    }\n}\n\n// 3. Ejecutar Escaneo\nctx.log(\"🔍 Buscando ocurrencia #\" + targetN + \" de '\" + keyToFind + \"'...\");\ntraverseAndCollect(data);\n\n// 4. Devolver resultado\nconst totalFound = allMatches.length;\nconst realIndex = targetN - 1;\n\nif (realIndex < totalFound) {\n    ctx.log(\"✅ Ocurrencia \" + targetN + \" encontrada (Total: \" + totalFound + \")\");\n    return allMatches[realIndex];\n} else {\n    ctx.log(\"❌ Solo existen \" + totalFound + \" ocurrencias de '\" + keyToFind + \"'. Pediste la #\" + targetN);\n    return null;\n}",
+    "type": "custom-module"
+  },
+  {
+    "id": "custom-calc-blindada-v3",
+    "title": "Calculadora (Blindada)",
+    "color": "#10b981",
+    "inputs": [
+      "Entrada"
+    ],
+    "outputs": [
+      "Resultado"
+    ],
+    "fields": [
+      {
+        "name": "operacion",
+        "label": "Operación",
+        "type": "select",
+        "options": [
+          "Sumar (+)",
+          "Restar (-)",
+          "Multiplicar (*)",
+          "Dividir (/)"
+        ],
+        "default": "Sumar (+)"
+      },
+      {
+        "name": "valorFijo",
+        "label": "Valor a operar",
+        "type": "number",
+        "default": 1
+      }
+    ],
+    "code": "// 0. DEFINIR FIELDS DESDE EL CONTEXTO (IMPORTANTE)\nconst fields = ctx.fields;\n\n// 1. Validar que hay entrada\nif (inputs[0] === undefined || inputs[0] === null) {\n    ctx.log(\"⚠️ Esperando conexión...\");\n    return null;\n}\n\nlet rawInput = inputs[0];\nlet valEntrada = NaN;\n\n// --- LÓGICA DE LIMPIEZA INTELIGENTE ---\n\n// Caso A: Es un Objeto (ej: JSON de archivo o Variable compleja)\nif (typeof rawInput === 'object') {\n    // Intentamos encontrar propiedades numéricas comunes automáticamente\n    if (rawInput.value !== undefined) rawInput = rawInput.value;\n    else if (rawInput.numero !== undefined) rawInput = rawInput.numero;\n    else if (rawInput.result !== undefined) rawInput = rawInput.result;\n    else {\n        // Fallback: Convertimos el objeto a texto para intentar \"leer\" un número dentro\n        rawInput = JSON.stringify(rawInput);\n    }\n}\n\n// Caso B: Es Texto o se convirtió a Texto (ej: \"Total: 50€\", \"Capítulo 1\")\n// Usamos una Expresión Regular para sacar el PRIMER número válido que aparezca\nconst strInput = String(rawInput);\nconst match = strInput.match(/-?\\d+(\\.\\d+)?/);\n\nif (match) {\n    valEntrada = parseFloat(match[0]);\n} else {\n    // Último intento: parseo directo\n    valEntrada = parseFloat(rawInput);\n}\n\n// -------------------------------------------\n\n// 2. Obtener parámetros de la UI\nconst valTextbox = parseFloat(fields.valorFijo || 0);\nconst op = fields.operacion || \"Sumar (+)\";\n\n// Validación de seguridad final\nif (isNaN(valEntrada)) {\n    // Mostramos qué llegó realmente para ayudar a depurar\n    let debugInfo = typeof inputs[0] === 'object' ? JSON.stringify(inputs[0]) : String(inputs[0]);\n    ctx.log(`⚠️ Error: No encontré números en \"${debugInfo.substring(0,15)}...\"`);\n    return inputs[0]; // Pasamos el dato sin tocarlo si falla\n}\n\nlet resultado = 0;\n\n// 3. Ejecutar operación\nif (op.includes(\"+\")) {\n    resultado = valEntrada + valTextbox;\n} else if (op.includes(\"-\")) {\n    resultado = valEntrada - valTextbox;\n} else if (op.includes(\"*\")) {\n    resultado = valEntrada * valTextbox;\n} else if (op.includes(\"/\")) {\n    if (valTextbox === 0) {\n        ctx.log(\"❌ Error: División por cero\");\n        return null;\n    }\n    resultado = valEntrada / valTextbox;\n}\n\nreturn resultado;",
+    "type": "custom-module"
+  },
+  {
+    "id": "custom-dual-var",
+    "title": "Variable Dual",
+    "color": "#0891b2",
+    "inputs": [
+      "guardar",
+      "leer"
+    ],
+    "outputs": [
+      "valor"
+    ],
+    "fields": [
+      {
+        "name": "nombreVar",
+        "type": "text"
+      }
+    ],
+    "code": "const nombre = ctx.fields.nombreVar;\nif (!nombre) {\n    ctx.log(\"⚠️ Error: Nombre de variable vacío\");\n    return null;\n}\n\n// Si la ejecución entra por el puerto 'guardar'\nif (ctx.port === 'guardar') {\n    // Guardamos el input en la memoria global\n    ctx.runtime.vars[nombre] = ctx.input;\n    ctx.log(`💾 Guardado en [${nombre}]: ${ctx.input}`);\n    return ctx.input;\n}\n\n// Si la ejecución entra por el puerto 'leer'\nif (ctx.port === 'leer') {\n    // Leemos de la memoria global\n    const valor = ctx.runtime.vars[nombre];\n    ctx.log(`📂 Leído de [${nombre}]: ${valor}`);\n    return valor;\n}\n\nreturn null;",
+    "type": "custom-module"
+  },
+  {
+    "id": "custom-counter-logic",
+    "title": "Contador Condicional",
+    "color": "#f97316",
+    "inputs": [
+      "in"
+    ],
+    "outputs": [
+      "true",
+      "false"
+    ],
+    "fields": [
+      {
+        "name": "varName",
+        "type": "text"
+      },
+      {
+        "name": "operacion",
+        "type": "select",
+        "options": [
+          "Sumar (+)",
+          "Restar (-)"
+        ]
+      },
+      {
+        "name": "paso",
+        "type": "number",
+        "placeholder": "1"
+      },
+      {
+        "name": "condicion",
+        "type": "select",
+        "options": [
+          "==",
+          ">",
+          "<",
+          ">=",
+          "<="
+        ]
+      },
+      {
+        "name": "objetivo",
+        "type": "number"
+      }
+    ],
+    "code": "\n// 1. Obtener parámetros\nconst varName = ctx.fields.varName;\nconst op = ctx.fields.operacion;\nconst paso = parseFloat(ctx.fields.paso) || 1;\nconst cond = ctx.fields.condicion;\nconst target = parseFloat(ctx.fields.objetivo) || 0;\n\nif (!varName) {\n    ctx.log(\"❌ Error: Nombre de variable no definido en el contador\");\n    return null;\n}\n\n// 2. Leer valor actual (o 0 si no existe)\nlet currentVal = parseFloat(ctx.runtime.vars[varName]) || 0;\n\n// 3. Operar\nif (op === 'Sumar (+)') {\n    currentVal += paso;\n} else {\n    currentVal -= paso;\n}\n\n// 4. Guardar variable actualizada\nctx.runtime.vars[varName] = currentVal;\nctx.log(`🔢 Contador '${varName}': ${currentVal}`);\n\n// 5. Comprobar Condición\nlet cumple = false;\nif (cond === '==') cumple = (currentVal == target);\nelse if (cond === '>') cumple = (currentVal > target);\nelse if (cond === '<') cumple = (currentVal < target);\nelse if (cond === '>=') cumple = (currentVal >= target);\nelse if (cond === '<=') cumple = (currentVal <= target);\n\n// 6. Routing de Salida (devuelve objeto para activar puerto específico)\nif (cumple) {\n    ctx.log(`✅ Condición cumplida (${currentVal} ${cond} ${target})`);\n    return { \"true\": currentVal };\n} else {\n    ctx.log(`Testing: No cumple (${currentVal} ${cond} ${target})`);\n    return { \"false\": currentVal };\n}\n",
+    "type": "custom-module"
+  },
+  {
+    "id": "custom-emoji-picker",
+    "title": "Selector Emojis",
+    "color": "#eab308",
+    "inputs": [
+      "open"
+    ],
+    "outputs": [
+      "selected"
+    ],
+    "fields": [],
+    "code": "\n// ID único para la ventana\nconst winId = 'custom-emoji-window';\nconst existing = document.getElementById(winId);\n\n// Si ya existe, la cerramos (Toggle)\nif (existing) {\n    existing.remove();\n    ctx.log(\"🪟 Ventana de emojis cerrada.\");\n    return;\n}\n\nctx.log(\"🪟 Abriendo selector de emojis...\");\n\n// 1. Rangos Unicode Principales (Emoticonos, Símbolos, Comida, Transporte, etc.)\nconst ranges = [\n    [0x1F600, 0x1F64F], // Smileys\n    [0x1F300, 0x1F5FF], // Misc Symbols\n    [0x1F680, 0x1F6FF], // Transport\n    [0x1F900, 0x1F9FF], // Supplemental\n    [0x1F1E6, 0x1F1FF], // Flags\n    [0x2600, 0x26FF],   // Misc\n    [0x2700, 0x27BF]    // Dingbats\n];\n\n// 2. Generar lista de emojis\nlet emojisHTML = '';\nfor (const range of ranges) {\n    for (let i = range[0]; i <= range[1]; i++) {\n        emojisHTML += `<button class=\"emoji-btn\" data-char=\"${String.fromCodePoint(i)}\">${String.fromCodePoint(i)}</button>`;\n    }\n}\n\n// 3. Crear Estructura DOM\nconst win = document.createElement('div');\nwin.id = winId;\nwin.className = 'window neumorph-out pop-in';\nwin.style.cssText = `\n    position: absolute;\n    top: 100px;\n    left: 100px;\n    width: 380px;\n    height: 500px;\n    z-index: 9999;\n    display: flex;\n    flex-direction: column;\n    background: #e0e5ec;\n    overflow: hidden;\n    resize: both;\n`;\n\n// Header con botón de cierre\nconst header = document.createElement('div');\nheader.className = 'window-header';\nheader.style.cssText = `\n    padding: 10px;\n    display: flex;\n    justify-content: space-between;\n    align-items: center;\n    background: #e0e5ec;\n    cursor: grab;\n    border-bottom: 1px solid rgba(255,255,255,0.5);\n`;\nheader.innerHTML = `\n    <span style=\"font-weight:bold; color:#555; font-size:0.8rem;\">😀 Emojis</span>\n    <button id=\"close-${winId}\" style=\"border:none; background:transparent; cursor:pointer; font-size:1.2rem;\">×</button>\n`;\n\n// Cuerpo (Grid de Emojis)\nconst body = document.createElement('div');\nbody.style.cssText = `\n    flex: 1;\n    padding: 10px;\n    overflow-y: auto;\n    display: flex;\n    flex-wrap: wrap;\n    gap: 5px;\n    justify-content: center;\n    align-content: flex-start;\n`;\n\n// Estilos CSS inyectados para los botones\nconst style = document.createElement('style');\nstyle.innerHTML = `\n    .emoji-btn {\n        width: 36px;\n        height: 36px;\n        font-size: 1.2rem;\n        border: none;\n        border-radius: 8px;\n        background: #e0e5ec;\n        box-shadow: 3px 3px 6px #b8b9be, -3px -3px 6px #ffffff;\n        cursor: pointer;\n        transition: transform 0.1s;\n        display: flex;\n        align-items: center;\n        justify-content: center;\n    }\n    .emoji-btn:active {\n        box-shadow: inset 2px 2px 5px #b8b9be, inset -2px -2px 5px #ffffff;\n        transform: scale(0.95);\n    }\n    .emoji-btn:hover {\n        background: #f0f3f7;\n    }\n    /* Scrollbar */\n    #${winId} ::-webkit-scrollbar { width: 6px; }\n    #${winId} ::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }\n`;\n\nbody.innerHTML = emojisHTML;\nwin.appendChild(style);\nwin.appendChild(header);\nwin.appendChild(body);\ndocument.body.appendChild(win);\n\n// 4. Lógica de Eventos\n\n// Arrastrar ventana (Simple drag)\nlet isDragging = false;\nlet startX, startY, initLeft, initTop;\nheader.onmousedown = (e) => {\n    isDragging = true;\n    startX = e.clientX;\n    startY = e.clientY;\n    initLeft = win.offsetLeft;\n    initTop = win.offsetTop;\n    // Traer al frente\n    win.style.zIndex = parseInt(Date.now() / 10000);\n};\nwindow.addEventListener('mousemove', (e) => {\n    if (!isDragging) return;\n    win.style.left = (initLeft + (e.clientX - startX)) + 'px';\n    win.style.top = (initTop + (e.clientY - startY)) + 'px';\n});\nwindow.addEventListener('mouseup', () => isDragging = false);\n\n// Cerrar\ndocument.getElementById(`close-${winId}`).onclick = () => win.remove();\n\n// Clic en Emoji (Delegación de eventos)\nbody.onclick = (e) => {\n    const btn = e.target.closest('.emoji-btn');\n    if (btn) {\n        const char = btn.dataset.char;\n        \n        // Copiar al portapapeles\n        navigator.clipboard.writeText(char).then(() => {\n            ctx.log(`📋 Copiado: ${char}`);\n            \n            // Feedback visual\n            const original = btn.innerText;\n            btn.innerText = '✅';\n            setTimeout(() => btn.innerText = original, 1000);\n        });\n\n        // Enviar al output del nodo por si se quiere usar en logica\n        // Nota: Esto solo funciona si el módulo se ejecuta de nuevo, pero \n        // como es una ventana persistente, el return solo ocurre al crearla.\n        // Para enviar datos en tiempo real desde la ventana al flujo haría falta un callback complejo.\n        // Por ahora, solo copia.\n    }\n};\n\nreturn \"Ventana Abierta\";\n",
+    "type": "custom-module"
+  },
+  {
+    "id": "custom-self-exporter-exec",
+    "title": "Crear Ejecutable v2.1",
+    "color": "#ef4444",
+    "inputs": [
+      "exec"
+    ],
+    "outputs": [],
+    "fields": [
+      {
+        "name": "filename",
+        "type": "text",
+        "placeholder": "NombreApp"
+      }
+    ],
+    "code": "\n// --- CORRECCIÓN: Eliminado el bloqueo si el input es vacío ---\n// Ahora se ejecuta siempre que el flujo llegue aquí.\n\nconst name = ctx.fields.filename || \"App_\" + Date.now();\nctx.log(`⚡ Procesando ejecutable: ${name}...`);\n\ntry {\n    // 1. Clonar el programa actual (Copia de seguridad del estado)\n    // 'ctx.graph' es el editor visual donde estás ahora\n    const fullData = ctx.graph.serialize();\n\n    // 2. CIRUGÍA: Extirpar este mismo nodo exportador de la copia\n    // Esto es vital para que el nuevo programa no se exporte a sí mismo en bucle\n    const cleanNodes = fullData.nodes.filter(n => n.id !== ctx.nodeId);\n    \n    // También borramos los cables que iban hacia o desde este nodo\n    const cleanConns = fullData.connections.filter(c => \n        c.fromNode !== ctx.nodeId && c.toNode !== ctx.nodeId\n    );\n\n    // Reconstruimos el objeto del programa limpio\n    const finalContent = {\n        ...fullData,\n        nodes: cleanNodes,\n        connections: cleanConns,\n        panX: 0, panY: 0, scale: 1\n    };\n\n    // 3. Crear el archivo en el Sistema\n    if (typeof FileSystem !== 'undefined') {\n        // Creamos un programa estándar primero\n        const newProg = FileSystem.createProgram(name, 'desktop');\n        \n        // MUTACIÓN: Lo convertimos en 'executable' y le cambiamos el icono\n        newProg.type = 'executable'; \n        newProg.icon = 'zap'; \n        newProg.color = 'text-yellow-500';\n        \n        // Inyectamos el cerebro (la lógica sin el exportador)\n        newProg.content = finalContent;\n        \n        // Guardamos cambios en disco\n        FileSystem.save();\n        \n        // Refrescamos el escritorio para que aparezca el icono\n        if (typeof refreshSystemViews === 'function') refreshSystemViews();\n        \n        ctx.log(`✅ ¡Éxito! Archivo \"${name}\" creado en el escritorio.`);\n    } else {\n        ctx.log(\"❌ Error Crítico: No se encuentra el Sistema de Archivos.\");\n    }\n} catch (e) {\n    ctx.log(\"❌ Error: \" + e.message);\n}\n",
+    "type": "custom-module"
+  }
+]
