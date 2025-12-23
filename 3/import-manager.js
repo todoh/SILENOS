@@ -6,9 +6,9 @@ const ImportManager = {
         if (!winContent) return;
 
         winContent.innerHTML = `
-            <div class="flex flex-col h-full bg-[#f3f4f6] p-6 gap-6">
+            <div class="flex flex-col h-full bg-[#f3f4f6] p-6 gap-6 relative">
                 
-                <div class="flex items-center gap-3 border-b border-gray-300 pb-4">
+                <div class="flex items-center gap-3 border-b border-gray-300 pb-4 shrink-0">
                     <div class="p-3 bg-indigo-100 rounded-xl text-indigo-600 shadow-sm">
                         <i data-lucide="hard-drive" class="w-6 h-6"></i>
                     </div>
@@ -18,50 +18,72 @@ const ImportManager = {
                     </div>
                 </div>
 
-                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-3">
-                    <div class="flex items-center gap-2 mb-1">
-                        <i data-lucide="save" class="w-4 h-4 text-indigo-500"></i>
-                        <label class="text-xs font-bold text-gray-500 uppercase">Backup Completo (Sistema + Módulos)</label>
-                    </div>
-                    <div class="flex items-center justify-between gap-4">
-                        <p class="text-[11px] text-gray-400 leading-tight">
-                            Descarga todo el sistema de archivos y los módulos de programación personalizados.
-                        </p>
-                        <button onclick="ImportManager.downloadBackup('${windowId}')" 
-                            class="neumorph-btn px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 transition-transform flex items-center gap-2 shrink-0">
-                            <i data-lucide="download" class="w-4 h-4"></i> DESCARGAR
-                        </button>
-                    </div>
-                </div>
-
-                <div class="flex-1 flex flex-col gap-2 min-h-0 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                    <div class="flex items-center gap-2 mb-1">
-                        <i data-lucide="import" class="w-4 h-4 text-orange-500"></i>
-                        <label class="text-xs font-bold text-gray-500 uppercase">Zona de Importación</label>
-                    </div>
-
-                    <div id="import-zone-${windowId}" class="flex-1 relative group bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 hover:border-indigo-400 transition-colors">
-                        <textarea id="import-text-${windowId}" 
-                            class="import-drop-zone w-full h-full bg-transparent p-4 text-xs font-mono text-gray-600 outline-none resize-none placeholder-gray-400"
-                            placeholder='Arrastra aquí archivos .JSON (Backups/Datos) o Carpetas con .TXT (Narrativas).\nTambién puedes pegar texto JSON directamente.'></textarea>
-                        
-                        <div id="import-overlay-${windowId}" class="absolute inset-0 bg-indigo-50/90 flex flex-col items-center justify-center rounded-lg opacity-0 pointer-events-none transition-opacity z-10">
-                            <i data-lucide="upload-cloud" class="w-10 h-10 text-indigo-500 mb-2"></i>
-                            <span class="text-sm font-bold text-indigo-600">Soltar para procesar</span>
+                <div class="flex-1 flex flex-col gap-4 overflow-y-auto pr-1 custom-scrollbar">
+                    
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-3 shrink-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <i data-lucide="save" class="w-4 h-4 text-indigo-500"></i>
+                            <label class="text-xs font-bold text-gray-500 uppercase">Backup Completo (Sistema + Módulos)</label>
+                        </div>
+                        <div class="flex items-center justify-between gap-4">
+                            <p class="text-[11px] text-gray-400 leading-tight">
+                                Descarga todo el sistema de archivos y los módulos de programación personalizados.
+                            </p>
+                            <button onclick="ImportManager.downloadBackup('${windowId}')" 
+                                class="neumorph-btn px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 transition-transform flex items-center gap-2 shrink-0">
+                                <i data-lucide="download" class="w-4 h-4"></i> DESCARGAR
+                            </button>
                         </div>
                     </div>
 
-                    <div class="flex justify-between items-center mt-2">
-                        <span id="import-count-${windowId}" class="text-[10px] font-bold text-gray-400">Esperando datos...</span>
-                        
-                        <button onclick="ImportManager.executeImport('${windowId}')" 
-                            class="neumorph-btn px-6 py-2 text-xs font-bold text-green-600 hover:text-green-700 active:scale-95 transition-transform flex items-center gap-2">
-                            <i data-lucide="check-circle" class="w-4 h-4"></i> IMPORTAR AL SISTEMA
-                        </button>
+                    <div class="flex flex-col gap-2 bg-white p-4 rounded-xl border border-gray-200 shadow-sm shrink-0" style="min-height: 200px;">
+                        <div class="flex items-center gap-2 mb-1">
+                            <i data-lucide="import" class="w-4 h-4 text-orange-500"></i>
+                            <label class="text-xs font-bold text-gray-500 uppercase">Zona de Importación</label>
+                        </div>
+
+                        <div id="import-zone-${windowId}" class="flex-1 relative group bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 hover:border-indigo-400 transition-colors h-32">
+                            <textarea id="import-text-${windowId}" 
+                                class="import-drop-zone w-full h-full bg-transparent p-4 text-xs font-mono text-gray-600 outline-none resize-none placeholder-gray-400"
+                                placeholder='Arrastra aquí archivos .JSON (Backups/Datos) o Carpetas con .TXT (Narrativas).\nTambién puedes pegar texto JSON directamente.'></textarea>
+                            
+                            <div id="import-overlay-${windowId}" class="absolute inset-0 bg-indigo-50/90 flex flex-col items-center justify-center rounded-lg opacity-0 pointer-events-none transition-opacity z-10">
+                                <i data-lucide="upload-cloud" class="w-10 h-10 text-indigo-500 mb-2"></i>
+                                <span class="text-sm font-bold text-indigo-600">Soltar para procesar</span>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center mt-2">
+                            <span id="import-count-${windowId}" class="text-[10px] font-bold text-gray-400">Esperando datos...</span>
+                            
+                            <button onclick="ImportManager.executeImport('${windowId}')" 
+                                class="neumorph-btn px-6 py-2 text-xs font-bold text-green-600 hover:text-green-700 active:scale-95 transition-transform flex items-center gap-2">
+                                <i data-lucide="check-circle" class="w-4 h-4"></i> IMPORTAR AL SISTEMA
+                            </button>
+                        </div>
                     </div>
+
+                    <div class="mt-4 pt-4 border-t border-red-200">
+                        <div class="flex items-center justify-between p-3 bg-red-50 border border-red-100 rounded-xl">
+                            <div class="flex flex-col">
+                                <div class="flex items-center gap-2 text-red-600 mb-1">
+                                    <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                                    <span class="text-xs font-bold uppercase">Zona de Peligro</span>
+                                </div>
+                                <p class="text-[10px] text-red-400">Borra archivos y módulos. Mantiene API Keys.</p>
+                            </div>
+                            <button onclick="ImportManager.showResetModal('${windowId}')" 
+                                class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-bold shadow-sm active:scale-95 transition-transform">
+                                ☢️ VACIAR MEMORIA
+                            </button>
+                        </div>
+                    </div>
+
                 </div>
 
-                <div id="import-status-${windowId}" class="text-[10px] text-center text-gray-400 font-mono h-4"></div>
+                <div id="import-status-${windowId}" class="text-[10px] text-center text-gray-400 font-mono h-4 shrink-0"></div>
+                
+                <div id="modal-container-${windowId}"></div>
             </div>
         `;
 
@@ -72,6 +94,8 @@ const ImportManager = {
     setupEvents(windowId) {
         const textarea = document.getElementById(`import-text-${windowId}`);
         const overlay = document.getElementById(`import-overlay-${windowId}`);
+
+        if (!textarea) return;
 
         // Eventos Drag & Drop
         textarea.addEventListener('dragover', (e) => { e.preventDefault(); overlay.style.opacity = '1'; });
@@ -88,8 +112,71 @@ const ImportManager = {
                 await this.handleExternalDrop(items, textarea, windowId);
             }
         });
-        
-        // Manejo de Drop Interno (Iconos del propio sistema) -> ya manejado en drag-drop.js llamando a handleInternalDrop
+    },
+
+    // --- MODAL DE RESETEO ---
+    showResetModal(windowId) {
+        const container = document.getElementById(`modal-container-${windowId}`);
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm rounded-b-[20px] pop-in">
+                <div class="bg-white w-4/5 max-w-sm p-6 rounded-2xl shadow-2xl flex flex-col gap-4 items-center text-center border-2 border-red-100">
+                    <div class="w-12 h-12 rounded-full bg-red-100 text-red-500 flex items-center justify-center mb-2">
+                        <i data-lucide="trash-2" class="w-6 h-6"></i>
+                    </div>
+                    
+                    <h3 class="text-lg font-bold text-gray-800">¿Estás seguro?</h3>
+                    <p class="text-xs text-gray-500 leading-relaxed">
+                        Esta acción borrará <b>TODOS</b> los archivos, carpetas, libros y módulos personalizados del sistema.<br>
+                        <span class="text-green-600 font-bold">Tu API KEY se conservará.</span>
+                    </p>
+
+                    <div class="flex gap-3 w-full mt-2">
+                        <button onclick="document.getElementById('modal-container-${windowId}').innerHTML=''" 
+                            class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-xl text-xs transition-colors">
+                            CANCELAR
+                        </button>
+                        <button onclick="ImportManager.executeReset('${windowId}')" 
+                            class="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl text-xs shadow-lg shadow-red-200 transition-transform active:scale-95">
+                            SÍ, BORRAR TODO
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+    },
+
+    executeReset(windowId) {
+        // 1. Salvaguardar API Keys
+        const savedKeys = localStorage.getItem('silenos_api_keys');
+
+        // 2. Limpieza Nuclear
+        localStorage.clear();
+
+        // 3. Restaurar API Keys
+        if (savedKeys) {
+            localStorage.setItem('silenos_api_keys', savedKeys);
+        }
+
+        // 4. Feedback y Recarga
+        const container = document.getElementById(`modal-container-${windowId}`);
+        if (container) {
+            container.innerHTML = `
+                <div class="absolute inset-0 z-50 flex items-center justify-center bg-white rounded-b-[20px]">
+                    <div class="flex flex-col items-center gap-3 text-green-600 animate-pulse">
+                        <i data-lucide="refresh-cw" class="w-8 h-8 animate-spin"></i>
+                        <span class="text-sm font-bold">Reiniciando Sistema...</span>
+                    </div>
+                </div>
+            `;
+            if (window.lucide) lucide.createIcons();
+        }
+
+        setTimeout(() => {
+            location.reload();
+        }, 1500);
     },
 
     // --- MANEJO DE DRAG & DROP EXTERNO (Archivos Reales) ---
@@ -125,7 +212,6 @@ const ImportManager = {
                 
                 if (result) {
                     if (Array.isArray(result)) {
-                        // Si el archivo contenía un array (ej: backup.json), lo aplanamos
                         collectedItems.push(...result);
                     } else {
                         collectedItems.push(result);
@@ -138,7 +224,6 @@ const ImportManager = {
 
         // 4. Volcar al Textarea
         if (collectedItems.length > 0) {
-            // Formatear bonito
             textarea.value = JSON.stringify(collectedItems, null, 2);
             this.setStatus(windowId, `Detectados ${collectedItems.length} elementos. Pulsa IMPORTAR.`, "text-green-600 font-bold");
             document.getElementById(`import-count-${windowId}`).innerText = `${collectedItems.length} objetos listos`;
@@ -156,7 +241,6 @@ const ImportManager = {
         });
         
         if (items.length > 0) {
-            // Convertir a JSON en el textarea
             const textarea = document.getElementById(`import-text-${windowId}`);
             if (textarea) {
                 textarea.value = JSON.stringify(items, null, 2);
@@ -205,23 +289,19 @@ const ImportManager = {
         });
     },
 
-    // Lógica inteligente para convertir archivos en objetos del sistema
     processFileEntry(entry, contentText) {
         const filename = entry.name;
         
-        // 1. JSON (Puede ser un backup completo, un item suelto, un libro, programa, etc.)
         if (filename.toLowerCase().endsWith('.json')) {
             try {
                 const json = JSON.parse(contentText);
-                return json; // Devuelve el objeto o array tal cual
+                return json; 
             } catch (e) { return null; }
         }
 
-        // 2. TEXTO / MD (Convertir a Narrativa)
         if (filename.toLowerCase().endsWith('.txt') || filename.toLowerCase().endsWith('.md')) {
             const fullPath = entry.fullPath || ("/" + filename);
             const parts = fullPath.split('/');
-            // Usar nombre de carpeta padre como etiqueta
             let tag = "GENERAL";
             if (parts.length > 2) tag = parts[parts.length - 2]; 
 
@@ -233,24 +313,23 @@ const ImportManager = {
                     tag: tag.toUpperCase(),
                     text: contentText
                 },
-                x: 100, y: 100, // Posiciones dummy, se pueden reorganizar luego
+                x: 100, y: 100, 
                 icon: 'sticky-note',
                 color: 'text-orange-500',
-                parentId: 'desktop' // Por defecto al escritorio
+                parentId: 'desktop'
             };
         }
 
         return null;
     },
 
-    // --- EJECUCIÓN DE LA IMPORTACIÓN (Crear/Sobrescribir en Sistema) ---
     executeImport(windowId) {
         const raw = document.getElementById(`import-text-${windowId}`).value;
         if (!raw.trim()) return this.setStatus(windowId, "El área está vacía.", "text-red-500");
 
         try {
             let data = JSON.parse(raw);
-            if (!Array.isArray(data)) data = [data]; // Normalizar a array
+            if (!Array.isArray(data)) data = [data]; 
 
             let count = 0;
             let modulesCount = 0;
@@ -258,12 +337,9 @@ const ImportManager = {
             data.forEach(item => {
                 if (!item.type) return;
 
-                // A. MÓDULOS DE PROGRAMACIÓN
                 if (item.type === 'custom-module') {
                     if (typeof ProgrammerManager !== 'undefined') {
-                        // Buscar si existe para actualizar o añadir
                         const idx = ProgrammerManager.customModules.findIndex(m => m.id === item.id);
-                        // Limpiamos la propiedad 'type' que se añade solo para exportar
                         const moduleData = { ...item };
                         delete moduleData.type; 
                         
@@ -273,24 +349,17 @@ const ImportManager = {
                         modulesCount++;
                     }
                 } 
-                // B. ITEMS DEL SISTEMA DE ARCHIVOS (AÑADIDO 'executable')
-                // FIX: Añadido 'executable' a la lista para que no se descarten al importar
                 else if (['folder', 'file', 'program', 'narrative', 'book', 'data', 'executable'].includes(item.type)) {
-                    // Verificar si existe por ID
                     const existingIdx = FileSystem.data.findIndex(i => i.id === item.id);
-                    
                     if (existingIdx >= 0) {
-                        // Sobrescribir existente (Restore)
                         FileSystem.data[existingIdx] = item;
                     } else {
-                        // Crear nuevo
                         FileSystem.data.push(item);
                     }
                     count++;
                 }
             });
 
-            // Guardar cambios
             FileSystem.save();
             if (modulesCount > 0 && typeof ProgrammerManager !== 'undefined') {
                 ProgrammerManager.saveModules();
@@ -298,7 +367,6 @@ const ImportManager = {
 
             this.setStatus(windowId, `Importado: ${count} items, ${modulesCount} módulos.`, "text-green-600 font-bold");
             
-            // Refrescar vistas
             if (typeof refreshSystemViews === 'function') refreshSystemViews();
             
         } catch (e) {
@@ -308,13 +376,9 @@ const ImportManager = {
 
     downloadBackup(windowId) {
         try {
-            // 1. Obtener datos del sistema de archivos
             let backupData = [...FileSystem.data];
-            
-            // 2. Adjuntar módulos personalizados si existen
             let modCount = 0;
             if (typeof ProgrammerManager !== 'undefined' && ProgrammerManager.customModules.length > 0) {
-                 // Añadimos 'type: custom-module' para que executeImport los reconozca
                  const mods = ProgrammerManager.customModules.map(m => ({ ...m, type: 'custom-module' }));
                  backupData = backupData.concat(mods);
                  modCount = mods.length;
