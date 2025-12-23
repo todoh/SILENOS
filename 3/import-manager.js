@@ -1,3 +1,4 @@
+// SILENOS 3/import-manager.js
 /* SILENOS 3/import-manager.js */
 
 const ImportManager = {
@@ -323,11 +324,18 @@ const ImportManager = {
         return null;
     },
 
-    executeImport(windowId) {
+    // [MODIFICADO] Ahora es ASYNC para asegurar que ProgrammerManager cargue sus datos antes
+    async executeImport(windowId) {
         const raw = document.getElementById(`import-text-${windowId}`).value;
         if (!raw.trim()) return this.setStatus(windowId, "El área está vacía.", "text-red-500");
 
         try {
+            // CRÍTICO: Asegurar que ProgrammerManager está cargado desde disco
+            // antes de mezclar datos, o sobrescribiríamos con una lista vacía.
+            if (typeof ProgrammerManager !== 'undefined') {
+                await ProgrammerManager.init();
+            }
+
             let data = JSON.parse(raw);
             if (!Array.isArray(data)) data = [data]; 
 
@@ -374,8 +382,14 @@ const ImportManager = {
         }
     },
 
-    downloadBackup(windowId) {
+    // [MODIFICADO] Ahora es ASYNC para asegurar que incluya los módulos
+    async downloadBackup(windowId) {
         try {
+            // CRÍTICO: Cargar módulos de disco si no están en memoria
+            if (typeof ProgrammerManager !== 'undefined') {
+                await ProgrammerManager.init();
+            }
+
             let backupData = [...FileSystem.data];
             let modCount = 0;
             if (typeof ProgrammerManager !== 'undefined' && ProgrammerManager.customModules.length > 0) {
