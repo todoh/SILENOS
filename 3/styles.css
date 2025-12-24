@@ -411,3 +411,79 @@ body {
 .prog-dynamic-controls { display: flex; justify-content: space-between; padding: 0 5px 5px 5px; margin-top: 5px; border-top: 1px dashed #333; padding-top: 5px; }
 .prog-btn-add-port { background: transparent; border: 1px dashed #555; color: #666; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
 .prog-btn-add-port:hover { border-color: #007acc; color: #007acc; background: rgba(0, 122, 204, 0.1); }
+/* --- NOTIFICACIONES DE PROCESOS (TOASTS) --- */
+#process-list {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 10000;
+    pointer-events: none; /* Permite clicks a través del área vacía */
+}
+
+.process-toast {
+    pointer-events: auto; /* Habilita clicks en la tarjeta */
+    background: rgba(30, 30, 30, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-left: 4px solid #2ea043; /* Verde ejecución */
+    color: #e0e0e0;
+    padding: 12px 16px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 0.85rem;
+    min-width: 240px;
+    animation: slideInRight 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+}
+
+.process-toast.closing {
+    animation: slideOutRight 0.3s ease forwards;
+}
+
+.process-loader {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.1);
+    border-top-color: #2ea043;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.process-close-btn {
+    background: transparent;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.process-close-btn:hover {
+    background: rgba(255, 50, 50, 0.2);
+    color: #ff4444;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOutRight {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(120%); opacity: 0; }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
