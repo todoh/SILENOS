@@ -20,6 +20,39 @@ const DownloadManager = {
         this.downloadBlob(jsonStr, `${item.title.replace(/\s+/g, '_')}.json`, 'application/json');
     },
 
+    // [F] DESCARGA RECURSIVA DE CARPETA Y CONTENIDO
+    downloadFolderRecursive(folder) {
+        // Sincronizar con el disco para asegurar que vemos todos los hijos
+        FileSystem.init();
+        
+        const allItems = [];
+        const processedIds = new Set();
+        
+        const collect = (itemId) => {
+            if (processedIds.has(itemId)) return;
+            processedIds.add(itemId);
+            
+            const item = FileSystem.getItem(itemId);
+            if (!item) return;
+            
+            // Añadir copia profunda del objeto al pack
+            allItems.push(JSON.parse(JSON.stringify(item)));
+            
+            // Si es carpeta, buscar hijos de forma recursiva
+            if (item.type === 'folder') {
+                const children = FileSystem.getItems(itemId);
+                children.forEach(child => collect(child.id));
+            }
+        };
+
+        collect(folder.id);
+        
+        const jsonStr = JSON.stringify(allItems, null, 2);
+        const fileName = `PACK_${folder.title.replace(/\s+/g, '_')}.json`;
+        this.downloadBlob(jsonStr, fileName, 'application/json');
+        console.log(`DownloadManager: Pack generado con ${allItems.length} elementos.`);
+    },
+
     // Descarga narrativa simple
     downloadNarrativeTxt(item) {
         const content = item.content || {};
@@ -127,7 +160,6 @@ const SystemClipboard = {
 // --- MENÚ CONTEXTUAL (LÓGICA PRINCIPAL) ---
 
 document.addEventListener('contextmenu', (e) => {
-    // Si estamos dentro del editor visual del programador, NO mostrar menú de escritorio
     if (e.target.closest('.prog-editor-container')) {
         e.preventDefault(); 
         return; 
@@ -135,15 +167,12 @@ document.addEventListener('contextmenu', (e) => {
 
     e.preventDefault();
     
-    // Detectar si el click fue sobre un archivo/carpeta
     const itemEl = e.target.closest('[data-id]');
     const itemId = itemEl ? itemEl.dataset.id : null;
     let itemTitle = null;
 
-    // Gestión de Selección al hacer click derecho
     if (itemId) {
         if (typeof SelectionManager !== 'undefined') {
-            // Si hacemos click derecho en algo no seleccionado, seleccionamos SOLO eso
             if (!SelectionManager.isSelected(itemId)) {
                 SelectionManager.clearSelection();
                 SelectionManager.addId(itemId);
@@ -151,11 +180,8 @@ document.addEventListener('contextmenu', (e) => {
         }
         const item = FileSystem.getItem(itemId);
         if (item) itemTitle = item.title;
-    } else {
-        // Click en vacío
     }
 
-    // Detectar si estamos en escritorio o en una carpeta
     const folderContent = e.target.closest('.folder-window-content');
     const parentId = folderContent ? folderContent.dataset.folderId : 'desktop';
 
@@ -190,18 +216,10 @@ function createContextMenu(x, y, itemId = null, itemTitle = null, parentId = 'de
         selectedCount = selectedIds.length;
     }
 
-    let isProgram = false;
-    let currentItem = null;
+    let currentItem = itemId ? FileSystem.getItem(itemId) : null;
 
-    if (itemId) {
-        currentItem = FileSystem.getItem(itemId);
-        if (currentItem && currentItem.type === 'program') isProgram = true;
-    }
-
-    // --- BLOQUE 1: ACCIONES SOBRE ITEMS (Copiar, Descargar, Borrar) ---
     if (itemId || selectedCount > 0) {
         
-        // OPCIÓN COPIAR
         options.push({
             label: `Copiar ${selectedCount > 1 ? '('+selectedCount+')' : ''}`,
             icon: 'copy',
@@ -210,8 +228,6 @@ function createContextMenu(x, y, itemId = null, itemTitle = null, parentId = 'de
                 const idsToCopy = selectedCount > 0 ? selectedIds : [itemId];
                 SystemClipboard.copy(idsToCopy);
                 
-                // [CORREGIDO] Feedback visual seguro (Notificación Flotante)
-                // Antes esto borraba el body si el foco no estaba en el botón correcto.
                 const notif = document.createElement('div');
                 notif.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-full text-xs font-bold z-[10000] pop-in pointer-events-none backdrop-blur-sm shadow-lg';
                 notif.innerText = "Copiado al portapapeles";
@@ -220,13 +236,21 @@ function createContextMenu(x, y, itemId = null, itemTitle = null, parentId = 'de
             }
         });
 
-        // SEPARADOR
         options.push({ separator: true });
 
-        // --- SECCIÓN DE DESCARGAS (Solo si hay 1 seleccionado) ---
+        // --- SECCIÓN DE DESCARGAS ---
         if (selectedCount <= 1 && currentItem) {
             
-            // 1. Descarga JSON Universal
+            // [NUEVO] Descarga PACK para carpetas
+            if (currentItem.type === 'folder') {
+                options.push({
+                    label: 'Descargar Pack (JSON)',
+                    icon: 'package',
+                    color: 'text-indigo-600',
+                    action: () => DownloadManager.downloadFolderRecursive(currentItem)
+                });
+            }
+
             options.push({
                 label: 'Descargar JSON',
                 icon: 'file-json',
@@ -234,7 +258,6 @@ function createContextMenu(x, y, itemId = null, itemTitle = null, parentId = 'de
                 action: () => DownloadManager.downloadJSON(currentItem)
             });
 
-            // 2. Opciones Específicas para LIBROS
             if (currentItem.type === 'book') {
                 options.push(
                     { label: 'Descargar DOC', icon: 'file-type-2', color: 'text-blue-600', action: () => DownloadManager.downloadBookDoc(currentItem) },
@@ -243,7 +266,6 @@ function createContextMenu(x, y, itemId = null, itemTitle = null, parentId = 'de
                 );
             }
 
-            // 3. Opciones Específicas para NARRATIVA
             if (currentItem.type === 'narrative') {
                 options.push({ 
                     label: 'Descargar TXT', 
@@ -253,11 +275,27 @@ function createContextMenu(x, y, itemId = null, itemTitle = null, parentId = 'de
                 });
             }
         }
+if (currentItem.type === 'image') {
+                options.push({
+                    label: 'Descargar PNG',
+                    icon: 'image',
+                    color: 'text-blue-600',
+                    action: () => {
+                        const link = document.createElement('a');
+                        link.href = currentItem.content;
+                        link.download = `${currentItem.title}.png`;
+                        link.click();
+                    }
+                });
+            }
 
-        // --- OPCIONES DE EDICIÓN ---
-
-        // OPCIÓN EDITAR (Solo para programas)
-        if (isProgram && selectedCount <= 1) {
+            options.push({
+                label: 'Descargar JSON',
+                icon: 'file-json',
+                color: 'text-gray-600',
+                action: () => DownloadManager.downloadJSON(currentItem)
+            });
+        if (currentItem && currentItem.type === 'program' && selectedCount <= 1) {
             options.push({
                 label: 'Editar Programa',
                 icon: 'edit-3',
@@ -269,38 +307,28 @@ function createContextMenu(x, y, itemId = null, itemTitle = null, parentId = 'de
         }
 
         let deleteLabel = 'Eliminar';
-        if (selectedCount > 1) {
-            deleteLabel = `Eliminar (${selectedCount})`;
-        }
+        if (selectedCount > 1) deleteLabel = `Eliminar (${selectedCount})`;
+        
         options.push({
             label: deleteLabel,
             icon: 'trash-2',
             color: 'text-red-500',
-            action: () => {
-                showDeleteConfirm(finalX, finalY, itemId, itemTitle, selectedCount);
-            }
+            action: () => showDeleteConfirm(finalX, finalY, itemId, itemTitle, selectedCount)
         });
 
     } 
     
-    // --- BLOQUE 2: ACCIONES SOBRE EL FONDO (Pegar, Crear Nuevo) ---
-    // Si NO hicimos click en un item (o queremos permitir pegar igual)
-    
     if (!itemId) {
-        // OPCIÓN PEGAR (Solo si hay algo en portapapeles)
         if (SystemClipboard.hasItems()) {
             options.push({
                 label: `Pegar (${SystemClipboard.getIds().length})`,
-                icon: 'clipboard-paste', // Icono Pegar
+                icon: 'clipboard-paste',
                 color: 'text-indigo-600',
-                action: () => {
-                    handlePasteAction(parentId, x, y);
-                }
+                action: () => handlePasteAction(parentId, x, y)
             });
             options.push({ separator: true });
         }
 
-        // OPCIONES DE CREACIÓN
         options.push(
             {
                 label: 'Crear Carpeta',
@@ -349,7 +377,6 @@ function createContextMenu(x, y, itemId = null, itemTitle = null, parentId = 'de
         );
     }
 
-    // Renderizar Opciones
     options.forEach(opt => {
         if (opt.separator) {
             const sep = document.createElement('div');
@@ -380,68 +407,46 @@ function removeContextMenu() {
     if (existing) existing.remove();
 }
 
-// --- LÓGICA DE PEGADO Y CLONADO ---
-
 function handlePasteAction(targetParentId, mouseX, mouseY) {
     const ids = SystemClipboard.getIds();
-    
-    // Iniciar transacción de sistema de archivos
     FileSystem.init();
 
     ids.forEach((id, index) => {
-        // Calcular posición en cascada si son varios
         const finalX = mouseX - 32 + (index * 15);
         const finalY = mouseY - 32 + (index * 15);
-        
         duplicateItemRecursive(id, targetParentId, finalX, finalY);
     });
 
     FileSystem.save();
-    
-    // Refrescar vistas
     if (typeof refreshSystemViews === 'function') refreshSystemViews();
     if (typeof SelectionManager !== 'undefined') SelectionManager.clearSelection();
 }
 
-// Función recursiva para duplicar items y carpetas
 function duplicateItemRecursive(itemId, newParentId, x = 0, y = 0) {
     const original = FileSystem.getItem(itemId);
     if (!original) return;
 
-    // 1. Crear clon profundo del objeto
     const clone = JSON.parse(JSON.stringify(original));
-    
-    // 2. Generar nuevo ID único
     clone.id = original.type + '-' + Date.now() + Math.floor(Math.random() * 1000000);
-    
-    // 3. Asignar nuevo padre
     clone.parentId = newParentId;
     
-    // 4. Modificar título
     if (!clone.title.includes('(Copia)')) {
         clone.title = clone.title + " (Copia)";
     } else {
         clone.title = clone.title + " 2";
     }
 
-    // 5. Asignar posición
     clone.x = x;
     clone.y = y;
-
-    // 6. Insertar en el sistema
     FileSystem.data.push(clone);
 
-    // 7. Si es carpeta, procesar hijos recursivamente
     if (original.type === 'folder') {
-        const children = FileSystem.getItems(itemId); // Items del original
+        const children = FileSystem.getItems(itemId);
         children.forEach(child => {
-            // Llamada recursiva con posiciones 0 (en carpeta se organizan solos)
             duplicateItemRecursive(child.id, clone.id, 0, 0);
         });
     }
 }
-
-// --- LÓGICA DE BORRADO ---
 
 function showDeleteConfirm(x, y, singleId, singleName, count) {
     const existing = document.getElementById('delete-modal');
@@ -482,8 +487,6 @@ function showDeleteConfirm(x, y, singleId, singleName, count) {
 
     document.body.appendChild(modal);
 
-    const close = () => modal.remove();
-
     document.getElementById('del-yes').onclick = () => {
         if (count > 1 && typeof SelectionManager !== 'undefined') {
             const ids = SelectionManager.getSelectedIds();
@@ -492,12 +495,11 @@ function showDeleteConfirm(x, y, singleId, singleName, count) {
         } else if (singleId) {
             FileSystem.deleteItem(singleId);
         }
-        
         if (window.refreshSystemViews) window.refreshSystemViews();
-        close();
+        modal.remove();
     };
 
-    document.getElementById('del-no').onclick = close;
+    document.getElementById('del-no').onclick = () => modal.remove();
 
     setTimeout(() => {
         document.addEventListener('click', function onClickOutside(ev) {

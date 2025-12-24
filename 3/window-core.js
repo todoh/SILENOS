@@ -1,43 +1,34 @@
-// SILENOS 3/window-core.js
-// --- NÚCLEO DE GESTIÓN DE VENTANAS (DOM & STATE) ---
+/* SILENOS 3/window-core.js */
+// --- NÚCLEO DE GESTIÓN DE VENTANAS (DOM, FOCO Y ESTADOS) ---
 
 function createWindowDOM(winObj, config) {
     const container = document.getElementById('windows-container');
     
-    let title = config.title;
-    let icon = config.icon;
-    let color = config.color;
+    // CORRECCIÓN: Prioridad en winObj.title
+    let title = winObj.title || config.title || "Ventana";
+    let icon = winObj.icon || config.icon || "box";
+    let color = winObj.color || config.color || "text-gray-600";
 
-    // Sobreescritura dinámica según tipo
-    if (winObj.type === 'folder') {
-        title = winObj.title;
-        icon = winObj.icon;
-        color = 'text-blue-500';
-    } else if (winObj.type === 'data') {
-        title = winObj.title;
-        icon = winObj.icon;
-        color = 'text-green-600';
-    } else if (winObj.type === 'book') {
-        title = winObj.title;
-        icon = winObj.icon;
-        color = 'text-indigo-600';
-    } else if (winObj.type === 'narrative') {
-        title = winObj.title;
-        icon = winObj.icon;
-        color = 'text-orange-500';
-    } else if (winObj.type === 'ai-tool') {
-        title = winObj.title;
-        icon = winObj.icon;
-        color = 'text-purple-600';
-    } else if (winObj.type === 'programmer') {
-        title = winObj.title;
-        icon = winObj.icon;
-        color = 'text-blue-600';
+    // Mapeo dinámico de colores y estilos según el tipo (F -> Forma)
+    const typeConfigs = {
+        'folder': { color: 'text-blue-500' },
+        'data': { color: 'text-green-600' },
+        'image': { color: 'text-blue-400' },
+        'book': { color: 'text-indigo-600' },
+        'narrative': { color: 'text-orange-500' },
+        'ai-tool': { color: 'text-purple-600' },
+        'programmer': { color: 'text-purple-600' },
+        'storage-tool': { color: 'text-indigo-600' },
+        'program-runner': { color: 'text-green-600' }
+    };
+
+    if (typeConfigs[winObj.type]) {
+        color = typeConfigs[winObj.type].color;
     }
 
     const winEl = document.createElement('div');
     winEl.id = `window-${winObj.id}`;
-    winEl.className = 'window neumorph-out pop-in pointer-events-auto';
+    winEl.className = 'window neumorph-out pop-in pointer-events-auto flex flex-col';
     
     winEl.style.width = config.width ? `${config.width}px` : '600px';
     winEl.style.height = config.height ? `${config.height}px` : '450px';
@@ -45,14 +36,12 @@ function createWindowDOM(winObj, config) {
     winEl.style.top = `${winObj.y}px`;
     winEl.style.zIndex = winObj.zIndex;
 
-    let contentHTML = `<div class="content-loader w-full h-full flex items-center justify-center text-gray-400">Cargando...</div>`;
-
     winEl.innerHTML = `
-        <div class="window-header h-10 flex items-center justify-between px-4 select-none bg-[#e0e5ec] rounded-t-[20px]"
+        <div class="window-header h-10 flex items-center justify-between px-4 select-none bg-[#e0e5ec] rounded-t-[20px] shrink-0"
              onmousedown="startWindowDrag(event, '${winObj.id}')">
             <div class="flex items-center gap-2 text-gray-600 font-bold text-sm">
                 <i data-lucide="${icon}" class="${color} w-4 h-4"></i>
-                <span>${title}</span>
+                <span class="truncate max-w-[200px]">${title}</span>
             </div>
             <div class="flex items-center gap-3" onmousedown="event.stopPropagation()">
                 <button onclick="toggleMinimize('${winObj.id}')" class="neumorph-control hover:text-blue-500 text-gray-500">
@@ -67,7 +56,7 @@ function createWindowDOM(winObj, config) {
             </div>
         </div>
         <div class="content-area flex-1 bg-gray-100 relative rounded-b-[20px] overflow-hidden flex flex-col">
-            ${contentHTML}
+            <div class="w-full h-full flex items-center justify-center text-gray-400">Cargando...</div>
         </div>
     `;
 
@@ -79,7 +68,7 @@ function closeApp(id) {
     const el = document.getElementById(`window-${id}`);
     if (el) el.remove();
     openWindows = openWindows.filter(w => w.id !== id);
-    renderDock();
+    if (typeof renderDock === 'function') renderDock();
 }
 
 function focusWindow(id) {
@@ -89,7 +78,7 @@ function focusWindow(id) {
         winObj.zIndex = zIndexCounter;
         const el = document.getElementById(`window-${id}`);
         if (el) el.style.zIndex = winObj.zIndex;
-        renderDock();
+        if (typeof renderDock === 'function') renderDock();
     }
 }
 
@@ -106,7 +95,7 @@ function toggleMinimize(id) {
         el.style.display = 'flex';
         focusWindow(id);
     }
-    renderDock();
+    if (typeof renderDock === 'function') renderDock();
 }
 
 function toggleMaximize(id) {
@@ -123,80 +112,17 @@ function toggleMaximize(id) {
         el.style.left = `${winObj.x}px`;
         el.style.top = `${winObj.y}px`;
         
-        // Restaurar tamaños según tipo
-        if (winObj.type === 'book') {
-            el.style.width = '700px';
-            el.style.height = '600px';
-        } else if (winObj.type === 'narrative') {
-            el.style.width = '500px';
-            el.style.height = '400px';
-        } else if (winObj.type === 'ai-tool' || winObj.type === 'programmer') {
-            el.style.width = '700px';
-            el.style.height = '600px';
-        } else if (winObj.type === 'config') {
-             el.style.width = '400px';
-             el.style.height = '350px';
-        } else {
-            el.style.width = '600px'; 
-            el.style.height = '450px';
-        }
-    }
-}
-
-function renderDock() {
-    const dockContainer = document.getElementById('dock-items');
-    if (!dockContainer) return;
-
-    dockContainer.innerHTML = '';
-
-    if (openWindows.length === 0) {
-        dockContainer.innerHTML = '<span class="text-gray-400 text-sm font-medium italic select-none empty-msg">Sin apps abiertas</span>';
-        return;
-    }
-
-    const visibleWindows = openWindows.filter(w => !w.isMinimized);
-    let activeId = null;
-    if (visibleWindows.length > 0) {
-        const maxZ = Math.max(...visibleWindows.map(w => w.zIndex));
-        activeId = visibleWindows.find(w => w.zIndex === maxZ)?.id;
-    }
-
-    openWindows.forEach(win => {
-        let iconName = 'box'; 
-        if(win.type === 'app') {
-            const app = APPS.find(a => a.id === win.appId);
-            iconName = app ? app.icon : 'box';
-        } else {
-            iconName = win.icon;
-        }
-
-        const isActive = (win.id === activeId) && !win.isMinimized;
-        const isMinimized = win.isMinimized;
-
-        const btn = document.createElement('button');
-        let classes = "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 relative ";
-        
-        if (isActive) classes += "neumorph-in text-blue-500 transform scale-105";
-        else classes += "neumorph-btn text-gray-500 hover:text-gray-700 hover:-translate-y-1";
-        
-        if (isMinimized) classes += " opacity-60";
-
-        btn.className = classes;
-        btn.onclick = () => {
-            if (isActive) toggleMinimize(win.id);
-            else {
-                if (win.isMinimized) toggleMinimize(win.id);
-                else focusWindow(win.id);
-            }
+        const sizes = {
+            'book': { w: 700, h: 600 },
+            'narrative': { w: 500, h: 400 },
+            'ai-tool': { w: 700, h: 600 },
+            'programmer': { w: 700, h: 600 },
+            'config': { w: 400, h: 350 },
+            'default': { w: 600, h: 450 }
         };
 
-        btn.innerHTML = `
-            <i data-lucide="${iconName}" class="w-6 h-6"></i>
-            ${!isMinimized ? '<div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-blue-400"></div>' : ''}
-        `;
-        
-        dockContainer.appendChild(btn);
-    });
-
-    if (window.lucide) lucide.createIcons();
+        const size = sizes[winObj.type] || sizes.default;
+        el.style.width = `${size.w}px`;
+        el.style.height = `${size.h}px`;
+    }
 }

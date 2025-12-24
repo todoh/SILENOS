@@ -1,5 +1,7 @@
-// SILENOS 3/window-manager.js
-// --- GESTIÓN DE VENTANAS (APPS + CARPETAS + DATOS + LIBROS + IA + CONFIG + PROGRAMADOR) ---
+/* SILENOS 3/window-manager.js */
+// --- GESTIÓN DE VENTANAS (APPS + CARPETAS + DATOS + LIBROS + IA + IMÁGENES + CONFIG) ---
+
+// --- 1. APERTURA DE VENTANAS POR TIPO ---
 
 // Abrir Carpeta
 function openFolderWindow(folderId) {
@@ -35,6 +37,50 @@ function openFolderWindow(folderId) {
     
     renderFolderContent(folderId, folderId);
 }
+
+// Visor de Imágenes
+function openImageWindow(fileId) {
+    const file = FileSystem.getItem(fileId);
+    if (!file) return;
+
+    const existing = openWindows.find(w => w.id === fileId);
+    if (existing) {
+        if (existing.isMinimized) toggleMinimize(fileId);
+        focusWindow(fileId);
+        return;
+    }
+
+    zIndexCounter++;
+    const winObj = {
+        id: fileId,
+        appId: 'image-viewer',
+        type: 'image',
+        fileId: fileId,
+        title: file.title,
+        icon: 'image',
+        zIndex: zIndexCounter,
+        isMinimized: false,
+        isMaximized: false,
+        x: 150 + (openWindows.length * 20),
+        y: 150 + (openWindows.length * 20)
+    };
+
+    createWindowDOM(winObj, { width: 450, height: 450, color: 'text-blue-400' });
+    openWindows.push(winObj);
+    renderDock();
+    if (window.lucide) lucide.createIcons();
+
+    const winContent = document.querySelector(`#window-${fileId} .content-area`);
+    if (winContent) {
+        winContent.innerHTML = `
+            <div class="w-full h-full bg-[#1e1e1e] flex items-center justify-center p-4 overflow-auto">
+                <img src="${file.content}" class="max-w-full max-h-full shadow-2xl rounded-lg object-contain">
+            </div>
+        `;
+    }
+}
+
+// Ventana Terminal (Programas en modo consola)
 function openTerminalWindow(fileId) {
     const file = FileSystem.getItem(fileId);
     const winId = 'term-' + fileId;
@@ -50,9 +96,9 @@ function openTerminalWindow(fileId) {
     const winObj = {
         id: winId,
         appId: 'terminal-runner',
-        type: 'program-runner', // Reusamos estilos
+        type: 'program-runner',
         fileId: fileId,
-        title: ">_ " + file.title, // Estilo Terminal
+        title: ">_ " + file.title,
         icon: 'terminal',
         zIndex: zIndexCounter,
         isMinimized: false,
@@ -61,13 +107,11 @@ function openTerminalWindow(fileId) {
         y: window.innerHeight / 2 - 150
     };
 
-    // Ventana más compacta y oscura
     createWindowDOM(winObj, { width: 500, height: 350, color: 'text-gray-400' });
     openWindows.push(winObj);
     renderDock();
     if (window.lucide) lucide.createIcons();
 
-    // Inyectar contenido del Terminal
     const winContent = document.querySelector(`#window-${winId} .content-area`);
     if (winContent) {
         winContent.innerHTML = `
@@ -82,31 +126,31 @@ function openTerminalWindow(fileId) {
             </div>
         `;
 
-        // EJECUCIÓN AUTOMÁTICA
         setTimeout(() => {
             if (typeof ProgrammerManager !== 'undefined') {
                 ProgrammerManager.runHeadless(winId, fileId);
             } else {
-                document.getElementById(`runner-console-${winId}`).innerHTML += "<div class='text-red-500'>Error: ProgrammerManager no encontrado.</div>";
+                const con = document.getElementById(`runner-console-${winId}`);
+                if(con) con.innerHTML += "<div class='text-red-500'>Error: ProgrammerManager no encontrado.</div>";
             }
         }, 500);
     }
 }
-// Abrir Ventana de Datos (Central de redirección)
+
+// Abrir Ventana de Datos
 function openDataWindow(fileId) {
     const file = FileSystem.getItem(fileId);
     if (!file) return;
 
-    // --- REDIRECCIONES POR TIPO ---
+    if (file.type === 'image') { openImageWindow(fileId); return; }
     if (file.type === 'book') { openBookWindow(fileId); return; }
     if (file.type === 'narrative') { openNarrativeWindow(fileId); return; }
     
-    // [CAMBIO] EJECUCIÓN SILENCIOSA SIN TERMINAL
     if (file.type === 'executable') { 
         if (typeof ProgrammerManager !== 'undefined') {
             ProgrammerManager.runHeadless(null, fileId);
         }
-        return; 
+        return;
     }
     
     if (file.type === 'program') { openProgramRunnerWindow(fileId); return; }
@@ -159,9 +203,9 @@ function openProgramRunnerWindow(fileId) {
     const winObj = {
         id: winId,
         appId: 'program-runner',
-        type: 'program-runner', // Tipo distinto para estilos si quieres
+        type: 'program-runner',
         fileId: fileId,
-        title: "" + file.title,
+        title: file.title,
         icon: 'play-circle',
         zIndex: zIndexCounter,
         isMinimized: false,
@@ -320,7 +364,6 @@ function openConfigWindow() {
     }
 }
 
-
 // Abrir Ventana Creador IA
 function openAICreatorWindow() {
     const id = 'ai-creator-app';
@@ -350,7 +393,6 @@ function openAICreatorWindow() {
     renderDock();
     if (window.lucide) lucide.createIcons();
     
-    // Renderizado del contenido
     const winContent = document.querySelector(`#window-${id} .content-area`);
     if(winContent) {
         winContent.innerHTML = `
@@ -405,7 +447,7 @@ function openAICreatorWindow() {
 
 // Abrir Ventana Programador
 function openProgrammerWindow(fileId = null) {
-    const winId = fileId || 'programmer-app'; 
+    const winId = fileId || 'programmer-app';
     let winTitle = "Programador de Flujo";
     if (fileId) {
         const file = FileSystem.getItem(fileId);
@@ -444,16 +486,14 @@ function openProgrammerWindow(fileId = null) {
     }
 }
 
-// --- UTILIDADES DE RENDER ---
-
-/* SILENOS 3/window-manager.js */
+// --- 2. RENDERIZADO DE CONTENIDO DE CARPETAS ---
 
 function renderFolderContent(windowId, folderId) {
     const winContent = document.querySelector(`#window-${windowId} .content-area`);
     if (!winContent) return;
 
     winContent.innerHTML = `
-        <div class="folder-window-content w-full h-full p-4 flex flex-wrap content-start gap-4" data-folder-id="${folderId}">
+        <div class="folder-window-content w-full h-full p-4 flex flex-wrap content-start gap-4 overflow-y-auto" data-folder-id="${folderId}">
         </div>
     `;
     
@@ -467,7 +507,6 @@ function renderFolderContent(windowId, folderId) {
 
     items.forEach(item => {
         const el = document.createElement('div');
-        // Mantenemos el ancho en w-24 para que el texto tenga espacio de envolver
         el.className = `flex flex-col items-center gap-2 w-24 cursor-pointer relative ${item.type === 'folder' ? 'folder-drop-zone' : ''}`;
         el.dataset.id = item.id;
         
@@ -475,12 +514,17 @@ function renderFolderContent(windowId, folderId) {
              if (e.target.tagName !== 'INPUT') startIconDrag(e, item.id, folderId);
         };
 
+        let iconContent = `<i data-lucide="${item.icon}" class="${item.color} w-7 h-7"></i>`;
+        if (item.type === 'image' && item.content) {
+            iconContent = `<img src="${item.content}" class="w-full h-full object-cover rounded-lg pointer-events-none shadow-sm">`;
+        }
+
         el.innerHTML = `
-            <div class="w-14 h-14 rounded-xl bg-gray-200 flex items-center justify-center shadow-sm hover:shadow-md transition-all">
-                <i data-lucide="${item.icon}" class="${item.color} w-7 h-7"></i>
+            <div class="w-14 h-14 rounded-xl bg-gray-200 flex items-center justify-center shadow-sm hover:shadow-md transition-all overflow-hidden p-0">
+                ${iconContent}
             </div>
             <span 
-                class="text-xs text-gray-600 text-center line-clamp-2 break-words w-full hover:bg-black/5 rounded px-1 cursor-text select-none"
+                class="text-xs text-gray-600 text-center line-clamp-2 break-words w-full hover:bg-black/5 rounded px-1 cursor-text select-none font-bold"
                 onmousedown="event.stopPropagation()"
                 onclick="showRenameModal(event, '${item.id}', '${item.title}')"
             >
@@ -492,9 +536,9 @@ function renderFolderContent(windowId, folderId) {
     if (window.lucide) lucide.createIcons();
 }
 
-// FUNCION OPEN APP PRINCIPAL
+// --- 3. NÚCLEO DE GESTIÓN DE VENTANAS (DOM, FOCO Y ESTADOS) ---
+
 function openApp(appId) {
-    // Si es la herramienta de almacenamiento
     if (appId === 'storage-tool') {
         openStorageWindow();
         return;
@@ -503,7 +547,7 @@ function openApp(appId) {
     const app = APPS.find(a => a.id === appId);
     if (!app) return;
     
-    const existingWindow = openWindows.find(w => w.id === appId); 
+    const existingWindow = openWindows.find(w => w.id === appId);
     if (existingWindow) {
         if (existingWindow.isMinimized) toggleMinimize(appId);
         focusWindow(appId);
@@ -531,48 +575,31 @@ function openApp(appId) {
 function createWindowDOM(winObj, config) {
     const container = document.getElementById('windows-container');
     
-    let title = config.title;
-    let icon = config.icon;
-    let color = config.color;
+    // CORRECCIÓN CRÍTICA: Priorizar winObj sobre config
+    let title = winObj.title || config.title || "Ventana";
+    let icon = winObj.icon || config.icon || "box";
+    let color = winObj.color || config.color || "text-gray-600";
 
-    // Sobreescritura dinámica según tipo
-    if (winObj.type === 'folder') {
-        title = winObj.title;
-        icon = winObj.icon;
-        color = 'text-blue-500';
-    } else if (winObj.type === 'data') {
-        title = winObj.title;
-        icon = winObj.icon;
-        color = 'text-green-600';
-    } else if (winObj.type === 'book') {
-        title = winObj.title;
-        icon = winObj.icon;
-        color = 'text-indigo-600';
-    } else if (winObj.type === 'narrative') {
-        title = winObj.title;
-        icon = winObj.icon;
-        color = 'text-orange-500';
-    } else if (winObj.type === 'ai-tool') {
-        title = winObj.title;
-        icon = winObj.icon;
-        color = 'text-purple-600';
-    } else if (winObj.type === 'programmer') {
-        title = winObj.title;
-        icon = winObj.icon;
-        color = 'text-purple-600';
-    } else if (winObj.type === 'storage-tool') { // Estilo para Storage
-        title = winObj.title;
-        icon = winObj.icon;
-        color = 'text-indigo-600';
-    } else if (winObj.type === 'program-runner') { // FIX: AÑADIDO PARA EJECUTAR PROGRAMAS
-        title = winObj.title;
-        icon = winObj.icon;
-        color = 'text-green-600';
+    // Mapeo dinámico de colores y estilos según el tipo (F -> Forma)
+    const typeConfigs = {
+        'folder': { color: 'text-blue-500' },
+        'data': { color: 'text-green-600' },
+        'image': { color: 'text-blue-400' },
+        'book': { color: 'text-indigo-600' },
+        'narrative': { color: 'text-orange-500' },
+        'ai-tool': { color: 'text-purple-600' },
+        'programmer': { color: 'text-purple-600' },
+        'storage-tool': { color: 'text-indigo-600' },
+        'program-runner': { color: 'text-green-600' }
+    };
+
+    if (typeConfigs[winObj.type]) {
+        color = typeConfigs[winObj.type].color;
     }
 
     const winEl = document.createElement('div');
     winEl.id = `window-${winObj.id}`;
-    winEl.className = 'window neumorph-out pop-in pointer-events-auto';
+    winEl.className = 'window neumorph-out pop-in pointer-events-auto flex flex-col';
     
     winEl.style.width = config.width ? `${config.width}px` : '600px';
     winEl.style.height = config.height ? `${config.height}px` : '450px';
@@ -580,14 +607,12 @@ function createWindowDOM(winObj, config) {
     winEl.style.top = `${winObj.y}px`;
     winEl.style.zIndex = winObj.zIndex;
 
-    let contentHTML = `<div class="content-loader w-full h-full flex items-center justify-center text-gray-400">Cargando...</div>`;
-
     winEl.innerHTML = `
-        <div class="window-header h-10 flex items-center justify-between px-4 select-none bg-[#e0e5ec] rounded-t-[20px]"
+        <div class="window-header h-10 flex items-center justify-between px-4 select-none bg-[#e0e5ec] rounded-t-[20px] shrink-0"
              onmousedown="startWindowDrag(event, '${winObj.id}')">
             <div class="flex items-center gap-2 text-gray-600 font-bold text-sm">
                 <i data-lucide="${icon}" class="${color} w-4 h-4"></i>
-                <span>${title}</span>
+                <span class="truncate max-w-[200px]">${title}</span>
             </div>
             <div class="flex items-center gap-3" onmousedown="event.stopPropagation()">
                 <button onclick="toggleMinimize('${winObj.id}')" class="neumorph-control hover:text-blue-500 text-gray-500">
@@ -602,7 +627,7 @@ function createWindowDOM(winObj, config) {
             </div>
         </div>
         <div class="content-area flex-1 bg-gray-100 relative rounded-b-[20px] overflow-hidden flex flex-col">
-            ${contentHTML}
+            <div class="w-full h-full flex items-center justify-center text-gray-400">Cargando...</div>
         </div>
     `;
 
@@ -658,27 +683,21 @@ function toggleMaximize(id) {
         el.style.left = `${winObj.x}px`;
         el.style.top = `${winObj.y}px`;
         
-        // Restaurar tamaños
-        if (winObj.type === 'book') {
-            el.style.width = '700px';
-            el.style.height = '600px';
-        } else if (winObj.type === 'narrative') {
-            el.style.width = '500px';
-            el.style.height = '400px';
-        } else if (winObj.type === 'ai-tool' || winObj.type === 'programmer') {
-            el.style.width = '700px';
-            el.style.height = '600px';
-        } else if (winObj.type === 'config') {
-             el.style.width = '400px';
-             el.style.height = '350px';
-        } else {
-            el.style.width = '600px'; 
-            el.style.height = '450px';
-        }
+        const sizes = {
+            'book': { w: 700, h: 600 },
+            'narrative': { w: 500, h: 400 },
+            'ai-tool': { w: 700, h: 600 },
+            'programmer': { w: 700, h: 600 },
+            'config': { w: 400, h: 350 },
+            'default': { w: 600, h: 450 }
+        };
+
+        const size = sizes[winObj.type] || sizes.default;
+        el.style.width = `${size.w}px`;
+        el.style.height = `${size.h}px`;
     }
 }
 
-// NUEVA FUNCIÓN DE VENTANA DE ALMACENAMIENTO
 function openStorageWindow() {
     const id = 'storage-app';
     const existing = openWindows.find(w => w.id === id);

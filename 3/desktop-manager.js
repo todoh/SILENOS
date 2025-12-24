@@ -1,9 +1,7 @@
 // --- RENDERIZADO DEL ESCRITORIO (SOLO ARCHIVOS) ---
 
-// Función global para refrescar todas las vistas (escritorio y ventanas abiertas)
 window.refreshSystemViews = function() {
     renderDesktopFiles();
-    // Refrescar ventanas de carpeta abiertas si existen
     if (typeof openWindows !== 'undefined') {
         openWindows.forEach(win => {
             if (win.type === 'folder' && typeof renderFolderContent === 'function') {
@@ -16,7 +14,6 @@ window.refreshSystemViews = function() {
 function renderDesktop() {
     const desktop = document.getElementById('desktop-area');
     desktop.innerHTML = ''; 
-    // Ya no renderizamos APPS fijas.
 }
 
 function renderDesktopFiles() {
@@ -38,15 +35,19 @@ function renderDesktopFiles() {
         el.style.top = `${file.y}px`;
         el.dataset.id = file.id;
 
-        // Iniciar arrastre solo desde el icono/contenedor, no desde el texto
         el.onmousedown = (e) => {
             if (e.target.tagName !== 'INPUT') startIconDrag(e, file.id, 'desktop');
         };
 
-        // El span tiene eventos propios para evitar el arrastre y permitir renombrar
+        // --- LÓGICA DE PREVISUALIZACIÓN DE IMAGEN ---
+        let iconContent = `<i data-lucide="${file.icon}" class="${file.color} w-8 h-8"></i>`;
+        if (file.type === 'image' && file.content) {
+            iconContent = `<img src="${file.content}" class="w-full h-full object-cover rounded-xl shadow-inner pointer-events-none">`;
+        }
+
         el.innerHTML = `
-            <div class="desktop-icon-btn hover:scale-105 transition-transform bg-[#e0e5ec]/80 backdrop-blur-sm">
-                <i data-lucide="${file.icon}" class="${file.color} w-8 h-8"></i>
+            <div class="desktop-icon-btn hover:scale-105 transition-transform bg-[#e0e5ec]/80 backdrop-blur-sm overflow-hidden p-0">
+                ${iconContent}
             </div>
             <span 
                 class="text-xs font-bold text-gray-700 text-center bg-white/30 px-2 py-0.5 rounded backdrop-blur-sm hover:bg-white/60 transition-colors select-none"
@@ -62,21 +63,16 @@ function renderDesktopFiles() {
     if (window.lucide) lucide.createIcons();
 }
 
-// --- MODAL MINIMALISTA DE RENOMBRADO ---
 window.showRenameModal = function(e, itemId, currentName) {
-    e.stopPropagation(); // Evitar clicks fantasma
-
-    // Eliminar modal previo si existe
+    e.stopPropagation();
     const existing = document.getElementById('rename-modal');
     if (existing) existing.remove();
 
-    // Crear modal
     const modal = document.createElement('div');
     modal.id = 'rename-modal';
     modal.className = 'fixed z-[9999] bg-[#e0e5ec]/90 backdrop-blur border border-white/50 shadow-xl rounded-xl p-2 flex items-center gap-2 pop-in';
     
-    // Posicionamiento junto al ratón
-    const x = Math.min(e.clientX + 10, window.innerWidth - 220); // Evitar que se salga por la derecha
+    const x = Math.min(e.clientX + 10, window.innerWidth - 220);
     const y = Math.min(e.clientY - 20, window.innerHeight - 60);
     modal.style.left = `${x}px`;
     modal.style.top = `${y}px`;
@@ -96,7 +92,6 @@ window.showRenameModal = function(e, itemId, currentName) {
     input.focus();
     input.select();
 
-    // Función guardar
     const save = () => {
         const newName = input.value.trim();
         if (newName && newName !== currentName) {
@@ -106,7 +101,6 @@ window.showRenameModal = function(e, itemId, currentName) {
         modal.remove();
     };
 
-    // Eventos
     document.getElementById('rename-save').onclick = save;
     document.getElementById('rename-cancel').onclick = () => modal.remove();
     
@@ -115,7 +109,6 @@ window.showRenameModal = function(e, itemId, currentName) {
         if (k.key === 'Escape') modal.remove();
     });
 
-    // Cerrar si se hace click fuera
     setTimeout(() => {
         document.addEventListener('click', function onClickOutside(ev) {
             if (!modal.contains(ev.target) && ev.target !== input) {

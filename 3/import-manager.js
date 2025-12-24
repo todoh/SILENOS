@@ -1,4 +1,3 @@
-// SILENOS 3/import-manager.js
 /* SILENOS 3/import-manager.js */
 
 const ImportManager = {
@@ -98,7 +97,6 @@ const ImportManager = {
 
         if (!textarea) return;
 
-        // Eventos Drag & Drop
         textarea.addEventListener('dragover', (e) => { e.preventDefault(); overlay.style.opacity = '1'; });
         textarea.addEventListener('dragleave', (e) => { e.preventDefault(); overlay.style.opacity = '0'; });
         
@@ -109,20 +107,18 @@ const ImportManager = {
 
             const items = e.dataTransfer.items;
             if (items && items.length > 0) {
-                // Manejo de Drop Externo (Archivos/Carpetas)
                 await this.handleExternalDrop(items, textarea, windowId);
             }
         });
     },
 
-    // --- MODAL DE RESETEO ---
     showResetModal(windowId) {
         const container = document.getElementById(`modal-container-${windowId}`);
         if (!container) return;
 
         container.innerHTML = `
             <div class="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm rounded-b-[20px] pop-in">
-                <div class="bg-white w-4/5 max-w-sm p-6 rounded-2xl shadow-2xl flex flex-col gap-4 items-center text-center border-2 border-red-100">
+                <div class="bg-white w-4/5 max-sm:w-full p-6 rounded-2xl shadow-2xl flex flex-col gap-4 items-center text-center border-2 border-red-100">
                     <div class="w-12 h-12 rounded-full bg-red-100 text-red-500 flex items-center justify-center mb-2">
                         <i data-lucide="trash-2" class="w-6 h-6"></i>
                     </div>
@@ -139,7 +135,7 @@ const ImportManager = {
                             CANCELAR
                         </button>
                         <button onclick="ImportManager.executeReset('${windowId}')" 
-                            class="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl text-xs shadow-lg shadow-red-200 transition-transform active:scale-95">
+                            class="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl text-xs shadow-lg transition-transform active:scale-95">
                             SÍ, BORRAR TODO
                         </button>
                     </div>
@@ -150,18 +146,10 @@ const ImportManager = {
     },
 
     executeReset(windowId) {
-        // 1. Salvaguardar API Keys
         const savedKeys = localStorage.getItem('silenos_api_keys');
-
-        // 2. Limpieza Nuclear
         localStorage.clear();
+        if (savedKeys) localStorage.setItem('silenos_api_keys', savedKeys);
 
-        // 3. Restaurar API Keys
-        if (savedKeys) {
-            localStorage.setItem('silenos_api_keys', savedKeys);
-        }
-
-        // 4. Feedback y Recarga
         const container = document.getElementById(`modal-container-${windowId}`);
         if (container) {
             container.innerHTML = `
@@ -175,19 +163,14 @@ const ImportManager = {
             if (window.lucide) lucide.createIcons();
         }
 
-        setTimeout(() => {
-            location.reload();
-        }, 1500);
+        setTimeout(() => location.reload(), 1500);
     },
 
-    // --- MANEJO DE DRAG & DROP EXTERNO (Archivos Reales) ---
     async handleExternalDrop(dataTransferItems, textarea, windowId) {
         this.setStatus(windowId, "Analizando archivos...", "text-blue-500");
-        
         const fileEntries = [];
         const queue = [];
 
-        // 1. Obtener entradas
         for (let i = 0; i < dataTransferItems.length; i++) {
             const item = dataTransferItems[i];
             if (item.kind === 'file') {
@@ -196,34 +179,22 @@ const ImportManager = {
             }
         }
 
-        // 2. Recorrer recursivamente
-        for (const entry of queue) {
-            await this.traverseFileTree(entry, fileEntries);
-        }
+        for (const entry of queue) { await this.traverseFileTree(entry, fileEntries); }
 
-        this.setStatus(windowId, `Procesando ${fileEntries.length} archivos...`, "text-blue-500");
-
-        // 3. Procesar Contenido
         const collectedItems = [];
-
         for (const entry of fileEntries) {
             try {
-                const content = await this.readFileContent(entry);
-                const result = this.processFileEntry(entry, content);
+                const isImage = /\.(png|jpg|jpeg|webp|gif)$/i.test(entry.name);
+                const content = await this.readFileContent(entry, isImage);
+                const result = this.processFileEntry(entry, content, isImage);
                 
                 if (result) {
-                    if (Array.isArray(result)) {
-                        collectedItems.push(...result);
-                    } else {
-                        collectedItems.push(result);
-                    }
+                    if (Array.isArray(result)) collectedItems.push(...result);
+                    else collectedItems.push(result);
                 }
-            } catch (err) {
-                console.warn("Skip file:", entry.name);
-            }
+            } catch (err) { console.warn("Skip file:", entry.name); }
         }
 
-        // 4. Volcar al Textarea
         if (collectedItems.length > 0) {
             textarea.value = JSON.stringify(collectedItems, null, 2);
             this.setStatus(windowId, `Detectados ${collectedItems.length} elementos. Pulsa IMPORTAR.`, "text-green-600 font-bold");
@@ -233,7 +204,6 @@ const ImportManager = {
         }
     },
 
-    // --- MANEJO DE DRAG & DROP INTERNO (Iconos de Silenos) ---
     handleInternalDrop(idList, dropZone, windowId) {
         const items = [];
         idList.forEach(id => {
@@ -250,7 +220,6 @@ const ImportManager = {
         }
     },
 
-    // Recorre carpetas recursivamente
     traverseFileTree(entry, fileList) {
         return new Promise((resolve) => {
             if (entry.isFile) {
@@ -260,81 +229,74 @@ const ImportManager = {
                 const dirReader = entry.createReader();
                 const readEntries = () => {
                     dirReader.readEntries(async (entries) => {
-                        if (entries.length === 0) {
-                            resolve();
-                        } else {
+                        if (entries.length === 0) resolve();
+                        else {
                             const promises = [];
-                            for (const subEntry of entries) {
-                                promises.push(this.traverseFileTree(subEntry, fileList));
-                            }
+                            for (const subEntry of entries) promises.push(this.traverseFileTree(subEntry, fileList));
                             await Promise.all(promises);
                             readEntries(); 
                         }
                     }, (err) => resolve());
                 };
                 readEntries();
-            } else {
-                resolve();
-            }
+            } else resolve();
         });
     },
 
-    readFileContent(fileEntry) {
+    readFileContent(fileEntry, asDataURL = false) {
         return new Promise((resolve, reject) => {
             fileEntry.file((file) => {
                 const reader = new FileReader();
                 reader.onload = (e) => resolve(e.target.result);
                 reader.onerror = reject;
-                reader.readAsText(file);
+                if (asDataURL) reader.readAsDataURL(file);
+                else reader.readAsText(file);
             }, reject);
         });
     },
 
-    processFileEntry(entry, contentText) {
+    processFileEntry(entry, contentText, isImage) {
         const filename = entry.name;
         
+        if (isImage) {
+            return {
+                // CORRECCIÓN: Usar Math.floor para evitar puntos decimales en el ID
+                id: 'image-import-' + Date.now() + Math.floor(Math.random() * 100000),
+                type: 'image',
+                title: filename,
+                content: contentText, 
+                x: 100, y: 100, 
+                icon: 'image',
+                color: 'text-blue-400',
+                parentId: 'desktop'
+            };
+        }
+
         if (filename.toLowerCase().endsWith('.json')) {
-            try {
-                const json = JSON.parse(contentText);
-                return json; 
-            } catch (e) { return null; }
+            try { return JSON.parse(contentText); } catch (e) { return null; }
         }
 
         if (filename.toLowerCase().endsWith('.txt') || filename.toLowerCase().endsWith('.md')) {
-            const fullPath = entry.fullPath || ("/" + filename);
-            const parts = fullPath.split('/');
-            let tag = "GENERAL";
-            if (parts.length > 2) tag = parts[parts.length - 2]; 
-
             return {
-                id: 'narrative-import-' + Date.now() + Math.random(),
+                id: 'narrative-import-' + Date.now(),
                 type: 'narrative',
                 title: filename.replace(/\.(txt|md)$/i, ''),
-                content: {
-                    tag: tag.toUpperCase(),
-                    text: contentText
-                },
+                content: { tag: "IMPORT", text: contentText },
                 x: 100, y: 100, 
                 icon: 'sticky-note',
                 color: 'text-orange-500',
                 parentId: 'desktop'
             };
         }
-
         return null;
     },
 
-    // [MODIFICADO] Ahora es ASYNC para asegurar que ProgrammerManager cargue sus datos antes
     async executeImport(windowId) {
         const raw = document.getElementById(`import-text-${windowId}`).value;
         if (!raw.trim()) return this.setStatus(windowId, "El área está vacía.", "text-red-500");
 
         try {
-            // CRÍTICO: Asegurar que ProgrammerManager está cargado desde disco
-            // antes de mezclar datos, o sobrescribiríamos con una lista vacía.
-            if (typeof ProgrammerManager !== 'undefined') {
-                await ProgrammerManager.init();
-            }
+            if (typeof ProgrammerManager !== 'undefined') await ProgrammerManager.init();
 
             let data = JSON.parse(raw);
             if (!Array.isArray(data)) data = [data]; 
@@ -342,7 +304,6 @@ const ImportManager = {
             let count = 0;
             let modulesCount = 0;
 
-            // 1. IMPORTACIÓN PRIMARIA
             data.forEach(item => {
                 if (!item.type) return;
 
@@ -358,19 +319,14 @@ const ImportManager = {
                         modulesCount++;
                     }
                 } 
-                else if (['folder', 'file', 'program', 'narrative', 'book', 'data', 'executable'].includes(item.type)) {
+                else if (['folder', 'file', 'program', 'narrative', 'book', 'data', 'executable', 'image'].includes(item.type)) {
                     const existingIdx = FileSystem.data.findIndex(i => i.id === item.id);
-                    if (existingIdx >= 0) {
-                        FileSystem.data[existingIdx] = item;
-                    } else {
-                        FileSystem.data.push(item);
-                    }
+                    if (existingIdx >= 0) FileSystem.data[existingIdx] = item;
+                    else FileSystem.data.push(item);
                     count++;
                 }
             });
 
-            // 2. [H -> COHERENCIA] RECONSTRUCCIÓN DE JERARQUÍA
-            // Si el objeto pertenece a un parentId que no existe, lo creamos para que sea visible
             const missingParents = new Set();
             FileSystem.data.forEach(item => {
                 if (item.parentId && item.parentId !== 'desktop') {
@@ -384,22 +340,18 @@ const ImportManager = {
                     id: pid,
                     type: 'folder',
                     title: 'Carpeta Recuperada',
-                    parentId: 'desktop', // Se coloca en el escritorio por defecto
+                    parentId: 'desktop', 
                     x: 50 + (Math.random() * 50), 
                     y: 50 + (Math.random() * 50),
                     icon: 'folder',
-                    color: 'text-amber-500' // Color distintivo para avisar al usuario
+                    color: 'text-amber-500'
                 });
-                console.log("H: Jerarquía reparada para parentId: " + pid);
             });
 
             FileSystem.save();
-            if (modulesCount > 0 && typeof ProgrammerManager !== 'undefined') {
-                ProgrammerManager.saveModules();
-            }
+            if (modulesCount > 0 && typeof ProgrammerManager !== 'undefined') ProgrammerManager.saveModules();
 
             this.setStatus(windowId, `Importado: ${count} items, ${modulesCount} módulos.`, "text-green-600 font-bold");
-            
             if (typeof refreshSystemViews === 'function') refreshSystemViews();
             
         } catch (e) {
@@ -407,13 +359,9 @@ const ImportManager = {
         }
     },
 
-    // [MODIFICADO] Ahora es ASYNC para asegurar que incluya los módulos
     async downloadBackup(windowId) {
         try {
-            // CRÍTICO: Cargar módulos de disco si no están en memoria
-            if (typeof ProgrammerManager !== 'undefined') {
-                await ProgrammerManager.init();
-            }
+            if (typeof ProgrammerManager !== 'undefined') await ProgrammerManager.init();
 
             let backupData = [...FileSystem.data];
             let modCount = 0;
@@ -433,9 +381,9 @@ const ImportManager = {
             a.click();
             document.body.removeChild(a);
             
-            this.setStatus(windowId, `Backup generado (${backupData.length} items, incluye ${modCount} módulos).`, "text-indigo-600");
+            this.setStatus(windowId, `Backup generado (${backupData.length} items).`, "text-indigo-600");
         } catch (e) {
-            this.setStatus(windowId, "Error generando backup: " + e.message, "text-red-500");
+            this.setStatus(windowId, "Error: " + e.message, "text-red-500");
         }
     },
 

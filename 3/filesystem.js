@@ -1,10 +1,9 @@
 /* SILENOS 3/filesystem.js */
-// --- SISTEMA DE ARCHIVOS (Persistencia y Lógica) ---
+// --- SISTEMA DE ARCHIVOS EVOLUCIONADO (A-F) ---
 
 const FS_KEY = 'neumorph_os_filesystem';
 
 const FileSystem = {
-    // Estado inicial
     data: [],
 
     init() {
@@ -31,7 +30,6 @@ const FileSystem = {
         }
     },
 
-    // Crear Carpeta
     createFolder(name, parentId = 'desktop', x = 0, y = 0) {
         this.init(); 
         const folder = {
@@ -49,7 +47,43 @@ const FileSystem = {
         return folder;
     },
 
-    // Crear Dato JSON
+    createImage(name, base64, parentId = 'desktop', x = 0, y = 0) {
+        this.init();
+        const file = {
+            id: 'image-' + Date.now() + Math.floor(Math.random() * 1000),
+            type: 'image',
+            title: name || 'Nueva Imagen',
+            parentId: parentId,
+            content: base64,
+            x: x,
+            y: y,
+            icon: 'image', 
+            color: 'text-blue-400'
+        };
+        this.data.push(file);
+        this.save();
+        return file;
+    },
+
+    // --- NUEVO: MATERIALIZAR FORMA VECTORIAL (F) ---
+    createSVG(name, content, parentId = 'desktop', x = 0, y = 0) {
+        this.init();
+        const file = {
+            id: 'svg-' + Date.now() + Math.floor(Math.random() * 1000),
+            type: 'svg',
+            title: name.endsWith('.svg') ? name : name + '.svg',
+            parentId: parentId,
+            content: content, // Código SVG raw para edición futura
+            x: x,
+            y: y,
+            icon: 'file-code',
+            color: 'text-orange-500'
+        };
+        this.data.push(file);
+        this.save();
+        return file;
+    },
+
     createData(name, content, parentId = 'desktop', x = 0, y = 0) {
         this.init();
         const file = {
@@ -68,7 +102,6 @@ const FileSystem = {
         return file;
     },
 
-    // [NUEVO] Crear Programa
     createProgram(name, parentId = 'desktop', x = 0, y = 0) {
         this.init();
         const prog = {
@@ -76,17 +109,10 @@ const FileSystem = {
             type: 'program',
             title: name || 'Nuevo Programa',
             parentId: parentId,
-            // Contenido inicial vacío (el grafo detectará esto y pondrá el Start por defecto)
-            content: { 
-                nodes: [], 
-                connections: [],
-                panX: 0,
-                panY: 0,
-                scale: 1
-            },
+            content: { nodes: [], connections: [], panX: 0, panY: 0, scale: 1 },
             x: x,
             y: y,
-            icon: 'cpu', // Icono distintivo
+            icon: 'cpu',
             color: 'text-purple-500'
         };
         this.data.push(prog);
@@ -94,7 +120,6 @@ const FileSystem = {
         return prog;
     },
 
-    // Crear Dato Narrativo
     createNarrative(name, parentId = 'desktop', x = 0, y = 0) {
         this.init();
         const item = {
@@ -102,10 +127,7 @@ const FileSystem = {
             type: 'narrative',
             title: name || 'Dato Narrativo',
             parentId: parentId,
-            content: {
-                tag: "GENERAL",
-                text: "Escribe aquí tu contenido narrativo..."
-            },
+            content: { tag: "GENERAL", text: "Escribe aquí tu contenido narrativo..." },
             x: x,
             y: y,
             icon: 'sticky-note',
@@ -116,7 +138,6 @@ const FileSystem = {
         return item;
     },
 
-    // Crear Libro
     createBook(name, parentId = 'desktop', x = 0, y = 0) {
         this.init();
         const book = {
@@ -124,14 +145,7 @@ const FileSystem = {
             type: 'book', 
             title: name || 'Nuevo Libro',
             parentId: parentId,
-            content: {
-                chapters: [
-                    {
-                        title: "Capítulo 1",
-                        paragraphs: ["Comienza tu historia aquí..."]
-                    }
-                ]
-            },
+            content: { chapters: [{ title: "Capítulo 1", paragraphs: ["Comienza tu historia aquí..."] }] },
             x: x,
             y: y,
             icon: 'book', 
@@ -142,7 +156,6 @@ const FileSystem = {
         return book;
     },
 
-    // Mover o Editar item
     updateItem(id, updates) {
         const item = this.data.find(i => i.id === id);
         if (item) {
@@ -178,5 +191,4 @@ const FileSystem = {
     }
 };
 
-// Inicializar al cargar
 FileSystem.init();
