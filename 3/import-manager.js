@@ -342,6 +342,7 @@ const ImportManager = {
             let count = 0;
             let modulesCount = 0;
 
+            // 1. IMPORTACIÓN PRIMARIA
             data.forEach(item => {
                 if (!item.type) return;
 
@@ -366,6 +367,30 @@ const ImportManager = {
                     }
                     count++;
                 }
+            });
+
+            // 2. [H -> COHERENCIA] RECONSTRUCCIÓN DE JERARQUÍA
+            // Si el objeto pertenece a un parentId que no existe, lo creamos para que sea visible
+            const missingParents = new Set();
+            FileSystem.data.forEach(item => {
+                if (item.parentId && item.parentId !== 'desktop') {
+                    const parentExists = FileSystem.data.some(f => f.id === item.parentId);
+                    if (!parentExists) missingParents.add(item.parentId);
+                }
+            });
+
+            missingParents.forEach(pid => {
+                FileSystem.data.push({
+                    id: pid,
+                    type: 'folder',
+                    title: 'Carpeta Recuperada',
+                    parentId: 'desktop', // Se coloca en el escritorio por defecto
+                    x: 50 + (Math.random() * 50), 
+                    y: 50 + (Math.random() * 50),
+                    icon: 'folder',
+                    color: 'text-amber-500' // Color distintivo para avisar al usuario
+                });
+                console.log("H: Jerarquía reparada para parentId: " + pid);
             });
 
             FileSystem.save();
