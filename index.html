@@ -3,341 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SILEN OS | Arquitectura de Coherencia</title>
+    <title>S I L E N O S .3.</title>
+           <meta property="og:title" content="S I L E N O S">   
+    <meta property="og:description" content="S I L E N O S">   
+    <meta property="og:image" content="https://todoh.github.io/SILENOS/3/preview.jpg">   
+    <meta property="og:url" content="https://github.com/todoh/SILENOS/3">  
+    <meta property="og:type" content="website">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:type" content="image/jpeg">
+ 
+ 
+    <link rel="icon" type="image/png" href="logo.png">
+
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;600;800;900&display=swap');
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS3DRenderer.js"></script>
 
-        :root {
-            --bg: #ffffff;
-            --text-main: #000000;
-            --accent-red: #ff3b3b;
-            --gray-light: #f8f9fa;
-        }
-
-        body {
-            background-color: var(--bg);
-            font-family: 'Inter', sans-serif;
-            color: var(--text-main);
-            overflow-x: hidden;
-            margin: 0;
-        }
-
-        /* --- ANIMACIONES TIPO VIDEO --- */
-        @keyframes fadeInOS {
-            0% { opacity: 0; transform: translateX(20px); filter: blur(10px); }
-            100% { opacity: 1; transform: translateX(0); filter: blur(0); }
-        }
-
-        @keyframes letterSpacingIn {
-            0% { letter-spacing: 1em; opacity: 0; }
-            100% { letter-spacing: 0.2em; opacity: 1; }
-        }
-
-        .animate-os {
-            animation: fadeInOS 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            animation-delay: 0.5s;
-            opacity: 0;
-        }
-
-        .animate-silenos {
-            animation: letterSpacingIn 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        /* --- ESTILOS DE COMPONENTES --- */
-        .glass-card {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            border-radius: 2px;
-            transition: all 0.4s ease;
-        }
-
-        .glass-card:hover {
-            border-color: var(--accent-red);
-            transform: translateY(-5px);
-        }
-
-        .reveal {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 1s ease-out;
-        }
-
-        .reveal.active {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .btn-silenos {
-            position: relative;
-            overflow: hidden;
-            border: 1px solid #000;
-            transition: all 0.3s ease;
-        }
-
-        .btn-silenos:hover {
-            background: #000;
-            color: #fff;
-        }
-
-        .tag-silen {
-            font-size: 10px;
-            letter-spacing: 0.3em;
-            text-transform: uppercase;
-            font-weight: 800;
-            color: #ccc;
-        }
-
-        /* Hero text adjustments */
-        .hero-logo-text {
-            font-size: clamp(3rem, 12vw, 8rem);
-            font-weight: 300;
-            letter-spacing: 0.2em;
-            line-height: 1;
-        }
-
-        /* REFINAMIENTO DEL VIDEO (D - Contenedor) */
-        .hero-video-wrapper {
-            max-width: 1000px;
-            width: 100%;
-            margin-top: 4rem;
-            position: relative;
-        }
-
-        .hero-video-container {
-            width: 100%;
-            aspect-ratio: 16 / 9;
-            background: #000;
-            box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(0, 0, 0, 0.08);
-            border-radius: 6px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .hero-video-container iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            /* Filtro sutil para integrar con el diseño minimalista */
-            filter: grayscale(0.2) contrast(1.1);
-        }
-
-        .video-status-tag {
-            position: absolute;
-            top: -25px;
-            left: 0;
-            display: flex;
-            items-center;
-            gap: 12px;
-            font-size: 9px;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            font-weight: 600;
-            color: #999;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles2.css">
+    <link rel="stylesheet" href="programmer-canvas.css">
 </head>
 <body>
 
-    <nav class="fixed top-0 w-full z-50 px-10 py-8 flex justify-between items-center bg-white/80 backdrop-blur-md border-b border-black/5">
-        <div class="flex items-center gap-1 cursor-pointer" onclick="window.scrollTo({top:0, behavior:'smooth'})">
-            <span class="text-xl font-light tracking-[0.3em] uppercase">SILEN</span>
-            <span class="text-xl font-bold tracking-[0.1em] text-[#ff3b3b]">OS</span>
-        </div>
-        <div class="hidden md:flex gap-10 font-medium text-[11px] uppercase tracking-[0.3em] text-gray-400">
-            <a href="#vision" class="hover:text-black transition-colors">Visión</a>
-            <a href="#core" class="hover:text-black transition-colors">Sistema</a>
-            <a href="#tech" class="hover:text-black transition-colors">Tecnología</a>
-        </div>
-        <a href="https://silenos.es/3/" class="btn-silenos px-8 py-2 text-[10px] font-bold uppercase tracking-widest">
-            Probar Sistema
-        </a>
-    </nav>
-
-    <section class="relative min-h-screen flex flex-col justify-center items-center px-6 pt-32 pb-20 overflow-hidden bg-white">
-        <div class="text-center z-10 w-full flex flex-col items-center">
-            
-            <div class="flex items-center justify-center mb-4">
-                <h1 class="hero-logo-text uppercase flex flex-col md:flex-row items-center">
-                    <span class="animate-silenos">SILEN</span>
-                    <span class="animate-os text-[#ff3b3b] font-bold md:ml-4">OS</span>
-                </h1>
-            </div>
-            
-            <div class="reveal active mb-4" style="transition-delay: 1.2s">
-                <p class="text-sm md:text-base text-gray-400 font-light tracking-[0.5em] uppercase">
-                    Arquitectura de Coherencia | Versión 3.0
-                </p>
-            </div>
-
-            <div class="hero-video-wrapper reveal active" style="transition-delay: 1.4s">
-                <div class="video-status-tag">
-                    <span class="flex h-2 w-2 relative">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-[#ff3b3b]"></span>
-                    </span>
-                    R - Resonancia Activa / 03.0
-                </div>
-                
-                <div class="hero-video-container">
-                   <iframe 
-                    src="https://www.youtube.com/embed/f3BzR7rcszs?autoplay=1&mute=1&loop=1&playlist=f3BzR7rcszs&controls=0&modestbranding=1&rel=0" 
-                    title="SILENOS 3" 
-                    frameborder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                    referrerpolicy="strict-origin-when-cross-origin" 
-                    allowfullscreen>
-                </iframe>
-                </div>
-            </div>
+    <div id="desktop-area" class="fixed inset-0 z-0 overflow-hidden bg-[#e0e5ec]">
         </div>
 
-        <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-[1px] h-32 bg-gradient-to-t from-black to-transparent opacity-20"></div>
-    </section>
+    <div id="windows-container" class="absolute inset-0 pointer-events-none z-10"></div>
 
-    <section id="vision" class="py-40 px-6 max-w-6xl mx-auto">
-        <div class="grid md:grid-cols-2 gap-32 items-center">
-            <div class="reveal">
-                <span class="tag-silen mb-6 block">B - Visión</span>
-                <h2 class="text-4xl md:text-5xl font-light mb-8 leading-tight tracking-tight">
-                    Observar la materia <br> <span class="font-bold">desde la esencia.</span>
-                </h2>
-                <p class="text-gray-500 leading-relaxed mb-10 text-sm md:text-base">
-                    Silenos OS no es solo una interfaz; es un **contenedor ascendente (D)** diseñado para canalizar el flujo de energía creativa (**K**) hacia resultados tangibles. Cada píxel responde a una lógica de coherencia absoluta (**H**).
-                </p>
-                <div class="grid grid-cols-2 gap-10">
-                    <div>
-                        <span class="block text-2xl font-bold mb-1">A</span>
-                        <span class="tag-silen">Acción</span>
-                        <p class="text-[10px] text-gray-400 mt-2 uppercase tracking-tighter">Impulso dinámico constante</p>
-                    </div>
-                    <div>
-                        <span class="block text-2xl font-bold mb-1">E</span>
-                        <span class="tag-silen">Equilibrio</span>
-                        <p class="text-[10px] text-gray-400 mt-2 uppercase tracking-tighter">Estabilidad estructural</p>
-                    </div>
-                </div>
-            </div>
-            <div class="reveal relative">
-                <div class="aspect-square bg-gray-50 flex items-center justify-center p-20 border border-black/5">
-                    <svg viewBox="0 0 100 100" class="w-full opacity-10">
-                        <circle cx="50" cy="50" r="40" fill="none" stroke="black" stroke-width="0.5"/>
-                        <path d="M50 10 L50 90 M10 50 L90 50" stroke="black" stroke-width="0.5"/>
-                    </svg>
-                    <div class="absolute inset-0 flex items-center justify-center">
-                        <span class="text-8xl font-black text-black/5">Z</span>
-                    </div>
-                </div>
+    <div class="absolute bottom-0 left-1/2 -translate-x-1/2 px-6 h-16 flex items-center justify-center z-50 pointer-events-none">
+        <div class="h-20 px-6 rounded-[24px] flex items-center gap-4 pointer-events-auto transition-all duration-300">
+            <button id="launcher-btn" onclick="toggleLauncher()" 
+                    class="w-12 h-12 rounded-xl flex items-center justify-center neumorph-btn text-gray-600 hover:text-gray-700 transition-transform hover:scale-105 active:scale-95">
+                <i data-lucide="eye" class="w-6 h-6"></i>
+            </button>
+            <div class="w-[2px] h-8 bg-gray-300/50 rounded-full"></div>
+            <div id="dock-items" class="flex gap-4">
+                <span class="text-gray-400 text-sm font-medium italic empty-msg">...</span>
             </div>
         </div>
-    </section>
+    </div>
 
-    <section id="core" class="py-40 bg-[#000] text-white overflow-hidden">
-        <div class="max-w-7xl mx-auto px-10">
-            <div class="mb-24 reveal">
-                <span class="tag-silen text-gray-500 mb-6 block">F - Forma</span>
-                <h2 class="text-4xl md:text-6xl font-light tracking-tighter">Módulos de <br> <span class="font-bold text-[#ff3b3b]">Potencial Infinito (P)</span></h2>
-            </div>
+<script src="refresco.js"></script>
 
-            <div class="grid md:grid-cols-3 gap-1">
-                <div class="p-12 border border-white/10 hover:bg-white/5 transition-colors reveal">
-                    <span class="text-xs font-bold text-[#ff3b3b] mb-4 block tracking-widest uppercase">AI-Worker</span>
-                    <h3 class="text-xl font-bold mb-4">Resonancia (R)</h3>
-                    <p class="text-xs text-gray-400 leading-relaxed uppercase tracking-widest">Integración nativa con Gemini para el procesamiento de lenguaje natural y generación de conocimiento puro.</p>
-                </div>
-                <div class="p-12 border border-white/10 hover:bg-white/5 transition-colors reveal" style="transition-delay: 0.1s">
-                    <span class="text-xs font-bold text-[#ff3b3b] mb-4 block tracking-widest uppercase">Node Logic</span>
-                    <h3 class="text-xl font-bold mb-4">Tramo (T)</h3>
-                    <p class="text-xs text-gray-400 leading-relaxed uppercase tracking-widest">Programación visual modular. Segmenta la lógica en unidades funcionales de alta precisión operativa.</p>
-                </div>
-                <div class="p-12 border border-white/10 hover:bg-white/5 transition-colors reveal" style="transition-delay: 0.2s">
-                    <span class="text-xs font-bold text-[#ff3b3b] mb-4 block tracking-widest uppercase">FileSystem</span>
-                    <h3 class="text-xl font-bold mb-4">Material (M)</h3>
-                    <p class="text-xs text-gray-400 leading-relaxed uppercase tracking-widest">Persistencia total de la materia digital. Estructuras JSON y narrativas almacenadas con granularidad extrema.</p>
-                </div>
-            </div>
-        </div>
-    </section>
+<script src="koreh/koreh-funcionaciones.js"></script>
+<script src="koreh/koreh-funcionaciones2.js"></script>
+<script src="koreh/koreh-funcionaciones3.js"></script>
+<script src="koreh/koreh-funcionaciones4.js"></script>
+<script src="koreh/koreh-funcionaciones5.js"></script>
+<script src="koreh/koreh-funcionaciones6.js"></script>
+<script src="koreh/koreh-funcionaciones7.js"></script>
+<script src="koreh/koreh-funcionaciones8.js"></script>
+<script src="koreh/koreh-funcionaciones9.js"></script>
+<script src="koreh/koreh-poly.synth.js"></script>
 
-    <section id="tech" class="py-40 px-6 bg-white">
-        <div class="max-w-5xl mx-auto text-center">
-            <div class="reveal">
-                <span class="tag-silen mb-8 block">X - Ciencia</span>
-                <h2 class="text-4xl font-light mb-12 tracking-tight">El Stack de la <span class="font-bold">Sabiduría (Z).</span></h2>
-                
-                <div class="space-y-4 max-w-2xl mx-auto">
-                    <div class="flex justify-between items-center py-6 border-b border-black/5 text-sm uppercase tracking-widest">
-                        <span class="font-bold">Core Engine</span>
-                        <span class="text-gray-400">Vanilla JS / Node Graph</span>
-                    </div>
-                    <div class="flex justify-between items-center py-6 border-b border-black/5 text-sm uppercase tracking-widest">
-                        <span class="font-bold">IA Model</span>
-                        <span class="text-gray-400">Gemini</span>
-                    </div>
-                    <div class="flex justify-between items-center py-6 border-b border-black/5 text-sm uppercase tracking-widest">
-                        <span class="font-bold">Visual Language</span>
-                        <span class="text-gray-400">Minimalist SILEN UI</span>
-                    </div>
-                </div>
+<script src="config.js"></script>
+<script src="filesystem.js"></script> 
+<script src="desktop-organizer.js"></script>
+<script src="import-manager.js"></script>
 
-                <div class="mt-20">
-                    <a href="https://silenos.es/3/" class="btn-silenos px-16 py-6 text-xs font-black uppercase tracking-[0.5em] inline-block">
-                        Entrar al Sistema
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
+<script src="download-manager.js"></script>
+<script src="clipboard/clipboard-manager.js"></script>
+<script src="clipboard/clipboard-processor.js"></script>
+<script src="clipboard/clipboard-color.js"></script>
+<script src="clipboard/clipboard-image.js"></script>
+<script src="clipboard/clipboard-internal.js"></script>
+<script src="clipboard/clipboard-link.js"></script>
+<script src="clipboard/clipboard-text.js"></script>
 
-    <footer class="py-20 px-10 bg-gray-50 border-t border-black/5">
-        <div class="flex flex-col md:flex-row justify-between items-center gap-10 max-w-7xl mx-auto">
-            <div class="flex items-center gap-1">
-                <span class="text-sm font-light tracking-[0.3em] uppercase">SILEN</span>
-                <span class="text-sm font-bold tracking-[0.1em] text-[#ff3b3b]">OS</span>
-            </div>
-            <p class="text-[10px] text-gray-400 uppercase tracking-[0.2em]">
-                Individualidad (I) • Coherencia (H) • Conocimiento (Z) | 2025
-            </p>
-            <div class="flex gap-8 text-gray-300">
-                <a href="#" class="hover:text-black transition-colors"><i data-lucide="github" class="w-4 h-4"></i></a>
-                <a href="#" class="hover:text-black transition-colors"><i data-lucide="twitter" class="w-4 h-4"></i></a>
-            </div>
-        </div>
-    </footer>
 
-    <script>
-        lucide.createIcons();
 
-        // Reveal Animation
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('active');
-                }
-            });
-        }, { threshold: 0.1 });
 
-        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-        // Smooth Scroll
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                const targetId = this.getAttribute('href');
-                if (targetId && targetId.startsWith('#')) {
-                    const target = document.querySelector(targetId);
-                    if (target) {
-                        e.preventDefault();
-                        target.scrollIntoView({ behavior: 'smooth' });
-                    }
-                }
-            });
-        });
-    </script>
+<script src="context-menu.js"></script>
+
+<script src="ai-service.js"></script> 
+<script src="ai-worker.js"></script>
+
+<script src="programador/prog-definitions.js"></script>
+<script src="programador/prog-ui-manager.js"></script>
+<script src="programador/prog-connection-system.js"></script>
+<script src="programador/prog-runtime.js"></script>
+<script src="programador/programmer-graph.js"></script>  
+<script src="programador/programmer-manager.js"></script>
+
+<script src="eye-pro-launcher.js"></script>
+<script src="narrative-manager.js"></script>
+<script src="book-manager.js"></script>
+<script src="data-viewer.js"></script>
+
+<script src="three-core.js"></script>
+<script src="three-input.js"></script>
+<script src="three-entities.js"></script>
+
+<script src="window-core.js"></script>
+<script src="window/window-launchers.js"></script>
+<script src="window/window-book.js"></script>
+<script src="window/window-folder.js"></script>
+<script src="window/window-terminal.js"></script>
+<script src="window/window-image.js"></script>
+<script src="window/window-narrative.js"></script>
+<script src="window/window-programmer.js"></script>
+<script src="window/window-programrunner.js"></script>
+<script src="dock-manager.js"></script>
+<script src="selection-manager.js"></script>
+<script src="drag-drop.js"></script> 
+<script src="boot.js"></script>
 </body>
 </html>
