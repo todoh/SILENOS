@@ -1,21 +1,6 @@
-// --- RENDERIZADO DEL ESCRITORIO (SOLO ARCHIVOS) ---
+/* SILENOS 3/desktop-manager.js - GESTIÓN DE ETIQUETAS Y RENOMBRADO */
 
-window.refreshSystemViews = function() {
-    renderDesktopFiles();
-    if (typeof openWindows !== 'undefined') {
-        openWindows.forEach(win => {
-            if (win.type === 'folder' && typeof renderFolderContent === 'function') {
-                renderFolderContent(win.id, win.folderId);
-            }
-        });
-    }
-};
-
-function renderDesktop() {
-    const desktop = document.getElementById('desktop-area');
-    desktop.innerHTML = ''; 
-}
-
+// 1. Función que dibuja los archivos y sus nombres en el escritorio
 function renderDesktopFiles() {
     let container = document.getElementById('desktop-files-layer');
     if (!container) {
@@ -24,7 +9,7 @@ function renderDesktopFiles() {
         container.className = 'absolute inset-0 pointer-events-none z-0'; 
         document.body.appendChild(container); 
     }
-    container.innerHTML = '';
+    container.innerHTML = ''; // Limpieza para evitar duplicados
 
     const files = FileSystem.getItems('desktop');
 
@@ -39,12 +24,12 @@ function renderDesktopFiles() {
             if (e.target.tagName !== 'INPUT') startIconDrag(e, file.id, 'desktop');
         };
 
-        // --- LÓGICA DE PREVISUALIZACIÓN DE IMAGEN ---
         let iconContent = `<i data-lucide="${file.icon}" class="${file.color} w-8 h-8"></i>`;
         if (file.type === 'image' && file.content) {
             iconContent = `<img src="${file.content}" class="w-full h-full object-cover rounded-xl shadow-inner pointer-events-none">`;
         }
 
+        // El SPAN es el encargado de mostrar el nombre y activar el renombrado
         el.innerHTML = `
             <div class="desktop-icon-btn hover:scale-105 transition-transform bg-[#e0e5ec]/80 backdrop-blur-sm overflow-hidden p-0">
                 ${iconContent}
@@ -63,6 +48,7 @@ function renderDesktopFiles() {
     if (window.lucide) lucide.createIcons();
 }
 
+// 2. Función que abre el editor de nombres y guarda los cambios
 window.showRenameModal = function(e, itemId, currentName) {
     e.stopPropagation();
     const existing = document.getElementById('rename-modal');
@@ -95,8 +81,12 @@ window.showRenameModal = function(e, itemId, currentName) {
     const save = () => {
         const newName = input.value.trim();
         if (newName && newName !== currentName) {
+            // Actualizamos la materia en el FileSystem
             FileSystem.updateItem(itemId, { title: newName });
-            window.refreshSystemViews();
+            // Forzamos la actualización de todas las vistas (incluyendo el escritorio)
+            if (typeof window.refreshSystemViews === 'function') {
+                window.refreshSystemViews();
+            }
         }
         modal.remove();
     };

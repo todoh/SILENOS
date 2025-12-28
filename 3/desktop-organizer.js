@@ -2,7 +2,7 @@
 // --- ORGANIZADOR DE COHERENCIA ESPACIAL POR CUADRÍCULAS COMPACTAS (H-G-Y) ---
 
 const DesktopOrganizer = {
-    MIN_GAP: 180, // Espaciado reducido para mayor compacidad
+    MIN_GAP: 190, // Espaciado reducido para mayor compacidad
     PEAK_DEPTH: 0, // Plano de manifestación física (Z=0)
     
     /**
