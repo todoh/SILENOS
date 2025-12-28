@@ -21,20 +21,31 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 window.refreshSystemViews = function() {
-    // 1. Notificar y forzar actualización inmediata en el motor 3D
+    // 1. Sincronización con el motor 3D (si existe)
     if (window.ThreeEntities) {
         ThreeEntities.updateFileCache();
     }
+    
+    // 2. Disparar evento global de cambio en el sistema de archivos
     window.dispatchEvent(new Event('fs-data-changed'));
     
-    // 2. Refrescar carpetas abiertas (2D)
-    if (typeof refreshAllViews === 'function') refreshAllViews();
+    // 3. Refrescar la capa de archivos del escritorio (iconos 2D)
+    if (typeof renderDesktopFiles === 'function') {
+        renderDesktopFiles();
+    }
     
-    // 3. Actualizar Dock
+    // 4. Actualizar el contenido de todas las carpetas que estén abiertas en ventanas
+    if (typeof openWindows !== 'undefined' && typeof renderFolderContent === 'function') {
+        openWindows.forEach(win => {
+            if (win.type === 'folder' && win.folderId) {
+                renderFolderContent(win.id, win.folderId);
+            }
+        });
+    }
+    
+    // 5. Refrescar otros componentes visuales (Dock y vistas auxiliares)
     if (typeof renderDock === 'function') renderDock();
-    
-    // 4. Limpiar capa 2D residual si existe
-    if (typeof renderDesktopFiles === 'function') renderDesktopFiles();
+    if (typeof refreshAllViews === 'function') refreshAllViews();
 
-    console.log("H -> Coherencia de vistas sincronizada.");
+    console.log("H -> Coherencia de vistas sincronizada (Desktop, Folders & 3D).");
 };

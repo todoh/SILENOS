@@ -12,11 +12,8 @@
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:type" content="image/jpeg">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="characters.css">
-    <link rel="stylesheet" href="maps.css"> 
-    <link rel="stylesheet" href="timeline.css">
-    <link rel="stylesheet" href="planner.css">
+ 
+ 
     <link rel="icon" type="image/png" href="logo.png">
 
 
@@ -39,7 +36,7 @@
     <div class="absolute bottom-0 left-1/2 -translate-x-1/2 px-6 h-16 flex items-center justify-center z-50 pointer-events-none">
         <div class="h-20 px-6 rounded-[24px] flex items-center gap-4 pointer-events-auto transition-all duration-300">
             <button id="launcher-btn" onclick="toggleLauncher()" 
-                    class="w-12 h-12 rounded-xl flex items-center justify-center neumorph-btn text-indigo-600 hover:text-indigo-700 transition-transform hover:scale-105 active:scale-95">
+                    class="w-12 h-12 rounded-xl flex items-center justify-center neumorph-btn text-gray-600 hover:text-gray-700 transition-transform hover:scale-105 active:scale-95">
                 <i data-lucide="eye" class="w-6 h-6"></i>
             </button>
             <div class="w-[2px] h-8 bg-gray-300/50 rounded-full"></div>
@@ -49,6 +46,7 @@
         </div>
     </div>
 
+<script src="refresco.js"></script>
 
 <script src="koreh/koreh-funcionaciones.js"></script>
 <script src="koreh/koreh-funcionaciones2.js"></script>
@@ -67,17 +65,32 @@
 <script src="import-manager.js"></script>
 
 <script src="download-manager.js"></script>
-<script src="clipboard-manager.js"></script>
+
+<script src="clipboard/clipboard-manager.js"></script>
+<script src="clipboard/clipboard-processor.js"></script>
+<script src="clipboard/clipboard-color.js"></script>
+<script src="clipboard/clipboard-image.js"></script>
+<script src="clipboard/clipboard-internal.js"></script>
+<script src="clipboard/clipboard-link.js"></script>
+<script src="clipboard/clipboard-text.js"></script>
+<script src="clipboard/clipboard-youtube.js"></script>
+
+
+
+
+
 <script src="context-menu.js"></script>
 
 <script src="ai-service.js"></script> 
 <script src="ai-worker.js"></script>
-<script src="prog-definitions.js"></script>
-<script src="prog-ui-manager.js"></script>
-<script src="prog-connection-system.js"></script>
-<script src="prog-runtime.js"></script>
-<script src="programmer-graph.js"></script>  
-<script src="programmer-manager.js"></script>
+
+<script src="programador/prog-definitions.js"></script>
+<script src="programador/prog-ui-manager.js"></script>
+<script src="programador/prog-connection-system.js"></script>
+<script src="programador/prog-runtime.js"></script>
+<script src="programador/programmer-graph.js"></script>  
+<script src="programador/programmer-manager.js"></script>
+
 <script src="eye-pro-launcher.js"></script>
 <script src="narrative-manager.js"></script>
 <script src="book-manager.js"></script>
@@ -88,7 +101,14 @@
 <script src="three-entities.js"></script>
 
 <script src="window-core.js"></script>
-<script src="window-launchers.js"></script>
+<script src="window/window-launchers.js"></script>
+<script src="window/window-book.js"></script>
+<script src="window/window-folder.js"></script>
+<script src="window/window-terminal.js"></script>
+<script src="window/window-image.js"></script>
+<script src="window/window-narrative.js"></script>
+<script src="window/window-programmer.js"></script>
+<script src="window/window-programrunner.js"></script>
 <script src="dock-manager.js"></script>
 <script src="selection-manager.js"></script>
 <script src="drag-drop.js"></script> 
