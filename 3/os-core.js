@@ -1,19 +1,17 @@
+/* SILENOS 3/os-core.js */
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', () => {
     renderDesktop();
-    renderDesktopFiles(); // Nueva función para archivos
-    lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
 });
 
-// --- RENDERIZADO (APPS FIJAS + ARCHIVOS) ---
+// --- RENDERIZADO (APPS FIJAS) ---
 function renderDesktop() {
     const desktop = document.getElementById('desktop-area');
-    // Limpiamos solo el área de apps fijas si quisieras separarlo, 
-    // pero aquí mezclaremos apps y archivos visualmente o los pondremos en capas.
-    // Para simplificar, usaremos el mismo contenedor pero mantenemos APPS arriba.
+    if (!desktop) return;
+    
     desktop.innerHTML = ''; 
 
-    // Renderizar APPS (fijas)
     APPS.forEach(app => {
         const btn = document.createElement('div');
         btn.className = 'flex flex-col items-center gap-2 group w-24 mb-4 cursor-pointer relative z-0';
@@ -22,55 +20,29 @@ function renderDesktop() {
             <div class="desktop-icon-btn group-hover:-translate-y-1">
                 <i data-lucide="${app.icon}" class="${app.color} w-8 h-8"></i>
             </div>
-            <span class="text-xs font-bold text-gray-600 drop-shadow-sm text-center">${app.title}</span>
+            <span class="text-xs font-bold text-gray-600 drop-shadow-sm text-center line-clamp-2 w-full break-words px-1 leading-tight">${app.title}</span>
         `;
         desktop.appendChild(btn);
     });
 }
 
 function renderDesktopFiles() {
-    // Buscar o crear contenedor de archivos (absoluto)
     let container = document.getElementById('desktop-files-layer');
     if (!container) {
         container = document.createElement('div');
         container.id = 'desktop-files-layer';
-        container.className = 'absolute inset-0 pointer-events-none z-0'; // Pointer events auto en hijos
-        document.body.appendChild(container); // Append al body para posicionamiento absoluto real
+        container.className = 'absolute inset-0 pointer-events-none z-0';
+        document.body.appendChild(container);
     }
     container.innerHTML = '';
-
-    const files = FileSystem.getItems('desktop');
-
-    files.forEach(file => {
-        const el = document.createElement('div');
-        el.className = `absolute flex flex-col items-center gap-2 w-20 cursor-pointer pointer-events-auto ${file.type === 'folder' ? 'folder-drop-zone' : ''}`;
-        el.style.left = `${file.x}px`;
-        el.style.top = `${file.y}px`;
-        el.dataset.id = file.id;
-
-        // Mouse down inicia drag
-        el.onmousedown = (e) => startIconDrag(e, file.id, 'desktop');
-
-        el.innerHTML = `
-            <div class="desktop-icon-btn hover:scale-105 transition-transform bg-[#e0e5ec]/80 backdrop-blur-sm">
-                <i data-lucide="${file.icon}" class="${file.color} w-8 h-8"></i>
-            </div>
-            <span class="text-xs font-bold text-gray-700 text-center bg-white/30 px-2 rounded backdrop-blur-sm">${file.title}</span>
-        `;
-        container.appendChild(el);
-    });
-    
-    lucide.createIcons();
 }
 
 // --- GESTIÓN DE VENTANAS (APPS + CARPETAS) ---
 
-// Abrir Carpeta
 function openFolderWindow(folderId) {
     const folder = FileSystem.getItem(folderId);
     if (!folder) return;
 
-    // Verificar si ya está abierta
     const existing = openWindows.find(w => w.id === folderId);
     if (existing) {
         if (existing.isMinimized) toggleMinimize(folderId);
@@ -81,8 +53,8 @@ function openFolderWindow(folderId) {
     zIndexCounter++;
     const winObj = {
         id: folderId,
-        appId: 'folder-manager', // ID genérico para iconos en dock
-        type: 'folder', // Distintivo
+        appId: 'folder-manager',
+        type: 'folder',
         folderId: folderId,
         title: folder.title,
         icon: 'folder-open',
@@ -98,7 +70,6 @@ function openFolderWindow(folderId) {
     renderDock();
     lucide.createIcons();
     
-    // Renderizar contenido inicial
     renderFolderContent(folderId, folderId);
 }
 
@@ -106,7 +77,6 @@ function renderFolderContent(windowId, folderId) {
     const winContent = document.querySelector(`#window-${windowId} .content-area`);
     if (!winContent) return;
 
-    // Marcamos el área como zona de contenido de carpeta para el Drop
     winContent.innerHTML = `
         <div class="folder-window-content w-full h-full p-4 flex flex-wrap content-start gap-4" data-folder-id="${folderId}">
             </div>
@@ -131,7 +101,7 @@ function renderFolderContent(windowId, folderId) {
             <div class="w-14 h-14 rounded-xl bg-gray-200 flex items-center justify-center shadow-sm hover:shadow-md transition-all">
                 <i data-lucide="${item.icon}" class="${item.color} w-7 h-7"></i>
             </div>
-            <span class="text-xs text-gray-600 text-center truncate w-full">${item.title}</span>
+            <span class="text-xs text-gray-600 text-center line-clamp-2 w-full break-words leading-tight px-1 font-bold">${item.title}</span>
         `;
         container.appendChild(el);
     });
@@ -142,7 +112,7 @@ function openApp(appId) {
     const app = APPS.find(a => a.id === appId);
     if (!app) return;
 
-    const existingWindow = openWindows.find(w => w.id === appId); // Id simple para apps
+    const existingWindow = openWindows.find(w => w.id === appId); 
     if (existingWindow) {
         if (existingWindow.isMinimized) toggleMinimize(appId);
         focusWindow(appId);
@@ -183,7 +153,6 @@ function createWindowDOM(winObj, config) {
     winEl.style.top = `${winObj.y}px`;
     winEl.style.zIndex = winObj.zIndex;
 
-    // Contenido
     let contentHTML = '';
     if (winObj.type === 'app') {
         if (config.type === 'blocked') {
@@ -195,7 +164,6 @@ function createWindowDOM(winObj, config) {
             `;
         }
     } else {
-        // Carpeta (se llenará dinámicamente)
         contentHTML = `<div class="content-loader">Cargando...</div>`;
     }
 
@@ -286,9 +254,9 @@ function toggleMaximize(id) {
     }
 }
 
-// --- DOCK DINÁMICO ---
 function renderDock() {
     const dockContainer = document.getElementById('dock-items');
+    if(!dockContainer) return;
     dockContainer.innerHTML = '';
 
     if (openWindows.length === 0) {
@@ -340,5 +308,5 @@ function renderDock() {
         dockContainer.appendChild(btn);
     });
 
-    lucide.createIcons();
+    if(window.lucide) lucide.createIcons();
 }

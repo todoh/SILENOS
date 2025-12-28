@@ -167,128 +167,82 @@ const ImportManager = {
     },
 
     async handleExternalDrop(dataTransferItems, textarea, windowId) {
-        this.setStatus(windowId, "Analizando archivos...", "text-blue-500");
-        const fileEntries = [];
-        const queue = [];
-
+        this.setStatus(windowId, "Analizando materia binaria...", "text-blue-500");
+        const entries = [];
         for (let i = 0; i < dataTransferItems.length; i++) {
             const item = dataTransferItems[i];
             if (item.kind === 'file') {
                 const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
-                if (entry) queue.push(entry);
+                if (entry) entries.push(entry);
             }
         }
 
-        for (const entry of queue) { await this.traverseFileTree(entry, fileEntries); }
-
         const collectedItems = [];
-        for (const entry of fileEntries) {
-            try {
-                const isImage = /\.(png|jpg|jpeg|webp|gif)$/i.test(entry.name);
-                const content = await this.readFileContent(entry, isImage);
-                const result = this.processFileEntry(entry, content, isImage);
-                
-                if (result) {
-                    if (Array.isArray(result)) collectedItems.push(...result);
-                    else collectedItems.push(result);
-                }
-            } catch (err) { console.warn("Skip file:", entry.name); }
+        for (const entry of entries) {
+            await this.processRecursiveEntry(entry, collectedItems);
         }
 
         if (collectedItems.length > 0) {
             textarea.value = JSON.stringify(collectedItems, null, 2);
-            this.setStatus(windowId, `Detectados ${collectedItems.length} elementos. Pulsa IMPORTAR.`, "text-green-600 font-bold");
-            document.getElementById(`import-count-${windowId}`).innerText = `${collectedItems.length} objetos listos`;
-        } else {
-            this.setStatus(windowId, "No se encontraron datos compatibles.", "text-red-500");
+            this.setStatus(windowId, `${collectedItems.length} elementos listos para confluencia.`, "text-green-600");
         }
     },
 
-    handleInternalDrop(idList, dropZone, windowId) {
-        const items = [];
-        idList.forEach(id => {
-            const item = FileSystem.getItem(id);
-            if(item) items.push(item);
-        });
-        
-        if (items.length > 0) {
-            const textarea = document.getElementById(`import-text-${windowId}`);
-            if (textarea) {
-                textarea.value = JSON.stringify(items, null, 2);
-                this.setStatus(windowId, `Cargados ${items.length} elementos internos.`, "text-blue-600");
+    async processRecursiveEntry(entry, list, parentId = 'desktop') {
+        if (entry.isFile) {
+            const file = await new Promise((res) => entry.file(res));
+            const isImage = /\.(png|jpg|jpeg|webp|gif)$/i.test(file.name);
+
+            if (isImage) {
+                const savedName = await FileSystem.saveImageFile(file);
+                if (savedName) {
+                    list.push({
+                        id: 'image-' + Date.now() + Math.random().toString(36).substr(2, 5),
+                        type: 'image',
+                        title: file.name,
+                        content: savedName,
+                        parentId: parentId,
+                        icon: 'image',
+                        color: 'text-blue-400',
+                        x: 100 + Math.random() * 100,
+                        y: 100 + Math.random() * 100
+                    });
+                }
+            } else if (file.name.endsWith('.json')) {
+                const text = await file.text();
+                try { 
+                    const data = JSON.parse(text);
+                    if (Array.isArray(data)) list.push(...data);
+                    else list.push(data);
+                } catch(e) {}
+            } else if (file.name.endsWith('.txt')) {
+                const text = await file.text();
+                list.push({
+                    id: 'narrative-' + Date.now(),
+                    type: 'narrative',
+                    title: file.name.replace('.txt', ''),
+                    content: { tag: "IMPORT", text: text },
+                    parentId: parentId,
+                    icon: 'sticky-note',
+                    color: 'text-orange-500'
+                });
+            }
+        } else if (entry.isDirectory) {
+            const folderId = 'folder-' + Date.now();
+            list.push({
+                id: folderId,
+                type: 'folder',
+                title: entry.name,
+                parentId: parentId,
+                icon: 'folder',
+                color: 'text-blue-500'
+            });
+            const reader = entry.createReader();
+            const subEntries = await new Promise(res => reader.readEntries(res));
+            for (const sub of subEntries) {
+                await this.processRecursiveEntry(sub, list, folderId);
             }
         }
-    },
-
-    traverseFileTree(entry, fileList) {
-        return new Promise((resolve) => {
-            if (entry.isFile) {
-                fileList.push(entry);
-                resolve();
-            } else if (entry.isDirectory) {
-                const dirReader = entry.createReader();
-                const readEntries = () => {
-                    dirReader.readEntries(async (entries) => {
-                        if (entries.length === 0) resolve();
-                        else {
-                            const promises = [];
-                            for (const subEntry of entries) promises.push(this.traverseFileTree(subEntry, fileList));
-                            await Promise.all(promises);
-                            readEntries(); 
-                        }
-                    }, (err) => resolve());
-                };
-                readEntries();
-            } else resolve();
-        });
-    },
-
-    readFileContent(fileEntry, asDataURL = false) {
-        return new Promise((resolve, reject) => {
-            fileEntry.file((file) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.onerror = reject;
-                if (asDataURL) reader.readAsDataURL(file);
-                else reader.readAsText(file);
-            }, reject);
-        });
-    },
-
-    processFileEntry(entry, contentText, isImage) {
-        const filename = entry.name;
-        
-        if (isImage) {
-            return {
-                // CORRECCIÓN: Usar Math.floor para evitar puntos decimales en el ID
-                id: 'image-import-' + Date.now() + Math.floor(Math.random() * 100000),
-                type: 'image',
-                title: filename,
-                content: contentText, 
-                x: 100, y: 100, 
-                icon: 'image',
-                color: 'text-blue-400',
-                parentId: 'desktop'
-            };
-        }
-
-        if (filename.toLowerCase().endsWith('.json')) {
-            try { return JSON.parse(contentText); } catch (e) { return null; }
-        }
-
-        if (filename.toLowerCase().endsWith('.txt') || filename.toLowerCase().endsWith('.md')) {
-            return {
-                id: 'narrative-import-' + Date.now(),
-                type: 'narrative',
-                title: filename.replace(/\.(txt|md)$/i, ''),
-                content: { tag: "IMPORT", text: contentText },
-                x: 100, y: 100, 
-                icon: 'sticky-note',
-                color: 'text-orange-500',
-                parentId: 'desktop'
-            };
-        }
-        return null;
     },
 
     async executeImport(windowId) {
@@ -301,6 +255,16 @@ const ImportManager = {
             let data = JSON.parse(raw);
             if (!Array.isArray(data)) data = [data]; 
 
+            // --- LÓGICA DE RE-IDENTIFICACIÓN (H) PARA EVITAR SOBREESCRITURA ---
+            const idMap = {};
+            data.forEach(item => {
+                if (item.id && item.type !== 'custom-module') {
+                    // Generar un nuevo ID único basado en el tipo y el tiempo
+                    const newId = item.type + '-' + Date.now() + '-' + Math.floor(Math.random() * 1000000);
+                    idMap[item.id] = newId;
+                }
+            });
+
             let count = 0;
             let modulesCount = 0;
 
@@ -308,6 +272,7 @@ const ImportManager = {
                 if (!item.type) return;
 
                 if (item.type === 'custom-module') {
+                    // Los módulos de código suelen mantener su ID para actualizarse
                     if (typeof ProgrammerManager !== 'undefined') {
                         const idx = ProgrammerManager.customModules.findIndex(m => m.id === item.id);
                         const moduleData = { ...item };
@@ -320,9 +285,18 @@ const ImportManager = {
                     }
                 } 
                 else if (['folder', 'file', 'program', 'narrative', 'book', 'data', 'executable', 'image'].includes(item.type)) {
-                    const existingIdx = FileSystem.data.findIndex(i => i.id === item.id);
-                    if (existingIdx >= 0) FileSystem.data[existingIdx] = item;
-                    else FileSystem.data.push(item);
+                    // Aplicar la nueva identidad si el ID estaba en el mapa
+                    if (idMap[item.id]) {
+                        item.id = idMap[item.id];
+                    }
+                    
+                    // Re-vincular con el padre si este también fue importado/renombrado
+                    if (item.parentId && idMap[item.parentId]) {
+                        item.parentId = idMap[item.parentId];
+                    }
+
+                    // Al tener IDs nuevos, siempre los añadimos al sistema
+                    FileSystem.data.push(item);
                     count++;
                 }
             });
@@ -364,11 +338,9 @@ const ImportManager = {
             if (typeof ProgrammerManager !== 'undefined') await ProgrammerManager.init();
 
             let backupData = [...FileSystem.data];
-            let modCount = 0;
             if (typeof ProgrammerManager !== 'undefined' && ProgrammerManager.customModules.length > 0) {
                  const mods = ProgrammerManager.customModules.map(m => ({ ...m, type: 'custom-module' }));
                  backupData = backupData.concat(mods);
-                 modCount = mods.length;
             }
 
             const jsonStr = JSON.stringify(backupData, null, 2);

@@ -6,14 +6,27 @@ const AIService = {
     currentKeyIndex: 0,
 
     init() {
-        // Cargar keys guardadas
         const savedKeys = localStorage.getItem('silenos_api_keys');
-        if (savedKeys) this.apiKeys = JSON.parse(savedKeys);
+        if (savedKeys) {
+            try {
+                this.apiKeys = JSON.parse(savedKeys);
+                console.log(`📡 AIService: ${this.apiKeys.length} llaves cargadas.`);
+            } catch (e) {
+                this.apiKeys = [];
+            }
+        }
     },
 
     setApiKeys(keysString) {
-        this.apiKeys = keysString.split(',').map(k => k.trim()).filter(k => k);
+        if (!keysString) return;
+        // Si recibimos un array directamente, lo usamos; si no, lo procesamos como string
+        const newKeys = Array.isArray(keysString) 
+            ? keysString 
+            : keysString.split(',').map(k => k.trim()).filter(k => k);
+        
+        this.apiKeys = newKeys;
         localStorage.setItem('silenos_api_keys', JSON.stringify(this.apiKeys));
+        console.log("✅ Memoria de API sincronizada:", this.apiKeys.length, "llaves.");
     },
 
     getApiKey() {
@@ -22,57 +35,20 @@ const AIService = {
         return this.apiKeys[this.currentKeyIndex];
     },
 
+    // [NUEVO] Permite a Koreh acceder al SET completo para la rotación masiva
+    getAllKeys() {
+        return this.apiKeys.length > 0 ? this.apiKeys : [];
+    },
+
     hasKeys() {
         return this.apiKeys.length > 0;
     },
 
-    // --- MÉTODOS DE GENERACIÓN (PROMPTS) ---
-
-    async generatePlan(prompt, context, targetChapters) {
-        const systemPrompt = `Eres un Arquitecto Narrativo.
-        Tu objetivo: Crear un esquema de una novela/guion basado en el INPUT y el CONTEXTO.
-        IMPORTANTE: Debes estructurar la historia en EXACTAMENTE ${targetChapters} CAPÍTULOS.
-        
-        Output JSON (Estricto, sin markdown): 
-        { 
-            "title": "Título de la Obra", 
-            "chapters": [ 
-                { "title": "Capítulo 1: [Nombre]", "summary": "Resumen detallado de lo que ocurre..." }, 
-                ... 
-            ] 
-        }`;
-        
-        const userPrompt = `INPUT USUARIO: ${prompt}\n\nCONTEXTO ADICIONAL:\n${context.substring(0, 10000)}`;
-
-        const raw = await this.callAI(systemPrompt, userPrompt);
-        return this.parseJSON(raw);
-    },
-
-    async writeChapterContent(chapterTitle, chapterSummary, globalContext, prevContext, step, total) {
-        const systemPrompt = `Eres un Escritor Experto. Estás escribiendo el CAPÍTULO ${step} de ${total}.
-        
-        TÍTULO DEL CAPÍTULO: ${chapterTitle}
-        RESUMEN DE LA TRAMA: ${chapterSummary}
-        
-        CONTEXTO GLOBAL: ${globalContext.substring(0, 5000)}
-        ${prevContext ? `LO QUE OCURRIÓ JUSTO ANTES: ...${prevContext}` : ''}
-        
-        INSTRUCCIONES:
-        1. Escribe directamente el contenido narrativo (prosa).
-        2. No uses introducciones tipo "Aquí está el capítulo" ni markdown de código.
-        3. Estilo: Inmersivo, detallado y coherente.`;
-
-        return await this.callAI(systemPrompt, "Escribe el contenido del capítulo ahora.");
-    },
-
-    // --- FUNCIÓN BASE ---
-
     async callAI(system, user) {
         const key = this.getApiKey();
-        if (!key) throw new Error("No hay API Keys configuradas en Ajustes.");
+        if (!key) throw new Error("No hay API Keys configuradas.");
 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemma-3-27b-it:generateContent?key=${key}`;
-        
         const payload = {
             contents: [{ role: "user", parts: [{ text: system + "\n\n" + user }] }],
             generationConfig: { temperature: 0.7, maxOutputTokens: 8192 }
@@ -95,18 +71,12 @@ const AIService = {
 
     parseJSON(str) {
         try {
-            // Limpieza básica por si la IA devuelve bloques de código markdown
             str = str.replace(/```json/g, '').replace(/```/g, '');
             const first = str.indexOf('{');
             const last = str.lastIndexOf('}');
-            if (first !== -1 && last !== -1) {
-                str = str.substring(first, last + 1);
-            }
+            if (first !== -1 && last !== -1) str = str.substring(first, last + 1);
             return JSON.parse(str);
-        } catch (e) { 
-            console.error("Error parseando JSON de IA:", str);
-            return null; 
-        }
+        } catch (e) { return null; }
     }
 };
 

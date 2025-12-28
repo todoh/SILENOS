@@ -1,22 +1,21 @@
 /* SILENOS 3/filesystem.js */
-// --- SISTEMA DE ARCHIVOS EVOLUCIONADO (A-F) ---
+// --- SISTEMA DE ARCHIVOS BASADO EN CACHÉ (LOCALSTORAGE) Y MATERIA BASE64 ---
 
-const FS_KEY = 'neumorph_os_filesystem';
+const FS_KEY = 'silenos_materia_storage';
 
 const FileSystem = {
     data: [],
+    _hasChanges: false,
 
-    init() {
+    async init() {
         try {
             const stored = localStorage.getItem(FS_KEY);
             if (stored) {
                 this.data = JSON.parse(stored);
-            } else {
-                this.data = []; 
+                console.log("H -> Materia recuperada de la memoria local.");
             }
         } catch (e) {
-            console.error("FileSystem: Error corrupto al leer caché", e);
-            this.data = [];
+            console.error("FS: Error en coherencia inicial", e);
         }
     },
 
@@ -24,171 +23,164 @@ const FileSystem = {
         try {
             localStorage.setItem(FS_KEY, JSON.stringify(this.data));
             window.dispatchEvent(new Event('fs-data-changed'));
+            this._hasChanges = true;
         } catch (e) {
-            console.error("FileSystem: Error CRÍTICO al guardar en disco", e);
-            alert("Error crítico: No se puede guardar en el almacenamiento local.");
+            console.error("FS: Error de almacenamiento (Límite de caché excedido)", e);
+            alert("⚠️ Error: La memoria del sistema está llena. Elimina archivos o imágenes.");
         }
     },
 
-    createFolder(name, parentId = 'desktop', x = 0, y = 0) {
-        this.init(); 
-        const folder = {
-            id: 'folder-' + Date.now() + Math.floor(Math.random() * 1000),
-            type: 'folder',
-            title: name || 'Nueva Carpeta',
-            parentId: parentId,
-            x: x,
-            y: y,
-            icon: 'folder',
-            color: 'text-blue-500'
-        };
-        this.data.push(folder);
-        this.save();
-        return folder;
+    // [ARREGLADO] Ahora permite una resolución mayor (800px) para "verlas bien"
+    async saveImageFile(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const max = 800; // Aumentado de 150 a 800 para calidad visual
+
+                    if (width > height) {
+                        if (width > max) {
+                            height *= max / width;
+                            width = max;
+                        }
+                    } else {
+                        if (height > max) {
+                            width *= max / height;
+                            height = max;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    const base64 = canvas.toDataURL('image/png', 0.8);
+                    resolve(base64);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
     },
 
-    createImage(name, base64, parentId = 'desktop', x = 0, y = 0) {
-        this.init();
-        const file = {
-            id: 'image-' + Date.now() + Math.floor(Math.random() * 1000),
-            type: 'image',
-            title: name || 'Nueva Imagen',
-            parentId: parentId,
-            content: base64,
-            x: x,
-            y: y,
-            icon: 'image', 
-            color: 'text-blue-400'
-        };
-        this.data.push(file);
-        this.save();
-        return file;
+    // [NUEVO] Función que faltaba para recuperar la URL de la materia visual
+    async getImageUrl(contentData) {
+        if (!contentData) return null;
+        // Si ya es base64, lo devolvemos directamente
+        if (contentData.startsWith('data:image')) return contentData;
+        return null;
     },
 
-    // --- NUEVO: MATERIALIZAR FORMA VECTORIAL (F) ---
-    createSVG(name, content, parentId = 'desktop', x = 0, y = 0) {
-        this.init();
-        const file = {
-            id: 'svg-' + Date.now() + Math.floor(Math.random() * 1000),
-            type: 'svg',
-            title: name.endsWith('.svg') ? name : name + '.svg',
-            parentId: parentId,
-            content: content, // Código SVG raw para edición futura
-            x: x,
-            y: y,
-            icon: 'file-code',
-            color: 'text-orange-500'
+    // --- MÉTODOS DE CREACIÓN DE MATERIA (M) ---
+
+    _getDefaultCoords(x, y) {
+        return {
+            x: (typeof x === 'number') ? x : window.innerWidth / 2,
+            y: (typeof y === 'number') ? y : window.innerHeight / 2,
+            z: 0 
         };
-        this.data.push(file);
-        this.save();
-        return file;
     },
 
-    createData(name, content, parentId = 'desktop', x = 0, y = 0) {
-        this.init();
-        const file = {
-            id: 'file-' + Date.now() + Math.floor(Math.random() * 1000),
-            type: 'file',
-            title: name || 'Nuevo Dato',
-            parentId: parentId,
-            content: content || { info: "Escribe aquí tu JSON..." },
-            x: x,
-            y: y,
-            icon: 'file-json',
-            color: 'text-green-600'
-        };
-        this.data.push(file);
-        this.save();
-        return file;
-    },
-
-    createProgram(name, parentId = 'desktop', x = 0, y = 0) {
-        this.init();
-        const prog = {
-            id: 'program-' + Date.now() + Math.floor(Math.random() * 1000),
-            type: 'program',
-            title: name || 'Nuevo Programa',
-            parentId: parentId,
-            content: { nodes: [], connections: [], panX: 0, panY: 0, scale: 1 },
-            x: x,
-            y: y,
-            icon: 'cpu',
-            color: 'text-purple-500'
-        };
-        this.data.push(prog);
-        this.save();
-        return prog;
-    },
-
-    createNarrative(name, parentId = 'desktop', x = 0, y = 0) {
-        this.init();
+    createImageItem(filename, parentId = 'desktop', contentData = '', x, y) {
+        const coords = this._getDefaultCoords(x, y);
         const item = {
-            id: 'narrative-' + Date.now() + Math.floor(Math.random() * 1000),
-            type: 'narrative',
-            title: name || 'Dato Narrativo',
-            parentId: parentId,
-            content: { tag: "GENERAL", text: "Escribe aquí tu contenido narrativo..." },
-            x: x,
-            y: y,
-            icon: 'sticky-note',
-            color: 'text-orange-500'
+            id: 'image-' + Date.now() + Math.floor(Math.random() * 1000),
+            type: 'image', title: filename, parentId,
+            content: contentData,
+            x: coords.x, y: coords.y, z: coords.z, icon: 'image', color: 'text-blue-400'
         };
         this.data.push(item);
         this.save();
         return item;
     },
 
-    createBook(name, parentId = 'desktop', x = 0, y = 0) {
-        this.init();
+    createFolder(name, parentId = 'desktop', x, y) {
+        const coords = this._getDefaultCoords(x, y);
+        const folder = {
+            id: 'folder-' + Date.now() + Math.floor(Math.random() * 1000),
+            type: 'folder', title: name || 'Nueva Carpeta', parentId,
+            x: coords.x, y: coords.y, z: coords.z, icon: 'folder', color: 'text-blue-500'
+        };
+        this.data.push(folder);
+        this.save();
+        return folder;
+    },
+
+    createData(name, content, parentId = 'desktop', x, y) {
+        const coords = this._getDefaultCoords(x, y);
+        const file = {
+            id: 'file-' + Date.now() + Math.floor(Math.random() * 1000),
+            type: 'file', title: name || 'Nuevo Dato', parentId,
+            content: content || { info: "..." },
+            x: coords.x, y: coords.y, z: coords.z, icon: 'file-json', color: 'text-green-600'
+        };
+        this.data.push(file);
+        this.save();
+        return file;
+    },
+
+    createBook(name, parentId = 'desktop', x, y) {
+        const coords = this._getDefaultCoords(x, y);
         const book = {
             id: 'book-' + Date.now() + Math.floor(Math.random() * 1000),
-            type: 'book', 
-            title: name || 'Nuevo Libro',
-            parentId: parentId,
-            content: { chapters: [{ title: "Capítulo 1", paragraphs: ["Comienza tu historia aquí..."] }] },
-            x: x,
-            y: y,
-            icon: 'book', 
-            color: 'text-indigo-600'
+            type: 'book', title: name || 'Nuevo Libro', parentId,
+            content: { chapters: [{ title: "Capítulo 1", paragraphs: ["..."] }] },
+            x: coords.x, y: coords.y, z: coords.z, icon: 'book', color: 'text-indigo-600'
         };
         this.data.push(book);
         this.save();
         return book;
     },
 
+    createNarrative(name, parentId = 'desktop', x, y) {
+        const coords = this._getDefaultCoords(x, y);
+        const item = {
+            id: 'narrative-' + Date.now() + Math.floor(Math.random() * 1000),
+            type: 'narrative', title: name || 'Dato Narrativo', parentId,
+            content: { tag: "GENERAL", text: "..." },
+            x: coords.x, y: coords.y, z: coords.z, icon: 'sticky-note', color: 'text-orange-500'
+        };
+        this.data.push(item);
+        this.save();
+        return item;
+    },
+
+    createProgram(name, parentId = 'desktop', x, y) {
+        const coords = this._getDefaultCoords(x, y);
+        const prog = {
+            id: 'program-' + Date.now() + Math.floor(Math.random() * 1000),
+            type: 'program', title: name || 'Nuevo Programa', parentId,
+            content: { nodes: [], connections: [], panX: 0, panY: 0, scale: 1 },
+            x: coords.x, y: coords.y, z: coords.z, icon: 'cpu', color: 'text-purple-500'
+        };
+        this.data.push(prog);
+        this.save();
+        return prog;
+    },
+
     updateItem(id, updates) {
         const item = this.data.find(i => i.id === id);
-        if (item) {
-            Object.assign(item, updates);
-            this.save();
-            return true;
-        }
+        if (item) { Object.assign(item, updates); this.save(); return true; }
         return false;
     },
 
-    getItems(parentId) {
-        return this.data.filter(i => i.parentId === parentId);
-    },
-
-    getItem(id) {
-        return this.data.find(i => i.id === id);
-    },
+    getItems(parentId) { return this.data.filter(i => i.parentId === parentId); },
+    getItem(id) { return this.data.find(i => i.id === id); },
 
     deleteItem(id) {
-        this.init(); 
         const getIdsToDelete = (itemId) => {
             let ids = [itemId];
             const children = this.data.filter(i => i.parentId === itemId);
-            children.forEach(c => {
-                ids = ids.concat(getIdsToDelete(c.id));
-            });
+            children.forEach(c => ids = ids.concat(getIdsToDelete(c.id)));
             return ids;
         };
-
         const allIdsToDelete = getIdsToDelete(id);
         this.data = this.data.filter(i => !allIdsToDelete.includes(i.id));
         this.save();
     }
 };
-
-FileSystem.init();

@@ -73,7 +73,10 @@ body {
 /* =========================================
    3. ESCRITORIO Y VENTANAS
    ========================================= */
-
+/* Evitar que los iconos se vean planos al rotar si decides añadir inclinación */
+.desktop-icon-btn {
+    backface-visibility: hidden;
+}
 /* Icono de Escritorio */
 .desktop-icon-btn {
     width: 64px;
@@ -92,21 +95,28 @@ body {
 }
 
 /* Selección */
-.icon-selected .desktop-icon-btn {
-    box-shadow: inset 4px 4px 8px #b8b9be, inset -4px -4px 8px #ffffff !important;
-    border: 1px solid #3b83f63b;
-}
+ 
 .icon-selected span {
     background: rgba(59, 130, 246, 0.2) !important;
     color: #1d4ed8 !important;
 }
+/* SILENOS 3/styles.css - ACTUALIZACIÓN SELECTOR */
+
 .selection-box {
-    position: absolute;
-    background: rgba(59, 130, 246, 0.2);
-    border: 1px solid rgba(59, 130, 246, 0.6);
-    border-radius: 4px;
-    pointer-events: none;
-    z-index: 9999;
+    position: fixed; /* Cambiado a fixed para ignorar scrolls accidentales y capas 3D */
+    background: rgba(59, 131, 246, 0.25);
+    border: 1.5px solid rgba(59, 131, 246, 0.8);
+    border-radius: 2px;
+    pointer-events: none; /* Crucial: para que no interfiera con los eventos de mouse */
+    z-index: 999999; /* Máxima prioridad sobre ventanas e iconos 3D */
+    box-sizing: border-box;
+}
+
+/* Asegurar que los iconos seleccionados tengan un estilo claro en el entorno 3D */
+.icon-selected .desktop-icon-btn {
+    box-shadow: inset 4px 4px 8px #b8b9be, inset -4px -4px 8px #ffffff !important;
+    border: 2px solid #3b82f6 !important;
+    transform: scale(0.98);
 }
 
 /* Estructura Ventana */
@@ -486,4 +496,58 @@ body {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* SILENOS 3/styles.css */
+
+/* =========================================
+   ESTILOS 3D PARA ESCRITORIO (Z-ENVIRONMENT)
+   ========================================= */
+
+/* SILENOS 3/styles.css - ACTUALIZACIÓN DE RENDIMIENTO */
+
+/* Forzar aceleración de hardware en el escritorio */
+#desktop-area {
+    perspective: 1200px;
+    perspective-origin: center;
+    overflow: hidden;
+    background: radial-gradient(circle at center, #f0f2f5 0%, #e0e5ec 100%);
+    /* Capa GPU */
+    transform: translateZ(0); 
+    backface-visibility: hidden;
+}
+
+#desktop-files-layer {
+    transform-style: preserve-3d;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    /* Hint para el navegador */
+    will-change: transform;
+}
+
+/* Optimización de iconos 3D */
+.desktop-icon-3d {
+    position: absolute;
+    pointer-events: auto;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+    will-change: transform, opacity;
+}
+
+/* Evitar repintados costosos en el texto de los iconos */
+.desktop-icon-3d span {
+    display: inline-block;
+    -webkit-font-smoothing: antialiased;
+    transform: translateZ(1px); /* Asegura que el texto esté en su propia capa */
+}
+
+/* Desactivar efectos pesados en móviles o navegadores lentos */
+@media (prefers-reduced-motion: reduce) {
+    .desktop-icon-3d {
+        transition: none !important;
+    }
 }
