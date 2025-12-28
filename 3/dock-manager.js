@@ -23,7 +23,7 @@ function renderDock() {
     dockContainer.innerHTML = '';
 
     if (openWindows.length === 0) {
-        dockContainer.innerHTML = '<span class="text-gray-400 text-sm font-medium italic select-none empty-msg px-2">Sin apps</span>';
+        dockContainer.innerHTML = '<span class="text-gray-400 text-sm font-medium italic select-none empty-msg px-2"></span>';
         return;
     }
 

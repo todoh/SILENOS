@@ -1,6 +1,6 @@
 /* SILENOS 3 / eye-pro-launcher.js */
 // H -> RECONFIGURACIÓN DE LA VISIÓN (B) PARA ACCESO DIRECTO A LA MATERIA (M)
-// Optimización Estética: Tienda Minimalista sin Imágenes.
+// Optimización Estética: Tienda Minimalista sin persistencia en Escritorio.
 
 (function() {
     // Definición de la Materia Pro (M) 
@@ -169,7 +169,6 @@
                             } catch (err) { container.innerHTML = '<div style="font-size:0.6rem; color:#ef4444; text-align:center;">ERROR (A)</div>'; }
                         }
 
-                        // Inyectar animación de carga si no existe
                         if(!document.getElementById('silen-spin-style')){
                             const s = document.createElement('style');
                             s.id = 'silen-spin-style';
@@ -199,26 +198,37 @@
 
     /**
      * REDEFINICIÓN DE TOGGLELAUNCHER (A)
+     * Ejecución directa de la Materia sin registro en FileSystem (E).
      */
     function injectProLauncher() {
-        console.log("B -> Resonancia focalizada en Aplicaciones de SILENOS (Pro).");
+        console.log("B -> Resonancia focalizada en Materia Store (Volátil).");
 
         window.toggleLauncher = async function() {
-            let item = FileSystem.getItem(APP_PRO_DATA.id);
-            
-            if (!item) {
-                item = JSON.parse(JSON.stringify(APP_PRO_DATA));
-                FileSystem.data.push(item);
-                FileSystem.save();
-                if (window.refreshSystemViews) window.refreshSystemViews();
-            }
+            // Cerramos cualquier menú previo si existe
+            const existingMenu = document.getElementById('launcher-menu');
+            if (existingMenu) existingMenu.remove();
 
-            if (typeof ProgrammerManager !== 'undefined') {
-                const existingMenu = document.getElementById('launcher-menu');
-                if (existingMenu) existingMenu.remove();
-                ProgrammerManager.runHeadless(null, item.id);
+            // Localizamos el módulo y sus valores de configuración
+            const storeModule = APP_PRO_DATA.content.embeddedModules.find(m => m.id === 'github-store-v3');
+            const storeNode = APP_PRO_DATA.content.nodes.find(n => n.id === 'node-store-v3');
+
+            if (storeModule && storeNode) {
+                try {
+                    // Creamos el contexto (ctx) que el código interno espera
+                    const ctx = {
+                        fields: storeNode.values
+                    };
+
+                    // Ejecución inmediata del código del módulo
+                    // Esto abre la ventana sin crear archivos en el escritorio
+                    const executeStore = new Function('ctx', storeModule.code);
+                    executeStore(ctx);
+                    
+                } catch (error) {
+                    console.error("L -> Error en la ejecución de la Materia:", error);
+                }
             } else {
-                console.error("L -> Error: El motor ProgrammerManager no está resonando.");
+                console.error("L -> Estructura de Materia Pro no encontrada.");
             }
         };
     }
@@ -229,5 +239,5 @@
         setTimeout(injectProLauncher, 100);
     }
 
-    console.log("H -> Lógica del Ojo blindada para Visión Pro.");
+    console.log("H -> Lógica del Ojo blindada para Visión Pro (Sin Huella).");
 })();
