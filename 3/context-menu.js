@@ -124,8 +124,23 @@ function addCreationOptions(options, parentId, mouseX, mouseY) {
         options.push({ separator: true });
     }
     
+    // 1. Pegado Interno (Archivos de Silenos)
     if (typeof SystemClipboard !== 'undefined' && SystemClipboard.hasItems()) {
-        options.push({ label: `Pegar (${SystemClipboard.getIds().length})`, icon: 'clipboard-paste', color: 'text-indigo-600', action: () => handlePasteAction(parentId, mouseX, mouseY) });
+        options.push({ label: `Pegar Archivos (${SystemClipboard.getIds().length})`, icon: 'copy-plus', color: 'text-indigo-600', action: () => handlePasteAction(parentId, mouseX, mouseY) });
+    }
+
+    // 2. Pegado Externo (Portapapeles del SO: Texto, Youtube, JSON, Imágenes)
+    // CORRECCIÓN: Ahora pasamos mouseX y mouseY a la función
+    if (typeof window.handleExternalPasteAction === 'function') {
+        options.push({ 
+            label: 'Pegar desde Portapapeles', 
+            icon: 'clipboard-paste', 
+            color: 'text-green-600', 
+            action: () => window.handleExternalPasteAction(parentId, mouseX, mouseY) 
+        });
+    }
+
+    if (SystemClipboard.hasItems() || typeof window.handleExternalPasteAction === 'function') {
         options.push({ separator: true });
     }
 
@@ -158,7 +173,6 @@ function addCreationOptions(options, parentId, mouseX, mouseY) {
         { label: 'Crear Dato Narrativo', icon: 'sticky-note', color: 'text-orange-500', action: () => createAndRefresh('narrative', 'Dato Narrativo') }
     );
 }
-
 function renderOptions(menu, options) {
     options.forEach(opt => {
         if (opt.separator) {

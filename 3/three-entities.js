@@ -48,7 +48,7 @@ const ThreeEntities = {
                 width: 90px; height: 90px; background: #e0e5ec;
                 border-radius: 24px; box-shadow: 10px 10px 20px #b8b9be, -10px -10px 20px #ffffff;
                 display: flex; align-items: center; justify-content: center;
-                font-size: 2.4rem; border: 1px solid rgba(255,255,255,0.4);  
+                font-size: 2.4rem; border: 0px solid rgba(255,255,255,0.4);  
                 font-weight: 200; color: #1f1f1fff; transition: border 0.3s, box-shadow 0.3s;
             `;
             

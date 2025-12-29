@@ -1,6 +1,12 @@
 /* SILENOS 3/styles.css */
 
 /* =========================================
+   0. FUENTES PERSONALIZADAS
+   ========================================= */
+/* Cargamos el archivo de fuente local que subiste */
+ 
+
+/* =========================================
    1. VARIABLES Y ESTILOS BASE
    ========================================= */
 :root {
@@ -14,7 +20,8 @@
 body {
     background-color: var(--bg-color);
     overflow: hidden;
-    font-family: 'Segoe UI', system-ui, sans-serif;
+    /* APLICAMOS LA FUENTE DE EMOJIS PRIMERO PARA FORZARLA */
+    font-family: 'SilenosEmojis', 'Segoe UI', system-ui, sans-serif;
     user-select: none;
     margin: 0;
 }
@@ -177,7 +184,7 @@ body {
     width: 100%;
     background-color: #1e1e1e;
     color: #d4d4d4;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'SilenosEmojis', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* También aquí por si acaso */
     overflow: hidden;
 }
 

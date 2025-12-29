@@ -7,46 +7,54 @@ const YouTubePasteHandler = {
         return this.ytRegex.test(text.trim());
     },
 
-    async handleText(text, destParentId) {
+    // [CORRECCIÓN] Aceptamos mouseX y mouseY
+    async handleText(text, destParentId, mouseX = null, mouseY = null) {
         const match = text.trim().match(this.ytRegex);
         if (!match) return false;
 
         const videoId = match[1];
-        let videoTitle = "Cargando video..."; // Estado inicial
+        let videoTitle = "Cargando video..."; 
 
-        // 1. OBTENCIÓN DEL TÍTULO REAL (Corregido para evitar bloqueo CORS)
+        // 1. OBTENCIÓN DEL TÍTULO
         try {
-            // Usamos el proxy de noembed.com porque youtube.com bloquea peticiones directas del navegador
             const response = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
             const data = await response.json();
-            
-            if (data.title) {
-                videoTitle = data.title;
-            } else {
-                videoTitle = "YouTube Video " + videoId;
-            }
+            if (data.title) videoTitle = data.title;
+            else videoTitle = "YouTube Video " + videoId;
         } catch (e) {
-            console.error("Error al obtener metadatos (fallback activo):", e);
+            console.error("Error al obtener metadatos:", e);
             videoTitle = "YouTube Video " + videoId;
         }
 
-        // 2. GENERACIÓN DE IDENTIFICADOR ÚNICO BASADO EN EL NOMBRE
         const nameId = videoTitle.toLowerCase()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar acentos
-            .replace(/[^a-z0-9]/g, '-') // Reemplazar símbolos por guiones
-            .replace(/-+/g, '-')        // Evitar guiones duplicados
-            .replace(/^-|-$/g, '');     // Limpiar extremos
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "") 
+            .replace(/[^a-z0-9]/g, '-') 
+            .replace(/-+/g, '-')        
+            .replace(/^-|-$/g, '');     
 
         const instanceId = Math.random().toString(36).substring(2, 8);
         const uniqueId = `${nameId}-${instanceId}`;
 
-        // 3. CREACIÓN DEL ITEM EN EL FILESYSTEM CON EL NOMBRE DEL VIDEO
+        // 2. CÁLCULO DE COORDENADAS
+        let finalX = 100, finalY = 100;
+        if (mouseX !== null && mouseY !== null) {
+            if (destParentId === 'desktop' && typeof ThreeDesktop !== 'undefined') {
+                const world = ThreeDesktop.screenToWorld(mouseX, mouseY);
+                finalX = world.x;
+                finalY = world.y;
+            } else {
+                finalX = mouseX;
+                finalY = mouseY;
+            }
+        }
+
+        // 3. CREACIÓN DEL ITEM CON COORDENADAS CORRECTAS
         const newItem = {
             id: uniqueId, 
             type: "executable",
-            title: "▶ " + videoTitle, // Ahora sí mostrará el título real
+            title: "▶ " + videoTitle, 
             parentId: destParentId,
-            x: 100, y: 100, z: 0,
+            x: finalX, y: finalY, z: 0, // Usamos las calculadas
             content: {
                 nodes: [
                     { id: "node-start", type: "start", x: 50, y: 150, inputs: [], outputs: ["out"], values: {}, uiFlags: {} },
@@ -67,7 +75,7 @@ const YouTubePasteHandler = {
         FileSystem.data.push(newItem);
         FileSystem.save();
         
-        console.log("📺 App creada con éxito con título:", videoTitle);
+        console.log("📺 App creada con éxito en", finalX, finalY);
         return true;
     },
 
@@ -86,7 +94,6 @@ if (!window.YT) {
     else document.head.appendChild(tag);
 }
 
-// Aseguramos que el título escape comillas simples para no romper el JS string
 const safeTitle = "${title.replace(/"/g, '\\"').replace(/'/g, "\\'")}";
 const tracks = [{ id: '${videoId}', title: safeTitle, sub: 'SILENOS Vision Player' }];
 let player;

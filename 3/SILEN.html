@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alfabeto Silen Geométrico</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        textarea {
+            width: 90%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        canvas {
+            border: 1px solid #eee;
+            background-color: #fffdf9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Alfabeto de Silen sobre Retícula</h2>
+        <p>Los trazos siguen los canales de la cuadrícula azul.</p>
+        <textarea id="inputText" rows="3" placeholder="Escribe aquí... (Ej: Hola Mundo)"></textarea>
+        <canvas id="silenCanvas" width="800" height="400"></canvas>
+    </div>
+
+<script>
+    const canvas = document.getElementById('silenCanvas');
+    const ctx = canvas.getContext('2d');
+    const input = document.getElementById('inputText');
+
+    // --- Configuración de la Retícula ---
+    const C_WIDTH = 50;
+    const C_HEIGHT = 80;
+    const C_PAD_X = 15;
+    const C_PAD_Y = 30;
+    const START_X = 20;
+    const START_Y = 20;
+
+    // Estilos de trazo
+    const STYLE_GRID = { color: 'rgba(100, 149, 237, 0.4)', width: 1 }; // Azul tenue
+    const STYLE_SYMBOL = { color: '#d63031', width: 3, cap: 'round', join: 'round' }; // Rojo intenso
+
+    // --- Puntos Clave de la Retícula (basado en imágenes 1-9) ---
+    // pTL: Top-Left, pTC: Top-Center, pTR: Top-Right
+    // pCL: Center-Left, pCC: Center-Center, pCR: Center-Right
+    // pBL: Bottom-Left, pBC: Bottom-Center, pBR: Bottom-Right
+    // pQM_TL: Quarter-Mid-Top-Left, pQM_TR: Quarter-Mid-Top-Right
+    // pQM_BL: Quarter-Mid-Bottom-Left, pQM_BR: Quarter-Mid-Bottom-Right
+
+    function getPoints(ox, oy) {
+        return {
+            pTL: {x: ox, y: oy},
+            pTC: {x: ox + C_WIDTH/2, y: oy},
+            pTR: {x: ox + C_WIDTH, y: oy},
+            pCL: {x: ox, y: oy + C_HEIGHT/2},
+            pCC: {x: ox + C_WIDTH/2, y: oy + C_HEIGHT/2},
+            pCR: {x: ox + C_WIDTH, y: oy + C_HEIGHT/2},
+            pBL: {x: ox, y: oy + C_HEIGHT},
+            pBC: {x: ox + C_WIDTH/2, y: oy + C_HEIGHT},
+            pBR: {x: ox + C_WIDTH, y: oy + C_HEIGHT},
+            // Puntos medios de los cuadrantes superiores e inferiores
+            pQM_TL: {x: ox + C_WIDTH/4, y: oy + C_HEIGHT/4},
+            pQM_TR: {x: ox + C_WIDTH*0.75, y: oy + C_HEIGHT/4},
+            pQM_BL: {x: ox + C_WIDTH/4, y: oy + C_HEIGHT*0.75},
+            pQM_BR: {x: ox + C_WIDTH*0.75, y: oy + C_HEIGHT*0.75},
+        };
+    }
+
+    // --- Dibujar la Retícula Base (Líneas azules) ---
+    // Recrea la geometría de las imágenes 1-9.
+    function drawBaseGrid(p) {
+        ctx.beginPath();
+        ctx.strokeStyle = STYLE_GRID.color;
+        ctx.lineWidth = STYLE_GRID.width;
+
+        // Marco Exterior
+        ctx.moveTo(p.pTL.x, p.pTL.y); ctx.lineTo(p.pTR.x, p.pTR.y); ctx.lineTo(p.pBR.x, p.pBR.y); ctx.lineTo(p.pBL.x, p.pBL.y); ctx.closePath();
+        // Cruz Central
+        ctx.moveTo(p.pTC.x, p.pTC.y); ctx.lineTo(p.pBC.x, p.pBC.y);
+        ctx.moveTo(p.pCL.x, p.pCL.y); ctx.lineTo(p.pCR.x, p.pCR.y);
+        // Diagonales Mayores (X)
+        ctx.moveTo(p.pTL.x, p.pTL.y); ctx.lineTo(p.pBR.x, p.pBR.y);
+        ctx.moveTo(p.pTR.x, p.pTR.y); ctx.lineTo(p.pBL.x, p.pBL.y);
+        // Diagonales Menores (Diamante)
+        ctx.moveTo(p.pTC.x, p.pTC.y); ctx.lineTo(p.pCR.x, p.pCR.y); ctx.lineTo(p.pBC.x, p.pBC.y); ctx.lineTo(p.pCL.x, p.pCL.y); ctx.closePath();
+
+        ctx.stroke();
+    }
+
+    // --- Mapeo de Letras a Segmentos de la Retícula ---
+    // Cada letra se construye conectando los puntos clave definidos arriba.
+    const silenMap = {
+        'A': (p) => { // Diagonal BL -> TR
+            ctx.moveTo(p.pBL.x, p.pBL.y); ctx.lineTo(p.pTR.x, p.pTR.y); },
+        'B': (p) => { // Vertical Derecha (TR -> BR) y Horizontal Inferior (BR -> BL)
+            ctx.moveTo(p.pTR.x, p.pTR.y); ctx.lineTo(p.pBR.x, p.pBR.y);
+            ctx.moveTo(p.pBR.x, p.pBR.y); ctx.lineTo(p.pBL.x, p.pBL.y); },
+        'V': (p) => silenMap['B'](p), // Mismo símbolo que B
+        'C': (p) => { // Flecha Derecha (TL -> CR -> BL)
+            ctx.moveTo(p.pTL.x, p.pTL.y); ctx.lineTo(p.pCR.x, p.pCR.y);
+            ctx.moveTo(p.pCR.x, p.pCR.y); ctx.lineTo(p.pBL.x, p.pBL.y); },
+        'Z': (p) => silenMap['C'](p), // Mismo símbolo que C
+        'D': (p) => { // Flecha Arriba (BL -> TC -> BR)
+            ctx.moveTo(p.pBL.x, p.pBL.y); ctx.lineTo(p.pTC.x, p.pTC.y);
+            ctx.moveTo(p.pTC.x, p.pTC.y); ctx.lineTo(p.pBR.x, p.pBR.y); },
+        'E': (p) => { // Diagonal TL -> BR
+            ctx.moveTo(p.pTL.x, p.pTL.y); ctx.lineTo(p.pBR.x, p.pBR.y); },
+        'F': (p) => { // Vertical Izquierda (TL -> CL), Diagonal Corta (CL -> QM_TR)
+            ctx.moveTo(p.pTL.x, p.pTL.y); ctx.lineTo(p.pCL.x, p.pCL.y);
+            ctx.moveTo(p.pCL.x, p.pCL.y); ctx.lineTo(p.pQM_TR.x, p.pQM_TR.y); },
+        'G': (p) => { // Diagonal Corta (QM_TL -> CC), Vertical Central Inferior (CC -> BC)
+            ctx.moveTo(p.pQM_TL.x, p.pQM_TL.y); ctx.lineTo(p.pCC.x, p.pCC.y);
+            ctx.moveTo(p.pCC.x, p.pCC.y); ctx.lineTo(p.pBC.x, p.pBC.y); },
+        'H': (p) => { // Vertical Izquierda Superior (TL -> CL), Horizontal Superior (TL -> TR)
+            ctx.moveTo(p.pTL.x, p.pTL.y); ctx.lineTo(p.pCL.x, p.pCL.y);
+            ctx.moveTo(p.pTL.x, p.pTL.y); ctx.lineTo(p.pTR.x, p.pTR.y); },
+        'I': (p) => { // Vertical Central (TC -> BC)
+            ctx.moveTo(p.pTC.x, p.pTC.y); ctx.lineTo(p.pBC.x, p.pBC.y); },
+        'J': (p) => { // Vertical Central (TC -> BC), Horizontal Inferior (QM_BL -> QM_BR)
+            ctx.moveTo(p.pTC.x, p.pTC.y); ctx.lineTo(p.pBC.x, p.pBC.y);
+            ctx.moveTo(p.pQM_BL.x, p.pQM_BL.y); ctx.lineTo(p.pQM_BR.x, p.pQM_BR.y); },
+        'K': (p) => { // Vertical Izquierda (TL -> BL), Pata (CL -> BR)
+            ctx.moveTo(p.pTL.x, p.pTL.y); ctx.lineTo(p.pBL.x, p.pBL.y);
+            ctx.moveTo(p.pCL.x, p.pCL.y); ctx.lineTo(p.pBR.x, p.pBR.y); },
+        'Q': (p) => silenMap['K'](p), // Mismo símbolo que K
+        'L': (p) => { // Flecha Izquierda (TR -> CL -> BR)
+            ctx.moveTo(p.pTR.x, p.pTR.y); ctx.lineTo(p.pCL.x, p.pCL.y);
+            ctx.moveTo(p.pCL.x, p.pCL.y); ctx.lineTo(p.pBR.x, p.pBR.y); },
+        'M': (p) => { // L mayúscula (TL -> BL -> BR)
+            ctx.moveTo(p.pTL.x, p.pTL.y); ctx.lineTo(p.pBL.x, p.pBL.y);
+            ctx.moveTo(p.pBL.x, p.pBL.y); ctx.lineTo(p.pBR.x, p.pBR.y); },
+        'N': (p) => { // Vertical Izquierda (TL -> BL), Gancho Subiendo (BL -> QM_BR)
+            ctx.moveTo(p.pTL.x, p.pTL.y); ctx.lineTo(p.pBL.x, p.pBL.y);
+            ctx.moveTo(p.pBL.x, p.pBL.y); ctx.lineTo(p.pQM_BR.x, p.pQM_BR.y); },
+        'Ñ': (p) => { // Vertical Central Superior (TC -> QM_BC), Flecha Abajo (QM_BL -> QM_BC -> QM_BR)
+            ctx.moveTo(p.pTC.x, p.pTC.y); ctx.lineTo(p.pCC.x, p.pCC.y); // Aprox hasta centro
+            ctx.moveTo(p.pQM_BL.x, p.pQM_BL.y); ctx.lineTo(p.pCC.x, p.pCC.y); // Punta flecha
+            ctx.moveTo(p.pQM_BR.x, p.pQM_BR.y); ctx.lineTo(p.pCC.x, p.pCC.y); },
+        'O': (p) => { // Punto en el centro-derecha
+             ctx.beginPath(); ctx.arc(p.pCR.x, p.pCR.y, 4, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); },
+        'P': (p) => { // Palo de Hockey (TR -> BR -> QM_BL)
+            ctx.moveTo(p.pTR.x, p.pTR.y); ctx.lineTo(p.pBR.x, p.pBR.y);
+            ctx.moveTo(p.pBR.x, p.pBR.y); ctx.lineTo(p.pQM_BL.x, p.pQM_BL.y); },
+        'R': (p) => { // T de lado (TL -> BL) y (CL -> CR)
+            ctx.moveTo(p.pTL.x, p.pTL.y); ctx.lineTo(p.pBL.x, p.pBL.y);
+            ctx.moveTo(p.pCL.x, p.pCL.y); ctx.lineTo(p.pCR.x, p.pCR.y); },
+        'RR': (p) => { // Cruz Grande (TC -> BC) y (CL -> CR)
+            ctx.moveTo(p.pTC.x, p.pTC.y); ctx.lineTo(p.pBC.x, p.pBC.y);
+            ctx.moveTo(p.pCL.x, p.pCL.y); ctx.lineTo(p.pCR.x, p.pCR.y); },
+        'S': (p) => { // V (TL -> BC -> TR)
+            ctx.moveTo(p.pTL.x, p.pTL.y); ctx.lineTo(p.pBC.x, p.pBC.y);
+            ctx.moveTo(p.pBC.x, p.pBC.y); ctx.lineTo(p.pTR.x, p.pTR.y); },
+        'T': (p) => { // Esquina Superior Derecha (TL -> TR -> CR)
+            ctx.moveTo(p.pTL.x, p.pTL.y); ctx.lineTo(p.pTR.x, p.pTR.y);
+            ctx.moveTo(p.pTR.x, p.pTR.y); ctx.lineTo(p.pCR.x, p.pCR.y); },
+        'U': (p) => { // Horizontal Inferior (QM_BL -> QM_BR)
+            ctx.moveTo(p.pQM_BL.x, p.pQM_BL.y); ctx.lineTo(p.pQM_BR.x, p.pQM_BR.y); },
+        'W': (p) => { // T invertida (BL -> BR) y (BC -> TC)
+            ctx.moveTo(p.pBL.x, p.pBL.y); ctx.lineTo(p.pBR.x, p.pBR.y);
+            ctx.moveTo(p.pBC.x, p.pBC.y); ctx.lineTo(p.pTC.x, p.pTC.y); },
+        'X': (p) => { // X pequeña (QM_TL -> QM_BR) y (QM_TR -> QM_BL)
+            ctx.moveTo(p.pQM_TL.x, p.pQM_TL.y); ctx.lineTo(p.pQM_BR.x, p.pQM_BR.y);
+            ctx.moveTo(p.pQM_TR.x, p.pQM_TR.y); ctx.lineTo(p.pQM_BL.x, p.pQM_BL.y); },
+        'Y': (p) => { // Y (TL -> CC), (TR -> CC), (CC -> BC)
+            ctx.moveTo(p.pTL.x, p.pTL.y); ctx.lineTo(p.pCC.x, p.pCC.y);
+            ctx.moveTo(p.pTR.x, p.pTR.y); ctx.lineTo(p.pCC.x, p.pCC.y);
+            ctx.moveTo(p.pCC.x, p.pCC.y); ctx.lineTo(p.pBC.x, p.pBC.y); }
+    };
+
+    function drawText() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let text = input.value.toUpperCase().normalize("NFD").replace(/[\u0300-\u0302\u0304-\u036f]/g, "");
+
+        let cursorX = START_X;
+        let cursorY = START_Y;
+
+        for (let i = 0; i < text.length; i++) {
+            let char = text[i];
+            let drawSymbolFunc = null;
+
+            if (char === '\n') { cursorX = START_X; cursorY += C_HEIGHT + C_PAD_Y; continue; }
+            if (char === ' ') { cursorX += C_WIDTH / 2; continue; }
+
+            if (char === 'R' && text[i+1] === 'R') { drawSymbolFunc = silenMap['RR']; i++; }
+            else { drawSymbolFunc = silenMap[char]; }
+
+            if (cursorX + C_WIDTH > canvas.width - START_X) { cursorX = START_X; cursorY += C_HEIGHT + C_PAD_Y; }
+
+            // 1. Obtener puntos de la cuadrícula actual
+            const points = getPoints(cursorX, cursorY);
+
+            // 2. Dibujar la retícula base
+            drawBaseGrid(points);
+
+            // 3. Dibujar el símbolo conectando los puntos
+            if (drawSymbolFunc) {
+                ctx.beginPath();
+                ctx.strokeStyle = STYLE_SYMBOL.color;
+                ctx.lineWidth = STYLE_SYMBOL.width;
+                ctx.lineCap = STYLE_SYMBOL.cap;
+                ctx.lineJoin = STYLE_SYMBOL.join;
+                drawSymbolFunc(points);
+                ctx.stroke();
+            }
+            cursorX += C_WIDTH + C_PAD_X;
+        }
+    }
+
+    input.addEventListener('input', drawText);
+    window.addEventListener('load', drawText);
+</script>
+
+</body>
+</html>

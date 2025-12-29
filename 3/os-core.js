@@ -1,4 +1,15 @@
 /* SILENOS 3/os-core.js */
+
+// --- RASTREADOR DE MOUSE GLOBAL ---
+// Necesario para saber dónde pegar archivos (Ctrl+V)
+window.globalMouseX = 0;
+window.globalMouseY = 0;
+
+document.addEventListener('mousemove', (e) => {
+    window.globalMouseX = e.clientX;
+    window.globalMouseY = e.clientY;
+});
+
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', () => {
     renderDesktop();
