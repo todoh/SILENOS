@@ -1,7 +1,8 @@
 /* SILENOS 3/filesystem.js */
-// --- SISTEMA DE ARCHIVOS BASADO EN CACHÉ (LOCALSTORAGE) Y MATERIA BASE64 ---
+// --- SISTEMA DE ARCHIVOS BASADO EN CACHE API Y STORAGE MANAGER ---
 
-const FS_KEY = 'silenos_materia_storage';
+const CACHE_NAME = 'silenos-fs-v1';
+const METADATA_PATH = '/system/metadata.json';
 
 const FileSystem = {
     data: [],
@@ -9,38 +10,77 @@ const FileSystem = {
 
     async init() {
         try {
-            const stored = localStorage.getItem(FS_KEY);
-            if (stored) {
-                this.data = JSON.parse(stored);
-                console.log("H -> Materia recuperada de la memoria local.");
+            // 1. Solicitar Persistencia y verificar cuota (Intentar reservar espacio)
+            if (navigator.storage && navigator.storage.persist) {
+                const isPersisted = await navigator.storage.persist();
+                console.log(`FS: Persistencia de almacenamiento ${isPersisted ? 'CONCEDIDA' : 'NO GARANTIZADA'}`);
+                
+                const estimate = await navigator.storage.estimate();
+                const quotaMB = (estimate.quota || 0) / (1024 * 1024);
+                const usageMB = (estimate.usage || 0) / (1024 * 1024);
+                
+                console.log(`FS: Cuota disponible: ${quotaMB.toFixed(2)} MB. Usado: ${usageMB.toFixed(2)} MB.`);
+                
+                if (quotaMB < 512) {
+                    console.warn("FS: Advertencia - El sistema tiene asignados menos de 512MB de espacio virtual.");
+                } else {
+                    console.log("FS: Espacio virtual de >512MB verificado.");
+                }
             }
+
+            // 2. Recuperar metadatos desde Cache API
+            const cache = await caches.open(CACHE_NAME);
+            const response = await cache.match(METADATA_PATH);
+            
+            if (response) {
+                this.data = await response.json();
+                console.log("H -> Materia recuperada del Cache API.");
+            } else {
+                // Intento de migración legacy si existe localStorage previo
+                const legacy = localStorage.getItem('silenos_materia_storage');
+                if (legacy) {
+                    console.log("FS: Migrando datos antiguos de LocalStorage a Cache API...");
+                    this.data = JSON.parse(legacy);
+                    this.save(); // Guardar en el nuevo sistema
+                }
+            }
+
         } catch (e) {
-            console.error("FS: Error en coherencia inicial", e);
+            console.error("FS: Error en coherencia inicial (Cache API)", e);
         }
     },
 
-    save() {
+    async save() {
         try {
-            localStorage.setItem(FS_KEY, JSON.stringify(this.data));
+            const cache = await caches.open(CACHE_NAME);
+            const blob = new Blob([JSON.stringify(this.data)], { type: 'application/json' });
+            const response = new Response(blob, {
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            await cache.put(METADATA_PATH, response);
+            
             window.dispatchEvent(new Event('fs-data-changed'));
             this._hasChanges = true;
+            // console.log("FS: Sistema guardado en Cache API");
         } catch (e) {
-            console.error("FS: Error de almacenamiento (Límite de caché excedido)", e);
-            alert("⚠️ Error: La memoria del sistema está llena. Elimina archivos o imágenes.");
+            console.error("FS: Error de almacenamiento crítico", e);
+            alert("⚠️ Error al guardar en el disco virtual.");
         }
     },
 
-    // [ARREGLADO] Ahora permite una resolución mayor (800px) para "verlas bien"
+    // [MODIFICADO] Guarda la imagen como Blob en Cache API y devuelve una ruta interna
     async saveImageFile(file) {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const img = new Image();
-                img.onload = () => {
+                img.onload = async () => {
+                    // Procesamiento visual (Resize)
                     const canvas = document.createElement('canvas');
                     let width = img.width;
                     let height = img.height;
-                    const max = 800; // Aumentado de 150 a 800 para calidad visual
+                    const max = 800; 
 
                     if (width > height) {
                         if (width > max) {
@@ -59,8 +99,28 @@ const FileSystem = {
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
                     
-                    const base64 = canvas.toDataURL('image/png', 0.8);
-                    resolve(base64);
+                    // Convertir a Blob en lugar de Base64 para ahorrar memoria
+                    canvas.toBlob(async (blob) => {
+                        if (!blob) {
+                            reject("Error generando blob de imagen");
+                            return;
+                        }
+
+                        const fileId = 'img-' + Date.now() + '-' + Math.floor(Math.random() * 10000) + '.png';
+                        const filePath = `/images/${fileId}`;
+                        
+                        try {
+                            const cache = await caches.open(CACHE_NAME);
+                            const response = new Response(blob, {
+                                headers: { 'Content-Type': 'image/png' }
+                            });
+                            await cache.put(filePath, response);
+                            resolve(filePath); // Guardamos la ruta interna, no el base64 gigante
+                        } catch (err) {
+                            console.error("FS: Error guardando imagen en Cache", err);
+                            reject(err);
+                        }
+                    }, 'image/png', 0.8);
                 };
                 img.src = e.target.result;
             };
@@ -68,11 +128,26 @@ const FileSystem = {
         });
     },
 
-    // [NUEVO] Función que faltaba para recuperar la URL de la materia visual
+    // [MODIFICADO] Recupera la URL usable (Blob URL) desde la caché
     async getImageUrl(contentData) {
         if (!contentData) return null;
-        // Si ya es base64, lo devolvemos directamente
+
+        // Soporte Legacy (si aún hay base64 guardado)
         if (contentData.startsWith('data:image')) return contentData;
+
+        // Soporte Cache API (Rutas internas)
+        if (contentData.startsWith('/images/')) {
+            try {
+                const cache = await caches.open(CACHE_NAME);
+                const response = await cache.match(contentData);
+                if (response) {
+                    const blob = await response.blob();
+                    return URL.createObjectURL(blob);
+                }
+            } catch (e) {
+                console.error("FS: No se pudo recuperar la imagen", contentData);
+            }
+        }
         return null;
     },
 
@@ -86,12 +161,12 @@ const FileSystem = {
         };
     },
 
-    createImageItem(filename, parentId = 'desktop', contentData = '', x, y) {
+    createImageItem(filename, parentId = 'desktop', contentPath = '', x, y) {
         const coords = this._getDefaultCoords(x, y);
         const item = {
             id: 'image-' + Date.now() + Math.floor(Math.random() * 1000),
             type: 'image', title: filename, parentId,
-            content: contentData,
+            content: contentPath, // Ahora guarda la ruta /images/...
             x: coords.x, y: coords.y, z: coords.z, icon: 'image', color: 'text-blue-400'
         };
         this.data.push(item);
@@ -180,6 +255,10 @@ const FileSystem = {
             return ids;
         };
         const allIdsToDelete = getIdsToDelete(id);
+        
+        // Opcional: Podríamos limpiar las imágenes del caché aquí si quisiéramos ser estrictos con la basura
+        // pero por seguridad mantenemos el borrado solo de metadatos por ahora.
+        
         this.data = this.data.filter(i => !allIdsToDelete.includes(i.id));
         this.save();
     }

@@ -100,6 +100,14 @@ function addTypeSpecificOptions(options, item, itemId) {
         action: () => showRenameModal(null, itemId, item.title) 
     });
 
+    // NUEVA OPCIÓN: Compartir (Web Share API)
+    options.push({
+        label: 'Compartir',
+        icon: 'share-2',
+        color: 'text-green-600',
+        action: () => shareItem(item)
+    });
+
     if (item.type === 'folder') {
         options.push({ label: 'Descargar Pack (JSON)', icon: 'package', color: 'text-indigo-600', action: () => DownloadManager.downloadFolderRecursive(item) });
     }
@@ -130,7 +138,6 @@ function addCreationOptions(options, parentId, mouseX, mouseY) {
     }
 
     // 2. Pegado Externo (Portapapeles del SO: Texto, Youtube, JSON, Imágenes)
-    // CORRECCIÓN: Ahora pasamos mouseX y mouseY a la función
     if (typeof window.handleExternalPasteAction === 'function') {
         options.push({ 
             label: 'Pegar desde Portapapeles', 
@@ -140,7 +147,7 @@ function addCreationOptions(options, parentId, mouseX, mouseY) {
         });
     }
 
-    if (SystemClipboard.hasItems() || typeof window.handleExternalPasteAction === 'function') {
+    if ((typeof SystemClipboard !== 'undefined' && SystemClipboard.hasItems()) || typeof window.handleExternalPasteAction === 'function') {
         options.push({ separator: true });
     }
 
@@ -173,6 +180,7 @@ function addCreationOptions(options, parentId, mouseX, mouseY) {
         { label: 'Crear Dato Narrativo', icon: 'sticky-note', color: 'text-orange-500', action: () => createAndRefresh('narrative', 'Dato Narrativo') }
     );
 }
+
 function renderOptions(menu, options) {
     options.forEach(opt => {
         if (opt.separator) {
@@ -197,8 +205,43 @@ function showNotification(msg) {
     n.innerText = msg; document.body.appendChild(n); setTimeout(() => n.remove(), 2000);
 }
 
-/* Fragmento de SILENOS 3/context-menu.js */
-// Función de confirmación de borrado completa
+async function shareItem(item) {
+    if (!navigator.share) {
+        showNotification("Navegador no compatible con Compartir");
+        return;
+    }
+
+    const shareData = {
+        title: `Silenos: ${item.title}`,
+        text: `Compartiendo ${item.type}: ${item.title} desde mi sistema Silenos.`,
+        url: window.location.href
+    };
+
+    try {
+        // Lógica especial para imágenes: Intentar enviar el archivo real
+        if (item.type === 'image' && item.content) {
+            const imageUrl = await FileSystem.getImageUrl(item.content);
+            if (imageUrl && imageUrl.startsWith('blob:')) {
+                const response = await fetch(imageUrl);
+                const blob = await response.blob();
+                const file = new File([blob], `${item.title}.png`, { type: 'image/png' });
+
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    shareData.files = [file];
+                    // Si compartimos archivo, a veces el texto sobra según la app, lo mantenemos como descripción
+                }
+            }
+        }
+
+        await navigator.share(shareData);
+        showNotification("Elemento compartido");
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            console.error("Error al compartir:", err);
+            showNotification("Error al intentar compartir");
+        }
+    }
+}
 
 function showDeleteConfirm(x, y, singleId, singleName, count) {
     const existing = document.getElementById('delete-modal');
@@ -234,7 +277,6 @@ function showDeleteConfirm(x, y, singleId, singleName, count) {
             FileSystem.deleteItem(singleId);
         }
         
-        // Sincronización total tras el borrado
         if (window.refreshSystemViews) window.refreshSystemViews();
         modal.remove();
     };
