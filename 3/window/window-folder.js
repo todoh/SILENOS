@@ -1,3 +1,5 @@
+/* SILENOS 3/window/window-folder.js */
+
 function openDataWindow(fileId) {
     const file = FileSystem.getItem(fileId);
     if (!file) return;
@@ -6,6 +8,14 @@ function openDataWindow(fileId) {
     if (file.type === 'image') { openImageWindow(fileId); return; }
     if (file.type === 'book') { openBookWindow(fileId); return; }
     if (file.type === 'narrative') { openNarrativeWindow(fileId); return; }
+    
+    // --- MODIFICACIÓN: Detectar HTML y abrir en ventana visual ---
+    if (file.type === 'html' || file.mimeType === 'text/html' || (file.title && file.title.toLowerCase().endsWith('.html'))) { 
+        openHtmlWindow(fileId); 
+        return; 
+    }
+    // -----------------------------------------------------------
+
     if (file.type === 'executable') { if (typeof ProgrammerManager !== 'undefined') ProgrammerManager.runHeadless(null, fileId); return; }
     if (file.type === 'program') { openProgramRunnerWindow(fileId); return; }
 
@@ -35,8 +45,57 @@ function openFolderWindow(folderId) {
     if (typeof renderDock === 'function') renderDock();
 }
 
+// --- NUEVAS FUNCIONES PARA HTML ---
+function openHtmlWindow(fileId) {
+    const file = FileSystem.getItem(fileId);
+    if (!file) return;
+    
+    const existing = openWindows.find(w => w.id === fileId);
+    if (existing) {
+        if (existing.isMinimized) toggleMinimize(fileId);
+        focusWindow(fileId);
+        return;
+    }
 
+    zIndexCounter++;
+    const winObj = { 
+        id: fileId, 
+        type: 'html', 
+        fileId: fileId, 
+        title: file.title, 
+        icon: 'globe', 
+        zIndex: zIndexCounter, 
+        x: 150 + (openWindows.length * 30), 
+        y: 150 + (openWindows.length * 30) 
+    };
+    
+    createWindowDOM(winObj, { width: 800, height: 600 });
+    openWindows.push(winObj);
+    
+    renderHtmlContent(fileId, file.content);
+    if (typeof renderDock === 'function') renderDock();
+}
 
+async function renderHtmlContent(windowId, content) {
+    const winContent = document.querySelector(`#window-${windowId} .content-area`);
+    if (!winContent) return;
+    
+    let url;
+    // Soporte para archivos raw (blobs) o contenido texto directo
+    if (typeof content === 'string' && content.startsWith('/files/')) {
+        url = await FileSystem.getImageUrl(content);
+    } else {
+        const blob = new Blob([content], { type: 'text/html' });
+        url = URL.createObjectURL(blob);
+    }
+    
+    winContent.innerHTML = `
+        <div class="w-full h-full bg-white relative">
+             <iframe src="${url}" class="w-full h-full border-none" sandbox="allow-scripts allow-modals allow-forms allow-same-origin allow-popups"></iframe>
+        </div>
+    `;
+}
+// ----------------------------------
 
 async function renderFolderContent(windowId, folderId) {
     const winContent = document.querySelector(`#window-${windowId} .content-area`);
@@ -53,8 +112,12 @@ async function renderFolderContent(windowId, folderId) {
 
         let iconContent = `<i data-lucide="${item.icon}" class="${item.color} w-7 h-7"></i>`;
         
-        if (item.type === 'executable' || item.type === 'program') {
-            const char = Array.from(item.title || " ")[0] || "⚙️";
+        // MODIFICACIÓN: Incluimos 'html' en la lógica de mostrar letra inicial
+        if (item.type === 'executable' || item.type === 'program' || item.type === 'html') {
+            let fallback = "⚙️";
+            if (item.type === 'html') fallback = "📄";
+            
+            const char = Array.from(item.title || " ")[0] || fallback;
             iconContent = `<span class="text-2xl font-black ${item.color} select-none">${char}</span>`;
         } else if (item.type === 'image' && item.content) {
             const blobUrl = await FileSystem.getImageUrl(item.content);
