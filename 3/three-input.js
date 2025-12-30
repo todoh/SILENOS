@@ -28,7 +28,7 @@ const ThreeInput = {
         if (isUi) return;
 
         e.preventDefault();
-        this.targetZ = Math.max(400, Math.min(this.targetZ + e.deltaY * 2, 1800));
+        this.targetZ = Math.max(300, Math.min(this.targetZ + e.deltaY * 2, 1800));
         ThreeCore.needsRender = true;
     },
 

@@ -2,6 +2,15 @@
 
 const APPS = [
     {
+        id: 'local-chat',
+        title: 'Llama 3.2 Local',
+        icon: 'cpu', // Icono de chip
+        type: 'custom',
+        color: 'text-blue-600',
+        width: 800,
+        height: 600
+    },
+    {
         id: 'wikipedia',
         title: 'Wikipedia',
         icon: 'book-open',

@@ -84,13 +84,21 @@ const ThreeEntities = {
     },
 
     // Función auxiliar para actualizar el aspecto visual del icono sin recrear el objeto
-    updateIconDOM(iconDiv, file) {
+    async updateIconDOM(iconDiv, file) {
         if (file.type === 'image' && file.content) {
             iconDiv.style.fontSize = '0';
             iconDiv.style.overflow = 'hidden';
-            iconDiv.innerHTML = `<img src="${file.content}" style="width:100%; height:100%; object-fit:cover; border-radius:20px; pointer-events:none;">`;
-        } else if (file.type === 'executable' || file.type === 'program') {
-            const firstChar = Array.from(file.title || " ")[0] || "⚙️";
+            
+            // CORRECCIÓN: Obtenemos el Blob URL real de la caché
+            const blobUrl = await FileSystem.getImageUrl(file.content);
+            iconDiv.innerHTML = `<img src="${blobUrl || ''}" style="width:100%; height:100%; object-fit:cover; border-radius:20px; pointer-events:none;">`;
+            
+        } else if (file.type === 'executable' || file.type === 'program' || file.type === 'html') {
+            // Se añade 'html' a la condición para mostrar el primer caracter
+            let fallback = "⚙️";
+            if (file.type === 'html') fallback = "📄";
+
+            const firstChar = Array.from(file.title || " ")[0] || fallback;
             iconDiv.innerText = firstChar;
             iconDiv.style.fontSize = '2.4rem';
         } else {
@@ -139,8 +147,8 @@ const ThreeEntities = {
             if (labelSpan && labelSpan.innerText !== file.title) {
                 labelSpan.innerText = file.title;
                 
-                // Si es un programa, su icono (la letra inicial) también debe cambiar
-                if (file.type === 'executable' || file.type === 'program') {
+                // Si es un programa o html, su icono (la letra inicial) también debe cambiar
+                if (file.type === 'executable' || file.type === 'program' || file.type === 'html') {
                     this.updateIconDOM(iconObj.element, file);
                 }
                 moving = true;

@@ -21,135 +21,55 @@ const ImportCore = {
         return collectedItems;
     },
 
-    // Extractor Inteligente: Cuenta llaves para aislar JSON entre texto basura
-    _smartJsonExtract(text) {
-        if (!text) return null;
-        let start = -1;
-        const firstBrace = text.indexOf('{');
-        const firstBracket = text.indexOf('[');
-
-        // 1. Encontrar el inicio real
-        if (firstBrace !== -1 && firstBracket !== -1) start = Math.min(firstBrace, firstBracket);
-        else if (firstBrace !== -1) start = firstBrace;
-        else if (firstBracket !== -1) start = firstBracket;
-
-        if (start === -1) return null;
-
-        // 2. Recorrer carácter a carácter contando niveles
-        let stack = 0;
-        let inString = false;
-        let escaped = false;
-        const openChar = text[start];
-        const closeChar = openChar === '{' ? '}' : ']';
-        
-        for (let i = start; i < text.length; i++) {
-            const char = text[i];
-
-            if (escaped) { escaped = false; continue; }
-            if (char === '\\') { escaped = true; continue; }
-            if (char === '"') { inString = !inString; continue; }
-
-            if (!inString) {
-                if (char === openChar) {
-                    stack++;
-                } else if (char === closeChar) {
-                    stack--;
-                    if (stack === 0) {
-                        // ¡Fin del objeto encontrado!
-                        const jsonStr = text.substring(start, i + 1);
-                        try { return JSON.parse(jsonStr); } catch (e) { return null; }
-                    }
-                }
-            }
-        }
-        return null;
-    },
-
-    // Lógica recursiva para leer carpetas y archivos
+    // Lógica recursiva: AHORA TRABAJA CON ARCHIVOS EN BRUTO
     async processRecursiveEntry(entry, list, parentId = 'desktop') {
         if (entry.isFile) {
             const file = await new Promise((res) => entry.file(res));
-            const name = file.name.toLowerCase();
-            const isImage = /\.(png|jpg|jpeg|webp|gif)$/i.test(file.name);
-
-            if (isImage) {
-                const savedName = await FileSystem.saveImageFile(file);
-                if (savedName) {
-                    list.push({
-                        id: 'image-' + Date.now() + Math.random().toString(36).substr(2, 5),
-                        type: 'image',
-                        title: file.name,
-                        content: savedName,
-                        parentId: parentId,
-                        icon: 'image',
-                        color: 'text-blue-400',
-                        x: 100 + Math.random() * 100,
-                        y: 100 + Math.random() * 100
-                    });
-                }
-            } 
-            else if (name.endsWith('.json')) {
-                const text = await file.text();
-                try { 
-                    const data = JSON.parse(text);
-                    if (Array.isArray(data)) {
-                        data.forEach(d => { if(d.type && !d.id) d.id = 'gen-' + Date.now() + Math.random(); });
-                        list.push(...data);
-                    }
-                    else {
-                        if (data.type && !data.id) data.id = 'gen-' + Date.now();
-                        list.push(data);
-                    }
-                } catch(e) { console.error("Error parseando JSON", e); }
-            } 
-            else if (name.endsWith('.txt')) {
-                const text = await file.text();
-                let importedAsData = false;
-
-                // 1. Intento Limpio
-                const tryParseDeep = (str) => {
-                    try {
-                        let clean = str.trim();
-                        if (clean.charCodeAt(0) === 0xFEFF) clean = clean.slice(1);
-                        return JSON.parse(clean);
-                    } catch (e) { return null; }
-                };
-
-                let data = tryParseDeep(text);
-
-                // 2. Si falla, usar Extractor Inteligente (Mejorado)
-                if (!data) {
-                    data = this._smartJsonExtract(text);
-                }
-
-                // 3. Verificación de Integridad de Silenos
-                if (data && (Array.isArray(data) || data.type)) {
-                    if (Array.isArray(data)) {
-                        data.forEach(d => { 
-                            if(d.type && !d.id) d.id = 'imported-' + Date.now() + Math.random(); 
-                        });
-                        list.push(...data);
-                    }
-                    else {
-                        if (!data.id) data.id = 'imported-' + Date.now();
-                        list.push(data);
-                    }
-                    importedAsData = true;
-                }
-
-                // 4. Fallback: Si no es JSON de sistema, es Narrativa
-                if (!importedAsData) {
-                    list.push({
-                        id: 'narrative-' + Date.now(),
-                        type: 'narrative',
-                        title: file.name.replace('.txt', ''),
-                        content: { tag: "IMPORT", text: text },
-                        parentId: parentId,
-                        icon: 'sticky-note',
-                        color: 'text-orange-500'
-                    });
-                }
+            
+            // 1. Guardar el contenido crudo (Blob) en el sistema de almacenamiento
+            const contentPath = await FileSystem.saveRawFile(file);
+            
+            if (!contentPath) {
+                console.error("Error guardando archivo raw:", file.name);
+                return;
             }
+
+            const isImage = /\.(png|jpg|jpeg|webp|gif|svg)$/i.test(file.name);
+            const isJson = file.name.endsWith('.json');
+            const isJs = file.name.endsWith('.js');
+
+            // 2. Crear el item de metadatos apuntando al contenido crudo
+            // Ya NO transformamos ni parseamos el contenido.
+            
+            if (isImage) {
+                // Mantenemos tipo 'image' para que el visor de imágenes funcione
+                list.push({
+                    id: 'image-' + Date.now() + Math.random().toString(36).substr(2, 5),
+                    type: 'image',
+                    title: file.name,
+                    content: contentPath, // Ruta interna
+                    parentId: parentId,
+                    icon: 'image',
+                    color: 'text-blue-400',
+                    x: 100 + Math.random() * 50,
+                    y: 100 + Math.random() * 50
+                });
+            } else {
+                // Para todo lo demás (TXT, JSON, JS, PDF...), es un archivo genérico
+                list.push({
+                    id: 'file-' + Date.now() + Math.random().toString(36).substr(2, 5),
+                    type: 'file',
+                    title: file.name,
+                    content: contentPath, // Ruta interna
+                    mimeType: file.type,
+                    parentId: parentId,
+                    icon: this._getIconForType(file.name),
+                    color: 'text-gray-200',
+                    x: 100 + Math.random() * 50,
+                    y: 100 + Math.random() * 50
+                });
+            }
+
         } else if (entry.isDirectory) {
             const folderId = 'folder-' + Date.now();
             list.push({
@@ -168,15 +88,25 @@ const ImportCore = {
         }
     },
 
-    // Inserta datos en el sistema manejando colisiones de IDs
+    _getIconForType(filename) {
+        if (filename.endsWith('.js')) return 'file-code';
+        if (filename.endsWith('.json')) return 'file-json';
+        if (filename.endsWith('.css')) return 'file-code-2';
+        if (filename.endsWith('.html')) return 'file-code';
+        if (filename.endsWith('.txt')) return 'file-text';
+        return 'file';
+    },
+
+    // Inserta datos en el sistema (Mantiene lógica de IDs)
     async importToSystem(data) {
         if (typeof ProgrammerManager !== 'undefined') await ProgrammerManager.init();
 
         const idMap = {};
-        // 1. Crear mapa de nuevos IDs para evitar duplicados
         data.forEach(item => {
-            if (item.id && item.type !== 'custom-module') {
-                const newId = item.type + '-' + Date.now() + '-' + Math.floor(Math.random() * 1000000);
+            // Re-generar IDs para evitar colisiones
+            if (item.id) {
+                const prefix = item.type || 'item';
+                const newId = prefix + '-' + Date.now() + '-' + Math.floor(Math.random() * 1000000);
                 idMap[item.id] = newId;
             }
         });
@@ -184,43 +114,19 @@ const ImportCore = {
         let count = 0;
         let modulesCount = 0;
 
-        // 2. Procesar inserción
         data.forEach(item => {
             if (!item.type) return;
 
-            if (item.type === 'custom-module') {
-                if (typeof ProgrammerManager !== 'undefined') {
-                    const idx = ProgrammerManager.customModules.findIndex(m => m.id === item.id);
-                    const moduleData = { ...item };
-                    delete moduleData.type; 
-                    
-                    if (idx >= 0) ProgrammerManager.customModules[idx] = moduleData;
-                    else ProgrammerManager.customModules.push(moduleData);
-                    
-                    modulesCount++;
-                }
-            } 
-            else if (['folder', 'file', 'program', 'narrative', 'book', 'data', 'executable', 'image'].includes(item.type)) {
-                
-                // Remapear ID propio
-                if (idMap[item.id]) item.id = idMap[item.id];
-                
-                // Remapear ID del padre
-                if (item.parentId && idMap[item.parentId]) {
-                    item.parentId = idMap[item.parentId];
-                }
+            // Actualizar IDs
+            if (idMap[item.id]) item.id = idMap[item.id];
+            if (item.parentId && idMap[item.parentId]) item.parentId = idMap[item.parentId];
 
-                FileSystem.data.push(item);
-                count++;
-            }
+            FileSystem.data.push(item);
+            count++;
         });
 
-        // 3. Recuperar carpetas huérfanas
         this.recoverOrphans();
-
-        // 4. Guardar
         FileSystem.save();
-        if (modulesCount > 0 && typeof ProgrammerManager !== 'undefined') ProgrammerManager.saveModules();
 
         return { count, modulesCount };
     },
@@ -240,22 +146,15 @@ const ImportCore = {
                 type: 'folder',
                 title: 'Carpeta Recuperada',
                 parentId: 'desktop', 
-                x: 50 + (Math.random() * 50), 
-                y: 50 + (Math.random() * 50),
-                icon: 'folder',
-                color: 'text-amber-500'
+                x: 50, y: 50,
+                icon: 'folder', color: 'text-amber-500'
             });
         });
     },
 
     async generateBackupData() {
-        if (typeof ProgrammerManager !== 'undefined') await ProgrammerManager.init();
-
-        let backupData = [...FileSystem.data];
-        if (typeof ProgrammerManager !== 'undefined' && ProgrammerManager.customModules.length > 0) {
-                const mods = ProgrammerManager.customModules.map(m => ({ ...m, type: 'custom-module' }));
-                backupData = backupData.concat(mods);
-        }
-        return backupData;
+        // Backup simple de la metadata. 
+        // Nota: El contenido RAW en caché no se serializa aquí, requeriría exportación especial.
+        return [...FileSystem.data];
     }
 };

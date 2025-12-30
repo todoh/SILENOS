@@ -17,7 +17,8 @@ function createWindowDOM(winObj, config) {
         'ai-tool': { color: 'text-purple-600' },
         'programmer': { color: 'text-purple-600' },
         'storage-tool': { color: 'text-indigo-600' },
-        'program-runner': { color: 'text-green-600' }
+        'program-runner': { color: 'text-green-600' },
+        'html': { color: 'text-orange-600' } // Añadido soporte visual para HTML
     };
 
     if (typeConfigs[winObj.type]) {
@@ -121,6 +122,7 @@ function toggleMaximize(id) {
             'ai-tool': { w: 700, h: 600 },
             'programmer': { w: 900, h: 650 },
             'config': { w: 400, h: 350 },
+            'html': { w: 800, h: 600 },
             'default': { w: 600, h: 450 }
         };
 

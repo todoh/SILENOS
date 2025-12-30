@@ -19,6 +19,16 @@ const DownloadManager = {
         this.downloadBlob(jsonStr, `${item.title.replace(/\s+/g, '_')}.json`, 'application/json');
     },
 
+    // [NUEVO] Función para descargar archivos HTML
+    downloadHTML(item) {
+        let filename = item.title;
+        // Asegurar extensión .html
+        if (!filename.toLowerCase().endsWith('.html')) {
+            filename += '.html';
+        }
+        this.downloadBlob(item.content, filename, 'text/html');
+    },
+
     downloadFolderRecursive(folder) {
         FileSystem.init();
         const allItems = [];

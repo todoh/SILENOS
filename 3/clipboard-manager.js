@@ -1,117 +1,168 @@
-/* SILENOS 3/clipboard-manager.js */
+/* SILENOS 3/clipboard/clipboard-json.js */
 
-const SystemClipboard = {
-    ids: [],
-    sourceMode: 'copy',
+const JsonPasteHandler = {
+    
+    // Extractor Robusto Mejorado: Cuenta llaves para aislar JSON preciso
+    _extractJsonFromText(text) {
+        if (!text) return null;
+        let clean = text.trim();
+        
+        // 1. Limpieza básica de Markdown
+        if (clean.startsWith('```')) {
+            clean = clean.replace(/^```[a-z]*\s*/i, '').replace(/\s*```$/, '');
+        }
+        
+        // 2. Intento directo (Rápido)
+        try { return JSON.parse(clean); } catch(e) {}
 
-    copy(ids) {
-        this.ids = [...ids];
-        this.sourceMode = 'copy';
-        console.log("Portapapeles: Copiado", this.ids);
+        // 3. Búsqueda Inteligente (Bracket Counting)
+        let start = -1;
+        const firstBrace = clean.indexOf('{');
+        const firstBracket = clean.indexOf('[');
+
+        if (firstBrace !== -1 && firstBracket !== -1) start = Math.min(firstBrace, firstBracket);
+        else if (firstBrace !== -1) start = firstBrace;
+        else if (firstBracket !== -1) start = firstBracket;
+
+        if (start === -1) return null;
+
+        // Algoritmo de conteo de pila para encontrar el cierre correcto
+        let stack = 0;
+        let inString = false;
+        let escaped = false;
+        const openChar = clean[start];
+        const closeChar = openChar === '{' ? '}' : ']';
+        
+        for (let i = start; i < clean.length; i++) {
+            const char = clean[i];
+
+            if (escaped) { escaped = false; continue; }
+            if (char === '\\') { escaped = true; continue; }
+            if (char === '"') { inString = !inString; continue; }
+
+            if (!inString) {
+                if (char === openChar) {
+                    stack++;
+                } else if (char === closeChar) {
+                    stack--;
+                    if (stack === 0) {
+                        // Cierre encontrado
+                        let sub = clean.substring(start, i + 1);
+                        
+                        try { return JSON.parse(sub); } catch(e) {
+                            try {
+                                const sanitized = sub.replace(/(".*?"|'.*?')/gs, (match) => {
+                                    if (match.startsWith('"')) {
+                                        return match.replace(/\n/g, '\\n').replace(/\r/g, '');
+                                    }
+                                    return match;
+                                });
+                                return JSON.parse(sanitized);
+                            } catch(err2) {}
+                        }
+                        return null; 
+                    }
+                }
+            }
+        }
+        return null;
     },
 
-    hasItems() { return this.ids.length > 0; },
-    getIds() { return this.ids; }
+    canHandleText(text) {
+        const data = this._extractJsonFromText(text);
+        if (!data) return false;
+        
+        const items = Array.isArray(data) ? data : [data];
+        
+        // Verificación de Integridad Silenos
+        return items.some(obj => obj && typeof obj === 'object' && (obj.type || obj.id));
+    },
+
+    async handleText(text, destParentId, mouseX, mouseY) {
+        return await this._processJsonText(text, destParentId, mouseX, mouseY);
+    },
+
+    async canHandle(item) {
+        // Ahora también detecta archivos reales .json
+        if (item.kind === "string") return true;
+        if (item.kind === "file") {
+            const file = item.getAsFile();
+            return file && (file.type === "application/json" || file.name.toLowerCase().endsWith('.json'));
+        }
+        return false;
+    },
+
+    async handle(item, destParentId, mouseX, mouseY) {
+        if (item.kind === "string") {
+            return new Promise(resolve => {
+                item.getAsString(async (text) => {
+                    const result = await this._processJsonText(text, destParentId, mouseX, mouseY);
+                    resolve(result);
+                });
+            });
+        } else if (item.kind === "file") {
+            const file = item.getAsFile();
+            if (!file) return false;
+            const text = await file.text();
+            return await this._processJsonText(text, destParentId, mouseX, mouseY);
+        }
+        return false;
+    },
+
+    // Lógica centralizada de procesamiento con posicionamiento espacial
+    async _processJsonText(text, destParentId, mouseX = null, mouseY = null) {
+        try {
+            const data = this._extractJsonFromText(text);
+            if (!data) return false;
+
+            let items = Array.isArray(data) ? data : [data];
+
+            // Filtro final de seguridad
+            const isSilenosItem = (obj) => obj && typeof obj === 'object' && (obj.type || obj.id);
+            const validItems = items.filter(isSilenosItem);
+
+            if (validItems.length > 0) {
+                console.log(`📦 JsonPasteHandler: ${validItems.length} items de sistema detectados.`);
+                
+                const batchIds = new Set(validItems.map(i => i.id));
+                
+                // Redirigir raíces al destino actual y aplicar coordenadas
+                validItems.forEach((i, idx) => {
+                    if (!i.id) i.id = 'paste-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+
+                    if (!i.parentId || !batchIds.has(i.parentId)) {
+                        i.parentId = destParentId;
+
+                        // Si es un item suelto o una App, forzamos la posición del ratón
+                        if (validItems.length < 5 && mouseX !== null && mouseY !== null) {
+                            const offset = idx * 25; // Ligero desplazamiento si hay varios
+                            
+                            if (destParentId === 'desktop' && typeof ThreeDesktop !== 'undefined') {
+                                const world = ThreeDesktop.screenToWorld(mouseX, mouseY);
+                                i.x = world.x + offset;
+                                i.y = world.y + offset;
+                            } else {
+                                i.x = mouseX + offset;
+                                i.y = mouseY + offset;
+                            }
+                        }
+                    }
+                });
+
+                if (typeof ImportCore !== 'undefined') {
+                    await ImportCore.importToSystem(validItems);
+                    return true;
+                } else {
+                    console.error("CRITICAL: ImportCore no está disponible.");
+                    return false;
+                }
+            }
+            return false;
+        } catch (err) {
+            console.error("Error procesando JSON Paste:", err);
+            return false;
+        }
+    }
 };
 
-document.addEventListener('paste', async (e) => {
-    let destParentId = 'desktop';
-    if (typeof openWindows !== 'undefined' && openWindows.length > 0) {
-        const activeWin = [...openWindows].sort((a, b) => b.zIndex - a.zIndex).find(w => !w.isMinimized);
-        if (activeWin && activeWin.type === 'folder') {
-            destParentId = activeWin.folderId;
-        }
-    }
-
-    const items = e.clipboardData.items;
-    
-    for (let i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf("image") !== -1) {
-            const file = items[i].getAsFile();
-            // El nuevo saveImageFile redimensiona a 150x150 y devuelve Base64
-            const b64Data = await FileSystem.saveImageFile(file);
-            if (b64Data) {
-                FileSystem.createImageItem(file.name || "Imagen Pegada", destParentId, b64Data);
-                console.log("📸 Materia visual (150px Base64) materializada.");
-            }
-        } 
-        else if (items[i].kind === "string") {
-            items[i].getAsString(async (text) => {
-                try {
-                    const data = JSON.parse(text);
-                    if (data.type || Array.isArray(data)) {
-                        const textarea = document.createElement('textarea');
-                        textarea.value = text;
-                        const mockWinId = 'clipboard-import';
-                        document.body.appendChild(textarea);
-                        textarea.id = `import-text-${mockWinId}`;
-                        await ImportManager.executeImport(mockWinId);
-                        textarea.remove();
-                        return;
-                    }
-                } catch (err) {
-                    FileSystem.createNarrative("Nota de Portapapeles", destParentId);
-                    const lastItem = FileSystem.data[FileSystem.data.length - 1];
-                    lastItem.content.text = text;
-                    FileSystem.save();
-                }
-            });
-        }
-    }
-
-    if (typeof refreshSystemViews === 'function') refreshSystemViews();
-});
-
-function handlePasteAction(targetParentId, mouseX, mouseY) {
-    const ids = SystemClipboard.getIds();
-    FileSystem.init();
-
-    ids.forEach((id, index) => {
-        let finalX, finalY, finalZ;
-        
-        if (targetParentId === 'desktop') {
-            if (typeof ThreeDesktop !== 'undefined') {
-                const world = ThreeDesktop.screenToWorld(mouseX, mouseY);
-                finalX = world.x - 48 + (index * 20);
-                finalY = world.y - 48 + (index * 20);
-                finalZ = world.z;
-            } else {
-                finalX = mouseX - 48 + (index * 20);
-                finalY = mouseY - 48 + (index * 20);
-                finalZ = 0; 
-            }
-        } else {
-            finalX = index * 15;
-            finalY = index * 15;
-            finalZ = 0;
-        }
-        
-        duplicateItemRecursive(id, targetParentId, finalX, finalY, finalZ);
-    });
-
-    FileSystem.save();
-    if (typeof refreshSystemViews === 'function') refreshSystemViews();
-}
-
-function duplicateItemRecursive(itemId, newParentId, x = 0, y = 0, z = 0) {
-    const original = FileSystem.getItem(itemId);
-    if (!original) return;
-
-    const clone = JSON.parse(JSON.stringify(original));
-    clone.id = original.type + '-' + Date.now() + Math.floor(Math.random() * 1000000);
-    clone.parentId = newParentId;
-    
-    clone.title = clone.title.includes('(Copia)') ? clone.title + " 2" : clone.title + " (Copia)";
-    clone.x = x;
-    clone.y = y;
-    clone.z = z;
-    
-    FileSystem.data.push(clone);
-
-    if (original.type === 'folder') {
-        const children = FileSystem.getItems(itemId);
-        children.forEach(child => {
-            duplicateItemRecursive(child.id, clone.id, 0, 0, 0);
-        });
-    }
-}
+ClipboardProcessor.registerHandler(JsonPasteHandler);

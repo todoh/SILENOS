@@ -1,7 +1,7 @@
-/* SILENOS 3/desktop-manager.js - GESTIÓN DE ETIQUETAS Y RENOMBRADO */
+/* SILENOS 3/desktop-manager.js */
 
-// 1. Función que dibuja los archivos y sus nombres en el escritorio
-function renderDesktopFiles() {
+// DEFINIMOS LA FUNCIÓN GLOBALMENTE
+window.renderDesktopFiles = function() {
     let container = document.getElementById('desktop-files-layer');
     if (!container) {
         container = document.createElement('div');
@@ -9,7 +9,7 @@ function renderDesktopFiles() {
         container.className = 'absolute inset-0 pointer-events-none z-0'; 
         document.body.appendChild(container); 
     }
-    container.innerHTML = ''; // Limpieza para evitar duplicados
+    container.innerHTML = ''; 
 
     const files = FileSystem.getItems('desktop');
 
@@ -24,14 +24,24 @@ function renderDesktopFiles() {
             if (e.target.tagName !== 'INPUT') startIconDrag(e, file.id, 'desktop');
         };
 
-        let iconContent = `<i data-lucide="${file.icon}" class="${file.color} w-8 h-8"></i>`;
+        // --- LÓGICA DE ICONO DINÁMICO ---
+        let iconContent = '';
+        
         if (file.type === 'image' && file.content) {
             iconContent = `<img src="${file.content}" class="w-full h-full object-cover rounded-xl shadow-inner pointer-events-none">`;
+        } else if (file.type === 'html') {
+            // Renderizamos la letra/emoji
+            iconContent = `
+                <div class="w-full h-full flex items-center justify-center font-black text-3xl select-none ${file.color || 'text-orange-500'}">
+                    ${file.icon || 'H'}
+                </div>`;
+        } else {
+            iconContent = `<i data-lucide="${file.icon}" class="${file.color} w-7 h-7"></i>`;
         }
 
-        // El SPAN es el encargado de mostrar el nombre y activar el renombrado
+        // Estructura cuadrada (w-12 h-12)
         el.innerHTML = `
-            <div class="desktop-icon-btn hover:scale-105 transition-transform bg-[#e0e5ec]/80 backdrop-blur-sm overflow-hidden p-0">
+            <div class="desktop-icon-btn w-12 h-12 rounded-xl hover:scale-105 transition-transform bg-[#e0e5ec]/80 backdrop-blur-sm overflow-hidden p-0 flex items-center justify-center border border-white/40 shadow-sm">
                 ${iconContent}
             </div>
             <span 
@@ -46,9 +56,8 @@ function renderDesktopFiles() {
     });
     
     if (window.lucide) lucide.createIcons();
-}
+};
 
-// 2. Función que abre el editor de nombres y guarda los cambios
 window.showRenameModal = function(e, itemId, currentName) {
     e.stopPropagation();
     const existing = document.getElementById('rename-modal');
@@ -81,9 +90,7 @@ window.showRenameModal = function(e, itemId, currentName) {
     const save = () => {
         const newName = input.value.trim();
         if (newName && newName !== currentName) {
-            // Actualizamos la materia en el FileSystem
             FileSystem.updateItem(itemId, { title: newName });
-            // Forzamos la actualización de todas las vistas (incluyendo el escritorio)
             if (typeof window.refreshSystemViews === 'function') {
                 window.refreshSystemViews();
             }

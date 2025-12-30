@@ -122,41 +122,40 @@ window.addEventListener('dragover', (e) => {
     e.dataTransfer.dropEffect = 'copy';
 });
 
+/**
+ * MANEJO DE DROP EXTERNO (Archivos, Enlaces, Texto del Sistema Operativo real)
+ * Ahora delega en ClipboardProcessor para unificar la lógica con el Pegado.
+ */
 window.addEventListener('drop', async (e) => {
     e.preventDefault();
+    // Si es un arrastre interno de iconos del sistema, no procesamos aquí (se encarga mouseup)
     if (dragState.isDragging) return;
 
+    // 1. Identificar destino (Escritorio o Ventana de Carpeta)
     const targetEl = document.elementFromPoint(e.clientX, e.clientY);
     const folderWin = targetEl ? targetEl.closest('.folder-window-content') : null;
     const destParentId = folderWin ? folderWin.dataset.folderId : 'desktop';
 
-    let x = e.clientX, y = e.clientY, z = 0;
-    if (destParentId === 'desktop' && typeof ThreeDesktop !== 'undefined') {
-        const world = ThreeDesktop.screenToWorld(e.clientX, e.clientY);
-        x = world.x; y = world.y; z = world.z;
-    }
+    // 2. Extraer datos del evento (Texto/Links y Archivos)
+    const text = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('url');
+    const items = Array.from(e.dataTransfer.items);
 
-    const items = e.dataTransfer.items;
-    if (items && items.length > 0) {
-        const collected = [];
-        for (let i = 0; i < items.length; i++) {
-            const entry = items[i].webkitGetAsEntry();
-            if (entry) {
-                await ImportManager.processRecursiveEntry(entry, collected, destParentId);
-            }
+    // 3. Delegar al procesador de portapapeles (Unificación de lógica)
+    if (typeof ClipboardProcessor !== 'undefined') {
+        // Pasamos las coordenadas exactas del ratón para que los items aparezcan donde se soltaron
+        const processed = await ClipboardProcessor.processExternalPaste(
+            text, 
+            items, 
+            destParentId, 
+            e.clientX, 
+            e.clientY
+        );
+
+        if (processed && typeof refreshSystemViews === 'function') {
+            refreshSystemViews();
         }
-
-        collected.forEach(item => {
-            if (destParentId === 'desktop') {
-                item.x = x + (Math.random() * 40);
-                item.y = y + (Math.random() * 40);
-                item.z = z;
-            }
-            FileSystem.data.push(item);
-        });
-
-        FileSystem.save();
-        if (typeof refreshSystemViews === 'function') refreshSystemViews();
+    } else {
+        console.error("ClipboardProcessor no disponible para manejar el drop.");
     }
 });
 
@@ -192,7 +191,6 @@ function handleIconDrop(e) {
     dragState.multiDragIds.forEach((id, index) => {
         const updates = { parentId: destParentId };
         if (isToDesktop) {
-            // El ajuste -32 compensa el tamaño del icono (64px/2) para centrarlo al ratón
             updates.x = worldCoords.x - 32 + (index * 20);
             updates.y = worldCoords.y - 32 + (index * 20);
             updates.z = 0; 

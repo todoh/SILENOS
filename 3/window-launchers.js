@@ -44,13 +44,16 @@ function openDataWindow(fileId) {
     const file = FileSystem.getItem(fileId);
     if (!file) return;
 
+    // Enrutamiento por tipo de archivo
     if (file.type === 'folder') { openFolderWindow(fileId); return; }
     if (file.type === 'image') { openImageWindow(fileId); return; }
     if (file.type === 'book') { openBookWindow(fileId); return; }
     if (file.type === 'narrative') { openNarrativeWindow(fileId); return; }
+    if (file.type === 'html') { openHTMLWindow(fileId); return; } // Soporte HTML
     if (file.type === 'executable') { if (typeof ProgrammerManager !== 'undefined') ProgrammerManager.runHeadless(null, fileId); return; }
     if (file.type === 'program') { openProgramRunnerWindow(fileId); return; }
 
+    // Fallback: Visor de Datos Genérico (Editor de Texto/JSON)
     const existing = openWindows.find(w => w.id === fileId);
     if (existing) { if (existing.isMinimized) toggleMinimize(fileId); focusWindow(fileId); return; }
 
@@ -98,6 +101,10 @@ async function renderFolderContent(windowId, folderId) {
         } else if (item.type === 'image' && item.content) {
             const blobUrl = await FileSystem.getImageUrl(item.content);
             if (blobUrl) iconContent = `<img src="${blobUrl}" class="w-full h-full object-cover rounded-lg pointer-events-none shadow-sm">`;
+        } else if (item.type === 'html') {
+             // Vista previa visual para HTML
+             const letter = (item.title || 'H').charAt(0).toUpperCase();
+             iconContent = `<div class="w-full h-full flex items-center justify-center font-black text-2xl text-orange-500">${letter}</div>`;
         }
 
         el.innerHTML = `
@@ -122,9 +129,89 @@ async function openImageWindow(fileId) {
     const blobUrl = await FileSystem.getImageUrl(file.content);
     const winContent = document.querySelector(`#window-${fileId} .content-area`);
     if (winContent) {
-        // [MEJORADO] Ajuste de fondo y visualización para "verlas bien"
         winContent.innerHTML = `<div class="w-full h-full bg-[#121212] flex items-center justify-center p-2 overflow-auto"><img src="${blobUrl || ''}" class="max-w-full max-h-full shadow-2xl rounded-md object-contain pointer-events-none"></div>`;
     }
+    if (typeof renderDock === 'function') renderDock();
+}
+
+// --- NUEVA FUNCIÓN CORREGIDA: Ejecución de HTML sin Blob URL ---
+async function openHTMLWindow(fileId) {
+    const file = FileSystem.getItem(fileId);
+    if (!file) return;
+
+    const existing = openWindows.find(w => w.id === fileId);
+    if (existing) { if (existing.isMinimized) toggleMinimize(fileId); focusWindow(fileId); return; }
+
+    zIndexCounter++;
+    const winObj = { 
+        id: fileId, 
+        type: 'html', 
+        title: file.title, 
+        icon: 'globe', 
+        zIndex: zIndexCounter, 
+        x: 100 + (openWindows.length * 30), 
+        y: 100 + (openWindows.length * 30) 
+    };
+
+    // Ventana amplia para aplicaciones web
+    createWindowDOM(winObj, { width: 900, height: 700 });
+    openWindows.push(winObj);
+
+    const winContent = document.querySelector(`#window-${fileId} .content-area`);
+    if (winContent) {
+        let htmlContent = "";
+        
+        // 1. Obtener el contenido HTML (Texto plano o desde Blob raw)
+        if (file.content && typeof file.content === 'object' && file.content.text) {
+            htmlContent = file.content.text;
+        } else if (typeof file.content === 'string') {
+             if (file.content.startsWith('/files/')) {
+                 const blob = await FileSystem.getRawFile(file.content);
+                 if (blob) htmlContent = await blob.text();
+             } else {
+                 htmlContent = file.content;
+             }
+        }
+
+        // 2. Renderizar usando document.write en lugar de src="blob:..."
+        // Esto mantiene el origen (origin) del padre, permitiendo que librerías como WebLLM
+        // resuelvan URLs relativas correctamente sin errores de "Invalid URL".
+        if (htmlContent) {
+            winContent.innerHTML = ''; // Limpiar loader
+            
+            const iframe = document.createElement('iframe');
+            iframe.className = "w-full h-full border-none bg-white";
+            iframe.setAttribute('allow', 'accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone; midi; clipboard-read; clipboard-write; display-capture; autoplay');
+            
+            // Importante: Adjuntar al DOM antes de escribir
+            winContent.appendChild(iframe);
+            
+            try {
+                const doc = iframe.contentWindow.document;
+                doc.open();
+                
+                // Opcional: Reforzar la base URL para que sea idéntica al sistema
+                // aunque en about:blank suele heredarla automáticamente.
+                if (!htmlContent.includes('<base')) {
+                    const baseTag = `<base href="${window.location.origin}/" />`;
+                    if (htmlContent.includes('<head>')) {
+                        htmlContent = htmlContent.replace('<head>', `<head>${baseTag}`);
+                    } else {
+                        htmlContent = `${baseTag}${htmlContent}`;
+                    }
+                }
+
+                doc.write(htmlContent);
+                doc.close();
+            } catch (e) {
+                console.error("Error escribiendo HTML en iframe:", e);
+                winContent.innerHTML = `<div class="p-4 text-red-500 font-bold">Error de Ejecución: ${e.message}</div>`;
+            }
+        } else {
+             winContent.innerHTML = `<div class="p-4 text-gray-400">El archivo está vacío o no se pudo leer.</div>`;
+        }
+    }
+
     if (typeof renderDock === 'function') renderDock();
 }
 
