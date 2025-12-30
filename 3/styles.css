@@ -21,7 +21,7 @@ body {
     background-color: var(--bg-color);
     overflow: hidden;
     /* APLICAMOS LA FUENTE DE EMOJIS PRIMERO PARA FORZARLA */
-    font-family: 'SilenosEmojis', 'Segoe UI', system-ui, sans-serif;
+    font-family: system-ui, sans-serif;
     user-select: none;
     margin: 0;
 }
