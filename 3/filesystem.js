@@ -10,7 +10,6 @@ const FileSystem = {
 
     async init() {
         try {
-            // 1. Verificación de Persistencia (Usando constantes)
             if (navigator.storage && navigator.storage.persist) {
                 const isPersisted = await navigator.storage.persist();
                 console.log(`FS: Persistencia ${isPersisted ? 'CONCEDIDA' : 'NO GARANTIZADA'}`);
@@ -20,10 +19,8 @@ const FileSystem = {
                 console.log(`FS: Cuota disponible: ${quotaMB.toFixed(2)} MB.`);
             }
 
-            // 2. Cargar Datos
             await this.load();
 
-            // 3. Auto-guardado periódico
             setInterval(() => {
                 if (this._hasChanges) {
                     this.save();
@@ -47,7 +44,6 @@ const FileSystem = {
             const dataBlob = new Blob([JSON.stringify(this.data)], { type: 'application/json' });
             const response = new Response(dataBlob);
             await cache.put(FS_CONSTANTS.METADATA_PATH, response);
-            // console.log("FS: Guardado exitoso.");
         } catch (e) {
             console.error("FS: Error al guardar:", e);
         }
@@ -72,15 +68,12 @@ const FileSystem = {
     },
 
     // --- ALMACENAMIENTO RAW (ARCHIVOS EN BRUTO) ---
-    // Guarda el archivo físico (Blob) en la Caché y devuelve una "ruta" virtual
     async saveRawFile(file) {
         try {
             const cache = await caches.open(FS_CONSTANTS.CACHE_NAME);
-            // Generar ID único para el contenido
             const contentId = 'blob-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
             const path = `/files/${contentId}`; 
             
-            // Guardamos el Blob directamente
             const response = new Response(file, { 
                 headers: { 
                     'Content-Type': file.type || 'application/octet-stream',
@@ -88,14 +81,13 @@ const FileSystem = {
                 }
             });
             await cache.put(path, response);
-            return path; // Retornamos la ruta interna
+            return path;
         } catch(e) {
             console.error("FS: Error guardando archivo raw:", e);
             return null;
         }
     },
 
-    // Recupera el Blob original usando la ruta
     async getRawFile(path) {
         if (!path || !path.startsWith('/files/')) return null;
         try {
@@ -109,29 +101,25 @@ const FileSystem = {
         }
     },
 
-    // Helper para obtener URL visualizable (especialmente para imágenes)
     async getImageUrl(content) {
-        // Si es una ruta de sistema de archivos raw
         if (typeof content === 'string' && content.startsWith('/files/')) {
             const blob = await this.getRawFile(content);
             if (blob) return URL.createObjectURL(blob);
         }
-        // Fallback para base64 antiguo o URLs externas
         return content; 
     },
 
-    // --- OPERACIONES CRUD (Delegación a Módulos + Raw) ---
+    // --- OPERACIONES CRUD ---
 
-    // Crear Item de Archivo Genérico (Raw)
     createFileItem(name, parentId, contentPath, mimeType, x, y) {
         const item = {
             id: 'file-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
-            type: 'file', // Tipo genérico
+            type: 'file',
             title: name,
             parentId: parentId,
-            content: contentPath, // Ruta al blob en caché
+            content: contentPath,
             mimeType: mimeType,
-            icon: 'file', // Icono por defecto
+            icon: 'file',
             color: 'text-gray-400',
             x: x || 100,
             y: y || 100
@@ -141,7 +129,6 @@ const FileSystem = {
         return item;
     },
 
-    // Crear Carpeta
     createFolder(name, parentId, coords) {
         const folder = TypeFolder.create(name, parentId, coords);
         this.data.push(folder);
@@ -149,7 +136,6 @@ const FileSystem = {
         return folder;
     },
 
-    // Crear Archivo de Texto (Mantiene compatibilidad)
     createTextFile(name, content, parentId, coords) {
         const file = TypeText.create(name, content, parentId, coords);
         this.data.push(file);
@@ -157,7 +143,6 @@ const FileSystem = {
         return file;
     },
 
-    // Crear Archivo CSS
     createCSS(name, content, parentId, coords) {
         const file = TypeCSS.create(name, content, parentId, coords);
         this.data.push(file);
@@ -165,7 +150,6 @@ const FileSystem = {
         return file;
     },
 
-    // Crear Javascript
     createJS(name, content, parentId, coords) {
         const file = TypeJS.create(name, content, parentId, coords);
         this.data.push(file);
@@ -173,24 +157,21 @@ const FileSystem = {
         return file;
     },
     
-    // Crear Imagen (Adaptado para usar raw si se desea, o compatibilidad)
     createImage(name, src, parentId, coords) {
-        // Nota: TypeImage.create podría esperar base64, pero aquí gestionamos la metadata.
-        // Si src es una ruta /files/, funcionará con getImageUrl
         const file = TypeImage.create(name, src, parentId, coords);
         this.data.push(file);
         this.save();
         return file;
     },
 
-    // Crear JSON
     createJSON(name, content, parentId, coords) {
         const file = TypeJSON.create(name, content, parentId, coords);
         this.data.push(file);
         this.save();
         return file;
     },
-createHTML(name, content, parentId, coords) {
+
+    createHTML(name, content, parentId, coords) {
         if (typeof TypeHTML === 'undefined') {
             console.error("FS: TypeHTML no está cargado.");
             return null;
@@ -200,7 +181,66 @@ createHTML(name, content, parentId, coords) {
         this.save();
         return file;
     },
-    // --- GESTIÓN DE ITEMS (Genérico) ---
+
+    createProgram(name, parentId, coords) {
+        if (typeof TypeProgram === 'undefined') {
+            console.error("FS: TypeProgram no está cargado.");
+            return null;
+        }
+        const item = TypeProgram.create(name, parentId, coords);
+        this.data.push(item);
+        this.save();
+        return item;
+    },
+
+    createBook(name, parentId, coords) {
+        if (typeof TypeBook === 'undefined') {
+            console.error("FS: TypeBook no está cargado.");
+            return null;
+        }
+        const item = TypeBook.create(name, parentId, coords);
+        this.data.push(item);
+        this.save();
+        return item;
+    },
+
+    createNarrative(name, parentId, coords) {
+        if (typeof TypeNarrative === 'undefined') {
+            console.error("FS: TypeNarrative no está cargado.");
+            return null;
+        }
+        const item = TypeNarrative.create(name, parentId, coords);
+        this.data.push(item);
+        this.save();
+        return item;
+    },
+
+    createData(name, content, parentId, coords) {
+        if (typeof TypeData === 'undefined') {
+            console.error("FS: TypeData no está cargado. Usando fallback genérico.");
+            const item = {
+                id: 'data-' + Date.now(),
+                type: 'data',
+                title: name,
+                parentId,
+                content: content || {},
+                x: coords?.x || 0,
+                y: coords?.y || 0,
+                z: coords?.z || 0,
+                icon: 'database',
+                color: 'text-blue-400'
+            };
+            this.data.push(item);
+            this.save();
+            return item;
+        }
+        const item = TypeData.create(name, content, parentId, coords);
+        this.data.push(item);
+        this.save();
+        return item;
+    },
+
+    // --- GESTIÓN DE ITEMS ---
 
     updateItem(id, updates) {
         const item = this.data.find(i => i.id === id);
@@ -231,8 +271,6 @@ createHTML(name, content, parentId, coords) {
 
         const allIdsToDelete = getIdsToDelete(id);
         const initialCount = this.data.length;
-        
-        // TODO: Aquí se podrían borrar también los Blobs de la caché para limpiar basura
         
         this.data = this.data.filter(i => !allIdsToDelete.includes(i.id));
         

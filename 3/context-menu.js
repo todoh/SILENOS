@@ -92,7 +92,6 @@ function createContextMenu(mouseX, mouseY, itemId = null, itemTitle = null, pare
 }
 
 function addTypeSpecificOptions(options, item, itemId) {
-    // Opción universal de renombrar (H - Coherencia)
     options.push({ 
         label: 'Renombrar', 
         icon: 'edit-2', 
@@ -111,7 +110,6 @@ function addTypeSpecificOptions(options, item, itemId) {
         );
     }
 
-    // [NUEVO] Opción para descargar HTML
     if (item.type === 'html') {
         options.push({ label: 'Descargar HTML', icon: 'file-code', color: 'text-orange-600', action: () => DownloadManager.downloadHTML(item) });
     }
@@ -129,13 +127,10 @@ function addCreationOptions(options, parentId, mouseX, mouseY) {
         options.push({ separator: true });
     }
     
-    // 1. Pegado Interno (Archivos de Silenos)
     if (typeof SystemClipboard !== 'undefined' && SystemClipboard.hasItems()) {
         options.push({ label: `Pegar Archivos (${SystemClipboard.getIds().length})`, icon: 'copy-plus', color: 'text-indigo-600', action: () => handlePasteAction(parentId, mouseX, mouseY) });
     }
 
-    // 2. Pegado Externo (Portapapeles del SO: Texto, Youtube, JSON, Imágenes)
-    // CORRECCIÓN: Ahora pasamos mouseX y mouseY a la función
     if (typeof window.handleExternalPasteAction === 'function') {
         options.push({ 
             label: 'Pegar desde Portapapeles', 
@@ -159,13 +154,13 @@ function addCreationOptions(options, parentId, mouseX, mouseY) {
 
     const createAndRefresh = (type, name) => {
         const c = getCoords();
-        const item = type === 'folder' ? FileSystem.createFolder(name, parentId, c.x, c.y) :
-                     type === 'program' ? FileSystem.createProgram(name, parentId, c.x, c.y) :
-                     type === 'book' ? FileSystem.createBook(name, parentId, c.x, c.y) :
-                     type === 'narrative' ? FileSystem.createNarrative(name, parentId, c.x, c.y) :
-                     FileSystem.createData(name, {info:"Dato"}, parentId, c.x, c.y);
+        const item = type === 'folder' ? FileSystem.createFolder(name, parentId, c) :
+                     type === 'program' ? FileSystem.createProgram(name, parentId, c) :
+                     type === 'book' ? FileSystem.createBook(name, parentId, c) :
+                     type === 'narrative' ? FileSystem.createNarrative(name, parentId, c) :
+                     FileSystem.createData(name, {info:"Dato"}, parentId, c);
         
-        if (typeof c.z === 'number') item.z = c.z;
+        if (item && typeof c.z === 'number') item.z = c.z;
         FileSystem.save(); 
         if (window.refreshAllViews) refreshAllViews();
         if (window.refreshSystemViews) window.refreshSystemViews();
@@ -178,6 +173,7 @@ function addCreationOptions(options, parentId, mouseX, mouseY) {
         { label: 'Crear Dato Narrativo', icon: 'sticky-note', color: 'text-orange-500', action: () => createAndRefresh('narrative', 'Dato Narrativo') }
     );
 }
+
 function renderOptions(menu, options) {
     options.forEach(opt => {
         if (opt.separator) {
@@ -201,9 +197,6 @@ function showNotification(msg) {
     n.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-full text-xs font-bold z-[10000] pop-in pointer-events-none backdrop-blur-sm shadow-lg';
     n.innerText = msg; document.body.appendChild(n); setTimeout(() => n.remove(), 2000);
 }
-
-/* Fragmento de SILENOS 3/context-menu.js */
-// Función de confirmación de borrado completa
 
 function showDeleteConfirm(x, y, singleId, singleName, count) {
     const existing = document.getElementById('delete-modal');
@@ -239,7 +232,6 @@ function showDeleteConfirm(x, y, singleId, singleName, count) {
             FileSystem.deleteItem(singleId);
         }
         
-        // Sincronización total tras el borrado
         if (window.refreshSystemViews) window.refreshSystemViews();
         modal.remove();
     };

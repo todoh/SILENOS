@@ -25,8 +25,11 @@ function startWindowDrag(e, id) {
     const rect = el.getBoundingClientRect();
     dragState.offsetX = e.clientX - rect.left;
     dragState.offsetY = e.clientY - rect.top;
+    
+    // Activar overlay para evitar que el iframe capture eventos del ratón
     const overlay = el.querySelector('.iframe-overlay');
     if(overlay) overlay.style.display = 'block';
+    
     if (typeof focusWindow === 'function') focusWindow(id);
 }
 
@@ -53,6 +56,9 @@ function startIconDrag(e, fileId, sourceParentId) {
     dragState.initialX = e.clientX;
     dragState.initialY = e.clientY;
     
+    // ACTIVAR OVERLAYS EN TODAS LAS VENTANAS PARA PERMITIR ARRASTRE FLUIDO SOBRE ELLAS
+    document.querySelectorAll('.iframe-overlay').forEach(ov => ov.style.display = 'block');
+
     const count = dragState.multiDragIds.length;
     const ghost = document.createElement('div');
     ghost.className = 'fixed pointer-events-none z-[9999] opacity-90 flex flex-col items-center gap-2';
@@ -97,6 +103,10 @@ window.addEventListener('mousemove', (e) => {
 
 window.addEventListener('mouseup', (e) => {
     if (!dragState.isDragging) return;
+    
+    // DESACTIVAR OVERLAYS AL SOLTAR
+    document.querySelectorAll('.iframe-overlay').forEach(ov => ov.style.display = 'none');
+
     try {
         if (dragState.type === 'window') {
             const el = document.getElementById(`window-${dragState.targetId}`);
@@ -122,27 +132,18 @@ window.addEventListener('dragover', (e) => {
     e.dataTransfer.dropEffect = 'copy';
 });
 
-/**
- * MANEJO DE DROP EXTERNO (Archivos, Enlaces, Texto del Sistema Operativo real)
- * Ahora delega en ClipboardProcessor para unificar la lógica con el Pegado.
- */
 window.addEventListener('drop', async (e) => {
     e.preventDefault();
-    // Si es un arrastre interno de iconos del sistema, no procesamos aquí (se encarga mouseup)
     if (dragState.isDragging) return;
 
-    // 1. Identificar destino (Escritorio o Ventana de Carpeta)
     const targetEl = document.elementFromPoint(e.clientX, e.clientY);
     const folderWin = targetEl ? targetEl.closest('.folder-window-content') : null;
     const destParentId = folderWin ? folderWin.dataset.folderId : 'desktop';
 
-    // 2. Extraer datos del evento (Texto/Links y Archivos)
     const text = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('url');
     const items = Array.from(e.dataTransfer.items);
 
-    // 3. Delegar al procesador de portapapeles (Unificación de lógica)
     if (typeof ClipboardProcessor !== 'undefined') {
-        // Pasamos las coordenadas exactas del ratón para que los items aparezcan donde se soltaron
         const processed = await ClipboardProcessor.processExternalPaste(
             text, 
             items, 
@@ -154,8 +155,6 @@ window.addEventListener('drop', async (e) => {
         if (processed && typeof refreshSystemViews === 'function') {
             refreshSystemViews();
         }
-    } else {
-        console.error("ClipboardProcessor no disponible para manejar el drop.");
     }
 });
 
@@ -169,6 +168,40 @@ function handleIconDrop(e) {
         return; 
     }
 
+    // --- LÓGICA DE DROP EN VENTANAS (CORREGIDA PARA CARPETAS) ---
+    if (typeof openWindows !== 'undefined') {
+        const windowsReversed = [...openWindows].reverse();
+        
+        for (const win of windowsReversed) {
+            const winEl = document.getElementById(`window-${win.id}`);
+            if (!winEl) continue;
+
+            const rect = winEl.getBoundingClientRect();
+            if (e.clientX >= rect.left && e.clientX <= rect.right &&
+                e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                
+                // Si la ventana es una carpeta, NO enviamos mensaje y NO hacemos return.
+                // Dejamos que el código siga hacia la "Lógica Estándar" de carpetas.
+                if (win.type === 'folder') {
+                    break; 
+                }
+                
+                const fileId = dragState.multiDragIds[0];
+                const fileItem = FileSystem.getItem(fileId);
+                const iframe = winEl.querySelector('iframe');
+                if (iframe && fileItem) {
+                    iframe.contentWindow.postMessage({
+                        type: 'FILE_DROP_INTERNAL',
+                        file: fileItem,
+                        content: fileItem.content 
+                    }, '*');
+                }
+                return; 
+            }
+        }
+    }
+
+    // --- LÓGICA ESTÁNDAR (ESCRITORIO / CARPETAS) ---
     const targetEl = document.elementFromPoint(e.clientX, e.clientY);
     let destParentId = 'desktop';
 
