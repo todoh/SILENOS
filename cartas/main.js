@@ -73,7 +73,19 @@ const App = () => {
                 const unsubDoc = db.collection('users').doc(u.uid).onSnapshot(doc => {
                     if(doc.exists) {
                         setUserData(doc.data());
-                        if(appState === 'loading' || appState === 'auth') setAppState('dashboard');
+                        
+                        // --- CORRECCIÓN IMPORTANTE AQUÍ ---
+                        // Usamos la forma funcional setAppState(prev => ...) para leer el estado ACTUAL.
+                        // El código anterior leía el estado "viejo" ('loading') y forzaba el Dashboard,
+                        // cerrando el juego cuando se actualizaba Firebase (al borrar el desafío).
+                        setAppState(prev => {
+                            // Solo si estamos cargando o en login vamos al dashboard.
+                            // Si ya estamos en 'game', NOS QUEDAMOS en 'game'.
+                            if (prev === 'loading' || prev === 'auth') {
+                                return 'dashboard';
+                            }
+                            return prev; 
+                        });
                     }
                 });
                 return () => unsubDoc();

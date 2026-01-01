@@ -103,9 +103,13 @@ const Dashboard = ({ user, userData, onLogout, onStartGame }) => {
                         </div>
                         <div className="flex gap-2 mt-2">
                             <Button variant="success" onClick={() => {
+                                // CORRECCIÓN: Guardar el ID antes de borrar el desafío para evitar condición de carrera
+                                const targetId = userData.incomingChallenge.hostPeerId;
+                                onStartGame({ mode: 'join_friend', targetPeerId: targetId });
+                                // Borrar después de iniciar
                                 db.collection('users').doc(user.uid).update({ incomingChallenge: null });
-                                onStartGame({ mode: 'join_friend', targetPeerId: userData.incomingChallenge.hostPeerId });
                             }} className="flex-1">Aceptar</Button>
+                            
                             <Button variant="danger" onClick={() => db.collection('users').doc(user.uid).update({ incomingChallenge: null })} className="flex-1">Rechazar</Button>
                         </div>
                     </div>
