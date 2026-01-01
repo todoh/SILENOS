@@ -1,147 +1,204 @@
-
-// --- COMPONENTES DEL TABLERO DE JUGADORES ---
+// --- TABLEROS DE JUGADORES (NEUMORFISTA) ---
 
 const OpponentBoard = ({ player, isMyTurn }) => {
     return (
-        <div className="flex flex-col items-center border-b border-white/10 bg-black/20 pb-2">
-            {/* Stats Rival */}
-            <div className="flex w-full justify-between items-center px-4 py-2 bg-slate-950 text-slate-300">
-                <div className="flex items-center gap-4">
-                    <div className="flex flex-col items-center">
-                        <span className="text-2xl font-bold text-yellow-500">{player.points} / 30</span>
-                        <span className="text-[10px] uppercase">Puntos</span>
+        <div className="flex flex-col items-center pb-2 w-full flex-shrink-0 bg-[var(--bg-main)] border-b border-[var(--shadow-dark)]">
+            {/* Stats Rival - Barra elevada */}
+            <div className="flex w-full justify-between items-center px-4 py-2 bg-[var(--bg-main)] shadow-lg z-10">
+                <div className="font-bold text-sm text-slate-400">{player.name}</div>
+                <div className="flex gap-4">
+                    <div className="neo-inset px-2 py-1 flex flex-col items-center w-10">
+                        <span className="text-yellow-500 font-bold leading-none">{player.points}</span>
+                        <span className="text-[6px] text-slate-500 uppercase">PTS</span>
                     </div>
-                    <div className="flex flex-col items-center">
-                        <span className="text-xl font-bold text-blue-400">⚡ {player.energy}</span>
-                        <span className="text-[10px] uppercase">Energía</span>
+                    <div className="neo-inset px-2 py-1 flex flex-col items-center w-10">
+                        <span className="text-blue-500 font-bold leading-none">{player.energy}</span>
+                        <span className="text-[6px] text-slate-500 uppercase">ENG</span>
                     </div>
                 </div>
-                <div className="font-bold text-lg">{player.name}</div>
             </div>
 
-            {/* Mano Rival (Oculta) */}
-            <div className="flex justify-center -mt-4 mb-2">
+            {/* Mano Rival (Cartas ocultas) */}
+            <div className="w-full flex justify-center py-2 -space-x-2 overflow-hidden h-14 md:h-20 opacity-70">
                 {player.hand.map((_, i) => (
-                    <div key={i} className="w-16 h-24 bg-slate-800 border border-slate-600 rounded m-1 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] shadow-lg"></div>
+                    <div key={i} className="w-8 h-10 md:w-10 md:h-14 neo-box bg-slate-700/50 transform rotate-3 border border-slate-600"></div>
                 ))}
             </div>
 
             {/* Campo Rival */}
-            <div className="flex justify-center gap-2 min-h-[160px] items-center">
-                {player.field.map((unit, idx) => (
-                    <CardDisplay key={idx} card={unit} size="small" />
-                ))}
+            <div className="w-full overflow-x-auto no-scrollbar py-2">
+                <div className="flex items-center gap-2 px-4 min-w-max justify-center min-h-[140px]">
+                    {player.field.length === 0 && <span className="text-slate-700 text-xs uppercase font-bold tracking-widest">Campo Rival Vacío</span>}
+                    {player.field.map((unit, idx) => (
+                        <CardDisplay key={idx} card={unit} size="small" />
+                    ))}
+                </div>
             </div>
         </div>
     );
 };
 
 const PlayerBoard = ({ player, isMyTurn, phase, playCard, useAbility, advancePhase, incomingStack, assignDefender }) => {
-    // Texto del botón de fase
+    const [dragState, setDragState] = React.useState(null);
+
     let phaseBtnText = "Esperando...";
     let canAdvance = false;
+    let btnVariant = "secondary";
     
     if (isMyTurn) {
-        if (phase === 'response') { phaseBtnText = "Resolver Combates"; canAdvance = true; }
-        else if (phase === 'preparation') { phaseBtnText = "Fin Preparación -> Combatir"; canAdvance = true; }
-        else if (phase === 'interaction') { phaseBtnText = "Terminar Turno"; canAdvance = true; }
+        if (phase === 'response') { 
+            phaseBtnText = "🛡️ Confirmar Defensa"; 
+            canAdvance = true; 
+            btnVariant = "warning";
+        }
+        else if (phase === 'main') { 
+            phaseBtnText = "Terminar Turno"; 
+            canAdvance = true; 
+            btnVariant = "danger";
+        }
     }
 
-    // Manejador inteligente de clics en unidades (Shortcut UX)
-    const handleUnitClick = (unit) => {
-        if (!isMyTurn) return;
+    // Drag Logic Desktop
+    const handleDragStart = (e, unit) => {
+        if (phase !== 'response' || unit.isFrozen) { e.preventDefault(); return; }
+        e.dataTransfer.setData("text/plain", unit.uuid);
+    };
+    const handleDropOnAttack = (e, actionUuid) => {
+        e.preventDefault();
+        const blockerUuid = Number(e.dataTransfer.getData("text/plain"));
+        if (blockerUuid) assignDefender(actionUuid, blockerUuid);
+    };
+    const handleDragOver = (e) => e.preventDefault();
 
-        // Si estamos defendiendo, clic en carta = usar habilidad 'def'
-        if (phase === 'response') {
-            useAbility(unit.uuid, 'def');
-        }
-        // Si estamos atacando, clic en carta = usar habilidad 'atk'
-        else if (phase === 'interaction') {
-            useAbility(unit.uuid, 'atk');
-        }
+    // Touch Logic
+    const handleTouchStart = (e, unit) => {
+        if (phase !== 'response' || unit.isFrozen) return;
+        const t = e.touches[0];
+        setDragState({ uuid: unit.uuid, x: t.clientX, y: t.clientY });
+    };
+    const handleTouchMove = (e) => {
+        if (!dragState) return;
+        if(e.cancelable) e.preventDefault();
+        const t = e.touches[0];
+        setDragState(prev => ({ ...prev, x: t.clientX, y: t.clientY }));
+    };
+    const handleTouchEnd = (e) => {
+        if (!dragState) return;
+        const t = e.changedTouches[0];
+        const target = document.elementFromPoint(t.clientX, t.clientY);
+        const dropZone = target?.closest('[data-drop-zone="true"]');
+        if (dropZone) assignDefender(Number(dropZone.getAttribute('data-action-uuid')), dragState.uuid);
+        setDragState(null);
     };
 
+    const draggingCard = dragState ? player.field.find(c => c.uuid === dragState.uuid) : null;
+
     return (
-        <div className="flex-1 flex flex-col justify-end bg-gradient-to-t from-slate-900 to-slate-900/50 relative">
+        <div className="flex-1 flex flex-col justify-end relative w-full overflow-hidden bg-[var(--bg-main)]">
             
-            {/* ZONA DE RESPUESTA (Solo visible en Fase Respuesta) */}
-            {isMyTurn && phase === 'response' && incomingStack.length > 0 && (
-                <div className="absolute top-0 left-0 right-0 bg-red-900/80 p-2 z-20 flex flex-col items-center animate-pulse">
-                    <h3 className="text-white font-bold text-lg mb-2">⚠️ ¡ATAQUES ENTRANTES! ASIGNA DEFENSORES ⚠️</h3>
-                    <div className="flex gap-4 overflow-x-auto w-full justify-center">
-                        {incomingStack.map((action, idx) => (
-                            <div key={idx} className="bg-slate-800 p-2 rounded border border-red-500 min-w-[200px] flex flex-col gap-2">
-                                <div className="text-white text-sm font-bold">{action.sourceCardName}</div>
-                                <div className="text-xs text-red-300">Poder de Ataque: {action.sourceStats}</div>
-                                <div className="text-xs text-yellow-300">Habilidad: {action.abilityName}</div>
-                                
-                                {action.blockerUuid ? (
-                                    <div className="bg-green-700 text-white text-xs p-1 text-center rounded">
-                                        Bloqueado por tu carta
+            {dragState && draggingCard && (
+                <div className="fixed z-50 pointer-events-none opacity-80" style={{ left: dragState.x, top: dragState.y, transform: 'translate(-50%, -50%)' }}>
+                    <CardDisplay card={draggingCard} size="small" />
+                </div>
+            )}
+
+            <div className="flex-1 overflow-y-auto flex flex-col justify-center gap-2 pb-2">
+                
+                {/* ZONA DE DEFENSA (NEO-INSET) */}
+                {isMyTurn && phase === 'response' && incomingStack.length > 0 && (
+                    <div className="neo-inset mx-2 my-2 p-2 flex flex-col border border-red-500/20">
+                        <div className="text-red-400 text-[10px] text-center mb-2 font-bold animate-pulse">ARRASTRA TUS UNIDADES A LOS ATAQUES</div>
+                        <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                            {incomingStack.map((action, idx) => {
+                                const blockerName = action.blockerUuid ? player.field.find(c => c.uuid === action.blockerUuid)?.name : null;
+                                return (
+                                    <div 
+                                        key={idx} 
+                                        data-drop-zone="true"
+                                        data-action-uuid={action.uuid}
+                                        onDragOver={handleDragOver}
+                                        onDrop={(e) => handleDropOnAttack(e, action.uuid)}
+                                        className={`w-24 h-28 flex-shrink-0 rounded-lg flex flex-col items-center justify-between p-2 transition-all border
+                                            ${action.blockerUuid 
+                                                ? 'neo-box border-green-500/30' 
+                                                : 'neo-inset bg-red-900/10 border-red-500/30'
+                                            }
+                                        `}
+                                    >
+                                        <span className="text-[9px] text-slate-400 truncate w-full text-center">{action.sourceCardName}</span>
+                                        <div className="text-2xl text-red-500 font-bold">{action.sourceStats}</div>
+                                        <div className={`text-[8px] px-2 py-1 rounded w-full text-center ${action.blockerUuid ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                                            {blockerName || "SIN DEFENSA"}
+                                        </div>
                                     </div>
-                                ) : (
-                                    <div className="text-xs text-center text-slate-400 italic">Clic en tu carta para bloquear</div>
-                                )}
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                {/* CAMPO PROPIO */}
+                <div className="w-full overflow-x-auto no-scrollbar py-2 min-h-[160px] flex flex-col justify-end">
+                     <div className="flex gap-2 px-4 min-w-max justify-center items-end">
+                        {player.field.length === 0 && <span className="text-slate-700 text-xs uppercase font-bold tracking-widest mb-10">Tu Campo Vacío</span>}
+                        {player.field.map((unit, idx) => (
+                            <div 
+                                key={idx} 
+                                draggable={isMyTurn && phase === 'response' && !unit.isFrozen}
+                                onDragStart={(e) => handleDragStart(e, unit)}
+                                onTouchStart={(e) => handleTouchStart(e, unit)}
+                                onTouchMove={handleTouchMove}
+                                onTouchEnd={handleTouchEnd}
+                                className={`transition-transform ${isMyTurn && phase === 'response' && !unit.isFrozen ? 'cursor-grab active:cursor-grabbing hover:-translate-y-2' : ''}`}
+                            >
+                                <CardDisplay 
+                                    card={unit} 
+                                    size="small"
+                                    canInteract={isMyTurn}
+                                    showAbilities={isMyTurn && phase === 'main'}
+                                    onUseAbility={(c, a) => useAbility(c.uuid, a.id)}
+                                />
                             </div>
                         ))}
                     </div>
                 </div>
-            )}
-
-            {/* Campo Jugador */}
-            <div className="flex justify-center gap-2 mb-4 min-h-[160px] items-end px-4">
-                {player.field.map((unit, idx) => (
-                    <div key={idx} onClick={() => handleUnitClick(unit)}>
-                        <CardDisplay 
-                            card={unit} 
-                            canInteract={isMyTurn}
-                            // Mostrar habilidades en TODAS las fases activas (Prep, Interacción y Respuesta)
-                            showAbilities={isMyTurn && ['preparation', 'interaction', 'response'].includes(phase)}
-                            // CORRECCIÓN IMPORTANTE: Extraer los IDs antes de enviarlos a useAbility
-                            onUseAbility={(c, a) => useAbility(c.uuid, a.id)}
-                        />
-                    </div>
-                ))}
             </div>
 
-            {/* Panel de Control Stats + Mano */}
-            <div className="bg-slate-950 p-4 border-t border-slate-700 flex flex-col md:flex-row items-center gap-4 relative">
+            {/* CONTROLES INFERIORES */}
+            <div className="neo-box rounded-b-none rounded-t-2xl border-b-0 shadow-[0_-5px_20px_rgba(0,0,0,0.3)] z-20 pb-2">
                 
-                {/* Stats */}
-                <div className="flex items-center gap-6 min-w-max">
-                    <div className="text-center">
-                        <div className="text-4xl font-bold text-yellow-500 drop-shadow-lg">{player.points}</div>
-                        <div className="text-[10px] uppercase text-slate-400">Puntos (Meta 30)</div>
+                {/* Info Stats y Botón */}
+                <div className="flex justify-between items-center px-6 py-3 border-b border-[var(--shadow-light)]">
+                    <div className="flex gap-6">
+                         <div className="neo-inset px-3 py-1 text-center min-w-[3rem]">
+                            <span className="block text-xl font-bold text-yellow-500 leading-none">{player.points}</span>
+                            <span className="text-[7px] uppercase text-slate-500">Pts</span>
+                        </div>
+                        <div className="neo-inset px-3 py-1 text-center min-w-[3rem]">
+                            <span className="block text-xl font-bold text-blue-500 leading-none">{player.energy}</span>
+                            <span className="text-[7px] uppercase text-slate-500">Eng</span>
+                        </div>
                     </div>
-                    <div className="text-center">
-                        <div className="text-3xl font-bold text-blue-500 drop-shadow-lg">⚡ {player.energy}</div>
-                        <div className="text-[10px] uppercase text-slate-400">Energía / {player.maxEnergy}</div>
-                    </div>
-                </div>
-
-                {/* Botón Fase */}
-                <div className="flex-1 flex justify-center w-full">
-                     <Button 
-                        onClick={advancePhase} 
-                        disabled={!canAdvance} 
-                        className={`w-full md:w-auto py-3 px-8 text-lg shadow-xl ${phase === 'interaction' ? 'bg-red-600 hover:bg-red-500' : 'bg-blue-600'}`}
-                    >
+                    <Button onClick={advancePhase} disabled={!canAdvance} variant={btnVariant} className="px-6 py-3 text-xs shadow-lg">
                         {phaseBtnText}
                     </Button>
                 </div>
 
                 {/* Mano */}
-                <div className="flex gap-2 overflow-x-auto pb-2 absolute bottom-full md:bottom-auto md:relative right-0 md:right-auto px-4 md:px-0">
-                    {player.hand.map((card, idx) => (
-                        <div key={idx} className="hover:-translate-y-10 transition-transform duration-300">
-                             <CardDisplay 
-                                card={card} 
-                                size="normal" 
-                                canInteract={isMyTurn && phase === 'preparation'}
-                                onClick={() => playCard(idx)}
-                            />
-                        </div>
-                    ))}
+                <div className="w-full overflow-x-auto no-scrollbar p-3">
+                    <div className="flex gap-2 px-2 min-w-max justify-center">
+                        {player.hand.length === 0 && <span className="text-xs text-slate-600">Sin cartas en mano</span>}
+                        {player.hand.map((card, idx) => (
+                            <div key={idx} className="hover:-translate-y-6 transition-transform duration-300">
+                                 <CardDisplay 
+                                    card={card} 
+                                    size="normal"
+                                    canInteract={isMyTurn && phase === 'main'}
+                                    onClick={() => playCard(idx)}
+                                />
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>

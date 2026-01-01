@@ -1,32 +1,44 @@
-// --- COMPONENTES DE UI GENERAL DEL JUEGO ---
+// --- COMPONENTES DE UI JUEGO ---
 
 const LobbyScreen = ({ status, gameConfig, myPeerId, targetPeerId, setTargetPeerId, connectToPeer, onBack }) => {
-    // (Igual que antes, sin cambios necesarios aquí, se mantiene funcionalidad)
-    const isChallenging = gameConfig.mode === 'host_friend';
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-slate-900">
+        <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-[var(--bg-main)]">
             <Button variant="secondary" onClick={onBack} className="absolute top-4 left-4">Volver</Button>
-            <div className="glass p-8 rounded-xl max-w-md w-full">
-                <h2 className="text-2xl text-yellow-500 mb-6 text-center">
-                    {isChallenging ? "Desafiando Amigo..." : "Sala de Espera"}
+            
+            <div className="neo-box p-8 max-w-md w-full flex flex-col gap-6 text-center">
+                <h2 className="text-2xl text-yellow-500 font-bold tracking-widest">
+                    {gameConfig.mode === 'host_friend' ? "DESAFIANDO..." : "SALA DE ESPERA"}
                 </h2>
-                {isChallenging ? (
-                        <div className="text-center"><p className="text-slate-300">Esperando...</p></div>
+                
+                {gameConfig.mode === 'host_friend' ? (
+                        <div className="py-8"><p className="text-slate-400 animate-pulse">Esperando a tu amigo...</p></div>
                 ) : (
                     <>
-                        <div className="mb-6 text-center">
-                            <p className="text-slate-400 mb-2">Tu ID:</p>
-                            <div className="bg-slate-800 p-2 rounded text-xs break-all cursor-pointer hover:text-white" onClick={() => navigator.clipboard.writeText(myPeerId)}>
-                                {myPeerId || "Generando..."} (Click copiar)
+                        <div className="neo-inset p-4">
+                            <p className="text-slate-500 text-[10px] uppercase tracking-wider mb-2">Tu ID de Conexión</p>
+                            <div 
+                                className="text-slate-300 font-mono text-sm break-all cursor-pointer hover:text-blue-400 transition-colors" 
+                                onClick={() => navigator.clipboard.writeText(myPeerId)}
+                            >
+                                {myPeerId || "..."} 
                             </div>
                         </div>
-                        <div className="flex gap-2">
-                            <input placeholder="ID del rival" value={targetPeerId} onChange={e => setTargetPeerId(e.target.value)} className="bg-slate-800 p-2 rounded w-full border border-slate-600 text-white" />
-                            <Button onClick={connectToPeer}>Unirse</Button>
+                        
+                        <div className="flex flex-col gap-2 mt-4 text-left">
+                            <label className="text-xs text-slate-500 ml-1">ID del Rival:</label>
+                            <div className="flex gap-2">
+                                <input 
+                                    placeholder="Pegar ID aquí..." 
+                                    value={targetPeerId} 
+                                    onChange={e => setTargetPeerId(e.target.value)} 
+                                    className="neo-input text-sm"
+                                />
+                                <Button onClick={connectToPeer}>Unirse</Button>
+                            </div>
                         </div>
                     </>
                 )}
-                <div className="text-center mt-4 text-xs text-slate-500">{status}</div>
+                <div className="text-xs text-slate-600 font-mono mt-2">Estado: {status}</div>
             </div>
         </div>
     );
@@ -34,23 +46,28 @@ const LobbyScreen = ({ status, gameConfig, myPeerId, targetPeerId, setTargetPeer
 
 const GameTopBar = ({ isMyTurn, gameLog, phase, onBack }) => {
     const phases = {
-        'response': { label: 'FASE 1: RESPUESTA', color: 'text-orange-400' },
-        'preparation': { label: 'FASE 2: PREPARACIÓN', color: 'text-blue-400' },
-        'interaction': { label: 'FASE 3: INTERACCIÓN', color: 'text-red-400' },
-        'waiting': { label: 'TURNO RIVAL', color: 'text-slate-500' }
+        'response': { label: 'DEFENSA', color: 'text-red-400' },
+        'main': { label: 'TU TURNO', color: 'text-green-400' },
+        'waiting': { label: 'RIVAL', color: 'text-slate-500' }
     };
-
-    const currentInfo = isMyTurn ? phases[phase] : phases['waiting'];
+    const current = isMyTurn ? (phases[phase] || phases['main']) : phases['waiting'];
 
     return (
-        <div className="bg-slate-950 p-2 flex justify-between items-center text-xs md:text-sm shadow-md z-30 border-b border-slate-800">
-            <div className="flex items-center gap-4">
-                <span className={`font-bold text-lg ${currentInfo.color} animate-pulse`}>
-                    {currentInfo.label}
-                </span>
-                <span className="text-slate-400 hidden md:inline truncate max-w-xs">Log: {gameLog[0]}</span>
+        <div className="neo-box rounded-none border-x-0 border-t-0 z-30 flex justify-between items-center px-4 py-2 h-14 mb-0 relative bg-[var(--bg-main)]">
+            <div className="flex items-center gap-4 w-full overflow-hidden">
+                <div className={`font-bold text-lg ${current.color} whitespace-nowrap min-w-[80px]`}>
+                    {current.label}
+                </div>
+                
+                {/* Log en un contenedor hundido */}
+                <div className="neo-inset flex-1 px-3 py-1.5 overflow-hidden flex items-center h-8">
+                    <span className="text-slate-400 italic text-xs truncate w-full">
+                        {gameLog[0] || "Inicio del duelo"}
+                    </span>
+                </div>
             </div>
-            <Button variant="danger" onClick={onBack} className="px-2 py-1 text-[10px]">Abandonar</Button>
+            
+            <Button variant="danger" onClick={onBack} className="ml-3 text-[10px] px-2">Salir</Button>
         </div>
     );
 };

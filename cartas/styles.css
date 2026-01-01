@@ -1,30 +1,158 @@
-   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Roboto:wght@400;500;700&display=swap');
-        
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #0f172a;
-            color: #e2e8f0;
-        }
-        h1, h2, h3, .card-title {
-            font-family: 'Cinzel', serif;
-        }
-        .card-hover:hover {
-            transform: translateY(-5px) scale(1.05);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-            z-index: 10;
-        }
-        .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-        }
-        .scrollbar-hide {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        .glass {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .mana-crystal {
-            box-shadow: 0 0 10px #3b82f6;
-        }
+/* --- ESTILOS ACTUALIZADOS: SOFT UI & MONTSERRAT --- */
+
+:root {
+    /* Paleta Neumorfismo "Soft Cloud" */
+    --bg-main: #ecf0f3;       /* Un gris azulado muy claro, más suave que el blanco puro */
+    --bg-dark: #e0e5ec;       
+    
+    /* Sombras más difusas y suaves */
+    --shadow-light: #ffffff;
+    --shadow-dark: #d1d9e6;   
+    
+    --text-main: #2d3748;     /* Gris oscuro casi negro para máxima legibilidad */
+    --text-muted: #718096;    /* Gris medio */
+    
+    /* Acentos más profundos para contrastar con el fondo claro */
+    --accent-gold: #d69e2e;
+    --accent-blue: #3182ce;
+    --accent-red: #e53e3e;
+    --accent-green: #38a169;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    font-family: 'Montserrat', sans-serif; /* Cambio a Montserrat */
+    margin: 0;
+ 
+    
+    /* Renderizado de texto NÍTIDO */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, .card-title {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800; /* Extra bold para títulos */
+    letter-spacing: -0.02em;
+}
+
+/* --- UTILIDADES NEUMORFISTAS SUAVES --- */
+
+/* Contenedor elevado (Bloque principal) */
+.neo-box {
+    background: var(--bg-main);
+    border-radius: 1.5rem; /* Bordes más redondeados */
+    box-shadow: 12px 12px 24px var(--shadow-dark), 
+                -12px -12px 24px var(--shadow-light);
+    border: 1px solid rgba(255,255,255,0.4); /* Borde sutil brillante */
+}
+
+/* Contenedor hundido (Inputs, zonas de drop) */
+.neo-inset {
+    background: var(--bg-main);
+    border-radius: 0.75rem;
+    box-shadow: inset 6px 6px 12px var(--shadow-dark), 
+                inset -6px -6px 12px var(--shadow-light);
+    border: none;
+}
+
+/* Botones Neumorfistas */
+.neo-btn {
+    background: var(--bg-main);
+    color: var(--text-muted);
+    border: none;
+    border-radius: 1rem;
+    padding: 0.75rem 1.5rem;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Transición más fluida */
+    
+    box-shadow: 6px 6px 12px var(--shadow-dark), 
+                -6px -6px 12px var(--shadow-light);
+    
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.neo-btn:hover:not(:disabled) {
+    color: var(--text-main);
+    transform: translateY(-2px);
+    box-shadow: 8px 8px 16px var(--shadow-dark), 
+                -8px -8px 16px var(--shadow-light);
+}
+
+.neo-btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: inset 4px 4px 8px var(--shadow-dark), 
+                inset -4px -4px 8px var(--shadow-light);
+}
+
+.neo-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+    background: #e9ecef;
+}
+
+/* Variantes de color de texto para botones */
+.neo-btn.primary { color: var(--accent-blue); }
+.neo-btn.secondary { color: var(--text-muted); }
+.neo-btn.danger { color: var(--accent-red); }
+.neo-btn.success { color: var(--accent-green); }
+.neo-btn.warning { color: var(--accent-gold); }
+
+/* Inputs de texto */
+.neo-input {
+    background: var(--bg-main);
+    color: var(--text-main);
+    border: none;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    width: 100%;
+    outline: none;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    box-shadow: inset 5px 5px 10px var(--shadow-dark), 
+                inset -5px -5px 10px var(--shadow-light);
+}
+.neo-input:focus {
+    box-shadow: inset 7px 7px 14px var(--shadow-dark), 
+                inset -7px -7px 14px var(--shadow-light);
+    color: var(--accent-blue);
+}
+
+/* --- CARTAS --- */
+.neo-card {
+    background: var(--bg-main);
+    border-radius: 1rem;
+    box-shadow: 8px 8px 16px var(--shadow-dark), 
+                -8px -8px 16px var(--shadow-light);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.5);
+}
+
+.neo-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 14px 14px 28px var(--shadow-dark), 
+                -14px -14px 28px var(--shadow-light);
+    z-index: 10;
+}
+
+/* Scrollbars ocultas */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

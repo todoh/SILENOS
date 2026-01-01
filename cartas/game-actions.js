@@ -1,4 +1,3 @@
-
 // --- ACCIONES DE JUEGO (REGLAS TÁCTICAS) ---
 
 const GameActions = {
@@ -36,9 +35,9 @@ const GameActions = {
             me.field.forEach(u => u.isFrozen = false);
 
             // 4. Determinar fase inicial
-            // Si hay ataques entrantes, vamos a Response. Si no, directo a Preparation.
+            // Si hay ataques entrantes, vamos a Response. Si no, directo a FASE PROPIA ('main').
             const hasIncoming = prev.incomingStack && prev.incomingStack.length > 0;
-            const initialPhase = hasIncoming ? 'response' : 'preparation';
+            const initialPhase = hasIncoming ? 'response' : 'main';
 
             const newState = {
                 ...prev,
@@ -50,7 +49,7 @@ const GameActions = {
             };
             
             addLog(`--- TURNO ${Math.floor(nextTurnCount/2) + 1} ---`);
-            addLog(`Fase: ${initialPhase === 'response' ? 'RESPUESTA (Defiéndete)' : 'PREPARACIÓN'}`);
+            addLog(`Fase: ${initialPhase === 'response' ? 'RESPUESTA (Defiéndete)' : 'FASE PROPIA'}`);
             
             sendStateUpdate(newState);
             return newState;
@@ -63,17 +62,15 @@ const GameActions = {
         let nextPhase = '';
         let shouldEndTurn = false;
 
+        // FLUJO DE FASES SIMPLIFICADO: Response -> Main -> Fin Turno
         if (gameState.phase === 'response') {
             // Resolver combates pendientes
             GameActions.resolveCombatPhase(context);
-            nextPhase = 'preparation';
-            sendLog("Fase de Preparación iniciada.");
+            nextPhase = 'main';
+            sendLog("Fase Propia iniciada.");
         } 
-        else if (gameState.phase === 'preparation') {
-            nextPhase = 'interaction';
-            sendLog("Fase de Interacción iniciada.");
-        } 
-        else if (gameState.phase === 'interaction') {
+        else if (gameState.phase === 'main') {
+            // De Fase Propia pasamos directo a fin de turno
             shouldEndTurn = true;
         }
 
@@ -105,8 +102,9 @@ const GameActions = {
         const me = gameState.players[gameState.myPlayerId];
         const card = me.hand[cardIndex];
 
-        if (gameState.phase !== 'preparation') {
-            addLog("Solo puedes jugar cartas en Fase de Preparación.");
+        // Validar FASE PROPIA ('main')
+        if (gameState.phase !== 'main') {
+            addLog("Solo puedes jugar cartas en tu Fase Propia.");
             return;
         }
         if (me.energy < card.cost) {
@@ -166,13 +164,11 @@ const GameActions = {
             return;
         }
 
-        // Validación de Fase vs Tipo de Habilidad
-        if (ability.type === 'preparation' && gameState.phase !== 'preparation') {
-            addLog("Habilidad de Preparación: Solo en Fase Prep.");
-            return;
-        }
-        if (ability.type === 'interaction' && gameState.phase !== 'interaction') {
-            addLog("Habilidad de Interacción: Solo en Fase Interacción.");
+        // VALIDACIÓN DE FASE ACTUALIZADA
+        const isMainPhaseAbility = ability.type === 'preparation' || ability.type === 'interaction';
+        
+        if (isMainPhaseAbility && gameState.phase !== 'main') {
+            addLog("Esta habilidad solo se usa en tu Fase Propia.");
             return;
         }
         if (ability.type === 'response' && gameState.phase !== 'response') {
@@ -216,17 +212,16 @@ const GameActions = {
             addLog(`${card.name} prepara ${ability.name}.`);
         }
         else if (ability.type === 'response') {
-            // (DEFENDER) Buscar ataque sin bloquear
+            // Lógica antigua de botón: busca el primer ataque sin bloquear
             const unblockedAction = gameState.incomingStack.find(a => !a.blockerUuid);
-            
             if (unblockedAction) {
-                fieldCard.isFrozen = true; // Defender gasta la acción de la carta
-                // Llamamos a la lógica de asignación
+                // Delegamos a assignDefender la lógica real
+                // Recuperamos el costo aquí manualmente porque assignDefender no cobra coste (la defensa es gratis base)
+                // Pero como ya pagamos arriba "player.energy -= ability.cost", está bien.
                 GameActions.assignDefender(unblockedAction.uuid, card.uuid, context);
-                addLog(`${card.name} defiende contra ${unblockedAction.sourceCardName}.`);
             } else {
                 addLog("No hay ataques para bloquear.");
-                player.energy += ability.cost; // Devolver energía si falló
+                player.energy += ability.cost; // Devolver energía
                 return; 
             }
         }
@@ -235,19 +230,50 @@ const GameActions = {
         sendStateUpdate({ ...gameState, players: newPlayers });
     },
 
-    // Asignar defensor en Fase de Respuesta
+    // Asignar defensor en Fase de Respuesta (ACTUALIZADO PARA D&D)
     assignDefender: (actionUuid, blockerCardUuid, context) => {
-        const { gameState, setGameState } = context;
-        if (gameState.phase !== 'response') return;
+        const { gameState, setGameState, addLog } = context;
+        if (gameState.phase !== 'response') {
+            addLog("Solo puedes asignar defensores en Fase de Respuesta.");
+            return;
+        }
+
+        // Buscar al defensor para validarlo y congelarlo
+        const myId = gameState.myPlayerId;
+        const me = gameState.players[myId];
+        const blocker = me.field.find(c => c.uuid === blockerCardUuid);
+
+        if (!blocker) return;
+        if (blocker.isFrozen) {
+            addLog(`${blocker.name} ya está asignado o congelado.`);
+            return;
+        }
 
         setGameState(prev => {
+            const newPlayers = [...prev.players];
+            const myPlayer = newPlayers[myId];
+            
+            // Congelar la carta que defiende
+            const fieldCard = myPlayer.field.find(c => c.uuid === blockerCardUuid);
+            if (fieldCard) {
+                fieldCard.isFrozen = true;
+                addLog(`${fieldCard.name} defiende.`);
+            }
+
+            // Asignar el bloqueo
             const newIncoming = prev.incomingStack.map(action => {
+                // Si esta carta ya estaba defendiendo OTRO ataque, la quitamos de ahí (re-asignación simple no soportada full, pero por seguridad)
+                if (action.blockerUuid === blockerCardUuid) {
+                    return { ...action, blockerUuid: null };
+                }
+                
                 if (action.uuid === actionUuid) {
                     return { ...action, blockerUuid: blockerCardUuid };
                 }
                 return action;
             });
-            return { ...prev, incomingStack: newIncoming };
+
+            return { ...prev, incomingStack: newIncoming, players: newPlayers };
         });
     },
 

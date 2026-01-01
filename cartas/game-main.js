@@ -36,10 +36,13 @@ const GameRoom = ({ user, userData, onBack, gameConfig }) => {
     const opponent = gameState.players[opId];
 
     return (
-        <div className="h-screen flex flex-col bg-slate-900 overflow-hidden font-sans select-none">
+        // Contenedor principal con fondo neumorfista (sin texturas ruidosas)
+        <div className="h-screen md:h-[100dvh] w-full flex flex-col bg-[var(--bg-main)] overflow-hidden select-none fixed inset-0">
+            
             <GameTopBar isMyTurn={isMyTurn} phase={gameState.phase} gameLog={gameLog} onBack={onBack} />
 
-            <div className="flex-1 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')] relative flex flex-col">
+            {/* Area de Tablero centrada */}
+            <div className="flex-1 relative flex flex-col w-full max-w-2xl mx-auto shadow-2xl border-x border-[var(--shadow-dark)]">
                 
                 <OpponentBoard player={opponent} isMyTurn={isMyTurn} />
 

@@ -3,7 +3,7 @@
 const getInitialGameState = () => ({
     turn: 0, // 0 = P1, 1 = P2
     turnCount: 1, // Para calcular energía (10, 20, 30...)
-    phase: 'response', // 'response', 'preparation', 'interaction'
+    phase: 'response', // Fases: 'response' (Defender) -> 'main' (Fase Propia: Jugar/Atacar)
     myPlayerId: 0, 
     
     // Pilas de acciones para la fase de respuesta

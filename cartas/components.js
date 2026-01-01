@@ -1,19 +1,11 @@
-// --- COMPONENTES UI REUTILIZABLES ---
+// --- COMPONENTES UI REUTILIZABLES (CORREGIDO) ---
 
 const Button = ({ children, onClick, disabled, className = "", variant = "primary" }) => {
-    const baseStyle = "px-3 py-1 rounded font-bold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-xs uppercase tracking-wider";
-    const variants = {
-        primary: "bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/50",
-        secondary: "bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600",
-        danger: "bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-500/50",
-        success: "bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-500/50",
-        warning: "bg-yellow-600 hover:bg-yellow-500 text-white"
-    };
     return (
         <button 
             onClick={onClick} 
             disabled={disabled} 
-            className={`${baseStyle} ${variants[variant]} ${className}`}
+            className={`neo-btn ${variant} ${className}`}
         >
             {children}
         </button>
@@ -23,87 +15,194 @@ const Button = ({ children, onClick, disabled, className = "", variant = "primar
 const CardDisplay = ({ card, size = "normal", onClick, canInteract = false, showAbilities = false, onUseAbility }) => {
     if (!card) return null;
 
-    // Reverso de la carta
+    // --- CONFIGURACIÓN DE TAMAÑOS ---
+    let sizeClasses = "w-32 h-48 md:w-44 md:h-64"; 
+    let textSizeMain = "text-[10px] md:text-xs";
+    let textSizeTiny = "text-[8px] md:text-[9px]";
+    let costSize = "w-6 h-6 md:w-8 md:h-8 text-xs md:text-sm";
+    
+    if (size === "small") {
+        sizeClasses = "w-24 h-32 md:w-28 md:h-40";
+        textSizeMain = "text-[8px]";
+    } else if (size === "large") {
+        sizeClasses = "w-72 h-[28rem] md:w-80 md:h-[32rem]";
+        textSizeMain = "text-sm md:text-base";
+        textSizeTiny = "text-xs";
+        costSize = "w-10 h-10 md:w-12 md:h-12 text-lg";
+    }
+
+    // --- RENDERIZADO REVERSO ---
     if (card.hidden) {
         return (
-            <div className="w-32 h-48 bg-slate-800 border-2 border-slate-600 rounded-lg flex items-center justify-center m-1 shadow-md bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
-                <div className="text-4xl opacity-20">?</div>
+            <div className={`${sizeClasses} neo-card flex items-center justify-center m-1 flex-shrink-0 !bg-[#0a0a0a] border border-slate-800 shadow-xl rounded-xl`}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10 text-slate-700 opacity-50">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                    <path d="M12 17h.01"/>
+                </svg>
             </div>
         );
     }
 
-    // Cálculo barra de vida
-    const hpPct = Math.max(0, Math.min(100, (card.currentHp / card.maxHp) * 100));
-    const hpColor = hpPct > 50 ? 'bg-green-500' : hpPct > 20 ? 'bg-yellow-500' : 'bg-red-600';
+    // --- CÁLCULO DE VIDA ---
+    const currentHp = card.currentHp !== undefined ? card.currentHp : card.maxHp;
+    const hpPct = Math.max(0, Math.min(100, (currentHp / card.maxHp) * 100));
+    
+    let hpBarColor = "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]";
+    if (hpPct <= 50) hpBarColor = "bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]";
+    if (hpPct <= 20) hpBarColor = "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]";
 
     return (
         <div 
-            onClick={() => canInteract && onClick && onClick(card)}
-            className={`w-40 h-60 relative bg-slate-900 border border-slate-600 rounded-lg flex flex-col m-1 select-none transition-all group overflow-hidden ${canInteract ? 'cursor-pointer hover:border-yellow-400' : ''}`}
+            onClick={() => (onClick && onClick(card))}
+            className={`
+                ${sizeClasses} 
+                relative flex flex-col m-1 select-none group flex-shrink-0 
+                rounded-xl overflow-hidden transition-all duration-300
+                border border-slate-800 bg-[#121212]
+                ${canInteract ? 'cursor-pointer ring-2 ring-yellow-500/50 hover:ring-yellow-400' : ''}
+                ${size !== 'large' ? 'hover:-translate-y-1 hover:shadow-2xl' : ''}
+            `}
         >
-            {/* Cabecera: Coste y Nombre */}
-            <div className="bg-slate-950 p-1 flex justify-between items-center border-b border-slate-800">
-                <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-inner">
+            {/* --- CABECERA --- */}
+            <div className="absolute top-0 left-0 right-0 h-8 z-20 flex justify-between items-start p-1 pointer-events-none">
+                <div className={`${costSize} rounded-full flex items-center justify-center font-black text-[#121212] bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg border border-blue-300 z-30`}>
                     {card.cost}
                 </div>
-                <div className="text-[10px] font-bold text-slate-200 truncate flex-1 text-right ml-1 font-serif">
-                    {card.name}
+                
+                <div className="bg-black/80 backdrop-blur-md px-2 py-1 rounded-bl-lg rounded-tr-lg border-b border-l border-slate-700 ml-auto max-w-[80%]">
+                    <div className={`${textSizeMain} font-bold text-gray-100 truncate tracking-tight`}>
+                        {card.name}
+                    </div>
                 </div>
             </div>
 
-            {/* Imagen */}
-            <div className="h-20 bg-slate-800 flex items-center justify-center text-4xl relative">
-                {card.image}
-                {/* Indicador de estado (Congelada/Usada) */}
+            {/* --- IMAGEN Y SUPERPOSICIONES --- */}
+            <div className="relative w-full h-full flex-1 overflow-hidden bg-slate-900 group-hover:brightness-110 transition-all">
+                <div className="w-full h-full flex items-center justify-center">
+                    {typeof card.image === 'string' ? (
+                        <img 
+                            src={card.image} 
+                            alt={card.name} 
+                            className="w-full h-full object-cover opacity-90"
+                            onError={(e) => { e.target.style.display = 'none'; }} 
+                        />
+                    ) : (
+                        card.image
+                    )}
+                </div>
+
                 {card.isFrozen && (
-                    <div className="absolute inset-0 bg-blue-500/30 backdrop-blur-[1px] flex items-center justify-center">
-                        <span className="text-xs font-bold bg-black/70 px-2 rounded text-blue-200">❄️ ESPERA</span>
+                    <div className="absolute inset-0 bg-blue-500/20 backdrop-blur-[2px] z-10 flex items-center justify-center">
+                        <div className="bg-black/60 p-2 rounded-full border border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-blue-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M12 3v18M3 12h18m-6.36-6.36l-9.28 9.28m0-9.28l9.28 9.28" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                        </div>
                     </div>
                 )}
+
+                {/* --- INDICADORES DE HABILIDADES --- */}
+                {card.abilities && (
+                    <div className="absolute top-10 right-1 flex flex-col gap-1 z-20 items-end">
+                        {card.abilities.map((ab, idx) => {
+                            let iconColor = "bg-gray-600";
+                            let pathData = "";
+
+                            if (ab.type === 'interaction') { 
+                                iconColor = "bg-red-600 border-red-400";
+                                pathData = "M14.5 17.5L3 6V3h3l11.5 11.5m-5 2.5 6-6m-4 4 4 4m3 1 2-2";
+                            } else if (ab.type === 'response') { 
+                                iconColor = "bg-blue-600 border-blue-400";
+                                pathData = "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z";
+                            } else if (ab.type === 'preparation') { 
+                                iconColor = "bg-purple-600 border-purple-400";
+                                pathData = "m12 3-1.9 5.8a2 2 0 0 1-1.2 1.3l-6.1 2 6.1 2a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.2-1.3l6.1-2-6.1-2a2 2 0 0 1-1.3-1.3z";
+                            }
+
+                            return (
+                                <div key={idx} className={`w-4 h-4 md:w-5 md:h-5 rounded-full ${iconColor} border flex items-center justify-center shadow-lg transform hover:scale-125 transition-transform`} title={ab.name}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-2.5 h-2.5 text-white">
+                                        <path d={pathData} />
+                                    </svg>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {/* --- BARRA DE VIDA INTEGRADA --- */}
+                <div className="absolute bottom-0 left-0 right-0 z-20">
+                    <div className="bg-gradient-to-t from-black via-black/90 to-transparent pt-4 pb-1 px-2">
+                        <div className="flex justify-between items-end mb-0.5">
+                            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">HP</span>
+                            <span className="text-[10px] md:text-xs font-mono font-bold text-white drop-shadow-md">
+                                {currentHp} <span className="text-gray-500 text-[8px]">/ {card.maxHp}</span>
+                            </span>
+                        </div>
+                        <div className="w-full h-1.5 md:h-2 bg-gray-800 rounded-full overflow-hidden border border-gray-700">
+                            <div 
+                                className={`h-full ${hpBarColor} transition-all duration-500 ease-out`} 
+                                style={{ width: `${hpPct}%` }}
+                            ></div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-3 gap-1 p-1 bg-slate-950/50 text-[10px] text-center font-mono">
-                <div className="text-red-400" title="Fuerza">
-                    STR<br/><span className="text-white text-xs">{card.strength}</span>
+            {/* --- GRID DE ESTADÍSTICAS --- */}
+            <div className="grid grid-cols-3 divide-x divide-slate-800 bg-[#0F0F0F] h-8 md:h-10 border-t border-slate-800">
+                 <div className="flex flex-col items-center justify-center pt-0.5">
+                    <span className="text-[7px] text-red-500 font-bold uppercase tracking-widest">STR</span>
+                    <span className="text-xs md:text-sm font-bold text-gray-200">{card.strength}</span>
                 </div>
-                <div className="text-blue-400" title="Inteligencia">
-                    INT<br/><span className="text-white text-xs">{card.intelligence}</span>
+                 <div className="flex flex-col items-center justify-center pt-0.5">
+                    <span className="text-[7px] text-blue-500 font-bold uppercase tracking-widest">INT</span>
+                    <span className="text-xs md:text-sm font-bold text-gray-200">{card.intelligence}</span>
                 </div>
-                <div className="text-purple-400" title="Poder">
-                    POW<br/><span className="text-white text-xs">{card.power}</span>
-                </div>
-            </div>
-
-            {/* Barra de Vida */}
-            <div className="px-2 py-1 bg-slate-900">
-                <div className="flex justify-between text-[9px] text-slate-400 mb-0.5">
-                    <span>HP</span>
-                    <span>{card.currentHp}/{card.maxHp}</span>
-                </div>
-                <div className="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                    <div className={`h-full transition-all duration-500 ${hpColor}`} style={{ width: `${hpPct}%` }}></div>
+                 <div className="flex flex-col items-center justify-center pt-0.5">
+                    <span className="text-[7px] text-purple-500 font-bold uppercase tracking-widest">POW</span>
+                    <span className="text-xs md:text-sm font-bold text-gray-200">{card.power}</span>
                 </div>
             </div>
 
-            {/* Descripción */}
-            <div className="flex-1 p-1 text-[9px] text-slate-400 leading-tight overflow-hidden text-center bg-slate-900">
-                {card.desc}
-            </div>
-
-            {/* Overlay de Habilidades (Solo si se solicita) */}
+            {/* --- OVERLAY DE HABILIDADES --- */}
             {showAbilities && !card.isFrozen && (
-                <div className="absolute inset-0 bg-black/80 flex flex-col gap-1 p-2 justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <div className="absolute inset-0 bg-slate-900/95 z-40 flex flex-col p-2 gap-2 overflow-y-auto animate-in fade-in duration-200">
+                    <div className="text-center text-xs font-bold text-slate-400 mb-1 border-b border-slate-700 pb-1">
+                        ELEGIR ACCIÓN
+                    </div>
                     {card.abilities.map((ab, idx) => (
                         <button 
                             key={idx}
                             onClick={(e) => { e.stopPropagation(); onUseAbility(card, ab); }}
-                            className="bg-slate-700 hover:bg-slate-600 text-[10px] text-white py-1 px-2 rounded border border-slate-500 flex justify-between items-center"
+                            className="w-full neo-inset bg-slate-800 hover:bg-slate-700 p-2 rounded flex justify-between items-center group/btn transition-colors border border-slate-700"
                         >
-                            <span>{ab.name}</span>
-                            <span className="text-blue-300 font-mono ml-1">{ab.cost}E</span>
+                            <div className="flex flex-col items-start overflow-hidden">
+                                <span className={`font-bold text-[10px] md:text-xs truncate w-full text-left
+                                    ${ab.type === 'interaction' ? 'text-red-400' : 
+                                      ab.type === 'response' ? 'text-blue-400' : 'text-purple-400'}
+                                `}>
+                                    {ab.name}
+                                </span>
+                                <span className="text-[8px] text-slate-500 truncate">{ab.desc}</span>
+                            </div>
+                            <div className="text-yellow-500 font-mono text-[10px] font-bold pl-2">
+                                -{ab.cost}
+                            </div>
                         </button>
                     ))}
+                    <div className="mt-auto text-[9px] text-center text-slate-600 italic">
+                        Click fuera para cancelar
+                    </div>
+                </div>
+            )}
+            
+            {size === 'large' && (
+                <div className="p-3 bg-[#111] border-t border-slate-800">
+                    <p className="text-gray-400 italic text-xs md:text-sm text-center font-serif leading-relaxed">
+                        "{card.desc}"
+                    </p>
                 </div>
             )}
         </div>
