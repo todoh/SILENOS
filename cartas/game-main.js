@@ -12,11 +12,17 @@ const GameRoom = ({ user, userData, onBack, gameConfig }) => {
         playCard,
         useAbility,
         advancePhase,
-        assignDefender
+        assignDefender,
+        autoDefend,
+        
+        // PROPS DE TARGETING
+        targetingData,
+        cancelTargeting,
+        resolveTargetedAbility
+
     } = useGameLogic({ user, userData, onBack, gameConfig });
 
     // Estado para la carta inspeccionada (Zoom en combate)
-    // Estructura: { card: Object, source: 'hand' | 'field' | 'opponent', index: number }
     const [selectedCard, setSelectedCard] = React.useState(null);
 
     if (status !== 'playing') {
@@ -48,23 +54,40 @@ const GameRoom = ({ user, userData, onBack, gameConfig }) => {
     const handlePlayFromModal = () => {
         if (selectedCard && selectedCard.source === 'hand') {
             playCard(selectedCard.index);
-            setSelectedCard(null); // Cerrar modal tras jugar
+            setSelectedCard(null); 
         }
     };
 
     return (
-        // Contenedor principal con fondo neumorfista (sin texturas ruidosas)
+        // Contenedor principal con fondo neumorfista
         <div className="h-screen md:h-[100dvh] w-full flex flex-col bg-[var(--bg-main)] overflow-hidden select-none fixed inset-0">
             
+            {/* --- OVERLAY DE MODO APUNTADO --- */}
+            {/* CORRECCIÓN: Fondo más oscuro (bg-black/60) y más desenfoque (backdrop-blur-md) para resaltar lo que esté encima */}
+            {targetingData && (
+                <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-md cursor-crosshair flex flex-col items-center justify-end pb-32 pointer-events-none transition-all duration-300">
+                    <div className="pointer-events-auto bg-slate-900/90 text-white px-6 py-4 rounded-xl border border-red-500 shadow-2xl flex flex-col items-center gap-2 animate-in slide-in-from-bottom-10 z-50">
+                        <span className="text-xs uppercase font-bold text-red-400 tracking-widest">Modo Ataque Activo</span>
+                        <div className="text-sm">
+                            Usando <span className="font-bold text-yellow-400">{targetingData.abilityName}</span>
+                        </div>
+                        <div className="text-[10px] text-slate-400">Toca una carta enemiga para disparar</div>
+                        <Button variant="secondary" onClick={cancelTargeting} className="mt-2 text-xs py-1 h-8">
+                            Cancelar
+                        </Button>
+                    </div>
+                </div>
+            )}
+
             {/* --- MODAL DE INSPECCIÓN DE CARTA (EN COMBATE) --- */}
             {selectedCard && (
                 <div 
                     className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 animate-in fade-in duration-200"
-                    onClick={() => setSelectedCard(null)} // Cerrar al hacer clic fuera
+                    onClick={() => setSelectedCard(null)} 
                 >
                     <div 
                         className="relative flex flex-col items-center gap-4 animate-in zoom-in-95 duration-200" 
-                        onClick={(e) => e.stopPropagation()} // Evitar cierre al hacer clic en la carta
+                        onClick={(e) => e.stopPropagation()}
                     >
                         <CardDisplay card={selectedCard.card} size="large" />
                         
@@ -88,12 +111,15 @@ const GameRoom = ({ user, userData, onBack, gameConfig }) => {
             <GameTopBar isMyTurn={isMyTurn} phase={gameState.phase} gameLog={gameLog} onBack={onBack} />
 
             {/* Area de Tablero centrada */}
-            <div className="flex-1 relative flex flex-col w-full max-w-2xl mx-auto shadow-2xl border-x border-[var(--shadow-dark)]">
+            <div className="flex-1 relative flex flex-col w-full max-w-[90%] mx-auto shadow-2xl border-x border-[var(--shadow-dark)]">
                 
                 <OpponentBoard 
                     player={opponent} 
                     isMyTurn={isMyTurn}
-                    onInspect={handleInspect} // Pasamos la función
+                    onInspect={handleInspect}
+                    // PROPS DE TARGETING PARA EL TABLERO RIVAL
+                    isTargeting={!!targetingData}
+                    onCardClick={(targetUuid) => resolveTargetedAbility(targetUuid)}
                 />
 
                 <PlayerBoard 
@@ -105,7 +131,8 @@ const GameRoom = ({ user, userData, onBack, gameConfig }) => {
                     advancePhase={advancePhase}
                     incomingStack={gameState.incomingStack}
                     assignDefender={assignDefender}
-                    onInspect={handleInspect} // Pasamos la función
+                    autoDefend={autoDefend}
+                    onInspect={handleInspect}
                 />
             </div>
         </div>

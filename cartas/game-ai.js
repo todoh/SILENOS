@@ -1,22 +1,21 @@
 // --- INTELIGENCIA ARTIFICIAL (LÓGICA DE LA MÁQUINA) ---
 // Guardar como: Cartas Silen/game-ai.js
 
-const GameAI = {
-    // Configuración básica de la IA
+window.GameAI = {
     AI_PLAYER_ID: 1,
     
-    // Iniciar turno de la IA
     runAiTurn: async (context) => {
-        const { setGameState, addLog, gameConfig } = context;
+        // Obtenemos gameState del context porque ahí vienen los ataques inyectados (incomingStack)
+        // desde actions-turn.js, antes de que el estado global se limpiara.
+        const { setGameState, addLog, gameState } = context;
         
-        // Simular tiempo de "pensar"
+        // Simular pensamiento
         await new Promise(r => setTimeout(r, 1500));
 
         // 1. INICIO DE TURNO (Robar carta, Energía)
         setGameState(prev => {
-            const ai = { ...prev.players[GameAI.AI_PLAYER_ID] };
+            const ai = { ...prev.players[window.GameAI.AI_PLAYER_ID] };
             
-            // Aumentar turno global y energía
             const nextTurnCount = prev.turnCount + 1;
             const newEnergyCap = Math.min(100, nextTurnCount * 10);
             
@@ -32,168 +31,158 @@ const GameAI = {
                 ai.hand.push(card);
             }
 
-            // Descongelar campo
-            ai.field.forEach(u => u.isFrozen = false);
+            // Descongelar campo (SOLO al inicio del turno absoluto)
+            // IMPORTANTE: Usamos .map para crear nuevas referencias y no mutar el estado anterior
+            ai.field = ai.field.map(u => ({ ...u, isFrozen: false }));
 
-            // Determinar fase: Si el jugador humano mandó ataques (outgoingStack del humano -> incomingStack de la IA)
-            // En el estado global, incomingStack son los ataques que RECIBE el turno actual.
-            // Si es turno de la IA, incomingStack tiene los ataques del Humano.
-            const hasIncoming = prev.incomingStack && prev.incomingStack.length > 0;
+            // CORRECCIÓN: Usamos el incomingStack pasado por contexto (los ataques del jugador)
+            // Si usamos prev.incomingStack aquí, estaría vacío porque se limpia al cambiar de turno.
+            const incomingAttacks = gameState.incomingStack || [];
+            const hasIncoming = incomingAttacks.length > 0;
             const initialPhase = hasIncoming ? 'response' : 'main';
 
             const newPlayers = [...prev.players];
-            newPlayers[GameAI.AI_PLAYER_ID] = ai;
+            newPlayers[window.GameAI.AI_PLAYER_ID] = ai;
 
             addLog(`[IA] Inicia turno (Fase: ${initialPhase === 'response' ? 'Defensa' : 'Ataque'}).`);
 
             return {
                 ...prev,
-                turn: GameAI.AI_PLAYER_ID,
+                turn: window.GameAI.AI_PLAYER_ID,
                 turnCount: nextTurnCount,
                 phase: initialPhase,
+                // Restauramos los ataques en el estado para que handleDefense pueda leerlos
+                incomingStack: incomingAttacks, 
                 outgoingStack: [], 
                 players: newPlayers
             };
         });
 
-        // Dar un momento para que se actualice el estado
         await new Promise(r => setTimeout(r, 500));
 
-        // Ejecutar lógica según fase
-        // Nota: Leemos el estado actualizado pasando una función al siguiente paso o accediendo via context si fuera ref, 
-        // pero aquí encadenaremos lógica basada en la predicción de fase.
-        
-        // Acceder al estado más reciente requiere un pequeño hack o pasar la función
-        // Para simplificar en React funcional, llamaremos a las funciones de decisión.
-        GameAI.decideNextMove(context);
+        // Ejecutar lógica
+        window.GameAI.decideNextMove(context);
     },
 
     decideNextMove: async (context) => {
-        // Necesitamos leer el estado actual del contexto, pero como setGameState es asíncrono,
-        // usamos un setTimeout breve para asegurar lectura fresca o usamos la referencia.
-        // En esta arquitectura, pasamos a la siguiente fase de ejecución.
-        
         setTimeout(async () => {
-            const state = context.gameState; // Esto podría estar desactualizado en closures antiguos, cuidado.
-            // Para garantizar, usamos el setter para leer el estado actual y decidir.
-            
+            // Usamos el updater de setGameState para obtener el estado más reciente de forma segura
             context.setGameState(current => {
-                GameAI.executePhaseLogic(current, context);
-                return current; // No modificamos aquí, solo leemos para ejecutar
+                // Ejecutamos la lógica basada en la fase actual
+                window.GameAI.executePhaseLogic(current, context);
+                return current; // No modificamos el estado aquí, solo leemos
             });
         }, 500);
     },
 
     executePhaseLogic: async (gameState, context) => {
-        const ai = gameState.players[GameAI.AI_PLAYER_ID];
-        const human = gameState.players[0];
-
         if (gameState.phase === 'response') {
-            await GameAI.handleDefense(gameState, context);
+            await window.GameAI.handleDefense(gameState, context);
         } else if (gameState.phase === 'main') {
-            await GameAI.handleMainPhase(gameState, context);
+            await window.GameAI.handleMainPhase(gameState, context);
         }
     },
 
     // LÓGICA DE DEFENSA
     handleDefense: async (currentState, context) => {
         const { setGameState, addLog } = context;
-        const ai = currentState.players[GameAI.AI_PLAYER_ID];
+        
+        // Clonación profunda para no perder referencias y asegurar persistencia de isFrozen
+        let newPlayers = JSON.parse(JSON.stringify(currentState.players));
+        const aiPlayer = newPlayers[window.GameAI.AI_PLAYER_ID];
         const incoming = currentState.incomingStack || [];
         
-        // Estrategia simple: Bloquear ataques que maten o hagan mucho daño
-        let assignedBlockers = [];
+        // Filtramos solo los que NO están congelados para defender
+        let availableBlockers = aiPlayer.field.filter(c => !c.isFrozen);
 
-        // Clonamos para simular
-        let availableBlockers = ai.field.filter(c => !c.isFrozen);
+        if (aiPlayer.field.length === 0) {
+            addLog("[IA] Campo vacío. Recibirá daño directo.");
+        }
 
         const newIncoming = incoming.map(attack => {
-            // Si ya no tengo bloqueadores, pasa el daño
             if (availableBlockers.length === 0) return attack;
 
-            // Buscar el mejor bloqueador (el que tenga HP > ataque o el más débil para sacrificar)
-            // 1. Intentar sobrevivir y matar atacante
+            // Lógica simple: Buscar quien sobreviva o el más barato
             let bestBlocker = availableBlockers.find(b => {
-                const power = (b.power || 0) + (b.strength || 0) + (b.intelligence || 0);
-                return b.currentHp > attack.sourceStats && power >= attack.sourceStats;
+                const strength = (b.strength || 0);
+                return b.currentHp > attack.sourceStats && strength >= attack.sourceStats;
             });
 
-            // 2. Si no, sacrificar el más débil para evitar daño al jugador
             if (!bestBlocker) {
                 bestBlocker = availableBlockers.sort((a,b) => a.cost - b.cost)[0];
             }
 
             if (bestBlocker) {
-                // Marcar como usado
+                // IMPORTANTE: Marcar como usado (isFrozen) en el array principal
+                const fieldIndex = aiPlayer.field.findIndex(c => c.uuid === bestBlocker.uuid);
+                if (fieldIndex !== -1) {
+                    aiPlayer.field[fieldIndex].isFrozen = true; 
+                    addLog(`[IA] ${aiPlayer.field[fieldIndex].name} defiende y se agota.`);
+                }
+
+                // Quitar de disponibles para este mismo turno de defensa
                 availableBlockers = availableBlockers.filter(b => b.uuid !== bestBlocker.uuid);
-                addLog(`[IA] ${bestBlocker.name} bloquea a ${attack.sourceCardName}.`);
+                
                 return { ...attack, blockerUuid: bestBlocker.uuid };
             }
 
             return attack;
         });
 
-        // Aplicar bloqueos
-        await new Promise(r => setTimeout(r, 1000));
-        
-        setGameState(prev => ({
-            ...prev,
-            incomingStack: newIncoming
-        }));
-
-        // Resolver combate
-        setTimeout(() => {
-            // CORRECCIÓN IA: Recibir updates del combate y aplicarlos manualmente
-            const combatUpdates = GameActions.resolveCombatPhase(context);
-            
-            // Forzamos avance de fase de la IA aplicando updates
-            context.setGameState(prev => ({ 
-                ...prev, 
-                ...combatUpdates,
-                phase: 'main' 
+        // 1. Aplicar la defensa y congelar cartas
+        await new Promise(resolve => {
+            setGameState(prev => ({
+                ...prev,
+                incomingStack: newIncoming,
+                players: newPlayers 
             }));
+            setTimeout(resolve, 1000); 
+        });
+
+        // 2. Resolver combate y pasar a Main
+        setGameState(current => {
+            // current ya debe tener las cartas congeladas del paso anterior
+            const combatUpdates = window.GameActions.resolveCombatPhase({ ...context, gameState: current });
             
             addLog("[IA] Fase Principal iniciada.");
-            
-            // Ejecutar Fase Principal
-            setTimeout(() => GameAI.decideNextMove(context), 1000);
-        }, 1500);
+            setTimeout(() => window.GameAI.decideNextMove(context), 1000);
+
+            return { 
+                ...current, 
+                ...combatUpdates, 
+                phase: 'main' 
+            };
+        });
     },
 
-    // LÓGICA DE FASE PRINCIPAL (Jugar cartas y Atacar)
+    // LÓGICA DE FASE PRINCIPAL
     handleMainPhase: async (currentState, context) => {
         const { setGameState, addLog } = context;
         
-        // 1. Jugar cartas
-        // Iteramos cartas en mano para ver cuáles jugar
-        // Hacemos esto en pasos secuenciales visuales
-        
+        // Intentar jugar cartas de la mano
         const tryPlayCard = async () => {
             let playedSomething = false;
             
-            // Usamos un setter para obtener estado fresco y modificarlo atómicamente
             await new Promise(resolve => {
                 setGameState(prev => {
-                    const ai = prev.players[GameAI.AI_PLAYER_ID];
-                    // MODIFICACIÓN: Eliminado límite de 5 cartas para la IA
-                    // if (ai.field.length >= 5) return prev; // Campo lleno
-
-                    // Buscar carta jugable (Coste <= Energía) - Prioriza las más caras que pueda pagar
+                    const ai = prev.players[window.GameAI.AI_PLAYER_ID];
+                    
                     const playableIndex = ai.hand.findIndex(c => c.cost <= ai.energy);
 
                     if (playableIndex !== -1) {
                         const card = ai.hand[playableIndex];
-                        const newAi = { ...ai };
+                        // Clonamos el jugador para no mutar estado previo incorrectamente
+                        const newAi = JSON.parse(JSON.stringify(ai));
                         
                         newAi.energy -= card.cost;
-                        const [playedCard] = newAi.hand.splice(playableIndex, 1);
+                        newAi.hand.splice(playableIndex, 1);
                         
-                        // Entrar al campo
-                        const unit = { ...playedCard, currentHp: playedCard.maxHp, uuid: Date.now() + Math.random(), isFrozen: false };
+                        // La carta nueva entra fresca
+                        const unit = { ...card, currentHp: card.maxHp, uuid: Date.now() + Math.random(), isFrozen: false };
                         newAi.field.push(unit);
                         
                         const newPlayers = [...prev.players];
-                        newPlayers[GameAI.AI_PLAYER_ID] = newAi;
+                        newPlayers[window.GameAI.AI_PLAYER_ID] = newAi;
                         
                         addLog(`[IA] Juega ${unit.name}.`);
                         playedSomething = true;
@@ -205,37 +194,37 @@ const GameAI = {
                 setTimeout(resolve, 1000);
             });
 
-            if (playedSomething) await tryPlayCard(); // Intentar jugar otra
+            if (playedSomething) await tryPlayCard(); 
         };
 
         await tryPlayCard();
 
-        // 2. Usar Habilidades / Preparar Ataques
+        // Intentar atacar con lo que quede en mesa
         await new Promise(resolve => {
             setGameState(prev => {
-                const ai = prev.players[GameAI.AI_PLAYER_ID];
-                const newAi = { ...ai };
+                const ai = prev.players[window.GameAI.AI_PLAYER_ID];
+                // Clonamos campo para asegurar inmutabilidad
+                const newAi = { ...ai, field: ai.field.map(u => ({...u})) };
                 const outgoing = [...prev.outgoingStack];
                 
                 newAi.field.forEach(unit => {
+                    // VERIFICACIÓN ESTRICTA: Si defendió, debe estar frozen y NO atacar.
                     if (unit.isFrozen) return;
 
-                    // IA Simple: Si tiene habilidad de ataque (interaction), usarla siempre si hay energía.
-                    // Si no tiene habilidad específica, atacar normal no gasta energía extra en este juego, 
-                    // pero definimos ataques como habilidades 'interaction'.
-                    
                     const attackAbility = unit.abilities.find(a => a.type === 'interaction');
                     
-                    if (attackAbility && newAi.energy >= attackAbility.cost) {
+                    if (attackAbility && newAi.energy >= attackAbility.cost) { 
                         newAi.energy -= attackAbility.cost;
-                        unit.isFrozen = true;
+                        unit.isFrozen = true; 
 
-                        const power = (unit.power || 0) + (unit.strength || 0) + (unit.intelligence || 0);
+                        const combatStrength = (unit.strength || 0);
+                        const potentialPoints = (unit.power || 0);
                         
                         outgoing.push({
                             sourceCardName: unit.name,
                             sourceCardUuid: unit.uuid,
-                            sourceStats: power,
+                            sourceStats: combatStrength,
+                            sourcePoints: potentialPoints,
                             abilityName: attackAbility.name,
                             uuid: Date.now() + Math.random()
                         });
@@ -244,32 +233,28 @@ const GameAI = {
                 });
 
                 const newPlayers = [...prev.players];
-                newPlayers[GameAI.AI_PLAYER_ID] = newAi;
+                newPlayers[window.GameAI.AI_PLAYER_ID] = newAi;
 
                 return { ...prev, players: newPlayers, outgoingStack: outgoing };
             });
             setTimeout(resolve, 1000);
         });
 
-        // 3. Terminar Turno (Pasar al Humano)
         addLog("[IA] Fin de turno. Enviando ataques...");
         
         setGameState(prev => {
-            // Pasamos el outgoingStack de la IA al incomingStack del Humano
-            // Y cambiamos el turno al 0
             return {
                 ...prev,
-                turn: 0,
-                phase: prev.outgoingStack.length > 0 ? 'response' : 'main', // Si IA ataca, humano responde
-                incomingStack: prev.outgoingStack, // Lo que IA envió
+                turn: 0, 
+                phase: prev.outgoingStack.length > 0 ? 'response' : 'main',
+                incomingStack: prev.outgoingStack, 
                 outgoingStack: [],
-                turnCount: prev.turnCount // El contador aumenta al inicio del turno de quien sea, en startTurn
+                turnCount: prev.turnCount
             };
         });
 
-        // Iniciar turno del Humano (Lógica local)
         setTimeout(() => {
-             GameActions.startTurn(context);
+             window.GameActions.startTurn(context);
         }, 500);
     }
 };

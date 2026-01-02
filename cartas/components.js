@@ -12,7 +12,7 @@ const Button = ({ children, onClick, disabled, className = "", variant = "primar
     );
 };
 
-const CardDisplay = ({ card, size = "normal", onClick, canInteract = false, showAbilities = false, onUseAbility, onInspect }) => {
+const CardDisplay = ({ card, size = "normal", onClick, canInteract = false }) => {
     if (!card) return null;
 
     // --- CONFIGURACIÓN DE TAMAÑOS ---
@@ -28,15 +28,11 @@ const CardDisplay = ({ card, size = "normal", onClick, canInteract = false, show
         containerClasses = "w-24 h-32 md:w-28 md:h-40";
         textSizeMain = "text-[8px]";
     } else if (size === "large") {
-        // CAMBIO AQUÍ: Reducido a h-[32rem] (antes 40rem) para que sea más compacta.
-        // w-80 se mantiene igual.
         containerClasses = "w-80 h-[32rem]"; 
         textSizeMain = "text-sm md:text-base";
         textSizeTiny = "text-xs";
         costSize = "w-10 h-10 md:w-12 md:h-12 text-lg";
         
-        // CAMBIO AQUÍ: Imagen fija a h-64 (antes más alta o variable).
-        // shrink-0 evita que se aplaste.
         imageContainerClass = "relative w-full h-64 shrink-0 overflow-hidden bg-slate-900 group-hover:brightness-110 transition-all border-b border-slate-800";
     }
 
@@ -89,7 +85,7 @@ const CardDisplay = ({ card, size = "normal", onClick, canInteract = false, show
                 </div>
             </div>
 
-            {/* --- ZONA 1: IMAGEN (TAMAÑO FIJO EN LARGE) --- */}
+            {/* --- ZONA 1: IMAGEN --- */}
             <div className={imageContainerClass}>
                 <div className="w-full h-full flex items-center justify-center">
                     {typeof card.image === 'string' ? (
@@ -114,7 +110,7 @@ const CardDisplay = ({ card, size = "normal", onClick, canInteract = false, show
                     </div>
                 )}
 
-                {/* --- INDICADORES DE HABILIDADES (ICONOS - SOLO NO LARGE) --- */}
+                {/* --- INDICADORES DE HABILIDADES (ICONOS) --- */}
                 {card.abilities && size !== 'large' && (
                     <div className="absolute top-10 right-1 flex flex-col gap-1 z-20 items-end">
                         {card.abilities.map((ab, idx) => {
@@ -133,7 +129,7 @@ const CardDisplay = ({ card, size = "normal", onClick, canInteract = false, show
                             }
 
                             return (
-                                <div key={idx} className={`w-4 h-4 md:w-5 md:h-5 rounded-full ${iconColor} border flex items-center justify-center shadow-lg transform hover:scale-125 transition-transform`} title={ab.name}>
+                                <div key={idx} className={`w-4 h-4 md:w-5 md:h-5 rounded-full ${iconColor} border flex items-center justify-center shadow-lg`} title={ab.name}>
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-2.5 h-2.5 text-white">
                                         <path d={pathData} />
                                     </svg>
@@ -178,7 +174,7 @@ const CardDisplay = ({ card, size = "normal", onClick, canInteract = false, show
                 </div>
             </div>
 
-            {/* --- ZONA 3: CONTENIDO VARIABLE (SCROLLABLE) --- */}
+            {/* --- ZONA 3: CONTENIDO VARIABLE (SCROLLABLE - SOLO LARGE) --- */}
             {size === 'large' ? (
                 <div className="flex-1 overflow-y-auto bg-[#151515] p-0 flex flex-col no-scrollbar">
                     {/* Lista de Habilidades */}
@@ -221,44 +217,6 @@ const CardDisplay = ({ card, size = "normal", onClick, canInteract = false, show
                     </div>
                 </div>
             ) : null}
-
-            {/* --- OVERLAY DE ACCIONES (SOLO MODO JUEGO PEQUEÑO) --- */}
-            {showAbilities && !card.isFrozen && (
-                <div className="absolute inset-0 bg-slate-900/95 z-40 flex flex-col p-2 gap-2 overflow-y-auto animate-in fade-in duration-200">
-                    <div className="text-center text-xs font-bold text-slate-400 mb-1 border-b border-slate-700 pb-1">
-                        ELEGIR ACCIÓN
-                    </div>
-                    {card.abilities.map((ab, idx) => (
-                        <button 
-                            key={idx}
-                            onClick={(e) => { e.stopPropagation(); onUseAbility(card, ab); }}
-                            className="w-full neo-inset bg-slate-800 hover:bg-slate-700 p-2 rounded flex justify-between items-center group/btn transition-colors border border-slate-700"
-                        >
-                            <div className="flex flex-col items-start overflow-hidden">
-                                <span className={`font-bold text-[10px] md:text-xs truncate w-full text-left
-                                    ${ab.type === 'interaction' ? 'text-red-400' : 
-                                      ab.type === 'response' ? 'text-blue-400' : 'text-purple-400'}
-                                `}>
-                                    {ab.name}
-                                </span>
-                                <span className="text-[8px] text-slate-500 truncate">{ab.desc}</span>
-                            </div>
-                            <div className="text-yellow-500 font-mono text-[10px] font-bold pl-2">
-                                -{ab.cost}
-                            </div>
-                        </button>
-                    ))}
-                    
-                    {onInspect && (
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); onInspect(card); }}
-                            className="mt-1 w-full neo-inset bg-slate-800 hover:bg-slate-700 p-1 rounded text-center text-[9px] text-slate-400 border border-slate-700 font-bold uppercase tracking-wider"
-                        >
-                            Ver Carta
-                        </button>
-                    )}
-                </div>
-            )}
         </div>
     );
 };

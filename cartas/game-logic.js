@@ -1,8 +1,7 @@
-
 // --- LÓGICA DEL JUEGO (HOOK PERSONALIZADO) ---
-// Sobreescribir: Cartas Silen/game-logic.js
+// Guardar como: Cartas Silen/game-logic.js
 
-const useGameLogic = ({ user, userData, onBack, gameConfig }) => {
+window.useGameLogic = ({ user, userData, onBack, gameConfig }) => {
     const [peer, setPeer] = React.useState(null);
     const [conn, setConn] = React.useState(null);
     const [myPeerId, setMyPeerId] = React.useState("");
@@ -10,16 +9,17 @@ const useGameLogic = ({ user, userData, onBack, gameConfig }) => {
     const [status, setStatus] = React.useState("init");
     const [gameLog, setGameLog] = React.useState([]);
     const [gameState, setGameState] = React.useState(getInitialGameState());
+    
+    // NUEVO: Estado para el modo de selección de objetivo
+    const [targetingData, setTargetingData] = React.useState(null); 
 
     const addLog = (msg) => setGameLog(prev => [msg, ...prev].slice(0, 10));
     
-    // En modo IA, sendLog solo loguea localmente. En online, envía.
     const sendLog = (msg) => { 
         if(conn) conn.send({ type: 'LOG_MSG', payload: { msg } }); 
         addLog(msg); 
     };
 
-    // En modo IA, sendStateUpdate no hace nada (estado compartido). En online, envía.
     const sendStateUpdate = (newState) => { 
         if(conn) conn.send({ type: 'UPDATE_STATE', payload: newState }); 
     };
@@ -28,7 +28,9 @@ const useGameLogic = ({ user, userData, onBack, gameConfig }) => {
         user, userData, onBack, gameConfig,
         peer, conn, status, gameLog, gameState,
         setPeer, setConn, setStatus, setGameState, 
-        addLog, sendLog, sendStateUpdate
+        addLog, sendLog, sendStateUpdate,
+        // Inyectamos el setter de targeting al contexto
+        targetingData, setTargetingData
     };
 
     React.useEffect(() => {
@@ -37,19 +39,16 @@ const useGameLogic = ({ user, userData, onBack, gameConfig }) => {
             setStatus("playing");
             addLog("Iniciando simulación contra la Máquina...");
             
-            // Construir mazo del jugador
             const myDeckIds = userData.deck || [1,1,2,2,6,6,6,6,4,5];
             const myDeck = buildDeck(myDeckIds);
             const initialHand = myDeck.splice(0, 4);
 
-            // Construir mazo de la IA (Aleatorio del pool completo)
             const aiDeckIds = Array(30).fill(0).map(() => ALL_CARDS[Math.floor(Math.random() * ALL_CARDS.length)].id);
             const aiDeck = buildDeck(aiDeckIds);
             const aiHand = aiDeck.splice(0, 4);
 
             setGameState(prev => {
                 const newPlayers = [...prev.players];
-                // Jugador (ID 0)
                 newPlayers[0] = { 
                     ...newPlayers[0], 
                     name: userData.username, 
@@ -57,7 +56,6 @@ const useGameLogic = ({ user, userData, onBack, gameConfig }) => {
                     hand: initialHand,
                     maxHp: 30
                 };
-                // IA (ID 1)
                 newPlayers[1] = {
                     ...newPlayers[1],
                     name: "Silenos AI",
@@ -68,12 +66,11 @@ const useGameLogic = ({ user, userData, onBack, gameConfig }) => {
                 return { ...prev, myPlayerId: 0, players: newPlayers };
             });
 
-            // Iniciar juego (Turno 0 - Jugador)
             setTimeout(() => {
-                 GameActions.startTurn({ ...gameContext, gameState: getInitialGameState(), setGameState });
+                 window.GameActions.startTurn({ ...gameContext, gameState: getInitialGameState(), setGameState });
             }, 1000);
 
-            return; // Salir, no inicializar PeerJS
+            return; 
         }
 
         // --- MODO ONLINE (PEERJS) ---
@@ -83,7 +80,6 @@ const useGameLogic = ({ user, userData, onBack, gameConfig }) => {
             console.log("Mi Peer ID:", id);
             setMyPeerId(id);
 
-            // --- MODO HOST (CREAR DESAFÍO) ---
             if (gameConfig.mode === 'host_friend' && gameConfig.targetFriendId) {
                 setStatus("waiting");
                 addLog("Generando sala... Desafío enviado.");
@@ -96,7 +92,6 @@ const useGameLogic = ({ user, userData, onBack, gameConfig }) => {
                     }
                 }).catch(err => console.error("Error enviando desafío:", err));
             }
-            // --- MODO JOIN AUTOMÁTICO ---
             else if (gameConfig.mode === 'join_friend' && gameConfig.targetPeerId) {
                 setTargetPeerId(gameConfig.targetPeerId);
                 setStatus("connecting");
@@ -138,13 +133,11 @@ const useGameLogic = ({ user, userData, onBack, gameConfig }) => {
         };
     }, []); 
 
-    // Helper para construir mazos
     const buildDeck = (ids) => {
         const deck = ids.map(id => {
             const base = ALL_CARDS.find(card => card.id === id);
             return base ? JSON.parse(JSON.stringify(base)) : null;
         }).filter(Boolean);
-        // Barajar
         for (let i = deck.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [deck[i], deck[j]] = [deck[j], deck[i]];
@@ -179,14 +172,14 @@ const useGameLogic = ({ user, userData, onBack, gameConfig }) => {
             c.send({ type: 'INIT_HANDSHAKE', payload: { name: userData.username, deckCount: myDeck.length } });
             
             if(amIHost) {
-                 setTimeout(() => GameActions.startTurn({ ...gameContext, gameState: getInitialGameState(), setGameState }), 1000);
+                 setTimeout(() => window.GameActions.startTurn({ ...gameContext, gameState: getInitialGameState(), setGameState }), 1000);
             }
         });
 
         c.on('data', (data) => {
             GameNetwork.handleIncomingData(data, { 
                 setGameState, addLog, onBack, user, conn, gameState: { ...gameState }, 
-                runStartTurn: () => GameActions.startTurn({ setGameState, gameState: { ...gameState }, sendStateUpdate, addLog })
+                runStartTurn: () => window.GameActions.startTurn({ setGameState, gameState: { ...gameState }, sendStateUpdate, addLog })
             });
         });
 
@@ -209,9 +202,20 @@ const useGameLogic = ({ user, userData, onBack, gameConfig }) => {
         peer, conn, myPeerId, targetPeerId, setTargetPeerId,
         status, gameLog, gameState,
         connectToPeer, 
-        playCard: (idx) => GameActions.playCard(idx, gameContext),
-        useAbility: (uuid, abId) => GameActions.useAbility(uuid, abId, gameContext),
-        advancePhase: () => GameActions.advancePhase(gameContext),
-        assignDefender: (actUuid, blkUuid) => GameActions.assignDefender(actUuid, blkUuid, gameContext)
+        
+        // Estado y setters de targeting
+        targetingData,
+        cancelTargeting: () => setTargetingData(null),
+
+        // Acciones mapeadas
+        playCard: (idx) => window.GameActions.playCard(idx, gameContext),
+        useAbility: (uuid, abId) => window.GameActions.useAbility(uuid, abId, gameContext),
+        
+        // Función expuesta para resolver el targeting
+        resolveTargetedAbility: (targetUuid) => window.GameActions.resolveTargetedAbility(targetUuid, gameContext),
+
+        advancePhase: () => window.GameActions.advancePhase(gameContext),
+        assignDefender: (actUuid, blkUuid) => window.GameActions.assignDefender(actUuid, blkUuid, gameContext),
+        autoDefend: () => window.GameActions.autoAssignDefenders(gameContext)
     };
 };
