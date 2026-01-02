@@ -1,4 +1,6 @@
+
 // --- LÓGICA DEL JUEGO (HOOK PERSONALIZADO) ---
+// Sobreescribir: Cartas Silen/game-logic.js
 
 const useGameLogic = ({ user, userData, onBack, gameConfig }) => {
     const [peer, setPeer] = React.useState(null);
@@ -10,8 +12,17 @@ const useGameLogic = ({ user, userData, onBack, gameConfig }) => {
     const [gameState, setGameState] = React.useState(getInitialGameState());
 
     const addLog = (msg) => setGameLog(prev => [msg, ...prev].slice(0, 10));
-    const sendLog = (msg) => { if(conn) conn.send({ type: 'LOG_MSG', payload: { msg } }); addLog(msg); };
-    const sendStateUpdate = (newState) => { if(conn) conn.send({ type: 'UPDATE_STATE', payload: newState }); };
+    
+    // En modo IA, sendLog solo loguea localmente. En online, envía.
+    const sendLog = (msg) => { 
+        if(conn) conn.send({ type: 'LOG_MSG', payload: { msg } }); 
+        addLog(msg); 
+    };
+
+    // En modo IA, sendStateUpdate no hace nada (estado compartido). En online, envía.
+    const sendStateUpdate = (newState) => { 
+        if(conn) conn.send({ type: 'UPDATE_STATE', payload: newState }); 
+    };
 
     const gameContext = {
         user, userData, onBack, gameConfig,
@@ -21,7 +32,51 @@ const useGameLogic = ({ user, userData, onBack, gameConfig }) => {
     };
 
     React.useEffect(() => {
-        // Creamos el Peer
+        // --- MODO OFFLINE / IA ---
+        if (gameConfig.mode === 'ai') {
+            setStatus("playing");
+            addLog("Iniciando simulación contra la Máquina...");
+            
+            // Construir mazo del jugador
+            const myDeckIds = userData.deck || [1,1,2,2,6,6,6,6,4,5];
+            const myDeck = buildDeck(myDeckIds);
+            const initialHand = myDeck.splice(0, 4);
+
+            // Construir mazo de la IA (Aleatorio del pool completo)
+            const aiDeckIds = Array(30).fill(0).map(() => ALL_CARDS[Math.floor(Math.random() * ALL_CARDS.length)].id);
+            const aiDeck = buildDeck(aiDeckIds);
+            const aiHand = aiDeck.splice(0, 4);
+
+            setGameState(prev => {
+                const newPlayers = [...prev.players];
+                // Jugador (ID 0)
+                newPlayers[0] = { 
+                    ...newPlayers[0], 
+                    name: userData.username, 
+                    deck: myDeck, 
+                    hand: initialHand,
+                    maxHp: 30
+                };
+                // IA (ID 1)
+                newPlayers[1] = {
+                    ...newPlayers[1],
+                    name: "Silenos AI",
+                    deck: aiDeck,
+                    hand: aiHand,
+                    maxHp: 30
+                };
+                return { ...prev, myPlayerId: 0, players: newPlayers };
+            });
+
+            // Iniciar juego (Turno 0 - Jugador)
+            setTimeout(() => {
+                 GameActions.startTurn({ ...gameContext, gameState: getInitialGameState(), setGameState });
+            }, 1000);
+
+            return; // Salir, no inicializar PeerJS
+        }
+
+        // --- MODO ONLINE (PEERJS) ---
         const newPeer = new Peer(null, { debug: 1 });
         
         newPeer.on('open', (id) => {
@@ -33,7 +88,6 @@ const useGameLogic = ({ user, userData, onBack, gameConfig }) => {
                 setStatus("waiting");
                 addLog("Generando sala... Desafío enviado.");
                 
-                // Guardamos el desafío en Firebase
                 db.collection('users').doc(gameConfig.targetFriendId).update({
                     incomingChallenge: {
                         hostPeerId: id,
@@ -42,8 +96,7 @@ const useGameLogic = ({ user, userData, onBack, gameConfig }) => {
                     }
                 }).catch(err => console.error("Error enviando desafío:", err));
             }
-            
-            // --- MODO JOIN AUTOMÁTICO (DESDE BOTÓN ACEPTAR) ---
+            // --- MODO JOIN AUTOMÁTICO ---
             else if (gameConfig.mode === 'join_friend' && gameConfig.targetPeerId) {
                 setTargetPeerId(gameConfig.targetPeerId);
                 setStatus("connecting");
@@ -51,22 +104,9 @@ const useGameLogic = ({ user, userData, onBack, gameConfig }) => {
 
                 setTimeout(() => {
                     if(newPeer.destroyed) return;
-                    
-                    // Usamos newPeer directamente aquí porque 'peer' del estado podría ser null aún
                     const c = newPeer.connect(gameConfig.targetPeerId, { reliable: true });
-                    
-                    if(!c) {
-                        alert("Error crítico: No se pudo iniciar la conexión.");
-                        onBack();
-                        return;
-                    }
-
-                    c.on('error', (err) => {
-                        console.error("Error de conexión:", err);
-                        alert("Fallo al conectar con el rival.");
-                        onBack();
-                    });
-
+                    if(!c) { alert("Error crítico."); onBack(); return; }
+                    c.on('error', (err) => { alert("Fallo al conectar."); onBack(); });
                     setupConnection(c, false);
                 }, 1000);
             } 
@@ -75,20 +115,16 @@ const useGameLogic = ({ user, userData, onBack, gameConfig }) => {
             }
         });
 
-        // --- MANEJO DE ERRORES GLOBAL DEL PEER ---
         newPeer.on('error', (err) => {
             console.error("Peer Error:", err);
             if (err.type === 'peer-unavailable') {
-                alert("Error: El desafío ha caducado o el rival ya no está en línea con ese ID.");
+                alert("Rival no encontrado o desconectado.");
                 onBack(); 
-            } else if (err.type === 'disconnected') {
-                addLog("Desconectado del servidor de señalización.");
             } else {
                 addLog(`Error de red: ${err.type}`);
             }
         });
 
-        // --- RECIBIR CONEXIÓN (HOST) ---
         newPeer.on('connection', (c) => {
             console.log("¡Alguien se está conectando!", c.peer);
             setupConnection(c, true);
@@ -96,35 +132,36 @@ const useGameLogic = ({ user, userData, onBack, gameConfig }) => {
 
         setPeer(newPeer);
 
-        // --- LIMPIEZA AL SALIR ---
         return () => {
             newPeer.destroy();
-            console.log("Peer destruido y desconectado.");
+            console.log("Peer destruido.");
         };
     }, []); 
+
+    // Helper para construir mazos
+    const buildDeck = (ids) => {
+        const deck = ids.map(id => {
+            const base = ALL_CARDS.find(card => card.id === id);
+            return base ? JSON.parse(JSON.stringify(base)) : null;
+        }).filter(Boolean);
+        // Barajar
+        for (let i = deck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [deck[i], deck[j]] = [deck[j], deck[i]];
+        }
+        return deck;
+    };
 
     const setupConnection = (c, amIHost) => {
         setConn(c);
         
         c.on('open', () => {
-            console.log("¡CONEXIÓN ABIERTA!");
             setStatus("playing");
             addLog("¡Conectado con éxito!");
             
             const myId = amIHost ? 0 : 1;
-            
-            // Construir mazo
             const myDeckIds = userData.deck || [1,1,2,2,6,6,6,6,4,5];
-            const myDeck = myDeckIds.map(id => {
-                const base = ALL_CARDS.find(card => card.id === id);
-                return base ? JSON.parse(JSON.stringify(base)) : null;
-            }).filter(Boolean);
-
-            // Barajar
-            for (let i = myDeck.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [myDeck[i], myDeck[j]] = [myDeck[j], myDeck[i]];
-            }
+            const myDeck = buildDeck(myDeckIds);
             const initialHand = myDeck.splice(0, 4);
 
             setGameState(prev => {
@@ -147,7 +184,6 @@ const useGameLogic = ({ user, userData, onBack, gameConfig }) => {
         });
 
         c.on('data', (data) => {
-            console.log("Datos recibidos:", data.type);
             GameNetwork.handleIncomingData(data, { 
                 setGameState, addLog, onBack, user, conn, gameState: { ...gameState }, 
                 runStartTurn: () => GameActions.startTurn({ setGameState, gameState: { ...gameState }, sendStateUpdate, addLog })
@@ -160,26 +196,12 @@ const useGameLogic = ({ user, userData, onBack, gameConfig }) => {
         });
     };
 
-    // --- FUNCIÓN MANUAL DE CONEXIÓN (PARA EL LOBBY) ---
-    // Esta es la función que faltaba y causaba el error
     const connectToPeer = () => {
         if (!targetPeerId || !peer) return;
         setStatus("connecting");
         addLog("Conectando manualmente...");
-        
         const c = peer.connect(targetPeerId, { reliable: true });
-        
-        if(!c) {
-             alert("Error al intentar conectar.");
-             return;
-        }
-        
-        c.on('error', (err) => {
-            console.error("Manual connection error:", err);
-            alert("Error al conectar: " + err.type);
-            setStatus("waiting");
-        });
-
+        if(!c) return;
         setupConnection(c, false);
     };
 

@@ -12,29 +12,41 @@ const Button = ({ children, onClick, disabled, className = "", variant = "primar
     );
 };
 
-const CardDisplay = ({ card, size = "normal", onClick, canInteract = false, showAbilities = false, onUseAbility }) => {
+const CardDisplay = ({ card, size = "normal", onClick, canInteract = false, showAbilities = false, onUseAbility, onInspect }) => {
     if (!card) return null;
 
     // --- CONFIGURACIÓN DE TAMAÑOS ---
-    let sizeClasses = "w-32 h-48 md:w-44 md:h-64"; 
+    let containerClasses = "w-32 h-48 md:w-44 md:h-64"; 
     let textSizeMain = "text-[10px] md:text-xs";
     let textSizeTiny = "text-[8px] md:text-[9px]";
     let costSize = "w-6 h-6 md:w-8 md:h-8 text-xs md:text-sm";
     
+    // Configuración de la imagen según tamaño
+    let imageContainerClass = "relative w-full flex-1 overflow-hidden bg-slate-900 group-hover:brightness-110 transition-all";
+
     if (size === "small") {
-        sizeClasses = "w-24 h-32 md:w-28 md:h-40";
+        containerClasses = "w-24 h-32 md:w-28 md:h-40";
         textSizeMain = "text-[8px]";
     } else if (size === "large") {
-        sizeClasses = "w-72 h-[28rem] md:w-80 md:h-[32rem]";
+        // CAMBIO AQUÍ: Reducido a h-[32rem] (antes 40rem) para que sea más compacta.
+        // w-80 se mantiene igual.
+        containerClasses = "w-80 h-[32rem]"; 
         textSizeMain = "text-sm md:text-base";
         textSizeTiny = "text-xs";
         costSize = "w-10 h-10 md:w-12 md:h-12 text-lg";
+        
+        // CAMBIO AQUÍ: Imagen fija a h-64 (antes más alta o variable).
+        // shrink-0 evita que se aplaste.
+        imageContainerClass = "relative w-full h-64 shrink-0 overflow-hidden bg-slate-900 group-hover:brightness-110 transition-all border-b border-slate-800";
     }
 
     // --- RENDERIZADO REVERSO ---
     if (card.hidden) {
         return (
-            <div className={`${sizeClasses} neo-card flex items-center justify-center m-1 flex-shrink-0 !bg-[#0a0a0a] border border-slate-800 shadow-xl rounded-xl`}>
+            <div 
+                onClick={() => (onClick && onClick(card))}
+                className={`${containerClasses} neo-card flex items-center justify-center m-1 flex-shrink-0 !bg-[#0a0a0a] border border-slate-800 shadow-xl rounded-xl cursor-pointer`}
+            >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10 text-slate-700 opacity-50">
                     <circle cx="12" cy="12" r="10"/>
                     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
@@ -56,7 +68,7 @@ const CardDisplay = ({ card, size = "normal", onClick, canInteract = false, show
         <div 
             onClick={() => (onClick && onClick(card))}
             className={`
-                ${sizeClasses} 
+                ${containerClasses} 
                 relative flex flex-col m-1 select-none group flex-shrink-0 
                 rounded-xl overflow-hidden transition-all duration-300
                 border border-slate-800 bg-[#121212]
@@ -77,8 +89,8 @@ const CardDisplay = ({ card, size = "normal", onClick, canInteract = false, show
                 </div>
             </div>
 
-            {/* --- IMAGEN Y SUPERPOSICIONES --- */}
-            <div className="relative w-full h-full flex-1 overflow-hidden bg-slate-900 group-hover:brightness-110 transition-all">
+            {/* --- ZONA 1: IMAGEN (TAMAÑO FIJO EN LARGE) --- */}
+            <div className={imageContainerClass}>
                 <div className="w-full h-full flex items-center justify-center">
                     {typeof card.image === 'string' ? (
                         <img 
@@ -102,8 +114,8 @@ const CardDisplay = ({ card, size = "normal", onClick, canInteract = false, show
                     </div>
                 )}
 
-                {/* --- INDICADORES DE HABILIDADES --- */}
-                {card.abilities && (
+                {/* --- INDICADORES DE HABILIDADES (ICONOS - SOLO NO LARGE) --- */}
+                {card.abilities && size !== 'large' && (
                     <div className="absolute top-10 right-1 flex flex-col gap-1 z-20 items-end">
                         {card.abilities.map((ab, idx) => {
                             let iconColor = "bg-gray-600";
@@ -150,8 +162,8 @@ const CardDisplay = ({ card, size = "normal", onClick, canInteract = false, show
                 </div>
             </div>
 
-            {/* --- GRID DE ESTADÍSTICAS --- */}
-            <div className="grid grid-cols-3 divide-x divide-slate-800 bg-[#0F0F0F] h-8 md:h-10 border-t border-slate-800">
+            {/* --- ZONA 2: STATS (INAMOVIBLE) --- */}
+            <div className="grid grid-cols-3 divide-x divide-slate-800 bg-[#0F0F0F] h-10 border-t border-b border-slate-800 flex-shrink-0 z-10 relative">
                  <div className="flex flex-col items-center justify-center pt-0.5">
                     <span className="text-[7px] text-red-500 font-bold uppercase tracking-widest">STR</span>
                     <span className="text-xs md:text-sm font-bold text-gray-200">{card.strength}</span>
@@ -166,7 +178,51 @@ const CardDisplay = ({ card, size = "normal", onClick, canInteract = false, show
                 </div>
             </div>
 
-            {/* --- OVERLAY DE HABILIDADES --- */}
+            {/* --- ZONA 3: CONTENIDO VARIABLE (SCROLLABLE) --- */}
+            {size === 'large' ? (
+                <div className="flex-1 overflow-y-auto bg-[#151515] p-0 flex flex-col no-scrollbar">
+                    {/* Lista de Habilidades */}
+                    {card.abilities && card.abilities.length > 0 && (
+                        <div className="px-4 py-3 flex flex-col gap-3">
+                            <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest border-b border-slate-700 pb-1 flex justify-between">
+                                <span>Habilidades</span>
+                                <span className="text-[8px]">Coste</span>
+                            </div>
+                            {card.abilities.map((ab, idx) => (
+                                <div key={idx} className="flex flex-col">
+                                    <div className="flex justify-between items-center mb-0.5">
+                                        <span className={`text-xs font-bold flex items-center gap-2
+                                            ${ab.type === 'interaction' ? 'text-red-400' : 
+                                              ab.type === 'response' ? 'text-blue-400' : 'text-purple-400'}
+                                        `}>
+                                            <span className={`w-1.5 h-1.5 rounded-full inline-block
+                                                 ${ab.type === 'interaction' ? 'bg-red-500' : 
+                                                   ab.type === 'response' ? 'bg-blue-500' : 'bg-purple-500'}
+                                            `}></span>
+                                            {ab.name}
+                                        </span>
+                                        <span className="text-[10px] text-yellow-500 font-mono font-bold bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">
+                                            {ab.cost > 0 ? ab.cost : '0'}
+                                        </span>
+                                    </div>
+                                    <span className="text-[11px] text-slate-400 leading-snug pl-3.5 opacity-80">
+                                        {ab.desc}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    
+                    {/* Descripción Narrativa */}
+                    <div className="mt-auto p-4 border-t border-slate-800 bg-[#111]">
+                        <p className="text-gray-500 italic text-xs md:text-sm text-center font-serif leading-relaxed">
+                            "{card.desc}"
+                        </p>
+                    </div>
+                </div>
+            ) : null}
+
+            {/* --- OVERLAY DE ACCIONES (SOLO MODO JUEGO PEQUEÑO) --- */}
             {showAbilities && !card.isFrozen && (
                 <div className="absolute inset-0 bg-slate-900/95 z-40 flex flex-col p-2 gap-2 overflow-y-auto animate-in fade-in duration-200">
                     <div className="text-center text-xs font-bold text-slate-400 mb-1 border-b border-slate-700 pb-1">
@@ -192,17 +248,15 @@ const CardDisplay = ({ card, size = "normal", onClick, canInteract = false, show
                             </div>
                         </button>
                     ))}
-                    <div className="mt-auto text-[9px] text-center text-slate-600 italic">
-                        Click fuera para cancelar
-                    </div>
-                </div>
-            )}
-            
-            {size === 'large' && (
-                <div className="p-3 bg-[#111] border-t border-slate-800">
-                    <p className="text-gray-400 italic text-xs md:text-sm text-center font-serif leading-relaxed">
-                        "{card.desc}"
-                    </p>
+                    
+                    {onInspect && (
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onInspect(card); }}
+                            className="mt-1 w-full neo-inset bg-slate-800 hover:bg-slate-700 p-1 rounded text-center text-[9px] text-slate-400 border border-slate-700 font-bold uppercase tracking-wider"
+                        >
+                            Ver Carta
+                        </button>
+                    )}
                 </div>
             )}
         </div>

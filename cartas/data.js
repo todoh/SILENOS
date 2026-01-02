@@ -1,4 +1,5 @@
 // --- BASE DE DATOS DE CARTAS (Silenos Tactical) ---
+// Guardar como: Cartas Silen/data.js
 
 const BASE_ABILITIES = [
     { id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Suma stats y ataca." },
@@ -80,7 +81,15 @@ const CORE_CARDS = [
     },
 ];
 
-// Combinamos las cartas base con las cartas extra si existen (definidas en data2.js)
-const ALL_CARDS = (typeof EXTRA_CARDS !== 'undefined') 
-    ? [...CORE_CARDS, ...EXTRA_CARDS] 
-    : CORE_CARDS;
+// Lógica de Mezcla: Combina Core + Extra (Data2) + Narrativo (Data3)
+let combinedCards = [...CORE_CARDS];
+
+if (typeof EXTRA_CARDS !== 'undefined') {
+    combinedCards = [...combinedCards, ...EXTRA_CARDS];
+}
+
+if (typeof NARRATIVE_CARDS !== 'undefined') {
+    combinedCards = [...combinedCards, ...NARRATIVE_CARDS];
+}
+
+const ALL_CARDS = combinedCards;

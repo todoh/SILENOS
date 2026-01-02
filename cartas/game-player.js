@@ -1,6 +1,6 @@
 // --- TABLEROS DE JUGADORES (NEUMORFISTA) ---
 
-const OpponentBoard = ({ player, isMyTurn }) => {
+const OpponentBoard = ({ player, isMyTurn, onInspect }) => {
     return (
         <div className="flex flex-col items-center pb-2 w-full flex-shrink-0 bg-[var(--bg-main)] border-b border-[var(--shadow-dark)]">
             {/* Stats Rival - Barra elevada */}
@@ -30,7 +30,13 @@ const OpponentBoard = ({ player, isMyTurn }) => {
                 <div className="flex items-center gap-2 px-4 min-w-max justify-center min-h-[140px]">
                     {player.field.length === 0 && <span className="text-slate-700 text-xs uppercase font-bold tracking-widest">Campo Rival Vacío</span>}
                     {player.field.map((unit, idx) => (
-                        <CardDisplay key={idx} card={unit} size="small" />
+                        <CardDisplay 
+                            key={idx} 
+                            card={unit} 
+                            size="small" 
+                            canInteract={true}
+                            onClick={() => onInspect(unit, 'opponent')} // Clic para ver carta del rival
+                        />
                     ))}
                 </div>
             </div>
@@ -38,7 +44,7 @@ const OpponentBoard = ({ player, isMyTurn }) => {
     );
 };
 
-const PlayerBoard = ({ player, isMyTurn, phase, playCard, useAbility, advancePhase, incomingStack, assignDefender }) => {
+const PlayerBoard = ({ player, isMyTurn, phase, playCard, useAbility, advancePhase, incomingStack, assignDefender, onInspect }) => {
     const [dragState, setDragState] = React.useState(null);
 
     let phaseBtnText = "Esperando...";
@@ -157,6 +163,7 @@ const PlayerBoard = ({ player, isMyTurn, phase, playCard, useAbility, advancePha
                                     canInteract={isMyTurn}
                                     showAbilities={isMyTurn && phase === 'main'}
                                     onUseAbility={(c, a) => useAbility(c.uuid, a.id)}
+                                    onInspect={(c) => onInspect(c, 'field')} // Botón de ver carta en overlay
                                 />
                             </div>
                         ))}
@@ -194,7 +201,8 @@ const PlayerBoard = ({ player, isMyTurn, phase, playCard, useAbility, advancePha
                                     card={card} 
                                     size="normal"
                                     canInteract={isMyTurn && phase === 'main'}
-                                    onClick={() => playCard(idx)}
+                                    // Cambiado de playCard a onInspect para ver primero
+                                    onClick={() => onInspect(card, 'hand', idx)}
                                 />
                             </div>
                         ))}
