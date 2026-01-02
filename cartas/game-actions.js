@@ -121,7 +121,9 @@ const GameActions = {
 
         if (gameState.phase !== 'main') { addLog("Solo en Fase Principal."); return; }
         if (me.energy < card.cost) { addLog("Energía insuficiente."); return; }
-        if (me.field.length >= 5) { addLog("Campo lleno."); return; }
+        
+        // MODIFICACIÓN: Eliminado el límite de 5 cartas
+        // if (me.field.length >= 5) { addLog("Campo lleno."); return; }
 
         const newPlayers = [...gameState.players];
         const player = newPlayers[gameState.myPlayerId];

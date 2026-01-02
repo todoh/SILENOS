@@ -175,7 +175,8 @@ const GameAI = {
             await new Promise(resolve => {
                 setGameState(prev => {
                     const ai = prev.players[GameAI.AI_PLAYER_ID];
-                    if (ai.field.length >= 5) return prev; // Campo lleno
+                    // MODIFICACIÓN: Eliminado límite de 5 cartas para la IA
+                    // if (ai.field.length >= 5) return prev; // Campo lleno
 
                     // Buscar carta jugable (Coste <= Energía) - Prioriza las más caras que pueda pagar
                     const playableIndex = ai.hand.findIndex(c => c.cost <= ai.energy);
