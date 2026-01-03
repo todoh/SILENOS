@@ -110,7 +110,7 @@ const EXPANSION_CARDS = [
     { 
         id: 124, name: "Asesino Sombrío", cost: 40, 
         power: 3, strength: 55, intelligence: 40, maxHp: 65, // Antes 200
-        image: "img/ladron_sombrio.jpg", desc: "Golpea desde las sombras.",
+        image: "img/asesino.jpg", desc: "Golpea desde las sombras.",
         types: ["Oscuridad", "Asesino", "Humano"],
         abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
     },

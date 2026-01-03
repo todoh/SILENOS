@@ -21,7 +21,7 @@ const AuthScreen = ({ onLogin }) => {
                     username: user.displayName || "Jugador Anónimo",
                     email: user.email,
                     photoURL: user.photoURL,
-                    korehs: 100,
+                    korehs: 10000000,
                     collection: starterDeck, // Inicialmente la colección es igual al mazo
                     deck: starterDeck,       // El mazo ACTIVO para jugar
                     // NUEVO: Estructura para múltiples mazos guardados

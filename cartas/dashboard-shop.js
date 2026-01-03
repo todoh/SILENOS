@@ -129,8 +129,8 @@ const DashboardShop = ({ user, userData, setSelectedCard }) => {
                 </h2>
                 <p className="text-slate-500 text-sm mb-6">Adquiere cartas específicas a un precio premium.</p>
 
-                <div className="neo-inset p-6 w-full max-w-6xl">
-                    <div className="flex flex-wrap gap-8 justify-center">
+                <div className="neo-inset p-6 w-full max-w-5xl">
+                    <div className="flex flex-wrap gap-4 justify-center">
                         {/* ALL_CARDS contiene:
                            - CORE_CARDS (data.js)
                            - EXTRA_CARDS (data2.js)
@@ -141,13 +141,13 @@ const DashboardShop = ({ user, userData, setSelectedCard }) => {
                             const canAfford = userData.korehs >= price;
 
                             return (
-                                <div key={idx} className="flex flex-col items-center gap-3 group">
+                                <div key={idx} className="flex flex-col items-center gap-1 group">
                                     {/* Contenedor Carta */}
                                     <div 
-                                        className="cursor-pointer hover:scale-105 transition-transform duration-200"
+                                        className="cursor-pointer hover:scale-115 transition-transform duration-200"
                                         onClick={() => setSelectedCard(card)}
                                     >
-                                        <CardDisplay card={card} size="normal" />
+                                        <CardDisplay card={card} size="w-32 md:w-32 aspect-[2/3]" />
                                     </div>
 
                                     {/* Botón de Compra */}

@@ -66,7 +66,14 @@ const Dashboard = ({ user, userData, onLogout, onStartGame }) => {
                 </div>
                 <div className="flex items-center gap-4 md:gap-6">
                     <div className="neo-inset px-4 py-2 rounded-full flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-yellow-500">
+                     {/* Nav Tabs */}
+                <div >
+                    <Button variant={view === 'home' ? 'primary' : 'secondary'} onClick={() => setView('home')}>Jugar</Button>
+                    <Button variant={view === 'deck' ? 'primary' : 'secondary'} onClick={() => setView('deck')}>Colección</Button>
+                    <Button variant={view === 'shop' ? 'primary' : 'secondary'} onClick={() => setView('shop')}>Tienda</Button>
+                </div>
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-yellow-500">
                             <circle cx="12" cy="12" r="10"/>
                             <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/>
                             <path d="M12 18V6"/>
@@ -89,12 +96,7 @@ const Dashboard = ({ user, userData, onLogout, onStartGame }) => {
             {/* Main Content */}
             <div className="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full">
                 
-                {/* Nav Tabs */}
-                <div className="flex gap-4 mb-8 justify-center md:justify-start">
-                    <Button variant={view === 'home' ? 'primary' : 'secondary'} onClick={() => setView('home')}>Jugar</Button>
-                    <Button variant={view === 'deck' ? 'primary' : 'secondary'} onClick={() => setView('deck')}>Colección</Button>
-                    <Button variant={view === 'shop' ? 'primary' : 'secondary'} onClick={() => setView('shop')}>Tienda</Button>
-                </div>
+               
 
                 {/* --- RENDERIZADO DE SUB-COMPONENTES --- */}
                 

@@ -17,7 +17,7 @@ const CardDisplay = ({ card, size = "normal", onClick, canInteract = false }) =>
     if (!card) return null;
 
     // --- CONFIGURACIÓN DE TAMAÑOS ---
-    let containerClasses = "w-32 h-52 md:w-44 md:h-72"; // Aumenté ligeramente la altura para acomodar los tipos
+    let containerClasses;
     let textSizeMain = "text-[10px] md:text-xs";
     let textSizeTiny = "text-[8px] md:text-[9px]";
     let costSize = "w-6 h-6 md:w-8 md:h-8 text-xs md:text-sm";
@@ -35,6 +35,11 @@ const CardDisplay = ({ card, size = "normal", onClick, canInteract = false }) =>
         costSize = "w-10 h-10 md:w-12 md:h-12 text-lg";
         
         imageContainerClass = "relative w-full h-64 shrink-0 overflow-hidden bg-slate-900 group-hover:brightness-110 transition-all border-b border-slate-800";
+    } else if (size === "normal" || !size) {
+        containerClasses = "w-32 h-52 md:w-44 md:h-72";
+    } else {
+        // Si 'size' no es una de las palabras clave, se asume que es una clase de tamaño (p.ej. 'w-full aspect-[2/3]')
+        containerClasses = size;
     }
 
     // --- RENDERIZADO REVERSO ---

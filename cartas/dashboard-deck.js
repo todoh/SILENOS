@@ -253,7 +253,8 @@ const DashboardDeck = ({ user, userData, setSelectedCard }) => {
 
             {/* --- LISTA DE CARTAS (Grid) --- */}
             <div className="neo-inset p-4 md:p-6 min-h-[50vh] overflow-y-auto">
-                <div className="flex flex-wrap gap-6 justify-center md:justify-start">
+                {/* CAMBIO A GRID: grid-cols-7 en pantallas grandes y uso de gap reducido */}
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-1 justify-items-center">
                     {userCards.map((card, idx) => {
                         // Lógica de Selección de Instancia basada en el mazo EDITADO
                         const remainingInDeck = currentDeckCounts[card.id] || 0;
@@ -262,7 +263,7 @@ const DashboardDeck = ({ user, userData, setSelectedCard }) => {
                         if (isSelected) currentDeckCounts[card.id]--;
 
                         return (
-                            <div key={idx} className="relative group">
+                            <div key={idx} className="relative group w-full flex justify-center">
                                 {/* Casilla de selección */}
                                 <div 
                                     onClick={(e) => {
@@ -270,7 +271,7 @@ const DashboardDeck = ({ user, userData, setSelectedCard }) => {
                                         toggleDeckCard(card.id, isSelected);
                                     }}
                                     className={`
-                                        absolute -top-3 -right-3 z-30 w-5 h-5 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 shadow-lg border-2
+                                        absolute -top-2 -right-2 z-30 w-5 h-5 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 shadow-lg border-2
                                         ${isSelected 
                                             ? 'bg-green-500 border-green-400 text-white scale-110' 
                                             : 'bg-[var(--bg-main)] border-slate-300 text-slate-300 hover:border-blue-400 hover:text-blue-400'
@@ -278,22 +279,22 @@ const DashboardDeck = ({ user, userData, setSelectedCard }) => {
                                     `}
                                 >
                                     {isSelected ? (
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                             <polyline points="20 6 9 17 4 12"></polyline>
                                         </svg>
                                     ) : (
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <line x1="12" y1="5" x2="12" y2="19"></line>
                                             <line x1="5" y1="12" x2="19" y2="12"></line>
                                         </svg>
                                     )}
                                 </div>
 
-                                {/* Carta visual */}
+                                {/* Carta visual - CAMBIO A SIZE SMALL */}
                                 <div className={`transition-all duration-300 ${isSelected ? 'brightness-110' : 'brightness-75 opacity-80'}`}>
                                     <CardDisplay 
                                         card={card} 
-                                        size="normal"
+                                        size="w-full aspect-[2/3]"
                                         canInteract={true}
                                         onClick={(c) => setSelectedCard(c)} // Zoom
                                     />
@@ -301,7 +302,7 @@ const DashboardDeck = ({ user, userData, setSelectedCard }) => {
                                 
                                 {/* Etiqueta "EN MAZO" si está seleccionada */}
                                 {isSelected && (
-                                    <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-30 bg-green-500/90 text-white text-[9px] font-bold px-2 py-0.5 rounded shadow-lg pointer-events-none whitespace-nowrap">
+                                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 bg-green-500/90 text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow-lg pointer-events-none whitespace-nowrap">
                                         EN MAZO
                                     </div>
                                 )}
