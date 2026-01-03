@@ -7,6 +7,9 @@ const BASE_ABILITIES = [
     { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea un ataque entrante." }
 ];
 
+// Hacer las habilidades base accesibles globalmente por si acaso
+window.BASE_ABILITIES = BASE_ABILITIES;
+
 // Cartas del núcleo base (Core Set)
 // AJUSTES: Vida reducida a ~1/3. Costes de habilidades bajados drásticamente.
 const CORE_CARDS = [
@@ -95,23 +98,39 @@ const CORE_CARDS = [
 ];
 
 // Lógica de Mezcla: Combina Core + Todos los paquetes adicionales detectados
+// Usamos comprobaciones robustas para encontrar las variables globales
+
 let combinedCards = [...CORE_CARDS];
 
+// Paquete EXTRA (data2.js)
 if (typeof EXTRA_CARDS !== 'undefined') {
     combinedCards = [...combinedCards, ...EXTRA_CARDS];
+} else if (typeof window.EXTRA_CARDS !== 'undefined') {
+    combinedCards = [...combinedCards, ...window.EXTRA_CARDS];
 }
 
+// Paquete NARRATIVO (data3.js)
 if (typeof NARRATIVE_CARDS !== 'undefined') {
     combinedCards = [...combinedCards, ...NARRATIVE_CARDS];
+} else if (typeof window.NARRATIVE_CARDS !== 'undefined') {
+    combinedCards = [...combinedCards, ...window.NARRATIVE_CARDS];
 }
 
+// Paquete EXPANSION (data-expansion.js)
 if (typeof EXPANSION_CARDS !== 'undefined') {
     combinedCards = [...combinedCards, ...EXPANSION_CARDS];
+} else if (typeof window.EXPANSION_CARDS !== 'undefined') {
+    combinedCards = [...combinedCards, ...window.EXPANSION_CARDS];
 }
 
-// NUEVO: Integración de DATA5 (Sinergias)
+// NUEVO: Integración de DATA5 (Sinergias) - (data5.js)
 if (typeof DATA5_CARDS !== 'undefined') {
     combinedCards = [...combinedCards, ...DATA5_CARDS];
+} else if (typeof window.DATA5_CARDS !== 'undefined') {
+    combinedCards = [...combinedCards, ...window.DATA5_CARDS];
 }
 
+// DEFINICIÓN CRÍTICA: Exponer ALL_CARDS globalmente para los componentes React
 const CARDS = combinedCards;
+window.CARDS = combinedCards;
+window.ALL_CARDS = combinedCards; // ESTO SOLUCIONA EL ERROR "ALL_CARDS is not defined"
