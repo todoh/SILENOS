@@ -1,79 +1,93 @@
 // --- BASE DE DATOS DE CARTAS (Silenos Tactical) ---
 // Guardar como: Cartas Silen/data.js
 
+// Habilidades base (Atacar/Defender) - Coste 0 se mantiene
 const BASE_ABILITIES = [
     { id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Suma stats y ataca." },
     { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea un ataque entrante." }
 ];
 
 // Cartas del núcleo base (Core Set)
+// AJUSTES: Vida reducida a ~1/3. Costes de habilidades bajados drásticamente.
 const CORE_CARDS = [
     { 
         id: 1, name: "Guerrero de Fuego", cost: 10,
-        power: 1, strength: 35, intelligence: 10, maxHp: 250,
+        power: 1, strength: 35, intelligence: 10, maxHp: 85, // Antes 250
         image: "img/guerrero_fuego.jpg", desc: "Arde con furia combativa.",
         types: ["Fuego", "Guerrero", "Humano"], 
         abilities: [...BASE_ABILITIES]
     },
     { 
         id: 2, name: "Muro de Hielo", cost: 10, 
-        power: 0, strength: 50, intelligence: 5, maxHp: 400,
+        power: 0, strength: 50, intelligence: 5, maxHp: 135, // Antes 400
         image: "img/muro_hielo.jpg", desc: "Defensa sólida.",
         types: ["Hielo", "Estructura", "Elemental"], 
         abilities: [...BASE_ABILITIES]
     },
     { 
-        id: 3, name: "Dragón Ancestral", cost: 60, 
-        power: 4, strength: 90, intelligence: 60, maxHp: 800,
-        image: "img/dragon_ancestral.jpg", desc: "Rey de los cielos.",
-        types: ["Fuego", "Dragón", "Bestia"], 
-        abilities: [...BASE_ABILITIES, { id: 'breath', name: "Aliento", type: "interaction", cost: 20, desc: "Daña sin contacto." }]
+        id: 3, name: "Mago de Fuego", cost: 20, 
+        power: 2, strength: 10, intelligence: 60, maxHp: 60, // Antes 180
+        image: "img/mago_fuego.jpg", desc: "Maestro de la piromancia.",
+        types: ["Fuego", "Mago", "Humano"], 
+        abilities: [
+            ...BASE_ABILITIES, 
+            { id: 'fireball', name: "Bola de Fuego", type: "interaction", cost: 15, desc: "Daño mágico alto." } // Coste bajado de 25 a 15
+        ]
     },
     { 
-        id: 4, name: "Ladrón Sombrío", cost: 20, 
-        power: 2, strength: 25, intelligence: 40, maxHp: 200,
-        image: "img/ladron_sombrio.jpg", desc: "Rápido y letal.",
-        types: ["Oscuridad", "Asesino", "Humano"], 
+        id: 4, name: "Elemental de Roca", cost: 25, 
+        power: 2, strength: 60, intelligence: 5, maxHp: 200, // Antes 600
+        image: "img/elemental_roca.jpg", desc: "Duro como la piedra.",
+        types: ["Tierra", "Elemental", "Tanque"], 
         abilities: [...BASE_ABILITIES]
     },
     { 
-        id: 5, name: "Mago Arcano", cost: 40, 
-        power: 1, strength: 30, intelligence: 85, maxHp: 180,
-        image: "img/mago_arcano.jpg", desc: "Conocimiento puro.",
-        types: ["Arcano", "Conjurador", "Humano"], 
-        abilities: [...BASE_ABILITIES, { id: 'meditate', name: "Meditar", type: "preparation", cost: 10, desc: "Cura 50 HP." }]
+        id: 5, name: "Sacerdotisa", cost: 15, 
+        power: 1, strength: 10, intelligence: 50, maxHp: 50, // Antes 150
+        image: "img/sacerdotisa.jpg", desc: "Luz curativa.",
+        types: ["Luz", "Soporte", "Humano"], 
+        abilities: [
+            ...BASE_ABILITIES, 
+            { id: 'heal', name: "Curar", type: "preparation", cost: 10, desc: "Restaura HP." } // Coste bajado de 20 a 10
+        ]
     },
     { 
-        id: 6, name: "Slime", cost: 10, 
-        power: 0, strength: 15, intelligence: 5, maxHp: 150,
-        image: "img/slime.jpg", desc: "Pequeño pero valiente.",
-        types: ["Agua", "Soporte", "Limo"], 
+        id: 6, name: "Caballero Real", cost: 30, 
+        power: 2, strength: 55, intelligence: 20, maxHp: 115, // Antes 350
+        image: "img/caballero_real.jpg", desc: "Honor y acero.",
+        types: ["Acero", "Guerrero", "Humano"], 
         abilities: [...BASE_ABILITIES]
     },
     { 
-        id: 7, name: "Caballero Real", cost: 50, 
-        power: 2, strength: 75, intelligence: 30, maxHp: 600,
-        image: "img/caballero_real.jpg", desc: "Honor ante todo.",
-        types: ["Metal", "Guardián", "Humano"], 
+        id: 7, name: "Titan de Hielo", cost: 40, 
+        power: 3, strength: 70, intelligence: 15, maxHp: 265, // Antes 800
+        image: "img/titan_hielo.jpg", desc: "El invierno camina.",
+        types: ["Hielo", "Gigante", "Elemental"], 
         abilities: [...BASE_ABILITIES]
     },
     { 
-        id: 8, name: "Nigromante", cost: 40, 
-        power: 1, strength: 40, intelligence: 70, maxHp: 300,
-        image: "img/nigromante.jpg", desc: "Levanta a los muertos.",
-        types: ["Oscuridad", "Conjurador", "Humano"], 
-        abilities: [...BASE_ABILITIES]
+        id: 8, name: "Fénix", cost: 45, 
+        power: 3, strength: 40, intelligence: 70, maxHp: 100, // Antes 300
+        image: "img/fenix.jpg", desc: "Renace de las cenizas.",
+        types: ["Fuego", "Bestia", "Volador"], 
+        abilities: [
+            ...BASE_ABILITIES,
+            { id: 'rebirth', name: "Renacer", type: "response", cost: 25, desc: "Revive al morir." } // Coste bajado de 50 a 25
+        ]
     },
     { 
         id: 9, name: "Druida", cost: 30, 
-        power: 1, strength: 45, intelligence: 60, maxHp: 350,
+        power: 1, strength: 45, intelligence: 60, maxHp: 120, // Antes 350
         image: "img/druida.jpg", desc: "Fuerza de la naturaleza.",
         types: ["Naturaleza", "Soporte", "Elfo"], 
-        abilities: [...BASE_ABILITIES, { id: 'grow', name: "Crecer", type: "preparation", cost: 15, desc: "+10 a todo." }]
+        abilities: [
+            ...BASE_ABILITIES, 
+            { id: 'grow', name: "Crecer", type: "preparation", cost: 8, desc: "+10 a todo." } // Coste bajado de 15 a 8
+        ]
     },
     { 
         id: 10, name: "Golem", cost: 50, 
-        power: 2, strength: 85, intelligence: 5, maxHp: 700,
+        power: 2, strength: 85, intelligence: 5, maxHp: 235, // Antes 700
         image: "img/golem.jpg", desc: "Inamovible.",
         types: ["Tierra", "Guardián", "Constructo"], 
         abilities: [...BASE_ABILITIES]
@@ -95,12 +109,9 @@ if (typeof EXPANSION_CARDS !== 'undefined') {
     combinedCards = [...combinedCards, ...EXPANSION_CARDS];
 }
 
-// Integración del nuevo Data 5 (Sinergias)
-// Verificamos si existe globalmente (window.DATA5_CARDS) o localmente
-if (typeof window.DATA5_CARDS !== 'undefined') {
-    combinedCards = [...combinedCards, ...window.DATA5_CARDS];
-} else if (typeof DATA5_CARDS !== 'undefined') {
+// NUEVO: Integración de DATA5 (Sinergias)
+if (typeof DATA5_CARDS !== 'undefined') {
     combinedCards = [...combinedCards, ...DATA5_CARDS];
 }
 
-const ALL_CARDS = combinedCards;
+const CARDS = combinedCards;

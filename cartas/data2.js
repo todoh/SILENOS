@@ -1,6 +1,7 @@
 // --- PAQUETE DE EXPANSIÓN DE CARTAS (DATA 2) ---
+// Guardar como: Cartas Silen/data2.js
 
-// NOTA: Reemplaza las rutas "img/..." con la ubicación real de tus archivos PNG.
+// AJUSTES: Vida reducida a ~1/3. Costes de habilidades reducidos.
 
 const EXTRA_CARDS = [
     { 
@@ -8,7 +9,7 @@ const EXTRA_CARDS = [
         power: 2,       
         strength: 40,   
         intelligence: 30, 
-        maxHp: 200,
+        maxHp: 65, // Antes 200
         image: "img/ninja_viento.jpg", 
         desc: "Velocidad invisible.",
         types: ["Viento", "Asesino", "Humano"],
@@ -22,7 +23,7 @@ const EXTRA_CARDS = [
         power: 2, 
         strength: 70,   
         intelligence: 10, 
-        maxHp: 450,
+        maxHp: 150, // Antes 450
         image: "img/yeti.jpg", 
         desc: "Abominable fuerza bruta.",
         types: ["Hielo", "Guerrero", "Bestia"],
@@ -32,18 +33,18 @@ const EXTRA_CARDS = [
         ]
     },
     { 
-        id: 13, name: "Sacerdotisa Lunar", cost: 40, 
+        id: 13, name: "Sacerdote", cost: 25, 
         power: 1, 
-        strength: 25,   
-        intelligence: 80, 
-        maxHp: 250,
-        image: "img/sacerdotisa.jpg", 
-        desc: "Luz en la oscuridad.",
-        types: ["Luz", "Soporte", "Elfo"],
+        strength: 20,   
+        intelligence: 60, 
+        maxHp: 50, // Antes 150
+        image: "img/sacerdote.jpg", 
+        desc: "Luz sagrada.",
+        types: ["Luz", "Soporte", "Humano"],
         abilities: [
             { id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Suma stats y ataca." },
             { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea un ataque entrante." },
-            { id: 'meditate', name: "Bendición", type: "preparation", cost: 15, desc: "Cura 50 HP." }
+            { id: 'meditate', name: "Bendición", type: "preparation", cost: 8, desc: "Cura 50 HP." } // Coste bajado de 15 a 8
         ]
     },
     { 
@@ -51,14 +52,14 @@ const EXTRA_CARDS = [
         power: 3,       
         strength: 80, 
         intelligence: 50, 
-        maxHp: 650,
+        maxHp: 215, // Antes 650
         image: "img/rey_esqueleto.jpg", 
         desc: "El trono de huesos espera.",
         types: ["Oscuridad", "Guerrero", "No-Muerto"],
         abilities: [
             { id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Suma stats y ataca." },
             { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea un ataque entrante." },
-            { id: 'grow', name: "Mando", type: "preparation", cost: 20, desc: "+10 a todo." }
+            { id: 'grow', name: "Mando", type: "preparation", cost: 10, desc: "+10 a todo." } // Coste bajado de 20 a 10
         ]
     },
     { 
@@ -66,14 +67,14 @@ const EXTRA_CARDS = [
         power: 5,       
         strength: 100,  
         intelligence: 40, 
-        maxHp: 900,
+        maxHp: 300, // Antes 900
         image: "img/leviatan.jpg", 
         desc: "Terror de las profundidades.",
-        types: ["Agua", "Dragón", "Bestia"],
+        types: ["Agua", "Gigante", "Bestia"],
         abilities: [
             { id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Suma stats y ataca." },
             { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea un ataque entrante." },
-            { id: 'breath', name: "Maremoto", type: "interaction", cost: 30, desc: "Daña sin contacto." }
+            { id: 'tidal_wave', name: "Tsunami", type: "interaction", cost: 25, desc: "Daño masivo a todos." } // Coste bajado de 50 a 25
         ]
     }
 ];

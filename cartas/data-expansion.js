@@ -1,364 +1,226 @@
 // --- EXPANSIÓN BASE (WAVE 1: 50 CARTAS) ---
 // Guardar como: Cartas Silen/data-expansion.js
 
+// AJUSTES: Vida drásticamente reducida (facilitar muertes). Costes de habilidades reducidos.
+
 const EXPANSION_CARDS = [
     // --- TIER 1: INICIADOS (Coste 10-20) ---
     { 
         id: 100, name: "Escudero Novato", cost: 10, 
-        power: 0, strength: 20, intelligence: 5, maxHp: 150, 
+        power: 0, strength: 20, intelligence: 5, maxHp: 50, // Antes 150
         image: "img/escudero.jpg", desc: "Su entusiasmo supera su habilidad.",
         types: ["Físico", "Guardián", "Humano"],
         abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
     },
     { 
         id: 101, name: "Diablillo Ígneo", cost: 10, 
-        power: 1, strength: 25, intelligence: 15, maxHp: 100, 
+        power: 1, strength: 25, intelligence: 15, maxHp: 35, // Antes 100
         image: "img/imp.jpg", desc: "Pequeño, rojo y molesto.",
         types: ["Fuego", "Conjurador", "Demonio"],
         abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
     },
     { 
-        id: 102, name: "Espora Tóxica", cost: 10, 
-        power: 0, strength: 10, intelligence: 10, maxHp: 100, 
-        image: "img/espora.jpg", desc: "Flota peligrosamente.",
-        types: ["Naturaleza", "Asesino", "Planta"],
+        id: 102, name: "Rata de Alcantarilla", cost: 10, 
+        power: 1, strength: 15, intelligence: 5, maxHp: 25, // Antes 80
+        image: "img/rata.jpg", desc: "Portadora de plagas.",
+        types: ["Veneno", "Bestia", "Alimaña"],
         abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
     },
     { 
-        id: 103, name: "Rata de Alcantarilla", cost: 10, 
-        power: 1, strength: 15, intelligence: 5, maxHp: 120, 
-        image: "img/rata.jpg", desc: "Plaga urbana.",
-        types: ["Físico", "Explorador", "Bestia"],
+        id: 103, name: "Espora Flotante", cost: 10, 
+        power: 0, strength: 5, intelligence: 20, maxHp: 20, // Antes 60
+        image: "img/espora.jpg", desc: "Explota al contacto.",
+        types: ["Naturaleza", "Trampa", "Planta"],
         abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
     },
     { 
-        id: 104, name: "Autómata Oxidado", cost: 15, 
-        power: 0, strength: 30, intelligence: 0, maxHp: 200, 
-        image: "img/automata.jpg", desc: "Aún funciona... creo.",
-        types: ["Metal", "Guardián", "Constructo"],
+        id: 104, name: "Slime Básico", cost: 15, 
+        power: 1, strength: 20, intelligence: 5, maxHp: 65, // Antes 200
+        image: "img/slime.jpg", desc: "Gelatinoso y pegajoso.",
+        types: ["Agua", "Tanque", "Limo"],
+        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
+    },
+    
+    // --- TIER 2: SOLDADOS Y AVENTUREROS (Coste 20-35) ---
+    { 
+        id: 110, name: "Guardia de la Ciudad", cost: 20, 
+        power: 1, strength: 40, intelligence: 10, maxHp: 85, // Antes 250
+        image: "img/guardia.jpg", desc: "Protege la ley.",
+        types: ["Físico", "Guardián", "Humano"],
         abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
     },
     { 
-        id: 105, name: "Aprendiz de Mago", cost: 15, 
-        power: 1, strength: 10, intelligence: 40, maxHp: 140, 
-        image: "img/aprendiz.jpg", desc: "Estudia las artes arcanas.",
-        types: ["Arcano", "Conjurador", "Humano"],
+        id: 111, name: "Mercenario", cost: 25, 
+        power: 2, strength: 50, intelligence: 15, maxHp: 90, // Antes 280
+        image: "img/mercenario.jpg", desc: "Lucha por oro.",
+        types: ["Físico", "Guerrero", "Humano"],
         abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
     },
     { 
-        id: 106, name: "Lobo Gris", cost: 20, 
-        power: 1, strength: 35, intelligence: 10, maxHp: 180, 
-        image: "img/lobo.jpg", desc: "Cazador en manada.",
-        types: ["Naturaleza", "Guerrero", "Bestia"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
-    },
-    { 
-        id: 107, name: "Esqueleto Arquero", cost: 20, 
-        power: 2, strength: 25, intelligence: 20, maxHp: 160, 
+        id: 112, name: "Arquero Esqueleto", cost: 20, 
+        power: 2, strength: 35, intelligence: 5, maxHp: 40, // Antes 120
         image: "img/esqueleto_arco.jpg", desc: "Puntería desde la tumba.",
         types: ["Físico", "Tirador", "No-Muerto"],
         abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
     },
     { 
-        id: 108, name: "Hada del Bosque", cost: 20, 
-        power: 0, strength: 10, intelligence: 50, maxHp: 150, 
-        image: "img/hada.jpg", desc: "Protectora menuda.",
-        types: ["Naturaleza", "Soporte", "Hada"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'meditate', name: "Curar", type: "preparation", cost: 10, desc: "Cura 50 HP." }]
+        id: 113, name: "Mago Arcano", cost: 30, 
+        power: 2, strength: 10, intelligence: 65, maxHp: 50, // Antes 160
+        image: "img/mago_arcano.jpg", desc: "Estudioso de lo oculto.",
+        types: ["Arcano", "Mago", "Humano"],
+        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'fireball', name: "Rayo Arcano", type: "interaction", cost: 12, desc: "Daño mágico." }] // Coste bajado
     },
     { 
-        id: 109, name: "Mercenario", cost: 20, 
-        power: 1, strength: 40, intelligence: 15, maxHp: 220, 
-        image: "img/mercenario.jpg", desc: "Leal al oro.",
-        types: ["Físico", "Guerrero", "Humano"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
+        id: 114, name: "Bardo", cost: 25, 
+        power: 1, strength: 20, intelligence: 45, maxHp: 60, // Antes 180
+        image: "img/bardo.jpg", desc: "Música inspiradora.",
+        types: ["Sonido", "Soporte", "Humano"],
+        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'heal', name: "Melodía", type: "preparation", cost: 8, desc: "Cura aliados." }] // Coste bajado
     },
 
-    // --- TIER 2: VETERANOS (Coste 25-40) ---
+    // --- TIER 3: ELITES Y MONSTRUOS (Coste 35-50) ---
     { 
-        id: 110, name: "Guardia Real", cost: 30, 
-        power: 1, strength: 50, intelligence: 10, maxHp: 400, 
-        image: "img/guardia.jpg", desc: "La defensa del reino.",
-        types: ["Metal", "Guardián", "Humano"],
+        id: 120, name: "Berserker", cost: 35, 
+        power: 3, strength: 75, intelligence: 5, maxHp: 115, // Antes 350
+        image: "img/berserker.jpg", desc: "Ira incontrolable.",
+        types: ["Físico", "Guerrero", "Humano"],
+        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'berserk', name: "Furia", type: "preparation", cost: 8, desc: "Sacrifica HP por daño." }] // Coste bajado
+    },
+    { 
+        id: 121, name: "Grifo Real", cost: 45, 
+        power: 3, strength: 60, intelligence: 30, maxHp: 150, // Antes 450
+        image: "img/grifo.jpg", desc: "Majestad alada.",
+        types: ["Viento", "Bestia", "Volador"],
         abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
     },
     { 
-        id: 111, name: "Asesina Drow", cost: 30, 
-        power: 2, strength: 45, intelligence: 35, maxHp: 250, 
-        image: "img/drow.jpg", desc: "Silenciosa y letal.",
-        types: ["Oscuridad", "Asesino", "Elfo"],
+        id: 122, name: "Nigromante", cost: 40, 
+        power: 2, strength: 20, intelligence: 70, maxHp: 75, // Antes 220
+        image: "img/nigromante.jpg", desc: "Levanta a los muertos.",
+        types: ["Oscuridad", "Invocador", "Humano"],
+        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'rebirth', name: "Alzar", type: "response", cost: 20, desc: "Revive unidad." }] // Coste bajado
+    },
+    { 
+        id: 123, name: "Tanque a Vapor", cost: 50, 
+        power: 3, strength: 80, intelligence: 10, maxHp: 200, // Antes 600
+        image: "img/tanque_vapor.jpg", desc: "Tecnología enana.",
+        types: ["Metal", "Tanque", "Máquina"],
         abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
     },
     { 
-        id: 112, name: "Mago de Fuego", cost: 35, 
-        power: 2, strength: 30, intelligence: 70, maxHp: 200, 
-        image: "img/mago_fuego.jpg", desc: "Piromante experto.",
-        types: ["Fuego", "Conjurador", "Humano"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'breath', name: "Bola de Fuego", type: "interaction", cost: 20, desc: "Daño a distancia." }]
-    },
-    { 
-        id: 113, name: "Oso de Guerra", cost: 35, 
-        power: 2, strength: 60, intelligence: 5, maxHp: 500, 
-        image: "img/oso_guerra.jpg", desc: "Fuerza de la naturaleza.",
-        types: ["Naturaleza", "Guerrero", "Bestia"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
-    },
-    { 
-        id: 114, name: "Fantasma", cost: 30, 
-        power: 1, strength: 30, intelligence: 50, maxHp: 250, 
-        image: "img/fantasma.jpg", desc: "Intangible terror.",
-        types: ["Oscuridad", "Incorpóreo", "Espíritu"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
-    },
-    { 
-        id: 115, name: "Torreta Autonoma", cost: 40, 
-        power: 3, strength: 55, intelligence: 20, maxHp: 300, 
-        image: "img/torreta.jpg", desc: "Defensa automatizada.",
-        types: ["Metal", "Estructura", "Máquina"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
-    },
-    { 
-        id: 116, name: "Guerrero Orco", cost: 30, 
-        power: 2, strength: 55, intelligence: 5, maxHp: 350, 
-        image: "img/orco.jpg", desc: "Furia en combate.",
-        types: ["Físico", "Guerrero", "Orco"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
-    },
-    { 
-        id: 117, name: "Sacerdote Solar", cost: 40, 
-        power: 1, strength: 30, intelligence: 65, maxHp: 280, 
-        image: "img/sacerdote.jpg", desc: "Adorador del sol.",
-        types: ["Luz", "Soporte", "Humano"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'meditate', name: "Luz Sanadora", type: "preparation", cost: 15, desc: "Cura 50 HP." }]
-    },
-    { 
-        id: 118, name: "Gárgola", cost: 35, 
-        power: 1, strength: 45, intelligence: 20, maxHp: 450, 
-        image: "img/gargola.jpg", desc: "Piedra viviente.",
-        types: ["Tierra", "Guardián", "Constructo"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
-    },
-    { 
-        id: 119, name: "Ninja de las Sombras", cost: 40, 
-        power: 3, strength: 50, intelligence: 40, maxHp: 220, 
-        image: "img/ninja_sombra.jpg", desc: "Nadie lo ve llegar.",
+        id: 124, name: "Asesino Sombrío", cost: 40, 
+        power: 3, strength: 55, intelligence: 40, maxHp: 65, // Antes 200
+        image: "img/ladron_sombrio.jpg", desc: "Golpea desde las sombras.",
         types: ["Oscuridad", "Asesino", "Humano"],
         abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
     },
 
-    // --- TIER 3: ELITE (Coste 45-65) ---
+    // --- TIER 4: LEYENDAS Y COLOSOS (Coste 50+) ---
     { 
-        id: 120, name: "Comandante Táctico", cost: 50, 
-        power: 2, strength: 60, intelligence: 50, maxHp: 500, 
-        image: "img/comandante.jpg", desc: "Lidera con el ejemplo.",
-        types: ["Físico", "Líder", "Humano"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'grow', name: "Estrategia", type: "preparation", cost: 20, desc: "+10 Stats." }]
+        id: 130, name: "Dragón de Oro", cost: 80, 
+        power: 5, strength: 90, intelligence: 80, maxHp: 330, // Antes 1000
+        image: "img/dragon_oro.jpg", desc: "Poder ancestral.",
+        types: ["Fuego", "Dragón", "Volador"],
+        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'fireball', name: "Aliento", type: "interaction", cost: 20, desc: "Quema todo." }] // Coste bajado
     },
     { 
-        id: 121, name: "Elemental de Roca", cost: 55, 
-        power: 2, strength: 80, intelligence: 10, maxHp: 700, 
-        image: "img/elemental_roca.jpg", desc: "Montaña caminante.",
-        types: ["Tierra", "Guardián", "Elemental"],
+        id: 131, name: "Señor del Bosque", cost: 70, 
+        power: 4, strength: 85, intelligence: 60, maxHp: 300, // Antes 900
+        image: "img/seniobosque.jpg", desc: "Guardián eterno.",
+        types: ["Naturaleza", "Guardián", "Elemental"],
+        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'grow', name: "Raíces", type: "preparation", cost: 10, desc: "Fortalece aliados." }] // Coste bajado
+    },
+    { 
+        id: 132, name: "Mecha-Kaiju", cost: 90, 
+        power: 5, strength: 95, intelligence: 20, maxHp: 400, // Antes 1200
+        image: "img/mecha_kaiju.jpg", desc: "Destructor mecánico.",
+        types: ["Metal", "Coloso", "Máquina"],
         abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
     },
     { 
-        id: 122, name: "Bruja del Pantano", cost: 50, 
-        power: 2, strength: 30, intelligence: 85, maxHp: 300, 
-        image: "img/bruja.jpg", desc: "Pociones letales.",
-        types: ["Naturaleza", "Conjurador", "Humano"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'breath', name: "Veneno", type: "interaction", cost: 25, desc: "Daño mágico." }]
-    },
-    { 
-        id: 123, name: "Ciber-Samurai", cost: 60, 
-        power: 3, strength: 75, intelligence: 40, maxHp: 450, 
-        image: "img/ciber_samurai.jpg", desc: "Honor y acero cromado.",
-        types: ["Metal", "Guerrero", "Cyborg"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'energy_blade', name: "Corte Láser", type: "interaction", cost: 20, desc: "Daño puro." }]
-    },
-    { 
-        id: 124, name: "Vampiro Noble", cost: 60, 
-        power: 2, strength: 55, intelligence: 60, maxHp: 400, 
-        image: "img/vampiro_noble.jpg", desc: "Sed eterna.",
+        id: 133, name: "Nigromante Supremo", cost: 75, 
+        power: 4, strength: 30, intelligence: 90, maxHp: 165, // Antes 500
+        image: "img/nigromante_supremo.jpg", desc: "La muerte obedece.",
         types: ["Oscuridad", "Líder", "No-Muerto"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'vampiric', name: "Drenar", type: "preparation", cost: 25, desc: "Roba vida." }]
+        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'rebirth', name: "Legión", type: "response", cost: 30, desc: "Revive múltiples." }] // Coste bajado
     },
     { 
-        id: 125, name: "Paladín Sagrado", cost: 65, 
-        power: 2, strength: 70, intelligence: 40, maxHp: 600, 
-        image: "img/paladin.jpg", desc: "Luz justiciera.",
-        types: ["Luz", "Guardián", "Humano"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'meditate', name: "Plegaria", type: "preparation", cost: 20, desc: "Cura 50 HP." }]
+        id: 134, name: "Dragón Ancestral", cost: 100, 
+        power: 6, strength: 100, intelligence: 100, maxHp: 500, // Antes 1500
+        image: "img/dragon_ancestral.jpg", desc: "El primero de todos.",
+        types: ["Arcano", "Dragón", "Dios"],
+        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'tidal_wave', name: "Cataclismo", type: "interaction", cost: 40, desc: "Destrucción total." }] // Coste bajado
+    },
+
+    // --- ESPECIALES Y RAROS ---
+    { 
+        id: 140, name: "Mímico", cost: 20, 
+        power: 1, strength: 30, intelligence: 10, maxHp: 50, // Antes 150
+        image: "img/mimico.jpg", desc: "¡No es un cofre!",
+        types: ["Físico", "Trampa", "Monstruo"],
+        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
     },
     { 
-        id: 126, name: "Francotirador", cost: 45, 
-        power: 4, strength: 30, intelligence: 60, maxHp: 200, 
+        id: 141, name: "Fantasma", cost: 25, 
+        power: 2, strength: 10, intelligence: 40, maxHp: 35, // Antes 100
+        image: "img/fantasma.jpg", desc: "Intangible.",
+        types: ["Espíritu", "Incorpóreo", "No-Muerto"],
+        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
+    },
+    { 
+        id: 142, name: "Bruja del Pantano", cost: 30, 
+        power: 2, strength: 15, intelligence: 60, maxHp: 55, // Antes 160
+        image: "img/bruja.jpg", desc: "Pociones y maldiciones.",
+        types: ["Veneno", "Mago", "Humano"],
+        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'snipe', name: "Maldición", type: "interaction", cost: 10, desc: "Daño directo." }] // Coste bajado
+    },
+    { 
+        id: 143, name: "Automata", cost: 35, 
+        power: 2, strength: 60, intelligence: 50, maxHp: 100, // Antes 300
+        image: "img/automata.jpg", desc: "Programado para luchar.",
+        types: ["Metal", "Guerrero", "Constructo"],
+        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
+    },
+    { 
+        id: 144, name: "Oso de Guerra", cost: 25, 
+        power: 2, strength: 55, intelligence: 5, maxHp: 110, // Antes 320
+        image: "img/oso_guerra.jpg", desc: "Armadura y garras.",
+        types: ["Físico", "Bestia", "Tanque"],
+        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
+    },
+    { 
+        id: 145, name: "Francotirador", cost: 30, 
+        power: 3, strength: 40, intelligence: 20, maxHp: 50, // Antes 140
         image: "img/sniper.jpg", desc: "Un tiro, una baja.",
         types: ["Físico", "Tirador", "Humano"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'ice_gaze', name: "Tiro Certero", type: "interaction", cost: 30, desc: "Daño preciso." }]
+        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'snipe', name: "Disparo Preciso", type: "interaction", cost: 12, desc: "Daño a distancia." }] // Coste bajado
     },
     { 
-        id: 127, name: "Kraken Menor", cost: 55, 
-        power: 2, strength: 65, intelligence: 30, maxHp: 550, 
-        image: "img/kraken_menor.jpg", desc: "Terror de los mares.",
-        types: ["Agua", "Guardián", "Bestia"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
-    },
-    { 
-        id: 128, name: "Druida Cambiapieles", cost: 50, 
-        power: 2, strength: 50, intelligence: 50, maxHp: 400, 
-        image: "img/cambiapieles.jpg", desc: "Hombre y bestia.",
-        types: ["Naturaleza", "Guerrero", "Bestia"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'grow', name: "Forma Bestia", type: "preparation", cost: 15, desc: "+Stats." }]
-    },
-    { 
-        id: 129, name: "Tanque de Vapor", cost: 65, 
-        power: 3, strength: 85, intelligence: 10, maxHp: 750, 
-        image: "img/tanque_vapor.jpg", desc: "Imparable máquina de guerra.",
-        types: ["Metal", "Guardián", "Máquina"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
-    },
-
-    // --- TIER 4: LEYENDAS (Coste 70-100) ---
-    { 
-        id: 130, name: "Fénix Renacido", cost: 80, 
-        power: 4, strength: 70, intelligence: 80, maxHp: 500, 
-        image: "img/fenix.jpg", desc: "Renace de sus cenizas.",
-        types: ["Fuego", "Conjurador", "Bestia"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'meditate', name: "Llamas de Vida", type: "preparation", cost: 30, desc: "Cura 50 HP." }]
-    },
-    { 
-        id: 131, name: "Titán de Hielo", cost: 90, 
-        power: 4, strength: 95, intelligence: 30, maxHp: 1000, 
-        image: "img/titan_hielo.jpg", desc: "Congela el mundo.",
-        types: ["Hielo", "Titán", "Elemental"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'breath', name: "Ventisca", type: "interaction", cost: 40, desc: "Daño masivo." }]
-    },
-    { 
-        id: 132, name: "Señor del Abismo", cost: 85, 
-        power: 5, strength: 90, intelligence: 60, maxHp: 800, 
-        image: "img/senor_abismo.jpg", desc: "Oscuridad encarnada.",
-        types: ["Oscuridad", "Líder", "Demonio"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'vampiric', name: "Consumir Alma", type: "preparation", cost: 30, desc: "Roba vida." }]
-    },
-    { 
-        id: 133, name: "Ángel Guerrero", cost: 75, 
-        power: 3, strength: 75, intelligence: 75, maxHp: 650, 
-        image: "img/angel_guerrero.jpg", desc: "Justicia divina.",
-        types: ["Luz", "Guerrero", "Angel"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'energy_blade', name: "Espada Sacra", type: "interaction", cost: 25, desc: "Daño puro." }]
-    },
-    { 
-        id: 134, name: "Mecha-Godzilla", cost: 100, 
-        power: 5, strength: 110, intelligence: 20, maxHp: 1200, 
-        image: "img/mecha_kaiju.jpg", desc: "Destructor de ciudades.",
-        types: ["Metal", "Titán", "Máquina"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'maremoto', name: "Misiles", type: "interaction", cost: 50, desc: "Daño en área." }]
-    },
-
-    // --- VARIANTES EXÓTICAS (Coste variado) ---
-    { 
-        id: 135, name: "Cubo de Gelatina", cost: 25, 
-        power: 1, strength: 20, intelligence: 20, maxHp: 600, 
-        image: "img/cubo.jpg", desc: "Absorbe todo.",
-        types: ["Ácido", "Estructura", "Limo"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
-    },
-    { 
-        id: 136, name: "Guerrero Espejismo", cost: 35, 
-        power: 2, strength: 40, intelligence: 40, maxHp: 200, 
-        image: "img/espejismo.jpg", desc: "¿Es real?",
-        types: ["Arcano", "Guerrero", "Ilusión"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
-    },
-    { 
-        id: 137, name: "Berserker", cost: 40, 
-        power: 3, strength: 70, intelligence: 0, maxHp: 250, 
-        image: "img/berserker.jpg", desc: "Ataca sin pensar.",
-        types: ["Físico", "Guerrero", "Humano"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
-    },
-    { 
-        id: 138, name: "Mímico", cost: 30, 
-        power: 2, strength: 50, intelligence: 30, maxHp: 300, 
-        image: "img/mimico.jpg", desc: "Cuidado con el cofre.",
-        types: ["Oscuridad", "Asesino", "Monstruo"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
-    },
-    { 
-        id: 139, name: "Bardo", cost: 25, 
-        power: 1, strength: 15, intelligence: 50, maxHp: 200, 
-        image: "img/bardo.jpg", desc: "Música inspiradora.",
-        types: ["Arcano", "Soporte", "Humano"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'grow', name: "Canción", type: "preparation", cost: 15, desc: "Buff." }]
-    },
-    { 
-        id: 140, name: "Hidra", cost: 70, 
-        power: 3, strength: 65, intelligence: 20, maxHp: 800, 
-        image: "img/hidra.jpg", desc: "Corta una cabeza, salen dos.",
-        types: ["Agua", "Guerrero", "Bestia"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'meditate', name: "Regenerar", type: "preparation", cost: 20, desc: "Cura 50 HP." }]
-    },
-    { 
-        id: 141, name: "Espectro del Vacío", cost: 55, 
-        power: 2, strength: 40, intelligence: 90, maxHp: 300, 
-        image: "img/vacio.jpg", desc: "No pertenece a este mundo.",
-        types: ["Vacío", "Conjurador", "Horror"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'psi_pulse', name: "Horror", type: "interaction", cost: 35, desc: "Daño área." }]
-    },
-    { 
-        id: 142, name: "Constructo de Cristal", cost: 60, 
-        power: 2, strength: 50, intelligence: 50, maxHp: 600, 
-        image: "img/cristal.jpg", desc: "Brillante y duro.",
-        types: ["Arcano", "Guardián", "Constructo"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'energy_blade', name: "Reflejo", type: "interaction", cost: 20, desc: "Daño puro." }]
-    },
-    { 
-        id: 143, name: "Señor de las Bestias", cost: 45, 
-        power: 2, strength: 55, intelligence: 30, maxHp: 400, 
-        image: "img/seniorbosque.jpg", desc: "Domina la selva.",
-        types: ["Naturaleza", "Soporte", "Humano"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'swarm', name: "Llamada", type: "interaction", cost: 15, desc: "Ataque enjambre." }]
-    },
-    { 
-        id: 144, name: "Grifo", cost: 50, 
-        power: 3, strength: 60, intelligence: 30, maxHp: 450, 
-        image: "img/grifo.jpg", desc: "Rey de los picos.",
-        types: ["Viento", "Guerrero", "Bestia"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
-    },
-    { 
-        id: 145, name: "Nigromante Supremo", cost: 70, 
-        power: 2, strength: 40, intelligence: 95, maxHp: 350, 
-        image: "img/nigromante_supremo.jpg", desc: "La muerte es el principio.",
-        types: ["Oscuridad", "Líder", "No-Muerto"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'vampiric', name: "Ritual", type: "preparation", cost: 20, desc: "Drena vida." }]
-    },
-    { 
-        id: 146, name: "Centauro Guerrero", cost: 40, 
-        power: 2, strength: 65, intelligence: 10, maxHp: 400, 
-        image: "img/centauro.jpg", desc: "Carga imparable.",
-        types: ["Físico", "Guerrero", "Bestia"],
+        id: 146, name: "Paladín", cost: 40, 
+        power: 2, strength: 60, intelligence: 30, maxHp: 125, // Antes 380
+        image: "img/paladin.jpg", desc: "Luz y defensa.",
+        types: ["Luz", "Guardián", "Humano"],
         abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
     },
     { 
         id: 147, name: "Sirena", cost: 35, 
-        power: 1, strength: 20, intelligence: 70, maxHp: 250, 
+        power: 1, strength: 20, intelligence: 70, maxHp: 85, // Antes 250
         image: "img/sirena.jpg", desc: "Voz hipnótica.",
         types: ["Agua", "Conjurador", "Bestia"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'psi_pulse', name: "Canto", type: "interaction", cost: 30, desc: "Daño sónico." }]
+        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'psi_pulse', name: "Canto", type: "interaction", cost: 15, desc: "Daño sónico." }] // Coste bajado de 30 a 15
     },
     { 
         id: 148, name: "Cíclope", cost: 60, 
-        power: 2, strength: 85, intelligence: 5, maxHp: 700, 
+        power: 2, strength: 85, intelligence: 5, maxHp: 235, // Antes 700
         image: "img/ciclope.jpg", desc: "Un ojo, mucha fuerza.",
         types: ["Físico", "Guerrero", "Gigante"],
         abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
     },
     { 
-        id: 149, name: "Dragón de Oro", cost: 100, 
-        power: 5, strength: 100, intelligence: 100, maxHp: 1000, 
-        image: "img/dragon_oro.jpg", desc: "El guardián definitivo.",
-        types: ["Luz", "Dragón", "Divino"],
-        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }, { id: 'breath', name: "Fuego Sagrado", type: "interaction", cost: 50, desc: "Daño masivo." }]
+        id: 149, name: "Cubo Gelatinoso", cost: 20, 
+        power: 1, strength: 30, intelligence: 0, maxHp: 135, // Antes 400
+        image: "img/cubo.jpg", desc: "Digiere todo.",
+        types: ["Ácido", "Limo", "Monstruo"],
+        abilities: [{ id: 'atk', name: "ATACAR", type: "interaction", cost: 0, desc: "Ataca." }, { id: 'def', name: "DEFENDER", type: "response", cost: 0, desc: "Bloquea." }]
     }
 ];
