@@ -9,11 +9,17 @@ const DashboardShop = ({ user, userData, setSelectedCard }) => {
         if (userData.korehs < pack.cost) return alert("Korehs insuficientes");
         setLoading(true);
         
-        const newCards = [];
-        // Generar cartas aleatorias según la cantidad del sobre
-        // Al usar ALL_CARDS, ahora incluye también las cartas de data3.js
-        for(let i=0; i < pack.count; i++) {
-            newCards.push(ALL_CARDS[Math.floor(Math.random() * ALL_CARDS.length)].id);
+        let newCards = [];
+
+        // Lógica Especial: Pack Maestro (Todas las cartas)
+        if (pack.id === 'master') {
+            newCards = ALL_CARDS.map(c => c.id);
+        } else {
+            // Generar cartas aleatorias según la cantidad del sobre
+            // Al usar ALL_CARDS, ahora incluye también las cartas de data3.js
+            for(let i=0; i < pack.count; i++) {
+                newCards.push(ALL_CARDS[Math.floor(Math.random() * ALL_CARDS.length)].id);
+            }
         }
 
         try {
@@ -22,8 +28,13 @@ const DashboardShop = ({ user, userData, setSelectedCard }) => {
                 collection: firebase.firestore.FieldValue.arrayUnion(...newCards)
             });
             
-            const cardNames = newCards.map(id => ALL_CARDS.find(c => c.id === id).name).join(', ');
-            alert(`¡Has abierto un ${pack.name}!\nObtenido: ${cardNames}`);
+            if (pack.id === 'master') {
+                alert(`¡Has adquirido la Colección Maestra!\nTodas las cartas disponibles han sido añadidas a tu colección.`);
+            } else {
+                const cardNames = newCards.map(id => ALL_CARDS.find(c => c.id === id).name).join(', ');
+                alert(`¡Has abierto un ${pack.name}!\nObtenido: ${cardNames}`);
+            }
+            
         } catch (err) {
             console.error(err);
             alert("Error en la transacción.");
@@ -81,7 +92,14 @@ const DashboardShop = ({ user, userData, setSelectedCard }) => {
                             </div>
                             
                             <h3 className={`text-xl font-bold mb-1 ${pack.color}`}>{pack.name}</h3>
-                            <p className="text-slate-500 text-xs mb-1 font-bold uppercase">{pack.count} Cartas</p>
+                            
+                            {/* Condicional para mostrar texto especial en el pack maestro */}
+                            {pack.id === 'master' ? (
+                                <p className="text-slate-500 text-xs mb-1 font-bold uppercase text-red-400">TODAS LAS CARTAS</p>
+                            ) : (
+                                <p className="text-slate-500 text-xs mb-1 font-bold uppercase">{pack.count} Cartas</p>
+                            )}
+                            
                             <p className="text-slate-400 text-sm mb-6 text-center italic">"{pack.desc}"</p>
                             
                             <Button 

@@ -1,4 +1,5 @@
 // --- PANTALLAS PRINCIPALES ---
+// Guardar como: Cartas Silen/main.js
 
 // 1. LOGIN CON GOOGLE
 const AuthScreen = ({ onLogin }) => {
@@ -13,13 +14,24 @@ const AuthScreen = ({ onLogin }) => {
             const userDoc = await db.collection('users').doc(user.uid).get();
 
             if (!userDoc.exists) {
+                // Mazo inicial por defecto
+                const starterDeck = [1,1,2,2,6,6,6,6,4,5];
+                
                 await db.collection('users').doc(user.uid).set({
                     username: user.displayName || "Jugador Anónimo",
                     email: user.email,
                     photoURL: user.photoURL,
                     korehs: 100,
-                    collection: [1,1,2,2,6,6,6,6,4,5],
-                    deck: [1,1,2,2,6,6,6,6,4,5],
+                    collection: starterDeck, // Inicialmente la colección es igual al mazo
+                    deck: starterDeck,       // El mazo ACTIVO para jugar
+                    // NUEVO: Estructura para múltiples mazos guardados
+                    savedDecks: [
+                        {
+                            id: Date.now().toString(), // ID único simple
+                            name: "Mazo Inicial",
+                            cards: starterDeck
+                        }
+                    ],
                     friends: [],
                     incomingChallenge: null,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()

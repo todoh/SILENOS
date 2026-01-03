@@ -1,4 +1,5 @@
 // --- COMPONENTES UI REUTILIZABLES (CORREGIDO) ---
+// Guardar como: Cartas Silen/components.js
 
 const Button = ({ children, onClick, disabled, className = "", variant = "primary" }) => {
     return (
@@ -16,7 +17,7 @@ const CardDisplay = ({ card, size = "normal", onClick, canInteract = false }) =>
     if (!card) return null;
 
     // --- CONFIGURACIÓN DE TAMAÑOS ---
-    let containerClasses = "w-32 h-48 md:w-44 md:h-64"; 
+    let containerClasses = "w-32 h-52 md:w-44 md:h-72"; // Aumenté ligeramente la altura para acomodar los tipos
     let textSizeMain = "text-[10px] md:text-xs";
     let textSizeTiny = "text-[8px] md:text-[9px]";
     let costSize = "w-6 h-6 md:w-8 md:h-8 text-xs md:text-sm";
@@ -25,10 +26,10 @@ const CardDisplay = ({ card, size = "normal", onClick, canInteract = false }) =>
     let imageContainerClass = "relative w-full flex-1 overflow-hidden bg-slate-900 group-hover:brightness-110 transition-all";
 
     if (size === "small") {
-        containerClasses = "w-24 h-32 md:w-28 md:h-40";
+        containerClasses = "w-24 h-36 md:w-28 md:h-48";
         textSizeMain = "text-[8px]";
     } else if (size === "large") {
-        containerClasses = "w-80 h-[32rem]"; 
+        containerClasses = "w-80 h-[36rem]"; 
         textSizeMain = "text-sm md:text-base";
         textSizeTiny = "text-xs";
         costSize = "w-10 h-10 md:w-12 md:h-12 text-lg";
@@ -59,6 +60,9 @@ const CardDisplay = ({ card, size = "normal", onClick, canInteract = false }) =>
     let hpBarColor = "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]";
     if (hpPct <= 50) hpBarColor = "bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]";
     if (hpPct <= 20) hpBarColor = "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]";
+
+    // --- OBTENER TIPOS (Seguridad si no están definidos) ---
+    const cardTypes = card.types || ["Neutro", "Base", "Común"];
 
     return (
         <div 
@@ -159,19 +163,43 @@ const CardDisplay = ({ card, size = "normal", onClick, canInteract = false }) =>
             </div>
 
             {/* --- ZONA 2: STATS (INAMOVIBLE) --- */}
-            <div className="grid grid-cols-3 divide-x divide-slate-800 bg-[#0F0F0F] h-10 border-t border-b border-slate-800 flex-shrink-0 z-10 relative">
+            <div className="grid grid-cols-3 divide-x divide-slate-800 bg-[#0F0F0F] h-8 md:h-10 border-t border-b border-slate-800 flex-shrink-0 z-10 relative">
                  <div className="flex flex-col items-center justify-center pt-0.5">
-                    <span className="text-[7px] text-red-500 font-bold uppercase tracking-widest">STR</span>
-                    <span className="text-xs md:text-sm font-bold text-gray-200">{card.strength}</span>
+                    <span className="text-[6px] md:text-[7px] text-red-500 font-bold uppercase tracking-widest">STR</span>
+                    <span className="text-[10px] md:text-sm font-bold text-gray-200">{card.strength}</span>
                 </div>
                  <div className="flex flex-col items-center justify-center pt-0.5">
-                    <span className="text-[7px] text-blue-500 font-bold uppercase tracking-widest">INT</span>
-                    <span className="text-xs md:text-sm font-bold text-gray-200">{card.intelligence}</span>
+                    <span className="text-[6px] md:text-[7px] text-blue-500 font-bold uppercase tracking-widest">INT</span>
+                    <span className="text-[10px] md:text-sm font-bold text-gray-200">{card.intelligence}</span>
                 </div>
                  <div className="flex flex-col items-center justify-center pt-0.5">
-                    <span className="text-[7px] text-purple-500 font-bold uppercase tracking-widest">POW</span>
-                    <span className="text-xs md:text-sm font-bold text-gray-200">{card.power}</span>
+                    <span className="text-[6px] md:text-[7px] text-purple-500 font-bold uppercase tracking-widest">POW</span>
+                    <span className="text-[10px] md:text-sm font-bold text-gray-200">{card.power}</span>
                 </div>
+            </div>
+
+            {/* --- ZONA TIPOS (MODIFICADA: LETRAS GRANDES EN MODAL, ABREVIADAS EN TABLERO) --- */}
+            <div className="flex justify-center items-center gap-1.5 py-1 px-1 bg-[#0c0c0c] border-b border-slate-800 min-h-[22px] flex-wrap z-10">
+                {cardTypes.map((type, idx) => {
+                    const styleClass = window.GameLogicSynergies?.getTypeColor(type) || 'text-slate-400 border-slate-700';
+                    
+                    // LÓGICA DE VISUALIZACIÓN DE TIPOS
+                    const isLarge = size === 'large';
+                    // Si es inspección (large), nombre completo. Si es tablero/mano, solo 3 letras.
+                    const displayType = isLarge ? type : type.substring(0, 3);
+                    // Si es inspección (large), letra mucho más grande. Si es tablero, pequeña.
+                    const fontClass = isLarge ? "text-xs md:text-sm px-2 py-1" : "text-[7px] md:text-[8px] px-1.5 py-0.5";
+
+                    return (
+                        <span 
+                            key={idx} 
+                            className={`${fontClass} font-bold rounded border ${styleClass} uppercase tracking-wider`}
+                            title={type} // Tooltip para ver el nombre completo si está abreviado
+                        >
+                            {displayType}
+                        </span>
+                    );
+                })}
             </div>
 
             {/* --- ZONA 3: CONTENIDO VARIABLE (SCROLLABLE - SOLO LARGE) --- */}
@@ -197,7 +225,7 @@ const CardDisplay = ({ card, size = "normal", onClick, canInteract = false }) =>
                                             `}></span>
                                             {ab.name}
                                         </span>
-                                        <span className="text-[10px] text-yellow-500 font-mono font-bold bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">
+                                        <span className="text-[7px] text-yellow-500 font-mono font-bold bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">
                                             {ab.cost > 0 ? ab.cost : '0'}
                                         </span>
                                     </div>

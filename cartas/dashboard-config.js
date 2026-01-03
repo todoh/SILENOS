@@ -25,6 +25,14 @@ const PACK_TYPES = [
         count: 10, 
         desc: "El poder absoluto.",
         color: "text-yellow-500" 
+    },
+    { 
+        id: 'master', 
+        name: 'Colección Maestra', 
+        cost: 2000, 
+        count: 0, 
+        desc: "Desbloquea TODAS las cartas.",
+        color: "text-red-600" 
     }
 ];
 
