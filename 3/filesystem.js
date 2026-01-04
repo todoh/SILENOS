@@ -2,7 +2,8 @@
 // --- SISTEMA DE ARCHIVOS PRINCIPAL (Facade) ---
 // Dependencias: archivos/fs-constants.js, archivos/type-*.js
 
-const FileSystem = {
+// CAMBIO IMPORTANTE: Asignamos a window.FileSystem para acceso global desde apps/iframes
+window.FileSystem = {
     data: [],
     _hasChanges: false,
 
