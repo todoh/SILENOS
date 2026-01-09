@@ -191,7 +191,7 @@ function openLocalAIWindow() {
         
         div.innerHTML = `
             <div class="w-6 h-6 rounded-full ${isUser ? 'bg-slate-700' : 'bg-blue-100'} flex items-center justify-center flex-shrink-0 text-xs text-white">
-                ${isUser ? '<i class="fa-solid fa-user"></i>' : '<span class="text-blue-600">AI</span>'}
+                ${isUser ? '<i data-lucide="user"></i>' : '<span class="text-blue-600">AI</span>'}
             </div>
             <div class="${bubbleColor} p-2.5 rounded-2xl ${isUser ? 'rounded-tr-none' : 'rounded-tl-none'} text-xs max-w-[85%] shadow-sm break-words whitespace-pre-wrap">${text}</div>
         `;
