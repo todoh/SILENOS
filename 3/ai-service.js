@@ -96,7 +96,7 @@ window.AIService = {
     },
     
     // Generación de planes (usado por AIWorker)
-    async generatePlan(prompt, context, numChapters) {
+    async generatePlan(prompt, context, numChapters, model) {
         // Prompt del sistema para estructurar libros
         const systemPrompt = `Eres un arquitecto de novelas experto. 
         Tu tarea es crear un plan estructural (JSON) para un libro basado en la idea del usuario.
@@ -112,12 +112,13 @@ window.AIService = {
         
         Contexto adicional: ${context.substring(0, 2000)}`;
 
-        const responseText = await this.callAI(systemPrompt, prompt);
+        // Pasamos el modelo recibido a callAI
+        const responseText = await this.callAI(systemPrompt, prompt, model);
         return this.parseJSON(responseText);
     },
 
     // Escritura de capítulos (usado por AIWorker)
-    async writeChapterContent(title, summary, context, prevContext, step, total) {
+    async writeChapterContent(title, summary, context, prevContext, step, total, model) {
         const systemPrompt = `Eres un escritor fantasma de best-sellers.
         Estás escribiendo el capítulo ${step} de ${total}: "${title}".
         
@@ -129,12 +130,14 @@ window.AIService = {
         Escribe el contenido del capítulo en formato Markdown. Sé inmersivo, detallado y creativo.
         Usa párrafos claros. NO pongas el título del capítulo otra vez, solo el contenido.`;
 
-        return await this.callAI(systemPrompt, "Escribe el capítulo ahora.");
+        // Pasamos el modelo recibido a callAI
+        return await this.callAI(systemPrompt, "Escribe el capítulo ahora.", model);
     },
 
     // --- NÚCLEO HÍBRIDO ---
 
-    async callAI(system, user) {
+    // Aceptamos 'model' como tercer argumento, con un default por si no se pasa
+    async callAI(system, user, model = "gemma-3-27b-it") {
         // 1. RUTA LOCAL (Si está activa)
         if (this.useLocal && this.isModelLoaded && this.localEngine) {
             try {
@@ -160,7 +163,8 @@ window.AIService = {
         const key = this.getApiKey();
         if (!key) throw new Error("No hay API Keys configuradas ni modelo local activo.");
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemma-3-27b-it:generateContent?key=${key}`;
+        // Usamos la variable 'model' en la URL en lugar de tenerla fija
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
         const payload = {
             contents: [{ role: "user", parts: [{ text: system + "\n\n" + user }] }],
             generationConfig: { temperature: 0.7, maxOutputTokens: 8192 }
@@ -174,7 +178,7 @@ window.AIService = {
 
         if (!res.ok) {
             const errData = await res.json().catch(() => ({}));
-            throw new Error(`API Error ${res.status}: ${errData.error?.message || res.statusText}`);
+            throw new Error(`API Error ${res.status} (${model}): ${errData.error?.message || res.statusText}`);
         }
         
         const data = await res.json();
