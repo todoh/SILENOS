@@ -489,7 +489,7 @@ const BookManager = {
             .book-chapter-number { font-size: 3em; font-weight: 900; color: #e2e8f0; font-family: sans-serif; line-height: 0.8; }
             .book-chapter-title { font-size: 1.5em; font-weight: 700; color: #1e293b; margin: 0; font-family: sans-serif; }
             
-            .book-paragraph-visual { margin-bottom: 1.5em; font-size: 1.1em; line-height: 1.8; text-align: justify; }
+            .book-paragraph-visual { margin-bottom: 1.5em; font-size: 1.1em; line-height: 1.8; text-align: justify; white-space: pre-wrap; }
             
             /* IMÁGENES EN EL HTML */
             .book-paragraph-visual img { 

@@ -45,7 +45,7 @@ const DownloadManager = {
             contentHtml += `<section id="${safeId}" class="chapter">`;
             contentHtml += `<h2>${chap.title}</h2>`;
             chap.paragraphs.forEach(p => {
-                if(p.trim()) contentHtml += `<p>${p}</p>`;
+                if(p.trim()) contentHtml += `<p>${p.replace(/\n/g, '<br>')}</p>`;
             });
             contentHtml += `</section><hr class="chapter-divider">`;
         });
@@ -184,7 +184,7 @@ const DownloadManager = {
         const chapters = item.content.chapters || [];
         chapters.forEach(chap => {
             html += `<h2>${chap.title}</h2>`;
-            chap.paragraphs.forEach(p => html += `<p>${p}</p>`);
+            chap.paragraphs.forEach(p => html += `<p>${p.replace(/\n/g, '<br>')}</p>`);
             html += `<br/>`;
         });
         html += `</body></html>`;
@@ -211,7 +211,7 @@ const DownloadManager = {
         const chapters = item.content.chapters || [];
         chapters.forEach(chap => {
             html += `<h2>${chap.title}</h2>`;
-            chap.paragraphs.forEach(p => html += `<p>${p}</p>`);
+            chap.paragraphs.forEach(p => html += `<p>${p.replace(/\n/g, '<br>')}</p>`);
         });
         html += `<script>window.onload = function() { setTimeout(() => { window.print(); window.close(); }, 500); }</script></body></html>`;
         printWindow.document.write(html);
