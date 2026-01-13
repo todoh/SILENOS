@@ -1,5 +1,40 @@
 /* SILENOS 3/boot.js */
 
+// --- 0. INTERCEPTOR DE AUTENTICACIÓN (PUENTE/BRIDGE) ---
+// Esto se ejecuta antes que nada. Si somos un popup de auth, enviamos la llave y cerramos.
+(function() {
+    try {
+        const hashParams = new URLSearchParams(window.location.hash.slice(1));
+        const keyFromUrl = hashParams.get('api_key');
+        
+        // Si hay API Key y tenemos un "opener" (ventana padre), somos el puente.
+        if (keyFromUrl && window.opener) {
+            console.log("🔑 [BOOT] Auth detectada. Transmitiendo al sistema principal...");
+            window.opener.postMessage({ type: 'POLLI_AUTH_SUCCESS', key: keyFromUrl }, '*');
+            
+            // UI Feedback visual por si el cierre tarda
+            document.body.innerHTML = `
+                <div style="display:flex;height:100vh;justify-content:center;align-items:center;background:#111;color:#4ade80;font-family:monospace;flex-direction:column;text-align:center;">
+                    <div style="font-size:40px;">✅</div>
+                    <p>CONECTADO</p>
+                    <p style="color:#666;font-size:12px;">Cerrando ventana...</p>
+                </div>
+            `;
+            
+            // Intentar cerrar la ventana
+            setTimeout(() => window.close(), 500);
+            
+            // Detenemos la ejecución del resto de boot.js para no cargar todo el OS en el popup
+            throw new Error("Auth Bridge Completed - Stopping Boot");
+        }
+    } catch (e) {
+        if (e.message === "Auth Bridge Completed - Stopping Boot") return; // Salida limpia
+        console.error("Error en Auth Bridge:", e);
+    }
+})();
+
+// --- INICIO NORMAL DEL SISTEMA ---
+
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Inicializar el Sistema de Archivos
     await FileSystem.init();
