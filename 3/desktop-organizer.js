@@ -1,23 +1,43 @@
 /* SILENOS 3 / desktop-organizer.js */
-// --- ORGANIZADOR DE COHERENCIA ESPACIAL POR CUADRÍCULAS COMPACTAS (H-G-Y) ---
+// --- ORGANIZADOR DE COHERENCIA ESPACIAL CON GUARDADO OPTIMIZADO ---
+
+// Utilidad de Debounce para evitar bloqueos por guardado masivo
+function createDebouncedSaver(wait) {
+    let timeout;
+    return function() {
+        if (timeout) clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            console.log("Guardando estado del sistema (Debounced)...");
+            FileSystem.save();
+        }, wait);
+    };
+}
 
 const DesktopOrganizer = {
-    MIN_GAP: 190, // Espaciado reducido para mayor compacidad
-    PEAK_DEPTH: 0, // Plano de manifestación física (Z=0)
+    MIN_GAP: 190, // Espaciado
+    PEAK_DEPTH: 0, // Plano de manifestación física
     
+    // Creamos el guardador optimizado
+    saveDebounced: createDebouncedSaver(1500),
+
     /**
-     * Inicia la reconfiguración del espacio visual en una cuadrícula única y compacta.
-     * Refinamos la arquitectura para que la función sea clara: Unificar la materia.
+     * Inicia la reconfiguración del espacio visual usando Proxies Ligeros
+     * y actualización silenciosa del FileSystem.
      */
     organize() {
         console.log("H-G -> Unificando materia en cuadrícula maestra (Z=0)...");
         
-        FileSystem.init();
-        const files = FileSystem.getItems('desktop');
-        if (files.length === 0) return;
+        const rawFiles = FileSystem.getItems('desktop');
+        if (rawFiles.length === 0) return;
+
+        // --- FASE DE ABSTRACCIÓN (PROXY) ---
+        const layoutProxies = rawFiles.map(file => ({
+            id: file.id,
+            type: file.type,
+            title: file.title || 'Sin título',
+        }));
 
         // --- DEFINICIÓN DE PRIORIDADES (H) ---
-        // El orden de la esencia define su posición en la red
         const typePriority = {
             'folder': 1,
             'app': 2,
@@ -27,9 +47,7 @@ const DesktopOrganizer = {
         };
 
         // --- ORDENAMIENTO DE CONFLUENCIA ---
-        // 1. Por tipo (Prioridad)
-        // 2. Por título (Alfabético)
-        const sortedFiles = [...files].sort((a, b) => {
+        layoutProxies.sort((a, b) => {
             const prioA = typePriority[a.type] || 99;
             const prioB = typePriority[b.type] || 99;
             
@@ -41,49 +59,58 @@ const DesktopOrganizer = {
         const centerY = window.innerHeight / 2;
 
         // --- CÁLCULO DE CUADRÍCULA MAESTRA (G) ---
-        // Buscamos una proporción equilibrada (Equilibrium - E)
-        const totalItems = sortedFiles.length;
-        const columns = Math.ceil(Math.sqrt(totalItems * 1.5)); // Ajuste de ratio para no ser cuadrado perfecto
+        const totalItems = layoutProxies.length;
+        const columns = Math.ceil(Math.sqrt(totalItems * 1.5)); 
         
-        this.arrangeGrid(sortedFiles, centerX, centerY, columns);
+        // Pasamos los PROXIES a la función de arreglo
+        this.arrangeGrid(layoutProxies, centerX, centerY, columns);
 
-        FileSystem.save();
-
-        // Ajuste de la cámara en el Canvas de ThreeDesktop
+        // Ajuste de la cámara
         if (typeof window.ThreeDesktop !== 'undefined') {
             window.ThreeDesktop.targetX = 0;
             window.ThreeDesktop.targetY = 0;
-            window.ThreeDesktop.targetZ = 1200; // Un poco más alejado para ver la red completa
+            window.ThreeDesktop.targetZ = 1200; 
         }
 
+        // Refrescamos la vista una sola vez al final
         if (window.refreshSystemViews) window.refreshSystemViews();
+        
+        // Forzamos el guardado final UNA SOLA VEZ
+        this.saveDebounced();
+        
         this.notifySuccess(totalItems);
     },
 
     /**
-     * Función auxiliar para organizar un array de ítems en una cuadrícula compacta
+     * Función auxiliar para organizar un array de proxies
      */
-    arrangeGrid(items, centerX, centerY, columns) {
-        if (items.length === 0) return;
+    arrangeGrid(proxies, centerX, centerY, columns) {
+        if (proxies.length === 0) return;
 
-        const rows = Math.ceil(items.length / columns);
+        const rows = Math.ceil(proxies.length / columns);
         
-        // Calculamos el tamaño total para centrar la red (U - Unión)
         const totalWidth = (columns - 1) * this.MIN_GAP;
         const totalHeight = (rows - 1) * this.MIN_GAP;
         
         const startX = centerX - totalWidth / 2;
         const startY = centerY - totalHeight / 2;
 
-        items.forEach((item, i) => {
+        // Iteramos sobre los proxies
+        proxies.forEach((proxy, i) => {
             const col = i % columns;
             const row = Math.floor(i / columns);
 
-            FileSystem.updateItem(item.id, {
-                x: startX + (col * this.MIN_GAP),
-                y: startY + (row * this.MIN_GAP),
+            const newX = startX + (col * this.MIN_GAP);
+            const newY = startY + (row * this.MIN_GAP);
+
+            // AQUÍ ESTÁ LA SOLUCIÓN AL CONGELAMIENTO:
+            // Pasamos 'true' como tercer argumento para SUPRIMIR el guardado en disco
+            // por cada ítem individual.
+            FileSystem.updateItem(proxy.id, {
+                x: newX,
+                y: newY,
                 z: this.PEAK_DEPTH
-            });
+            }, true); 
         });
     },
 
@@ -109,3 +136,6 @@ const DesktopOrganizer = {
         }, 4000);
     }
 };
+
+// Hacemos accesible la función de guardado
+window.saveDesktopDebounced = DesktopOrganizer.saveDebounced;

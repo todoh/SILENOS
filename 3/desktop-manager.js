@@ -1,6 +1,80 @@
 /* SILENOS 3/desktop-manager.js */
 
-// DEFINIMOS LA FUNCIÓN GLOBALMENTE
+// --- HELPERS ESTRUCTURALES (Separación de Lógica) ---
+
+/**
+ * Crea un objeto ligero (Proxy) desvinculado de la referencia pesada del FileSystem.
+ * Solo transporta lo necesario para la visualización.
+ */
+function createDesktopProxy(file) {
+    return {
+        id: file.id,
+        x: file.x,
+        y: file.y,
+        type: file.type,
+        title: file.title,
+        icon: file.icon,
+        color: file.color,
+        // ESTRATEGIA DE PROXY: Solo pasamos contenido si es estrictamente necesario (imágenes)
+        // Todo lo demás se anula para liberar memoria en el renderizado.
+        content: (file.type === 'image') ? file.content : null
+    };
+}
+
+/**
+ * Genera el DOM basándose EXCLUSIVAMENTE en el proxy.
+ * No tiene acceso al objeto file original.
+ */
+function renderProxyItem(container, fileProxy) {
+    const el = document.createElement('div');
+    el.className = `absolute flex flex-col items-center gap-2 w-24 cursor-pointer pointer-events-auto ${fileProxy.type === 'folder' ? 'folder-drop-zone' : ''}`;
+    el.style.left = `${fileProxy.x}px`;
+    el.style.top = `${fileProxy.y}px`;
+    el.dataset.id = fileProxy.id;
+
+    el.onmousedown = (e) => {
+        // Usamos el ID del proxy para iniciar el arrastre
+        if (e.target.tagName !== 'INPUT') {
+            if (typeof window.startIconDrag === 'function') {
+                window.startIconDrag(e, fileProxy.id, 'desktop');
+            }
+        }
+    };
+
+    // --- LÓGICA DE ICONO DINÁMICO ---
+    let iconContent = '';
+    
+    if (fileProxy.type === 'image' && fileProxy.content) {
+        iconContent = `<img src="${fileProxy.content}" class="w-full h-full object-cover rounded-xl shadow-inner pointer-events-none">`;
+    } else if (fileProxy.type === 'html') {
+        iconContent = `
+            <div class="w-full h-full flex items-center justify-center font-black text-3xl select-none ${fileProxy.color || 'text-orange-500'}">
+                ${fileProxy.icon || 'H'}
+            </div>`;
+    } else {
+        iconContent = `<i data-lucide="${fileProxy.icon}" class="${fileProxy.color} w-7 h-7"></i>`;
+    }
+
+    // Estructura visual
+    el.innerHTML = `
+        <div class="desktop-icon-btn w-12 h-12 rounded-xl hover:scale-105 transition-transform bg-[#e0e5ec]/80 backdrop-blur-sm overflow-hidden p-0 flex items-center justify-center border border-white/40 shadow-sm">
+            ${iconContent}
+        </div>
+        <span 
+            class="text-xs font-bold text-gray-700 text-center bg-white/30 px-2 py-0.5 rounded backdrop-blur-sm hover:bg-white/60 transition-colors select-none"
+            onmousedown="event.stopPropagation()" 
+            onclick="showRenameModal(event, '${fileProxy.id}', '${fileProxy.title}')"
+        >
+            ${fileProxy.title}
+        </span>
+    `;
+    
+    container.appendChild(el);
+}
+
+
+// --- FUNCIÓN PRINCIPAL EXPORTADA ---
+
 window.renderDesktopFiles = function() {
     let container = document.getElementById('desktop-files-layer');
     if (!container) {
@@ -11,48 +85,17 @@ window.renderDesktopFiles = function() {
     }
     container.innerHTML = ''; 
 
+    // 1. Obtención de datos crudos
     const files = FileSystem.getItems('desktop');
 
-    files.forEach(file => {
-        const el = document.createElement('div');
-        el.className = `absolute flex flex-col items-center gap-2 w-24 cursor-pointer pointer-events-auto ${file.type === 'folder' ? 'folder-drop-zone' : ''}`;
-        el.style.left = `${file.x}px`;
-        el.style.top = `${file.y}px`;
-        el.dataset.id = file.id;
+    // 2. FASE DE PROXY (Procesamiento de datos puro)
+    // Mapeamos primero para liberar referencias al objeto 'file' original antes de tocar el DOM
+    const proxies = files.map(createDesktopProxy);
 
-        el.onmousedown = (e) => {
-            if (e.target.tagName !== 'INPUT') startIconDrag(e, file.id, 'desktop');
-        };
-
-        // --- LÓGICA DE ICONO DINÁMICO ---
-        let iconContent = '';
-        
-        if (file.type === 'image' && file.content) {
-            iconContent = `<img src="${file.content}" class="w-full h-full object-cover rounded-xl shadow-inner pointer-events-none">`;
-        } else if (file.type === 'html') {
-            // Renderizamos la letra/emoji
-            iconContent = `
-                <div class="w-full h-full flex items-center justify-center font-black text-3xl select-none ${file.color || 'text-orange-500'}">
-                    ${file.icon || 'H'}
-                </div>`;
-        } else {
-            iconContent = `<i data-lucide="${file.icon}" class="${file.color} w-7 h-7"></i>`;
-        }
-
-        // Estructura cuadrada (w-12 h-12)
-        el.innerHTML = `
-            <div class="desktop-icon-btn w-12 h-12 rounded-xl hover:scale-105 transition-transform bg-[#e0e5ec]/80 backdrop-blur-sm overflow-hidden p-0 flex items-center justify-center border border-white/40 shadow-sm">
-                ${iconContent}
-            </div>
-            <span 
-                class="text-xs font-bold text-gray-700 text-center bg-white/30 px-2 py-0.5 rounded backdrop-blur-sm hover:bg-white/60 transition-colors select-none"
-                onmousedown="event.stopPropagation()" 
-                onclick="showRenameModal(event, '${file.id}', '${file.title}')"
-            >
-                ${file.title}
-            </span>
-        `;
-        container.appendChild(el);
+    // 3. FASE DE RENDERIZADO (Manifestación visual)
+    // Iteramos sobre los proxies ya limpios
+    proxies.forEach(proxy => {
+        renderProxyItem(container, proxy);
     });
     
     if (window.lucide) lucide.createIcons();

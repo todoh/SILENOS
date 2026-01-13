@@ -45,6 +45,7 @@ window.FileSystem = {
             const dataBlob = new Blob([JSON.stringify(this.data)], { type: 'application/json' });
             const response = new Response(dataBlob);
             await cache.put(FS_CONSTANTS.METADATA_PATH, response);
+            console.log("FS: Estado guardado en disco."); // Log para verificar
         } catch (e) {
             console.error("FS: Error al guardar:", e);
         }
@@ -243,12 +244,17 @@ window.FileSystem = {
 
     // --- GESTIÓN DE ITEMS ---
 
-    updateItem(id, updates) {
+    // EDITADO: Añadido parámetro 'suppressSave' para actualizaciones masivas
+    updateItem(id, updates, suppressSave = false) {
         const item = this.data.find(i => i.id === id);
         if (item) { 
             Object.assign(item, updates); 
             this._hasChanges = true; 
-            this.save(); 
+            // Solo guardamos si NO se suprime el guardado. 
+            // Si suppressSave es true, confiamos en el setInterval o en una llamada manual posterior.
+            if (!suppressSave) {
+                this.save();
+            }
             return true; 
         }
         return false;
