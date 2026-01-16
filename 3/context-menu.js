@@ -107,7 +107,6 @@ function addTypeSpecificOptions(options, item, itemId) {
         options.push(
             { label: 'Descargar DOC', icon: 'file-type-2', color: 'text-blue-600', action: () => DownloadManager.downloadBookDoc(item) },
             { label: 'Descargar PDF', icon: 'printer', color: 'text-red-600', action: () => DownloadManager.downloadBookPdf(item) },
-            // NUEVA OPCIÓN
             { label: 'Descargar como Web', icon: 'globe', color: 'text-green-600', action: () => DownloadManager.downloadBookWeb(item) }
         );
     }
@@ -118,6 +117,11 @@ function addTypeSpecificOptions(options, item, itemId) {
     
     if (item.type === 'program') {
         options.push({ label: 'Editar Programa', icon: 'edit-3', color: 'text-blue-600', action: () => { if (typeof openProgrammerWindow === 'function') openProgrammerWindow(itemId); } });
+    }
+
+    // NUEVA OPCIÓN: Gamebook
+    if (item.type === 'gamebook') {
+        options.push({ label: 'Abrir Editor', icon: 'gamepad-2', color: 'text-purple-600', action: () => { if (typeof openGamebookWindow === 'function') openGamebookWindow(itemId); } });
     }
     
     options.push({ label: 'Descargar JSON', icon: 'file-json', color: 'text-gray-600', action: () => DownloadManager.downloadJSON(item) });
@@ -159,6 +163,7 @@ function addCreationOptions(options, parentId, mouseX, mouseY) {
         const item = type === 'folder' ? FileSystem.createFolder(name, parentId, c) :
                      type === 'program' ? FileSystem.createProgram(name, parentId, c) :
                      type === 'book' ? FileSystem.createBook(name, parentId, c) :
+                     type === 'gamebook' ? FileSystem.createGamebook(name, parentId, c) :
                      type === 'narrative' ? FileSystem.createNarrative(name, parentId, c) :
                      FileSystem.createData(name, {info:"Dato"}, parentId, c);
         
@@ -172,6 +177,8 @@ function addCreationOptions(options, parentId, mouseX, mouseY) {
         { label: 'Crear Carpeta', icon: 'folder-plus', action: () => createAndRefresh('folder', 'Nueva Carpeta') },
         { label: 'Crear Programa', icon: 'cpu', color: 'text-purple-600', action: () => createAndRefresh('program', 'Nuevo Programa') },
         { label: 'Crear Libro', icon: 'book-plus', color: 'text-indigo-600', action: () => createAndRefresh('book', 'Nuevo Libro') },
+        // OPCIÓN AGREGADA
+        { label: 'Crear Librojuego', icon: 'gamepad-2', color: 'text-purple-600', action: () => createAndRefresh('gamebook', 'Nuevo Librojuego') },
         { label: 'Crear Dato Narrativo', icon: 'sticky-note', color: 'text-orange-500', action: () => createAndRefresh('narrative', 'Dato Narrativo') }
     );
 }

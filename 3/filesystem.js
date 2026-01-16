@@ -2,12 +2,9 @@
 // --- SISTEMA DE ARCHIVOS PRINCIPAL (Facade) ---
 // Dependencias: archivos/fs-constants.js, archivos/type-*.js
 
-// CAMBIO IMPORTANTE: Asignamos a window.FileSystem para acceso global desde apps/iframes
 window.FileSystem = {
     data: [],
     _hasChanges: false,
-
-    // --- CICLO DE VIDA ---
 
     async init() {
         try {
@@ -37,15 +34,13 @@ window.FileSystem = {
         }
     },
 
-    // --- PERSISTENCIA METADATA ---
-
     async save() {
         try {
             const cache = await caches.open(FS_CONSTANTS.CACHE_NAME);
             const dataBlob = new Blob([JSON.stringify(this.data)], { type: 'application/json' });
             const response = new Response(dataBlob);
             await cache.put(FS_CONSTANTS.METADATA_PATH, response);
-            console.log("FS: Estado guardado en disco."); // Log para verificar
+            console.log("FS: Estado guardado en disco."); 
         } catch (e) {
             console.error("FS: Error al guardar:", e);
         }
@@ -69,7 +64,6 @@ window.FileSystem = {
         }
     },
 
-    // --- ALMACENAMIENTO RAW (ARCHIVOS EN BRUTO) ---
     async saveRawFile(file) {
         try {
             const cache = await caches.open(FS_CONSTANTS.CACHE_NAME);
@@ -205,6 +199,18 @@ window.FileSystem = {
         this.save();
         return item;
     },
+    
+    // NUEVO MÉTODO AGREGADO
+    createGamebook(name, parentId, coords) {
+        if (typeof TypeGamebook === 'undefined') {
+            console.error("FS: TypeGamebook no está cargado.");
+            return null;
+        }
+        const item = TypeGamebook.create(name, parentId, coords);
+        this.data.push(item);
+        this.save();
+        return item;
+    },
 
     createNarrative(name, parentId, coords) {
         if (typeof TypeNarrative === 'undefined') {
@@ -242,16 +248,11 @@ window.FileSystem = {
         return item;
     },
 
-    // --- GESTIÓN DE ITEMS ---
-
-    // EDITADO: Añadido parámetro 'suppressSave' para actualizaciones masivas
     updateItem(id, updates, suppressSave = false) {
         const item = this.data.find(i => i.id === id);
         if (item) { 
             Object.assign(item, updates); 
             this._hasChanges = true; 
-            // Solo guardamos si NO se suprime el guardado. 
-            // Si suppressSave es true, confiamos en el setInterval o en una llamada manual posterior.
             if (!suppressSave) {
                 this.save();
             }
