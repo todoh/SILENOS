@@ -112,6 +112,8 @@ function addTypeSpecificOptions(options, item, itemId) {
     }
 
     if (item.type === 'html') {
+        // --- OPCIÓN AGREGADA AQUÍ ---
+        options.push({ label: 'Abrir en Ventana', icon: 'globe', color: 'text-indigo-600', action: () => { if (typeof openHTMLWindow === 'function') openHTMLWindow(itemId); } });
         options.push({ label: 'Descargar HTML', icon: 'file-code', color: 'text-orange-600', action: () => DownloadManager.downloadHTML(item) });
     }
     
@@ -177,7 +179,6 @@ function addCreationOptions(options, parentId, mouseX, mouseY) {
         { label: 'Crear Carpeta', icon: 'folder-plus', action: () => createAndRefresh('folder', 'Nueva Carpeta') },
         { label: 'Crear Programa', icon: 'cpu', color: 'text-purple-600', action: () => createAndRefresh('program', 'Nuevo Programa') },
         { label: 'Crear Libro', icon: 'book-plus', color: 'text-indigo-600', action: () => createAndRefresh('book', 'Nuevo Libro') },
-        // OPCIÓN AGREGADA
         { label: 'Crear Librojuego', icon: 'gamepad-2', color: 'text-purple-600', action: () => createAndRefresh('gamebook', 'Nuevo Librojuego') },
         { label: 'Crear Dato Narrativo', icon: 'sticky-note', color: 'text-orange-500', action: () => createAndRefresh('narrative', 'Dato Narrativo') }
     );
