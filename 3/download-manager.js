@@ -175,20 +175,143 @@ const DownloadManager = {
         this.downloadBlob(text, `${item.title}.txt`, 'text/plain');
     },
 
-    downloadBookDoc(item) {
-        let html = `
-            <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-            <head><meta charset='utf-8'><title>${item.title}</title></head>
-            <body><h1>${item.title}</h1>
-        `;
-        const chapters = item.content.chapters || [];
-        chapters.forEach(chap => {
-            html += `<h2>${chap.title}</h2>`;
-            chap.paragraphs.forEach(p => html += `<p>${p.replace(/\n/g, '<br>')}</p>`);
-            html += `<br/>`;
+    // =========================================================
+    // NUEVAS FUNCIONES DE SOPORTE PARA DOC CON IMÁGENES
+    // =========================================================
+
+    extractSrc(htmlString) {
+        const div = document.createElement('div');
+        div.innerHTML = htmlString;
+        const img = div.querySelector('img');
+        return img ? img.src : null;
+    },
+
+    convertSvgToPng(svgDataUri) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                // Configuración de calidad
+                const scale = 2; 
+                const width = (img.width || 800) * scale;
+                const height = (img.height || 600) * scale;
+
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = "#FFFFFF"; // Fondo blanco para Word
+                ctx.fillRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
+
+                try {
+                    resolve(canvas.toDataURL('image/png'));
+                } catch (e) {
+                    reject(e);
+                }
+            };
+            img.onerror = function(e) {
+                console.warn("Error cargando imagen SVG para DOC, usando original...", e);
+                resolve(svgDataUri);
+            };
+            img.src = svgDataUri;
         });
-        html += `</body></html>`;
-        this.downloadBlob(html, `${item.title}.doc`, 'application/msword');
+    },
+
+    async downloadBookDoc(item) {
+        // Configuración para el documento Word
+        const DOC_CONFIG = {
+            fontSize: '11pt',
+            fontFamily: "'Times New Roman', serif",
+            imageWidth: 600
+        };
+
+        let htmlBody = "";
+        
+        // Título del libro
+        if (item.title) {
+            htmlBody += `<h1 style="font-size:24pt; text-align:center; margin-bottom:40px;">${item.title}</h1>`;
+        }
+
+        const chapters = item.content.chapters || [];
+        
+        // Iterar sobre capítulos
+        for (let i = 0; i < chapters.length; i++) {
+            const chapter = chapters[i];
+            
+            // Salto de página antes de cada capítulo (excepto el primero si se desea, o siempre)
+            if (i > 0) {
+                htmlBody += `<br style="page-break-before:always;">`;
+            }
+
+            if (chapter.title) {
+                htmlBody += `<h2 style="font-size:16pt; margin-top:30px; margin-bottom:15px; color:#2c3e50;">${chapter.title}</h2>`;
+            }
+
+            if (Array.isArray(chapter.paragraphs)) {
+                for (const paragraph of chapter.paragraphs) {
+                    if (typeof paragraph === 'string') {
+                        // Detectar imágenes SVG/Base64
+                        if (paragraph.trim().startsWith('<img') && (paragraph.includes('data:image') || paragraph.includes('src='))) {
+                            const imgSrc = this.extractSrc(paragraph);
+                            if (imgSrc) {
+                                let finalSrc = imgSrc;
+                                // Convertir SVGs a PNG para Word
+                                if (imgSrc.includes('image/svg+xml')) {
+                                    try {
+                                        finalSrc = await this.convertSvgToPng(imgSrc);
+                                    } catch (e) {
+                                        console.error("Fallo conversión SVG->PNG", e);
+                                    }
+                                }
+                                
+                                htmlBody += `<p style="text-align:center; margin: 20px 0;">
+                                    <img src="${finalSrc}" width="${DOC_CONFIG.imageWidth}" style="width:${DOC_CONFIG.imageWidth}px; height:auto;">
+                                </p>`;
+                            }
+                        } else {
+                            // Texto normal - Procesar negritas Markdown **texto**
+                            let processedText = paragraph.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                            // Reemplazar saltos de línea por <br>
+                            processedText = processedText.replace(/\n/g, '<br>');
+                            
+                            htmlBody += `<p style="font-size:${DOC_CONFIG.fontSize}; text-align:justify; line-height:1.5; margin-bottom:10px;">${processedText}</p>`;
+                        }
+                    }
+                }
+            }
+        }
+
+        const docContent = `
+            <html xmlns:o='urn:schemas-microsoft-com:office:office' 
+                  xmlns:w='urn:schemas-microsoft-com:office:word' 
+                  xmlns='http://www.w3.org/TR/REC-html40'>
+            <head>
+                <meta charset="utf-8">
+                <title>${item.title || 'Documento'}</title>
+                <style>
+                    body { font-family: ${DOC_CONFIG.fontFamily}; }
+                    p { mso-style-name:"Normal"; margin-bottom: 10pt; }
+                    @page Section1 {
+                        size: 595.35pt 841.99pt; 
+                        margin: 70.85pt;
+                        mso-header-margin: 35.4pt;
+                        mso-footer-margin: 35.4pt;
+                        mso-paper-source: 0;
+                    }
+                    div.Section1 { page: Section1; }
+                </style>
+            </head>
+            <body>
+                <div class="Section1">
+                    ${htmlBody}
+                </div>
+            </body>
+            </html>
+        `;
+
+        this.downloadBlob(docContent, `${item.title}.doc`, 'application/msword');
     },
 
     downloadBookPdf(item) {
