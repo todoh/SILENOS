@@ -75,28 +75,24 @@ const JavascriptPasteHandler = {
         }
 
         if (typeof FileSystem !== 'undefined') {
-            // Inyección Directa Manual
-            const newId = 'js-' + Date.now() + Math.random().toString(36).substr(2, 5);
+            // CORRECCIÓN: Usar la fábrica oficial FileSystem.createJS
+            // Esto asegura:
+            // 1. Estructura correcta: content: { text: "..." }
+            // 2. Persistencia: Llama a _markDirty() internamente para guardar en DB.
+            const coords = { x: finalX || 100, y: finalY || 100, z: 0 };
             
-            const newFile = {
-                id: newId,
-                type: 'javascript',   // Tipo para abrir con editor de código
-                title: fileName,
-                content: text,
-                parentId: destParentId,
-                x: finalX || 100,
-                y: finalY || 100,
-                icon: 'file-code',    // Icono visual
-                color: 'text-yellow-400'
-            };
+            if (typeof FileSystem.createJS === 'function') {
+                FileSystem.createJS(fileName, text, destParentId, coords);
+                
+                // Forzar guardado físico inmediato
+                if (typeof FileSystem.save === 'function') FileSystem.save();
 
-            FileSystem.data.push(newFile);
-            FileSystem.save();
-
-            if (typeof refreshSystemViews === 'function') refreshSystemViews();
-            if (typeof showNotification === 'function') showNotification(`JS pegado: ${fileName}`);
-            
-            return true;
+                if (typeof refreshSystemViews === 'function') refreshSystemViews();
+                if (typeof showNotification === 'function') showNotification(`JS creado: ${fileName}`);
+                return true;
+            } else {
+                console.error("Error: FileSystem.createJS no está disponible.");
+            }
         }
 
         return false;
