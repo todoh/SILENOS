@@ -16,8 +16,24 @@ const TypeJS = {
     },
     actions: [
         {
+            label: "Editar Código (IDE)",
+            icon: "code",
+            condition: function(file) { return true; },
+            action: function(file) {
+                if (typeof openCodeEditorWindow === 'function') {
+                    openCodeEditorWindow(file.id);
+                } else {
+                    console.error("openCodeEditorWindow no está definido. Asegúrate de cargar window-code-editor.js");
+                }
+            }
+        },
+        {
             label: "Descargar como .js",
             icon: "download",
+            // Importante: condition fuerza a que el menú sepa que debe mostrarse
+            condition: function(file) { 
+                return true; 
+            },
             action: function(file) {
                 // Obtenemos el texto. Según create(), la estructura es file.content.text
                 const textContent = (file.content && file.content.text) ? file.content.text : "";
@@ -45,3 +61,6 @@ const TypeJS = {
         }
     ]
 };
+
+// Aseguramos la visibilidad global por si el sistema de módulos lo requiere
+window.TypeJS = TypeJS;
