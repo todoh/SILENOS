@@ -1,13 +1,17 @@
 /* SILENOS 3/filesystem.js */
 // --- SISTEMA DE ARCHIVOS PRINCIPAL (Facade) ---
 // Dependencias: archivos/fs-constants.js, archivos/type-*.js
+// Optimizado: Usa IndexedDB para guardado selectivo (granular) en lugar de JSON monolítico.
 
 window.FileSystem = {
     data: [],
-    _hasChanges: false,
-
+    _db: null, // Referencia a la base de datos IndexedDB
+    _modifiedIds: new Set(), // Cola de IDs que necesitan guardarse
+    _deletedIds: new Set(),  // Cola de IDs que necesitan borrarse
+    
     async init() {
         try {
+            // 1. Verificación de persistencia (igual que antes)
             if (navigator.storage && navigator.storage.persist) {
                 const isPersisted = await navigator.storage.persist();
                 console.log(`FS: Persistencia ${isPersisted ? 'CONCEDIDA' : 'NO GARANTIZADA'}`);
@@ -17,16 +21,18 @@ window.FileSystem = {
                 console.log(`FS: Cuota disponible: ${quotaMB.toFixed(2)} MB.`);
             }
 
+            // 2. Inicializar IndexedDB
+            await this._initDB();
+
+            // 3. Cargar datos (con migración automática si es necesario)
             await this.load();
 
+            // 4. Iniciar el ciclo de guardado selectivo (cada 1s es suficiente y muy ligero)
             setInterval(() => {
-                if (this._hasChanges) {
-                    this.save();
-                    this._hasChanges = false;
-                }
-            }, 5000);
+                this._processPendingChanges();
+            }, 1000);
 
-            console.log("FS: Sistema de archivos inicializado con módulos divididos.");
+            console.log("FS: Sistema de archivos inicializado (Modo DB Granular).");
             return true;
         } catch (error) {
             console.error("FS: Error fatal en init:", error);
@@ -34,29 +40,83 @@ window.FileSystem = {
         }
     },
 
-    async save() {
+    // --- INTERNO: GESTIÓN DE INDEXEDDB ---
+
+    _initDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open('SilenosFS', 1);
+
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                // Crear el almacén de objetos 'items' si no existe, usando 'id' como clave
+                if (!db.objectStoreNames.contains('items')) {
+                    db.createObjectStore('items', { keyPath: 'id' });
+                }
+            };
+
+            request.onsuccess = (e) => {
+                this._db = e.target.result;
+                resolve();
+            };
+
+            request.onerror = (e) => {
+                console.error("FS: Error abriendo IndexedDB", e);
+                reject(e);
+            };
+        });
+    },
+
+    async _processPendingChanges() {
+        // Si no hay cambios pendientes, no hacer nada (ahorro de recursos)
+        if (this._modifiedIds.size === 0 && this._deletedIds.size === 0) return;
+
         try {
-            const cache = await caches.open(FS_CONSTANTS.CACHE_NAME);
-            const dataBlob = new Blob([JSON.stringify(this.data)], { type: 'application/json' });
-            const response = new Response(dataBlob);
-            await cache.put(FS_CONSTANTS.METADATA_PATH, response);
-            console.log("FS: Estado guardado en disco."); 
+            const tx = this._db.transaction(['items'], 'readwrite');
+            const store = tx.objectStore('items');
+            
+            // Procesar borrados
+            for (const id of this._deletedIds) {
+                store.delete(id);
+            }
+            this._deletedIds.clear();
+
+            // Procesar actualizaciones/creaciones
+            for (const id of this._modifiedIds) {
+                const item = this.getItem(id);
+                if (item) {
+                    store.put(item);
+                }
+            }
+            this._modifiedIds.clear();
+
+            // Esperar a que la transacción termine (opcional, pero buena práctica para debug)
+            tx.oncomplete = () => {
+                // console.log("FS: Cambios sincronizados con disco.");
+            };
         } catch (e) {
-            console.error("FS: Error al guardar:", e);
+            console.error("FS: Error en guardado selectivo:", e);
         }
     },
 
     async load() {
         try {
-            const cache = await caches.open(FS_CONSTANTS.CACHE_NAME);
-            const response = await cache.match(FS_CONSTANTS.METADATA_PATH);
-            
-            if (response) {
-                this.data = await response.json();
-                console.log(`FS: ${this.data.length} elementos cargados.`);
+            // Intentar cargar desde IndexedDB
+            const tx = this._db.transaction(['items'], 'readonly');
+            const store = tx.objectStore('items');
+            const request = store.getAll();
+
+            const items = await new Promise((resolve, reject) => {
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+
+            if (items && items.length > 0) {
+                this.data = items;
+                console.log(`FS: ${this.data.length} elementos cargados desde DB.`);
             } else {
-                console.log("FS: No hay datos previos. Iniciando vacío.");
-                this.data = [];
+                // SI LA DB ESTÁ VACÍA: INTENTAR MIGRAR DESDE EL SISTEMA ANTIGUO (CACHE)
+                console.log("FS: DB vacía. Buscando datos legacy en Caché...");
+                await this._migrateFromLegacyCache();
             }
         } catch (e) {
             console.error("FS: Error al cargar:", e);
@@ -64,6 +124,36 @@ window.FileSystem = {
         }
     },
 
+    async _migrateFromLegacyCache() {
+        try {
+            const cache = await caches.open(FS_CONSTANTS.CACHE_NAME);
+            const response = await cache.match(FS_CONSTANTS.METADATA_PATH);
+            
+            if (response) {
+                const legacyData = await response.json();
+                console.log(`FS: Migrando ${legacyData.length} elementos de Caché a DB...`);
+                
+                this.data = legacyData;
+                
+                // Guardar todo en DB masivamente una sola vez
+                const tx = this._db.transaction(['items'], 'readwrite');
+                const store = tx.objectStore('items');
+                this.data.forEach(item => store.put(item));
+                
+                console.log("FS: Migración completada.");
+            } else {
+                console.log("FS: No se encontraron datos previos. Iniciando vacío.");
+                this.data = [];
+            }
+        } catch (e) {
+            console.warn("FS: Fallo en migración o inicio limpio:", e);
+            this.data = [];
+        }
+    },
+
+    // --- RAW FILES (BLOBS) ---
+    // Mantenemos Cache API para archivos binarios grandes, funciona bien.
+    
     async saveRawFile(file) {
         try {
             const cache = await caches.open(FS_CONSTANTS.CACHE_NAME);
@@ -105,7 +195,14 @@ window.FileSystem = {
         return content; 
     },
 
-    // --- OPERACIONES CRUD ---
+    // --- OPERACIONES CRUD (Optimizadas para marcar cambios) ---
+
+    // Método auxiliar para marcar un ítem como "necesita guardado"
+    _markDirty(id) {
+        this._modifiedIds.add(id);
+        // Si estaba pendiente de borrar, ya no (resurrección o re-creación)
+        this._deletedIds.delete(id); 
+    },
 
     createFileItem(name, parentId, contentPath, mimeType, x, y) {
         const item = {
@@ -121,49 +218,49 @@ window.FileSystem = {
             y: y || 100
         };
         this.data.push(item);
-        this.save();
+        this._markDirty(item.id); // Marcamos para guardar
         return item;
     },
 
     createFolder(name, parentId, coords) {
         const folder = TypeFolder.create(name, parentId, coords);
         this.data.push(folder);
-        this.save();
+        this._markDirty(folder.id);
         return folder;
     },
 
     createTextFile(name, content, parentId, coords) {
         const file = TypeText.create(name, content, parentId, coords);
         this.data.push(file);
-        this.save();
+        this._markDirty(file.id);
         return file;
     },
 
     createCSS(name, content, parentId, coords) {
         const file = TypeCSS.create(name, content, parentId, coords);
         this.data.push(file);
-        this.save();
+        this._markDirty(file.id);
         return file;
     },
 
     createJS(name, content, parentId, coords) {
         const file = TypeJS.create(name, content, parentId, coords);
         this.data.push(file);
-        this.save();
+        this._markDirty(file.id);
         return file;
     },
     
     createImage(name, src, parentId, coords) {
         const file = TypeImage.create(name, src, parentId, coords);
         this.data.push(file);
-        this.save();
+        this._markDirty(file.id);
         return file;
     },
 
     createJSON(name, content, parentId, coords) {
         const file = TypeJSON.create(name, content, parentId, coords);
         this.data.push(file);
-        this.save();
+        this._markDirty(file.id);
         return file;
     },
 
@@ -174,7 +271,7 @@ window.FileSystem = {
         }
         const file = TypeHTML.create(name, content, parentId, coords);
         this.data.push(file);
-        this.save();
+        this._markDirty(file.id);
         return file;
     },
 
@@ -185,7 +282,7 @@ window.FileSystem = {
         }
         const item = TypeProgram.create(name, parentId, coords);
         this.data.push(item);
-        this.save();
+        this._markDirty(item.id);
         return item;
     },
 
@@ -196,11 +293,10 @@ window.FileSystem = {
         }
         const item = TypeBook.create(name, parentId, coords);
         this.data.push(item);
-        this.save();
+        this._markDirty(item.id);
         return item;
     },
     
-    // NUEVO MÉTODO AGREGADO
     createGamebook(name, parentId, coords) {
         if (typeof TypeGamebook === 'undefined') {
             console.error("FS: TypeGamebook no está cargado.");
@@ -208,7 +304,7 @@ window.FileSystem = {
         }
         const item = TypeGamebook.create(name, parentId, coords);
         this.data.push(item);
-        this.save();
+        this._markDirty(item.id);
         return item;
     },
 
@@ -219,7 +315,7 @@ window.FileSystem = {
         }
         const item = TypeNarrative.create(name, parentId, coords);
         this.data.push(item);
-        this.save();
+        this._markDirty(item.id);
         return item;
     },
 
@@ -239,12 +335,12 @@ window.FileSystem = {
                 color: 'text-blue-400'
             };
             this.data.push(item);
-            this.save();
+            this._markDirty(item.id);
             return item;
         }
         const item = TypeData.create(name, content, parentId, coords);
         this.data.push(item);
-        this.save();
+        this._markDirty(item.id);
         return item;
     },
 
@@ -252,9 +348,8 @@ window.FileSystem = {
         const item = this.data.find(i => i.id === id);
         if (item) { 
             Object.assign(item, updates); 
-            this._hasChanges = true; 
             if (!suppressSave) {
-                this.save();
+                this._markDirty(item.id); // Solo marcamos, el loop se encarga de guardar
             }
             return true; 
         }
@@ -280,10 +375,15 @@ window.FileSystem = {
         const allIdsToDelete = getIdsToDelete(id);
         const initialCount = this.data.length;
         
+        // Filtrar de la memoria
         this.data = this.data.filter(i => !allIdsToDelete.includes(i.id));
         
         if (this.data.length < initialCount) {
-            this.save();
+            // Marcar TODOS los eliminados para borrarlos de la DB
+            allIdsToDelete.forEach(deletedId => {
+                this._deletedIds.add(deletedId);
+                this._modifiedIds.delete(deletedId); // Si estaba pendiente de guardar, cancelar
+            });
             return true;
         }
         return false;
