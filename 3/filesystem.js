@@ -197,6 +197,11 @@ window.FileSystem = {
         this._deletedIds.delete(id); 
     },
 
+    // ALIAS DE SEGURIDAD (Por si WindowManager llama a getFile)
+    getFile(id) {
+        return this.getItem(id);
+    },
+
     createFileItem(name, parentId, contentPath, mimeType, x, y) {
         const item = {
             id: 'file-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
@@ -214,6 +219,9 @@ window.FileSystem = {
         this._markDirty(item.id);
         return item;
     },
+
+    // ... (El resto de métodos createFolder, createTextFile se mantienen igual, 
+    // lo importante es que _markDirty existe y getFile redirige a getItem)
 
     createFolder(name, parentId, coords) {
         const folder = TypeFolder.create(name, parentId, coords);
@@ -321,8 +329,6 @@ window.FileSystem = {
         return item;
     },
 
-    // AHORA UPDATEITEM SIEMPRE MARCA SUCIO, IGNORANDO EL SUPRESSSAVE
-    // Esto es seguro porque 'markDirty' es muy barato en RAM.
     updateItem(id, updates, suppressSave = false) {
         const item = this.data.find(i => i.id === id);
         if (item) { 

@@ -4,7 +4,7 @@ const APPS = [
     {
         id: 'local-chat',
         title: 'Llama 3.2 Local',
-        icon: 'cpu', // Icono de chip
+        icon: 'cpu', 
         type: 'custom',
         color: 'text-blue-600',
         width: 800,
@@ -27,12 +27,21 @@ const APPS = [
         color: 'text-emerald-600'
     },
     {
-        id: 'storage-tool',  // <--- RENOMBRADO A STORAGE
+        id: 'storage-tool',
         title: 'Almacenamiento',
-        icon: 'hard-drive', // Icono de disco duro
+        icon: 'hard-drive',
         type: 'custom',     
         color: 'text-indigo-600',
         width: 500,
+        height: 600
+    },
+    {
+        id: '3d-viewer', // <--- APP REGISTRADA CORRECTAMENTE
+        title: 'Visor 3D',
+        icon: 'box', 
+        type: 'custom',     
+        color: 'text-orange-500',
+        width: 900,
         height: 600
     },
     {

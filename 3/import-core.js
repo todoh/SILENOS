@@ -35,14 +35,12 @@ const ImportCore = {
             }
 
             const isImage = /\.(png|jpg|jpeg|webp|gif|svg)$/i.test(file.name);
-            const isJson = file.name.endsWith('.json');
-            const isJs = file.name.endsWith('.js');
-
+            const is3D = /\.(glb|gltf)$/i.test(file.name);
+            
             // 2. Crear el item de metadatos apuntando al contenido crudo
-            // Ya NO transformamos ni parseamos el contenido.
             
             if (isImage) {
-                // Mantenemos tipo 'image' para que el visor de imágenes funcione
+                // TIPO IMAGEN
                 list.push({
                     id: 'image-' + Date.now() + Math.random().toString(36).substr(2, 5),
                     type: 'image',
@@ -54,13 +52,29 @@ const ImportCore = {
                     x: 100 + Math.random() * 50,
                     y: 100 + Math.random() * 50
                 });
+            } else if (is3D) {
+                // TIPO 3D (GLB/GLTF)
+                console.log("ImportCore: Detectado archivo 3D", file.name);
+                list.push({
+                    id: 'model-' + Date.now() + Math.random().toString(36).substr(2, 5),
+                    type: 'file', 
+                    subtype: 'glb', // IMPORTANTE: Subtipo explícito
+                    title: file.name,
+                    content: contentPath, 
+                    mimeType: file.type || 'model/gltf-binary',
+                    parentId: parentId,
+                    icon: 'box', 
+                    color: 'text-orange-400',
+                    x: 100 + Math.random() * 50,
+                    y: 100 + Math.random() * 50
+                });
             } else {
-                // Para todo lo demás (TXT, JSON, JS, PDF...), es un archivo genérico
+                // GENÉRICO (TXT, JSON, JS, PDF...)
                 list.push({
                     id: 'file-' + Date.now() + Math.random().toString(36).substr(2, 5),
                     type: 'file',
                     title: file.name,
-                    content: contentPath, // Ruta interna
+                    content: contentPath, 
                     mimeType: file.type,
                     parentId: parentId,
                     icon: this._getIconForType(file.name),
@@ -94,6 +108,7 @@ const ImportCore = {
         if (filename.endsWith('.css')) return 'file-code-2';
         if (filename.endsWith('.html')) return 'file-code';
         if (filename.endsWith('.txt')) return 'file-text';
+        if (filename.endsWith('.glb') || filename.endsWith('.gltf')) return 'box';
         return 'file';
     },
 
@@ -103,7 +118,6 @@ const ImportCore = {
 
         const idMap = {};
         data.forEach(item => {
-            // Re-generar IDs para evitar colisiones
             if (item.id) {
                 const prefix = item.type || 'item';
                 const newId = prefix + '-' + Date.now() + '-' + Math.floor(Math.random() * 1000000);
@@ -114,6 +128,7 @@ const ImportCore = {
         let count = 0;
         let modulesCount = 0;
 
+        // --- FASE CRÍTICA: INSERCIÓN Y PERSISTENCIA ---
         data.forEach(item => {
             if (!item.type) return;
 
@@ -121,12 +136,21 @@ const ImportCore = {
             if (idMap[item.id]) item.id = idMap[item.id];
             if (item.parentId && idMap[item.parentId]) item.parentId = idMap[item.parentId];
 
-            FileSystem.data.push(item);
+            FileSystem.data.push(item); // Insertar en RAM
+            
+            // !! CORRECCIÓN VITAL !!
+            // Marcar como "sucio" para que el FileSystem sepa que debe guardarlo en IndexedDB
+            if (typeof FileSystem._markDirty === 'function') {
+                FileSystem._markDirty(item.id);
+            }
+
             count++;
         });
 
         this.recoverOrphans();
-        FileSystem.save();
+        
+        // Forzar guardado inmediato
+        await FileSystem.save(); 
 
         return { count, modulesCount };
     },
@@ -149,12 +173,12 @@ const ImportCore = {
                 x: 50, y: 50,
                 icon: 'folder', color: 'text-amber-500'
             });
+            // Marcar carpeta recuperada también
+            if (typeof FileSystem._markDirty === 'function') FileSystem._markDirty(pid);
         });
     },
 
     async generateBackupData() {
-        // Backup simple de la metadata. 
-        // Nota: El contenido RAW en caché no se serializa aquí, requeriría exportación especial.
         return [...FileSystem.data];
     }
 };
