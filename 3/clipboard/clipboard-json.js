@@ -6,12 +6,28 @@ const JsonPasteHandler = {
         if (!text) return null;
         let clean = text.replace(/\u00A0/g, ' ').trim();
         
+        // --- 1. LIMPIEZA DE MARKDOWN ---
         if (clean.startsWith('```')) {
             clean = clean.replace(/^```[a-z]*\s*/i, '').replace(/\s*```$/, '');
         }
+
+        // --- 2. [CRÍTICO] PROTECCIÓN ANTI-ROBO ---
+        // Si el texto limpio empieza claramente como HTML o JS, 
+        // abortamos INMEDIATAMENTE para que los handlers específicos (HTML/JS) lo procesen.
         
+        // A. Si parece HTML (empieza por < o doctype)
+        if (clean.startsWith('<') || /^<!DOCTYPE/i.test(clean)) return null;
+
+        // B. Si parece JS (empieza por keywords reservadas o comentarios)
+        // Esto evita que robe archivos JS que empiezan con imports o clases
+        const jsStartRegex = /^(import|export|const|let|var|function|class|window\.|document\.)\s/i;
+        if (jsStartRegex.test(clean) || clean.startsWith('/*') || clean.startsWith('//')) return null;
+
+        // --- 3. INTENTO DE PARSEO DIRECTO ---
         try { return JSON.parse(clean); } catch(e) {}
 
+        // --- 4. BÚSQUEDA PROFUNDA (Smart Extract) ---
+        // Solo llegamos aquí si NO parece código de otro tipo.
         let start = -1;
         const firstBrace = clean.indexOf('{');
         const firstBracket = clean.indexOf('[');
@@ -98,42 +114,33 @@ const JsonPasteHandler = {
 
             let items = Array.isArray(data) ? data : [data];
 
-            // --- CRITERIO MEJORADO PARA DETECTAR BACKUPS/SISTEMA ---
+            // --- DETECCIÓN DE BACKUPS/SISTEMA ---
             const isSilenosItem = (obj) => {
                 if (!obj || typeof obj !== 'object') return false;
                 if (!obj.id || !obj.type) return false;
                 
-                // 1. Si tiene información espacial o padre, es casi seguro del sistema
                 if (obj.parentId !== undefined || (obj.x !== undefined && obj.y !== undefined)) return true;
-
-                // 2. Si tiene contenido explícito, probablemente es un archivo
                 if (obj.content !== undefined) return true;
 
-                // 3. Lista ampliada de tipos conocidos
                 const knownTypes = [
                     'executable', 'folder', 'link', 'image-link', 'window', 
                     'program', 'custom-module', 'book', 'file', 'image',
                     'javascript', 'css', 'html', 'json', 'text', 'markdown',
                     'chat', 'query', 'vector', 'backup', 'config'
                 ];
-                
                 return knownTypes.includes(obj.type);
             };
 
             const validItems = items.filter(isSilenosItem);
-
-            // CASO A: Es un backup o conjunto de objetos de sistema (lo importamos)
-            // Se activa si hay items válidos y representan una mayoría significativa (>50%)
             const purity = validItems.length / items.length;
             const looksLikeBackup = validItems.length > 0 && purity >= 0.5;
 
             if (looksLikeBackup) {
-                console.log(`📦 JsonPasteHandler: ${validItems.length} items de sistema detectados (Pureza: ${Math.round(purity*100)}%). Iniciando Importación...`);
+                console.log(`📦 JsonPasteHandler: ${validItems.length} items de sistema detectados. Importando...`);
                 const batchIds = new Set(validItems.map(i => i.id));
                 
                 validItems.forEach((i, idx) => {
                     if (!i.id) i.id = 'paste-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
-                    
                     if (!i.parentId || !batchIds.has(i.parentId)) {
                         if (i.type !== 'custom-module') {
                             i.parentId = destParentId;
@@ -159,8 +166,7 @@ const JsonPasteHandler = {
                     return true;
                 }
             } 
-            
-            // CASO B: Es JSON puro de datos (Creamos el archivo manualmente)
+            // CASO B: JSON Puro
             else {
                 console.log(`📦 JsonPasteHandler: JSON Puro detectado. Creando archivo contenedor...`);
                 
@@ -198,7 +204,6 @@ const JsonPasteHandler = {
                     return true;
                 }
             }
-
             return false;
         } catch (err) {
             console.error("Error procesando JSON:", err);
@@ -207,4 +212,4 @@ const JsonPasteHandler = {
     }
 };
 
-ClipboardProcessor.registerHandler(JsonPasteHandler, 30); // Prioridad aumentada a 30
+ClipboardProcessor.registerHandler(JsonPasteHandler, 30);
