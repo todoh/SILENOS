@@ -13,5 +13,35 @@ const TypeJS = {
             icon: 'file-code', // O 'code'
             color: 'text-yellow-300' // Amarillo JS
         };
-    }
+    },
+    actions: [
+        {
+            label: "Descargar como .js",
+            icon: "download",
+            action: function(file) {
+                // Obtenemos el texto. Según create(), la estructura es file.content.text
+                const textContent = (file.content && file.content.text) ? file.content.text : "";
+                
+                // Crear el Blob con tipo MIME de JavaScript
+                const blob = new Blob([textContent], { type: 'application/javascript' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                
+                // Usar el título del archivo (file.title) y asegurar la extensión
+                let fileName = file.title || "script.js";
+                if (!fileName.toLowerCase().endsWith('.js')) {
+                    fileName += '.js';
+                }
+                link.download = fileName;
+                
+                // Añadir al DOM, ejecutar click y limpiar
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Liberar memoria
+                setTimeout(() => URL.revokeObjectURL(link.href), 100);
+            }
+        }
+    ]
 };
