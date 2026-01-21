@@ -57,6 +57,7 @@ const HtmlPasteHandler = {
         if (typeof FileSystem !== 'undefined') {
             const newId = 'html-' + Date.now() + Math.random().toString(36).substr(2, 5);
             
+            // Creamos el objeto manualmente para mantener tu configuración de iconos/colores
             const newFile = {
                 id: newId,
                 type: 'html',        
@@ -70,6 +71,15 @@ const HtmlPasteHandler = {
             };
 
             FileSystem.data.push(newFile);
+
+            // --- CORRECCIÓN CLAVE ---
+            // Marcamos el ID como "sucio" para que el ciclo de guardado (IndexedDB) lo detecte.
+            // Esto es lo mismo que hace 'updateItem' internamente cuando renombras.
+            if (typeof FileSystem._markDirty === 'function') {
+                FileSystem._markDirty(newId);
+            }
+            
+            // Forzamos el guardado inmediato
             FileSystem.save();
 
             if (typeof refreshSystemViews === 'function') refreshSystemViews();
