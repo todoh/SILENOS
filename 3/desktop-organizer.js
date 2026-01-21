@@ -23,20 +23,32 @@ const DesktopOrganizer = {
         }));
 
         // --- DEFINICIÓN DE PRIORIDADES (H) ---
+        // Actualizado para reconocer todos los tipos de archivo del sistema
         const typePriority = {
             'folder': 1,
             'app': 2,
             'program': 2,
-            'link': 3,
-            'file': 4
+            'javascript': 2, // Agregado: Código JS junto a programas
+            'json': 2,       // Agregado: Datos JSON
+            'html': 2,       // Agregado: Web
+            'css': 2,        // Agregado: Estilos
+            'book': 3,       // Agregado: Libros
+            'gamebook': 3,   // Agregado: Librojuegos
+            'narrative': 3,  // Agregado: Narrativa
+            'image': 3,      // Agregado: Imágenes
+            'data': 4,       // Agregado: Datos genéricos
+            'text': 4,       // Agregado: Texto plano
+            'link': 5,
+            'file': 6        // Resto
         };
 
         // --- ORDENAMIENTO DE CONFLUENCIA ---
         layoutProxies.sort((a, b) => {
-            const prioA = typePriority[a.type] || 99;
+            const prioA = typePriority[a.type] || 99; // 99 para tipos desconocidos
             const prioB = typePriority[b.type] || 99;
             
             if (prioA !== prioB) return prioA - prioB;
+            // Orden alfabético secundario
             return a.title.localeCompare(b.title, undefined, {numeric: true, sensitivity: 'base'});
         });
 
@@ -45,6 +57,7 @@ const DesktopOrganizer = {
 
         // --- CÁLCULO DE CUADRÍCULA MAESTRA (G) ---
         const totalItems = layoutProxies.length;
+        // Factor 1.5 para hacer la cuadrícula un poco más ancha que alta (formato pantalla)
         const columns = Math.ceil(Math.sqrt(totalItems * 1.5)); 
         
         // Ejecutamos la organización

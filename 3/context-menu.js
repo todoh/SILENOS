@@ -112,9 +112,43 @@ function addTypeSpecificOptions(options, item, itemId) {
     }
 
     if (item.type === 'html') {
-        // --- OPCIÓN AGREGADA AQUÍ ---
         options.push({ label: 'Abrir en Ventana', icon: 'globe', color: 'text-indigo-600', action: () => { if (typeof openHTMLWindow === 'function') openHTMLWindow(itemId); } });
         options.push({ label: 'Descargar HTML', icon: 'file-code', color: 'text-orange-600', action: () => DownloadManager.downloadHTML(item) });
+    }
+
+    // --- CORRECCIÓN FINAL: Soporte híbrido (string u objeto) para JS ---
+    if (item.type === 'javascript') {
+        options.push({ 
+            label: 'Descargar como .js', 
+            icon: 'file-code', 
+            color: 'text-yellow-600', 
+            action: () => {
+                let text = "";
+                // Verificamos si es string directo (tu JSON) o un objeto (nuevos archivos)
+                if (typeof item.content === 'string') {
+                    text = item.content;
+                } else if (item.content && item.content.text) {
+                    text = item.content.text;
+                }
+                
+                if (!text) console.warn("Contenido JS vacío o formato desconocido", item);
+
+                const blob = new Blob([text], { type: 'application/javascript' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                
+                let fileName = item.title || "script";
+                if (!fileName.toLowerCase().endsWith('.js')) {
+                    fileName += '.js';
+                }
+                link.download = fileName;
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                setTimeout(() => URL.revokeObjectURL(link.href), 100);
+            } 
+        });
     }
     
     if (item.type === 'program') {

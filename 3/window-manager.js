@@ -1,13 +1,79 @@
 /* SILENOS 3/window-manager.js */
-// --- Y -> CONFLUENCIA: GESTIÓN DE APLICACIONES Y HERRAMIENTAS ---
+
+// --- FUNCIÓN CENTRAL DE APERTURA DE ARCHIVOS ---
+window.openFile = function(fileId) {
+    const file = FileSystem.getItem(fileId);
+    if (!file) return;
+
+    console.log("Intentando abrir:", file.title, "Tipo detectado:", file.type);
+
+    // --- CORRECCIÓN PRIORITARIA ---
+    // Si el archivo termina en .js, FORZAMOS el editor de código.
+    // Esto arregla archivos pegados que el sistema marcó erróneamente como 'data' o 'text'.
+    if (file.type === 'javascript' || (file.title && file.title.toLowerCase().endsWith('.js'))) {
+        if (typeof openCodeEditorWindow === 'function') {
+            openCodeEditorWindow(fileId);
+            return; // ¡Importante! Salimos aquí para que no ejecute el switch de abajo
+        } else {
+            console.error("Falta cargar window/window-code-editor.js");
+        }
+    }
+
+    // Si no es JS, seguimos con la lógica normal
+    switch (file.type) {
+        case 'folder':
+            if (typeof openFolderWindow === 'function') openFolderWindow(fileId);
+            break;
+            
+        case 'image':
+            if (typeof openImageWindow === 'function') openImageWindow(fileId);
+            break;
+
+        case 'book':
+        case 'epub':
+            if (typeof openBookWindow === 'function') openBookWindow(fileId);
+            break;
+            
+        case 'gamebook':
+            if (typeof openGamebookWindow === 'function') openGamebookWindow(fileId);
+            break;
+
+        case 'program':
+             if (typeof openProgramRunner === 'function') openProgramRunner(fileId);
+             break;
+
+        case 'narrative':
+            if (typeof openNarrativeWindow === 'function') openNarrativeWindow(fileId);
+            break;
+
+        // Fallback para JSON, Data o desconocidos
+        default:
+            if (typeof openDataWindow === 'function') {
+                openDataWindow(fileId);
+            } else {
+                console.warn("No hay visor para este tipo:", file.type);
+            }
+            break;
+    }
+};
+
+// --- GESTIÓN DE APLICACIONES ---
 
 function openApp(appId) {
     if (appId === 'storage-tool') { openStorageWindow(); return; }
-    if (appId === 'local-chat') { openLocalAIWindow(); return; } // <--- NUEVO LANZADOR
+    if (appId === 'local-chat') { openLocalAIWindow(); return; } 
 
-    const app = APPS.find(a => a.id === appId);
-    if (!app) return;
+    let app = null;
+    if (typeof APPS !== 'undefined') {
+        app = APPS.find(a => a.id === appId);
+    }
     
+    if (!app && appId !== 'config' && appId !== 'terminal') return;
+    
+    if (appId === 'terminal') {
+        if (typeof openTerminal === 'function') { openTerminal(); return; }
+    }
+
     const existingWindow = openWindows.find(w => w.id === appId);
     if (existingWindow) {
         if (existingWindow.isMinimized) toggleMinimize(appId);
@@ -17,16 +83,22 @@ function openApp(appId) {
 
     zIndexCounter++;
     const winObj = {
-        id: appId, appId: appId, type: 'app', zIndex: zIndexCounter,
-        isMinimized: false, isMaximized: false, x: 50, y: 50
+        id: appId, 
+        appId: appId, 
+        type: 'app', 
+        zIndex: zIndexCounter,
+        isMinimized: false, 
+        isMaximized: false, 
+        x: 50, 
+        y: 50
     };
 
-    createWindowDOM(winObj, app);
+    createWindowDOM(winObj, app || { title: appId, width: 400, height: 300 });
     openWindows.push(winObj);
     if (window.lucide) lucide.createIcons();
 }
 
-// --- NUEVA VENTANA DE CHAT LOCAL (Llama 3.2) ---
+// --- VENTANA DE CHAT LOCAL (Llama 3.2) ---
 function openLocalAIWindow() {
     const id = 'local-chat-window';
     const existing = openWindows.find(w => w.id === id);
@@ -44,7 +116,6 @@ function openLocalAIWindow() {
     const winContent = document.querySelector(`#window-${id} .content-area`);
     if (!winContent) return;
 
-    // Renderizamos la UI del Chat
     winContent.innerHTML = `
         <div class="flex flex-col h-full bg-slate-100 font-sans text-slate-800 relative overflow-hidden">
             <div class="bg-white shadow-sm p-3 flex items-center justify-between z-10 shrink-0">
@@ -96,7 +167,6 @@ function openLocalAIWindow() {
         </div>
     `;
 
-    // --- LÓGICA DE LA VENTANA ---
     const loadBtn = winContent.querySelector('#btn-load-llama');
     const loader = winContent.querySelector('#llama-loader');
     const status = winContent.querySelector('#llama-status');
@@ -108,14 +178,12 @@ function openLocalAIWindow() {
     const messagesDiv = winContent.querySelector('#llama-messages');
     const errorMsg = winContent.querySelector('#llama-error');
 
-    // Estado inicial
     if (typeof AIService !== 'undefined' && AIService.isModelLoaded) {
         loader.classList.add('hidden');
         status.textContent = "Modelo Listo";
         status.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700";
     }
 
-    // 1. Cargar Modelo
     loadBtn.onclick = async () => {
         if (typeof AIService === 'undefined') return;
         
@@ -127,14 +195,12 @@ function openLocalAIWindow() {
         try {
             await AIService.initLocalModel((report) => {
                 progText.textContent = report.text;
-                // Estimación de progreso
                 let p = 0;
                 if (report.progress) p = report.progress * 100;
                 else if (report.text.includes("Loading")) p = 90;
                 progBar.style.width = `${p}%`;
             });
 
-            // Éxito
             loader.style.opacity = '0';
             setTimeout(() => loader.classList.add('hidden'), 500);
             status.textContent = "Modelo Listo";
@@ -148,31 +214,25 @@ function openLocalAIWindow() {
         }
     };
 
-    // 2. Enviar Mensaje
     form.onsubmit = async (e) => {
         e.preventDefault();
         const text = input.value.trim();
         if (!text) return;
         
-        // UI User
         appendMessage(text, 'user');
         input.value = '';
         input.disabled = true;
 
-        // UI AI Placeholder
         const aiMsgDiv = appendMessage("...", 'ai');
         let fullResponse = "";
 
         try {
-            // Usamos streaming para mejor UX en el chat
             const history = [{ role: "system", content: "Eres un asistente útil y conciso." }, { role: "user", content: text }];
-            
             await AIService.streamChat(history, (chunk) => {
                 fullResponse += chunk;
                 aiMsgDiv.textContent = fullResponse;
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
             });
-            
         } catch (err) {
             aiMsgDiv.textContent += " [Error: " + err.message + "]";
             if (err.message.includes("no cargado")) loader.classList.remove('hidden');
@@ -186,19 +246,16 @@ function openLocalAIWindow() {
         const isUser = sender === 'user';
         const div = document.createElement('div');
         div.className = `flex gap-2 ${isUser ? 'flex-row-reverse' : ''}`;
-        
         const bubbleColor = isUser ? 'bg-blue-600 text-white' : 'bg-white text-slate-800 border border-slate-200';
-        
         div.innerHTML = `
             <div class="w-6 h-6 rounded-full ${isUser ? 'bg-slate-700' : 'bg-blue-100'} flex items-center justify-center flex-shrink-0 text-xs text-white">
                 ${isUser ? '<i data-lucide="user"></i>' : '<span class="text-blue-600">AI</span>'}
             </div>
             <div class="${bubbleColor} p-2.5 rounded-2xl ${isUser ? 'rounded-tr-none' : 'rounded-tl-none'} text-xs max-w-[85%] shadow-sm break-words whitespace-pre-wrap">${text}</div>
         `;
-        
         messagesDiv.appendChild(div);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        return div.querySelector('div:last-child'); // Retorna la burbuja de texto
+        return div.querySelector('div:last-child');
     }
 }
 
