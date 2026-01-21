@@ -1,28 +1,13 @@
 /* SILENOS 3 / desktop-organizer.js */
-// --- ORGANIZADOR DE COHERENCIA ESPACIAL CON GUARDADO OPTIMIZADO ---
-
-// Utilidad de Debounce para evitar bloqueos por guardado masivo
-function createDebouncedSaver(wait) {
-    let timeout;
-    return function() {
-        if (timeout) clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            console.log("Guardando estado del sistema (Debounced)...");
-            FileSystem.save();
-        }, wait);
-    };
-}
+// --- ORGANIZADOR DE COHERENCIA ESPACIAL (Adaptado a FS Granular) ---
 
 const DesktopOrganizer = {
     MIN_GAP: 190, // Espaciado
     PEAK_DEPTH: 0, // Plano de manifestación física
     
-    // Creamos el guardador optimizado
-    saveDebounced: createDebouncedSaver(1500),
-
     /**
-     * Inicia la reconfiguración del espacio visual usando Proxies Ligeros
-     * y actualización silenciosa del FileSystem.
+     * Inicia la reconfiguración del espacio visual.
+     * Ahora mucho más rápido gracias al FS granular.
      */
     organize() {
         console.log("H-G -> Unificando materia en cuadrícula maestra (Z=0)...");
@@ -62,7 +47,7 @@ const DesktopOrganizer = {
         const totalItems = layoutProxies.length;
         const columns = Math.ceil(Math.sqrt(totalItems * 1.5)); 
         
-        // Pasamos los PROXIES a la función de arreglo
+        // Ejecutamos la organización
         this.arrangeGrid(layoutProxies, centerX, centerY, columns);
 
         // Ajuste de la cámara
@@ -72,11 +57,11 @@ const DesktopOrganizer = {
             window.ThreeDesktop.targetZ = 1200; 
         }
 
-        // Refrescamos la vista una sola vez al final
+        // Refrescamos la vista
         if (window.refreshSystemViews) window.refreshSystemViews();
         
-        // Forzamos el guardado final UNA SOLA VEZ
-        this.saveDebounced();
+        // Forzamos el guardado de las nuevas posiciones
+        FileSystem.save();
         
         this.notifySuccess(totalItems);
     },
@@ -103,14 +88,15 @@ const DesktopOrganizer = {
             const newX = startX + (col * this.MIN_GAP);
             const newY = startY + (row * this.MIN_GAP);
 
-            // AQUÍ ESTÁ LA SOLUCIÓN AL CONGELAMIENTO:
-            // Pasamos 'true' como tercer argumento para SUPRIMIR el guardado en disco
-            // por cada ítem individual.
+            // ACTUALIZACIÓN RÁPIDA:
+            // Ya no necesitamos suprimir el guardado (suppressSave=true)
+            // porque FileSystem.updateItem ahora solo actualiza RAM y marca sucio.
+            // La escritura a disco es asíncrona y no bloquea el hilo UI.
             FileSystem.updateItem(proxy.id, {
                 x: newX,
                 y: newY,
                 z: this.PEAK_DEPTH
-            }, true); 
+            }); 
         });
     },
 
@@ -137,5 +123,5 @@ const DesktopOrganizer = {
     }
 };
 
-// Hacemos accesible la función de guardado
-window.saveDesktopDebounced = DesktopOrganizer.saveDebounced;
+// Alias de compatibilidad
+window.saveDesktopDebounced = () => FileSystem.save();

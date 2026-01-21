@@ -44,6 +44,7 @@ function startIconDrag(e, fileId, sourceParentId) {
         }
     }
 
+    // OPTIMIZACIÓN: Solo obtenemos metadatos básicos para el ghost
     const fileItem = FileSystem.getItem(fileId);
     if (!fileItem) return;
 
@@ -56,7 +57,7 @@ function startIconDrag(e, fileId, sourceParentId) {
     dragState.initialX = e.clientX;
     dragState.initialY = e.clientY;
     
-    // ACTIVAR OVERLAYS EN TODAS LAS VENTANAS PARA PERMITIR ARRASTRE FLUIDO SOBRE ELLAS
+    // ACTIVAR OVERLAYS EN TODAS LAS VENTANAS
     document.querySelectorAll('.iframe-overlay').forEach(ov => ov.style.display = 'block');
 
     const count = dragState.multiDragIds.length;
@@ -104,7 +105,7 @@ window.addEventListener('mousemove', (e) => {
 window.addEventListener('mouseup', (e) => {
     if (!dragState.isDragging) return;
     
-    // DESACTIVAR OVERLAYS AL SOLTAR
+    // DESACTIVAR OVERLAYS
     document.querySelectorAll('.iframe-overlay').forEach(ov => ov.style.display = 'none');
 
     try {
@@ -168,7 +169,7 @@ function handleIconDrop(e) {
         return; 
     }
 
-    // --- LÓGICA DE DROP EN VENTANAS (CORREGIDA PARA CARPETAS) ---
+    // --- LÓGICA DE DROP EN VENTANAS ---
     if (typeof openWindows !== 'undefined') {
         const windowsReversed = [...openWindows].reverse();
         
@@ -180,8 +181,6 @@ function handleIconDrop(e) {
             if (e.clientX >= rect.left && e.clientX <= rect.right &&
                 e.clientY >= rect.top && e.clientY <= rect.bottom) {
                 
-                // Si la ventana es una carpeta, NO enviamos mensaje y NO hacemos return.
-                // Dejamos que el código siga hacia la "Lógica Estándar" de carpetas.
                 if (win.type === 'folder') {
                     break; 
                 }
@@ -190,10 +189,13 @@ function handleIconDrop(e) {
                 const fileItem = FileSystem.getItem(fileId);
                 const iframe = winEl.querySelector('iframe');
                 if (iframe && fileItem) {
+                    const isHuge = fileItem.content && fileItem.content.length > 1000000;
+                    
                     iframe.contentWindow.postMessage({
                         type: 'FILE_DROP_INTERNAL',
-                        file: fileItem,
-                        content: fileItem.content 
+                        file: fileItem, 
+                        content: isHuge ? null : fileItem.content, 
+                        isHugeContent: isHuge
                     }, '*');
                 }
                 return; 
@@ -221,6 +223,7 @@ function handleIconDrop(e) {
         worldCoords = ThreeDesktop.screenToWorld(e.clientX, e.clientY);
     }
 
+    // Actualizamos las coordenadas en memoria (RAM)
     dragState.multiDragIds.forEach((id, index) => {
         const updates = { parentId: destParentId };
         if (isToDesktop) {
@@ -228,10 +231,12 @@ function handleIconDrop(e) {
             updates.y = worldCoords.y - 32 + (index * 20);
             updates.z = 0; 
         }
-        FileSystem.updateItem(id, updates);
+        FileSystem.updateItem(id, updates); // Automáticamente marca sucio
     });
     
+    // Forzamos el guardado para asegurar la persistencia de las coordenadas
     FileSystem.save();
+
     if (typeof refreshAllViews === 'function') refreshAllViews();
     if (typeof refreshSystemViews === 'function') refreshSystemViews();
 }

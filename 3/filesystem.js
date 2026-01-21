@@ -1,7 +1,7 @@
 /* SILENOS 3/filesystem.js */
 // --- SISTEMA DE ARCHIVOS PRINCIPAL (Facade) ---
 // Dependencias: archivos/fs-constants.js, archivos/type-*.js
-// Optimizado: Usa IndexedDB para guardado selectivo (granular) en lugar de JSON monolítico.
+// Optimizado: Usa IndexedDB para guardado selectivo (granular) + Compatibilidad con save()
 
 window.FileSystem = {
     data: [],
@@ -11,7 +11,7 @@ window.FileSystem = {
     
     async init() {
         try {
-            // 1. Verificación de persistencia (igual que antes)
+            // 1. Verificación de persistencia
             if (navigator.storage && navigator.storage.persist) {
                 const isPersisted = await navigator.storage.persist();
                 console.log(`FS: Persistencia ${isPersisted ? 'CONCEDIDA' : 'NO GARANTIZADA'}`);
@@ -24,10 +24,10 @@ window.FileSystem = {
             // 2. Inicializar IndexedDB
             await this._initDB();
 
-            // 3. Cargar datos (con migración automática si es necesario)
+            // 3. Cargar datos
             await this.load();
 
-            // 4. Iniciar el ciclo de guardado selectivo (cada 1s es suficiente y muy ligero)
+            // 4. Iniciar el ciclo de guardado selectivo (cada 1s)
             setInterval(() => {
                 this._processPendingChanges();
             }, 1000);
@@ -48,7 +48,6 @@ window.FileSystem = {
 
             request.onupgradeneeded = (e) => {
                 const db = e.target.result;
-                // Crear el almacén de objetos 'items' si no existe, usando 'id' como clave
                 if (!db.objectStoreNames.contains('items')) {
                     db.createObjectStore('items', { keyPath: 'id' });
                 }
@@ -67,7 +66,6 @@ window.FileSystem = {
     },
 
     async _processPendingChanges() {
-        // Si no hay cambios pendientes, no hacer nada (ahorro de recursos)
         if (this._modifiedIds.size === 0 && this._deletedIds.size === 0) return;
 
         try {
@@ -89,18 +87,26 @@ window.FileSystem = {
             }
             this._modifiedIds.clear();
 
-            // Esperar a que la transacción termine (opcional, pero buena práctica para debug)
             tx.oncomplete = () => {
-                // console.log("FS: Cambios sincronizados con disco.");
+                // console.log("FS: Sincronización DB completada.");
             };
         } catch (e) {
             console.error("FS: Error en guardado selectivo:", e);
         }
     },
 
+    // --- COMPATIBILIDAD Y CONTROL ---
+
+    // Este método existía en la versión anterior y es llamado por otros scripts.
+    // Ahora actúa como un disparador manual del proceso de guardado granular.
+    async save() {
+        // Forzamos la ejecución inmediata de los cambios pendientes
+        await this._processPendingChanges();
+        console.log("FS: Guardado manual ejecutado.");
+    },
+
     async load() {
         try {
-            // Intentar cargar desde IndexedDB
             const tx = this._db.transaction(['items'], 'readonly');
             const store = tx.objectStore('items');
             const request = store.getAll();
@@ -114,8 +120,7 @@ window.FileSystem = {
                 this.data = items;
                 console.log(`FS: ${this.data.length} elementos cargados desde DB.`);
             } else {
-                // SI LA DB ESTÁ VACÍA: INTENTAR MIGRAR DESDE EL SISTEMA ANTIGUO (CACHE)
-                console.log("FS: DB vacía. Buscando datos legacy en Caché...");
+                console.log("FS: DB vacía. Buscando datos legacy...");
                 await this._migrateFromLegacyCache();
             }
         } catch (e) {
@@ -132,28 +137,21 @@ window.FileSystem = {
             if (response) {
                 const legacyData = await response.json();
                 console.log(`FS: Migrando ${legacyData.length} elementos de Caché a DB...`);
-                
                 this.data = legacyData;
                 
-                // Guardar todo en DB masivamente una sola vez
                 const tx = this._db.transaction(['items'], 'readwrite');
                 const store = tx.objectStore('items');
                 this.data.forEach(item => store.put(item));
-                
                 console.log("FS: Migración completada.");
             } else {
-                console.log("FS: No se encontraron datos previos. Iniciando vacío.");
                 this.data = [];
             }
         } catch (e) {
-            console.warn("FS: Fallo en migración o inicio limpio:", e);
             this.data = [];
         }
     },
 
     // --- RAW FILES (BLOBS) ---
-    // Mantenemos Cache API para archivos binarios grandes, funciona bien.
-    
     async saveRawFile(file) {
         try {
             const cache = await caches.open(FS_CONSTANTS.CACHE_NAME);
@@ -181,10 +179,7 @@ window.FileSystem = {
             const response = await cache.match(path);
             if (response) return await response.blob();
             return null;
-        } catch(e) { 
-            console.error("FS: Error recuperando raw file:", e);
-            return null; 
-        }
+        } catch(e) { return null; }
     },
 
     async getImageUrl(content) {
@@ -195,12 +190,10 @@ window.FileSystem = {
         return content; 
     },
 
-    // --- OPERACIONES CRUD (Optimizadas para marcar cambios) ---
+    // --- OPERACIONES CRUD ---
 
-    // Método auxiliar para marcar un ítem como "necesita guardado"
     _markDirty(id) {
         this._modifiedIds.add(id);
-        // Si estaba pendiente de borrar, ya no (resurrección o re-creación)
         this._deletedIds.delete(id); 
     },
 
@@ -218,7 +211,7 @@ window.FileSystem = {
             y: y || 100
         };
         this.data.push(item);
-        this._markDirty(item.id); // Marcamos para guardar
+        this._markDirty(item.id);
         return item;
     },
 
@@ -265,10 +258,7 @@ window.FileSystem = {
     },
 
     createHTML(name, content, parentId, coords) {
-        if (typeof TypeHTML === 'undefined') {
-            console.error("FS: TypeHTML no está cargado.");
-            return null;
-        }
+        if (typeof TypeHTML === 'undefined') return null;
         const file = TypeHTML.create(name, content, parentId, coords);
         this.data.push(file);
         this._markDirty(file.id);
@@ -276,10 +266,7 @@ window.FileSystem = {
     },
 
     createProgram(name, parentId, coords) {
-        if (typeof TypeProgram === 'undefined') {
-            console.error("FS: TypeProgram no está cargado.");
-            return null;
-        }
+        if (typeof TypeProgram === 'undefined') return null;
         const item = TypeProgram.create(name, parentId, coords);
         this.data.push(item);
         this._markDirty(item.id);
@@ -287,10 +274,7 @@ window.FileSystem = {
     },
 
     createBook(name, parentId, coords) {
-        if (typeof TypeBook === 'undefined') {
-            console.error("FS: TypeBook no está cargado.");
-            return null;
-        }
+        if (typeof TypeBook === 'undefined') return null;
         const item = TypeBook.create(name, parentId, coords);
         this.data.push(item);
         this._markDirty(item.id);
@@ -298,10 +282,7 @@ window.FileSystem = {
     },
     
     createGamebook(name, parentId, coords) {
-        if (typeof TypeGamebook === 'undefined') {
-            console.error("FS: TypeGamebook no está cargado.");
-            return null;
-        }
+        if (typeof TypeGamebook === 'undefined') return null;
         const item = TypeGamebook.create(name, parentId, coords);
         this.data.push(item);
         this._markDirty(item.id);
@@ -309,10 +290,7 @@ window.FileSystem = {
     },
 
     createNarrative(name, parentId, coords) {
-        if (typeof TypeNarrative === 'undefined') {
-            console.error("FS: TypeNarrative no está cargado.");
-            return null;
-        }
+        if (typeof TypeNarrative === 'undefined') return null;
         const item = TypeNarrative.create(name, parentId, coords);
         this.data.push(item);
         this._markDirty(item.id);
@@ -321,7 +299,6 @@ window.FileSystem = {
 
     createData(name, content, parentId, coords) {
         if (typeof TypeData === 'undefined') {
-            console.error("FS: TypeData no está cargado. Usando fallback genérico.");
             const item = {
                 id: 'data-' + Date.now(),
                 type: 'data',
@@ -344,13 +321,13 @@ window.FileSystem = {
         return item;
     },
 
+    // AHORA UPDATEITEM SIEMPRE MARCA SUCIO, IGNORANDO EL SUPRESSSAVE
+    // Esto es seguro porque 'markDirty' es muy barato en RAM.
     updateItem(id, updates, suppressSave = false) {
         const item = this.data.find(i => i.id === id);
         if (item) { 
             Object.assign(item, updates); 
-            if (!suppressSave) {
-                this._markDirty(item.id); // Solo marcamos, el loop se encarga de guardar
-            }
+            this._markDirty(item.id); 
             return true; 
         }
         return false;
@@ -375,14 +352,12 @@ window.FileSystem = {
         const allIdsToDelete = getIdsToDelete(id);
         const initialCount = this.data.length;
         
-        // Filtrar de la memoria
         this.data = this.data.filter(i => !allIdsToDelete.includes(i.id));
         
         if (this.data.length < initialCount) {
-            // Marcar TODOS los eliminados para borrarlos de la DB
             allIdsToDelete.forEach(deletedId => {
                 this._deletedIds.add(deletedId);
-                this._modifiedIds.delete(deletedId); // Si estaba pendiente de guardar, cancelar
+                this._modifiedIds.delete(deletedId);
             });
             return true;
         }
