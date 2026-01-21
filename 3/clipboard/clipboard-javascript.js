@@ -1,7 +1,9 @@
 /* SILENOS 3/clipboard/clipboard-javascript.js */
 
 const JavascriptPasteHandler = {
-    headerRegex: /\/\*\s*SILENOS\s+(.*?)\s*\*\//,
+    // MEJORA: Regex ampliada para soportar "FILENAME:" y "SILENOS"
+    headerRegex: /\/\*\s*(?:SILENOS|FILENAME)\s*[:\s]*\s*(.*?)\s*\*\//i,
+    
     jsPatterns: [
         /function\s+\w+\s*\(/,
         /(const|let|var)\s+\w+\s*=\s*/,
@@ -11,16 +13,24 @@ const JavascriptPasteHandler = {
         /import\s+.*?from\s+['"]/,
         /export\s+(default|const|class|function)/,
         /document\.querySelector/,
-        /window\.addEventListener/
+        /window\.addEventListener/,
+        // [NUEVO] Patrones para objetos globales y métodos
+        /window\.\w+(\.\w+)*\s*=/,  
+        /\w+\s*:\s*function/
     ],
     keywords: ['return', 'async', 'await', 'if', 'else', 'for', 'while', 'switch', 'case', 'try', 'catch'],
 
     canHandleText(text) {
         if (!text || typeof text !== 'string') return false;
         
+        const cleanText = text.trim();
+
+        // [NUEVO] Seguridad: Si parece explícitamente HTML raíz, lo ignoramos para que lo coja el HtmlHandler
+        if (/^<!DOCTYPE/i.test(cleanText) || /^<html/i.test(cleanText)) return false;
+
+        // 1. Chequeo de Cabecera
         if (this.headerRegex.test(text)) return true;
 
-        const cleanText = text.trim();
         // IGNORAR JSON (si empieza y termina con llaves/corchetes, dejalo al JSON Handler)
         if ((cleanText.startsWith('{') && cleanText.endsWith('}')) || 
             (cleanText.startsWith('[') && cleanText.endsWith(']'))) {
@@ -28,9 +38,11 @@ const JavascriptPasteHandler = {
         }
         if (cleanText.length < 10) return false;
 
+        // 2. Chequeo de Patrones
         const hasPattern = this.jsPatterns.some(regex => regex.test(cleanText));
         if (hasPattern) return true;
 
+        // 3. Chequeo de Keywords
         let keywordCount = 0;
         this.keywords.forEach(kw => {
             if (new RegExp(`\\b${kw}\\b`).test(cleanText)) keywordCount++;
@@ -41,12 +53,23 @@ const JavascriptPasteHandler = {
     },
 
     _guessFileName(text) {
+        // Intentar sacar nombre de cabecera primero (por si acaso se llama desde fuera)
+        const match = text.match(this.headerRegex);
+        if (match && match[1]) {
+            const parts = match[1].trim().split('/');
+            return parts[parts.length - 1];
+        }
+
         const funcMatch = text.match(/function\s+(\w+)/);
         if (funcMatch) return `${funcMatch[1]}.js`;
         const classMatch = text.match(/class\s+(\w+)/);
         if (classMatch) return `${classMatch[1]}.js`;
-        const constMatch = text.match(/const\s+(\w+)\s*=/);
+        const constMatch = text.match(/(?:const|let|var)\s+(\w+)\s*=/);
         if (constMatch) return `${constMatch[1]}.js`;
+        // [NUEVO] Detectar asignación a window
+        const windowMatch = text.match(/window\.(\w+)\s*=/);
+        if (windowMatch) return `${windowMatch[1]}.js`;
+
         return `script-${Date.now()}.js`;
     },
 
@@ -54,6 +77,7 @@ const JavascriptPasteHandler = {
         console.log("📜 JavascriptHandler: Creando archivo JS...");
 
         let fileName = "script.js";
+        // Re-verificar cabecera para el nombre final
         const match = text.match(this.headerRegex);
         if (match && match[1]) {
             const parts = match[1].trim().split('/');
@@ -103,5 +127,6 @@ const JavascriptPasteHandler = {
 };
 
 if (typeof ClipboardProcessor !== 'undefined') {
-    ClipboardProcessor.registerHandler(JavascriptPasteHandler, 10);
+    // [IMPORTANTE] Prioridad subida a 25 para ganar al HTML (20)
+    ClipboardProcessor.registerHandler(JavascriptPasteHandler, 25);
 }

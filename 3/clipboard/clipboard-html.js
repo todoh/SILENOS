@@ -20,8 +20,11 @@ const HtmlPasteHandler = {
         const cleanText = text.trim();
 
         // [NUEVO] Si empieza por estructura JSON, NO es un HTML raíz.
-        // Esto evita que robe los backups del sistema.
         if (cleanText.startsWith('{') || cleanText.startsWith('[')) return false;
+
+        // [MEJORA] Si empieza por comentario de código (/* o //), NO es HTML raíz.
+        // Esto evita robar archivos JS que contienen strings de HTML dentro.
+        if (cleanText.startsWith('/*') || cleanText.startsWith('//')) return false;
 
         if (cleanText.startsWith('<') && cleanText.endsWith('>')) {
             if (cleanText.includes('</') || cleanText.includes('/>')) return true;
@@ -74,7 +77,6 @@ const HtmlPasteHandler = {
 
             // --- CORRECCIÓN CLAVE ---
             // Marcamos el ID como "sucio" para que el ciclo de guardado (IndexedDB) lo detecte.
-            // Esto es lo mismo que hace 'updateItem' internamente cuando renombras.
             if (typeof FileSystem._markDirty === 'function') {
                 FileSystem._markDirty(newId);
             }
