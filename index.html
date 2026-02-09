@@ -3,276 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SILENOS | Next Generation OS</title>
+    <title>S I L E N O S .3.</title>
+    <meta property="og:title" content="S I L E N O S">   
+    <meta property="og:description" content="S I L E N O S">   
+    <meta property="og:image" content="https://todoh.github.io/SILENOS/3/preview.jpg">   
+    <meta property="og:url" content="https://github.com/todoh/SILENOS/3">  
+    <meta property="og:type" content="website">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:type" content="image/jpeg">
+ 
+    <link rel="icon" type="image/png" href="logo.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --brand-red: #E63946;
-        }
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS3DRenderer.js"></script>
 
-        body {
-            background-color: #000;
-            color: #fff;
-            font-family: 'Inter', sans-serif;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-        }
-
-        /* Animación de Revelado de Texto */
-        .reveal-text {
-            display: inline-block;
-            overflow: hidden;
-            vertical-align: bottom;
-        }
-
-        .reveal-text span {
-            display: inline-block;
-            transform: translateY(100%);
-            animation: slideUp 1.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-        }
-
-        @keyframes slideUp {
-            to { transform: translateY(0); }
-        }
-
-        /* Efecto Glitch Sutil para el Logo */
-        .logo-container:hover .logo-main {
-            animation: glitch 0.3s cubic-bezier(.25,.46,.45,.94) both infinite;
-        }
-
-        @keyframes glitch {
-            0% { transform: translate(0); }
-            20% { transform: translate(-2px, 2px); }
-            40% { transform: translate(-2px, -2px); }
-            60% { transform: translate(2px, 2px); }
-            80% { transform: translate(2px, -2px); }
-            100% { transform: translate(0); }
-        }
-
-        /* Líneas de Escaneado (Overlay) */
-        .scanlines {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            background-size: 100% 2px, 3px 100%;
-            pointer-events: none;
-            z-index: 50;
-        }
-
-        /* Navegación con subrayado animado */
-        .nav-link {
-            position: relative;
-            padding-bottom: 4px;
-            transition: color 0.3s ease;
-        }
-        
-        .nav-link::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 0;
-            height: 1px;
-            background-color: var(--brand-red);
-            transition: width 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-        }
-
-        .nav-link:hover::after {
-            width: 100%;
-        }
-
-        .nav-link:hover {
-            color: var(--brand-red);
-        }
-
-        #canvas-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles2.css">
+    <link rel="stylesheet" href="code-editor/editor-styles.css">
+    <link rel="stylesheet" href="programmer-canvas.css">
 </head>
-<body class="flex flex-col justify-between items-center py-12 px-8">
+<body>
 
-    <div class="scanlines"></div>
-    <div id="canvas-container">
-        <canvas id="os-kernel-canvas"></canvas>
+    <div id="desktop-area" class="fixed inset-0 z-0 overflow-hidden bg-[#e0e5ec]"></div>
+
+    <div id="windows-container" class="absolute inset-0 pointer-events-none z-10"></div>
+
+    <div class="absolute bottom-0 left-1/2 -translate-x-1/2 px-6 h-16 flex items-center justify-center z-50 pointer-events-none">
+        <div class="h-20 px-6 rounded-[24px] flex items-center gap-4 pointer-events-auto transition-all duration-300">
+            <button id="launcher-btn" onclick="toggleLauncher()" 
+                    class="w-12 h-12 rounded-xl flex items-center justify-center neumorph-btn text-gray-600 hover:text-gray-700 transition-transform hover:scale-105 active:scale-95">
+                <i data-lucide="eye" class="w-6 h-6"></i>
+            </button>
+            <div class="w-[2px] h-8 bg-gray-300/50 rounded-full"></div>
+            <div id="dock-items" class="flex gap-4">
+                <span class="text-gray-400 text-sm font-medium italic empty-msg">...</span>
+            </div>
+        </div>
     </div>
+ 
+    <script src="koreh/koreh-funcionaciones.js"></script>
+    <script src="koreh/koreh-funcionaciones2.js"></script>
+    <script src="koreh/koreh-funcionaciones3.js"></script>
+    <script src="koreh/koreh-funcionaciones4.js"></script>
+    <script src="koreh/koreh-funcionaciones5.js"></script>
+    <script src="koreh/koreh-funcionaciones6.js"></script>
+    <script src="koreh/koreh-funcionaciones7.js"></script>
+    <script src="koreh/koreh-funcionaciones8.js"></script>
+    <script src="koreh/koreh-funcionaciones9.js"></script>
+    <script src="koreh/koreh-poly.synth.js"></script>
 
-    <!-- Header Status -->
-    <header class="w-full flex justify-between items-start z-10 opacity-40 text-[10px] tracking-[0.4em] uppercase">
-        <div class="reveal-text"><span style="animation-delay: 0.2s;">Core Status: Optimal</span></div>
-        <div class="reveal-text"><span style="animation-delay: 0.4s;">Location: 36.5297° N, 6.1921° W</span></div>
-    </header>
+    <script src="config.js"></script>
 
-    <!-- Main Content -->
-    <main class="relative z-10 text-center flex flex-col items-center">
-        <div class="logo-container cursor-default mb-4">
-            <h1 class="logo-main text-6xl md:text-8xl font-thin tracking-[0.3em] uppercase transition-all duration-700">
-                Silen<span class="text-[#E63946] font-bold">os</span>
-            </h1>
-        </div>
-        
-        <p class="tagline text-xs md:text-sm tracking-[0.8em] uppercase text-gray-500 mt-6">
-            <span class="reveal-text"><span style="animation-delay: 0.8s;">Redefiniendo el flujo binario</span></span>
-        </p>
+    <script src="archivos/fs-constants.js"></script>
+    <script src="archivos/type-css.js"></script>
+    <script src="archivos/type-text.js"></script>
+    <script src="archivos/type-folder.js"></script>
+    <script src="archivos/type-image.js"></script>
+    <script src="archivos/type-js.js"></script>
+    <script src="archivos/type-json.js"></script>
+    <script src="archivos/type-html.js"></script>
+    <script src="archivos/type-data.js"></script>
+    <script src="archivos/type-book.js"></script>
+    <script src="archivos/type-gamebook.js"></script>
+    <script src="archivos/type-narrative.js"></script>
+    <script src="archivos/type-program.js"></script>
 
-        <nav class="mt-16 flex gap-12 md:gap-20 text-[10px] tracking-[0.3em] uppercase z-20">
-            <a href="https://www.silenos.es/3/" class="nav-link"><span class="reveal-text"><span style="animation-delay: 1.0s;">Entrar</span></span></a>
-            <a href="https://www.silenos.es/cartas/" class="nav-link"><span class="reveal-text"><span style="animation-delay: 1.0s;">Cartas</span></span></a>
-            <a href="#" class="nav-link"><span class="reveal-text"><span style="animation-delay: 1.2s;">Docs</span></span></a>
-        </nav>
-    </main>
+    <script src="filesystem.js"></script> 
+    <script src="desktop-organizer.js"></script>
+    <script src="import-core.js"></script>
+    <script src="import-manager.js"></script>
+    <script src="import-ui.js"></script>
 
-    <!-- Footer Stats -->
-    <footer class="w-full flex flex-col md:flex-row justify-between items-center z-10 gap-4 opacity-50">
-        <div class="text-[9px] tracking-[0.2em] uppercase">
-            Silenos OS v2.0.4 - Build 0x8FF2
-        </div>
-        <div class="flex gap-8 text-[9px] tracking-[0.2em] uppercase">
-            <span>Latency: <span id="ping">14</span>ms</span>
-            <span>Uptime: <span id="uptime">00:00:00</span></span>
-        </div>
-    </footer>
+    <script src="download-manager.js"></script>
 
-    <script>
-        // Función del Canvas - Núcleo Dinámico
-        window.onload = function() {
-            const canvas = document.getElementById('os-kernel-canvas');
-            const ctx = canvas.getContext('2d');
-            let particles = [];
-            const particleCount = 120;
-            const mouse = { x: null, y: null, radius: 150 };
+    <script src="clipboard/clipboard-manager.js"></script>
+    <script src="clipboard/clipboard-processor.js"></script>
+    <script src="clipboard/clipboard-color.js"></script>
+    <script src="clipboard/clipboard-image.js"></script>
+    <script src="clipboard/clipboard-internal.js"></script>
+    <script src="clipboard/clipboard-link.js"></script>
+    <script src="clipboard/clipboard-text.js"></script>
+    <script src="clipboard/clipboard-youtube.js"></script>
+    <script src="clipboard/clipboard-javascript.js"></script>
+    <script src="clipboard/clipboard-html.js"></script>
+    <script src="clipboard/clipboard-css.js"></script>
+    <script src="clipboard/clipboard-json.js"></script>
 
-            window.addEventListener('mousemove', (e) => {
-                mouse.x = e.clientX;
-                mouse.y = e.clientY;
-            });
+    <script src="context-menu.js"></script>
 
-            function resize() {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-            }
+    <script src="ai-service.js"></script> 
+    <script src="ai-worker.js"></script>
 
-            class Particle {
-                constructor() {
-                    this.x = Math.random() * canvas.width;
-                    this.y = Math.random() * canvas.height;
-                    this.size = Math.random() * 1.5 + 0.5;
-                    this.baseX = this.x;
-                    this.baseY = this.y;
-                    this.density = (Math.random() * 30) + 1;
-                    this.color = Math.random() > 0.95 ? '#E63946' : '#333';
-                }
+    <script src="programador/prog-definitions.js"></script>
+    <script src="programador/prog-ui-manager.js"></script>
+    <script src="programador/prog-connection-system.js"></script>
+    <script src="programador/prog-runtime.js"></script>
+    <script src="programador/programmer-graph.js"></script>  
+    <script src="programador/programmer-manager.js"></script>
+    
+    <script src="window/window-silenos.js"></script>
+    <script src="narrative-manager.js"></script>
+    <script src="book-manager.js"></script>
+    <script src="gamebook/gb-ui.js"></script>
+    <script src="gamebook/gb-export-book.js"></script>
+    <script src="gamebook/gb-export-game.js"></script>
+    <script src="gamebook/gb-logic.js"></script>
+    <script src="gamebook-manager.js"></script>
+    <script src="data-viewer.js"></script>
 
-                draw() {
-                    ctx.fillStyle = this.color;
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                    ctx.closePath();
-                    ctx.fill();
-                }
+    <script src="three-core.js"></script>
+    <script src="three-input.js"></script>
+    <script src="three-entities.js"></script>
 
-                update() {
-                    let dx = mouse.x - this.x;
-                    let dy = mouse.y - this.y;
-                    let distance = Math.sqrt(dx * dx + dy * dy);
-                    let forceDirectionX = dx / distance;
-                    let forceDirectionY = dy / distance;
-                    let maxDistance = mouse.radius;
-                    let force = (maxDistance - distance) / maxDistance;
-                    let directionX = forceDirectionX * force * this.density;
-                    let directionY = forceDirectionY * force * this.density;
+    <script src="code-editor/code-editor-manager.js"></script>
 
-                    if (distance < mouse.radius) {
-                        this.x -= directionX;
-                        this.y -= directionY;
-                    } else {
-                        if (this.x !== this.baseX) {
-                            let dxBase = this.x - this.baseX;
-                            this.x -= dxBase / 15;
-                        }
-                        if (this.y !== this.baseY) {
-                            let dyBase = this.y - this.baseY;
-                            this.y -= dyBase / 15;
-                        }
-                    }
-                }
-            }
+    <script src="window-core.js"></script>
+    <script src="window/window-launchers.js"></script>
 
-            function init() {
-                particles = [];
-                for (let i = 0; i < particleCount; i++) {
-                    particles.push(new Particle());
-                }
-            }
+    <script src="window/window-book.js"></script>
+    <script src="window/window-3d-viewer.js"></script>
+    <script src="window/window-code-editor.js"></script>
+    <script src="window/window-folder.js"></script>
+    <script src="window/window-terminal.js"></script>
+    <script src="window/window-image.js"></script>
+    <script src="window/window-narrative.js"></script>
+    <script src="window/window-programmer.js"></script>
+    <script src="window/window-programrunner.js"></script>
 
-            function connect() {
-                for (let a = 0; a < particles.length; a++) {
-                    for (let b = a; b < particles.length; b++) {
-                        let dx = particles[a].x - particles[b].x;
-                        let dy = particles[a].y - particles[b].y;
-                        let distance = Math.sqrt(dx * dx + dy * dy);
+    <script src="window-manager.js"></script>
+    <script src="eye-pro-launcher.js"></script>
 
-                        if (distance < 100) {
-                            let opacity = 1 - (distance / 100);
-                            ctx.strokeStyle = `rgba(150, 150, 150, ${opacity * 0.15})`;
-                            ctx.lineWidth = 0.5;
-                            ctx.beginPath();
-                            ctx.moveTo(particles[a].x, particles[a].y);
-                            ctx.lineTo(particles[b].x, particles[b].y);
-                            ctx.stroke();
-                        }
-                    }
-                }
-            }
-
-            function animate() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                for (let i = 0; i < particles.length; i++) {
-                    particles[i].update();
-                    particles[i].draw();
-                }
-                connect();
-                requestAnimationFrame(animate);
-            }
-
-            // Datos dinámicos simulados
-            function updateStats() {
-                const ping = document.getElementById('ping');
-                const uptime = document.getElementById('uptime');
-                let startTime = Date.now();
-
-                setInterval(() => {
-                    if (ping) ping.innerText = Math.floor(Math.random() * 5) + 12;
-                    
-                    if (uptime) {
-                        let diff = Date.now() - startTime;
-                        let h = Math.floor(diff / 3600000).toString().padStart(2, '0');
-                        let m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
-                        let s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-                        uptime.innerText = `${h}:${m}:${s}`;
-                    }
-                }, 1000);
-            }
-
-            window.addEventListener('resize', () => {
-                resize();
-                init();
-            });
-
-            resize();
-            init();
-            animate();
-            updateStats();
-        };
-    </script>
+    <script src="dock-manager.js"></script>
+    <script src="selection-manager.js"></script>
+    <script src="drag-drop.js"></script> 
+    <script src="config/scripts.js"></script>
+    <script src="boot.js"></script>
 </body>
-
 </html>

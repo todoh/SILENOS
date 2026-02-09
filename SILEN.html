@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SISTEMA CENTRAL SILENOS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+        body { background-color: #0f172a; font-family: 'Space Grotesk', sans-serif; color: #e2e8f0; height: 100vh; display: flex; overflow: hidden; }
+        
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .neon-text { text-shadow: 0 0 10px rgba(99, 102, 241, 0.5); }
+        .input-dark { background: #1e293b; border: 1px solid #334155; color: #fff; transition: all 0.3s; }
+        .input-dark:focus { border-color: #6366f1; outline: none; box-shadow: 0 0 15px rgba(99, 102, 241, 0.2); }
+        
+        /* Animaciones */
+        .pulse-green { animation: pulseG 2s infinite; }
+        @keyframes pulseG { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
+        
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        
+        /* Editor de código básico */
+        .code-editor {
+            font-family: 'Fira Code', 'Consolas', monospace;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.5;
+            tab-size: 4;
+        }
+    </style>
+</head>
+<body class="flex w-full h-full">
+
+    <aside class="w-64 bg-slate-900/50 border-r border-slate-700/50 flex flex-col p-4">
+        <div class="flex items-center gap-3 mb-8 px-2">
+            <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                <i class="fa-solid fa-network-wired text-white text-sm"></i>
+            </div>
+            <h1 class="font-bold tracking-tight text-white neon-text text-lg">SILENOS</h1>
+        </div>
+
+        <nav class="space-y-2 flex-1">
+            <button data-target="general" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left group">
+                <i class="fa-solid fa-fingerprint w-5 text-center"></i>
+                <span class="font-medium text-sm">Conexión</span>
+            </button>
+            
+            <button data-target="models" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left group text-slate-400 hover:bg-slate-800">
+                <i class="fa-solid fa-sliders w-5 text-center"></i>
+                <span class="font-medium text-sm">Modelos IA</span>
+            </button>
+
+            <button data-target="scripts" onclick="window.ScriptManager && window.ScriptManager.init()" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left group text-slate-400 hover:bg-slate-800">
+                <i class="fa-solid fa-code w-5 text-center"></i>
+                <span class="font-medium text-sm">Scripts Inicio</span>
+            </button>
+
+            <button data-target="storage" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left group text-slate-400 hover:bg-slate-800">
+                <i class="fa-solid fa-database w-5 text-center"></i>
+                <span class="font-medium text-sm">Almacenamiento</span>
+            </button>
+            
+            <button data-target="system" class="nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left group text-slate-400 hover:bg-slate-800">
+                <i class="fa-solid fa-microchip w-5 text-center"></i>
+                <span class="font-medium text-sm">Sistema</span>
+            </button>
+        </nav>
+
+        <div class="mt-auto p-4 bg-slate-800/50 rounded-xl border border-slate-700/50">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-400">ESTADO RED</span>
+                <div id="status-indicator" class="w-2 h-2 rounded-full bg-red-500 transition-colors duration-500"></div>
+            </div>
+            <div id="status-text" class="text-xs font-mono text-slate-400">OFFLINE</div>
+        </div>
+    </aside>
+
+    <main class="flex-1 p-8 overflow-y-auto relative bg-gradient-to-br from-[#0f172a] to-[#1e293b]">
+        
+        <section id="section-general" class="config-section max-w-4xl mx-auto animate-fade-in">
+            <header class="mb-8">
+                <h2 class="text-3xl font-bold text-white mb-2">Enlace Neural</h2>
+                <p class="text-slate-400">Gestiona la conexión con el proveedor de inteligencia artificial Pollinations.</p>
+            </header>
+
+            <div class="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center min-h-[400px] relative overflow-hidden">
+                <div class="absolute inset-0 bg-grid-slate-800/[0.1] bg-[size:20px_20px]"></div>
+                <div class="absolute top-0 right-0 p-8 opacity-5"><i class="fa-solid fa-fingerprint text-9xl"></i></div>
+                
+                <div class="relative z-10 text-center space-y-8 w-full max-w-md">
+                    <div id="auth-login-section">
+                        <div class="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl border border-slate-700">
+                            <i class="fa-solid fa-plug text-3xl text-slate-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2">Sistema Desconectado</h3>
+                        <p class="text-slate-400 text-sm mb-8">Conecta tu cuenta para habilitar la generación ilimitada y modelos avanzados.</p>
+                        <button onclick="window.AuthManager.loginPollinations()" class="group relative w-full py-4 bg-white text-slate-900 font-bold rounded-xl shadow-xl hover:scale-105 transition-all overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                            <span class="relative flex items-center justify-center gap-3">
+                                <img src="https://pollinations.ai/favicon.ico" class="w-5 h-5"> CONECTAR POLLINATIONS
+                            </span>
+                        </button>
+                    </div>
+
+                    <div id="auth-user-section" class="hidden flex-col items-center">
+                        <div class="w-24 h-24 rounded-full bg-green-500/10 flex items-center justify-center mb-4 text-green-400 border border-green-500/30 pulse-green mx-auto">
+                            <i class="fa-solid fa-check text-4xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-1">Enlace Activo</h3>
+                        <p class="text-sm text-green-400 font-mono mb-6">Conexión estable establecida</p>
+                        <div class="bg-slate-900/80 p-4 rounded-lg border border-slate-700 w-full mb-6">
+                            <label class="text-[10px] uppercase text-slate-500 font-bold block mb-2 text-left">API KEY HASH</label>
+                            <div class="flex justify-between items-center">
+                                <code id="api-key-display" class="text-slate-300 font-mono text-sm">...</code>
+                                <i class="fa-solid fa-lock text-slate-600"></i>
+                            </div>
+                        </div>
+                        <button onclick="window.AuthManager.logoutPollinations()" class="text-sm text-red-400 hover:text-red-300 border border-red-900/50 bg-red-900/10 px-6 py-2 rounded-lg hover:bg-red-900/30 transition-all w-full">
+                            DESCONECTAR SISTEMA
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="section-scripts" class="config-section max-w-6xl mx-auto hidden h-full">
+            <header class="mb-6 flex justify-between items-end">
+                <div>
+                    <h2 class="text-3xl font-bold text-white mb-2">Scripts de Inicio</h2>
+                    <p class="text-slate-400">Ejecuta código JavaScript personalizado al arrancar Silenos. Ordena la prioridad de carga.</p>
+                </div>
+            </header>
+
+            <div class="grid grid-cols-12 gap-6 h-[600px]">
+                
+                <div class="col-span-4 glass-panel p-4 rounded-2xl flex flex-col">
+                    <div class="flex justify-between items-center mb-4 pb-4 border-b border-slate-700">
+                        <h3 class="font-bold text-white">Mis Scripts</h3>
+                        <button id="btn-add-script" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1 rounded text-sm transition-colors">
+                            <i class="fa-solid fa-plus"></i> Nuevo
+                        </button>
+                    </div>
+                    <div id="scripts-list" class="flex-1 overflow-y-auto pr-2 space-y-2">
+                        <div class="text-center text-slate-500 mt-10">Cargando...</div>
+                    </div>
+                </div>
+
+                <div id="editor-panel" class="col-span-8 glass-panel p-0 rounded-2xl flex flex-col overflow-hidden opacity-50 pointer-events-none transition-opacity">
+                    <div class="bg-slate-900/80 p-3 border-b border-slate-700 flex justify-between items-center">
+                        <input id="script-name-input" type="text" placeholder="Nombre del Script" class="bg-transparent text-white font-bold border-none focus:outline-none w-1/2 text-lg placeholder-slate-600">
+                        <button id="btn-save-script-content" class="text-indigo-400 hover:text-white text-xs font-bold border border-indigo-500/30 hover:bg-indigo-600/20 px-3 py-1.5 rounded transition-all">
+                            <i class="fa-solid fa-save"></i> GUARDAR
+                        </button>
+                    </div>
+                    <textarea id="script-editor-area" class="flex-1 w-full h-full p-4 code-editor resize-none focus:outline-none" spellcheck="false" placeholder="// Escribe tu código JavaScript aquí..."></textarea>
+                </div>
+
+            </div>
+        </section>
+
+        <section id="section-models" class="config-section max-w-4xl mx-auto hidden">
+             <header class="mb-8 flex justify-between items-end">
+                <div>
+                    <h2 class="text-3xl font-bold text-white mb-2">Motores de IA</h2>
+                    <p class="text-slate-400">Configura qué modelos se utilizan para cada tarea del sistema.</p>
+                </div>
+                <button id="btn-save-models" onclick="window.ModelManager.saveModelSettings()" class="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/50 px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-save"></i> GUARDAR CAMBIOS
+                </button>
+            </header>
+
+           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="glass-panel p-6 rounded-2xl border-t-4 border-t-indigo-500">
+        <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+            <i class="fa-solid fa-comment-dots text-indigo-400"></i> Generación de Texto
+        </h3>
+        <div class="space-y-6">
+            <div class="group">
+                <label class="text-xs uppercase text-slate-500 font-bold mb-2 block group-hover:text-indigo-400 transition-colors">Modo Rápido (Chat/NPCs)</label>
+                <select id="text-fast" class="w-full input-dark p-3 rounded-xl text-sm">
+                    <option value="nova-fast">Amazon Nova Micro</option>
+                    <option value="qwen-coder">Qwen3 Coder 30B</option>
+                    <option value="gemini-fast">Google Gemini 2.5 Flash Lite</option>
+                    <option value="mistral">Mistral Small 3.2 24B</option>
+                    <option value="openai-fast">OpenAI GPT-5 Nano</option>
+                    <option value="openai">OpenAI GPT-5 Mini</option>
+                    <option value="deepseek">DeepSeek V3.2</option>
+                    <option value="perplexity-fast">Perplexity Sonar</option>
+                    <option value="gemini-search">Google Gemini 2.5 Flash Lite (Search)</option>
+                    <option value="minimax">MiniMax M2.1</option>
+                    <option value="perplexity-reasoning">Perplexity Sonar Reasoning</option>
+                    <option value="openai-audio">OpenAI GPT-4o Mini Audio</option>
+                    <option value="chickytutor">ChickyTutor AI Language Tutor</option>
+                    <option value="openai-large">OpenAI GPT-5.2</option>
+                    <option value="glm">Z.ai GLM-4.7</option>
+                    <option value="kimi">Moonshot Kimi K2.5</option>
+                    <option value="midijourney">MIDIjourney</option>
+                    <option value="claude-fast">Anthropic Claude Haiku 4.5</option>
+                </select>
+            </div>
+            <div class="group">
+                <label class="text-xs uppercase text-slate-500 font-bold mb-2 block group-hover:text-purple-400 transition-colors">Modo Lento (Libros/Lógica)</label>
+                <select id="text-slow" class="w-full input-dark p-3 rounded-xl text-sm border-l-2 border-l-purple-500">
+                    <option value="openai-large">OpenAI GPT-5.2</option>
+                    <option value="qwen-coder">Qwen3 Coder 30B</option>
+                    <option value="nova-fast">Amazon Nova Micro</option>
+                    <option value="gemini-fast">Google Gemini 2.5 Flash Lite</option>
+                    <option value="mistral">Mistral Small 3.2 24B</option>
+                    <option value="openai-fast">OpenAI GPT-5 Nano</option>
+                    <option value="openai">OpenAI GPT-5 Mini</option>
+                    <option value="deepseek">DeepSeek V3.2</option>
+                    <option value="perplexity-fast">Perplexity Sonar</option>
+                    <option value="gemini-search">Google Gemini 2.5 Flash Lite (Search)</option>
+                    <option value="minimax">MiniMax M2.1</option>
+                    <option value="perplexity-reasoning">Perplexity Sonar Reasoning</option>
+                    <option value="openai-audio">OpenAI GPT-4o Mini Audio</option>
+                    <option value="chickytutor">ChickyTutor AI Language Tutor</option>
+                    <option value="glm">Z.ai GLM-4.7</option>
+                    <option value="kimi">Moonshot Kimi K2.5</option>
+                    <option value="midijourney">MIDIjourney</option>
+                    <option value="claude-fast">Anthropic Claude Haiku 4.5</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="glass-panel p-6 rounded-2xl border-t-4 border-t-pink-500">
+        <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+            <i class="fa-solid fa-image text-pink-400"></i> Motor Visual
+        </h3>
+        <div class="space-y-6">
+            <div class="group">
+                <label class="text-xs uppercase text-slate-500 font-bold mb-2 block group-hover:text-pink-400 transition-colors">Modo Rápido (Preview)</label>
+                <select id="img-fast" class="w-full input-dark p-3 rounded-xl text-sm">
+                    <option value="flux">Flux Schnell</option>
+                    <option value="zimage">Z-Image Turbo</option>
+                    <option value="imagen-4">Imagen 4 (api.airforce)</option>
+                    <option value="flux-2-dev">FLUX.2 Dev (api.airforce)</option>
+                    <option value="klein">FLUX.2 Klein 4B</option>
+                    <option value="klein-large">FLUX.2 Klein 9B</option>
+                    <option value="gptimage">GPT Image 1 Mini</option>
+                </select>
+            </div>
+            <div class="group">
+                <label class="text-xs uppercase text-slate-500 font-bold mb-2 block group-hover:text-rose-400 transition-colors">Modo Lento (Render Final)</label>
+                <select id="img-slow" class="w-full input-dark p-3 rounded-xl text-sm border-l-2 border-l-pink-500">
+                    <option value="flux">Flux Schnell</option>
+                    <option value="zimage">Z-Image Turbo</option>
+                    <option value="imagen-4">Imagen 4 (api.airforce)</option>
+                    <option value="flux-2-dev">FLUX.2 Dev (api.airforce)</option>
+                    <option value="klein">FLUX.2 Klein 4B</option>
+                    <option value="klein-large">FLUX.2 Klein 9B</option>
+                    <option value="gptimage">GPT Image 1 Mini</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+        </section>
+
+        <section id="section-storage" class="config-section max-w-4xl mx-auto hidden">
+            <header class="mb-8">
+                <h2 class="text-3xl font-bold text-white mb-2">Almacenamiento Local</h2>
+                <p class="text-slate-400">Administra el espacio utilizado por el sistema Silenos en tu navegador.</p>
+            </header>
+
+            <div class="grid grid-cols-1 gap-6">
+                
+                <div class="glass-panel p-8 rounded-2xl">
+                    <div class="flex justify-between items-end mb-4">
+                        <h3 class="text-lg font-bold text-white"><i class="fa-solid fa-hard-drive text-indigo-400 mr-2"></i> Estado de Memoria</h3>
+                        <span id="storage-text" class="text-2xl font-mono font-bold text-indigo-400">0% USADO</span>
+                    </div>
+                    
+                    <div class="w-full h-4 bg-slate-800 rounded-full overflow-hidden border border-slate-700 mb-4">
+                        <div id="storage-bar" class="h-full bg-indigo-500 transition-all duration-1000 ease-out" style="width: 0%"></div>
+                    </div>
+                    
+                    <p id="storage-details" class="text-sm text-slate-500 font-mono">Calculando espacio disponible...</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <div class="glass-panel p-6 rounded-2xl border-l-4 border-l-emerald-500 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-lg font-bold text-white mb-2">Copia de Seguridad</h3>
+                            <p class="text-sm text-slate-400 mb-6">Descarga un archivo JSON con todos tus archivos, libros y configuraciones actuales.</p>
+                        </div>
+                        <button id="btn-backup-download" class="w-full py-3 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/50 rounded-xl font-bold transition-all flex items-center justify-center gap-2 group">
+                            <i class="fa-solid fa-download group-hover:translate-y-1 transition-transform"></i> DESCARGAR BACKUP
+                        </button>
+                    </div>
+
+                    <div class="glass-panel p-6 rounded-2xl border-l-4 border-l-red-500 flex flex-col justify-between relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 text-red-500/10 text-9xl"><i class="fa-solid fa-skull-crossbones"></i></div>
+                        <div class="relative z-10">
+                            <h3 class="text-lg font-bold text-white mb-2 text-red-400">Formateo Total</h3>
+                            <p class="text-sm text-slate-400 mb-6">Elimina permanentemente todos los datos y restablece Silenos al estado de fábrica.</p>
+                        </div>
+                        <button id="btn-wipe-data" class="relative z-10 w-full py-3 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/50 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-trash-can"></i> FORMATEAR SISTEMA
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <section id="section-system" class="config-section max-w-4xl mx-auto hidden">
+            <header class="mb-8">
+                <h2 class="text-3xl font-bold text-white mb-2">Sistema</h2>
+                <p class="text-slate-400">Información del entorno y diagnósticos.</p>
+            </header>
+            
+            <div class="glass-panel p-8 rounded-2xl text-center">
+                <i class="fa-solid fa-person-digging text-4xl text-slate-600 mb-4"></i>
+                <h3 class="text-xl font-bold text-slate-300">En Construcción</h3>
+                <p class="text-slate-500 mt-2">Esta sección estará disponible en futuras actualizaciones de Silenos.</p>
+            </div>
+        </section>
+
+    </main>
+
+    <script src="config/core.js"></script>
+    <script src="config/ui.js"></script>
+    <script src="config/auth.js"></script>
+    <script src="config/models.js"></script>
+    <script src="config/storage.js"></script>
+    <script src="config/scripts.js"></script> </body>
+</html>
