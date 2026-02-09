@@ -1,4 +1,4 @@
-/* SILENOS 3/window-manager.js */
+/* SILENOS 3/window-manager.js - Core System */
 
 const WindowManager = {
     windows: [],
@@ -6,77 +6,58 @@ const WindowManager = {
     zIndexCounter: 100,
 
     init() {
-        console.log("🪟 WindowManager: Iniciado");
+        console.log("🪟 WindowManager: Iniciado correctamente.");
         this.setupDesktopEvents();
     },
 
     setupDesktopEvents() {
-        document.getElementById('desktop')?.addEventListener('dblclick', (e) => {
-            const icon = e.target.closest('.desktop-icon');
-            if (icon) {
-                const fileId = icon.dataset.id;
-                this.openFile(fileId);
-            }
-        });
+        const desktop = document.getElementById('desktop');
+        if (desktop) {
+            desktop.addEventListener('dblclick', (e) => {
+                const icon = e.target.closest('.desktop-icon');
+                if (icon) {
+                    const fileId = icon.dataset.id;
+                    this.openFile(fileId);
+                }
+            });
+        }
     },
 
     openFile(fileId) {
-        if (typeof FileSystem === 'undefined') return;
+        if (typeof FileSystem === 'undefined') {
+            console.error("FileSystem no está definido");
+            return;
+        }
         
-        // CORRECCIÓN: Usar getItem, que es el método nativo de FileSystem
         const file = FileSystem.getItem(fileId);
         if (!file) return console.error("Archivo no encontrado:", fileId);
 
-        console.log(`📂 Abriendo archivo: ${file.title} (Tipo: ${file.type}, Subtipo: ${file.subtype})`);
+        console.log(`📂 Abriendo archivo: ${file.title}`);
 
-        // ---------------------------------------------------------
-        // 🚀 INTERCEPTOR DE MODELOS 3D 
-        // ---------------------------------------------------------
-        // Detecta si es un GLB/GLTF por extensión, subtipo o mimeType
+        // Interceptor 3D
         const isGlb = (file.subtype === 'glb') || 
                       (file.title && /\.(glb|gltf)$/i.test(file.title)) ||
                       (file.mimeType && file.mimeType.includes('model/'));
         
         if (isGlb) {
-            console.log("🚀 Detectado modelo 3D -> Abriendo Visor GLB");
             this.createWindow('3d-viewer', { fileId: fileId, title: file.title });
             return; 
         }
 
-        // Ruteo Estándar
         switch (file.type) {
-            case 'folder':
-                this.createWindow('folder', { folderId: fileId });
-                break;
-                
+            case 'folder': this.createWindow('folder', { folderId: fileId }); break;
             case 'js':
             case 'javascript':
             case 'html':
             case 'css':
             case 'json': 
             case 'text':
-            case 'txt':
-                this.createWindow('code-editor', { fileId: fileId });
-                break;
-
-            case 'image':
-                this.createWindow('image', { fileId: fileId });
-                break;
-
-            case 'book':
-                this.createWindow('book', { bookId: fileId });
-                break;
-            
-            case 'gamebook':
-                this.createWindow('gamebook', { gamebookId: fileId });
-                break;
-
-            case 'program':
-                this.createWindow('programrunner', { programId: fileId });
-                break;
-
+            case 'txt': this.createWindow('code-editor', { fileId: fileId }); break;
+            case 'image': this.createWindow('image', { fileId: fileId }); break;
+            case 'book': this.createWindow('book', { bookId: fileId }); break;
+            case 'gamebook': this.createWindow('gamebook', { gamebookId: fileId }); break;
+            case 'program': this.createWindow('programrunner', { programId: fileId }); break;
             default:
-                console.warn("Tipo desconocido, intentando editor:", file.type);
                 this.createWindow('code-editor', { fileId: fileId });
                 break;
         }
@@ -86,14 +67,22 @@ const WindowManager = {
         const appConfig = (typeof APPS !== 'undefined') ? APPS.find(a => a.id === type) : null;
         
         const id = 'win-' + Date.now();
+        
+        // Coordenadas: Si vienen en params (x,y) se usan, si no, cascada automática
+        let finalX = params.x;
+        let finalY = params.y;
+
+        if (finalX === undefined) finalX = 100 + (this.windows.length * 20);
+        if (finalY === undefined) finalY = 50 + (this.windows.length * 20);
+
         const winData = {
             id: id,
             type: type, 
-            title: params.title || appConfig?.title || 'Ventana',
-            x: 100 + (this.windows.length * 20),
-            y: 50 + (this.windows.length * 20),
-            width: appConfig?.width || 600,
-            height: appConfig?.height || 400,
+            title: params.title || appConfig?.title || (type === 'silenos' ? 'Configuración Silenos' : 'Ventana'),
+            x: finalX,
+            y: finalY,
+            width: params.width || appConfig?.width || 600,
+            height: params.height || appConfig?.height || 400,
             isMinimized: false,
             isMaximized: false,
             params: params,
@@ -115,32 +104,35 @@ const WindowManager = {
         winEl.style.top = `${winData.y}px`;
         winEl.style.zIndex = winData.zIndex;
 
-        const appConfig = (typeof APPS !== 'undefined') ? APPS.find(a => a.id === winData.type) : null;
-        const iconName = appConfig?.icon || 'app-window';
+        let iconName = winData.params?.icon || 'app-window';
+        if (winData.type === 'silenos') iconName = 'eye';
 
+        // Z-Index 50 en header para asegurar arrastre
         winEl.innerHTML = `
-            <div class="window-header bg-gray-800 px-3 py-2 flex justify-between items-center cursor-move select-none border-b border-gray-700" 
+            <div class="window-header bg-gray-800 px-3 py-2 flex justify-between items-center cursor-move select-none border-b border-gray-700 relative" 
+                 style="z-index: 50;"
                  onmousedown="WindowManager.startDrag('${winData.id}', event)">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 pointer-events-none">
                     <i data-lucide="${iconName}" class="w-4 h-4 text-blue-400"></i>
                     <span id="title-${winData.id}" class="text-sm font-medium text-gray-200">${winData.title}</span>
                 </div>
-                <div class="flex items-center gap-1">
+                <div class="flex items-center gap-1" style="pointer-events: auto;">
                     <button onclick="WindowManager.minimizeWindow('${winData.id}')" class="p-1 hover:bg-gray-700 rounded text-gray-400 hover:text-white"><i data-lucide="minus" class="w-3 h-3"></i></button>
                     <button onclick="WindowManager.maximizeWindow('${winData.id}')" class="p-1 hover:bg-gray-700 rounded text-gray-400 hover:text-white"><i data-lucide="square" class="w-3 h-3"></i></button>
                     <button onclick="WindowManager.closeWindow('${winData.id}')" class="p-1 hover:bg-red-900/50 rounded text-gray-400 hover:text-red-400"><i data-lucide="x" class="w-3 h-3"></i></button>
                 </div>
             </div>
-            <div class="content-area flex-1 bg-gray-950 overflow-hidden relative">
+            <div class="content-area flex-1 bg-gray-950 overflow-hidden relative" style="z-index: 1;">
                 <div class="flex items-center justify-center h-full text-gray-500">
-                    <span class="animate-pulse">Cargando aplicación...</span>
+                    <span class="animate-pulse">Cargando...</span>
                 </div>
             </div>
         `;
 
-        document.getElementById('windows-container').appendChild(winEl);
+        const container = document.getElementById('windows-container') || document.body;
+        container.appendChild(winEl);
         
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
 
         this.loadWindowContent(winData);
         this.bringToFront(winData.id);
@@ -148,44 +140,49 @@ const WindowManager = {
 
     loadWindowContent(winData) {
         setTimeout(() => {
-            switch (winData.type) {
-                case 'folder':
-                    if (typeof WindowFolder !== 'undefined') WindowFolder.render(winData.id, winData.params.folderId);
-                    break;
-                case 'code-editor':
-                    if (typeof WindowCodeEditor !== 'undefined') WindowCodeEditor.render(winData.id, winData.params.fileId);
-                    break;
-                case 'image':
-                    if (typeof WindowImage !== 'undefined') WindowImage.render(winData.id, winData.params.fileId);
-                    break;
-                case 'gamebook':
-                    if (typeof WindowGamebook !== 'undefined') WindowGamebook.render(winData.id, winData.params.gamebookId);
-                    break;
-                case 'book':
-                    if (typeof WindowBook !== 'undefined') WindowBook.render(winData.id, winData.params.bookId);
-                    break;
-                case 'programrunner':
-                    if (typeof WindowProgramRunner !== 'undefined') WindowProgramRunner.render(winData.id, winData.params.programId);
-                    break;
-                
-                // --- CARGA DEL VISOR 3D ---
-                case '3d-viewer':
-                    if (typeof Window3DViewer !== 'undefined') {
-                        Window3DViewer.render(winData.id, winData.params.fileId);
-                    } else {
-                        import('./window/window-3d-viewer.js').then(module => {
-                            window.Window3DViewer = module.default || module.Window3DViewer;
+            try {
+                switch (winData.type) {
+                    case 'folder':
+                        if (typeof WindowFolder !== 'undefined') WindowFolder.render(winData.id, winData.params.folderId);
+                        break;
+                    case 'code-editor':
+                        if (typeof WindowCodeEditor !== 'undefined') WindowCodeEditor.render(winData.id, winData.params.fileId);
+                        break;
+                    case 'image':
+                        if (typeof WindowImage !== 'undefined') WindowImage.render(winData.id, winData.params.fileId);
+                        break;
+                    case 'gamebook':
+                        if (typeof WindowGamebook !== 'undefined') WindowGamebook.render(winData.id, winData.params.gamebookId);
+                        break;
+                    case 'book':
+                        if (typeof WindowBook !== 'undefined') WindowBook.render(winData.id, winData.params.bookId);
+                        break;
+                    case 'programrunner':
+                        if (typeof WindowProgramRunner !== 'undefined') WindowProgramRunner.render(winData.id, winData.params.programId);
+                        break;
+                    case 'silenos':
+                        if (typeof WindowSilenos !== 'undefined') {
+                            WindowSilenos.render(winData.id);
+                        } else {
+                            const c = document.querySelector(`#window-${winData.id} .content-area`);
+                            if(c) c.innerHTML = `<div class="p-4 text-red-400">Error: WindowSilenos no cargado.</div>`;
+                        }
+                        break;
+                    case '3d-viewer':
+                        if (typeof Window3DViewer !== 'undefined') {
                             Window3DViewer.render(winData.id, winData.params.fileId);
-                        }).catch(e => {
-                            const container = document.querySelector(`#window-${winData.id} .content-area`);
-                            if(container) container.innerHTML = `<div class="p-4 text-red-400">Error: Window3DViewer no encontrado.</div>`;
-                        });
-                    }
-                    break;
-
-                default:
-                    const container = document.querySelector(`#window-${winData.id} .content-area`);
-                    if(container) container.innerHTML = `<div class="p-4 text-red-400">Aplicación ${winData.type} no instalada.</div>`;
+                        } else {
+                            // Intento de carga dinámica
+                            const c = document.querySelector(`#window-${winData.id} .content-area`);
+                            if(c) c.innerHTML = `<div class="p-4 text-yellow-500">Módulo 3D no encontrado.</div>`;
+                        }
+                        break;
+                    default:
+                        const defC = document.querySelector(`#window-${winData.id} .content-area`);
+                        if(defC) defC.innerHTML = `<div class="p-4 text-gray-400">App ${winData.type} genérica.</div>`;
+                }
+            } catch (err) {
+                console.error("Error cargando contenido de ventana:", err);
             }
         }, 50);
     },
@@ -216,7 +213,7 @@ const WindowManager = {
             win.isMaximized = false;
         } else {
             el.style.width = '100%';
-            el.style.height = 'calc(100% - 40px)'; // Menos header
+            el.style.height = 'calc(100% - 40px)'; // Dejar espacio para barra de tareas si hay
             el.style.left = '0';
             el.style.top = '0';
             win.isMaximized = true;
@@ -226,7 +223,8 @@ const WindowManager = {
     bringToFront(id) {
         const win = this.windows.find(w => w.id === id);
         if (win) {
-            win.zIndex = ++this.zIndexCounter;
+            this.zIndexCounter++;
+            win.zIndex = this.zIndexCounter;
             const el = document.getElementById(`window-${id}`);
             if (el) el.style.zIndex = win.zIndex;
             this.activeWindowId = id;
@@ -234,6 +232,7 @@ const WindowManager = {
     },
 
     startDrag(id, e) {
+        // Ignora botones de la barra
         if (e.target.closest('button')) return;
         
         this.bringToFront(id);
@@ -270,3 +269,7 @@ const WindowManager = {
         document.addEventListener('mouseup', onMouseUp);
     }
 };
+
+// EXPOSICIÓN GLOBAL INDISPENSABLE
+window.WindowManager = WindowManager;
+console.log("✅ WindowManager cargado y expuesto globalmente.");

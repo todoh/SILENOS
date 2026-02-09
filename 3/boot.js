@@ -39,6 +39,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 1. Inicializar el Sistema de Archivos
     await FileSystem.init();
 
+    // 1.5. Ejecutar Scripts de Usuario (INYECCIÓN NUEVA)
+    // Se ejecuta después de FS init por si los scripts necesitan acceder a datos
+    if (window.ScriptManager && typeof ScriptManager.runStartupScripts === 'function') {
+        ScriptManager.runStartupScripts();
+    }
+
     // 2. Sincronizar la caché de entidades
     if (window.ThreeEntities) {
         ThreeEntities.updateFileCache();

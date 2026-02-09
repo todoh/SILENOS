@@ -1,200 +1,135 @@
 // SILENOS 3/ai-service.js
-// --- SERVICIO DE COMUNICACIÓN CON IA (PROMPTS Y API + LOCAL LLM) ---
+// --- SERVICIO CENTRAL DE INTELIGENCIA (POLLINATIONS AI CORE) ---
 
-// 1. Definimos el servicio y lo anclamos EXPLÍCITAMENTE a window para que las apps/iframes lo vean.
 window.AIService = {
-    apiKeys: [],
-    currentKeyIndex: 0,
-    
-    // --- ESTADO LOCAL LLM (WebGPU) ---
-    localEngine: null,
-    useLocal: false,
-    modelId: "Llama-3.2-1B-Instruct-q4f16_1-MLC",
-    isModelLoaded: false,
+    // --- ESTADO Y CONFIGURACIÓN ---
+    state: {
+        apiKey: null,
+        isAuthenticated: false,
+        config: {
+            // Modelos de Texto
+            textModelFast: 'openai',     // Rápido y eficiente (GPT-4o-mini eq)
+            textModelSlow: 'qwen-coder', // Lento y profundo (Razonamiento/Código)
+            
+            // Modelos de Imagen
+            imageModelFast: 'flux',      // Generación estándar rápida
+            imageModelSlow: 'turbo'      // Alta fidelidad (o midjourney si disponible)
+        }
+    },
 
+    // --- INICIALIZACIÓN ---
     init() {
-        const savedKeys = localStorage.getItem('silenos_api_keys');
-        if (savedKeys) {
+        this.loadSettings();
+        console.log("🚀 AIService: Pollinations Core Iniciado", this.state.isAuthenticated ? "ONLINE" : "OFFLINE");
+        
+        // Exponer el servicio globalmente de forma segura
+        window.PollinationsCore = this;
+    },
+
+    loadSettings() {
+        // Cargar Key
+        const key = localStorage.getItem('pollinations_api_key');
+        if (key) {
+            this.state.apiKey = key;
+            this.state.isAuthenticated = true;
+        }
+
+        // Cargar Configuración de Modelos
+        const savedConfig = localStorage.getItem('silenos_ai_config');
+        if (savedConfig) {
             try {
-                this.apiKeys = JSON.parse(savedKeys);
-                console.log(`📡 AIService: ${this.apiKeys.length} llaves cargadas.`);
-            } catch (e) {
-                this.apiKeys = [];
-            }
+                this.state.config = { ...this.state.config, ...JSON.parse(savedConfig) };
+            } catch(e) { console.error("Error cargando config IA", e); }
         }
     },
 
-    setApiKeys(keysString) {
-        if (!keysString) return;
-        const newKeys = Array.isArray(keysString) 
-            ? keysString 
-            : keysString.split(',').map(k => k.trim()).filter(k => k);
-        
-        this.apiKeys = newKeys;
-        localStorage.setItem('silenos_api_keys', JSON.stringify(this.apiKeys));
-        console.log("✅ Memoria de API sincronizada:", this.apiKeys.length, "llaves.");
-    },
-
-    getApiKey() {
-        if (this.apiKeys.length === 0) return null;
-        this.currentKeyIndex = (this.currentKeyIndex + 1) % this.apiKeys.length;
-        return this.apiKeys[this.currentKeyIndex];
-    },
-
-    getAllKeys() {
-        return this.apiKeys.length > 0 ? this.apiKeys : [];
-    },
-
-    hasKeys() {
-        // Si usamos local, siempre "tenemos llaves" (el modelo)
-        if (this.useLocal && this.isModelLoaded) return true;
-        return this.apiKeys.length > 0;
-    },
-
-    // --- FUNCIONES LOCAL LLM ---
-
-    async initLocalModel(progressCallback) {
-        if (this.localEngine) {
-            this.isModelLoaded = true;
-            this.useLocal = true;
-            return true;
+    saveSettings(newConfig) {
+        if (newConfig) {
+            this.state.config = { ...this.state.config, ...newConfig };
+            localStorage.setItem('silenos_ai_config', JSON.stringify(this.state.config));
         }
+    },
+
+    // --- GESTIÓN DE SESIÓN (LOGIN/LOGOUT) ---
+    setKey(key) {
+        if (!key) return;
+        this.state.apiKey = key;
+        this.state.isAuthenticated = true;
+        localStorage.setItem('pollinations_api_key', key);
+        console.log("🔐 AIService: Llave de Pollinations guardada.");
+        // Disparar evento para que la UI se actualice si está escuchando
+        window.dispatchEvent(new Event('ai-auth-changed'));
+    },
+
+    logout() {
+        this.state.apiKey = null;
+        this.state.isAuthenticated = false;
+        localStorage.removeItem('pollinations_api_key');
+        console.log("🔒 AIService: Sesión cerrada.");
+        window.dispatchEvent(new Event('ai-auth-changed'));
+    },
+
+    // --- NÚCLEO DE GENERACIÓN (TEXTO) ---
+    async generateText(prompt, systemPrompt = "Eres un asistente útil.", mode = 'fast') {
+        // 1. Selección de modelo según velocidad
+        const model = mode === 'slow' ? this.state.config.textModelSlow : this.state.config.textModelFast;
         
+        // 2. Construcción de mensajes
+        const messages = [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: prompt }
+        ];
+
+        console.log(`🧠 AI Request (${mode}):`, model);
+
         try {
-            console.log("🦙 Cargando WebLLM...");
-            // Importación dinámica para compatibilidad
-            const webllm = await import("https://esm.run/@mlc-ai/web-llm");
-            
-            this.localEngine = await webllm.CreateMLCEngine(
-                this.modelId,
-                { initProgressCallback: progressCallback }
-            );
-            
-            this.isModelLoaded = true;
-            this.useLocal = true;
-            console.log("🦙 Llama 3.2 Cargado y Listo.");
-            return true;
-        } catch (e) {
-            console.error("Error fatal cargando WebLLM:", e);
-            throw e;
-        }
-    },
-
-    async streamChat(messages, onChunk) {
-        if (!this.localEngine) throw new Error("Modelo Local no cargado.");
-        
-        const completion = await this.localEngine.chat.completions.create({
-            messages,
-            stream: true,
-            temperature: 0.7,
-        });
-
-        for await (const chunk of completion) {
-            const content = chunk.choices[0]?.delta?.content || "";
-            if (content) onChunk(content);
-        }
-    },
-    
-    // Generación de planes (usado por AIWorker)
-    async generatePlan(prompt, context, numChapters, model) {
-        // Prompt del sistema para estructurar libros
-        const systemPrompt = `Eres un arquitecto de novelas experto. 
-        Tu tarea es crear un plan estructural (JSON) para un libro basado en la idea del usuario.
-        
-        FORMATO JSON REQUERIDO:
-        {
-            "title": "Título sugerido",
-            "chapters": [
-                { "title": "Nombre Cap 1", "summary": "Resumen detallado de qué pasa aquí..." },
-                ... hasta ${numChapters} capítulos
-            ]
-        }
-        
-        Contexto adicional: ${context.substring(0, 2000)}`;
-
-        // Pasamos el modelo recibido a callAI
-        const responseText = await this.callAI(systemPrompt, prompt, model);
-        return this.parseJSON(responseText);
-    },
-
-    // Escritura de capítulos (usado por AIWorker)
-    async writeChapterContent(title, summary, context, prevContext, step, total, model) {
-        const systemPrompt = `Eres un escritor fantasma de best-sellers.
-        Estás escribiendo el capítulo ${step} de ${total}: "${title}".
-        
-        Resumen del capítulo: ${summary}
-        
-        Contexto Global (Datos): ${context.substring(0, 3000)}
-        Contexto Inmediato (Anterior): ${prevContext}
-        
-        Escribe el contenido del capítulo en formato Markdown. Sé inmersivo, detallado y creativo.
-        Usa párrafos claros. NO pongas el título del capítulo otra vez, solo el contenido.`;
-
-        // Pasamos el modelo recibido a callAI
-        return await this.callAI(systemPrompt, "Escribe el capítulo ahora.", model);
-    },
-
-    // --- NÚCLEO HÍBRIDO ---
-
-    // Aceptamos 'model' como tercer argumento, con un default por si no se pasa
-    async callAI(system, user, model = "gemma-3-27b-it") {
-        // 1. RUTA LOCAL (Si está activa)
-        if (this.useLocal && this.isModelLoaded && this.localEngine) {
-            try {
-                const messages = [
-                    { role: "system", content: system },
-                    { role: "user", content: user }
-                ];
-                // Respuesta completa (no streaming) para compatibilidad con el sistema
-                const reply = await this.localEngine.chat.completions.create({
-                    messages,
-                    stream: false, // Bloqueante para el sistema
-                    temperature: 0.7
-                });
-                return reply.choices[0].message.content;
-            } catch (e) {
-                console.error("Error en Inferencia Local:", e);
-                // Fallback a API si falla local
-                console.log("⚠️ Fallo local, intentando API...");
+            // 3. Llamada API (Soporta modo sin key con limitaciones, o con key)
+            const headers = { 'Content-Type': 'application/json' };
+            if (this.state.isAuthenticated) {
+                headers['Authorization'] = `Bearer ${this.state.apiKey}`;
             }
+
+            const response = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({
+                    model: model,
+                    messages: messages,
+                    temperature: mode === 'slow' ? 0.7 : 0.5 // Más creativo en modo lento
+                })
+            });
+
+            if (!response.ok) throw new Error(`Pollinations Error: ${response.status}`);
+            
+            const data = await response.json();
+            return data.choices[0].message.content;
+
+        } catch (error) {
+            console.error("❌ Error en Generación de Texto:", error);
+            return `[ERROR DE IA: ${error.message}]`;
         }
-
-        // 2. RUTA NUBE (Gemini API)
-        const key = this.getApiKey();
-        if (!key) throw new Error("No hay API Keys configuradas ni modelo local activo.");
-
-        // Usamos la variable 'model' en la URL en lugar de tenerla fija
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
-        const payload = {
-            contents: [{ role: "user", parts: [{ text: system + "\n\n" + user }] }],
-            generationConfig: { temperature: 0.7, maxOutputTokens: 8192 }
-        };
-
-        const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) {
-            const errData = await res.json().catch(() => ({}));
-            throw new Error(`API Error ${res.status} (${model}): ${errData.error?.message || res.statusText}`);
-        }
-        
-        const data = await res.json();
-        return data.candidates[0].content.parts[0].text;
     },
 
-    parseJSON(str) {
-        try {
-            str = str.replace(/```json/g, '').replace(/```/g, '');
-            const first = str.indexOf('{');
-            const last = str.lastIndexOf('}');
-            if (first !== -1 && last !== -1) str = str.substring(first, last + 1);
-            return JSON.parse(str);
-        } catch (e) { return null; }
+    // --- NÚCLEO DE GENERACIÓN (IMAGEN) ---
+    async generateImage(prompt, mode = 'fast') {
+        const model = mode === 'slow' ? this.state.config.imageModelSlow : this.state.config.imageModelFast;
+        const seed = Math.floor(Math.random() * 1000000);
+        const width = 1024;
+        const height = 1024;
+        
+        console.log(`🎨 Image Request (${mode}):`, model);
+
+        // Construcción de URL (Pollinations usa GET para imágenes normalmente)
+        const encodedPrompt = encodeURIComponent(prompt);
+        let url = `https://pollinations.ai/p/${encodedPrompt}?width=${width}&height=${height}&seed=${seed}&model=${model}`;
+        
+        if (mode === 'slow') {
+            url += "&enhance=true"; // Flag para mejorar calidad si el modelo lo soporta
+        }
+
+        return url; // Retorna la URL de la imagen directamente
     }
 };
 
-// Inicialización
+// Auto-arranque
 window.AIService.init();
