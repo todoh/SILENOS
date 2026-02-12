@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SILENOS v5 - UNIVERSE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div id="intro-screen" class="swiss-grid w-full h-full">
+        <div class="cell flex flex-col justify-between animate-entry border-b md:border-b-0 md:border-r border-black">
+            <h1 id="intro-title" class="typo-grotesk text-6xl md:text-8xl lg:text-9xl break-words">SILEN<br><Span style="color: RED;">OS</Span><br>UNIV.</h1>
+            <div class="typo-mono mt-4 md:mt-0">
+                Silenos v4.0<br>
+                KOREH
+            </div>
+        </div>
+        <div class="cell flex flex-col justify-center items-start animate-entry" style="animation-delay: 0.1s;">
+            <p class="typo-mono mb-6 max-w-md text-sm md:text-base">
+                131
+            </p>
+            <button id="btn-select-dir" class="w-full md:w-auto group relative overflow-hidden border border-black bg-white px-6 py-4 transition-all hover:bg-black hover:text-white active:scale-95">
+                <span class="typo-grotesk text-lg md:text-xl relative z-10">Abrir Directorio</span>
+            </button>
+            <p id="error-msg" class="text-red-600 typo-mono mt-4 text-xs hidden">
+                ERROR: API no soportada. Use Chromium.
+            </p>
+        </div>
+    </div>
+
+    <div id="app-interface" class="swiss-grid w-full h-full" style="display: none;">
+        
+        <header class="cell flex justify-between items-center bg-white z-20 border-b border-black h-[40px]">
+            <div class="flex items-center w-full overflow-hidden">
+                <div class="typo-grotesk text-xl md:text-2xl tracking-tighter truncate mr-4 shrink-0 px-4">SILEN<SPAN style="color: red;" >OS</SPAN> </div>
+                <div id="current-path" class="typo-mono text-gray-500 hidden md:block border-l border-gray-300 pl-4 truncate">:: UNIVERSE VIEW</div>
+            </div>
+            
+            <div class="flex gap-4 items-center shrink-0 ml-2 px-4">
+                <button id="btn-create-folder" class="typo-mono text-xs hover:bg-black hover:text-white px-1 border border-transparent hover:border-black">[+DIR]</button>
+                <button id="btn-refresh" class="typo-mono text-xs hover:bg-black hover:text-white px-1 border border-transparent hover:border-black">[REF]</button>
+                <button style="display: none;" id="btn-clear-windows" class="typo-mono text-xs hover:bg-red-600 hover:text-white px-1 border border-transparent hover:border-red-600">[CLS]</button>
+            </div>
+        </header>
+
+        <main id="drop-zone" class="cell bg-gray-50 relative overflow-hidden w-full h-full" style="grid-column: 1 / -1; grid-row: 2 / -1;">
+            
+            <aside id="file-tree-panel" class="hidden"></aside>
+            <div id="file-tree" class="hidden"></div>
+
+            <div class="absolute bottom-4 right-4 z-50 flex gap-2">
+                <button id="btn-sort-trigger" class="border border-black bg-white text-black hover:bg-black hover:text-white transition-all px-4 py-2 typo-mono active:scale-95 text-xs shadow-none">
+                    [ ORDENAR ]
+                </button>
+                <button id="btn-paste-trigger" class="border border-black bg-white text-black hover:bg-black hover:text-white transition-all px-4 py-2 typo-mono active:scale-95 text-xs shadow-none">
+                    [ + PEGAR ]
+                </button>
+            </div>
+
+            <div id="taskbar-container" class="absolute bottom-0 left-0 z-[9999] flex items-end p-2 gap-1 w-full pointer-events-none">
+                </div>
+
+            <div id="last-action" class="absolute top-4 right-4 typo-mono text-[10px] bg-black text-white p-2 hidden z-50">
+                // ACTION LOGGED
+            </div>
+        </main>
+        
+    </div>
+
+    <div id="rename-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/20 backdrop-blur-sm">
+        <div class="bg-white border border-black p-6 w-full max-w-xs shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] animate-entry">
+            <p class="typo-mono mb-4 text-xs font-bold">:: RENAME ENTRY</p>
+            <input type="text" id="rename-input" class="w-full border border-black p-2 font-mono text-sm mb-6 focus:outline-none focus:bg-gray-50" placeholder="New filename..." autocomplete="off">
+            <div class="flex justify-end gap-2">
+                <button id="btn-cancel-rename" class="typo-mono border border-black px-4 py-2 hover:bg-black hover:text-white transition-colors text-xs">CANCEL</button>
+                <button id="btn-confirm-rename" class="typo-mono border border-black bg-black text-white px-4 py-2 hover:bg-gray-800 transition-colors text-xs">CONFIRM</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">NOTIFICACION</div>
+
+    <script src="logic.js"></script>
+    <script src="ui.js"></script>
+    <script src="html-processor.js"></script>
+    <script src="window-interaction.js"></script>
+    <script src="window-system.js"></script>
+    <script src="app-bridge.js"></script>
+    
+    <script src="fs-universe-core.js"></script>
+    <script src="fs-universe-data.js"></script>
+    <script src="fs-universe-physics.js"></script>
+    <script src="fs-universe-render.js"></script>
+    
+    <script src="fs-core.js"></script>
+    <script src="fs-render.js"></script>
+    <script src="fs-actions.js"></script>
+    <script src="config-core.js"></script>
+<script src="config-window.js"></script>
+<script src="config-boot.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

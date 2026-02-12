@@ -1,0 +1,209 @@
+/* ---------------------------------------------------------
+   STYLES.CSS
+   High-end web design interface, Swiss International Style
+   v5.0 - Universe Edition
+--------------------------------------------------------- */
+:root {
+    --bg-color: #ffffff;
+    --text-color: #000000;
+    --line-color: #000000;
+    --window-bg: #ffffff;
+    --header-bg: #000000;
+    --header-text: #ffffff;
+    --selection-color: #e5e5e5;
+}
+
+* {
+    box-shadow: none !important;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--line-color);
+    color: var(--text-color);
+    font-family: 'Inter', 'Helvetica Neue', 'Helvetica', Arial, sans-serif;
+    margin: 0;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- TIPOGRAFÍA SUIZA --- */
+.typo-grotesk {
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 0.9;
+    text-transform: uppercase;
+}
+
+.typo-mono {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+/* --- LAYOUT GRID --- */
+#app-interface {
+    display: grid;
+    /* Grid simplificada: 1 columna full */
+    grid-template-columns: 1fr; 
+    grid-template-rows: 40px 1fr; /* Header / Main */
+    height: 100%;
+    width: 100%;
+    gap: 1px;
+    background-color: var(--line-color);
+}
+
+.cell {
+    background-color: var(--bg-color);
+    position: relative;
+    overflow: hidden;
+}
+
+/* --- SISTEMA DE VENTANAS (MODERN SWISS) --- */
+.silenos-window {
+    position: absolute;
+    background-color: var(--window-bg);
+    border: 1px solid var(--line-color);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 10px 10px 0px rgba(0,0,0,0.2) !important; /* Sombra dura para distinguir del canvas */
+    min-width: 200px;
+    min-height: 100px;
+    /* Z-Index manejado por JS, pero base alta */
+    z-index: 100;
+}
+
+.silenos-window.active {
+    outline: 2px solid var(--line-color); 
+    box-shadow: 15px 15px 0px rgba(0,0,0,0.3) !important;
+}
+
+.window-header {
+    height: 28px;
+    background-color: var(--header-bg);
+    color: var(--header-text);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 8px;
+    cursor: grab;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.window-header:active {
+    cursor: grabbing;
+}
+
+.window-title {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    text-transform: uppercase;
+    pointer-events: none; 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70%;
+}
+
+.window-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.win-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    font-family: monospace;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 2px;
+}
+
+.win-btn:hover {
+    color: #bbb;
+}
+
+.window-content {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background-color: var(--bg-color);
+}
+
+.window-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 10;
+    display: none; 
+}
+
+/* --- RESIZE HANDLES --- */
+.resize-handle { position: absolute; z-index: 20; }
+.res-n { top: 0; left: 0; right: 0; height: 4px; cursor: n-resize; }
+.res-s { bottom: 0; left: 0; right: 0; height: 4px; cursor: s-resize; }
+.res-e { top: 0; bottom: 0; right: 0; width: 4px; cursor: e-resize; }
+.res-w { top: 0; bottom: 0; left: 0; width: 4px; cursor: w-resize; }
+.res-ne { top: 0; right: 0; width: 10px; height: 10px; cursor: ne-resize; z-index: 21; }
+.res-nw { top: 0; left: 0; width: 10px; height: 10px; cursor: nw-resize; z-index: 21; }
+.res-se { bottom: 0; right: 0; width: 10px; height: 10px; cursor: se-resize; z-index: 21; }
+.res-sw { bottom: 0; left: 0; width: 10px; height: 10px; cursor: sw-resize; z-index: 21; }
+
+/* TOAST */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: black;
+    color: white;
+    padding: 8px 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 9999;
+}
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+}
+
+/* --- SWISS TASKBAR --- */
+.taskbar-item {
+    pointer-events: auto; /* Reactivar clicks ya que el contenedor es none */
+    background: white;
+    border: 1px solid black;
+    color: black;
+    padding: 4px 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.1s;
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: 2px 2px 0px rgba(0,0,0,1);
+    margin-bottom: 4px; /* Separación del borde inferior real */
+}
+
+.taskbar-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 4px 4px 0px rgba(0,0,0,1);
+}
+
+.taskbar-item.active {
+    background: black;
+    color: white;
+    border: 1px solid black;
+    box-shadow: none;
+    transform: translateY(0);
+}
