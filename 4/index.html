@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SILENOS v5 - UNIVERSE</title>
+    <title>SILENOS v4 - UNIVERSE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -35,7 +35,7 @@
 
     <div id="app-interface" class="swiss-grid w-full h-full" style="display: none;">
         
-        <header class="cell flex justify-between items-center bg-white z-20 border-b border-black h-[40px]">
+        <header class="cell flex justify-between items-center bg-white z-20     h-[40px]">
             <div class="flex items-center w-full overflow-hidden">
                 <div class="typo-grotesk text-xl md:text-2xl tracking-tighter truncate mr-4 shrink-0 px-4">SILEN<SPAN style="color: red;" >OS</SPAN> </div>
                 <div id="current-path" class="typo-mono text-gray-500 hidden md:block border-l border-gray-300 pl-4 truncate">:: UNIVERSE VIEW</div>
@@ -93,12 +93,15 @@
     <script src="app-bridge.js"></script>
     
     <script src="fs-universe-core.js"></script>
+    <script src="fs-universe-selection.js"></script>
     <script src="fs-universe-data.js"></script>
     <script src="fs-universe-physics.js"></script>
-    <script src="fs-universe-render.js"></script>
+    <script src="fs-universe-draw.js"></script>
+<script src="fs-universe-input.js"></script>
+<script src="fs-universe-utils.js"></script>
     
     <script src="fs-core.js"></script>
-    <script src="fs-render.js"></script>
+
     <script src="fs-actions.js"></script>
     <script src="config-core.js"></script>
 <script src="config-window.js"></script>

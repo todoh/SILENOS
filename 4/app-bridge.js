@@ -24,6 +24,11 @@ async function openFileInSilenos(entry, dirHandle) {
         const blobUrl = URL.createObjectURL(file);
         spawnWindow(entry.name, blobUrl, 'image');
     }
+    else if (type === 'video') {
+        // NUEVO: Proceso de video
+        const blobUrl = URL.createObjectURL(file);
+        spawnWindow(entry.name, blobUrl, 'video');
+    }
     else {
         // Texto / Código
         const text = await file.text();
@@ -34,5 +39,6 @@ async function openFileInSilenos(entry, dirHandle) {
 function detectFileType(filename) {
     if (filename.endsWith('.html') || filename.endsWith('.htm')) return 'html';
     if (filename.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) return 'image';
+    if (filename.match(/\.(mp4|webm|ogg|mov|m4v)$/i)) return 'video'; // Detectar videos
     return 'txt';
 }

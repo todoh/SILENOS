@@ -50,19 +50,33 @@ async function readFileContent(filename) {
 }
 
 // Función auxiliar para escribir archivos
-async function writeFileToSystem(filename, content) {
-    if (!window.currentHandle) return;
+// MODIFICADO: Acepta targetHandle opcional para escribir en carpetas específicas
+async function writeFileToSystem(filename, content, isBinary = false, targetHandle = null) {
+    // Si no se especifica target, usa el directorio actual (Escritorio)
+    const dir = targetHandle || window.currentHandle;
+    
+    if (!dir) {
+        console.error("No hay directorio destino para guardar.");
+        return;
+    }
+
     try {
-        const fileHandle = await window.currentHandle.getFileHandle(filename, { create: true });
+        const fileHandle = await dir.getFileHandle(filename, { create: true });
         const writable = await fileHandle.createWritable();
         await writable.write(content);
         await writable.close();
         
         if (typeof log === 'function') log(`GUARDADO: ${filename}`);
         
-        // Actualizar Universo
-        if (typeof Universe !== 'undefined') {
-            await Universe.loadDirectory(window.currentHandle);
+        // Actualizar Universo o Ventanas
+        // Usamos Actions.refreshViews si existe, ya que sabe qué ventana refrescar
+        if (typeof Actions !== 'undefined' && typeof Actions.refreshViews === 'function') {
+            Actions.refreshViews(dir);
+        } else if (typeof Universe !== 'undefined') {
+            // Fallback: Si estamos en el escritorio, recargar universo
+            if (window.currentHandle && await window.currentHandle.isSameEntry(dir)) {
+                await Universe.loadDirectory(window.currentHandle);
+            }
         } else if (typeof refreshFileTree === 'function') {
             await refreshFileTree();
         }

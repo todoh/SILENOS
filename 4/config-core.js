@@ -17,6 +17,35 @@ window.SystemConfig = {
         console.log("⚙️ SystemConfig: Core Loaded");
     },
 
+    // --- INTERCEPTOR DE REDIRECCIÓN (CRÍTICO) ---
+    checkAuthRedirect() {
+        const hash = window.location.hash;
+        if (!hash) return false;
+
+        // Extraer parámetros del hash (#api_key=...)
+        const params = new URLSearchParams(hash.substring(1));
+        
+        // BUSCAMOS 'api_key' (que es el que usa Pollinations actualmente)
+        const key = params.get('api_key') || params.get('key') || params.get('access_token');
+
+        if (key) {
+            console.log("AUTH: Key found in URL. Handshaking...");
+            
+            // Si hay ventana padre, le pasamos la llave
+            if (window.opener) {
+                window.opener.postMessage({
+                    type: 'POLLI_AUTH_SUCCESS',
+                    key: key
+                }, '*');
+                
+                console.log("AUTH: Closing popup.");
+                window.close(); // Cerrar ventana inmediatamente
+                return true; 
+            }
+        }
+        return false;
+    },
+
     // --- GESTIÓN DE VARIABLES ---
     loadVariables() {
         try {
@@ -59,6 +88,7 @@ window.SystemConfig = {
     login() {
         // Redirige a la página de autenticación de Pollinations
         const redirectUrl = encodeURIComponent(window.location.href);
+        // Abrimos popup
         window.open(`https://enter.pollinations.ai/authorize?redirect_url=${redirectUrl}`, 'PollinationsAuth', 'width=500,height=700');
     },
 
@@ -80,16 +110,25 @@ window.SystemConfig = {
         });
     },
 
-    // --- SISTEMA DE NOTIFICACIÓN INTERNA ---
     notifyChange() {
-        // Dispara un evento personalizado para que la UI sepa que debe repintarse
         window.dispatchEvent(new CustomEvent('silenos:config-updated'));
     }
 };
 
-// Inicializar al cargar
-if (document.readyState === 'complete') {
-    SystemConfig.init();
-} else {
-    window.addEventListener('load', () => SystemConfig.init());
+// --- EJECUCIÓN ---
+
+// 1. PRIMERO: Verificar si somos el Popup de Auth ANTES de cargar nada más.
+if (window.SystemConfig.checkAuthRedirect()) {
+    // Si devolvió true, es que encontró la key y mandó cerrar.
+    // Detenemos la carga visual ocultando el body para evitar el "flash" de la interfaz.
+    if (document.body) document.body.style.display = 'none';
+    // No llamamos a init() para no arrancar el resto del sistema en el popup.
+} 
+else {
+    // 2. Si NO es popup, iniciamos normal.
+    if (document.readyState === 'complete') {
+        SystemConfig.init();
+    } else {
+        window.addEventListener('load', () => SystemConfig.init());
+    }
 }

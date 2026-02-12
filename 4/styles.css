@@ -1,96 +1,110 @@
 /* ---------------------------------------------------------
    STYLES.CSS
-   High-end web design interface, Swiss International Style
-   v5.0 - Universe Edition
+   High-end web design interface, Nordic Minimalist Style
+   v5.1 - Silenos Clean Edition
 --------------------------------------------------------- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400&display=swap');
+
 :root {
-    --bg-color: #ffffff;
-    --text-color: #000000;
-    --line-color: #000000;
-    --window-bg: #ffffff;
-    --header-bg: #000000;
-    --header-text: #ffffff;
-    --selection-color: #e5e5e5;
+    /* Paleta Nórdica */
+    --bg-app: #f9fafb;        /* Fondo general muy claro */
+    --bg-window: #ffffff;     /* Fondo de ventanas blanco puro */
+    --text-primary: #1a1a1a;  /* Negro suave */
+    --text-secondary: #737373;/* Gris medio */
+    --border-light: #e5e5e5;  /* Líneas divisorias sutiles */
+    --border-active: #d4d4d4; /* Borde un poco más oscuro para focus */
+    
+    /* Sombras Suaves (Elevation) */
+    --shadow-window: 0 4px 20px -5px rgba(0, 0, 0, 0.08), 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+    --shadow-active: 0 10px 30px -5px rgba(0, 0, 0, 0.12), 0 5px 15px -3px rgba(0, 0, 0, 0.05);
+    
+    /* Tipografía */
+    --font-ui: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
 }
 
 * {
-    box-shadow: none !important;
     box-sizing: border-box;
+    /* Eliminamos el reset agresivo de sombras para permitir las suaves */
 }
 
 body {
-    background-color: var(--line-color);
-    color: var(--text-color);
-    font-family: 'Inter', 'Helvetica Neue', 'Helvetica', Arial, sans-serif;
+    background-color: var(--bg-app);
+    color: var(--text-primary);
+    font-family: var(--font-ui);
     margin: 0;
     overflow: hidden;
     height: 100vh;
     width: 100vw;
     display: flex;
     flex-direction: column;
+    font-weight: 300;
 }
 
-/* --- TIPOGRAFÍA SUIZA --- */
+/* --- TIPOGRAFÍA --- */
 .typo-grotesk {
-    font-weight: 900;
-    letter-spacing: -0.02em;
-    line-height: 0.9;
-    text-transform: uppercase;
+    font-family: var(--font-ui);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
 }
 
 .typo-mono {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 0.8rem;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
 }
 
 /* --- LAYOUT GRID --- */
 #app-interface {
     display: grid;
-    /* Grid simplificada: 1 columna full */
     grid-template-columns: 1fr; 
-    grid-template-rows: 40px 1fr; /* Header / Main */
+    grid-template-rows: 50px 1fr; /* Header un poco más alto para aire */
     height: 100%;
     width: 100%;
-    gap: 1px;
-    background-color: var(--line-color);
+    gap: 0; /* Sin gaps visibles */
+    background-color: var(--bg-app);
 }
 
 .cell {
-    background-color: var(--bg-color);
+    background-color: transparent;
     position: relative;
     overflow: hidden;
 }
 
-/* --- SISTEMA DE VENTANAS (MODERN SWISS) --- */
+/* --- SISTEMA DE VENTANAS (NORDIC FLOAT) --- */
 .silenos-window {
     position: absolute;
-    background-color: var(--window-bg);
-    border: 1px solid var(--line-color);
+    background-color: var(--bg-window);
+    border: 1px solid var(--border-light);
+    border-radius: 6px; /* Redondeo suave */
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-shadow: 10px 10px 0px rgba(0,0,0,0.2) !important; /* Sombra dura para distinguir del canvas */
+    /* Sombra difusa en lugar de sólida */
+    box-shadow: var(--shadow-window) !important;
     min-width: 200px;
     min-height: 100px;
-    /* Z-Index manejado por JS, pero base alta */
     z-index: 100;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .silenos-window.active {
-    outline: 2px solid var(--line-color); 
-    box-shadow: 15px 15px 0px rgba(0,0,0,0.3) !important;
+    border-color: var(--border-active);
+    box-shadow: var(--shadow-active) !important;
+    z-index: 101; /* Asegurar que la activa esté encima */
 }
 
 .window-header {
-    height: 28px;
-    background-color: var(--header-bg);
-    color: var(--header-text);
+    height: 36px; /* Cabecera más ligera */
+    background-color: var(--bg-window); /* Fondo blanco */
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-primary);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 8px;
+    padding: 0 12px;
     cursor: grab;
     user-select: none;
     flex-shrink: 0;
@@ -101,9 +115,12 @@ body {
 }
 
 .window-title {
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
+    color: var(--text-secondary); /* Título en gris */
     pointer-events: none; 
     white-space: nowrap;
     overflow: hidden;
@@ -113,97 +130,110 @@ body {
 
 .window-controls {
     display: flex;
-    gap: 8px;
+    gap: 10px;
 }
 
 .win-btn {
     background: transparent;
     border: none;
-    color: white;
-    font-family: monospace;
+    color: var(--border-active); /* Iconos gris claro */
+    font-family: var(--font-ui);
     cursor: pointer;
     font-size: 14px;
     line-height: 1;
-    padding: 0 2px;
+    padding: 0;
+    transition: color 0.2s;
 }
 
 .win-btn:hover {
-    color: #bbb;
+    color: var(--text-primary); /* Negro al pasar el mouse */
 }
 
 .window-content {
     flex: 1;
     position: relative;
     overflow: hidden;
-    background-color: var(--bg-color);
+    background-color: var(--bg-window);
 }
 
 .window-overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.5); /* Overlay blanco sutil */
     z-index: 10;
     display: none; 
 }
 
-/* --- RESIZE HANDLES --- */
+/* --- RESIZE HANDLES (Invisibles pero funcionales) --- */
 .resize-handle { position: absolute; z-index: 20; }
-.res-n { top: 0; left: 0; right: 0; height: 4px; cursor: n-resize; }
-.res-s { bottom: 0; left: 0; right: 0; height: 4px; cursor: s-resize; }
-.res-e { top: 0; bottom: 0; right: 0; width: 4px; cursor: e-resize; }
-.res-w { top: 0; bottom: 0; left: 0; width: 4px; cursor: w-resize; }
-.res-ne { top: 0; right: 0; width: 10px; height: 10px; cursor: ne-resize; z-index: 21; }
-.res-nw { top: 0; left: 0; width: 10px; height: 10px; cursor: nw-resize; z-index: 21; }
-.res-se { bottom: 0; right: 0; width: 10px; height: 10px; cursor: se-resize; z-index: 21; }
-.res-sw { bottom: 0; left: 0; width: 10px; height: 10px; cursor: sw-resize; z-index: 21; }
+.res-n { top: 0; left: 0; right: 0; height: 6px; cursor: n-resize; }
+.res-s { bottom: 0; left: 0; right: 0; height: 6px; cursor: s-resize; }
+.res-e { top: 0; bottom: 0; right: 0; width: 6px; cursor: e-resize; }
+.res-w { top: 0; bottom: 0; left: 0; width: 6px; cursor: w-resize; }
+.res-ne { top: 0; right: 0; width: 12px; height: 12px; cursor: ne-resize; z-index: 21; }
+.res-nw { top: 0; left: 0; width: 12px; height: 12px; cursor: nw-resize; z-index: 21; }
+.res-se { bottom: 0; right: 0; width: 12px; height: 12px; cursor: se-resize; z-index: 21; }
+.res-sw { bottom: 0; left: 0; width: 12px; height: 12px; cursor: sw-resize; z-index: 21; }
 
-/* TOAST */
+/* TOAST (Minimalista) */
 .toast {
     position: fixed;
-    bottom: 20px;
+    bottom: 30px;
     left: 50%;
     transform: translateX(-50%) translateY(100px);
-    background: black;
+    background: var(--text-primary); /* Negro suave */
     color: white;
-    padding: 8px 16px;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    padding: 10px 20px;
+    border-radius: 4px; /* Ligeramente redondeado */
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    box-shadow: var(--shadow-active);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     z-index: 9999;
 }
 .toast.show {
     transform: translateX(-50%) translateY(0);
 }
 
-/* --- SWISS TASKBAR --- */
+/* --- NORDIC TASKBAR (Píldoras flotantes) --- */
+/* Contenedor asumido en el HTML, pero estilizamos los items */
+
 .taskbar-item {
-    pointer-events: auto; /* Reactivar clicks ya que el contenedor es none */
-    background: white;
-    border: 1px solid black;
-    color: black;
-    padding: 4px 8px;
-    font-family: 'Courier New', monospace;
+    pointer-events: auto;
+    background: var(--bg-window);
+    border: 1px solid var(--border-light);
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    font-family: var(--font-ui);
     font-size: 10px;
-    font-weight: bold;
+    font-weight: 500;
+    letter-spacing: 0.02em;
     text-transform: uppercase;
     cursor: pointer;
-    transition: all 0.1s;
-    max-width: 150px;
+    transition: all 0.2s ease;
+    max-width: 160px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    box-shadow: 2px 2px 0px rgba(0,0,0,1);
-    margin-bottom: 4px; /* Separación del borde inferior real */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Sombra muy sutil */
+    border-radius: 4px; /* Redondeado */
+    margin-right: 8px; /* Espaciado lateral */
+    margin-bottom: 0;
 }
 
 .taskbar-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 4px 4px 0px rgba(0,0,0,1);
+    border-color: var(--border-active);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
 }
 
 .taskbar-item.active {
-    background: black;
+    background: var(--text-primary); /* Activo es negro */
     color: white;
-    border: 1px solid black;
-    box-shadow: none;
-    transform: translateY(0);
+    border-color: var(--text-primary);
+    box-shadow: 0 4px 10px -2px rgba(0,0,0,0.2);
+    transform: translateY(-1px);
 }

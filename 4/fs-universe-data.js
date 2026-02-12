@@ -8,9 +8,9 @@ Universe.loadDirectory = async function(dirHandle) {
     this.currentHandle = dirHandle;
     this.nodes = [];
     
-    // Reset cámara suavemente
-    this.camera.targetX = this.width / 2;
-    this.camera.targetY = this.height / 2;
+    // --- CORRECCIÓN CÁMARA ---
+    this.camera.targetX = 0;
+    this.camera.targetY = 0;
     this.camera.targetZoom = 1;
 
     const entries = [];
@@ -51,6 +51,7 @@ Universe.loadDirectory = async function(dirHandle) {
 
 Universe.detectType = function(name) {
     if (name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) return 'image';
+    if (name.match(/\.(mp4|webm|ogg|mov|m4v)$/i)) return 'video';
     if (name.endsWith('.js') || name.endsWith('.html') || name.endsWith('.css')) return 'code';
     return 'file';
 };
@@ -66,12 +67,46 @@ Universe.enrichNode = async function(node) {
             node.childCount = count;
             node.targetR = 50 + (Math.log(count + 1) * 5);
         } catch (e) { console.warn("Access denied to subfolder", e); }
+
     } else if (node.type === 'image') {
         try {
             const file = await node.entry.getFile();
             const bmp = await createImageBitmap(file);
             node.preview = bmp;
         } catch (e) {}
+
+    } else if (node.type === 'video') {
+        // NUEVO: Generar miniatura de video
+        try {
+            const file = await node.entry.getFile();
+            const video = document.createElement('video');
+            video.src = URL.createObjectURL(file);
+            video.muted = true;
+            video.playsInline = true;
+            video.crossOrigin = "anonymous";
+            video.currentTime = 1; // Capturar en el segundo 1
+
+            // Esperar a que cargue el frame
+            await new Promise((resolve, reject) => {
+                video.onloadeddata = () => {
+                     // Forzar seek si no está en el punto
+                     if(video.currentTime !== 1) video.currentTime = 1;
+                };
+                video.onseeked = () => resolve();
+                video.onerror = () => reject();
+                // Timeout por seguridad
+                setTimeout(resolve, 2000); 
+            });
+
+            const bmp = await createImageBitmap(video);
+            node.preview = bmp;
+            
+            // Limpieza
+            URL.revokeObjectURL(video.src);
+            video.remove();
+        } catch (e) {
+            console.warn("Video preview failed", e);
+        }
     }
 };
 
@@ -97,7 +132,7 @@ Universe.sortNodes = function(toggleMode = true) {
     const total = this.nodes.length;
     const cols = Math.ceil(Math.sqrt(total)); 
     
-    // --- CAMBIO: ESPACIO AUMENTADO A 180 ---
+    // Espacio
     const spacing = 180; 
     
     const gridWidth = cols * spacing;
@@ -110,8 +145,11 @@ Universe.sortNodes = function(toggleMode = true) {
         const targetX = startX + (col * spacing);
         const targetY = (-Math.ceil(total/cols) * spacing / 2) + (row * spacing);
         
-        // Asignamos una fuerza fuerte hacia esa posición
         this.nodes[i].homeX = targetX;
         this.nodes[i].homeY = targetY;
     }
+
+    // Recentrar cámara
+    this.camera.targetX = 0;
+    this.camera.targetY = 0;
 };

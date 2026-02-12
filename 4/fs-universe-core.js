@@ -19,6 +19,7 @@ window.Universe = {
     
     // Datos globales
     nodes: [], 
+    selectedNodes: [], // NUEVO: Lista de nodos seleccionados
     currentHandle: null,
     sortMode: 'name', 
     
@@ -27,8 +28,8 @@ window.Universe = {
     spring: 0.05,
     
     // --- ESTADOS DE INTERACCIÓN ACTUALIZADOS ---
-    draggedNode: null,      // Nodo que se está moviendo actualmente
-    isCameraDragging: false, // Si se está moviendo el fondo
+    draggedNode: null,      
+    isCameraDragging: false, 
     
     startX: 0, startY: 0,
     lastMouseX: 0, lastMouseY: 0,
@@ -58,16 +59,29 @@ window.Universe = {
 
         // --- GESTIÓN DE EVENTOS ---
         this.canvas.addEventListener('mousedown', (e) => this.handleInputStart(e));
-        this.canvas.addEventListener('mousemove', (e) => this.handleInputMove(e));
+        // Usamos window para mousemove/up para que no se rompa si sales del canvas
+        window.addEventListener('mousemove', (e) => {
+            if(this.initialized) this.handleInputMove(e);
+        });
+        window.addEventListener('mouseup', (e) => {
+            if(this.initialized) this.handleInputEnd(e);
+        });
+
         this.canvas.addEventListener('wheel', (e) => this.handleWheel(e), { passive: false });
+        
+        // Bloquear menú contextual nativo y usar el nuestro condicionalmente
         this.canvas.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
+            e.preventDefault(); 
+            // Si venimos de un arrastre de selección, NO mostrar menú
+            if (this.selection && this.selection.suppressMenu) {
+                this.selection.suppressMenu = false; // Resetear flag
+                return;
+            }
             this.handleRightClick(e);
         });
 
         if (!this.initialized) {
             window.addEventListener('resize', () => this.resize());
-            window.addEventListener('mouseup', (e) => this.handleInputEnd(e));
             this.initialized = true;
             console.log("🌌 Universe Engine: Global Listeners Attached");
         }

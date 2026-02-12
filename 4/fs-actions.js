@@ -4,39 +4,55 @@
 window.Actions = {
     clipboard: {
         operation: null, // 'copy' o 'cut'
-        entry: null,     // FileSystemHandle
-        sourceDir: null  // Handle del directorio origen (necesario para borrar en cut)
+        entries: [],     // Array de FileSystemHandles (Interno)
+        sourceDir: null  
     },
 
     // --- MENÚ CONTEXTUAL ---
-    openContextMenu(x, y, entry, parentHandle) {
-        // Eliminar menú previo si existe
+    openContextMenu(x, y, targets, parentHandle) {
+        // Normalizamos 'targets' siempre a un array, aunque venga null o uno solo
+        let entries = [];
+        if (targets) {
+            entries = Array.isArray(targets) ? targets : [targets];
+        }
+
         const oldMenu = document.getElementById('ctx-menu');
         if (oldMenu) oldMenu.remove();
 
         const menu = document.createElement('div');
         menu.id = 'ctx-menu';
-        menu.className = 'fixed bg-white border border-black shadow-lg z-[9999] flex flex-col w-32 py-1';
+        menu.className = 'fixed bg-white border border-black shadow-lg z-[9999] flex flex-col w-48 py-1'; 
         menu.style.left = `${x}px`;
         menu.style.top = `${y}px`;
 
-        // Generar opciones según si se clickeó en un archivo o en el fondo
         let options = [];
 
-        if (entry) {
-            // Clic en archivo/carpeta
-            options = [
-                { label: 'OPEN', action: () => this.executeOpen(entry) },
-                { label: 'COPY', action: () => this.setClipboard('copy', entry, parentHandle) },
-                { label: 'CUT', action: () => this.setClipboard('cut', entry, parentHandle) },
-                { label: 'RENAME', action: () => triggerRenameFlow(entry) },
-                { label: 'DELETE', action: () => handleDelete(entry, parentHandle) },
-            ];
+        if (entries.length > 0) {
+            // -- ACCIONES SOBRE SELECCIÓN --
+            const count = entries.length;
+            const labelSuffix = count > 1 ? ` (${count})` : '';
+
+            // Solo abrir si es uno solo
+            if (count === 1) {
+                options.push({ label: 'OPEN', action: () => this.executeOpen(entries[0]) });
+            }
+
+            options.push({ label: `COPY${labelSuffix}`, action: () => this.setClipboard('copy', entries, parentHandle) });
+            options.push({ label: `CUT${labelSuffix}`, action: () => this.setClipboard('cut', entries, parentHandle) });
+            
+            // Renombrar solo si es uno
+            if (count === 1) {
+                options.push({ label: 'RENAME', action: () => triggerRenameFlow(entries[0]) });
+            }
+            
+            options.push({ label: `DELETE${labelSuffix}`, action: () => handleDelete(entries, parentHandle) });
+
         } else {
-            // Clic en fondo (pegar)
-            if (this.clipboard.entry) {
+            // -- ACCIONES GLOBALES (Fondo) --
+            if (this.clipboard.entries.length > 0) {
                 const opName = this.clipboard.operation === 'cut' ? 'MOVE HERE' : 'PASTE HERE';
-                options.push({ label: opName, action: () => this.executePaste(parentHandle) });
+                const count = this.clipboard.entries.length;
+                options.push({ label: `${opName} (${count})`, action: () => this.executePaste(parentHandle) });
             }
             options.push({ label: 'NEW FOLDER', action: () => handleCreateFolder(parentHandle) });
             options.push({ label: 'NEW FILE', action: () => handleCreateFile(parentHandle) });
@@ -44,7 +60,7 @@ window.Actions = {
 
         options.forEach(opt => {
             const btn = document.createElement('button');
-            btn.className = 'text-left px-4 py-2 hover:bg-black hover:text-white text-xs font-mono uppercase';
+            btn.className = 'text-left px-4 py-2 hover:bg-black hover:text-white text-xs font-mono uppercase truncate';
             btn.textContent = opt.label;
             btn.onclick = () => {
                 opt.action();
@@ -53,7 +69,7 @@ window.Actions = {
             menu.appendChild(btn);
         });
 
-        // Cerrar al hacer clic fuera
+        // Cerrar al hacer click fuera
         setTimeout(() => {
             document.addEventListener('click', function closeCtx() {
                 if (menu) menu.remove();
@@ -64,42 +80,49 @@ window.Actions = {
         document.body.appendChild(menu);
     },
 
-    // --- LOGICA DEL PORTAPAPELES ---
-    setClipboard(op, entry, sourceDir) {
-        this.clipboard = { operation: op, entry: entry, sourceDir: sourceDir };
-        showToast(`${op.toUpperCase()}: ${entry.name}`);
+    // --- LOGICA DEL PORTAPAPELES (MULTI) ---
+    setClipboard(op, entries, sourceDir) {
+        // Guardamos array
+        const list = Array.isArray(entries) ? entries : [entries];
+        this.clipboard = { operation: op, entries: list, sourceDir: sourceDir };
+        showToast(`${op.toUpperCase()}: ${list.length} ITEMS`);
     },
 
+    // Ejecutar pegado interno (archivos de Silenos)
     async executePaste(targetDirHandle) {
-        if (!this.clipboard.entry) return;
+        // OJO: Si no hay interno, NO retornamos sin hacer nada si venimos del botón, 
+        // pero esta función se usa para el menú contextual interno.
+        // La lógica mixta está en pasteToWindow.
+        
+        if (this.clipboard.entries.length === 0) return;
         if (!targetDirHandle) targetDirHandle = window.currentHandle;
 
-        const { operation, entry, sourceDir } = this.clipboard;
+        const { operation, entries, sourceDir } = this.clipboard;
 
         try {
-            showToast("Processing...");
+            showToast(`Processing ${entries.length} items...`);
             
-            // Copiar contenido (Recursivo si es carpeta)
-            await this.copyEntryToHandle(entry, targetDirHandle);
+            for (const entry of entries) {
+                // Copiar
+                await this.copyEntryToHandle(entry, targetDirHandle);
 
-            // Si era 'Cortar', borrar el original
-            if (operation === 'cut' && sourceDir) {
-                // Verificar que no estamos pegando en la misma carpeta
-                if (await sourceDir.isSameEntry(targetDirHandle)) {
-                    showToast("Ignored: Source and Destination are same");
-                    return;
+                // Si es cortar, borrar original
+                if (operation === 'cut' && sourceDir) {
+                    if (await sourceDir.isSameEntry(targetDirHandle)) {
+                        console.warn(`Skipping delete for ${entry.name} (same dir)`);
+                        continue;
+                    }
+                    await sourceDir.removeEntry(entry.name, { recursive: true });
                 }
-                await sourceDir.removeEntry(entry.name, { recursive: true });
             }
 
-            // Limpiar clipboard si fue corte
             if (operation === 'cut') {
-                this.clipboard = { operation: null, entry: null, sourceDir: null };
+                this.clipboard = { operation: null, entries: [], sourceDir: null };
             }
 
-            // REFRESCAR VISTAS
+            // Refrescar vistas
             this.refreshViews(targetDirHandle);
-            if (operation === 'cut') this.refreshViews(sourceDir);
+            if (operation === 'cut' && sourceDir) this.refreshViews(sourceDir);
 
             showToast("Done!");
         } catch (err) {
@@ -111,14 +134,12 @@ window.Actions = {
     async copyEntryToHandle(entry, targetDirHandle) {
         if (entry.kind === 'file') {
             const file = await entry.getFile();
-            // Crear archivo en destino (renombrar si existe)
             const newFileHandle = await targetDirHandle.getFileHandle(entry.name, { create: true });
             const writable = await newFileHandle.createWritable();
             await writable.write(file);
             await writable.close();
         } else if (entry.kind === 'directory') {
             const newDirHandle = await targetDirHandle.getDirectoryHandle(entry.name, { create: true });
-            // Copiar hijos recursivamente
             for await (const child of entry.values()) {
                 await this.copyEntryToHandle(child, newDirHandle);
             }
@@ -131,10 +152,8 @@ window.Actions = {
             if (typeof Universe !== 'undefined') await Universe.loadDirectory(handle);
         }
         
-        // Refrescar Ventana si está abierta para esa carpeta
+        // Refrescar Ventanas abiertas que muestren esta carpeta
         if (typeof WindowManager !== 'undefined') {
-            const win = WindowManager.windows.find(w => w.type === 'dir' && w.title === handle.name); // Simple check por nombre/titulo
-            // Una comprobación más robusta requeriría guardar el handle en la ventana, lo cual hemos añadido en window-system.js
             WindowManager.windows.forEach(async w => {
                 if (w.type === 'dir' && w.handle && await w.handle.isSameEntry(handle)) {
                     WindowManager.populateDirectoryWindow(w.id, handle);
@@ -153,23 +172,105 @@ window.Actions = {
         }
     },
 
-    // Helper para pegar desde botón de ventana
-    pasteToWindow(windowId) {
+    // --- FUNCIÓN DEL BOTÓN [PASTE] CORREGIDA ---
+    async pasteToWindow(windowId) {
         const win = WindowManager.windows.find(w => w.id === windowId);
-        if (win && win.handle) {
-            this.executePaste(win.handle);
+        if (!win || !win.handle) {
+            console.error("Target window invalid or no handle");
+            return;
+        }
+
+        console.log(`[PASTE] Triggered for Window: ${win.title}`);
+
+        // CASO 1: Tenemos archivos internos cortados/copiados?
+        if (this.clipboard.entries.length > 0) {
+            console.log("-> Using Internal Clipboard");
+            await this.executePaste(win.handle);
+        } 
+        // CASO 2: NO tenemos archivos internos -> Leemos del Sistema Operativo
+        else {
+            console.log("-> Using System Clipboard (Navigator API)");
+            try {
+                // Intentar leer items ricos (Imágenes, Archivos mixtos)
+                const items = await navigator.clipboard.read();
+                let pasted = false;
+
+                for (const item of items) {
+                    // -- IMÁGENES --
+                    if (item.types.some(t => t.startsWith('image/'))) {
+                        const blob = await item.getType(item.types.find(t => t.startsWith('image/')));
+                        const ext = blob.type.split('/')[1] || 'png';
+                        // Usamos funciones globales de logic.js si están disponibles, si no, fallback simple
+                        const filename = (typeof generateFilename === 'function') 
+                            ? generateFilename('IMG', ext) 
+                            : `paste_${Date.now()}.${ext}`;
+                            
+                        await this.writeBlobToHandle(win.handle, filename, blob);
+                        pasted = true;
+                    }
+                    // -- TEXTO / HTML --
+                    else if (item.types.includes('text/plain')) {
+                        const blob = await item.getType('text/plain');
+                        const text = await blob.text();
+                        if (text.trim()) {
+                            const type = (typeof detectTextType === 'function') ? detectTextType(text) : 'txt';
+                            const filename = (typeof generateFilename === 'function') 
+                                ? generateFilename(type.toUpperCase(), type) 
+                                : `paste_${Date.now()}.txt`;
+
+                            await this.writeBlobToHandle(win.handle, filename, text); // text se guarda igual
+                            pasted = true;
+                        }
+                    }
+                }
+                
+                if (pasted) {
+                    showToast("SYSTEM PASTE SUCCESS");
+                    this.refreshViews(win.handle);
+                } else {
+                    showToast("Clipboard empty or unsupported");
+                }
+
+            } catch (err) {
+                // Fallback para navegadores que bloquean .read() pero permiten .readText()
+                console.warn("Clipboard read failed, trying text fallback", err);
+                try {
+                    const text = await navigator.clipboard.readText();
+                    if (text) {
+                        const type = (typeof detectTextType === 'function') ? detectTextType(text) : 'txt';
+                        const filename = `PASTE_${Date.now()}.${type}`;
+                        await this.writeBlobToHandle(win.handle, filename, text);
+                        showToast("TEXT PASTED");
+                        this.refreshViews(win.handle);
+                    }
+                } catch (e2) {
+                    console.error("System Paste Failed completely", e2);
+                    showToast("PASTE BLOCKED BY BROWSER");
+                }
+            }
+        }
+    },
+
+    // Helper auxiliar para escribir directamente en un handle específico (bypass de main.js)
+    async writeBlobToHandle(dirHandle, filename, content) {
+        try {
+            const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(content);
+            await writable.close();
+        } catch (err) {
+            console.error("Write error:", err);
+            throw err;
         }
     }
 };
 
-// --- HANDLERS ANTIGUOS (ADAPTADOS) ---
+// --- HANDLERS GLOBALES ---
 
 async function handleOpenFile(entry) {
     if (!entry) return;
     try {
         if (typeof openFileInSilenos === 'function') {
-            // Necesitamos el parent handle para assets HTML, difícil saberlo desde aquí si venimos de ventana flotante.
-            // Usamos currentHandle como fallback.
             await openFileInSilenos(entry, window.currentHandle);
         }
     } catch (err) {
@@ -178,15 +279,23 @@ async function handleOpenFile(entry) {
     }
 }
 
-async function handleDelete(entry, parentHandle) {
-    if (!confirm(`¿Eliminar ${entry.name}?`)) return;
+async function handleDelete(entries, parentHandle) {
+    const list = Array.isArray(entries) ? entries : [entries];
+    const count = list.length;
+    
+    if (!confirm(`¿Eliminar ${count} elemento(s)?`)) return;
+    
     const dir = parentHandle || window.currentHandle;
     try {
-        await dir.removeEntry(entry.name, { recursive: true });
+        for (const entry of list) {
+            await dir.removeEntry(entry.name, { recursive: true });
+        }
         Actions.refreshViews(dir);
+        if (typeof Universe !== 'undefined') Universe.clearSelection();
+        
     } catch (err) {
         console.error(err);
-        showToast("Delete failed");
+        showToast("Delete failed partially");
     }
 }
 
@@ -212,15 +321,15 @@ async function handleCreateFile(targetHandle) {
     } catch (e) { showToast("Error creating file"); }
 }
 
-// Renombrado: Sigue dependiendo de UI.js openRenameModal
 function triggerRenameFlow(entry) {
     if (typeof openRenameModal === 'function') {
         openRenameModal(entry.name, async (newName) => {
             try {
-                if (entry.move) {
+                if (entry.move) { // Chrome 111+
                     await entry.move(newName);
-                    // No sabemos el padre fácilmente aquí sin pasarlo, asumimos refresco global o Universe
+                    // Actualizar todo
                     if (typeof Universe !== 'undefined') await Universe.loadDirectory(window.currentHandle);
+                    if (typeof WindowManager !== 'undefined') WindowManager.renderTaskbar(); // Por si cambió un título
                 } else {
                     showToast("Rename not supported directly");
                 }
@@ -230,10 +339,4 @@ function triggerRenameFlow(entry) {
             }
         });
     }
-}
-
-// Compatibilidad
-async function handleFileClick(filename) {
-    // Deprecado en favor de Actions.executeOpen, pero mantenido para no romper referencias
-    console.warn("Use Actions.executeOpen instead");
 }

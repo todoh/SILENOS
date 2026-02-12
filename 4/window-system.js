@@ -29,7 +29,7 @@ const WindowManager = {
      * Abre una nueva ventana
      * @param {string} title - Título
      * @param {any} content - Contenido (URL, Texto o FileHandle)
-     * @param {string} type - 'html', 'iframe', 'image', 'txt', 'dir'
+     * @param {string} type - 'html', 'iframe', 'image', 'video', 'txt', 'dir'
      */
     openWindow(title, content, type = 'html') {
         const id = 'win-' + Date.now() + Math.floor(Math.random() * 1000);
@@ -63,8 +63,8 @@ const WindowManager = {
         const winEl = document.createElement('div');
         winEl.id = winData.id;
         winEl.className = 'silenos-window animate-entry';
-        winEl.style.width = '600px';
-        winEl.style.height = '400px';
+        winEl.style.width = '800px';
+        winEl.style.height = '550px';
         winEl.style.left = `${x}px`;
         winEl.style.top = `${y}px`;
         winEl.style.zIndex = winData.zIndex;
@@ -125,6 +125,11 @@ const WindowManager = {
             return `<div class="w-full h-full flex items-center justify-center bg-gray-100">
                         <img src="${source}" class="max-w-full max-h-full object-contain">
                     </div>`;
+        } else if (type === 'video') {
+            // NUEVO: Reproductor de video
+            return `<div class="w-full h-full flex items-center justify-center bg-black">
+                        <video src="${source}" controls autoplay class="max-w-full max-h-full outline-none"></video>
+                    </div>`;
         } else if (type === 'txt') {
             return `<textarea class="w-full h-full p-2 bg-white font-mono text-sm resize-none border-none outline-none" readonly>${source}</textarea>`;
         } else if (type === 'dir') {
@@ -163,17 +168,54 @@ const WindowManager = {
                 const itemEl = document.createElement('div');
                 itemEl.className = 'flex flex-col items-center gap-1 p-2 hover:bg-gray-100 cursor-pointer group rounded';
                 
-                // Icono
-                let iconSvg = '';
+                let visualContent = '';
+
+                // --- LOGICA DE VISUALIZACIÓN DE ICONOS/IMAGENES/VIDEOS ---
                 if (entry.kind === 'directory') {
-                     iconSvg = `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
+                     visualContent = `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
                 } else {
-                     iconSvg = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>`;
+                    // Detección de tipos
+                    const isImage = entry.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
+                    const isVideo = entry.name.match(/\.(mp4|webm|ogg|mov|m4v)$/i);
+                    
+                    if (isImage) {
+                        try {
+                            const file = await entry.getFile();
+                            const blobUrl = URL.createObjectURL(file);
+                            visualContent = `<div class="w-10 h-10 flex items-center justify-center overflow-hidden bg-gray-50 border border-gray-200">
+                                                <img src="${blobUrl}" class="w-full h-full object-cover" style="pointer-events: none;">
+                                             </div>`;
+                        } catch (e) {
+                            visualContent = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>`;
+                        }
+                    } else if (isVideo) {
+                        try {
+                            const file = await entry.getFile();
+                            const blobUrl = URL.createObjectURL(file);
+                            // Mini reproductor que se activa con hover
+                            visualContent = `<div class="w-10 h-10 flex items-center justify-center overflow-hidden bg-black border border-gray-200 relative">
+                                                <video src="${blobUrl}" muted loop class="w-full h-full object-cover" onmouseover="this.play()" onmouseout="this.pause()"></video>
+                                                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                    <div class="w-0 h-0 border-t-[3px] border-t-transparent border-l-[6px] border-l-white border-b-[3px] border-b-transparent ml-0.5"></div>
+                                                </div>
+                                             </div>`;
+                        } catch (e) {
+                             visualContent = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`;
+                        }
+                    } else {
+                        // Archivo normal
+                        visualContent = `<div class="w-10 h-10 flex items-center justify-center">
+                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                                         </div>`;
+                    }
                 }
 
                 itemEl.innerHTML = `
-                    <div class="w-10 h-10 flex items-center justify-center">${iconSvg}</div>
-                    <span class="text-[10px] font-mono text-center break-all leading-tight w-full truncate">${entry.name}</span>
+                    ${visualContent}
+                    <span class="text-[10px] font-mono text-center break-words leading-tight w-full" 
+                          style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
+                        ${entry.name}
+                    </span>
                 `;
 
                 // INTERACCIÓN
