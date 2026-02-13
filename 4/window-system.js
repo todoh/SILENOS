@@ -120,13 +120,12 @@ const WindowManager = {
 
     generateContentHTML(type, source, id) {
         if (type === 'iframe' || type === 'html') {
-            return `<iframe srcdoc="${(typeof source === 'string' ? source : '').replace(/"/g, '&quot;')}" class="w-full h-full border-none" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>`;
+            return `<iframe srcdoc="${(typeof source === 'string' ? source : '').replace(/"/g, '&quot;')}" class="w-full h-full border-none" sandbox="allow-scripts allow-same-origin allow-forms allow-modals"></iframe>`;
         } else if (type === 'image') {
             return `<div class="w-full h-full flex items-center justify-center bg-gray-100">
                         <img src="${source}" class="max-w-full max-h-full object-contain">
                     </div>`;
         } else if (type === 'video') {
-            // NUEVO: Reproductor de video
             return `<div class="w-full h-full flex items-center justify-center bg-black">
                         <video src="${source}" controls autoplay class="max-w-full max-h-full outline-none"></video>
                     </div>`;
@@ -177,6 +176,7 @@ const WindowManager = {
                     // Detección de tipos
                     const isImage = entry.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
                     const isVideo = entry.name.match(/\.(mp4|webm|ogg|mov|m4v)$/i);
+                    const isJson = entry.name.endsWith('.json');
                     
                     if (isImage) {
                         try {
@@ -192,7 +192,6 @@ const WindowManager = {
                         try {
                             const file = await entry.getFile();
                             const blobUrl = URL.createObjectURL(file);
-                            // Mini reproductor que se activa con hover
                             visualContent = `<div class="w-10 h-10 flex items-center justify-center overflow-hidden bg-black border border-gray-200 relative">
                                                 <video src="${blobUrl}" muted loop class="w-full h-full object-cover" onmouseover="this.play()" onmouseout="this.pause()"></video>
                                                 <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -202,8 +201,33 @@ const WindowManager = {
                         } catch (e) {
                              visualContent = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`;
                         }
+                    } else if (isJson) {
+                        // --- DETECCIÓN DE CONTENIDO JSON VISUAL ---
+                        try {
+                            const file = await entry.getFile();
+                            const text = await file.text();
+                            const json = JSON.parse(text);
+                            
+                            if (json.imagen64 && typeof json.imagen64 === 'string') {
+                                const src = json.imagen64.startsWith('data:') 
+                                    ? json.imagen64 
+                                    : `data:image/png;base64,${json.imagen64}`;
+                                    
+                                visualContent = `<div class="w-10 h-10 flex items-center justify-center overflow-hidden bg-white border-2 border-black">
+                                                    <img src="${src}" class="w-full h-full object-cover" style="pointer-events: none;">
+                                                 </div>`;
+                            } else {
+                                visualContent = `<div class="w-10 h-10 flex items-center justify-center border border-gray-200 bg-white">
+                                                    <span class="text-[8px] font-mono font-bold">JSON</span>
+                                                 </div>`;
+                            }
+                        } catch(e) {
+                             visualContent = `<div class="w-10 h-10 flex items-center justify-center border border-gray-200 bg-white">
+                                                <span class="text-[8px] font-mono">{}</span>
+                                             </div>`;
+                        }
                     } else {
-                        // Archivo normal
+                        // Archivo Genérico
                         visualContent = `<div class="w-10 h-10 flex items-center justify-center">
                                             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
                                          </div>`;
@@ -219,19 +243,16 @@ const WindowManager = {
                 `;
 
                 // INTERACCIÓN
-                // Doble clic o clic simple para abrir
                 itemEl.onclick = async (e) => {
                     e.stopPropagation();
                     if (entry.kind === 'directory') {
-                        // Abrir otra ventana anidada
                         WindowManager.openWindow(entry.name, entry, 'dir');
                     } else {
-                        // Abrir archivo
-                        if (typeof handleOpenFile === 'function') handleOpenFile(entry);
+                        // FIX: PASAMOS dirHandle COMO CONTEXTO AL ABRIR
+                        if (typeof handleOpenFile === 'function') handleOpenFile(entry, dirHandle);
                     }
                 };
 
-                // Clic derecho para opciones (Cortar/Copiar) dentro de la ventana
                 itemEl.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -243,7 +264,7 @@ const WindowManager = {
                 container.appendChild(itemEl);
             }
             
-            // Listener de fondo para pegar en esta carpeta
+            // Listener de fondo
             container.addEventListener('contextmenu', (e) => {
                 if(e.target === container) {
                     e.preventDefault();
@@ -303,11 +324,10 @@ const WindowManager = {
             // Buscar la siguiente ventana activa más alta
             const activeWindows = this.windows.filter(w => !w.minimized && w.id !== id);
             if (activeWindows.length > 0) {
-                 // Ordenar por zIndex descendente
                  activeWindows.sort((a,b) => b.zIndex - a.zIndex);
                  this.focusWindow(activeWindows[0].id);
             } else {
-                 this.renderTaskbar(); // Solo actualizar si no hay nada que enfocar
+                 this.renderTaskbar(); 
             }
         }
     },
@@ -317,17 +337,17 @@ const WindowManager = {
         if (win) {
             this.zIndexCounter++;
             win.zIndex = this.zIndexCounter;
-            win.minimized = false; // Ya no está minimizada
+            win.minimized = false; 
 
             const el = document.getElementById(id);
             if (el) {
-                el.classList.remove('hidden'); // Asegurar visible
+                el.classList.remove('hidden'); 
                 el.style.zIndex = win.zIndex;
                 
                 document.querySelectorAll('.silenos-window').forEach(w => w.classList.remove('active'));
                 el.classList.add('active');
             }
-            this.renderTaskbar(); // Update taskbar state (active class)
+            this.renderTaskbar(); 
         }
     },
 
@@ -336,7 +356,6 @@ const WindowManager = {
         if (!this.taskbarContainer) return;
         this.taskbarContainer.innerHTML = '';
 
-        // Identificar la ventana activa (mayor zIndex y no minimizada)
         let activeId = null;
         const visibleWindows = this.windows.filter(w => !w.minimized);
         if (visibleWindows.length > 0) {
@@ -349,8 +368,6 @@ const WindowManager = {
             const isActive = (win.id === activeId) && !win.minimized;
             
             btn.className = `taskbar-item ${isActive ? 'active' : ''}`;
-            
-            // Formato de texto: [ TIPO : NOMBRE ]
             const typeLabel = win.type === 'dir' ? 'DIR' : win.type.toUpperCase();
             btn.textContent = `[ ${typeLabel} : ${win.title} ]`;
             

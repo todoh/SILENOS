@@ -53,6 +53,8 @@ Universe.detectType = function(name) {
     if (name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) return 'image';
     if (name.match(/\.(mp4|webm|ogg|mov|m4v)$/i)) return 'video';
     if (name.endsWith('.js') || name.endsWith('.html') || name.endsWith('.css')) return 'code';
+    // Nota: Los JSON se detectan inicialmente como 'code' o 'file', y luego se promocionan a 'data' en enrichNode
+    if (name.endsWith('.json')) return 'file'; 
     return 'file';
 };
 
@@ -76,7 +78,7 @@ Universe.enrichNode = async function(node) {
         } catch (e) {}
 
     } else if (node.type === 'video') {
-        // NUEVO: Generar miniatura de video
+        // Generar miniatura de video
         try {
             const file = await node.entry.getFile();
             const video = document.createElement('video');
@@ -106,6 +108,36 @@ Universe.enrichNode = async function(node) {
             video.remove();
         } catch (e) {
             console.warn("Video preview failed", e);
+        }
+    } else if (node.entry.name.endsWith('.json')) {
+        // --- DETECCIÓN DE DATOS RICOS (JSON CON IMAGEN) ---
+        try {
+            const file = await node.entry.getFile();
+            const text = await file.text();
+            const json = JSON.parse(text);
+
+            // Si tiene imagen en base64, lo convertimos en nodo tipo 'data'
+            if (json.imagen64 && typeof json.imagen64 === 'string' && json.imagen64.length > 100) {
+                // Crear imagen desde base64
+                const img = new Image();
+                
+                // Asegurar prefijo si no lo tiene (asumiendo png/jpeg si viene crudo)
+                const src = json.imagen64.startsWith('data:') 
+                    ? json.imagen64 
+                    : `data:image/png;base64,${json.imagen64}`;
+                
+                img.src = src;
+                
+                await img.decode(); // Esperar decodificación
+                const bmp = await createImageBitmap(img);
+                
+                node.preview = bmp;
+                node.type = 'data'; // CAMBIO DE TIPO: Ahora es un nodo de datos visual
+                node.targetR = 40; // Un poco más grande para lucir la imagen
+            }
+        } catch (e) {
+            // Si falla el parseo o la imagen, se queda como archivo normal
+            // console.warn("JSON parse/preview error", e);
         }
     }
 };

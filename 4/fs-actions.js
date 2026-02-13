@@ -34,7 +34,8 @@ window.Actions = {
 
             // Solo abrir si es uno solo
             if (count === 1) {
-                options.push({ label: 'OPEN', action: () => this.executeOpen(entries[0]) });
+                // AQUÍ PASAMOS parentHandle CORRECTAMENTE AL ABRIR
+                options.push({ label: 'OPEN', action: () => this.executeOpen(entries[0], parentHandle) });
             }
 
             options.push({ label: `COPY${labelSuffix}`, action: () => this.setClipboard('copy', entries, parentHandle) });
@@ -90,9 +91,6 @@ window.Actions = {
 
     // Ejecutar pegado interno (archivos de Silenos)
     async executePaste(targetDirHandle) {
-        // OJO: Si no hay interno, NO retornamos sin hacer nada si venimos del botón, 
-        // pero esta función se usa para el menú contextual interno.
-        // La lógica mixta está en pasteToWindow.
         
         if (this.clipboard.entries.length === 0) return;
         if (!targetDirHandle) targetDirHandle = window.currentHandle;
@@ -162,17 +160,18 @@ window.Actions = {
         }
     },
 
-    executeOpen(entry) {
+    // AHORA ACEPTA parentHandle
+    executeOpen(entry, parentHandle) {
         if (entry.kind === 'directory') {
             if (typeof WindowManager !== 'undefined') {
                 WindowManager.openWindow(entry.name, entry, 'dir');
             }
         } else {
-            handleOpenFile(entry);
+            handleOpenFile(entry, parentHandle);
         }
     },
 
-    // --- FUNCIÓN DEL BOTÓN [PASTE] CORREGIDA ---
+    // --- FUNCIÓN DEL BOTÓN [PASTE] ---
     async pasteToWindow(windowId) {
         const win = WindowManager.windows.find(w => w.id === windowId);
         if (!win || !win.handle) {
@@ -182,25 +181,20 @@ window.Actions = {
 
         console.log(`[PASTE] Triggered for Window: ${win.title}`);
 
-        // CASO 1: Tenemos archivos internos cortados/copiados?
         if (this.clipboard.entries.length > 0) {
             console.log("-> Using Internal Clipboard");
             await this.executePaste(win.handle);
         } 
-        // CASO 2: NO tenemos archivos internos -> Leemos del Sistema Operativo
         else {
             console.log("-> Using System Clipboard (Navigator API)");
             try {
-                // Intentar leer items ricos (Imágenes, Archivos mixtos)
                 const items = await navigator.clipboard.read();
                 let pasted = false;
 
                 for (const item of items) {
-                    // -- IMÁGENES --
                     if (item.types.some(t => t.startsWith('image/'))) {
                         const blob = await item.getType(item.types.find(t => t.startsWith('image/')));
                         const ext = blob.type.split('/')[1] || 'png';
-                        // Usamos funciones globales de logic.js si están disponibles, si no, fallback simple
                         const filename = (typeof generateFilename === 'function') 
                             ? generateFilename('IMG', ext) 
                             : `paste_${Date.now()}.${ext}`;
@@ -208,7 +202,6 @@ window.Actions = {
                         await this.writeBlobToHandle(win.handle, filename, blob);
                         pasted = true;
                     }
-                    // -- TEXTO / HTML --
                     else if (item.types.includes('text/plain')) {
                         const blob = await item.getType('text/plain');
                         const text = await blob.text();
@@ -218,7 +211,7 @@ window.Actions = {
                                 ? generateFilename(type.toUpperCase(), type) 
                                 : `paste_${Date.now()}.txt`;
 
-                            await this.writeBlobToHandle(win.handle, filename, text); // text se guarda igual
+                            await this.writeBlobToHandle(win.handle, filename, text);
                             pasted = true;
                         }
                     }
@@ -232,7 +225,6 @@ window.Actions = {
                 }
 
             } catch (err) {
-                // Fallback para navegadores que bloquean .read() pero permiten .readText()
                 console.warn("Clipboard read failed, trying text fallback", err);
                 try {
                     const text = await navigator.clipboard.readText();
@@ -251,7 +243,6 @@ window.Actions = {
         }
     },
 
-    // Helper auxiliar para escribir directamente en un handle específico (bypass de main.js)
     async writeBlobToHandle(dirHandle, filename, content) {
         try {
             const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
@@ -265,13 +256,20 @@ window.Actions = {
     }
 };
 
-// --- HANDLERS GLOBALES ---
+// --- HANDLERS GLOBALES (ACTUALIZADOS) ---
 
-async function handleOpenFile(entry) {
+// Se añade parentHandle opcional. Si no se da, usa el global (Desktop)
+async function handleOpenFile(entry, parentHandle) {
     if (!entry) return;
+    
+    // Contexto de resolución: ¿De dónde sacamos los assets hermanos?
+    // Si viene parentHandle (desde una ventana), usamos ese.
+    // Si no, usamos el directorio actual montado (Escritorio).
+    const contextHandle = parentHandle || window.currentHandle;
+
     try {
         if (typeof openFileInSilenos === 'function') {
-            await openFileInSilenos(entry, window.currentHandle);
+            await openFileInSilenos(entry, contextHandle);
         }
     } catch (err) {
         console.error("Error al abrir archivo:", err);
@@ -325,17 +323,46 @@ function triggerRenameFlow(entry) {
     if (typeof openRenameModal === 'function') {
         openRenameModal(entry.name, async (newName) => {
             try {
-                if (entry.move) { // Chrome 111+
+                if (entry.move) {
                     await entry.move(newName);
-                    // Actualizar todo
-                    if (typeof Universe !== 'undefined') await Universe.loadDirectory(window.currentHandle);
-                    if (typeof WindowManager !== 'undefined') WindowManager.renderTaskbar(); // Por si cambió un título
+                    
+                    if (typeof Universe !== 'undefined' && window.currentHandle) {
+                        await Universe.loadDirectory(window.currentHandle);
+                    }
+
+                    if (typeof WindowManager !== 'undefined') {
+                        for (const win of WindowManager.windows) {
+                            if (win.type === 'dir' && win.handle) {
+                                await WindowManager.populateDirectoryWindow(win.id, win.handle);
+                                try {
+                                    if (await win.handle.isSameEntry(entry)) {
+                                        win.title = newName;
+                                        const titleEl = document.querySelector(`#${win.id} .window-title`);
+                                        if (titleEl) titleEl.textContent = newName;
+                                    }
+                                } catch (err) { }
+                            }
+                            else if (win.handle) { 
+                                try {
+                                    if (await win.handle.isSameEntry(entry)) {
+                                        win.title = newName;
+                                        const titleEl = document.querySelector(`#${win.id} .window-title`);
+                                        if (titleEl) titleEl.textContent = newName;
+                                    }
+                                } catch(e) {}
+                            }
+                        }
+                        WindowManager.renderTaskbar();
+                    }
+
+                    showToast(`RENAMED: ${newName}`);
+
                 } else {
                     showToast("Rename not supported directly");
                 }
             } catch (e) {
                 console.error(e);
-                showToast("Error renaming");
+                showToast("Error renaming: " + e.message);
             }
         });
     }
