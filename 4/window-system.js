@@ -25,12 +25,6 @@ const WindowManager = {
         this.renderTaskbar();
     },
 
-    /**
-     * Abre una nueva ventana
-     * @param {string} title - Título
-     * @param {any} content - Contenido (URL, Texto o FileHandle)
-     * @param {string} type - 'html', 'iframe', 'image', 'video', 'txt', 'dir'
-     */
     openWindow(title, content, type = 'html') {
         const id = 'win-' + Date.now() + Math.floor(Math.random() * 1000);
         this.zIndexCounter++;
@@ -43,18 +37,17 @@ const WindowManager = {
             id: id,
             title: title,
             type: type,
-            handle: (type === 'dir') ? content : null, // Guardar handle si es dir
+            handle: (type === 'dir') ? content : null, 
             isMaximized: false,
             zIndex: this.zIndexCounter,
-            minimized: false // Estado minimizado
+            minimized: false 
         };
 
         this.windows.push(winData);
         this.renderWindow(winData, content, initialX, initialY);
         
-        // Actualizar barra de tareas
         this.renderTaskbar();
-        this.focusWindow(id); // Para marcar como activo inmediatamente
+        this.focusWindow(id); 
         
         return id;
     },
@@ -69,7 +62,6 @@ const WindowManager = {
         winEl.style.top = `${y}px`;
         winEl.style.zIndex = winData.zIndex;
 
-        // Botón extra de PASTE solo si es directorio
         const pasteBtn = winData.type === 'dir' 
             ? `<button class="win-btn ml-2 border border-white px-1 text-[10px]" onclick="Actions.pasteToWindow('${winData.id}')">[PASTE]</button>` 
             : '';
@@ -106,13 +98,11 @@ const WindowManager = {
             this.focusWindow(winData.id);
         });
 
-        // Evento drop básico para evitar redirecciones
         winEl.addEventListener('dragover', e => e.preventDefault());
         winEl.addEventListener('drop', e => e.preventDefault());
 
         this.container.appendChild(winEl);
 
-        // Post-render actions
         if (winData.type === 'dir') {
             this.populateDirectoryWindow(winData.id, contentSource);
         }
@@ -132,9 +122,13 @@ const WindowManager = {
         } else if (type === 'txt') {
             return `<textarea class="w-full h-full p-2 bg-white font-mono text-sm resize-none border-none outline-none" readonly>${source}</textarea>`;
         } else if (type === 'dir') {
-            // Contenedor para los iconos
             return `<div id="win-dir-${id}" class="w-full h-full p-4 overflow-auto grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))] gap-4 content-start">
                         <div class="text-xs font-mono text-gray-400 col-span-full">LOADING...</div>
+                    </div>`;
+        } else if (type === 'programs') {
+            // Nuevo tipo para el listado de programas
+            return `<div id="win-programs-${id}" class="w-full h-full p-8 overflow-auto bg-white flex flex-col">
+                        <div class="text-xs font-mono text-gray-400 animate-pulse">ESCANEANDO PROGRAMAS...</div>
                     </div>`;
         }
         return `<div class="p-4">Contenido desconocido</div>`;
@@ -144,7 +138,7 @@ const WindowManager = {
         const container = document.getElementById(`win-dir-${winId}`);
         if (!container) return;
 
-        container.innerHTML = ''; // Clear loading
+        container.innerHTML = ''; 
 
         try {
             const entries = [];
@@ -152,7 +146,6 @@ const WindowManager = {
                 entries.push(entry);
             }
             
-            // Ordenar: Carpetas primero
             entries.sort((a, b) => {
                 if (a.kind === b.kind) return a.name.localeCompare(b.name);
                 return a.kind === 'directory' ? -1 : 1;
@@ -169,11 +162,9 @@ const WindowManager = {
                 
                 let visualContent = '';
 
-                // --- LOGICA DE VISUALIZACIÓN DE ICONOS/IMAGENES/VIDEOS ---
                 if (entry.kind === 'directory') {
                      visualContent = `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
                 } else {
-                    // Detección de tipos
                     const isImage = entry.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
                     const isVideo = entry.name.match(/\.(mp4|webm|ogg|mov|m4v)$/i);
                     const isJson = entry.name.endsWith('.json');
@@ -202,7 +193,6 @@ const WindowManager = {
                              visualContent = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`;
                         }
                     } else if (isJson) {
-                        // --- DETECCIÓN DE CONTENIDO JSON VISUAL ---
                         try {
                             const file = await entry.getFile();
                             const text = await file.text();
@@ -227,7 +217,6 @@ const WindowManager = {
                                              </div>`;
                         }
                     } else {
-                        // Archivo Genérico
                         visualContent = `<div class="w-10 h-10 flex items-center justify-center">
                                             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
                                          </div>`;
@@ -242,13 +231,11 @@ const WindowManager = {
                     </span>
                 `;
 
-                // INTERACCIÓN
                 itemEl.onclick = async (e) => {
                     e.stopPropagation();
                     if (entry.kind === 'directory') {
                         WindowManager.openWindow(entry.name, entry, 'dir');
                     } else {
-                        // FIX: PASAMOS dirHandle COMO CONTEXTO AL ABRIR
                         if (typeof handleOpenFile === 'function') handleOpenFile(entry, dirHandle);
                     }
                 };
@@ -264,7 +251,6 @@ const WindowManager = {
                 container.appendChild(itemEl);
             }
             
-            // Listener de fondo
             container.addEventListener('contextmenu', (e) => {
                 if(e.target === container) {
                     e.preventDefault();
@@ -284,7 +270,7 @@ const WindowManager = {
         const el = document.getElementById(id);
         if (el) el.remove();
         this.windows = this.windows.filter(w => w.id !== id);
-        this.renderTaskbar(); // Update taskbar
+        this.renderTaskbar(); 
     },
 
     toggleMaximize(id) {
@@ -311,7 +297,7 @@ const WindowManager = {
             el.setAttribute('data-maximized', 'true');
             win.isMaximized = true;
         }
-        this.focusWindow(id); // Traer al frente al maximizar
+        this.focusWindow(id); 
     },
 
     minimizeWindow(id) {
@@ -321,7 +307,6 @@ const WindowManager = {
             el.classList.add('hidden');
             win.minimized = true;
             
-            // Buscar la siguiente ventana activa más alta
             const activeWindows = this.windows.filter(w => !w.minimized && w.id !== id);
             if (activeWindows.length > 0) {
                  activeWindows.sort((a,b) => b.zIndex - a.zIndex);
@@ -351,7 +336,6 @@ const WindowManager = {
         }
     },
 
-    // --- TASKBAR RENDERER (SWISS STYLE) ---
     renderTaskbar() {
         if (!this.taskbarContainer) return;
         this.taskbarContainer.innerHTML = '';
