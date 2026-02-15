@@ -219,14 +219,16 @@ async function scanHtmlFilesRecursive(dirHandle, pathPrefix = '') {
     for await (const entry of dirHandle.values()) {
         if (entry.kind === 'directory') {
             // Recursividad: buscar dentro de subcarpetas
+            // IMPORTANTE: Pasamos 'entry' como dirHandle para la siguiente recursión
             const subResults = await scanHtmlFilesRecursive(entry, pathPrefix + entry.name + ' / ');
             results = results.concat(subResults);
         } else if (entry.kind === 'file' && entry.name.endsWith('.html')) {
             // Es un archivo HTML
             results.push({
                 entry: entry,
-                path: pathPrefix, // Ruta legible "carpeta / subcarpeta"
-                name: entry.name
+                path: pathPrefix, 
+                name: entry.name,
+                parentHandle: dirHandle // <--- AQUI GUARDAMOS LA CARPETA PADRE EXACTA
             });
         }
     }
@@ -234,20 +236,18 @@ async function scanHtmlFilesRecursive(dirHandle, pathPrefix = '') {
     return results;
 }
 
+// MODIFICADO: Usa parentHandle del item
 async function populateProgramsWindow(winId, programsHandle) {
     const container = document.getElementById(`win-programs-${winId}`);
     if (!container) return;
 
-    // Estado de carga
     container.innerHTML = `<div class="text-xs font-mono text-gray-400 animate-pulse p-4">ESCANEANDO DIRECTORIOS...</div>`;
 
     try {
-        // Escaneo recursivo real
         const files = await scanHtmlFilesRecursive(programsHandle);
 
-        container.innerHTML = ''; // Limpiar loader
+        container.innerHTML = ''; 
 
-        // Título del listado
         const header = document.createElement('div');
         header.className = 'mb-6 pb-2 border-b border-black flex justify-between items-end';
         header.innerHTML = `
@@ -261,7 +261,6 @@ async function populateProgramsWindow(winId, programsHandle) {
             return;
         }
 
-        // Grid de enlaces
         const list = document.createElement('div');
         list.className = 'grid grid-cols-1 md:grid-cols-2 gap-3';
 
@@ -269,10 +268,7 @@ async function populateProgramsWindow(winId, programsHandle) {
             const btn = document.createElement('button');
             btn.className = 'group flex flex-col items-start p-4 border border-gray-200 hover:bg-black hover:text-white hover:border-black transition-all text-left bg-gray-50';
             
-            // Icono + Nombre
             const nameHtml = `<span class="font-bold text-sm mb-1 group-hover:underline underline-offset-2 decoration-1">${item.name.replace('.html', '')}</span>`;
-            
-            // Ruta (Path)
             const pathHtml = item.path 
                 ? `<span class="text-[9px] font-mono text-gray-400 group-hover:text-gray-300 uppercase tracking-wide">${item.path}</span>`
                 : `<span class="text-[9px] font-mono text-gray-400 group-hover:text-gray-300 uppercase tracking-wide">ROOT</span>`;
@@ -280,11 +276,11 @@ async function populateProgramsWindow(winId, programsHandle) {
             btn.innerHTML = nameHtml + pathHtml;
             
             btn.onclick = () => {
-                // Abrir usando el manejador global (pasando el handle de programas como contexto padre si es necesario, 
-                // pero handleOpenFile suele usar window.currentHandle. Idealmente pasamos el directorio padre del archivo si pudiéramos,
-                // pero processHTMLAndAssets buscará desde rootHandle, así que está bien).
+                // USAMOS item.parentHandle (La carpeta del programa, ej: "animation")
+                // Esto permite que 'chroma.js' se encuentre.
+                // html-processor.js se encargará de buscar 'librerias' en la raíz si no está aquí.
                 if (typeof handleOpenFile === 'function') {
-                    handleOpenFile(item.entry);
+                    handleOpenFile(item.entry, item.parentHandle);
                 }
             };
 
@@ -308,26 +304,19 @@ async function handleOpenPrograms() {
     }
 
     try {
-        // 1. Obtener handle de la carpeta "programas"
         const programsHandle = await window.currentHandle.getDirectoryHandle('programas', { create: true });
         
         if (typeof WindowManager !== 'undefined') {
-            // 2. Abrir ventana con tipo 'programs' (definido en window-system.js)
             const winId = WindowManager.openWindow('PROGRAMAS INSTALADOS', programsHandle, 'programs');
             
-            // 3. Poblar la lista inmediatamente
             await populateProgramsWindow(winId, programsHandle);
 
-            // 4. Iniciar sincronización en segundo plano y refrescar al terminar
             downloadGithubPrograms(window.currentHandle).then(async () => {
-                // Solo refrescamos si la ventana sigue existiendo en el DOM
                 if (document.getElementById(`win-programs-${winId}`)) {
                     console.log("SYNC: Actualizando lista de programas...");
                     await populateProgramsWindow(winId, programsHandle);
                     if(typeof showToast === 'function') showToast("PROGRAM LIST UPDATED");
                 }
-                
-                // Refrescar Universo si está abierto
                 if (typeof Universe !== 'undefined') await Universe.loadDirectory(window.currentHandle);
             });
 
@@ -364,7 +353,6 @@ if(typeof btnRefresh !== 'undefined' && btnRefresh) {
     });
 }
 
-// ASIGNACIÓN DEL NUEVO HANDLER
 if(btnProgramsTrigger) btnProgramsTrigger.addEventListener('click', handleOpenPrograms);
 
 if(btnSortTrigger) {
