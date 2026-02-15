@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador Libros</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="libros/styles.css">
+</head>
+<body>
+
+    <div id="loading-bar" class="loading-bar" style="width: 0%"></div>
+
+    <div id="file-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-white/95 p-8 hidden transition-opacity">
+        <div class="bg-white w-full max-w-lg flex flex-col max-h-[70vh] border border-gray-200 shadow-xl">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h2 class="text-xs font-medium tracking-[0.2em] text-gray-400 uppercase">Seleccionar Carpeta Origen</h2>
+                <button onclick="ui.toggleFileSelector()" class="text-gray-300 hover:text-black transition-colors text-xl font-light">&times;</button>
+            </div>
+            <div id="folder-list" class="p-0 overflow-y-auto flex-1 h-64 bg-white">
+                <div class="p-12 text-center text-gray-300 font-light text-sm italic">Inicializando escáner...</div>
+            </div>
+            <div class="p-6 border-t border-gray-100 bg-gray-50/50">
+                <button onclick="core.confirmFolderSelection()" class="btn-primary w-full">ESCANEAR CARPETA</button>
+            </div>
+        </div>
+    </div>
+
+    <header class="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-8 z-10 shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="w-8 h-8 flex items-center justify-center text-black border border-gray-200">
+                <i class="fa-solid fa-feather-pointed text-sm"></i>
+            </div>
+            <div class="flex flex-col">
+                <h1 class="font-medium text-black text-xs tracking-[0.15em] leading-tight">Generador Libros<span class="text-gray-400 ml-1">v5.3 SPLIT</span></h1>
+               
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-8">
+            <div class="flex flex-col items-end gap-1">
+                <span class="label-text">Modelo IA</span>
+                <input type="text" id="modelSelect" class="config-input text-right w-24" value="gemini-fast" placeholder="Modelo">
+            </div>
+
+            <div class="h-8 w-px bg-gray-100"></div>
+
+            <div class="flex flex-col items-end gap-1">
+                <span class="label-text">Estado API</span>
+                <div class="flex items-center gap-2">
+                    <span id="status-text" class="text-[10px] font-medium text-gray-300 uppercase tracking-wider">OFFLINE</span>
+                    <span id="status-indicator" class="w-1.5 h-1.5 rounded-full bg-gray-200"></span>
+                </div>
+            </div>
+
+            <div class="h-8 w-px bg-gray-100"></div>
+
+            <button onclick="ui.toggleFileSelector()" class="btn-nordic flex items-center gap-2">
+                <i class="fa-solid fa-folder-open text-[10px]"></i>
+                <span id="current-folder-label">Cargar Datos</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        
+        <div class="w-1/3 flex flex-col border-r border-gray-100 bg-gray-50/30">
+            <div class="px-8 py-6 border-b border-gray-100 bg-white">
+                <h2 class="label-text mb-4">Progreso de Novela</h2>
+                <div class="flex justify-between items-end mb-2">
+                    <span id="prog-text" class="text-xs font-mono text-black">Esperando datos...</span>
+                    <span id="prog-percent" class="text-xs font-mono text-gray-400">0%</span>
+                </div>
+                <div class="w-full bg-gray-100 h-1">
+                    <div id="progress-bar" class="bg-black h-1 transition-all duration-700" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="flex-1 flex flex-col overflow-hidden bg-white">
+                <div class="px-8 py-4 border-b border-gray-50 flex justify-between items-center">
+                    <h3 class="label-text">Registro del Sistema</h3>
+                    <i class="fa-solid fa-microchip text-gray-300 text-xs"></i>
+                </div>
+                <div id="process-log" class="flex-1 overflow-y-auto px-8 py-4 space-y-3">
+                </div>
+            </div>
+
+            <div class="p-8 bg-white border-t border-gray-100">
+                <button onclick="core.startProduction()" id="start-btn" disabled class="btn-primary w-full flex items-center justify-center gap-3 shadow-sm hover:shadow-md transition-all">
+                    <span>INICIAR MOTOR v5.3</span>
+                    <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="w-2/3 flex flex-col bg-white relative">
+            <div class="absolute top-0 left-0 w-full h-12 bg-gradient-to-b from-white to-transparent pointer-events-none z-10"></div>
+            
+            <div id="chat-container" class="flex-1 overflow-y-auto p-12 pb-24 space-y-12">
+                <div class="text-center mt-20 text-gray-300 font-light italic text-sm">
+                    El manuscrito estructurado aparecerá aquí...
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="libros/ai.js"></script>
+    <script src="libros/main.js"></script>
+    <script src="libros/logic_state.js"></script>
+    <script src="libros/logic_gen.js"></script>
+    <script src="libros/logic_files.js"></script>
+
+</body>
+</html>

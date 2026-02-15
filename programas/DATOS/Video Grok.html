@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Tipografías */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #ffffff; 
+            color: #1a1a1a; 
+            height: 100vh; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            font-weight: 300;
+        }
+
+        /* Scrollbar Invisible/Minimal */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #d4d4d4; }
+
+        /* Componentes UI Base */
+        .loading-bar { 
+            position: fixed; top: 0; left: 0; height: 2px; background: #1a1a1a; 
+            transition: width 0.4s ease; z-index: 1000; 
+        }
+        
+        .font-mono { font-family: 'JetBrains Mono', monospace; letter-spacing: -0.02em; }
+
+        .config-input {
+            background: transparent;
+            border-bottom: 1px solid #e5e5e5;
+            color: #1a1a1a;
+            padding: 8px 0;
+            border-radius: 0; 
+            font-size: 0.8rem;
+            outline: none;
+            transition: border-color 0.3s;
+            width: 100%;
+        }
+        .config-input:focus { border-bottom: 1px solid #1a1a1a; }
+        
+        select.config-input { cursor: pointer; background-color: white; }
+
+        /* Sliders */
+        input[type=range] {
+            -webkit-appearance: none; width: 100%; background: transparent; margin-top: 10px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 12px; width: 12px; border-radius: 50%;
+            background: #1a1a1a; cursor: pointer; margin-top: -5px; 
+            border: 2px solid white; box-shadow: 0 0 0 1px #1a1a1a;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 2px; cursor: pointer; background: #e5e5e5;
+        }
+
+        /* Botones */
+        .btn-nordic { 
+            background: #ffffff;
+            color: #1a1a1a;
+            text-transform: uppercase; 
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            font-weight: 500;
+            border: 1px solid #e5e5e5;
+            padding: 8px 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .btn-nordic:hover { border-color: #1a1a1a; background: #fafafa; }
+        .btn-nordic.active { background: #1a1a1a; color: white; border-color: #1a1a1a; }
+
+        .btn-primary {
+            background: #1a1a1a; color: #ffffff; border: none;
+            font-family: 'Inter', sans-serif; text-transform: uppercase;
+            font-size: 11px; letter-spacing: 0.15em; padding: 16px;
+            transition: opacity 0.3s; width: 100%;
+        }
+        .btn-primary:hover { opacity: 0.8; }
+        .btn-primary:disabled { background: #e5e5e5; color: #a3a3a3; cursor: not-allowed; }
+
+        .label-text {
+            font-size: 9px; text-transform: uppercase; letter-spacing: 0.2em;
+            color: #9ca3af; font-weight: 500; margin-bottom: 4px; display: block;
+        }
+
+        /* Galería Minimalista */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 2rem;
+            width: 100%;
+        }
+
+        .gallery-item {
+            position: relative;
+            background: #f9f9f9;
+            border: 1px solid #f0f0f0;
+            aspect-ratio: 16/9; /* Default para video container */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .gallery-item:hover { border-color: #d4d4d4; transform: translateY(-2px); shadow: 0 10px 30px -10px rgba(0,0,0,0.1); }
+        
+        .gallery-video {
+            width: 100%; height: 100%; object-fit: contain; background: black;
+        }
+        
+        .item-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            opacity: 0; transition: opacity 0.2s;
+            display: flex; flex-direction: column;
+            align-items: flex-end; justify-content: flex-end; 
+            padding: 10px;
+            pointer-events: none; /* Dejar pasar clicks al video si es necesario */
+        }
+        .gallery-item:hover .item-overlay { opacity: 1; pointer-events: auto; }
+
+        /* Upload Area Minimal */
+        .upload-mini {
+            border: 1px dashed #e5e5e5; padding: 10px; text-align: center;
+            transition: all 0.2s; cursor: pointer; position: relative;
+        }
+        .upload-mini:hover { border-color: #1a1a1a; background: #fafafa; }
+        .upload-preview { 
+            width: 100%; height: 60px; object-fit: cover; display: none; opacity: 0.7; 
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="loading-bar" class="loading-bar" style="width: 0%"></div>
+
+    <div id="folder-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-white/95 p-8 hidden transition-opacity">
+        <div class="bg-white w-full max-w-lg flex flex-col max-h-[60vh] border border-gray-200 shadow-xl">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h2 class="text-xs font-medium tracking-[0.2em] text-gray-400 uppercase">Seleccionar Destino</h2>
+                <button onclick="document.getElementById('folder-modal').classList.add('hidden')" class="text-gray-300 hover:text-black transition-colors text-xl font-light">&times;</button>
+            </div>
+            <div id="folder-list" class="p-0 overflow-y-auto flex-1 h-64 bg-white">
+                <div class="p-12 text-center text-gray-300 font-light text-sm italic">Escaneando sistema de archivos...</div>
+            </div>
+        </div>
+    </div>
+
+    <header class="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-8 z-10 shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="w-8 h-8 flex items-center justify-center text-black border border-gray-100">
+                <i class="fa-solid fa-film text-lg"></i>
+            </div>
+            <div class="flex flex-col">
+                <h1 class="font-medium text-black text-xs tracking-[0.15em] leading-tight">Video Studio<span class="text-gray-400 ml-1">v1.0</span></h1>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-8">
+            <div class="flex flex-col items-end gap-1">
+                <span class="label-text">Estado API</span>
+                <div class="flex items-center gap-2">
+                    <span id="status-text" class="text-[10px] font-medium text-gray-300 uppercase tracking-wider">OFFLINE</span>
+                    <span id="status-indicator" class="w-1.5 h-1.5 rounded-full bg-gray-200"></span>
+                </div>
+            </div>
+
+            <div class="h-8 w-px bg-gray-100"></div>
+
+            <div class="flex flex-col items-end gap-1">
+                <span class="label-text">Auto-Guardado en</span>
+                <button onclick="app.showFolderModal()" id="target-folder-label" class="text-[10px] font-medium text-black border-b border-gray-200 hover:border-black truncate max-w-[150px] transition-colors pb-0.5">
+                    Seleccionar Carpeta
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        <div class="w-80 flex flex-col p-0 border-r border-gray-100 bg-white overflow-y-auto shrink-0">
+            
+            <div class="p-8 space-y-8">
+                <div>
+                    <h2 class="label-text">Prompt de Video</h2>
+                    <textarea id="prompt-input" rows="4" class="config-input resize-none leading-relaxed text-gray-600 placeholder-gray-300" 
+                    placeholder="Describe el movimiento, cámara y escena..."></textarea>
+                </div>
+
+                <div>
+                    <h2 class="label-text flex justify-between">
+                        <span>Imagen Base (Opcional)</span>
+                        <i class="fa-solid fa-image text-gray-300"></i>
+                    </h2>
+                    <div class="upload-mini mt-2" onclick="document.getElementById('file-input').click()">
+                        <input type="file" id="file-input" class="hidden" accept="image/*" onchange="app.handleFile(this)">
+                        <div id="upload-placeholder">
+                            <i class="fa-solid fa-cloud-arrow-up text-gray-300 mb-1"></i>
+                            <p class="text-[9px] text-gray-400 uppercase tracking-widest">Subir Imagen</p>
+                        </div>
+                        <img id="image-preview" class="upload-preview">
+                        <button id="clear-img" onclick="app.clearImage(event)" class="hidden absolute top-1 right-1 bg-white border border-gray-200 text-black rounded-full w-4 h-4 flex items-center justify-center text-[8px] hover:bg-gray-100">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="label-text">Modelo IA</h2>
+                    <select id="model-select" class="config-input text-gray-600">
+                        <option value="grok-video">GROK Video (Nuevo)</option>
+                        <option value="seedance">Seedance (Estándar)</option>
+                        <option value="veo">Google Veo</option>
+                    </select>
+                </div>
+
+                <div>
+                    <h2 class="label-text">Formato</h2>
+                    <div class="flex gap-2 mt-2">
+                        <button onclick="app.setRatio('square')" id="btn-square" class="btn-nordic flex-1 text-center"><i class="fa-regular fa-square"></i></button>
+                        <button onclick="app.setRatio('landscape')" id="btn-landscape" class="btn-nordic flex-1 text-center active"><i class="fa-solid fa-image"></i></button>
+                        <button onclick="app.setRatio('portrait')" id="btn-portrait" class="btn-nordic flex-1 text-center"><i class="fa-solid fa-mobile-screen"></i></button>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="label-text flex justify-between">
+                        <span>Duración</span>
+                        <span id="duration-val" class="text-black">5s</span>
+                    </h2>
+                    <input type="range" id="duration-slider" min="2" max="10" step="1" value="5" oninput="document.getElementById('duration-val').innerText = this.value + 's'">
+                </div>
+
+                <div>
+                    <h2 class="label-text flex justify-between">
+                        <span>Semilla</span>
+                        <span id="seed-val" class="font-mono text-gray-400">Random</span>
+                    </h2>
+                    <button onclick="app.randomizeSeed()" class="btn-nordic w-full mt-2 text-[9px]">
+                        <i class="fa-solid fa-shuffle"></i> Aleatorizar
+                    </button>
+                </div>
+
+                <div id="folder-warning" class="text-[9px] text-orange-400 font-mono hidden mt-2">
+                    <i class="fa-solid fa-triangle-exclamation mr-1"></i> Sin acceso a disco. Solo visualización.
+                </div>
+
+            </div>
+
+            <div class="mt-auto p-8 border-t border-gray-50">
+                <button onclick="app.generate()" id="btn-generate" class="btn-primary flex items-center justify-center gap-3">
+                    <span>GENERAR VIDEO</span>
+                    <i class="fa-solid fa-video text-[10px]"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex-1 bg-gray-50/50 relative flex flex-col">
+            
+            <div class="h-10 border-b border-gray-100 flex items-center px-6 bg-white justify-between shrink-0">
+                <span id="process-status" class="text-[10px] font-mono text-gray-400 uppercase">Listo para renderizar</span>
+                <span class="text-[10px] font-mono text-gray-300">POLLINATIONS.AI</span>
+            </div>
+
+            <div id="gallery-container" class="flex-1 overflow-y-auto p-8">
+                
+                <div id="placeholder" class="h-full flex flex-col items-center justify-center opacity-20">
+                    <i class="fa-solid fa-film text-6xl text-gray-400 mb-4"></i>
+                    <p class="text-xs font-light text-gray-500 tracking-widest uppercase">No hay videos generados</p>
+                </div>
+
+                <div id="gallery-grid" class="gallery-grid hidden"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- BRIDGE CON SISTEMA DE ARCHIVOS (SILENOS) ---
+        const Sys = window.parent.SystemConfig;
+        const FS = window.parent; 
+
+        class VideoStudio {
+            constructor() {
+                this.targetHandle = null; 
+                this.apiKey = localStorage.getItem('pollinations_api_key') || (Sys ? Sys.authKey : null);
+                this.currentRatio = 'landscape';
+                this.activeImageBase64 = null;
+                this.currentSeed = Math.floor(Math.random() * 1000000);
+            }
+
+            async init() {
+                this.updateAuthUI();
+                this.updateSeedDisplay();
+                await this.refreshFolderList();
+                
+                // Listener de autenticación silenciosa si el padre envía llaves
+                window.addEventListener('message', (event) => {
+                    if (event.data && event.data.type === 'POLLI_AUTH_SUCCESS' && event.data.key) {
+                        this.apiKey = event.data.key;
+                        localStorage.setItem('pollinations_api_key', this.apiKey);
+                        this.updateAuthUI();
+                    }
+                });
+            }
+
+            updateAuthUI() {
+                const indicator = document.getElementById('status-indicator');
+                const text = document.getElementById('status-text');
+
+                if (this.apiKey) {
+                    indicator.className = "w-1.5 h-1.5 rounded-full bg-green-500"; 
+                    text.innerText = "ONLINE";
+                    text.className = "text-[10px] font-medium text-black uppercase tracking-wider";
+                } else {
+                    indicator.className = "w-1.5 h-1.5 rounded-full bg-gray-200"; 
+                    text.innerText = "OFFLINE";
+                }
+            }
+
+            // --- GESTIÓN DE SISTEMA DE ARCHIVOS ---
+            async refreshFolderList() {
+                const list = document.getElementById('folder-list'); 
+                list.innerHTML = '';
+                if (!FS || !FS.rootHandle) {
+                    list.innerHTML = '<div class="p-8 text-center text-xs text-red-400 font-light">No se detectó el sistema de archivos padre. La función de auto-guardado no estará disponible.</div>';
+                    document.getElementById('folder-warning').classList.remove('hidden');
+                    return;
+                }
+                this.addFolderOption(list, FS.rootHandle, 'ROOT', true);
+                await this.scanDirRecursive(FS.rootHandle, list, 'ROOT');
+            }
+
+            async scanDirRecursive(dirHandle, listElement, pathString, depth = 0) {
+                if (depth > 2) return; 
+                for await (const entry of dirHandle.values()) {
+                    if (entry.kind === 'directory') {
+                        const currentPath = `${pathString} / ${entry.name}`;
+                        this.addFolderOption(listElement, entry, currentPath);
+                        await this.scanDirRecursive(entry, listElement, currentPath, depth + 1);
+                    }
+                }
+            }
+
+            addFolderOption(container, handle, displayName, isRoot = false) {
+                const el = document.createElement('div');
+                el.className = "px-6 py-3 cursor-pointer border-b border-gray-50 flex items-center gap-4 text-xs font-light text-gray-600 hover:bg-gray-50 transition-colors";
+                const iconClass = isRoot ? 'fa-database text-black' : 'fa-folder text-gray-300';
+                
+                el.innerHTML = `<i class="fa-solid ${iconClass} text-[10px]"></i><span class="truncate w-full tracking-wide">${displayName}</span>`;
+                el.onclick = () => {
+                    this.targetHandle = handle;
+                    document.getElementById('target-folder-label').innerText = displayName; 
+                    document.getElementById('folder-modal').classList.add('hidden');
+                    document.getElementById('folder-warning').classList.add('hidden');
+                };
+                container.appendChild(el);
+            }
+
+            showFolderModal() { 
+                this.refreshFolderList(); 
+                document.getElementById('folder-modal').classList.remove('hidden'); 
+            }
+
+            // --- LÓGICA DE UI ---
+
+            setRatio(ratio) {
+                this.currentRatio = ratio;
+                document.querySelectorAll('.btn-nordic').forEach(b => b.classList.remove('active'));
+                document.getElementById(`btn-${ratio}`).classList.add('active');
+            }
+
+            getDimensions() {
+                switch(this.currentRatio) {
+                    case 'portrait': return { w: 768, h: 1344 };
+                    case 'square': return { w: 1024, h: 1024 };
+                    case 'landscape': default: return { w: 1344, h: 768 };
+                }
+            }
+
+            randomizeSeed() {
+                this.currentSeed = Math.floor(Math.random() * 1000000);
+                this.updateSeedDisplay();
+            }
+
+            updateSeedDisplay() {
+                document.getElementById('seed-val').innerText = this.currentSeed;
+            }
+
+            // --- LÓGICA DE IMAGEN ---
+            handleFile(input) {
+                const file = input.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.activeImageBase64 = e.target.result;
+                    this.showImagePreview(this.activeImageBase64);
+                };
+                reader.readAsDataURL(file);
+            }
+
+            showImagePreview(src) {
+                const preview = document.getElementById('image-preview');
+                const placeholder = document.getElementById('upload-placeholder');
+                const clearBtn = document.getElementById('clear-img');
+                
+                preview.src = src;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+                clearBtn.classList.remove('hidden');
+            }
+
+            clearImage(e) {
+                if(e) e.stopPropagation();
+                this.activeImageBase64 = null;
+                document.getElementById('file-input').value = "";
+                document.getElementById('image-preview').style.display = 'none';
+                document.getElementById('upload-placeholder').style.display = 'block';
+                document.getElementById('clear-img').classList.add('hidden');
+            }
+
+            // --- GENERACIÓN DE VIDEO ---
+
+            async generate() {
+                const prompt = document.getElementById('prompt-input').value.trim();
+                const model = document.getElementById('model-select').value;
+                const duration = document.getElementById('duration-slider').value;
+
+                if (!prompt && !this.activeImageBase64) {
+                    return alert("Describe tu video o sube una imagen base.");
+                }
+
+                // UI Loading
+                const btn = document.getElementById('btn-generate');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>PROCESANDO...</span>';
+                document.getElementById('loading-bar').style.width = '40%';
+                document.getElementById('process-status').innerText = "Enviando solicitud...";
+
+                document.getElementById('placeholder').classList.add('hidden');
+                document.getElementById('gallery-grid').classList.remove('hidden');
+
+                try {
+                    const dim = this.getDimensions();
+                    const safePrompt = encodeURIComponent(prompt || "video creation");
+                    
+                    let response;
+                    
+                    // Lógica para Image-to-Video (POST) o Text-to-Video (GET/POST)
+                    if (this.activeImageBase64) {
+                        const postBody = {
+                            prompt: prompt,
+                            model: model,
+                            width: dim.w,
+                            height: dim.h,
+                            seed: this.currentSeed,
+                            nologo: true,
+                            duration: duration,
+                            image: this.activeImageBase64
+                        };
+
+                        const postUrl = `https://gen.pollinations.ai/image/${safePrompt}`;
+                        
+                        response = await fetch(postUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                ...(this.apiKey ? { 'Authorization': `Bearer ${this.apiKey}` } : {})
+                            },
+                            body: JSON.stringify(postBody)
+                        });
+
+                    } else {
+                        // Construcción URL GET
+                        let url = `https://gen.pollinations.ai/image/${safePrompt}?model=${model}&width=${dim.w}&height=${dim.h}&seed=${this.currentSeed}&nologo=true&duration=${duration}`;
+                        if (this.apiKey) url += `&key=${this.apiKey}`;
+                        
+                        response = await fetch(url);
+                    }
+
+                    if (!response.ok) throw new Error("API Error: " + response.statusText);
+                    document.getElementById('loading-bar').style.width = '80%';
+                    document.getElementById('process-status').innerText = "Recibiendo stream...";
+
+                    const blob = await response.blob();
+                    
+                    // Verificación básica
+                    if (!blob.type.includes('video')) {
+                        console.warn("Recibido tipo: " + blob.type);
+                        if(blob.type.includes('image')) throw new Error("El modelo devolvió una imagen estática.");
+                    }
+
+                    // Guardado en disco
+                    let savedFileName = null;
+                    if (this.targetHandle) {
+                        savedFileName = `VID_${Date.now()}.mp4`;
+                        await this.saveToDisk(blob, savedFileName);
+                    }
+
+                    // Añadir a galería
+                    this.addToGallery(blob, savedFileName);
+
+                    document.getElementById('process-status').innerText = "Generación completada.";
+                    document.getElementById('loading-bar').style.width = '0%';
+
+                } catch (e) {
+                    console.error(e);
+                    alert("Error: " + e.message);
+                    document.getElementById('process-status').innerText = "Error en la generación.";
+                    document.getElementById('loading-bar').style.width = '0%';
+                }
+
+                btn.disabled = false;
+                btn.innerHTML = '<span>GENERAR VIDEO</span><i class="fa-solid fa-video text-[10px]"></i>';
+            }
+
+            async saveToDisk(blob, filename) {
+                try {
+                    const fileHandle = await this.targetHandle.getFileHandle(filename, { create: true });
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    console.log(`Guardado: ${filename}`);
+                } catch(e) {
+                    console.error("Error al guardar en disco:", e);
+                    alert("No se pudo escribir en el archivo. Verifica permisos.");
+                }
+            }
+
+            addToGallery(blob, fileName) {
+                const url = URL.createObjectURL(blob);
+                const gallery = document.getElementById('gallery-grid');
+                
+                const div = document.createElement('div');
+                div.className = "gallery-item";
+                
+                // Aspect Ratio para el contenedor de la galería según lo seleccionado
+                let aspectRatioStyle = "aspect-ratio: 16/9;";
+                if(this.currentRatio === 'square') aspectRatioStyle = "aspect-ratio: 1/1;";
+                if(this.currentRatio === 'portrait') aspectRatioStyle = "aspect-ratio: 9/16;";
+                
+                div.style = aspectRatioStyle;
+
+                const statusIcon = fileName ? '<i class="fa-solid fa-check text-green-400"></i>' : '<i class="fa-solid fa-floppy-disk text-white"></i>';
+
+                div.innerHTML = `
+                    <video src="${url}" class="gallery-video" loop muted playsinline onmouseover="this.play()" onmouseout="this.pause()"></video>
+                    <div class="item-overlay">
+                        <span class="text-[9px] font-mono text-white/50 mb-auto self-start">ID: ${this.currentSeed}</span>
+                        <div class="flex gap-2">
+                             <a href="${url}" download="video-${Date.now()}.mp4" class="btn-nordic bg-white text-black border-none hover:bg-gray-200 text-[10px] py-1 px-3">
+                                <i class="fa-solid fa-download"></i>
+                            </a>
+                            <div class="btn-nordic bg-black/50 text-white border-white/20 py-1 px-3 cursor-default" title="${fileName ? 'Guardado Auto' : 'No Guardado'}">
+                                ${statusIcon}
+                            </div>
+                            <button onclick="window.open('${url}', '_blank')" class="btn-nordic bg-black/50 text-white border-white/20 hover:bg-black py-1 px-3">
+                                <i class="fa-solid fa-expand"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                // Insertar al principio
+                gallery.prepend(div);
+            }
+        }
+
+        const app = new VideoStudio();
+        window.onload = () => app.init();
+
+    </script>
+</body>
+</html>

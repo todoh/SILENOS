@@ -1,0 +1,79 @@
+/* --- ESTILOS NORDIC (EXTRACTOR BASE) --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap');
+
+body { 
+    font-family: 'Inter', sans-serif; 
+    background: #ffffff; 
+    color: #1a1a1a; 
+    height: 100vh; 
+    overflow: hidden; 
+    display: flex; 
+    flex-direction: column; 
+    font-weight: 300; 
+}
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #d4d4d4; }
+
+.loading-bar { 
+    position: fixed; top: 0; left: 0; height: 2px; background: #1a1a1a; 
+    transition: width 0.4s ease; z-index: 1000; 
+}
+
+.font-mono { font-family: 'JetBrains Mono', monospace; letter-spacing: -0.02em; }
+
+.config-input {
+    background: transparent; border-bottom: 1px solid #e5e5e5; color: #1a1a1a;
+    padding: 4px 0; border-radius: 0; font-size: 0.75rem; outline: none;
+    transition: border-color 0.3s; width: 100%;
+}
+.config-input:focus { border-bottom: 1px solid #1a1a1a; }
+
+.btn-nordic { 
+    background: #ffffff; color: #1a1a1a; text-transform: uppercase; 
+    font-size: 10px; letter-spacing: 0.1em; font-weight: 500;
+    border: 1px solid #e5e5e5; padding: 8px 16px; transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif; cursor: pointer;
+}
+.btn-nordic:hover { border-color: #1a1a1a; background: #fff; }
+
+.btn-primary {
+    background: #1a1a1a; color: #ffffff; border: none;
+    font-family: 'Inter', sans-serif; text-transform: uppercase;
+    font-size: 11px; letter-spacing: 0.15em; padding: 16px;
+    transition: opacity 0.3s; cursor: pointer;
+}
+.btn-primary:hover { opacity: 0.8; }
+.btn-primary:disabled { background: #e5e5e5; color: #a3a3a3; cursor: not-allowed; }
+
+.label-text {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 0.2em;
+    color: #9ca3af; font-weight: 500;
+}
+
+/* --- ESTILOS ESPECÍFICOS OMNIGEN --- */
+.log-enter { animation: fadeSlide 0.4s ease forwards; opacity: 0; }
+@keyframes fadeSlide { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Renderizado del Libro */
+.prose-content {
+    font-family: 'Georgia', serif; 
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: #333;
+    max-width: 65ch;
+    margin: 0 auto;
+}
+.prose-content p { margin-bottom: 1.5em; text-align: justify; }
+
+.typing-dot { animation: typing 1.4s infinite ease-in-out both; }
+.typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+@keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
+/* Colores de estado para logs */
+.text-architect { color: #4f46e5; } 
+.text-writer { color: #e11d48; }    
+.text-critic { color: #d97706; }

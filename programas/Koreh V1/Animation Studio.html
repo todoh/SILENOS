@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animation Studio V2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="animation/styles.css">
+</head>
+<body>
+
+    <div id="folder-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-white/95 p-8 hidden">
+        <div class="bg-white w-full max-w-lg flex flex-col max-h-[70vh] border border-gray-200 shadow-xl rounded-lg overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h2 class="text-xs font-medium tracking-[0.2em] text-gray-600 uppercase">Biblioteca de Proyectos</h2>
+                <button onclick="ui.toggleFolderModal()" class="text-gray-400 hover:text-black text-xl transition">&times;</button>
+            </div>
+            <div id="folder-list" class="p-0 overflow-y-auto flex-1 h-64 bg-white"></div>
+        </div>
+    </div>
+
+    <header class="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-6 z-10 shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-black flex items-center justify-center text-white rounded-sm">
+                <i class="fa-solid fa-film text-sm"></i>
+            </div>
+            <h1 class="font-bold text-black text-xs tracking-[0.15em]">ANIMATION<span class="font-light text-gray-400">STUDIO</span></h1>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <div class="flex flex-col items-end">
+                <span class="label-text">Koreh AI</span>
+                <div class="flex items-center gap-2">
+                    <span id="status-text" class="text-[9px] font-medium text-gray-400 uppercase tracking-wider">...</span>
+                    <span id="status-indicator" class="w-1.5 h-1.5 rounded-full bg-gray-200"></span>
+                </div>
+            </div>
+            <div class="h-6 w-px bg-gray-200"></div>
+            <button onclick="ui.toggleFolderModal()" class="btn-nordic py-2">
+                <i class="fa-solid fa-folder-tree text-gray-400"></i> <span id="current-folder-label" class="truncate max-w-[100px]">Seleccionar Carpeta</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        
+        <div class="w-[400px] bg-white border-r border-gray-100 flex flex-col z-20 shadow-xl relative">
+            
+            <div class="flex-1 overflow-y-auto">
+                <div class="p-4 border-b border-gray-100">
+                     <div class="flex items-center justify-between mb-3">
+                        <h3 class="label-text"><i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Producción de Escena</h3>
+                     </div>
+                    <textarea id="scene-input" class="config-input border border-gray-200 p-3 h-24 rounded bg-gray-50 focus:bg-white resize-none leading-relaxed text-xs mb-3" 
+                    placeholder="Describe una escena completa. Ej: Un caballero oscuro pelea contra un dragón en un castillo en ruinas bajo la lluvia."></textarea>
+                    <button onclick="logic.analyzeAndGenerate()" id="btn-generate" class="btn-primary w-full py-3 rounded-sm shadow-sm hover:shadow-md">
+                        PRODUCIR GUIÓN COMPLETO
+                    </button>
+                </div>
+
+                <div class="p-4 border-b border-gray-100 bg-gray-50/50">
+                    <h3 class="label-text mb-3"><i class="fa-solid fa-plus mr-2"></i>Generador de Assets</h3>
+                    <div class="flex gap-2 mb-3">
+                        <button id="gen-btn-bg" class="btn-nordic flex-1 active" onclick="ui.setGenTab('bg')">Fondo</button>
+                        <button id="gen-btn-sprite" class="btn-nordic flex-1" onclick="ui.setGenTab('sprite')">Sprite Transparente</button>
+                    </div>
+                    <div class="flex gap-2">
+                         <input type="text" id="asset-prompt" class="config-input border border-gray-200 p-2 text-xs flex-1 bg-white" placeholder="Ej: Bosque nevado al atardecer...">
+                         <input type="number" id="asset-qty" value="1" min="1" max="4" class="config-input border border-gray-200 w-12 text-center text-xs bg-white font-bold">
+                        <button onclick="logic.generateCustomAssets()" class="btn-primary py-2 px-4 rounded-sm">
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                     <span class="text-[9px] text-gray-400 mt-2 block leading-tight">*Genera hasta 4 imágenes en paralelo. Se guardan automáticamente en la biblioteca.</span>
+                </div>
+                
+                <div class="p-4">
+                     <div class="flex justify-between items-center mb-3">
+                        <h3 class="label-text"><i class="fa-solid fa-layer-group mr-2"></i>Capas de Escena</h3>
+                        <span id="assets-count" class="text-[9px] font-bold text-gray-400">0 ITEMS</span>
+                    </div>
+                    <div id="assets-list" class="space-y-1 min-h-[50px] mb-4">
+                        <div class="text-[10px] text-gray-300 text-center italic py-4 border border-dashed border-gray-100 rounded">Escena vacía</div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="ui.captureCanvas()" class="btn-nordic py-2"><i class="fa-solid fa-camera"></i> Guardar Escena (PNG)</button>
+                        <button onclick="ui.clearScene()" class="btn-nordic py-2 text-red-400 hover:text-red-600 hover:border-red-200"><i class="fa-solid fa-trash"></i> Limpiar Todo</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-200 bg-gray-50 h-64 flex flex-col">
+                <div class="p-3 border-b border-gray-100 flex justify-between items-center">
+                    <h3 class="label-text"><i class="fa-regular fa-images mr-2"></i>Biblioteca Local</h3>
+                    <button onclick="logic.loadExistingData()" class="text-gray-400 hover:text-black text-xs"><i class="fa-solid fa-rotate"></i></button>
+                </div>
+                <div id="library-container" class="flex-1 overflow-y-auto bg-gray-100/50 p-2">
+                     <div id="library-grid" class="library-grid">
+                         <div class="col-span-4 text-[10px] text-gray-400 text-center italic pt-8">Selecciona una carpeta para ver sus imágenes.</div>
+                     </div>
+                </div>
+            </div>
+            
+            <div id="sidebar-loader" class="absolute inset-0 bg-white/95 backdrop-blur-md z-50 flex flex-col items-center justify-center hidden transition-all">
+                <div class="w-10 h-10 border-4 border-gray-100 border-t-black rounded-full animate-spin mb-4"></div>
+                <span id="loader-text" class="text-[10px] uppercase tracking-[0.2em] font-bold text-black">Procesando...</span>
+                <span id="loader-subtext" class="text-[9px] text-gray-400 mt-2">Esto puede tomar unos segundos</span>
+            </div>
+        </div>
+
+        <div class="flex-1 bg-[#1a1a1a] flex items-center justify-center relative overflow-hidden p-12">
+            <div class="absolute inset-0 pointer-events-none opacity-20" 
+                 style="background-image: radial-gradient(#ffffff 1px, transparent 1px); background-size: 32px 32px;">
+            </div>
+
+            <div class="shadow-2xl border-[4px] border-white bg-white relative rounded-sm overflow-hidden">
+                <canvas id="stage-canvas" width="1280" height="720" class="cursor-crosshair block"></canvas>
+                <div class="absolute bottom-3 right-3 text-[9px] text-black/70 font-medium font-mono bg-white/90 px-3 py-1 rounded-full backdrop-blur-sm border border-white/50 shadow-sm">HD 1280x720</div>
+            </div>
+        </div>
+
+    </main>
+
+    <canvas id="chroma-canvas" style="display: none;"></canvas>
+
+    <script src="librerias/ai.core.js"></script>
+    <script src="librerias/ai.text.js"></script>
+    <script src="librerias/ai.image.js"></script>
+
+    <script src="animation/chroma.js"></script>
+    <script src="animation/ui.js"></script>
+    <script src="animation/ai.js"></script>
+    <script src="animation/logic.js"></script>
+    <script src="animation/main.js"></script>
+</body>
+</html>

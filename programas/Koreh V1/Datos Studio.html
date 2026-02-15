@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studio Datos v3.3.0 - Chroma Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="datosstudio/styles.css">
+</head>
+<body>
+
+    <div id="loading-bar" class="loading-bar" style="width: 0%"></div>
+
+    <div id="msg-modal" class="fixed inset-0 z-[120] flex items-center justify-center bg-black/20 hidden backdrop-blur-sm transition-opacity">
+        <div class="bg-white border border-gray-200 shadow-2xl p-6 max-w-sm w-full flex flex-col gap-4">
+            <h3 id="msg-title" class="label-text text-black text-center tracking-widest mb-1">NOTIFICACIÓN</h3>
+            <div id="msg-content" class="text-sm font-light text-center leading-relaxed text-gray-700"></div>
+            <div class="flex gap-2 justify-center mt-2 pt-4 border-t border-gray-50" id="msg-actions"></div>
+        </div>
+    </div>
+
+    <div id="folder-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-white/95 p-8 hidden transition-opacity">
+        <div class="bg-white w-full max-w-lg flex flex-col max-h-[70vh] border border-gray-200 shadow-xl">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h2 class="text-xs font-medium tracking-[0.2em] text-gray-400 uppercase">Seleccionar Origen</h2>
+                <button onclick="ui.toggleFolderModal()" class="text-gray-300 hover:text-black transition-colors text-xl font-light">&times;</button>
+            </div>
+            <div id="folder-list" class="p-0 overflow-y-auto flex-1 h-64 bg-white">
+                <div class="p-12 text-center text-gray-300 font-light text-sm italic">Escaneando sistema...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="name-modal" class="fixed inset-0 z-[110] flex items-center justify-center bg-white/95 p-8 hidden transition-opacity">
+        <div class="bg-white w-full max-w-sm border border-gray-200 shadow-xl p-6 flex flex-col gap-4">
+            <div class="flex justify-between items-center">
+                <h2 class="label-text text-black tracking-widest">CREAR NUEVO DATO</h2>
+                <button onclick="ui.toggleNameModal()" class="text-gray-300 hover:text-black">&times;</button>
+            </div>
+            <input type="text" id="new-item-name" class="config-input text-lg font-medium text-center" placeholder="Nombre del archivo..." onkeydown="if(event.key==='Enter') app.confirmCreate()">
+            <div class="flex gap-2 justify-end mt-2 pt-4 border-t border-gray-50">
+                <button onclick="ui.toggleNameModal()" class="btn-nordic text-gray-400 border-none hover:bg-gray-50">Cancelar</button>
+                <button onclick="app.confirmCreate()" class="btn-primary w-auto px-6">CREAR</button>
+            </div>
+        </div>
+    </div>
+
+    <header class="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-6 z-10 shrink-0 relative">
+        <div class="flex items-center gap-4">
+            <button onclick="ui.toggleGenerator()" id="btn-toggle-gen" class="w-8 h-8 flex items-center justify-center text-black border border-gray-200 hover:bg-black hover:text-white transition-colors">
+                <i class="fa-solid fa-bars-staggered text-sm"></i>
+            </button>
+            <div class="flex flex-col">
+                <h1 class="font-medium text-black text-xs tracking-[0.15em] leading-tight">STUDIO DATOS<span class="text-gray-400 ml-1">v3.3</span></h1>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <div class="flex flex-col items-end gap-1 mr-4">
+                <span class="label-text">API Status</span>
+                <div class="flex items-center gap-2">
+                    <span id="status-text" class="text-[10px] font-medium text-gray-300 uppercase tracking-wider">OFFLINE</span>
+                    <span id="status-indicator" class="w-1.5 h-1.5 rounded-full bg-gray-200"></span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 border-r border-gray-100 pr-6 mr-2 h-8">
+                <span class="label-text mb-0 cursor-pointer text-[9px]" onclick="document.getElementById('chroma-toggle').click()">SIN FONDO</span>
+                <div class="relative">
+                    <input type="checkbox" id="chroma-toggle" class="toggle-checkbox hidden">
+                    <label for="chroma-toggle" class="toggle-label block w-7 h-4 bg-gray-200 rounded-full cursor-pointer relative transition-colors">
+                        <div class="toggle-circle absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform"></div>
+                    </label>
+                </div>
+            </div>
+
+            <button onclick="app.illustrateAll()" id="btn-illustrate-all" class="btn-nordic mr-2" title="Generar imágenes para elementos sin imagen">
+                <i class="fa-solid fa-palette text-[10px]"></i> Ilustrar Todo
+            </button>
+
+            <button onclick="app.createNewItem()" class="btn-nordic">
+                <i class="fa-solid fa-plus text-[10px]"></i> Nuevo
+            </button>
+            
+            <button onclick="ui.toggleFolderModal()" id="folder-label-btn" class="btn-nordic min-w-[140px] justify-between">
+                <span>Seleccionar Carpeta</span>
+                <i class="fa-solid fa-folder-open text-gray-400"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden relative bg-gray-50/30">
+        
+        <aside id="generator-sidebar" class="sidebar sidebar-left">
+            <div class="h-16 border-b border-gray-100 flex items-center justify-between px-6 bg-white shrink-0">
+                <span class="label-text text-black tracking-widest">MOTOR DE GÉNESIS</span>
+                <i class="fa-solid fa-bolt text-xs text-gray-300"></i>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                
+                <div class="space-y-4">
+                    <div>
+                        <span class="label-text text-blue-500">Enfoque de Realidad</span>
+                        <select id="gen-mode" class="config-input text-blue-900 font-medium bg-blue-50/50">
+                            <option value="fiction">Fantasía / Sci-Fi (Creativo)</option>
+                            <option value="real">Realidad / Histórico (Estricto)</option>
+                            <option value="search">Deep Research (Perplexity + Reasoning)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <span class="label-text">Premisa / Semilla</span>
+                        <textarea id="gen-premise" rows="3" class="config-input resize-none leading-relaxed" placeholder="Ej. Una facción de magos... O Personajes de la Revolución Francesa..."></textarea>
+                    </div>
+
+                    <div>
+                        <span class="label-text">Estilo Visual Global</span>
+                        <textarea id="gen-visual" rows="2" class="config-input resize-none" placeholder="Ej. Cyberpunk, óleo clásico, fotografía realista..."></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="label-text">Categoría</span>
+                            <select id="gen-type" class="config-input">
+                            <optgroup label="Seres y Biología">
+                                <option value="Dato">Dato</option>
+
+                                <option value="Personaje">Personaje / NPC</option>
+                                <option value="Criatura">Criatura / Fauna</option>
+                                <option value="Flora">Flora / Vegetación</option>
+                                <option value="Raza">Raza / Especie</option>
+                            </optgroup>
+
+                            <optgroup label="Geografía y Espacio">
+                                <option value="Lugar">Lugar / Región</option>
+                                <option value="Asentamiento">Ciudad / Pueblo</option>
+                                <option value="Estructura">Edificio / Monumento</option>
+                                <option value="Cosmología">Planeta / Astro</option>
+                            </optgroup>
+
+                            <optgroup label="Objetos y Bienes">
+                                <option value="Objeto">Objeto / Artefacto</option>
+                                <option value="Arma">Arma / Equipo</option>
+                                <option value="Vehículo">Vehículo / Transporte</option>
+                                <option value="Recurso">Material / Recurso</option>
+                                <option value="Comida">Alimento / Poción</option>
+                            </optgroup>
+
+                            <optgroup label="Sociedad y Cultura">
+                                <option value="Facción">Facción / Organización</option>
+                                <option value="Religión">Religión / Mitología</option>
+                                <option value="Idioma">Idioma / Dialecto</option>
+                                <option value="Profesión">Profesión / Título</option>
+                            </optgroup>
+
+                            <optgroup label="Historia y Metafísica">
+                                <option value="Evento">Evento Histórico</option>
+                                <option value="Hechizo">Hechizo / Habilidad</option>
+                                <option value="Ley">Ley / Documento</option>
+                                <option value="Misión">Misión / Quest</option>
+                                <option value="Concepto">Concepto / Lore</option>
+                            </optgroup>
+                        </select>
+                        </div>
+                        <div>
+                            <span class="label-text">Cantidad</span>
+                            <input type="number" id="gen-count" class="config-input" value="3" min="1" max="10">
+                        </div>
+                    </div>
+
+                    <button onclick="app.generateBatch()" id="btn-gen-batch" class="btn-primary mt-4">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> GENERAR LOTE
+                    </button>
+                </div>
+
+                <div class="pt-6 border-t border-gray-100">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="label-text">Registro de Sistema</span>
+                        <button onclick="document.getElementById('gen-logs').innerHTML=''" class="text-[9px] text-gray-300 hover:text-red-400">BORRAR</button>
+                    </div>
+                    <div id="gen-logs" class="log-console h-40 bg-gray-50 p-2 border border-gray-100">
+                        <div class="log-entry info">Sistema listo.</div>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+
+        <div class="flex-1 overflow-y-auto relative transition-all duration-300" id="main-scroll">
+            <div id="grid-container" class="grid-container">
+                <div class="col-span-full flex flex-col items-center justify-center h-64 text-gray-300">
+                    <i class="fa-solid fa-cube text-4xl mb-4 opacity-20"></i>
+                    <p class="text-xs tracking-widest uppercase">Selecciona una carpeta para comenzar</p>
+                </div>
+            </div>
+        </div>
+
+        <aside id="editor-sidebar" class="sidebar sidebar-right">
+            <div class="h-16 border-b border-gray-100 flex items-center justify-between px-6 bg-white shrink-0">
+                <span class="label-text text-black">Editor de Propiedades</span>
+                <button onclick="ui.closeSidebar()" class="text-gray-300 hover:text-red-400 transition-colors"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                <div class="space-y-2">
+                    <div class="flex justify-between items-end">
+                        <span class="label-text">Representación Visual</span>
+                        <button onclick="app.generateImage()" class="text-[9px] font-bold text-black border-b border-gray-200 hover:border-black uppercase tracking-wider transition-all">Generar (Klein)</button>
+                    </div>
+                    <div class="aspect-square bg-gray-50 border border-gray-100 relative group overflow-hidden flex items-center justify-center" id="editor-img-container">
+                        <i class="fa-regular fa-image text-gray-300 text-2xl"></i>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <span class="label-text">Título / Nombre</span>
+                        <input type="text" id="inp-title" class="config-input font-medium text-lg" placeholder="Nombre...">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="label-text">Etiqueta</span>
+                            <input type="text" id="inp-tag" class="config-input" placeholder="Ej. Personaje">
+                        </div>
+                        <div>
+                            <span class="label-text">ID Archivo</span>
+                            <input type="text" id="inp-id" class="config-input text-gray-400" disabled>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="label-text">Descripción Narrativa</span>
+                            <button onclick="app.refineText('desc')" class="text-[9px] text-gray-400 hover:text-black uppercase tracking-wider transition-colors"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>Refinar</button>
+                        </div>
+                        <textarea id="inp-desc" rows="6" class="config-input resize-none leading-relaxed text-gray-600 border-b border-gray-200" placeholder="Descripción..."></textarea>
+                    </div>
+
+                    <div>
+                        <span class="label-text text-purple-400">Prompt Visual (IA)</span>
+                        <textarea id="inp-visual" rows="3" class="config-input resize-none font-mono text-xs text-purple-800 bg-purple-50/50 p-2 border-purple-100" placeholder="Prompt..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-gray-100 bg-white shrink-0 flex gap-4">
+                <button onclick="app.deleteCurrentItem()" class="btn-nordic text-red-400 border-red-100 hover:bg-red-50 hover:border-red-200">
+                    <i class="fa-regular fa-trash-can"></i>
+                </button>
+                <button onclick="app.saveCurrentItem()" id="btn-save" class="btn-primary">
+                    GUARDAR CAMBIOS
+                </button>
+            </div>
+
+            <div id="sidebar-loader" class="loader-overlay">
+                <i class="fa-solid fa-circle-notch fa-spin text-2xl text-black mb-2"></i>
+                <span class="text-[10px] uppercase tracking-widest text-gray-500 font-medium">Procesando IA...</span>
+            </div>
+        </aside>
+
+    </main>
+    
+    <canvas id="hidden-canvas" style="display: none;"></canvas>
+
+    <script src="librerias/ai.core.js"></script>
+    <script src="librerias/ai.text.js"></script>
+    <script src="librerias/ai.image.js"></script>
+
+    <script src="datosstudio/logic.utils.js"></script>
+    <script src="datosstudio/logic.ui.js"></script>    
+    <script src="datosstudio/logic.core.js"></script>
+    <script src="datosstudio/chroma.core.js"></script>
+    <script src="datosstudio/chroma.ui.js"></script>
+    <script src="datosstudio/coherence.core.js"></script>
+    <script src="datosstudio/imagen.batch.js"></script>
+    <script src="datosstudio/imagen.core.js"></script>
+    <script src="datosstudio/imagen.text.js"></script>
+    <script src="datosstudio/main.js"></script>
+
+</body>
+</html>

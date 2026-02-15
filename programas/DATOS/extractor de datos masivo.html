@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extractor Datos V9 - MapReduce Paralelo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #ffffff; 
+            color: #1a1a1a; 
+            height: 100vh; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            font-weight: 300; 
+        }
+
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #d4d4d4; }
+
+        .loading-bar { 
+            position: fixed; top: 0; left: 0; height: 2px; background: #1a1a1a; 
+            transition: width 0.4s ease; z-index: 1000; 
+        }
+        
+        .font-mono { font-family: 'JetBrains Mono', monospace; letter-spacing: -0.02em; }
+        .label-text { font-size: 9px; text-transform: uppercase; letter-spacing: 0.2em; color: #9ca3af; font-weight: 500; }
+
+        .btn-primary {
+            background: #1a1a1a; color: #ffffff; border: none; font-family: 'Inter', sans-serif;
+            text-transform: uppercase; font-size: 11px; letter-spacing: 0.15em; padding: 16px;
+            transition: opacity 0.3s;
+        }
+        .btn-primary:hover { opacity: 0.8; }
+        .btn-primary:disabled { background: #e5e5e5; color: #a3a3a3; cursor: not-allowed; }
+
+        .log-enter { animation: fadeSlide 0.4s ease forwards; opacity: 0; }
+        @keyframes fadeSlide { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div id="loading-bar" class="loading-bar" style="width: 0%"></div>
+
+    <div id="folder-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-white/95 p-8 hidden transition-opacity">
+        <div class="bg-white w-full max-w-lg flex flex-col max-h-[60vh] border border-gray-200 shadow-xl">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h2 class="text-xs font-medium tracking-[0.2em] text-gray-400 uppercase">Seleccionar Destino</h2>
+                <button onclick="document.getElementById('folder-modal').classList.add('hidden')" class="text-gray-300 hover:text-black transition-colors text-xl font-light">&times;</button>
+            </div>
+            <div id="folder-list" class="p-0 overflow-y-auto flex-1 h-64 bg-white">
+                <div class="p-12 text-center text-gray-300 font-light text-sm italic">Escaneando sistema de archivos...</div>
+            </div>
+        </div>
+    </div>
+
+    <header class="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-8 z-10 shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="w-8 h-8 flex items-center justify-center text-black">
+                <i class="fa-solid fa-layer-group text-lg"></i>
+            </div>
+            <div class="flex flex-col">
+                <h1 class="font-medium text-black text-xs tracking-[0.15em] leading-tight">EXTRACTOR<span class="text-gray-400 ml-1">MAP-REDUCE</span></h1>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-8">
+            <div class="flex flex-col items-end gap-1">
+                <span class="label-text">Estado API</span>
+                <div class="flex items-center gap-2">
+                    <span id="status-text" class="text-[10px] font-medium text-gray-300 uppercase tracking-wider">OFFLINE</span>
+                    <span id="status-indicator" class="w-1.5 h-1.5 rounded-full bg-gray-200"></span>
+                </div>
+            </div>
+
+            <div class="h-8 w-px bg-gray-100"></div>
+
+            <div class="flex flex-col items-end gap-1">
+                <span class="label-text">Directorio</span>
+                <button onclick="app.showFolderModal()" id="target-folder-label" class="text-[10px] font-medium text-black border-b border-gray-200 hover:border-black truncate max-w-[150px] transition-colors pb-0.5">
+                    Seleccionar Carpeta
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        <div class="w-1/2 flex flex-col p-0 border-r border-gray-100 bg-white relative">
+            <div class="flex justify-between items-end p-8 pb-4">
+                <h2 class="label-text">Fuente Narrativa (Libro Completo)</h2>
+                <button onclick="document.getElementById('source-text').value=''" class="text-[9px] text-gray-300 hover:text-red-400 transition-colors uppercase tracking-widest">Borrar</button>
+            </div>
+            
+            <textarea id="source-text" class="flex-1 w-full px-8 py-4 border-none bg-white focus:ring-0 outline-none resize-none text-sm font-light leading-7 text-gray-600 placeholder-gray-200" 
+            placeholder="Pega aquí el contenido completo del libro (150-200 páginas)..."></textarea>
+            
+            <div class="p-8 bg-white">
+                <button onclick="app.startProcess()" id="btn-generate" class="btn-primary w-full flex items-center justify-center gap-3 shadow-sm hover:shadow-md transition-all">
+                    <span>Iniciar Extracción Masiva</span>
+                    <i class="fa-solid fa-bolt text-[10px]"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="w-1/2 flex flex-col bg-gray-50/30">
+            <div class="px-8 py-8 pb-4 border-b border-gray-100 flex justify-between items-end">
+                <h2 class="label-text">Registro del Sistema</h2>
+                <span id="timer" class="text-[10px] text-gray-400 font-mono">00:00</span>
+            </div>
+            
+            <div id="process-log" class="flex-1 overflow-y-auto px-8 py-4 space-y-3"></div>
+            
+            <div class="h-64 bg-white border-t border-gray-100 flex flex-col z-10">
+                <div class="px-8 py-4 border-b border-gray-50 flex justify-between items-center bg-white">
+                    <h3 class="label-text">Fichas Generadas</h3>
+                    <i class="fa-regular fa-folder-open text-gray-300 text-xs"></i>
+                </div>
+                <div id="results-list" class="flex-1 overflow-y-auto p-6 grid grid-cols-1 gap-2 content-start"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- CONFIGURACIÓN DE FORMATO ESTÁNDAR ---
+        const FORMATO_ESTANDAR = {
+            "name": "Nombre de la Entidad",
+            "type": "Personaje|Lugar|Objeto",
+            "desc": "Descripción narrativa detallada basada en el contexto...",
+            "visualDesc": "Prompt visual detallado: fotografía realista, iluminación, rasgos...",
+            "imagen64": " " 
+        };
+
+        // --- BRIDGE CON SYSTEMA ---
+        const Sys = window.parent.SystemConfig || {};
+        const FS = window.parent; 
+
+        // --- UTILIDADES ---
+        const UTILS = {
+            cleanJSON(str) {
+                if(!str) return "{}";
+                str = str.replace(/```json/g, '').replace(/```/g, '');
+                const firstBrace = str.indexOf('{');
+                const firstBracket = str.indexOf('[');
+                const lastBrace = str.lastIndexOf('}');
+                const lastBracket = str.lastIndexOf(']');
+                
+                let start = -1, end = -1;
+                if (firstBracket !== -1 && (firstBrace === -1 || firstBracket < firstBrace)) {
+                    start = firstBracket; end = lastBracket;
+                } else if (firstBrace !== -1) {
+                    start = firstBrace; end = lastBrace;
+                }
+
+                if (start !== -1 && end !== -1) return str.substring(start, end + 1);
+                return str; 
+            },
+            updateProgress(percent) { document.getElementById('loading-bar').style.width = percent + '%'; },
+            chunkText(text, size = 15000, overlap = 500) {
+                const chunks = [];
+                for (let i = 0; i < text.length; i += (size - overlap)) {
+                    chunks.push(text.substring(i, i + size));
+                }
+                return chunks;
+            }
+        };
+
+        // --- CLASE PRINCIPAL: GENERADOR DE DATOS ---
+        class NarrativeGenerator {
+            constructor() {
+                this.targetHandle = null; 
+                this.startTime = 0; 
+                this.timerInterval = null;
+                this.masterIndex = []; 
+                this.consolidatedEntities = [];
+            }
+
+            async init() {
+                this.updateAuthUI();
+                await this.refreshFolderList();
+                window.parent.addEventListener('silenos:config-updated', () => this.updateAuthUI());
+            }
+
+            updateAuthUI() {
+                const indicator = document.getElementById('status-indicator');
+                const text = document.getElementById('status-text');
+                if (Sys && Sys.authKey) {
+                    indicator.className = "w-1.5 h-1.5 rounded-full bg-black"; 
+                    text.innerText = "CONECTADO";
+                    text.className = "text-[10px] font-medium text-black uppercase tracking-wider";
+                } else {
+                    indicator.className = "w-1.5 h-1.5 rounded-full bg-gray-200"; 
+                    text.innerText = "DESCONECTADO";
+                }
+            }
+
+            // --- SISTEMA DE ARCHIVOS ---
+            async refreshFolderList() {
+                const list = document.getElementById('folder-list'); 
+                list.innerHTML = '';
+                if (!FS || !FS.rootHandle) {
+                    list.innerHTML = '<div class="p-8 text-center text-xs text-red-400 font-light">Root Handle not found.</div>';
+                    return;
+                }
+                this.addFolderOption(list, FS.rootHandle, 'ROOT', true);
+                await this.scanDirRecursive(FS.rootHandle, list, 'ROOT');
+            }
+
+            async scanDirRecursive(dirHandle, listElement, pathString, depth = 0) {
+                if (depth > 2) return; 
+                for await (const entry of dirHandle.values()) {
+                    if (entry.kind === 'directory') {
+                        const currentPath = `${pathString}/${entry.name}`;
+                        this.addFolderOption(listElement, entry, currentPath);
+                        await this.scanDirRecursive(entry, listElement, currentPath, depth + 1);
+                    }
+                }
+            }
+
+            addFolderOption(container, handle, displayName, isRoot = false) {
+                const el = document.createElement('div');
+                el.className = "px-6 py-3 cursor-pointer border-b border-gray-50 flex items-center gap-4 text-xs font-light text-gray-600 hover:bg-gray-50 transition-colors";
+                el.innerHTML = `<i class="fa-solid ${isRoot?'fa-database':'fa-folder'} ${isRoot?'text-black':'text-gray-300'} text-[10px]"></i><span class="truncate w-full tracking-wide">${displayName}</span>`;
+                el.onclick = () => {
+                    this.targetHandle = handle;
+                    document.getElementById('target-folder-label').innerText = displayName;
+                    document.getElementById('folder-modal').classList.add('hidden');
+                };
+                container.appendChild(el);
+            }
+            showFolderModal() { this.refreshFolderList(); document.getElementById('folder-modal').classList.remove('hidden'); }
+
+            // --- API Y LOGGING ---
+            async aiCall(prompt, temp=0.7) {
+                if (!Sys || !Sys.authKey) throw new Error("Auth Required");
+                try {
+                    const response = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${Sys.authKey}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            model: 'openai-large', 
+                            messages: [{ role: 'system', content: "Eres un analista de datos experto. Responde solo JSON válido." }, { role: 'user', content: prompt }],
+                            temperature: temp
+                        })
+                    });
+                    if (!response.ok) throw new Error(`API: ${response.status}`);
+                    const data = await response.json();
+                    return data.choices[0].message.content;
+                } catch (e) {
+                    console.error("AI Error:", e);
+                    return null;
+                }
+            }
+
+            log(msg, type = 'info') {
+                const c = document.getElementById('process-log');
+                const el = document.createElement('div');
+                let color = type === 'error' ? 'text-red-500' : (type === 'success' ? 'text-black' : 'text-gray-400');
+                let icon = type === 'success' ? 'fa-check' : (type === 'error' ? 'fa-xmark' : 'fa-circle-notch');
+                if(type === 'info') icon = 'fa-info';
+                
+                el.className = `log-enter flex gap-3 items-start text-[10px] font-mono leading-relaxed ${color}`;
+                el.innerHTML = `<i class="fa-solid ${icon} mt-1 text-[8px] opacity-50"></i><span>${msg}</span>`;
+                c.prepend(el);
+            }
+
+            addResult(filename) {
+                const list = document.getElementById('results-list');
+                const el = document.createElement('div');
+                el.className = "group flex items-center justify-between p-3 border border-gray-100 hover:border-gray-300 transition-colors bg-white";
+                el.innerHTML = `<div class="flex items-center gap-3"><i class="fa-regular fa-file-code text-gray-300 group-hover:text-black transition-colors text-xs"></i><span class="text-xs font-mono text-gray-600 group-hover:text-black transition-colors">${filename}</span></div><span class="text-[8px] uppercase tracking-widest text-gray-300">OK</span>`;
+                list.prepend(el);
+            }
+
+            // --- LÓGICA CORE: MAP-REDUCE ---
+
+            async startProcess() {
+                const text = document.getElementById('source-text').value.trim();
+                if (!this.targetHandle || !text || !Sys.authKey) {
+                    this.log("Error: Falta texto, carpeta o autenticación.", "error");
+                    return;
+                }
+
+                this.setLoading(true);
+                this.masterIndex = []; 
+                this.consolidatedEntities = [];
+                
+                try {
+                    // --- FASE 1: MAP (Escaneo Masivo) ---
+                    const chunks = UTILS.chunkText(text, 15000, 500);
+                    this.log(`FASE 1: Iniciando escaneo de ${chunks.length} bloques...`, "info");
+                    
+                    const batchSizePhase1 = 4;
+                    for (let i = 0; i < chunks.length; i += batchSizePhase1) {
+                        const batch = chunks.slice(i, i + batchSizePhase1);
+                        this.log(`Procesando lote ${Math.floor(i/batchSizePhase1)+1}/${Math.ceil(chunks.length/batchSizePhase1)}`, "info");
+                        
+                        const promises = batch.map((chunk, idx) => this.analyzeChunk(chunk, i + idx));
+                        const results = await Promise.all(promises);
+                        
+                        results.forEach(res => { if(res) this.masterIndex.push(res); });
+                        UTILS.updateProgress(10 + (i / chunks.length) * 40); 
+                    }
+
+                    this.log(`Escaneo completo. ${this.masterIndex.length} bloques indexados.`, "success");
+
+                    // --- FASE 2: REDUCE (Consolidación de Entidades) ---
+                    this.log("FASE 2: Normalizando entidades y eliminando duplicados...", "info");
+                    
+                    let rawNames = [];
+                    this.masterIndex.forEach(idx => {
+                        if(idx.entities && Array.isArray(idx.entities)) {
+                            rawNames.push(...idx.entities.map(e => e.name));
+                        }
+                    });
+                    
+                    rawNames = [...new Set(rawNames)];
+                    
+                    this.consolidatedEntities = await this.normalizeEntities(rawNames);
+                    this.log(`Identificadas ${this.consolidatedEntities.length} entidades únicas.`, "success");
+                    UTILS.updateProgress(60);
+
+                    // --- FASE 3: GENERATE (Creación de Fichas en Paralelo) ---
+                    this.log("FASE 3: Generando fichas en paralelo (Formato Estándar)...", "info");
+
+                    const batchSizePhase3 = 5; // Procesamos 5 fichas simultáneamente
+                    for (let i = 0; i < this.consolidatedEntities.length; i += batchSizePhase3) {
+                        const batch = this.consolidatedEntities.slice(i, i + batchSizePhase3);
+                        this.log(`Generando lote de fichas ${Math.floor(i/batchSizePhase3)+1}/${Math.ceil(this.consolidatedEntities.length/batchSizePhase3)}...`, "info");
+                        
+                        // Array de promesas para procesar el lote en paralelo
+                        const promises = batch.map(async (entity) => {
+                            const context = this.gatherContextForEntity(entity.name, entity.aliases);
+                            const profile = await this.generateEntityProfile(entity.name, entity.type, context);
+                            if(profile) await this.saveFile(entity.name, profile);
+                        });
+
+                        // Esperamos a que las 5 fichas terminen antes de lanzar las siguientes 5
+                        await Promise.all(promises);
+                        
+                        UTILS.updateProgress(60 + ((i + batch.length) / this.consolidatedEntities.length) * 40);
+                    }
+
+                    this.log("PROCESO FINALIZADO CON ÉXITO", "success");
+                    UTILS.updateProgress(100);
+
+                } catch (e) {
+                    console.error(e);
+                    this.log(e.message, "error");
+                } finally {
+                    this.setLoading(false);
+                }
+            }
+
+            // --- WORKERS ---
+
+            async analyzeChunk(textChunk, index) {
+                const prompt = `
+                    Analiza este fragmento de libro (Bloque #${index}).
+                    1. Resume qué ocurre en 2 frases (summary).
+                    2. Lista las ENTIDADES (Personajes, Lugares, Facciones) que aparecen o se mencionan activamente.
+                    
+                    TEXTO: "${textChunk.substring(0, 12000)}..." (recortado)
+
+                    RESPUESTA FORMATO JSON:
+                    {
+                        "summary": "texto...",
+                        "entities": [
+                            { "name": "Nombre Exacto", "type": "Personaje|Lugar|Objeto" }
+                        ]
+                    }
+                `;
+                
+                const res = await this.aiCall(prompt, 0.5);
+                try {
+                    const data = JSON.parse(UTILS.cleanJSON(res));
+                    return { id: index, ...data };
+                } catch(e) {
+                    return null;
+                }
+            }
+
+            async normalizeEntities(rawList) {
+                const prompt = `
+                    Lista de nombres extraídos de un libro.
+                    Agrupa y limpia (ej: "Juan", "Juan Pérez" -> "Juan Pérez").
+
+                    LISTA: ${JSON.stringify(rawList)}
+
+                    RESPUESTA JSON:
+                    [
+                        { "name": "Nombre Canónico", "type": "Personaje|Lugar|Objeto", "aliases": ["Juan", "Alias"] }
+                    ]
+                `;
+                
+                const res = await this.aiCall(prompt, 0.2);
+                try {
+                    return JSON.parse(UTILS.cleanJSON(res));
+                } catch(e) {
+                    return rawList.map(n => ({ name: n, type: "Unknown", aliases: [] }));
+                }
+            }
+
+            gatherContextForEntity(name, aliases = []) {
+                const relevantSummaries = [];
+                const checkList = [name, ...aliases].map(n => n.toLowerCase());
+
+                this.masterIndex.forEach(block => {
+                    if (!block.entities) return;
+                    const found = block.entities.some(e => checkList.some(check => e.name.toLowerCase().includes(check)));
+                    if (found) {
+                        relevantSummaries.push(`[Bloque ${block.id}]: ${block.summary}`);
+                    }
+                });
+                return relevantSummaries.join("\n");
+            }
+
+            async generateEntityProfile(name, type, contextSummary) {
+                const prompt = `
+                    Genera una Ficha de Datos para: "${name}" (${type}).
+                    
+                    INFORMACIÓN CONTEXTUAL (Extraída de todo el libro):
+                    ${contextSummary}
+
+                    TU TAREA: Completa el siguiente JSON estrictamente.
+                    Usa "imagen64": " " (un espacio en blanco).
+                    En "desc", sé narrativo y detallado.
+                    En "visualDesc", describe una fotografía realista.
+
+                    FORMATO JSON OBLIGATORIO:
+                    ${JSON.stringify(FORMATO_ESTANDAR)}
+                `;
+
+                const res = await this.aiCall(prompt, 0.7);
+                try {
+                    return JSON.parse(UTILS.cleanJSON(res));
+                } catch(e) {
+                    return null;
+                }
+            }
+
+            async saveFile(name, data) {
+                if (!this.targetHandle) return;
+                const filename = `${name.trim().replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
+                try {
+                    const fileHandle = await this.targetHandle.getFileHandle(filename, { create: true });
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(JSON.stringify(data, null, 2));
+                    await writable.close();
+                    this.addResult(filename);
+                } catch(e) {
+                    console.error("Save error", e);
+                }
+            }
+
+            setLoading(active) {
+                const btn = document.getElementById('btn-generate');
+                if(active) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Procesando...</span>';
+                    this.startTimer();
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>Iniciar Extracción Masiva</span><i class="fa-solid fa-bolt text-[10px]"></i>';
+                    this.stopTimer();
+                }
+            }
+
+            startTimer() {
+                this.startTime = Date.now();
+                this.timerInterval = setInterval(() => {
+                    const d = Math.floor((Date.now() - this.startTime) / 1000);
+                    const m = Math.floor(d / 60).toString().padStart(2,'0');
+                    const s = (d % 60).toString().padStart(2,'0');
+                    document.getElementById('timer').innerText = `${m}:${s}`;
+                }, 1000);
+            }
+            stopTimer() { clearInterval(this.timerInterval); }
+        }
+
+        const app = new NarrativeGenerator();
+        window.onload = () => app.init();
+
+    </script>
+</body>
+</html>

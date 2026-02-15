@@ -1,0 +1,69 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap');
+
+body { 
+    font-family: 'Inter', sans-serif; 
+    background: #ffffff; 
+    color: #1a1a1a; 
+    height: 100vh; 
+    overflow: hidden; 
+    display: flex; 
+    flex-direction: column; 
+    font-weight: 300; 
+}
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 2px; }
+
+.btn-primary {
+    background: #1a1a1a; color: white; border: none;
+    font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600;
+    padding: 12px; transition: all 0.2s; cursor: pointer;
+}
+.btn-primary:hover { background: #333; }
+.btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+
+.btn-nordic {
+    background: white; border: 1px solid #e5e5e5; color: #1a1a1a;
+    font-size: 10px; font-weight: 500; text-transform: uppercase;
+    padding: 8px 12px; transition: all 0.2s; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+}
+.btn-nordic:hover { border-color: #1a1a1a; background: #fafafa; }
+
+.config-input { width: 100%; outline: none; transition: border-color 0.2s; }
+.label-text { font-size: 9px; text-transform: uppercase; letter-spacing: 0.2em; color: #9ca3af; font-weight: 600; }
+.font-mono { font-family: 'JetBrains Mono', monospace; }
+
+/* Asset List Item */
+.asset-item {
+    display: flex; align-items: center; gap: 10px; padding: 6px;
+    border: 1px solid #f0f0f0; background: white; border-radius: 4px;
+    cursor: grab; transition: all 0.2s; user-select: none;
+}
+.asset-item:active { cursor: grabbing; }
+.asset-item:hover { border-color: #1a1a1a; }
+.asset-item.dragging { opacity: 0.5; border: 1px dashed #000; background: #fafafa; }
+
+.asset-item img { width: 32px; height: 32px; object-fit: contain; background: #f0f0f0; border-radius: 2px; pointer-events: none; }
+
+.trash-btn {
+    margin-left: auto;
+    color: #e5e5e5;
+    padding: 4px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.trash-btn:hover { color: #ef4444; }
+
+/* Library Item */
+.library-item {
+    padding: 6px 8px;
+    font-size: 10px;
+    color: #666;
+    border-bottom: 1px solid #f9f9f9;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.library-item:hover { background: #f0f0f0; color: #000; }
