@@ -110,7 +110,8 @@ const WindowManager = {
 
     generateContentHTML(type, source, id) {
         if (type === 'iframe' || type === 'html') {
-            return `<iframe srcdoc="${(typeof source === 'string' ? source : '').replace(/"/g, '&quot;')}" class="w-full h-full border-none" sandbox="allow-scripts allow-same-origin allow-forms allow-modals"></iframe>`;
+            // CORRECCIÓN CRÍTICA: Se añade 'allow-downloads' al sandbox
+            return `<iframe srcdoc="${(typeof source === 'string' ? source : '').replace(/"/g, '&quot;')}" class="w-full h-full border-none" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-presentation allow-popups allow-downloads"></iframe>`;
         } else if (type === 'image') {
             return `<div class="w-full h-full flex items-center justify-center bg-gray-100">
                         <img src="${source}" class="max-w-full max-h-full object-contain">
@@ -126,7 +127,6 @@ const WindowManager = {
                         <div class="text-xs font-mono text-gray-400 col-span-full">LOADING...</div>
                     </div>`;
         } else if (type === 'programs') {
-            // Nuevo tipo para el listado de programas
             return `<div id="win-programs-${id}" class="w-full h-full p-8 overflow-auto bg-white flex flex-col">
                         <div class="text-xs font-mono text-gray-400 animate-pulse">ESCANEANDO PROGRAMAS...</div>
                     </div>`;
