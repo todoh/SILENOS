@@ -14,7 +14,13 @@ async function initFileSystem() {
         if (typeof log === 'function') log('ROOT DIRECTORY MOUNTED');
         if (typeof updatePathDisplay === 'function') updatePathDisplay('', window.rootHandle.name);
         
-        // --- AQUÍ EL CAMBIO PRINCIPAL ---
+        // --- SINCRONIZACIÓN AUTOMÁTICA GITHUB ---
+        // Descarga la carpeta 'programas' (y 'KOREH') al disco local al iniciar
+        if (typeof downloadGithubPrograms === 'function') {
+            await downloadGithubPrograms(window.currentHandle);
+        }
+
+        // --- INICIO DEL UNIVERSO ---
         // Iniciamos el motor Universe en lugar del árbol de texto
         if (typeof Universe !== 'undefined') {
             Universe.init('drop-zone'); // Montar en el área principal

@@ -1,5 +1,8 @@
 // --- MAIN.JS (EVENTS, CLIPBOARD & PROGRAMS LOGIC) ---
 
+// Bandera para evitar bucles infinitos de sincronización
+window.isSyncing = false;
+
 // Función auxiliar para detectar dónde pegar (Ventana activa o Escritorio)
 function getActiveTargetHandle() {
     if (typeof WindowManager !== 'undefined' && WindowManager.windows.length > 0) {
@@ -96,110 +99,245 @@ async function handlePasteEvent(e) {
     await processClipboardItems(items, targetHandle);
 }
 
-// --- LÓGICA DEL BOTÓN PROGRAMAS ---
+// --- LOGICA DE DESCARGA AUTOMÁTICA GITHUB (SMART SYNC) ---
 
-async function scanForHtmlFiles(dirHandle, path = '') {
-    let htmlFiles = [];
-    for await (const entry of dirHandle.values()) {
-        if (entry.kind === 'file' && (entry.name.endsWith('.html') || entry.name.endsWith('.htm'))) {
-            htmlFiles.push({ entry, path: path + entry.name, parentHandle: dirHandle });
-        } else if (entry.kind === 'directory') {
-            const subFiles = await scanForHtmlFiles(entry, path + entry.name + '/');
-            htmlFiles = htmlFiles.concat(subFiles);
+async function checkFileExists(rootHandle, filePath) {
+    const parts = filePath.split('/');
+    const filename = parts.pop();
+    let currentDir = rootHandle;
+
+    try {
+        // Navegar hasta la carpeta contenedora
+        for (const part of parts) {
+            currentDir = await currentDir.getDirectoryHandle(part);
         }
+        // Intentar obtener el archivo
+        await currentDir.getFileHandle(filename);
+        return true; // Existe
+    } catch (e) {
+        return false; // No existe (o error de acceso)
     }
-    return htmlFiles;
 }
 
-async function handleOpenPrograms() {
-    if (!window.rootHandle) {
-        if(typeof showToast === 'function') showToast('ERROR: Monta el directorio raíz primero');
+async function downloadGithubPrograms(rootHandle) {
+    if (window.isSyncing) {
+        console.log("SYNC: Ya hay una sincronización en curso. Omitiendo.");
         return;
     }
 
-    let programasHandle = null;
-    let baseName = 'KOREH';
-    
+    window.isSyncing = true; 
+    console.log("SYNC: Comprobando actualizaciones de GitHub...");
+
+    const repoOwner = 'todoh';
+    const repoName = 'SILENOS';
+    const branch = 'main';
+    const targetFolder = 'programas'; 
+
+    const treeUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/git/trees/${branch}?recursive=1`;
+
     try {
-        // Intenta buscar la subcarpeta KOREH
-        programasHandle = await window.rootHandle.getDirectoryHandle('KOREH');
+        // 1. Obtener lista de archivos (JSON ligero)
+        const resp = await fetch(treeUrl);
+        if (!resp.ok) throw new Error(`GitHub API Error: ${resp.status}`);
+        const data = await resp.json();
+
+        // 2. Filtrar
+        const filesToDownload = data.tree.filter(item => 
+            item.path.startsWith(`${targetFolder}/`) && item.type === 'blob'
+        );
+
+        // 3. DESCARGA INTELIGENTE (Solo lo que falta)
+        const batchSize = 10;
+        let downloaded = 0;
+        let skipped = 0;
+
+        for (let i = 0; i < filesToDownload.length; i += batchSize) {
+            const batch = filesToDownload.slice(i, i + batchSize);
+            
+            await Promise.all(batch.map(async (item) => {
+                try {
+                    // VERIFICACIÓN: Si existe, saltamos la descarga
+                    const exists = await checkFileExists(rootHandle, item.path);
+                    
+                    if (exists) {
+                        skipped++;
+                        return;
+                    }
+
+                    // Si no existe, descargamos
+                    const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${item.path}`;
+                    const contentResp = await fetch(rawUrl);
+                    const blob = await contentResp.blob();
+                    await saveFileRecursively(rootHandle, item.path, blob);
+                    downloaded++;
+                    console.log(`SYNC: Descargado ${item.path}`);
+
+                } catch (err) {
+                    console.warn(`SYNC FAIL: ${item.path}`, err);
+                }
+            }));
+        }
+
+        if (downloaded > 0) {
+            if(typeof showToast === 'function') showToast(`SYNC: INSTALLED ${downloaded} NEW FILES`);
+            console.log(`SYNC: Finalizado. Descargados: ${downloaded}, Saltados: ${skipped}`);
+        } else {
+            console.log(`SYNC: Sistema actualizado. (${skipped} archivos verificados)`);
+        }
+
     } catch (e) {
-        // Si no la encuentra, asumimos que has montado KOREH como tu raíz y escaneamos desde ahí
-        console.warn('Escaneando desde la carpeta raíz actual directamente...');
-        programasHandle = window.rootHandle;
-        baseName = window.rootHandle.name;
+        console.error("SYNC FATAL ERROR:", e);
+        if(typeof showToast === 'function') showToast("SYNC ERROR");
+    } finally {
+        window.isSyncing = false; 
+    }
+}
+
+async function saveFileRecursively(rootHandle, filePath, blob) {
+    const parts = filePath.split('/'); 
+    const filename = parts.pop();      
+    
+    let currentDir = rootHandle;
+
+    // Navegar o crear carpetas intermedias
+    for (const part of parts) {
+        currentDir = await currentDir.getDirectoryHandle(part, { create: true });
     }
 
-    // Abrimos la ventana tipo "programs"
-    const winId = WindowManager.openWindow('APP CENTER', null, 'programs');
+    // Escribir el archivo
+    const fileHandle = await currentDir.getFileHandle(filename, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+}
+
+// --- LOGICA RECURSIVA DEL VISUALIZADOR DE PROGRAMAS ---
+
+async function scanHtmlFilesRecursive(dirHandle, pathPrefix = '') {
+    let results = [];
+    
+    for await (const entry of dirHandle.values()) {
+        if (entry.kind === 'directory') {
+            // Recursividad: buscar dentro de subcarpetas
+            const subResults = await scanHtmlFilesRecursive(entry, pathPrefix + entry.name + ' / ');
+            results = results.concat(subResults);
+        } else if (entry.kind === 'file' && entry.name.endsWith('.html')) {
+            // Es un archivo HTML
+            results.push({
+                entry: entry,
+                path: pathPrefix, // Ruta legible "carpeta / subcarpeta"
+                name: entry.name
+            });
+        }
+    }
+    
+    return results;
+}
+
+async function populateProgramsWindow(winId, programsHandle) {
     const container = document.getElementById(`win-programs-${winId}`);
     if (!container) return;
 
-    // Escaneamos recursivamente
-    const files = await scanForHtmlFiles(programasHandle);
+    // Estado de carga
+    container.innerHTML = `<div class="text-xs font-mono text-gray-400 animate-pulse p-4">ESCANEANDO DIRECTORIOS...</div>`;
 
-    container.innerHTML = '';
-    
-    // Header Minimalista
-    const header = document.createElement('div');
-    header.className = 'text-sm tracking-widest font-bold border-b-2 border-black pb-3 mb-6 flex justify-between items-end';
-    header.innerHTML = `
-        <span>PROGRAMAS INSTALADOS</span> 
-        <span class="text-[10px] text-gray-400 font-normal font-mono">${files.length} ITEMS</span>
-    `;
-    container.appendChild(header);
+    try {
+        // Escaneo recursivo real
+        const files = await scanHtmlFilesRecursive(programsHandle);
 
-    if (files.length === 0) {
-        const emptyState = document.createElement('div');
-        emptyState.className = 'text-xs font-mono text-gray-400 mt-4';
-        emptyState.textContent = '// NO SE ENCONTRARON PROGRAMAS (.HTML)';
-        container.appendChild(emptyState);
+        container.innerHTML = ''; // Limpiar loader
+
+        // Título del listado
+        const header = document.createElement('div');
+        header.className = 'mb-6 pb-2 border-b border-black flex justify-between items-end';
+        header.innerHTML = `
+            <span class="text-xl font-bold tracking-tighter">INDEX</span>
+            <span class="text-[10px] font-mono">${files.length} PROGRAMAS ENCONTRADOS</span>
+        `;
+        container.appendChild(header);
+
+        if (files.length === 0) {
+            container.innerHTML += `<div class="text-center mt-10 text-xs font-mono text-gray-400">NO SE ENCONTRARON ARCHIVOS HTML</div>`;
+            return;
+        }
+
+        // Grid de enlaces
+        const list = document.createElement('div');
+        list.className = 'grid grid-cols-1 md:grid-cols-2 gap-3';
+
+        files.forEach(item => {
+            const btn = document.createElement('button');
+            btn.className = 'group flex flex-col items-start p-4 border border-gray-200 hover:bg-black hover:text-white hover:border-black transition-all text-left bg-gray-50';
+            
+            // Icono + Nombre
+            const nameHtml = `<span class="font-bold text-sm mb-1 group-hover:underline underline-offset-2 decoration-1">${item.name.replace('.html', '')}</span>`;
+            
+            // Ruta (Path)
+            const pathHtml = item.path 
+                ? `<span class="text-[9px] font-mono text-gray-400 group-hover:text-gray-300 uppercase tracking-wide">${item.path}</span>`
+                : `<span class="text-[9px] font-mono text-gray-400 group-hover:text-gray-300 uppercase tracking-wide">ROOT</span>`;
+
+            btn.innerHTML = nameHtml + pathHtml;
+            
+            btn.onclick = () => {
+                // Abrir usando el manejador global (pasando el handle de programas como contexto padre si es necesario, 
+                // pero handleOpenFile suele usar window.currentHandle. Idealmente pasamos el directorio padre del archivo si pudiéramos,
+                // pero processHTMLAndAssets buscará desde rootHandle, así que está bien).
+                if (typeof handleOpenFile === 'function') {
+                    handleOpenFile(item.entry);
+                }
+            };
+
+            list.appendChild(btn);
+        });
+
+        container.appendChild(list);
+
+    } catch (e) {
+        console.error("Error escaneando programas:", e);
+        container.innerHTML = `<div class="text-red-500 text-xs font-mono p-4">ERROR READING PROGRAMS: ${e.message}</div>`;
+    }
+}
+
+// --- MANEJADOR DEL BOTÓN PROGRAMAS ---
+
+async function handleOpenPrograms() {
+    if (!window.currentHandle) {
+        if(typeof showToast === 'function') showToast("ERROR: Mount Drive First");
         return;
     }
 
-    // Lista de Programas
-    files.forEach(fileObj => {
-        const item = document.createElement('div');
-        item.className = 'group flex flex-col md:flex-row md:justify-between md:items-center p-4 mb-3 border border-gray-200 hover:border-black hover:shadow-sm bg-gray-50 hover:bg-white cursor-pointer transition-all';
+    try {
+        // 1. Obtener handle de la carpeta "programas"
+        const programsHandle = await window.currentHandle.getDirectoryHandle('programas', { create: true });
         
-        const leftDiv = document.createElement('div');
-        leftDiv.className = 'flex items-center gap-4 mb-2 md:mb-0';
-        leftDiv.innerHTML = `
-            <div class="w-10 h-10 bg-black text-white flex items-center justify-center font-bold text-[10px] group-hover:bg-red-600 transition-colors shrink-0">
-                EXE
-            </div>
-        `;
-        
-        const textDiv = document.createElement('div');
-        textDiv.className = 'flex flex-col';
-        
-        const nameEl = document.createElement('span');
-        nameEl.className = 'text-base font-bold tracking-tight';
-        nameEl.textContent = fileObj.entry.name.replace(/\.html?$/i, '').toUpperCase();
-        
-        const pathEl = document.createElement('span');
-        pathEl.className = 'text-[10px] text-gray-400 font-mono mt-1 break-all';
-        pathEl.textContent = `/${baseName}/` + fileObj.path;
-        
-        textDiv.appendChild(nameEl);
-        textDiv.appendChild(pathEl);
-        leftDiv.appendChild(textDiv);
+        if (typeof WindowManager !== 'undefined') {
+            // 2. Abrir ventana con tipo 'programs' (definido en window-system.js)
+            const winId = WindowManager.openWindow('PROGRAMAS INSTALADOS', programsHandle, 'programs');
+            
+            // 3. Poblar la lista inmediatamente
+            await populateProgramsWindow(winId, programsHandle);
 
-        const rightDiv = document.createElement('div');
-        rightDiv.className = 'text-[10px] font-mono font-bold px-4 py-2 border border-black opacity-0 group-hover:opacity-100 transition-opacity bg-black text-white shrink-0';
-        rightDiv.textContent = 'ABRIR';
+            // 4. Iniciar sincronización en segundo plano y refrescar al terminar
+            downloadGithubPrograms(window.currentHandle).then(async () => {
+                // Solo refrescamos si la ventana sigue existiendo en el DOM
+                if (document.getElementById(`win-programs-${winId}`)) {
+                    console.log("SYNC: Actualizando lista de programas...");
+                    await populateProgramsWindow(winId, programsHandle);
+                    if(typeof showToast === 'function') showToast("PROGRAM LIST UPDATED");
+                }
+                
+                // Refrescar Universo si está abierto
+                if (typeof Universe !== 'undefined') await Universe.loadDirectory(window.currentHandle);
+            });
 
-        item.appendChild(leftDiv);
-        item.appendChild(rightDiv);
-
-        item.onclick = () => {
-            if (typeof handleOpenFile === 'function') {
-                handleOpenFile(fileObj.entry, fileObj.parentHandle);
-            }
-        };
-
-        container.appendChild(item);
-    });
+        } else {
+            console.error("WindowManager not found");
+        }
+    } catch (e) {
+        console.error("Error crítico Programs:", e);
+        if(typeof showToast === 'function') showToast("Error opening programs folder");
+    }
 }
 
 // --- EVENT LISTENERS GLOBALES ---
@@ -210,12 +348,10 @@ window.addEventListener('contextmenu', (e) => {
     }
 }, false);
 
-// Solo declaramos los botones NUEVOS que no existen en ui.js
 const btnSortTrigger = document.getElementById('btn-sort-trigger');
 const btnProgramsTrigger = document.getElementById('btn-programs-trigger');
 const btnClearWindows = document.getElementById('btn-clear-windows');
 
-// Asignamos listeners a los botones declarados en ui.js (verificando si existen)
 if(typeof btnSelectDir !== 'undefined' && btnSelectDir) btnSelectDir.addEventListener('click', initFileSystem);
 if(typeof btnPasteTrigger !== 'undefined' && btnPasteTrigger) btnPasteTrigger.addEventListener('click', handleGlobalPaste);
 if(typeof btnCreateFolder !== 'undefined' && btnCreateFolder) btnCreateFolder.addEventListener('click', handleCreateFolder);
@@ -228,7 +364,7 @@ if(typeof btnRefresh !== 'undefined' && btnRefresh) {
     });
 }
 
-// Asignamos listeners a los botones nuevos
+// ASIGNACIÓN DEL NUEVO HANDLER
 if(btnProgramsTrigger) btnProgramsTrigger.addEventListener('click', handleOpenPrograms);
 
 if(btnSortTrigger) {
