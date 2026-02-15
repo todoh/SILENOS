@@ -3,277 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SILENOS | Next Generation OS</title>
+    <title>SILENOS 4 + KOREH SUITE</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --brand-red: #E63946;
-        }
-
-        body {
-            background-color: #000;
-            color: #fff;
-            font-family: 'Inter', sans-serif;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-        }
-
-        /* Animación de Revelado de Texto */
-        .reveal-text {
-            display: inline-block;
-            overflow: hidden;
-            vertical-align: bottom;
-        }
-
-        .reveal-text span {
-            display: inline-block;
-            transform: translateY(100%);
-            animation: slideUp 1.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-        }
-
-        @keyframes slideUp {
-            to { transform: translateY(0); }
-        }
-
-        /* Efecto Glitch Sutil para el Logo */
-        .logo-container:hover .logo-main {
-            animation: glitch 0.3s cubic-bezier(.25,.46,.45,.94) both infinite;
-        }
-
-        @keyframes glitch {
-            0% { transform: translate(0); }
-            20% { transform: translate(-2px, 2px); }
-            40% { transform: translate(-2px, -2px); }
-            60% { transform: translate(2px, 2px); }
-            80% { transform: translate(2px, -2px); }
-            100% { transform: translate(0); }
-        }
-
-        /* Líneas de Escaneado (Overlay) */
-        .scanlines {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            background-size: 100% 2px, 3px 100%;
-            pointer-events: none;
-            z-index: 50;
-        }
-
-        /* Navegación con subrayado animado */
-        .nav-link {
-            position: relative;
-            padding-bottom: 4px;
-            transition: color 0.3s ease;
-        }
-        
-        .nav-link::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 0;
-            height: 1px;
-            background-color: var(--brand-red);
-            transition: width 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-        }
-
-        .nav-link:hover::after {
-            width: 100%;
-        }
-
-        .nav-link:hover {
-            color: var(--brand-red);
-        }
-
-        #canvas-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-        }
-    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body class="flex flex-col justify-between items-center py-12 px-8">
+<body class="antialiased">
 
-    <div class="scanlines"></div>
-    <div id="canvas-container">
-        <canvas id="os-kernel-canvas"></canvas>
-    </div>
+    <nav class="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 h-16 flex items-center justify-between px-8">
+        <div class="flex items-center gap-2">
+            <div class="w-4 h-4 bg-black"></div>
+            <span class="font-display text-lg tracking-tighter">SILEN<span class="text-red-600">OS</span></span>
+        </div>
+        <div class="hidden md:flex gap-8 font-mono text-xs text-gray-500">
+            <a href="#koreh" class="hover:text-black transition">KOREH AI</a>
+            <a href="#ecosystem" class="hover:text-black transition">ECOSISTEMA</a>
+            <a href="#docs" class="hover:text-black transition">DOCUMENTACIÓN</a>
+        </div>
+        <a href="index.html" class="btn-nordic py-2 px-4 text-[10px]">
+            INICIAR OS
+        </a>
+    </nav>
 
-    <!-- Header Status -->
-    <header class="w-full flex justify-between items-start z-10 opacity-40 text-[10px] tracking-[0.4em] uppercase">
-        <div class="reveal-text"><span style="animation-delay: 0.2s;">Core Status: Optimal</span></div>
-        <div class="reveal-text"><span style="animation-delay: 0.4s;">Location: 36.5297° N, 6.1921° W</span></div>
+    <header class="min-h-screen flex flex-col justify-center px-8 md:px-24 pt-20 relative">
+        <div class="max-w-5xl z-10">
+            <p class="font-mono text-xs text-gray-400 mb-6 reveal">SISTEMA OPERATIVO WEB v4.0</p>
+            <h1 class="hero-title font-display text-6xl md:text-9xl mb-8 reveal">
+                <span>INTELIGENCIA</span>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-gray-200 to-gray-400">ESTRUCTURADA.</span>
+                <span>CREATIVIDAD</span>
+                <span class="text-red-600">LÍQUIDA.</span>
+            </h1>
+            <p class="max-w-xl text-lg md:text-xl font-light text-gray-600 leading-relaxed mb-10 reveal">
+                Silenos es un entorno de escritorio web minimalista.
+                Integrado con <strong>KOREH</strong>, una suite de herramientas generativas diseñadas para la producción narrativa, visual y audiovisual masiva.
+            </p>
+            <div class="flex gap-4 reveal">
+                <a href="index.html" class="btn-nordic">
+                    <i class="fa-solid fa-power-off mr-2"></i> EJECUTAR SILENOS
+                </a>
+                <a href="#docs" class="btn-nordic" style="border-color: transparent; background: transparent;">
+                    LEER DOCUMENTACIÓN <i class="fa-solid fa-arrow-down ml-2"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="absolute right-0 top-1/2 -translate-y-1/2 w-1/3 h-2/3 border-l border-gray-100 hidden lg:flex items-center justify-center opacity-30 pointer-events-none">
+            <i class="fa-solid fa-cube text-9xl text-gray-100 animate-pulse"></i>
+        </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="relative z-10 text-center flex flex-col items-center">
-        <div class="logo-container cursor-default mb-4">
-            <h1 class="logo-main text-6xl md:text-8xl font-thin tracking-[0.3em] uppercase transition-all duration-700">
-                Silen<span class="text-[#E63946] font-bold">os</span>
-            </h1>
+    <section id="koreh" class="py-32 px-8 md:px-24 bg-gray-50 border-t border-gray-200">
+        <div class="mb-20 reveal">
+            <h2 class="font-display text-4xl mb-4">KOREH SUITE</h2>
+            <p class="font-mono text-xs text-gray-500 max-w-md">
+                Conjunto de herramientas de IA orquestadas. Desde la generación de texto hasta el renderizado de vídeo.
+            </p>
+        </div>
+
+        <div id="koreh-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            </div>
+    </section>
+
+    <section id="ecosystem" class="py-32 px-8 md:px-24 bg-black text-white relative overflow-hidden">
+        <div class="absolute inset-0 pointer-events-none opacity-20 ecosystem-bg-grid"></div>
+
+        <div class="max-w-6xl mx-auto relative z-10">
+            <div class="mb-20 text-center reveal">
+                <h2 class="font-display text-4xl mb-4 text-white">PIPELINE NARRATIVO</h2>
+                <p class="font-mono text-xs text-gray-400">
+                    Flujo de datos continuo. Desde la creación de la entidad hasta la producción final.
+                </p>
+            </div>
+
+            <div id="ecosystem-pipeline" class="grid grid-cols-1 md:grid-cols-4 gap-8 items-stretch">
+                </div>
+
+            <div class="mt-24 pt-12 border-t border-white/10 text-center reveal">
+                <h4 class="font-bold text-sm uppercase tracking-widest mb-4">NÚCLEO DEL SISTEMA</h4>
+                <div class="inline-flex items-center gap-8 border border-white/20 rounded-full px-8 py-4 bg-white/5 backdrop-blur-sm">
+                    <div class="text-left">
+                        <span class="block text-xs font-bold text-white">APP BRIDGE</span>
+                        <span class="block text-[10px] text-gray-400 font-mono">File System Unificado</span>
+                    </div>
+                    <i class="fa-solid fa-infinity text-gray-500"></i>
+                    <div class="text-right">
+                        <span class="block text-xs font-bold text-white">UNIVERSE ENGINE</span>
+                        <span class="block text-[10px] text-gray-400 font-mono">Visualización Espacial</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="specs" class="py-32 px-8 md:px-24 bg-white">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div class="reveal">
+                <h2 class="font-display text-4xl mb-8">ESPECIFICACIONES<br>TÉCNICAS</h2>
+                <div id="specs-list" class="space-y-8">
+                    </div>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-200 p-8 h-96 relative overflow-hidden reveal shadow-inner">
+                <div class="font-mono text-[10px] text-gray-400 leading-loose select-none">
+                    &lt;system&gt;<br>
+                    &nbsp;&nbsp;init(Core.FileSystem);<br>
+                    &nbsp;&nbsp;loadModule('KOREH');<br>
+                    &nbsp;&nbsp;const reality = new Universe({<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;physics: true,<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;render: 'swiss-style'<br>
+                    &nbsp;&nbsp;});<br>
+                    &nbsp;&nbsp;await reality.mount('/root');<br>
+                    &nbsp;&nbsp;// Conexión neuronal establecida<br>
+                    &nbsp;&nbsp;<span class="text-black font-bold">System.ready();</span><br>
+                    &lt;/system&gt;
+                </div>
+                
+                <div class="absolute bottom-8 right-8 text-right">
+                    <div class="text-4xl font-display">v4.0</div>
+                    <div class="text-xs font-mono text-gray-400">BUILD 2026.02</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="docs" class="py-32 px-8 md:px-24 bg-gray-50 border-t border-gray-200">
+        <div class="mb-20 reveal">
+            <h2 class="font-display text-4xl mb-4">DOCUMENTACIÓN</h2>
+            <p class="font-mono text-xs text-gray-500 max-w-md">
+                Manual de referencia técnica y operativa para Silenos 4 y la suite Koreh.
+            </p>
+        </div>
+
+        <div id="docs-grid" class="flex flex-col gap-4 max-w-4xl mx-auto">
+        </div>
+    </section>
+
+    <footer class="bg-black text-white py-20 px-8 md:px-24">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-10">
+            <div>
+                <h2 class="font-display text-2xl mb-2">SILENOS</h2>
+                <p class="font-mono text-xs text-gray-500">Operating System for Creatives.</p>
+            </div>
+            
+            <div class="flex flex-col items-start md:items-end gap-2 font-mono text-xs text-gray-400">
+                <span>Desarrollado en Jerez, España.</span>
+                <span>&copy; 2026 Manuel Rodsua.</span>
+            </div>
         </div>
         
-        <p class="tagline text-xs md:text-sm tracking-[0.8em] uppercase text-gray-500 mt-6">
-            <span class="reveal-text"><span style="animation-delay: 0.8s;">Redefiniendo el flujo binario</span></span>
-        </p>
-
-        <nav class="mt-16 flex gap-12 md:gap-20 text-[10px] tracking-[0.3em] uppercase z-20">
-            <a href="https://www.silenos.es/3/" class="nav-link"><span class="reveal-text"><span style="animation-delay: 1.0s;">Entrar V.3</span></span></a>
-            <a href="https://www.silenos.es/cartas/" class="nav-link"><span class="reveal-text"><span style="animation-delay: 1.0s;">Cartas</span></span></a>
-            <a href="https://www.silenos.es/4/" class="nav-link"><span class="reveal-text"><span style="animation-delay: 1.2s;">V.4</span></span></a>
-        </nav>
-    </main>
-
-    <!-- Footer Stats -->
-    <footer class="w-full flex flex-col md:flex-row justify-between items-center z-10 gap-4 opacity-50">
-        <div class="text-[9px] tracking-[0.2em] uppercase">
-            Silenos OS v2.0.4 - Build 0x8FF2
-        </div>
-        <div class="flex gap-8 text-[9px] tracking-[0.2em] uppercase">
-            <span>Latency: <span id="ping">14</span>ms</span>
-            <span>Uptime: <span id="uptime">00:00:00</span></span>
+        <div class="mt-20 pt-8 border-t border-gray-800 flex justify-between text-[10px] font-mono uppercase tracking-widest text-gray-600">
+            <span>Status: Operational</span>
+            <span>LocalFS Access Required</span>
         </div>
     </footer>
 
-    <script>
-        // Función del Canvas - Núcleo Dinámico
-        window.onload = function() {
-            const canvas = document.getElementById('os-kernel-canvas');
-            const ctx = canvas.getContext('2d');
-            let particles = [];
-            const particleCount = 120;
-            const mouse = { x: null, y: null, radius: 150 };
+    <div class="marquee-container">
+        <span id="marquee-text">Loading System...</span>
+    </div>
 
-            window.addEventListener('mousemove', (e) => {
-                mouse.x = e.clientX;
-                mouse.y = e.clientY;
-            });
-
-            function resize() {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-            }
-
-            class Particle {
-                constructor() {
-                    this.x = Math.random() * canvas.width;
-                    this.y = Math.random() * canvas.height;
-                    this.size = Math.random() * 1.5 + 0.5;
-                    this.baseX = this.x;
-                    this.baseY = this.y;
-                    this.density = (Math.random() * 30) + 1;
-                    this.color = Math.random() > 0.95 ? '#E63946' : '#333';
-                }
-
-                draw() {
-                    ctx.fillStyle = this.color;
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                    ctx.closePath();
-                    ctx.fill();
-                }
-
-                update() {
-                    let dx = mouse.x - this.x;
-                    let dy = mouse.y - this.y;
-                    let distance = Math.sqrt(dx * dx + dy * dy);
-                    let forceDirectionX = dx / distance;
-                    let forceDirectionY = dy / distance;
-                    let maxDistance = mouse.radius;
-                    let force = (maxDistance - distance) / maxDistance;
-                    let directionX = forceDirectionX * force * this.density;
-                    let directionY = forceDirectionY * force * this.density;
-
-                    if (distance < mouse.radius) {
-                        this.x -= directionX;
-                        this.y -= directionY;
-                    } else {
-                        if (this.x !== this.baseX) {
-                            let dxBase = this.x - this.baseX;
-                            this.x -= dxBase / 15;
-                        }
-                        if (this.y !== this.baseY) {
-                            let dyBase = this.y - this.baseY;
-                            this.y -= dyBase / 15;
-                        }
-                    }
-                }
-            }
-
-            function init() {
-                particles = [];
-                for (let i = 0; i < particleCount; i++) {
-                    particles.push(new Particle());
-                }
-            }
-
-            function connect() {
-                for (let a = 0; a < particles.length; a++) {
-                    for (let b = a; b < particles.length; b++) {
-                        let dx = particles[a].x - particles[b].x;
-                        let dy = particles[a].y - particles[b].y;
-                        let distance = Math.sqrt(dx * dx + dy * dy);
-
-                        if (distance < 100) {
-                            let opacity = 1 - (distance / 100);
-                            ctx.strokeStyle = `rgba(150, 150, 150, ${opacity * 0.15})`;
-                            ctx.lineWidth = 0.5;
-                            ctx.beginPath();
-                            ctx.moveTo(particles[a].x, particles[a].y);
-                            ctx.lineTo(particles[b].x, particles[b].y);
-                            ctx.stroke();
-                        }
-                    }
-                }
-            }
-
-            function animate() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                for (let i = 0; i < particles.length; i++) {
-                    particles[i].update();
-                    particles[i].draw();
-                }
-                connect();
-                requestAnimationFrame(animate);
-            }
-
-            // Datos dinámicos simulados
-            function updateStats() {
-                const ping = document.getElementById('ping');
-                const uptime = document.getElementById('uptime');
-                let startTime = Date.now();
-
-                setInterval(() => {
-                    if (ping) ping.innerText = Math.floor(Math.random() * 5) + 12;
-                    
-                    if (uptime) {
-                        let diff = Date.now() - startTime;
-                        let h = Math.floor(diff / 3600000).toString().padStart(2, '0');
-                        let m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
-                        let s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-                        uptime.innerText = `${h}:${m}:${s}`;
-                    }
-                }, 1000);
-            }
-
-            window.addEventListener('resize', () => {
-                resize();
-                init();
-            });
-
-            resize();
-            init();
-            animate();
-            updateStats();
-        };
-    </script>
-</body>
-
+    <script src="documentation.js"></script> <script src="content.js"></script>       <script src="main.js"></script>          </body>
 </html>
-

@@ -1,0 +1,151 @@
+/* styles.css */
+:root {
+    --bg-color: #ffffff;
+    --text-main: #1a1a1a;
+    --accent: #000000;
+    --grid-line: rgba(0, 0, 0, 0.05);
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    background-image: 
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+        linear-gradient(var(--grid-line) 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+/* Tipografías */
+.font-mono { font-family: 'JetBrains Mono', monospace; }
+.font-display { font-weight: 900; letter-spacing: -0.04em; }
+
+/* Animaciones (ESTO USA LA CLASE .active) */
+.reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Componentes UI */
+.btn-nordic {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: white; border: 1px solid #e5e5e5; color: #1a1a1a;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    padding: 12px 24px; transition: all 0.3s ease; cursor: pointer;
+    text-decoration: none;
+}
+.btn-nordic:hover {
+    border-color: #000; background: #000; color: #fff;
+}
+
+.card-module {
+    background: white;
+    border: 1px solid #e5e5e5;
+    padding: 2rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    height: 100%; /* Asegura altura uniforme en grid */
+}
+.card-module:hover {
+    border-color: #000;
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.05);
+}
+
+.card-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: #ccc;
+    position: absolute; top: 1rem; right: 1rem;
+}
+
+/* Hero Text Effect */
+.hero-title span {
+    display: block;
+    line-height: 0.9;
+}
+
+/* Ecosystem Background */
+.ecosystem-bg-grid {
+    background-image: 
+        linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+/* Marquee */
+.marquee-container {
+    position: fixed; bottom: 0; left: 0; width: 100%;
+    background: #000; color: #fff;
+    padding: 8px 0; overflow: hidden; white-space: nowrap;
+    z-index: 100;
+    border-top: 1px solid #333;
+}
+#marquee-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.2em;
+    display: inline-block;
+}
+
+/* =========================================
+   ESTILOS PARA DOCUMENTACIÓN DESPLEGABLE
+   ========================================= */
+
+.doc-accordion {
+    background: white;
+    border: 1px solid #e5e5e5;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.doc-accordion:hover {
+    border-color: #000;
+    transform: translateX(5px);
+}
+
+/* CAMBIO CLAVE: Usamos .expanded en lugar de .active para abrir el acordeón */
+.doc-accordion.expanded {
+    border-color: #000;
+    background: #fafafa;
+}
+
+/* Cabecera del acordeón */
+.doc-header {
+    padding: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Contenido oculto por defecto */
+.doc-content {
+    max-height: 0;
+    overflow: hidden;
+    padding: 0 2rem;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Estado abierto */
+.doc-accordion.expanded .doc-content {
+    max-height: 500px; /* Altura máxima suficiente */
+    padding-bottom: 2rem;
+    opacity: 1;
+}
+
+.doc-icon {
+    transition: transform 0.4s ease;
+}
+
+.doc-accordion.expanded .doc-icon {
+    transform: rotate(180deg);
+    color: red;
+}
