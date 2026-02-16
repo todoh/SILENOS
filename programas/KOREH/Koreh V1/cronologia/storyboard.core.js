@@ -1,5 +1,5 @@
 // --- cronologia/storyboard.core.js ---
-// MOTOR DE STORYBOARD Y CONSISTENCIA VISUAL (V3 - PERSISTENT MEMORY)
+// MOTOR DE STORYBOARD Y CONSISTENCIA VISUAL (V3.6 - FIX COMPATIBILIDAD Y TRADUCCIÓN)
 
 const Storyboard = {
     
@@ -16,6 +16,14 @@ const Storyboard = {
         const existingAssets = main.visualBibleData || [];
         const hasMemory = existingAssets.length > 0;
 
+        // --- HELPER CRÍTICO DE COMPATIBILIDAD ---
+        // Busca visual_signature (nuevo) O visualDesc (archivos viejos como Arandela)
+        const getVisual = (asset) => {
+            if (asset.visual_signature) return asset.visual_signature;
+            if (asset.visualDesc) return asset.visualDesc;
+            return "Descripción visual no disponible.";
+        };
+
         try {
             // =================================================================================
             // FASE 1: DEFINICIÓN DE ACTIVOS (INCREMENTAL)
@@ -23,7 +31,8 @@ const Storyboard = {
             ui.toggleLoading(true, "FASE 1: CONTINUIDAD VISUAL", hasMemory ? "Consultando VISUAL_BIBLE.json y detectando nuevos elementos..." : "Creando Biblia Visual desde cero...");
 
             // Convertimos la memoria existente en un string para la IA
-            const memoryString = JSON.stringify(existingAssets.map(a => ({ name: a.name, desc: a.visual_signature })));
+            // USAMOS getVisual() AQUÍ PARA QUE LA IA ENTIENDA TUS ARCHIVOS ANTIGUOS
+            const memoryString = JSON.stringify(existingAssets.map(a => ({ name: a.name, desc: getVisual(a) })));
 
             const biblePrompt = `
             ACTÚA COMO: Director de Arte y Diseñador de Vestuario obsesivo.
@@ -68,9 +77,6 @@ const Storyboard = {
             console.log(`Nuevos activos detectados: ${newAssets.length}`);
             
             // --- FUSIÓN DE MEMORIA (MERGE) ---
-            // Combinamos lo viejo con lo nuevo. Si hay colisión de nombres, respetamos lo VIEJO (Inmutable) a menos que queramos sobreescribir.
-            // Aquí asumimos respeto total a la antigüedad para continuidad.
-            
             const finalVisualBible = [...existingAssets];
             
             newAssets.forEach(newItem => {
@@ -84,8 +90,8 @@ const Storyboard = {
             // GUARDAR LA NUEVA BIBLIA COMPLETADA EN EL ARCHIVO JSON
             await main.saveVisualBible(finalVisualBible);
 
-            // Actualizar UI
-            window.currentVisualBible = finalVisualBible.map(x => ({ name: x.name, visual_tags: x.visual_signature }));
+            // Actualizar UI - USANDO getVisual TAMBIÉN AQUÍ
+            window.currentVisualBible = finalVisualBible.map(x => ({ name: x.name, visual_tags: getVisual(x) }));
             SbUI.renderBible(window.currentVisualBible);
 
             // =================================================================================
@@ -122,37 +128,44 @@ const Storyboard = {
             const sceneSkeleton = JSON.parse(ai.cleanJSON(skeletonRes)).scenes;
 
             // =================================================================================
-            // FASE 3: FUSIÓN GENERATIVA (USANDO LA BIBLIA COMPLETA)
+            // FASE 3: FUSIÓN GENERATIVA (TRADUCCIÓN VISUAL ESTRICTA)
             // =================================================================================
-            ui.toggleLoading(true, "FASE 3: INGENIERÍA DE PROMPTS 8K", "Inyectando definiciones de VISUAL_BIBLE.json...");
+            ui.toggleLoading(true, "FASE 3: INGENIERÍA DE PROMPTS 8K", "Sustituyendo nombres por descripciones físicas...");
 
-            // Usamos la biblia COMPLETA (Viejos + Nuevos) para generar los prompts
-            const assetDictionary = finalVisualBible.map(a => `DEFINICIÓN DE "${a.name}": ${a.visual_signature}`).join('\n\n');
+            // 1. CREAMOS EL MAPA DE SUSTITUCIÓN (USANDO getVisual PARA NO FALLAR)
+            const substitutionMap = finalVisualBible.map(a => 
+                `- IDENTIFICADOR: "${a.name}"  >>>  SUSTITUIR POR: "${getVisual(a)}"`
+            ).join('\n');
 
             const promptEngineeringPrompt = `
-            ACTÚA COMO: Ingeniero de Prompts para Stable Diffusion (Experto en consistencia).
+            ACTÚA COMO: Un "Traductor Visual" para Motores de Renderizado (Stable Diffusion / Midjourney).
             
-            TU BIBLIA DE VERDAD (USAR OBLIGATORIAMENTE):
-            ${assetDictionary}
+            OBJETIVO:
+            Convertir escenas narrativas en PROMPTS DE IMAGEN PUROS.
             
-            ESCENAS A PROCESAR:
+            PROBLEMA CRÍTICO A EVITAR:
+            El motor de render NO SABE quiénes son los personajes por su nombre.
+            Si el prompt dice "Juan está corriendo", la imagen saldrá MAL porque la IA no sabe cómo es Juan.
+            
+            TU MISIÓN (SUSTITUCIÓN OBLIGATORIA):
+            Debes reescribir cada escena ELIMINANDO LOS NOMBRES PROPIOS y reemplazándolos por su DESCRIPCIÓN FÍSICA del mapa de abajo.
+            
+            MAPA DE SUSTITUCIÓN (VISUAL BIBLE):
+            ${substitutionMap}
+            
+            ESCENAS A TRADUCIR:
             ${JSON.stringify(sceneSkeleton)}
             
-            TAREA MAESTRA:
-            Para cada escena, escribe el "visual_prompt" definitivo.
-            
-            REGLAS DE ORO (COHERENCIA VISUAL):
-            1.  NUNCA uses solo el nombre. COPIA Y PEGA la definición física de la Biblia.
-                (Ej: "((Juan: tall man...)) fighting with ((Sword: glowing...))").
-            2.  Define el ENTORNO usando la definición de la Biblia.
-            3.  Añade iluminación cinematográfica (Ej: "Cinematic lighting, 8k, masterpiece").
-            4.  Output en INGLÉS DETALLADO.
+            REGLAS DE SALIDA (INGLÉS):
+            1. JAMÁS incluyas el nombre del personaje en el prompt final (Ej: No escribas "Juan", escribe "A tall man with a scar...").
+            2. Describe la acción + el entorno + la iluminación.
+            3. Añade al final: "cinematic lighting, 8k, highly detailed, masterpiece".
             
             SALIDA JSON:
             {
                 "prompts": [
-                    "Prompt completo escena 1...",
-                    "Prompt completo escena 2..."
+                    "Prompt visual escena 1 (Sin nombres, solo descripciones)...",
+                    "Prompt visual escena 2 (Sin nombres, solo descripciones)..."
                 ]
             }`;
 

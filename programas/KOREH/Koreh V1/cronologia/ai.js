@@ -105,7 +105,7 @@ const ai = {
             for await (const entry of handle.values()) {
                 if (entry.kind === 'directory') {
                     await scan(entry);
-                } else if (entry.kind === 'file' && entry.name.endsWith('.json') && !entry.name.includes('TIMELINE')) {
+                } else if (entry.kind === 'file' && entry.name.endsWith('.json') && !entry.name.includes('TIMELINE') && !entry.name.includes('VISUAL_BIBLE')) {
                     try {
                         const f = await entry.getFile();
                         const t = await f.text();
@@ -113,10 +113,13 @@ const ai = {
                         
                         const name = json.name || json.title || entry.name.replace('.json','');
                         const type = json.type || "Entidad";
-                        const desc = json.desc || "Sin descripción";
+                        
+                        // LÓGICA LITERAL: Extraer visualDesc en lugar de desc para evitar contaminación narrativa
+                        const visualData = json.visualDesc || json.visual_signature || "Sin descripción visual definida";
                         const tags = json.tags ? `[Tags: ${json.tags.join(', ')}]` : "";
                         
-                        this.inventory.push(`[${type}] ${name} ${tags}: ${desc.substring(0, 350)}`);
+                        // Inyectamos el texto visual en el inventario que leerá la IA
+                        this.inventory.push(`[${type}] ${name} ${tags}: ${visualData.substring(0, 500)}`);
                         count++;
                     } catch(e) { console.warn("Skipping " + entry.name); }
                 }
@@ -136,7 +139,7 @@ const ai = {
             list.appendChild(s);
         });
 
-        this.log(`Inventario cargado: ${count} entidades narrativas.`, "success");
+        this.log(`Inventario cargado: ${count} entidades (Filtro Visual Activo).`, "success");
     },
 
     // --- MOTOR "SWARM GENESIS" (GÉNESIS DE PREMISA - SENTIDO COMÚN) ---
@@ -154,27 +157,26 @@ const ai = {
         btn.innerHTML = '<i class="fa-solid fa-network-wired fa-spin"></i> FASE 1: ANÁLISIS DE REALIDAD';
         
         try {
-            this.log("Desplegando Analistas (Sin grandilocuencia)...", "brain");
+            this.log("Desplegando Analistas (Basado en Apariencia)...", "brain");
             
-            const commonContext = `CONTEXTO (INVENTARIO): ${this.inventory.join('\n')}. ${guidance ? `INTENCIÓN DEL USUARIO: "${guidance}"` : ""}`;
+            const commonContext = `CONTEXTO (INVENTARIO VISUAL): ${this.inventory.join('\n')}. ${guidance ? `INTENCIÓN DEL USUARIO: "${guidance}"` : ""}`;
 
             // Agente 1: Personajes (Bajado a tierra)
-            const promptPsych = `Eres un ANALISTA DE CARACTERES. Analiza SOLO los PERSONAJES.
-            No inventes traumas épicos si no están ahí.
+            const promptPsych = `Eres un ANALISTA DE CARACTERES. Analiza SOLO los PERSONAJES basándote en su apariencia y roles visuales.
+            No inventes traumas si no están ahí.
             Dame: 1. Qué quieren (Objetivo tangible). 2. Qué les impide conseguirlo (Obstáculo real). 3. Dinámica actual entre ellos.
-            Sé realista. Si son campesinos, sus problemas son de campesinos, no de reyes.`;
+            Sé realista.`;
 
             // Agente 2: Entorno (Bajado a tierra)
-            const promptSocio = `Eres un OBSERVADOR SOCIAL. Analiza el ENTORNO y la COMUNIDAD.
-            Dame: 1. Cómo funciona este lugar día a día. 2. Recursos disponibles vs Necesidades. 3. El conflicto latente natural (sin forzar guerras si no las hay).`;
+            const promptSocio = `Eres un OBSERVADOR SOCIAL. Analiza el ENTORNO y la COMUNIDAD basándote en las descripciones físicas.
+            Dame: 1. Cómo funciona este lugar día a día. 2. Recursos disponibles vs Necesidades. 3. El conflicto latente natural.`;
 
             // Agente 3: Lore/Objetos (Bajado a tierra)
             const promptLore = `Eres un INVENTARIADOR. Analiza los OBJETOS y LUGARES.
-            Dame: 1. Herramientas u objetos clave disponibles. 2. Limitaciones físicas del lugar. 3. Detalles atmosféricos basados en los datos.
-            Evita términos como "MacGuffin" o "Artefacto Ancestral" a menos que el inventario lo diga explícitamente.`;
+            Dame: 1. Herramientas u objetos clave disponibles. 2. Limitaciones físicas del lugar. 3. Detalles atmosféricos basados en los datos.`;
 
             const promises = [
-                this.callModel(promptPsych, commonContext, 0.5, 'openai-large'), // Temp baja para realismo
+                this.callModel(promptPsych, commonContext, 0.5, 'openai-large'), 
                 this.callModel(promptSocio, commonContext, 0.5, 'openai-large'),
                 this.callModel(promptLore, commonContext, 0.5, 'openai-large')
             ];
@@ -184,27 +186,26 @@ const ai = {
             this.log("Análisis de Sentido Común recibido.", "agent");
             btn.innerHTML = '<i class="fa-solid fa-book fa-fade"></i> FASE 2: SINTETIZANDO PREMISA...';
             
-            // DIRECTOR CON RESTRICCIÓN DE ESCALA
             const directorPrompt = `Actúa como un EDITOR LITERARIO DE SENTIDO COMÚN.
             
-            INSUMOS REALISTAS:
+            INSUMOS REALISTAS (VISUALES):
             - PERSONAJES: "${resPsych}"
             - ENTORNO: "${resSocio}"
             - ELEMENTOS: "${resLore}"
             
-            TAREA: Escribe una PREMISA SÓLIDA y PROPORCIONAL a los datos.
+            TAREA: Escribe una PREMISA SÓLIDA y PROPORCIONAL a los datos físicos.
             
             REGLAS DE ORO (ANTI-GRANDILOCUENCIA):
-            1. DETECTA LA ESCALA: Si los datos son sobre una pequeña aldea, escribe una historia íntima. Si son sobre imperios, escribe una épica. NO conviertas una historia pequeña en una "Saga Legendaria" artificialmente.
-            2. NO INVENTES DRAMA VACÍO: Evita palabras como "Destino", "Elegido", "Oscuridad Ancestral" a menos que los datos lo justifiquen.
+            1. DETECTA LA ESCALA: Si los datos son sobre una pequeña aldea, escribe una historia íntima.
+            2. NO INVENTES DRAMA VACÍO: Evita términos épicos si los datos no lo justifican.
             3. LÓGICA: El conflicto debe nacer de la fricción natural entre lo que los personajes quieren y lo que el entorno permite.
             
             ESTRUCTURA DE SALIDA:
-            # TÍTULO (Acorde al tono)
-            # LOGLINE (Resumen en 2 frases reales)
-            # EL CONFLICTO CENTRAL (¿Cuál es el problema práctico a resolver?)
-            # DINÁMICA DE PERSONAJES (¿Quién ayuda y quién estorba?)
-            # ESTRUCTURA SUGERIDA (Inicio, Nudo, Desenlace lógicos)
+            # TÍTULO
+            # LOGLINE
+            # EL CONFLICTO CENTRAL
+            # DINÁMICA DE PERSONAJES
+            # ESTRUCTURA SUGERIDA
             `;
 
             const finalPremise = await this.callModel(directorPrompt, "Sintetiza la historia con sentido común.", 0.6, 'openai-large');
@@ -214,7 +215,7 @@ const ai = {
             actions.classList.remove('hidden');
             resultArea.scrollIntoView({ behavior: 'smooth' });
             
-            this.log("Premisa generada con lógica y coherencia.", "success");
+            this.log("Premisa generada con lógica y coherencia visual.", "success");
 
         } catch(e) {
             console.error(e);
@@ -230,10 +231,9 @@ const ai = {
     async runPipeline() {
         if(!this.apiKey) return alert("Conecta la IA primero.");
         
-        const prompt = document.getElementById('ai-prompt').value; // La Biblia generada
+        const prompt = document.getElementById('ai-prompt').value; 
         if(!prompt) return alert("Falta la Biblia/Premisa. Genérala primero.");
         
-        // Este valor viene del cálculo preciso de ai2.js
         const eventCount = parseInt(document.getElementById('ai-event-count').value);
         const density = document.getElementById('ai-density').value;
         
@@ -245,7 +245,6 @@ const ai = {
         this.updateProgress(5);
         
         try {
-            // PASO 1: MAPEO ESTRUCTURAL ESTRICTO (El Plano Azul)
             this.log("Generando Escaleta de Ejecución Estricta...", "brain");
             
             const skeletonSys = `Eres el JEFE DE CONTINUIDAD de una producción narrativa.
@@ -253,28 +252,25 @@ const ai = {
             DOCUMENTACIÓN MAESTRA:
             "${prompt}"
             
-            INVENTARIO DE ACTIVOS (Personajes/Lugares disponibles):
+            INVENTARIO DE ACTIVOS (DEFINICIÓN VISUAL):
             ${this.inventory.join('\n')}
 
             ORDEN DE PRODUCCIÓN:
             Debes desglosar la historia en EXACTAMENTE ${eventCount} Capítulos/Secuencias.
             
             REGLAS DE CAUSALIDAD (LÓGICA FORENSE):
-            1. NO inventes tramas paralelas que no estén en la Premisa.
-            2. Cada capítulo debe ser CAUSA del siguiente y CONSECUENCIA del anterior.
+            1. NO inventes tramas paralelas.
+            2. Cada capítulo debe ser CAUSA del siguiente.
             3. Usa los NOMBRES EXACTOS del inventario.
-            4. El ritmo debe ajustarse para cubrir TODA la historia en exactamente ${eventCount} pasos.
             
-            FORMATO JSON: { "chapters": [{ "time": 1, "title": "Título Técnico", "intent": "Instrucción precisa de qué ocurre y qué cambia (Valor de carga)", "cast": ["PersonajeA", "LugarB"] }, ...] }`;
+            FORMATO JSON: { "chapters": [{ "time": 1, "title": "Título Técnico", "intent": "Instrucción precisa", "cast": ["PersonajeA"] }, ...] }`;
             
-            // OpenAI-Large para lógica estructural perfecta
             const skelRes = await this.callModel(skeletonSys, "Genera el plan de rodaje (JSON).", 0.4, 'openai-large');
             const skeleton = JSON.parse(this.cleanJSON(skelRes)).chapters;
             
             this.updateProgress(30);
             this.log(`Plan de ejecución aprobado: ${skeleton.length} nodos.`, "success");
             
-            // PASO 2: RENDERIZADO DE MOMENTOS (La Construcción)
             const finalEvents = [];
             
             for (let i = 0; i < skeleton.length; i++) {
@@ -284,26 +280,23 @@ const ai = {
                 this.toggleLoading(true, `RENDERIZANDO CAPÍTULO ${i+1}/${skeleton.length}`, `${chapter.title} (Gemini Fast)`);
                 this.updateProgress(progressBase);
 
-                // Prompt de Renderizado "8K Definition"
-                const writerSys = `Eres el RENDERIZADOR DE ESCENAS de esta historia.
+                const writerSys = `Eres el RENDERIZADOR DE ESCENAS.
                 
-                ESTADO ACTUAL DE LA TRAMA (Capítulo ${i+1}): "${chapter.title}"
-                PROPÓSITO DE LA ESCENA: ${chapter.intent}
-                ACTIVOS EN ESCENA: ${chapter.cast.join(', ')}.
+                ESTADO ACTUAL (Capítulo ${i+1}): "${chapter.title}"
+                PROPÓSITO: ${chapter.intent}
+                ACTIVOS EN ESCENA (VISUAL): ${chapter.cast.join(', ')}.
                 
                 TAREA:
                 Genera ${momentsPromptInfo} bloques de texto de ALTA DEFINICIÓN (Momentos).
                 
                 REGLAS DE RENDERIZADO:
-                1. NO RESUMAS ("Entonces pelearon..."). MUESTRA la acción ("El puño de X impactó en...").
+                1. NO RESUMAS. MUESTRA la acción.
                 2. Enfócate en lo sensorial y lo físico.
-                3. Usa los datos del inventario (si hay un objeto mágico, describe cómo brilla/suena).
-                4. Mantén la continuidad lógica estricta con el propósito de la escena.
+                3. Usa las descripciones físicas del inventario (visualDesc) para mantener la consistencia del aspecto.
                 
                 Output JSON: { "moments": ["Texto detallado 1...", "Texto detallado 2..."] }`;
 
                 try {
-                    // Gemini-Fast para volumen de texto y prosa
                     const writeRes = await this.callModel(writerSys, "Renderiza la escena.", 0.7, 'gemini-fast');
                     const writeJson = JSON.parse(this.cleanJSON(writeRes));
                     
