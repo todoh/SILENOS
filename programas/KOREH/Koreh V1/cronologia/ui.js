@@ -54,6 +54,11 @@ const ui = {
         }
     },
 
+    // --- FUNCIÓN RESTAURADA ---
+    toggleStoryboardModal() {
+        document.getElementById('storyboard-modal').classList.toggle('hidden');
+    },
+
     useGeneratedPremise() {
         const txt = document.getElementById('genesis-output').value;
         if (!txt) return;
