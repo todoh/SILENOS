@@ -119,14 +119,27 @@ async function checkFileExists(rootHandle, filePath) {
     }
 }
 
-async function downloadGithubPrograms(rootHandle) {
+// MODIFICADO: Ahora acepta forceUpdate y muestra Modal
+window.downloadGithubPrograms = async function(rootHandle, forceUpdate = false) {
     if (window.isSyncing) {
         console.log("SYNC: Ya hay una sincronización en curso. Omitiendo.");
         return;
     }
 
+    const modal = document.getElementById('sync-modal');
+    const statusText = document.getElementById('sync-status');
+    const progressBar = document.getElementById('sync-bar');
+
     window.isSyncing = true; 
-    console.log("SYNC: Comprobando actualizaciones de GitHub...");
+    
+    // Mostrar Modal
+    if(modal) {
+        modal.classList.remove('hidden');
+        if(statusText) statusText.textContent = "Connecting to Repository...";
+        if(progressBar) progressBar.style.width = '10%';
+    }
+
+    console.log(`SYNC: Inicio (Force: ${forceUpdate})`);
 
     const repoOwner = 'todoh';
     const repoName = 'SILENOS';
@@ -136,7 +149,7 @@ async function downloadGithubPrograms(rootHandle) {
     const treeUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/git/trees/${branch}?recursive=1`;
 
     try {
-        // 1. Obtener lista de archivos (JSON ligero)
+        // 1. Obtener lista de archivos
         const resp = await fetch(treeUrl);
         if (!resp.ok) throw new Error(`GitHub API Error: ${resp.status}`);
         const data = await resp.json();
@@ -146,52 +159,76 @@ async function downloadGithubPrograms(rootHandle) {
             item.path.startsWith(`${targetFolder}/`) && item.type === 'blob'
         );
 
-        // 3. DESCARGA INTELIGENTE (Solo lo que falta)
+        const totalFiles = filesToDownload.length;
+        if(progressBar) progressBar.style.width = '30%';
+
+        // 3. DESCARGA
         const batchSize = 10;
         let downloaded = 0;
         let skipped = 0;
+        let processed = 0;
 
-        for (let i = 0; i < filesToDownload.length; i += batchSize) {
+        for (let i = 0; i < totalFiles; i += batchSize) {
             const batch = filesToDownload.slice(i, i + batchSize);
             
             await Promise.all(batch.map(async (item) => {
                 try {
-                    // VERIFICACIÓN: Si existe, saltamos la descarga
-                    const exists = await checkFileExists(rootHandle, item.path);
-                    
-                    if (exists) {
-                        skipped++;
-                        return;
+                    // Si NO es forzado, verificamos existencia
+                    if (!forceUpdate) {
+                        const exists = await checkFileExists(rootHandle, item.path);
+                        if (exists) {
+                            skipped++;
+                            return; // Salir de este map, ir al finally
+                        }
                     }
 
-                    // Si no existe, descargamos
+                    // Descarga
                     const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${item.path}`;
                     const contentResp = await fetch(rawUrl);
                     const blob = await contentResp.blob();
                     await saveFileRecursively(rootHandle, item.path, blob);
                     downloaded++;
-                    console.log(`SYNC: Descargado ${item.path}`);
-
+                    
                 } catch (err) {
                     console.warn(`SYNC FAIL: ${item.path}`, err);
+                } finally {
+                    processed++;
+                    // Actualizar UI Modal
+                    if(statusText) statusText.textContent = `Downloading: ${processed}/${totalFiles} files...`;
+                    if(progressBar) {
+                        const pct = 30 + Math.floor((processed / totalFiles) * 70);
+                        progressBar.style.width = `${pct}%`;
+                    }
                 }
             }));
         }
 
+        if(statusText) statusText.textContent = "Finalizing...";
+        if(progressBar) progressBar.style.width = '100%';
+
+        // Pequeña pausa para ver el 100%
+        await new Promise(r => setTimeout(r, 500));
+
         if (downloaded > 0) {
-            if(typeof showToast === 'function') showToast(`SYNC: INSTALLED ${downloaded} NEW FILES`);
+            if(typeof showToast === 'function') showToast(`SYNC COMPLETE: ${downloaded} FILES UPDATED`);
             console.log(`SYNC: Finalizado. Descargados: ${downloaded}, Saltados: ${skipped}`);
         } else {
-            console.log(`SYNC: Sistema actualizado. (${skipped} archivos verificados)`);
+            if (forceUpdate && typeof showToast === 'function') showToast("SYNC: ALL FILES RE-VERIFIED");
+            else console.log(`SYNC: Sistema actualizado. (${skipped} archivos verificados)`);
         }
 
     } catch (e) {
         console.error("SYNC FATAL ERROR:", e);
-        if(typeof showToast === 'function') showToast("SYNC ERROR");
+        if(typeof showToast === 'function') showToast("SYNC ERROR: Network issue");
+        if(statusText) statusText.textContent = "ERROR: " + e.message;
+        await new Promise(r => setTimeout(r, 2000));
     } finally {
-        window.isSyncing = false; 
+        window.isSyncing = false;
+        // Ocultar Modal
+        if(modal) modal.classList.add('hidden');
+        if(progressBar) progressBar.style.width = '0';
     }
-}
+};
 
 async function saveFileRecursively(rootHandle, filePath, blob) {
     const parts = filePath.split('/'); 
@@ -218,17 +255,14 @@ async function scanHtmlFilesRecursive(dirHandle, pathPrefix = '') {
     
     for await (const entry of dirHandle.values()) {
         if (entry.kind === 'directory') {
-            // Recursividad: buscar dentro de subcarpetas
-            // IMPORTANTE: Pasamos 'entry' como dirHandle para la siguiente recursión
             const subResults = await scanHtmlFilesRecursive(entry, pathPrefix + entry.name + ' / ');
             results = results.concat(subResults);
         } else if (entry.kind === 'file' && entry.name.endsWith('.html')) {
-            // Es un archivo HTML
             results.push({
                 entry: entry,
                 path: pathPrefix, 
                 name: entry.name,
-                parentHandle: dirHandle // <--- AQUI GUARDAMOS LA CARPETA PADRE EXACTA
+                parentHandle: dirHandle 
             });
         }
     }
@@ -276,9 +310,6 @@ async function populateProgramsWindow(winId, programsHandle) {
             btn.innerHTML = nameHtml + pathHtml;
             
             btn.onclick = () => {
-                // USAMOS item.parentHandle (La carpeta del programa, ej: "animation")
-                // Esto permite que 'chroma.js' se encuentre.
-                // html-processor.js se encargará de buscar 'librerias' en la raíz si no está aquí.
                 if (typeof handleOpenFile === 'function') {
                     handleOpenFile(item.entry, item.parentHandle);
                 }
@@ -311,9 +342,10 @@ async function handleOpenPrograms() {
             
             await populateProgramsWindow(winId, programsHandle);
 
-            downloadGithubPrograms(window.currentHandle).then(async () => {
+            // Llamada inicial estándar (force=false)
+            downloadGithubPrograms(window.currentHandle, false).then(async () => {
                 if (document.getElementById(`win-programs-${winId}`)) {
-                    console.log("SYNC: Actualizando lista de programas...");
+                    console.log("SYNC: Actualizando lista de programas tras descarga...");
                     await populateProgramsWindow(winId, programsHandle);
                     if(typeof showToast === 'function') showToast("PROGRAM LIST UPDATED");
                 }

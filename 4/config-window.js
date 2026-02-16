@@ -57,6 +57,14 @@ window.ConfigWindowUI = {
             </div>
 
             <div class="mb-8">
+                <div class="section-title">System Update</div>
+                <p class="text-xs mb-4 text-gray-500">Forzar descarga de la última versión de los programas base.</p>
+                <button class="btn w-full" onclick="handleUpdatePrograms()">
+                    <i class="fa-solid fa-cloud-arrow-down"></i> ACTUALIZAR PROGRAMAS (FORCE)
+                </button>
+            </div>
+
+            <div class="mb-8">
                 <div class="section-title">System Variables</div>
                 <div class="bg-gray-50 p-2 mb-4 border border-gray-200">
                     <div class="flex gap-2 mb-2">
@@ -73,6 +81,9 @@ window.ConfigWindowUI = {
             <script>
                 // --- LOGICA INTERNA DEL IFRAME ---
                 const Sys = window.parent.SystemConfig;
+                
+                // Referencia a la ventana padre para invocar descarga
+                const ParentWindow = window.parent;
 
                 function render() {
                     renderAuth();
@@ -129,6 +140,18 @@ window.ConfigWindowUI = {
                     if(confirm('¿Desconectar Pollinations?')) {
                         Sys.logout();
                         render();
+                    }
+                }
+
+                // NUEVA FUNCIÓN: ACTUALIZAR PROGRAMAS
+                window.handleUpdatePrograms = function() {
+                    if(confirm('¿Sobreescribir todos los programas base con la última versión de GitHub? Se perderán cambios locales en /programas.')) {
+                        if (ParentWindow.downloadGithubPrograms && ParentWindow.currentHandle) {
+                            // Llamamos con forceUpdate = true
+                            ParentWindow.downloadGithubPrograms(ParentWindow.currentHandle, true);
+                        } else {
+                            alert("Error: FileSystem no montado o función no disponible.");
+                        }
                     }
                 }
 
