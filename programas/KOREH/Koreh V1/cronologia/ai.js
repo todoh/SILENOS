@@ -58,7 +58,14 @@ const ai = {
     },
 
     updateProgress(percent) {
-        document.getElementById('ai-progress-bar').style.width = percent + '%';
+        // CORRECCIÓN: Apuntamos a 'loading-bar' que es el ID que existe en tu HTML.
+        // Se añade verificación para que no rompa si el DOM no está listo.
+        const el = document.getElementById('loading-bar');
+        if (el) {
+            el.style.width = percent + '%';
+        } else {
+            console.warn("Elemento 'loading-bar' no encontrado en el DOM.");
+        }
     },
 
     // --- API CORE ---
