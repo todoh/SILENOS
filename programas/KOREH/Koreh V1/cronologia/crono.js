@@ -1,4 +1,4 @@
-// --- crono.js: SISTEMA DE VISUALIZACIÓN ---
+// --- crono.js: SISTEMA DE VISUALIZACIÓN (ADAPTATIVO) ---
 
 class TimelineSystem {
     constructor() {
@@ -165,13 +165,26 @@ class TimelineSystem {
             const stemStyle = isUp ? `height:${stemH}px; bottom: 0;` : `height:${stemH}px; top: 0;`;
             const cardStyle = isUp ? `bottom: ${stemH + 8}px; transform-origin: bottom center;` : `top: ${stemH + 8}px; transform-origin: top center;`;
 
+            // --- LÓGICA DE IMAGEN ADAPTATIVA ---
+            let imgHtml = '';
+            if (ev.image64) {
+                // Si es vertical ('portrait'), usamos h-64 (256px) en vez de h-24 (96px)
+                const isPortrait = ev.aspectRatio === 'portrait';
+                const imgClass = isPortrait 
+                    ? "w-full h-48 object-cover mt-2 border border-gray-100 rounded-sm" // Estilo Vertical (Alto)
+                    : "w-full h-24 object-cover mt-2 border border-gray-100 rounded-sm"; // Estilo Horizontal (Cinemático)
+                
+                imgHtml = `<img src="${ev.image64}" class="${imgClass}">`;
+            }
+            // -----------------------------------
+
             el.innerHTML = `
                 <div class="evt-stem" style="${stemStyle}"></div>
                 <div class="evt-dot"></div>
                 <div class="evt-card" style="${cardStyle}">
                     <div class="evt-time">${ev.time.toFixed(1)}</div>
                     <div class="evt-title">${ev.description || 'Sin título'}</div>
-                    ${ev.image64 ? `<img src="${ev.image64}" class="w-full h-24 object-cover mt-2 border border-gray-100">` : ''}
+                    ${imgHtml}
                 </div>
             `;
             

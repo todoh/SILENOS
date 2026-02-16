@@ -1,15 +1,16 @@
-// --- ui.js: INTERFAZ DE USUARIO ---
+// --- cronologia/ui.js ---
+// INTERFAZ DE USUARIO (MODIFICADO PARA SELECCIÓN DE FORMATO)
 
 const ui = {
     selectedFolderHandle: null,
     selectedEventId: null,
 
     init() {
-        // Listeners para el inspector
+        // Listeners básicos
         document.getElementById('inp-time').addEventListener('input', (e) => main.updateSelected('time', parseFloat(e.target.value)));
         document.getElementById('inp-title').addEventListener('input', (e) => main.updateSelected('description', e.target.value));
         
-        // Listener Imagen
+        // Listener Imagen (Subida manual)
         document.getElementById('inp-img').addEventListener('change', (e) => {
             const f = e.target.files[0];
             if(!f) return;
@@ -39,48 +40,33 @@ const ui = {
         if (!modal.classList.contains('hidden')) this.refreshFolderList();
     },
 
-    toggleAIModal() {
-        document.getElementById('ai-modal').classList.toggle('hidden');
-    },
+    toggleAIModal() { document.getElementById('ai-modal').classList.toggle('hidden'); },
+    togglePremiseModal() { document.getElementById('premise-modal').classList.toggle('hidden'); },
+    toggleStoryboardModal() { document.getElementById('storyboard-modal').classList.toggle('hidden'); },
 
-    // --- NUEVO: PREMISE MODAL UI ---
-    togglePremiseModal() {
-        const modal = document.getElementById('premise-modal');
-        modal.classList.toggle('hidden');
-        
-        // Reset visual simple si se abre
-        if (!modal.classList.contains('hidden')) {
-            document.getElementById('genesis-direction').focus();
+    toggleLoading(show, text, subtext="") {
+        const el = document.getElementById('ai-loading-overlay');
+        if(show) {
+            el.classList.remove('hidden');
+            el.classList.add('flex');
+            document.getElementById('ai-loading-text').innerText = text;
+            document.getElementById('ai-loading-subtext').innerText = subtext;
+        } else {
+            el.classList.add('hidden');
+            el.classList.remove('flex');
         }
-    },
-
-    // --- FUNCIÓN RESTAURADA ---
-    toggleStoryboardModal() {
-        document.getElementById('storyboard-modal').classList.toggle('hidden');
-    },
-
-    useGeneratedPremise() {
-        const txt = document.getElementById('genesis-output').value;
-        if (!txt) return;
-        document.getElementById('ai-prompt').value = txt;
-        this.togglePremiseModal();
-        // Asegurar que el modal principal está visible
-        document.getElementById('ai-modal').classList.remove('hidden');
     },
 
     // --- FILE SYSTEM UI ---
     async refreshFolderList() {
         const list = document.getElementById('folder-list'); 
         list.innerHTML = '';
-        
-        // CORRECCIÓN: Usar window.parent directamente como en Cronologia.html
         const FS = window.parent;
         
         if (!FS || !FS.rootHandle) {
-            list.innerHTML = '<div class="p-8 text-center text-xs text-red-400 font-light">Root Handle no accesible o no definido en el padre.</div>';
+            list.innerHTML = '<div class="p-8 text-center text-xs text-red-400 font-light">Root Handle no accesible.</div>';
             return;
         }
-
         this.addFolderOption(list, FS.rootHandle, 'RAÍZ DEL PROYECTO', true);
         await this.scanDirRecursive(FS.rootHandle, list, 'ROOT');
     },
@@ -110,14 +96,60 @@ const ui = {
         container.appendChild(el);
     },
 
-    // --- INSPECTOR UI ---
+    // --- INSPECTOR UI (MODIFICADO) ---
     showInspector(ev) {
         document.getElementById('inspector-empty').classList.add('hidden');
         document.getElementById('inspector-content').classList.remove('hidden');
 
         document.getElementById('inp-time').value = ev.time;
-        document.getElementById('inp-title').value = ev.description;
+        document.getElementById('inp-title').value = ev.description || "";
+        
+        // IMAGEN
         this.renderInspectorImage(ev.image64);
+        
+        // PROMPT VISUAL Y CONTROLES (MODIFICADO)
+        // Buscamos o creamos el textarea del prompt visual
+        let promptContainer = document.getElementById('visual-prompt-container');
+        if (!promptContainer) {
+            // Si no existe (primera carga), lo creamos dinámicamente debajo de la imagen
+            const parent = document.getElementById('inspector-img-section');
+            promptContainer = document.createElement('div');
+            promptContainer.id = 'visual-prompt-container';
+            promptContainer.className = "mt-4 border-t border-gray-100 pt-4";
+            promptContainer.innerHTML = `
+                <div class="flex justify-between items-center mb-2">
+                    <label class="label-text text-purple-600">Prompt Visual (IA)</label>
+                    
+                    <div class="flex items-center gap-2">
+                        <select id="inp-aspect-ratio" class="text-[9px] bg-white border border-gray-200 rounded px-1 py-1 text-gray-600 outline-none hover:border-purple-300 transition-colors">
+                            <option value="landscape">Horizontal (16:9)</option>
+                            <option value="portrait">Vertical (9:16)</option>
+                        </select>
+
+                        <button id="btn-gen-single" class="text-[9px] bg-black text-white px-2 py-1 rounded hover:bg-gray-800 transition-colors uppercase font-bold tracking-wider">
+                            <i class="fa-solid fa-paintbrush"></i>
+                        </button>
+                    </div>
+                </div>
+                <textarea id="inp-visual-prompt" class="config-input text-[10px] font-mono text-purple-800 bg-purple-50/30 p-2 border border-purple-100 rounded h-20 resize-none" placeholder="Prompt para la imagen..."></textarea>
+            `;
+            parent.appendChild(promptContainer);
+        }
+
+        // Configurar valores
+        const txtArea = document.getElementById('inp-visual-prompt');
+        txtArea.value = ev.visualPrompt || "";
+        txtArea.onchange = (e) => main.updateSelected('visualPrompt', e.target.value);
+        
+        // Configurar Selector de Aspecto
+        const ratioSelect = document.getElementById('inp-aspect-ratio');
+        ratioSelect.value = ev.aspectRatio || 'landscape'; // Default a landscape
+        ratioSelect.onchange = (e) => main.updateSelected('aspectRatio', e.target.value);
+
+        // Actualizar onclick del botón con el ID actual
+        const btnGen = document.getElementById('btn-gen-single');
+        btnGen.onclick = () => ImgGen.generateSingle(ev.id);
+
         this.renderMoments(ev);
     },
 
@@ -155,7 +187,6 @@ const ui = {
             `;
             
             const area = row.querySelector('textarea');
-            // Auto resize
             area.style.height = 'auto';
             area.style.height = (area.scrollHeight) + 'px';
             

@@ -2,15 +2,16 @@
 
 const main = {
     data: { events: [] },
+    visualBibleData: [], // Almacén de memoria visual persistente
     fileHandle: null,
-    rootHandle: null, // Guardamos la referencia a la raíz
+    visualBibleHandle: null, // Referencia al archivo de la biblia visual
+    rootHandle: null, 
 
     init() {
         console.log("Inicializando Cronología v5...");
         ui.init();
         
         // CORRECCIÓN: Conexión con el sistema de archivos padre correcta
-        // En Cronologia.html, 'FS' es window.parent directamente.
         if (window.parent && window.parent.rootHandle) {
             this.rootHandle = window.parent.rootHandle;
         }
@@ -26,7 +27,7 @@ const main = {
         ui.toggleFileSelector();
         
         try {
-            // Intenta obtener TIMELINE_DATA.json
+            // 1. CARGAR TIMELINE_DATA.json (Datos de la cronología)
             this.fileHandle = await ui.selectedFolderHandle.getFileHandle('TIMELINE_DATA.json', { create: true });
             const file = await this.fileHandle.getFile();
             const text = await file.text();
@@ -40,6 +41,31 @@ const main = {
             }
             
             this.loadEvents(this.data.events);
+
+            // 2. CARGAR VISUAL_BIBLE.json (Memoria Visual Persistente)
+            try {
+                // Intentamos abrirlo, si no existe no pasa nada (se creará al guardar)
+                this.visualBibleHandle = await ui.selectedFolderHandle.getFileHandle('VISUAL_BIBLE.json', { create: true });
+                const vFile = await this.visualBibleHandle.getFile();
+                const vText = await vFile.text();
+                
+                if (vText.trim()) {
+                    const vJson = JSON.parse(vText);
+                    this.visualBibleData = Array.isArray(vJson) ? vJson : (vJson.assets || []);
+                    console.log("Biblia Visual cargada:", this.visualBibleData.length, "activos.");
+                    
+                    // Si existe la UI de storyboard, actualizamos la vista previa
+                    if (typeof SbUI !== 'undefined' && SbUI.renderBible) {
+                        SbUI.renderBible(this.visualBibleData.map(x => ({ name: x.name, visual_tags: x.visual_signature })));
+                    }
+                } else {
+                    this.visualBibleData = [];
+                }
+            } catch (err) {
+                console.warn("No se encontró VISUAL_BIBLE.json o está vacío. Se creará uno nuevo al generar.", err);
+                this.visualBibleData = [];
+            }
+
             // Notificar a la IA dónde estamos
             ai.setContext(ui.selectedFolderHandle);
 
@@ -56,7 +82,29 @@ const main = {
             await writable.write(JSON.stringify(this.data, null, 2));
             await writable.close();
         } catch (e) {
-            console.error("Error guardando:", e);
+            console.error("Error guardando timeline:", e);
+        }
+    },
+
+    // Nueva función para guardar la Biblia Visual
+    async saveVisualBible(assets) {
+        if (!this.rootHandle) return; // Si no hay carpeta, no guardamos
+        
+        try {
+            // Actualizamos memoria local
+            this.visualBibleData = assets;
+            
+            // Si no tenemos handle (caso raro), lo intentamos obtener de nuevo
+            if (!this.visualBibleHandle) {
+                this.visualBibleHandle = await this.rootHandle.getFileHandle('VISUAL_BIBLE.json', { create: true });
+            }
+
+            const writable = await this.visualBibleHandle.createWritable();
+            await writable.write(JSON.stringify(this.visualBibleData, null, 2));
+            await writable.close();
+            console.log("VISUAL_BIBLE.json actualizado correctamente.");
+        } catch (e) {
+            console.error("Error guardando VISUAL_BIBLE.json:", e);
         }
     },
 
