@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StoryPlayer - Render & Voz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/webm-muxer@5.0.2/build/webm-muxer.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="flex flex-col">
+
+    <div id="file-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-8 hidden">
+        <div class="bg-white w-full max-w-lg flex flex-col max-h-[70vh] rounded shadow-2xl overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
+                <h2 class="text-xs font-medium tracking-[0.2em] text-gray-400 uppercase">Explorador de Sistema</h2>
+                <button onclick="UI.toggleFileSelector()" class="text-gray-300 hover:text-black text-xl">&times;</button>
+            </div>
+            <div id="folder-list" class="p-0 overflow-y-auto flex-1 h-64 bg-white">
+            </div>
+            <div class="p-6 border-t border-gray-100 bg-gray-50">
+                <button onclick="Project.confirmFolderSelection()" class="btn-primary rounded">CARGAR PROYECTO SELECCIONADO</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="export-modal" class="fixed inset-0 z-[90] flex items-center justify-center bg-black/90 backdrop-blur-md p-8 hidden">
+        <div class="bg-slate-900 w-full max-w-md rounded-lg border border-slate-700 shadow-2xl overflow-hidden">
+            <div class="p-6 border-b border-slate-700">
+                <h2 class="text-lg font-bold text-white flex items-center gap-3">
+                    <i class="fa-solid fa-bolt text-yellow-500"></i> Renderizado Turbo
+                </h2>
+            </div>
+            <div class="p-6 space-y-6">
+                <div class="flex items-center justify-between p-4 bg-slate-800 rounded border border-slate-700">
+                    <div class="flex flex-col">
+                        <span class="text-sm font-bold text-slate-200">Incrustar Subtítulos</span>
+                        <span class="text-xs text-slate-400">Renderizar texto sobre el video</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="chk-subs" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-500"></div>
+                    </label>
+                </div>
+
+                <div class="text-xs text-slate-500 bg-slate-950 p-3 rounded font-mono">
+                    <i class="fa-solid fa-microchip mr-2 text-cyan-400"></i> Modo Turbo activado. El video se procesará a máxima velocidad de CPU sin reproducirse.
+                </div>
+            </div>
+            <div class="p-4 bg-slate-950 flex gap-3">
+                <button onclick="UI.toggleExportModal()" class="flex-1 py-3 text-slate-400 text-xs font-bold uppercase hover:bg-slate-800 rounded">Cancelar</button>
+                <button onclick="RenderEngine.startRender()" class="flex-1 py-3 bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-400 hover:to-orange-500 text-white rounded font-bold text-xs uppercase tracking-widest shadow-lg">
+                    Renderizar Rápido
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="render-progress" class="fixed inset-0 z-[150] bg-black flex flex-col items-center justify-center hidden">
+        <div class="w-64 mb-6 relative">
+            <div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                <div id="render-bar" class="h-full bg-yellow-500 w-0 transition-all duration-75"></div>
+            </div>
+        </div>
+        <h3 class="text-white text-xl font-bold tracking-widest mb-2">PROCESANDO</h3>
+        <p id="render-status" class="text-slate-500 text-xs font-mono">Calculando audio...</p>
+        
+        <canvas id="render-canvas" width="1920" height="1080" class="absolute pointer-events-none opacity-0"></canvas>
+    </div>
+
+    <header class="h-16 border-b border-slate-700 bg-slate-900/80 flex items-center justify-between px-6 shrink-0 z-20">
+        <div class="flex items-center gap-4">
+            <div class="w-8 h-8 rounded bg-gradient-to-br from-pink-500 to-violet-600 flex items-center justify-center text-white">
+                <i class="fa-solid fa-play"></i>
+            </div>
+            <h1 class="font-bold text-lg tracking-wide">STORY<span class="font-light text-slate-400">PLAYER</span></h1>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <div id="auth-status" class="text-xs font-mono px-3 py-1 rounded bg-slate-800 text-slate-500">
+                OFFLINE
+            </div>
+            <button onclick="App.auth()" class="text-xs hover:text-white text-slate-400 transition-colors uppercase font-bold">
+                <i class="fa-solid fa-key mr-1"></i> Conectar API
+            </button>
+            <div class="h-6 w-px bg-slate-700"></div>
+            
+            <button onclick="UI.toggleFileSelector()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-xs uppercase font-bold tracking-wider transition-all border border-slate-700">
+                <i class="fa-regular fa-folder-open mr-2"></i> Cargar Proyecto
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        
+        <aside class="w-[450px] bg-slate-900 flex flex-col border-r border-slate-700 z-10">
+            
+            <div class="p-4 border-b border-slate-700 bg-slate-800/50 space-y-4">
+                <div>
+                    <label class="text-[10px] uppercase font-bold text-slate-500 block mb-2">Voz del Narrador</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="AudioEngine.setVoice('alloy')" class="voice-btn active p-2 rounded bg-slate-700 text-xs border border-pink-500 text-white">Alloy</button>
+                        <button onclick="AudioEngine.setVoice('echo')" class="voice-btn p-2 rounded bg-slate-800 text-xs border border-transparent hover:bg-slate-700 text-slate-400">Echo</button>
+                        <button onclick="AudioEngine.setVoice('fable')" class="voice-btn p-2 rounded bg-slate-800 text-xs border border-transparent hover:bg-slate-700 text-slate-400">Fable</button>
+                        <button onclick="AudioEngine.setVoice('onyx')" class="voice-btn p-2 rounded bg-slate-800 text-xs border border-transparent hover:bg-slate-700 text-slate-400">Onyx</button>
+                        <button onclick="AudioEngine.setVoice('nova')" class="voice-btn p-2 rounded bg-slate-800 text-xs border border-transparent hover:bg-slate-700 text-slate-400">Nova</button>
+                        <button onclick="AudioEngine.setVoice('shimmer')" class="voice-btn p-2 rounded bg-slate-800 text-xs border border-transparent hover:bg-slate-700 text-slate-400">Shimmer</button>
+                    </div>
+                </div>
+
+                <button onclick="AudioEngine.generateAll()" id="btn-gen-all" class="w-full py-3 bg-gradient-to-r from-pink-600 to-violet-600 hover:from-pink-500 hover:to-violet-500 text-white rounded font-bold text-xs uppercase tracking-widest shadow-lg shadow-purple-900/20 transition-all">
+                    <i class="fa-solid fa-microphone-lines mr-2"></i> Generar Todas las Voces
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto" id="script-container">
+                <div class="p-10 text-center text-slate-500 italic text-sm">
+                    Carga una carpeta de Cronología para ver el guion.
+                </div>
+            </div>
+
+            <div class="p-2 bg-slate-950 text-[10px] text-slate-500 flex justify-between px-4">
+                <span id="stats-events">0 Eventos</span>
+                <span id="stats-audio">0 Audios</span>
+            </div>
+        </aside>
+
+        <section class="flex-1 bg-slate-950 flex flex-col items-center justify-center p-8 relative">
+            
+            <div class="w-full max-w-4xl relative flex flex-col items-center">
+                
+                <div class="cinema-screen rounded-lg border border-slate-700 bg-black relative w-full" id="screen-container">
+                    <img id="player-img" class="w-full h-full object-contain opacity-0 transition-opacity duration-500">
+                    <div id="player-subs" class="subtitle-overlay text-xl md:text-2xl font-medium text-white opacity-0 transition-opacity duration-300">...</div>
+                    <div id="player-loader" class="absolute inset-0 flex items-center justify-center bg-black/80 z-20 hidden">
+                        <i class="fa-solid fa-circle-notch fa-spin text-4xl text-pink-500"></i>
+                    </div>
+                    <div id="player-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-600">
+                        <i class="fa-solid fa-clapperboard text-6xl mb-4"></i>
+                        <span class="text-sm tracking-widest uppercase">Vista Previa</span>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex items-center justify-between gap-4 p-4 glass-panel rounded-lg w-full">
+                    <div class="flex items-center gap-4">
+                        <button onclick="Player.togglePlay()" id="btn-play" class="w-12 h-12 rounded-full bg-white text-black hover:bg-slate-200 flex items-center justify-center text-xl transition-transform hover:scale-105">
+                            <i class="fa-solid fa-play ml-1"></i>
+                        </button>
+                        
+                        <div class="flex bg-slate-800 rounded p-1 border border-slate-700">
+                            <button onclick="Player.setFormat('horizontal')" id="btn-fmt-h" class="px-3 py-1 text-[10px] uppercase font-bold rounded bg-slate-600 text-white transition-all">16:9</button>
+                            <button onclick="Player.setFormat('vertical')" id="btn-fmt-v" class="px-3 py-1 text-[10px] uppercase font-bold rounded text-slate-500 hover:text-white transition-all">9:16</button>
+                        </div>
+
+                        <div class="flex flex-col ml-2">
+                            <span id="time-display" class="font-mono text-sm text-pink-400">00:00 / 00:00</span>
+                            <span id="scene-display" class="text-xs text-slate-400">Escena 1</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <button onclick="UI.toggleExportModal()" id="btn-export" class="px-6 py-2 rounded bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-bold uppercase tracking-wider text-white transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fa-solid fa-video"></i> Exportar Video
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <audio id="audio-player" class="hidden"></audio>
+
+    <script src="voz.js"></script>
+    <script src="video.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
