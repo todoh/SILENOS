@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cronología + Arquitecto IA</title>
+    <title>Cronología + Storyboard IA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="cronologia/styles.css">
@@ -35,7 +35,6 @@
                 <div>
                     <label class="label-text">Dirección Creativa (Opcional)</label>
                     <textarea id="genesis-direction" class="config-input border border-gray-200 p-3 h-24 rounded bg-gray-50 focus:bg-white" placeholder="Ej: Quiero una historia de misterio donde la facción de los Magos traiciona al Rey..."></textarea>
-                    <p class="text-[10px] text-gray-400 mt-2">La IA leerá todos tus datos cargados y buscará conexiones para crear una trama.</p>
                 </div>
                 
                 <div id="genesis-result-area" class="hidden">
@@ -49,7 +48,41 @@
                 
                 <div id="genesis-actions" class="flex gap-4 hidden">
                     <button onclick="ui.useGeneratedPremise()" class="btn-nordic flex-1 justify-center border-green-200 text-green-700 hover:bg-green-50">USAR ESTA PREMISA</button>
-                    <button onclick="ai.generateSmartPremise()" class="btn-nordic w-auto text-gray-400"><i class="fa-solid fa-rotate"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="storyboard-modal" class="fixed inset-0 z-[110] flex items-center justify-center bg-white/98 p-4 hidden">
+        <div class="bg-white w-full max-w-3xl border border-gray-200 shadow-2xl flex flex-col h-[80vh]">
+            <div class="h-14 border-b border-gray-100 flex items-center justify-between px-6 bg-gray-50 shrink-0">
+                <h2 class="font-medium text-xs tracking-widest text-indigo-600 uppercase"><i class="fa-solid fa-clapperboard mr-2"></i>Generador Storyboard</h2>
+                <button onclick="ui.toggleStoryboardModal()" class="text-gray-400 hover:text-black">&times;</button>
+            </div>
+            
+            <div class="flex-1 overflow-hidden flex">
+                <div class="w-2/3 p-6 flex flex-col border-r border-gray-100">
+                    <label class="label-text">Texto Narrativo / Guion</label>
+                    <textarea id="sb-story-text" class="flex-1 config-input border border-gray-200 p-4 rounded bg-gray-50 focus:bg-white text-sm leading-relaxed resize-none" placeholder="Pega aquí tu historia completa. La IA extraerá escenas, personajes y generará las imágenes..."></textarea>
+                </div>
+                
+                <div class="w-1/3 bg-gray-50 p-6 flex flex-col">
+                    <div class="mb-4">
+                        <h4 class="label-text text-indigo-500 mb-2">Biblia Visual Detectada</h4>
+                        <div id="visual-bible-container" class="bg-white border border-gray-200 h-64 overflow-y-auto p-3 rounded shadow-sm">
+                            <div class="text-[10px] text-gray-400 italic text-center mt-10">
+                                La IA listará aquí los rasgos visuales extraídos.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="bible-panel" class="hidden mb-4"></div>
+
+                    <div class="mt-auto">
+                         <button onclick="Storyboard.analyzeAndGenerate(document.getElementById('sb-story-text').value)" class="btn-primary bg-indigo-600 hover:bg-indigo-700 w-full py-4 shadow-lg">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> CREAR STORYBOARD
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -62,15 +95,11 @@
                     <i class="fa-solid fa-layer-group text-indigo-500"></i>
                     <h2 class="font-medium text-xs tracking-widest text-black uppercase">Arquitecto de Novela</h2>
                 </div>
-                <div class="flex gap-4 items-center">
-                    <button id="auth-btn" onclick="ai.login()" class="text-[10px] uppercase font-bold text-gray-400 hover:text-indigo-600">Conectar IA</button>
-                    <button onclick="ui.toggleAIModal()" class="w-8 h-8 flex items-center justify-center border border-gray-200 hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">&times;</button>
-                </div>
+                <button onclick="ui.toggleAIModal()" class="w-8 h-8 flex items-center justify-center border border-gray-200 hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">&times;</button>
             </div>
 
             <div class="flex flex-1 overflow-hidden">
                 <div class="w-1/3 min-w-[350px] border-r border-gray-100 p-6 flex flex-col overflow-y-auto bg-white">
-                    
                     <div id="ai-inventory" class="mb-6 p-4 bg-indigo-50/50 rounded border border-indigo-100">
                         <div class="flex justify-between items-center mb-2">
                             <h4 class="label-text text-indigo-400">Contexto Cargado</h4>
@@ -78,62 +107,41 @@
                         </div>
                         <div id="ai-inventory-list" class="flex flex-wrap gap-1 max-h-24 overflow-y-auto pr-1"></div>
                     </div>
-
+                    
                     <div class="mb-6">
-                        <div class="flex justify-between items-end mb-2">
-                            <label class="label-text">Premisa de la Historia</label>
-                            <button onclick="ui.togglePremiseModal()" class="text-[9px] font-bold text-indigo-600 hover:underline uppercase tracking-wider"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>Sugerir con IA</button>
+                        <div class="flex justify-between items-end mb-1">
+                            <label class="label-text">Premisa</label>
+                            <button onclick="ui.togglePremiseModal()" class="text-[9px] uppercase font-bold text-indigo-600 hover:underline"><i class="fa-solid fa-sparkles mr-1"></i>Sugerir</button>
                         </div>
-                        <textarea id="ai-prompt" class="config-input border border-gray-200 p-3 h-40 rounded bg-gray-50 focus:bg-white text-sm leading-relaxed" placeholder="Escribe aquí de qué trata el libro o usa el sugeridor..."></textarea>
+                        <textarea id="ai-prompt" class="config-input border border-gray-200 p-3 h-32 rounded bg-gray-50 focus:bg-white text-sm" placeholder="Escribe aquí tu premisa o usa el botón 'Sugerir'..."></textarea>
                     </div>
 
                     <div class="mb-6 p-4 border border-gray-100 rounded bg-gray-50">
                         <div class="flex justify-between items-center mb-3">
-                            <label class="label-text">Estructura del Libro</label>
-                            <button id="btn-calc-struct" onclick="ai2.calculateStructure()" class="text-[9px] bg-white border border-gray-200 px-2 py-1 rounded hover:border-indigo-500 hover:text-indigo-600 transition-colors uppercase font-bold tracking-wider" title="Calcular automáticamente según premisa">
-                                <i class="fa-solid fa-calculator mr-1"></i> Auto-Calcular
-                            </button>
+                            <label class="label-text">Estructura</label>
+                            <button id="btn-calc-struct" onclick="ai2.calculateStructure()" class="text-[9px] border border-gray-200 px-2 py-1 rounded hover:text-indigo-600 font-bold">Auto-Calcular</button>
                         </div>
-                        <div class="flex gap-4 items-center">
-                            <div class="flex flex-col w-1/2">
-                                <span class="text-[9px] text-gray-400 mb-1">Capítulos</span>
-                                <input type="number" id="ai-event-count" value="10" min="3" max="50" class="config-input text-center font-mono border border-gray-200 py-2 bg-white focus:border-indigo-500">
+                        <div class="flex gap-4">
+                            <div class="w-1/2">
+                                <span class="text-[9px] text-gray-400">Capítulos</span>
+                                <input type="number" id="ai-event-count" value="10" class="config-input text-center border border-gray-200 py-1 bg-white">
                             </div>
-                            <div class="flex flex-col w-1/2">
-                                <span class="text-[9px] text-gray-400 mb-1">Densidad</span>
-                                <select id="ai-density" class="config-input border border-gray-200 py-2 text-xs bg-white focus:border-indigo-500">
-                                    <option value="low">Rápida (3-5)</option>
-                                    <option value="medium" selected>Normal (5-8)</option>
-                                    <option value="high">Detallada (8-12)</option>
+                            <div class="w-1/2">
+                                <span class="text-[9px] text-gray-400">Densidad</span>
+                                <select id="ai-density" class="config-input border border-gray-200 py-1 bg-white">
+                                    <option value="medium">Normal</option>
+                                    <option value="high">Alta</option>
                                 </select>
                             </div>
                         </div>
                     </div>
-
-                    <div class="flex-1"></div>
-
-                    <button onclick="ai.runPipeline()" id="btn-run-ai" class="btn-primary bg-black hover:bg-gray-800 text-white border-none py-4 shadow-lg transform transition-transform active:scale-95">
-                        GENERAR NOVELA
-                    </button>
+                    
+                    <button onclick="ai.runPipeline()" id="btn-run-ai" class="btn-primary">GENERAR NOVELA (ESTRUCTURA)</button>
                 </div>
 
                 <div class="w-2/3 bg-gray-50 p-8 flex flex-col relative overflow-hidden">
                     <div id="ai-console" class="font-mono text-[11px] space-y-3 text-gray-600 h-full overflow-y-auto pb-10 pr-4">
-                        <div class="text-indigo-600 font-bold">> Sistema Arquitecto v2 Iniciado.</div>
-                        <div class="text-gray-400 italic">> Esperando instrucciones...</div>
-                    </div>
-                    
-                    <div id="ai-loading-overlay" class="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center hidden z-50">
-                        <div class="relative w-16 h-16 mb-6">
-                            <div class="absolute inset-0 border-4 border-gray-100 rounded-full"></div>
-                            <div class="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
-                        </div>
-                        <h3 class="text-xs font-bold tracking-[0.2em] uppercase text-black mb-2" id="ai-loading-text">PROCESANDO</h3>
-                        <p class="text-[10px] text-gray-400 font-mono" id="ai-loading-subtext">Analizando narrativa...</p>
-                        
-                        <div class="w-64 h-1 bg-gray-100 mt-6 overflow-hidden rounded-full">
-                            <div id="ai-progress-bar" class="h-full bg-indigo-600 w-0 transition-all duration-500 ease-out"></div>
-                        </div>
+                        <div class="text-indigo-600 font-bold">> Sistema v7 Listo.</div>
                     </div>
                 </div>
             </div>
@@ -143,20 +151,34 @@
     <header class="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-8 z-10 shrink-0">
         <div class="flex items-center gap-4">
             <div class="w-8 h-8 flex items-center justify-center text-black border border-gray-200">
-                <i class="fa-solid fa-timeline text-sm"></i>
+                <i class="fa-solid fa-film text-sm"></i>
             </div>
             <div class="flex flex-col">
-                <h1 class="font-medium text-black text-xs tracking-[0.15em] leading-tight">CRONOLOGÍA<span class="text-gray-400 ml-1">v6.NOVEL</span></h1>
+                <h1 class="font-medium text-black text-xs tracking-[0.15em] leading-tight">CRONOLOGÍA<span class="text-gray-400 ml-1">v7.SB</span></h1>
             </div>
         </div>
         
-        <div class="flex items-center gap-6">
-            <button onclick="ui.toggleAIModal()" class="btn-nordic border-indigo-100 text-indigo-600 hover:bg-indigo-50">
-                <i class="fa-solid fa-book-open"></i> Escribir Novela
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+                 <button id="auth-btn" onclick="ai.login()" class="text-[10px] uppercase font-bold text-gray-400 hover:text-indigo-600 mr-2">Conectar IA</button>
+            </div>
+
+            <button onclick="ui.toggleAIModal()" class="btn-nordic border-blue-100 text-blue-600 hover:bg-blue-50" title="Crear Estructura de Novela">
+                <i class="fa-solid fa-layer-group"></i> <span class="hidden xl:inline">Novela</span>
             </button>
-            <div class="h-8 w-px bg-gray-100"></div>
-            <button onclick="ui.toggleFileSelector()" class="btn-nordic">
-                <i class="fa-solid fa-folder-open"></i> <span id="current-folder-label">Cargar Datos</span>
+
+            <button onclick="ui.toggleStoryboardModal()" class="btn-nordic border-gray-300 text-black hover:bg-gray-50" title="Crear Storyboard Visual">
+                <i class="fa-solid fa-clapperboard"></i> <span class="hidden xl:inline">Storyboard</span>
+            </button>
+
+            <button onclick="ImgGen.generateBatch()" id="btn-gen-batch" class="btn-nordic bg-black text-white border-black hover:bg-gray-800">
+                <i class="fa-solid fa-images"></i> <span class="hidden md:inline">Ilustrar Todo</span>
+            </button>
+            
+            <div class="h-8 w-px bg-gray-100 mx-2"></div>
+
+            <button onclick="ui.toggleFileSelector()" class="btn-nordic" title="Cargar Carpeta de Proyecto">
+                <i class="fa-solid fa-folder-open"></i> <span id="current-folder-label" class="max-w-[100px] truncate hidden md:inline">Cargar Datos</span>
             </button>
         </div>
     </header>
@@ -165,49 +187,52 @@
         
         <div class="w-96 bg-white border-r border-gray-100 flex flex-col z-20 shadow-lg">
             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white">
-                <h3 class="label-text">Detalle del Capítulo</h3>
+                <h3 class="label-text">Propiedades del Frame</h3>
                 <div class="flex gap-2">
                     <button onclick="main.createNewEvent()" class="text-gray-400 hover:text-black transition-colors" title="Nuevo"><i class="fa-solid fa-plus"></i></button>
                     <button onclick="main.deleteEvent()" class="text-gray-400 hover:text-red-500 transition-colors" title="Borrar"><i class="fa-regular fa-trash-can"></i></button>
                 </div>
             </div>
 
-            <div id="inspector-content" class="flex-1 overflow-y-auto p-6 space-y-8 hidden">
-                <div>
-                    <div id="img-preview" class="w-full h-48 bg-gray-50 border border-gray-100 flex items-center justify-center cursor-pointer overflow-hidden group relative hover:border-gray-300 transition-colors rounded-sm" onclick="document.getElementById('inp-img').click()">
+            <div id="inspector-content" class="flex-1 overflow-y-auto p-6 space-y-6 hidden">
+                
+                <div id="inspector-img-section">
+                    <div id="img-preview" class="w-full h-48 bg-gray-50 border border-gray-100 flex items-center justify-center cursor-pointer overflow-hidden group relative hover:border-gray-300 transition-colors rounded-sm shadow-inner" onclick="document.getElementById('inp-img').click()">
                         <div id="img-placeholder" class="text-center">
                             <i class="fa-regular fa-image text-gray-300 text-xl mb-2"></i>
-                            <span class="block text-[9px] text-gray-400 uppercase tracking-widest">Portada Capítulo</span>
+                            <span class="block text-[9px] text-gray-400 uppercase tracking-widest">Sin Imagen</span>
                         </div>
                         <img id="img-element" class="hidden w-full h-full object-cover">
-                        <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center text-white text-xs font-medium">CAMBIAR</div>
+                        <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center text-white text-xs font-medium">CAMBIAR MANUALMENTE</div>
                     </div>
                     <input type="file" id="inp-img" class="hidden" accept="image/*">
                 </div>
-                <div class="space-y-4">
+                
+                <div class="space-y-4 pt-4 border-t border-gray-100">
                     <div class="flex gap-4">
                         <div class="w-1/3">
-                            <label class="label-text">Orden</label>
+                            <label class="label-text">Secuencia</label>
                             <input type="number" step="0.1" id="inp-time" class="config-input font-mono text-center">
                         </div>
                         <div class="w-2/3">
-                            <label class="label-text">Título del Capítulo</label>
+                            <label class="label-text">Título de Escena</label>
                             <input type="text" id="inp-title" class="config-input font-bold text-sm">
                         </div>
                     </div>
                 </div>
+                
                 <div>
                     <div class="flex justify-between items-center mb-3">
-                        <label class="label-text">Momentos (Narrativa)</label>
-                        <button onclick="main.addMoment()" class="text-[9px] uppercase tracking-wider text-indigo-600 hover:underline">+ Añadir Escena</button>
+                        <label class="label-text">Narrativa / Guion</label>
+                        <button onclick="main.addMoment()" class="text-[9px] uppercase tracking-wider text-indigo-600 hover:underline">+ Añadir Texto</button>
                     </div>
                     <div id="moments-list" class="space-y-3 pl-2 border-l-2 border-gray-100"></div>
                 </div>
             </div>
 
             <div id="inspector-empty" class="flex-1 flex flex-col items-center justify-center text-gray-300 p-8 text-center">
-                <i class="fa-solid fa-book text-3xl mb-4 opacity-30"></i>
-                <p class="text-xs font-light tracking-wide">Selecciona un evento para ver los detalles narrativos.</p>
+                <i class="fa-solid fa-clapperboard text-3xl mb-4 opacity-30"></i>
+                <p class="text-xs font-light tracking-wide">Selecciona un frame para editar guion o imagen.</p>
             </div>
         </div>
 
@@ -226,14 +251,26 @@
                 </div>
                 <button class="btn-nordic bg-white shadow-sm" onclick="timeline.resetView()">CENTRAR</button>
             </div>
+            
+            <div id="ai-loading-overlay" class="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center hidden z-50">
+                <div class="relative w-16 h-16 mb-6">
+                    <div class="absolute inset-0 border-4 border-gray-100 rounded-full"></div>
+                    <div class="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
+                </div>
+                <h3 class="text-xs font-bold tracking-[0.2em] uppercase text-black mb-2" id="ai-loading-text">PROCESANDO</h3>
+                <p class="text-[10px] text-gray-400 font-mono" id="ai-loading-subtext">Analizando narrativa...</p>
+            </div>
         </div>
 
     </main>
 
     <script src="cronologia/ui.js"></script>
+    <script src="cronologia/storyboard.ui.js"></script>
     <script src="cronologia/crono.js"></script>
     <script src="cronologia/ai.js"></script>
-    <script src="cronologia/ai2.js"></script> 
+    <script src="cronologia/ai2.js"></script>
+    <script src="cronologia/storyboard.core.js"></script>
+    <script src="cronologia/images.js"></script>
     <script src="cronologia/main.js"></script>
 </body>
 </html>
