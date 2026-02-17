@@ -87,7 +87,7 @@ const AiWriter = {
                 
                 SALIDA JSON: { "assets": [{ "name": "Nombre", "visual_signature": "descripción..." }] }`;
 
-                const defRes = await ai.callModel(definitionPrompt, "Diseña los activos visuales.", 0.6, 'openai-large');
+                const defRes = await ai.callModel(definitionPrompt, "Diseña los activos visuales.", 0.6, 'openai-fast');
                 const newAssets = JSON.parse(ai.cleanJSON(defRes)).assets || [];
                 
                 await CoherenceEngine.appendToBible(newAssets);
@@ -112,7 +112,7 @@ const AiWriter = {
                 : storyContext;
 
             const scriptPrompt = `
-            ACTÚA COMO: Un compilador de Prompts para Video (Grok/Sora).
+            ACTÚA COMO: Un compilador de Prompts para Video (Grok/Sora) y un ESCRITOR DE NARRATIVA LITERARIA.
             
             TABLA DE SUSTITUCIÓN VISUAL (OBLIGATORIA):
             ${replacementRules}
@@ -120,21 +120,20 @@ const AiWriter = {
             HISTORIA:
             "${finalStoryContext}"
             
-            === INSTRUCCIONES DE FUSIÓN VISUAL (MODO ESTRICTO) ===
+            === INSTRUCCIONES DE FUSIÓN VISUAL Y NARRATIVA ===
 
-            TU TAREA: Reescribir la historia escena por escena para la cámara.
+            TU TAREA: Reescribir la historia escena por escena generando dos outputs distintos.
 
-            REGLA #1: ELIMINACIÓN DE NOMBRES Y ROLES
-            En el campo 'visual_prompt', ESTÁ PROHIBIDO escribir nombres propios (Ej: "Imhotep") o roles genéricos (Ej: "El joven obrero", "El protagonista").
-            
-            REGLA #2: INYECCIÓN LITERAL
-            Cada vez que un personaje actúe, DEBES COPIAR Y PEGAR su descripción de la TABLA DE SUSTITUCIÓN.
-            
-            Ejemplo Malo: "The young laborer's back is visible." (Grok no sabe cómo es ese obrero).
-            Ejemplo Bueno: "Close up of [PEGAR DESCRIPCIÓN DEL OBRERO AQUÍ: muscular young man with copper skin...]'s bare back..."
+            REGLA #1: ELIMINACIÓN DE NOMBRES EN VISUAL (PROMPT DE VIDEO)
+            En el campo 'visual_prompt', ESTÁ PROHIBIDO escribir nombres propios (Ej: "Imhotep") o roles genéricos.
+            DEBES COPIAR Y PEGAR su descripción de la TABLA DE SUSTITUCIÓN. Contexto ambiental persistente (iluminación, fondo).
 
-            REGLA #3: CONTEXTO AMBIENTAL PERSISTENTE
-            Todas las tomas deben incluir el entorno (iluminación, fondo). No dejes elementos flotando en la nada.
+            REGLA #2: NARRATIVA DE ALTO NIVEL (VOICE OVER)
+            En el campo 'narration_text', escribe el guion para el locutor.
+            - Estilo: CINEMÁTICO, PROFUNDO y LITERARIO (como un audiolibro premium o documental de Netflix).
+            - PROHIBIDO: Usar frases como "En esta escena vemos", "La imagen muestra" o redundancias visuales.
+            - OBLIGATORIO: Usa nombres propios. Céntrate en la emoción, la acción interna y la trama.
+            - RITMO: Usa puntuación pensada para ser leída en voz alta (pausas dramáticas).
 
             ---
 
@@ -142,8 +141,8 @@ const AiWriter = {
             {
                 "takes": [
                     {
-                        "visual_prompt": "Descripción visual FINAL en INGLÉS (Sin nombres, con descripciones físicas completas pegadas)...",
-                        "narration_text": "Narración en ESPAÑOL (Aquí SÍ usa los nombres propios para que se entienda la historia)."
+                        "visual_prompt": "Descripción visual FINAL en INGLÉS (Sin nombres, pura descripción física pegada)...",
+                        "narration_text": "Narración en ESPAÑOL. Texto literario, emotivo y directo a la historia. Ejemplo: 'A pesar del frío, Juan sabía que no había vuelta atrás.' (NUNCA: 'Vemos a Juan con frío')."
                     }
                 ]
             }`;
