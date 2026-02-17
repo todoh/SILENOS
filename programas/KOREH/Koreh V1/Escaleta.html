@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escaleta Studio - Video & Narrativa</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/webm-muxer@5.0.2/build/webm-muxer.min.js"></script>
+
+    <link rel="stylesheet" href="cronologia/styles.css">
+    <link rel="stylesheet" href="cronologia/escaleta/styles.css">
+</head>
+<body class="bg-slate-50 text-slate-900 h-screen flex flex-col overflow-hidden font-sans">
+
+    <div id="loading-overlay" class="fixed inset-0 z-[200] bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center hidden">
+        <div class="relative w-16 h-16 mb-6">
+            <div class="absolute inset-0 border-4 border-gray-100 rounded-full"></div>
+            <div class="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
+        </div>
+        <h3 class="text-xs font-bold tracking-[0.2em] uppercase text-black mb-2" id="loading-title">PROCESANDO</h3>
+        <p class="text-[10px] text-gray-400 font-mono" id="loading-subtitle">Iniciando motores...</p>
+        <div class="w-64 h-1 bg-gray-100 mt-4 rounded-full overflow-hidden hidden" id="progress-container">
+            <div id="progress-bar" class="h-full bg-indigo-600 w-0 transition-all duration-300"></div>
+        </div>
+    </div>
+
+    <div id="file-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-8 hidden">
+        <div class="bg-white w-full max-w-lg flex flex-col max-h-[70vh] border border-gray-200 shadow-2xl rounded-sm">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h2 class="text-xs font-medium tracking-[0.2em] text-gray-500 uppercase">
+                    <i class="fa-solid fa-folder-tree mr-2"></i>Fuente de Datos
+                </h2>
+                <button onclick="EscaletaUI.toggleFileSelector()" class="text-gray-300 hover:text-black text-xl transition-colors">&times;</button>
+            </div>
+            <div id="folder-list" class="p-0 overflow-y-auto flex-1 h-64 bg-white">
+                </div>
+            <div class="p-4 border-t border-gray-100 bg-gray-50 flex justify-end">
+                <span class="text-[9px] text-gray-400 self-center mr-auto italic">Selecciona la carpeta raíz del proyecto Cronología.</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="export-modal" class="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-4 hidden">
+        <div class="bg-white w-full max-w-md border border-gray-200 shadow-2xl rounded-sm overflow-hidden animate-fade-in">
+            <div class="p-6 bg-slate-50 border-b border-gray-100 text-center">
+                <h2 class="text-xs font-bold tracking-[0.2em] text-indigo-600 uppercase mb-1">Renderizar Película</h2>
+                <p class="text-[10px] text-gray-400">Selecciona formato y opciones</p>
+            </div>
+            
+            <div class="px-6 py-3 bg-white border-b border-gray-100 flex justify-center">
+                <label class="flex items-center gap-2 cursor-pointer select-none group">
+                    <input type="checkbox" id="chk-render-subs" class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300" checked>
+                    <span class="text-xs font-medium text-gray-600 group-hover:text-indigo-600 transition-colors">Incrustar Subtítulos</span>
+                </label>
+            </div>
+
+            <div class="p-6 flex flex-col gap-3 max-h-[60vh] overflow-y-auto">
+                
+                <button onclick="Exporter.renderFullMovie('video_only', document.getElementById('chk-render-subs').checked); EscaletaUI.toggleExportModal()" class="group flex items-center gap-4 p-4 border border-gray-100 hover:border-indigo-500 hover:bg-indigo-50 transition-all rounded text-left">
+                    <div class="w-10 h-10 rounded bg-gray-100 group-hover:bg-indigo-100 flex items-center justify-center text-gray-400 group-hover:text-indigo-600 shrink-0 transition-colors">
+                        <i class="fa-solid fa-video-slash"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xs font-bold text-gray-700 group-hover:text-indigo-900 uppercase">Solo Video (Mudo)</h3>
+                        <p class="text-[10px] text-gray-400 leading-tight">Video puro sin ninguna pista de audio. Ideal para edición.</p>
+                    </div>
+                </button>
+
+                <button onclick="Exporter.renderFullMovie('ambience_only', document.getElementById('chk-render-subs').checked); EscaletaUI.toggleExportModal()" class="group flex items-center gap-4 p-4 border border-gray-100 hover:border-blue-500 hover:bg-blue-50 transition-all rounded text-left">
+                    <div class="w-10 h-10 rounded bg-gray-100 group-hover:bg-blue-100 flex items-center justify-center text-gray-400 group-hover:text-blue-600 shrink-0 transition-colors">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xs font-bold text-gray-700 group-hover:text-blue-900 uppercase">Video + Sonido Original</h3>
+                        <p class="text-[10px] text-gray-400 leading-tight">Mantiene el diseño sonoro/ambiente generado por Grok. SIN VOZ.</p>
+                    </div>
+                </button>
+
+                <button onclick="Exporter.renderFullMovie('voice_only', document.getElementById('chk-render-subs').checked); EscaletaUI.toggleExportModal()" class="group flex items-center gap-4 p-4 border border-gray-100 hover:border-purple-500 hover:bg-purple-50 transition-all rounded text-left">
+                    <div class="w-10 h-10 rounded bg-gray-100 group-hover:bg-purple-100 flex items-center justify-center text-gray-400 group-hover:text-purple-600 shrink-0 transition-colors">
+                        <i class="fa-solid fa-microphone-lines"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xs font-bold text-gray-700 group-hover:text-purple-900 uppercase">Video + Narración</h3>
+                        <p class="text-[10px] text-gray-400 leading-tight">Solo la voz de la IA. Ignora el sonido ambiente del video.</p>
+                    </div>
+                </button>
+
+                <button onclick="Exporter.renderFullMovie('full_mix', document.getElementById('chk-render-subs').checked); EscaletaUI.toggleExportModal()" class="group flex items-center gap-4 p-4 border border-gray-100 hover:border-emerald-500 hover:bg-emerald-50 transition-all rounded text-left">
+                    <div class="w-10 h-10 rounded bg-gray-100 group-hover:bg-emerald-100 flex items-center justify-center text-gray-400 group-hover:text-emerald-600 shrink-0 transition-colors">
+                        <i class="fa-solid fa-photo-film"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xs font-bold text-gray-700 group-hover:text-emerald-900 uppercase">Mezcla Completa</h3>
+                        <p class="text-[10px] text-gray-400 leading-tight">Video + Ambiente Original + Narración IA combinados.</p>
+                    </div>
+                </button>
+            </div>
+
+            <div class="p-4 bg-gray-50 border-t border-gray-100 text-center">
+                <button onclick="EscaletaUI.toggleExportModal()" class="text-[10px] font-bold text-gray-400 hover:text-gray-600 uppercase tracking-wide">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="script-input-modal" class="fixed inset-0 z-[110] flex items-center justify-center bg-white/98 p-4 hidden">
+        <div class="bg-white w-full max-w-3xl border border-gray-200 shadow-2xl flex flex-col h-[80vh]">
+            <div class="h-14 border-b border-gray-100 flex items-center justify-center relative px-6 bg-gray-50 shrink-0">
+                <h2 class="font-medium text-xs tracking-widest text-indigo-600 uppercase"><i class="fa-solid fa-pen-nib mr-2"></i>Guion Manual / Texto</h2>
+                <button onclick="EscaletaUI.toggleScriptModal()" class="absolute right-4 text-gray-400 hover:text-black">&times;</button>
+            </div>
+            
+            <div class="flex-1 p-6 flex flex-col">
+                <div class="mb-2 flex justify-between items-end">
+                    <label class="label-text">Pega tu historia o guion aquí</label>
+                    <span class="text-[9px] text-gray-400 italic">La IA detectará automáticamente las escenas y generará las tomas.</span>
+                </div>
+                <textarea id="manual-script-text" class="flex-1 config-input border border-gray-200 p-4 rounded bg-gray-50 focus:bg-white text-sm leading-relaxed resize-none font-mono" placeholder="EXT. BOSQUE - DÍA&#10;&#10;El protagonista camina entre los árboles..."></textarea>
+            </div>
+
+            <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-4">
+                <button onclick="EscaletaUI.toggleScriptModal()" class="text-xs font-bold text-gray-400 hover:text-gray-600 px-4">CANCELAR</button>
+                <button onclick="AiWriter.generateStructure(document.getElementById('manual-script-text').value)" class="btn-primary bg-indigo-600 hover:bg-indigo-700 py-3 px-8 shadow-lg">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> GENERAR ESCALETA
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-20 shadow-sm">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-indigo-600 flex items-center justify-center text-white rounded-sm shadow-md">
+                <i class="fa-solid fa-clapperboard text-lg"></i>
+            </div>
+            <div class="flex flex-col">
+                <h1 class="font-bold text-slate-800 text-sm tracking-[0.15em] leading-tight">ESCALETA<span class="text-indigo-500">.AI</span></h1>
+                <span class="text-[9px] text-slate-400 tracking-wide uppercase">Pre-Visualización & Producción</span>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <div class="flex flex-col items-end">
+                <span class="label-text mb-0">API Connection</span>
+                <div class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" onclick="ai.login()">
+                    <span id="auth-status-text" class="text-[10px] font-bold text-gray-400">OFFLINE</span>
+                    <div id="auth-indicator" class="w-2 h-2 rounded-full bg-gray-300"></div>
+                </div>
+            </div>
+
+            <div class="h-8 w-px bg-gray-100"></div>
+
+            <button onclick="EscaletaUI.toggleFileSelector()" id="btn-project-folder" class="btn-nordic text-slate-600 border-slate-200 hover:border-indigo-500 hover:text-indigo-600">
+                <i class="fa-solid fa-folder-open"></i> <span id="project-name-display">Cargar Proyecto</span>
+            </button>
+            
+            <button onclick="EscaletaUI.toggleExportModal()" class="btn-primary bg-slate-900 hover:bg-black text-white px-6 py-3 rounded-sm shadow-lg flex items-center gap-2">
+                <i class="fa-solid fa-film"></i> RENDERIZAR PELÍCULA
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        
+        <aside class="w-80 bg-white border-r border-gray-200 flex flex-col z-10 shrink-0">
+            <div class="p-6 border-b border-gray-100">
+                <h2 class="label-text text-indigo-500 mb-4"><i class="fa-solid fa-sliders mr-1"></i> Configuración de IA</h2>
+                
+                <div class="mb-6">
+                    <label class="label-text">Voz Narrador (OpenAI)</label>
+                    <div class="grid grid-cols-3 gap-2 mt-2">
+                        <button onclick="Generators.setVoice('alloy')" class="voice-btn active" data-voice="alloy">Alloy</button>
+                        <button onclick="Generators.setVoice('echo')" class="voice-btn" data-voice="echo">Echo</button>
+                        <button onclick="Generators.setVoice('fable')" class="voice-btn" data-voice="fable">Fable</button>
+                        <button onclick="Generators.setVoice('onyx')" class="voice-btn" data-voice="onyx">Onyx</button>
+                        <button onclick="Generators.setVoice('nova')" class="voice-btn" data-voice="nova">Nova</button>
+                        <button onclick="Generators.setVoice('shimmer')" class="voice-btn" data-voice="shimmer">Shimmer</button>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="label-text">Modelo de Video</label>
+                    <select id="video-model-select" class="config-input mt-1 bg-white">
+                        <option value="grok-video">Grok Beta (Recomendado)</option>
+                        <option value="luma">Luma Dream Machine</option>
+                        <option value="haiper">Haiper (Fast)</option>
+                    </select>
+                </div>
+
+                <div class="space-y-2">
+                    <button onclick="Generators.generateAllVideos()" class="btn-nordic w-full justify-center border-indigo-100 text-indigo-700 hover:bg-indigo-50">
+                        <i class="fa-solid fa-video"></i> Generar Todos los Videos
+                    </button>
+                    <button onclick="Generators.generateAllAudio()" class="btn-nordic w-full justify-center border-pink-100 text-pink-700 hover:bg-pink-50">
+                        <i class="fa-solid fa-microphone-lines"></i> Generar Todos los Audios
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 bg-slate-50/50">
+                <h2 class="label-text text-slate-400 mb-2"><i class="fa-solid fa-fingerprint mr-1"></i> Coherencia Visual</h2>
+                <div id="coherence-list" class="space-y-2">
+                    <div class="text-[10px] text-gray-400 italic">Carga un proyecto para escanear activos visuales...</div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-gray-200 bg-white space-y-2">
+                <button onclick="AiWriter.generateStructure()" class="btn-nordic w-full justify-center bg-white text-gray-600 border-gray-300 hover:bg-gray-50">
+                    <i class="fa-solid fa-database text-gray-400"></i> Desde Cronología (JSON)
+                </button>
+                <button onclick="EscaletaUI.toggleScriptModal()" class="btn-nordic w-full justify-center bg-slate-800 text-white border-slate-800 hover:bg-slate-700">
+                    <i class="fa-solid fa-pen-nib"></i> Crear desde Texto Manual
+                </button>
+            </div>
+        </aside>
+
+        <section class="flex-1 bg-slate-100/50 flex flex-col relative overflow-hidden">
+            <div class="h-10 border-b border-gray-200 bg-white px-4 flex items-center justify-between shrink-0">
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider" id="timeline-stats">0 Tomas | 00:00 Total</span>
+                <div class="flex gap-2">
+                    <button onclick="EscaletaUI.clearAll()" class="text-[10px] text-red-400 hover:text-red-600 uppercase font-bold px-2">Limpiar Todo</button>
+                </div>
+            </div>
+
+            <div id="empty-state" class="absolute inset-0 top-10 flex flex-col items-center justify-center z-0 hidden">
+                <i class="fa-solid fa-layer-group text-6xl text-gray-300 mb-4"></i>
+                <p class="text-sm text-gray-500 font-light">No hay tomas generadas.</p>
+                <p class="text-xs text-gray-400 mt-1">Carga un proyecto y pulsa "Generar Escaleta"</p>
+            </div>
+
+            <div id="takes-list" class="flex-1 overflow-y-auto p-8 space-y-4 pb-32 z-10 relative">
+                </div>
+        </section>
+
+        <aside class="w-96 bg-white border-l border-gray-200 flex flex-col z-10 shrink-0 shadow-xl">
+            <div class="aspect-video bg-black relative group">
+                <video id="inspector-video" class="w-full h-full object-contain" loop playsinline></video>
+                <div class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <i id="play-icon" class="fa-solid fa-play text-white text-3xl"></i>
+                </div>
+                <div class="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onclick="Inspector.togglePlay()" class="w-6 h-6 bg-white/20 hover:bg-white/40 rounded text-white text-[10px] flex items-center justify-center"><i class="fa-solid fa-play"></i></button>
+                    <button onclick="Inspector.toggleMute()" class="w-6 h-6 bg-white/20 hover:bg-white/40 rounded text-white text-[10px] flex items-center justify-center"><i class="fa-solid fa-volume-high"></i></button>
+                </div>
+                <div id="video-placeholder" class="absolute inset-0 flex items-center justify-center bg-slate-900 text-slate-600">
+                    <span class="text-[10px] uppercase tracking-widest font-bold">Sin Video</span>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 space-y-6" id="inspector-forms">
+                <div class="text-center text-gray-400 text-xs italic mt-10">Selecciona una toma para editar.</div>
+            </div>
+        </aside>
+
+    </main>
+
+    <script src="cronologia/ai.js"></script>
+    <script src="cronologia/escaleta/core.js"></script>
+    <script src="cronologia/escaleta/coherence.js"></script>
+    <script src="cronologia/escaleta/ai_writer.js"></script>
+    <script src="cronologia/escaleta/generators.js"></script>
+    <script src="cronologia/escaleta/exporter.js"></script>
+    <script src="cronologia/escaleta/ui.js"></script>
+
+    <script>
+        window.onload = () => {
+            EscaletaCore.init();
+            EscaletaUI.init();
+        };
+    </script>
+</body>
+</html>
