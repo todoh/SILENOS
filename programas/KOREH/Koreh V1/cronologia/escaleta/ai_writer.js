@@ -112,7 +112,7 @@ const AiWriter = {
                 : storyContext;
 
             const scriptPrompt = `
-            ACTÚA COMO: Un compilador de Prompts para Video (Grok/Sora) y un ESCRITOR DE NARRATIVA LITERARIA.
+            ACTÚA COMO: Un compilador de Prompts para Video (Grok/Sora).
             
             TABLA DE SUSTITUCIÓN VISUAL (OBLIGATORIA):
             ${replacementRules}
@@ -120,20 +120,21 @@ const AiWriter = {
             HISTORIA:
             "${finalStoryContext}"
             
-            === INSTRUCCIONES DE FUSIÓN VISUAL Y NARRATIVA ===
+            === INSTRUCCIONES DE FUSIÓN VISUAL (MODO ESTRICTO) ===
 
-            TU TAREA: Reescribir la historia escena por escena generando dos outputs distintos.
+            TU TAREA: Reescribir la historia escena por escena para la cámara.
 
-            REGLA #1: ELIMINACIÓN DE NOMBRES EN VISUAL (PROMPT DE VIDEO)
-            En el campo 'visual_prompt', ESTÁ PROHIBIDO escribir nombres propios (Ej: "Imhotep") o roles genéricos.
-            DEBES COPIAR Y PEGAR su descripción de la TABLA DE SUSTITUCIÓN. Contexto ambiental persistente (iluminación, fondo).
+            REGLA #1: ELIMINACIÓN DE NOMBRES Y ROLES
+            En el campo 'visual_prompt', ESTÁ PROHIBIDO escribir nombres propios (Ej: "Imhotep") o roles genéricos (Ej: "El joven obrero", "El protagonista").
+            
+            REGLA #2: INYECCIÓN LITERAL
+            Cada vez que un personaje actúe, DEBES COPIAR Y PEGAR su descripción de la TABLA DE SUSTITUCIÓN.
+            
+            Ejemplo Malo: "The young laborer's back is visible." (Grok no sabe cómo es ese obrero).
+            Ejemplo Bueno: "Close up of [PEGAR DESCRIPCIÓN DEL OBRERO AQUÍ: muscular young man with copper skin...]'s bare back..."
 
-            REGLA #2: NARRATIVA DE ALTO NIVEL (VOICE OVER)
-            En el campo 'narration_text', escribe el guion para el locutor.
-            - Estilo: CINEMÁTICO, PROFUNDO y LITERARIO (como un audiolibro premium o documental de Netflix).
-            - PROHIBIDO: Usar frases como "En esta escena vemos", "La imagen muestra" o redundancias visuales.
-            - OBLIGATORIO: Usa nombres propios. Céntrate en la emoción, la acción interna y la trama.
-            - RITMO: Usa puntuación pensada para ser leída en voz alta (pausas dramáticas).
+            REGLA #3: CONTEXTO AMBIENTAL PERSISTENTE
+            Todas las tomas deben incluir el entorno (iluminación, fondo). No dejes elementos flotando en la nada.
 
             ---
 
@@ -141,8 +142,8 @@ const AiWriter = {
             {
                 "takes": [
                     {
-                        "visual_prompt": "Descripción visual FINAL en INGLÉS (Sin nombres, pura descripción física pegada)...",
-                        "narration_text": "Narración en ESPAÑOL. Texto literario, emotivo y directo a la historia. Ejemplo: 'A pesar del frío, Juan sabía que no había vuelta atrás.' (NUNCA: 'Vemos a Juan con frío')."
+                        "visual_prompt": "Descripción visual FINAL en INGLÉS (Sin nombres, con descripciones físicas completas pegadas)...",
+                        "narration_text": "Narración en ESPAÑOL (Aquí SÍ usa los nombres propios para que se entienda la historia). Una o dos frases bien formadas. Si la toma es conceptual o artistica.. no descriabas el suceso en si si no un texto que acompañe a la escena, por ejmplo: La toma es una cascaada que conecta un momento con otro.. pues no dices cae agua por la cascada .. sino que puedes poner un comentario relaccionando el video con el contenido narrativo de la historia. El narrador tiene que sonar natural"
                     }
                 ]
             }`;

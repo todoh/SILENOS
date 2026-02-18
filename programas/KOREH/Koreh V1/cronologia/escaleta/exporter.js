@@ -5,15 +5,25 @@ const Exporter = {
     canvas: null,
     ctx: null,
 
-    // Configuración de salida
+    // Configuración de salida (se sobreescribirá según formato)
     width: 1920,
     height: 1080,
     fps: 30,
 
     // exportMode: 'video_only', 'voice_only', 'ambience_only', 'full_mix'
     // showSubtitles: boolean
-    async renderFullMovie(exportMode = 'full_mix', showSubtitles = true) {
+    // outputFormat: 'landscape' | 'portrait'
+    async renderFullMovie(exportMode = 'full_mix', showSubtitles = true, outputFormat = 'landscape') {
         
+        // --- 0. CONFIGURACIÓN DE FORMATO ---
+        if (outputFormat === 'portrait') {
+            this.width = 1080;
+            this.height = 1920;
+        } else {
+            this.width = 1920;
+            this.height = 1080;
+        }
+
         // --- 1. CONFIGURACIÓN DE PISTAS ---
         const includeTTS = (exportMode === 'voice_only' || exportMode === 'full_mix');
         const includeAmbience = (exportMode === 'ambience_only' || exportMode === 'full_mix');
@@ -29,7 +39,7 @@ const Exporter = {
             if (takes.length === 0) return alert("No hay tomas de video para renderizar.");
         }
 
-        EscaletaUI.toggleLoading(true, "PRODUCCIÓN FINAL", `Modo: ${exportMode.toUpperCase()} | Subtítulos: ${showSubtitles ? 'SÍ' : 'NO'}`);
+        EscaletaUI.toggleLoading(true, "PRODUCCIÓN FINAL", `Modo: ${exportMode.toUpperCase()} | Formato: ${outputFormat.toUpperCase()}`);
 
         // --- 3. SETUP CANVAS & ASSETS ---
         this.canvas = document.createElement('canvas');
@@ -154,11 +164,12 @@ const Exporter = {
                         if(videoElement.readyState >= 2) r();
                     });
 
-                    // Dibujar
+                    // Dibujar fondo negro
                     this.ctx.fillStyle = 'black';
                     this.ctx.fillRect(0,0, this.width, this.height);
                     
                     if (videoElement.videoWidth > 0) {
+                        // Lógica de escalado inteligente (Letterbox: FIT)
                         const scale = Math.min(this.width / videoElement.videoWidth, this.height / videoElement.videoHeight);
                         const w = videoElement.videoWidth * scale;
                         const h = videoElement.videoHeight * scale;
@@ -204,6 +215,9 @@ const Exporter = {
             if (exportMode === 'ambience_only') suffix = "_AMBIENTE";
             if (exportMode === 'voice_only') suffix = "_VOZ";
             if (exportMode === 'full_mix') suffix = "_MASTER";
+            
+            // Añadir formato al nombre
+            suffix += (outputFormat === 'portrait' ? '_VERTICAL' : '_HORIZONTAL');
 
             this.download(new Blob([buffer], { type: 'video/webm' }), suffix);
 
@@ -276,18 +290,27 @@ const Exporter = {
 
     drawSubtitles(text, ctx) {
         if (!text) return;
-        ctx.font = "bold 50px Arial";
+        
+        // Ajuste dinámico de fuente según el ancho del canvas
+        const fontSize = this.width < 1000 ? 40 : 50; // Más pequeño en vertical (width=1080? No, 720. Espera, output es 1080 en vertical)
+        // Bueno, en vertical 1080px sigue siendo ancho, pero necesitamos márgenes más seguros.
+        
+        ctx.font = `bold ${fontSize}px Arial`;
         ctx.fillStyle = "white";
         ctx.strokeStyle = "black";
         ctx.lineWidth = 6;
         ctx.textAlign = "center";
         
+        // Margen de seguridad: 10% a cada lado
+        const maxWidth = this.width * 0.8;
+        
         const words = text.split(' ');
         let line = '';
         const lines = [];
+        
         for (let w of words) {
             const test = line + w + ' ';
-            if (ctx.measureText(test).width > this.width - 200 && line.length > 0) {
+            if (ctx.measureText(test).width > maxWidth && line.length > 0) {
                 lines.push(line);
                 line = w + ' ';
             } else {
@@ -296,8 +319,11 @@ const Exporter = {
         }
         lines.push(line);
 
+        // Renderizar de abajo hacia arriba
+        const bottomMargin = this.height * 0.15; // 15% desde abajo
+        
         lines.reverse().forEach((l, idx) => {
-            const y = this.height - 100 - (idx * 60);
+            const y = this.height - bottomMargin - (idx * (fontSize + 10));
             ctx.strokeText(l, this.width / 2, y);
             ctx.fillText(l, this.width / 2, y);
         });
