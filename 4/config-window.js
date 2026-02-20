@@ -64,6 +64,20 @@ window.ConfigWindowUI = {
                     <p class="text-[9px] text-gray-400 mt-1 italic text-right" id="google-msg">Guardado en LocalStorage</p>
                 </div>
             </div>
+
+            <div class="mb-8">
+                <div class="font-bold text-sm mb-2 border-b-2 border-black pb-1 uppercase">Google Cloud API</div>
+                <p class="text-xs mb-2 text-gray-500">Servicios en la nube de Google (Cloud, Vision, Text-to-Speech, etc.).</p>
+                
+                <div class="bg-gray-50 p-3 border border-gray-200">
+                    <label class="text-[10px] font-bold text-gray-400 block mb-1">API KEY</label>
+                    <div class="flex gap-2">
+                        <input type="password" id="inp-googlecloud-sys" class="border border-gray-300 p-1 text-xs w-full outline-none focus:border-black font-mono" placeholder="AIzaSy..." onchange="saveGoogleCloudKey()">
+                        <button class="border border-black bg-white px-2 py-1 text-xs font-bold uppercase hover:bg-black hover:text-white transition-all" onclick="saveGoogleCloudKey()"><i class="fa-solid fa-floppy-disk"></i></button>
+                    </div>
+                    <p class="text-[9px] text-gray-400 mt-1 italic text-right" id="googlecloud-msg">Guardado en LocalStorage</p>
+                </div>
+            </div>
     
             <div class="mb-8">
                 <div class="font-bold text-sm mb-2 border-b-2 border-black pb-1 uppercase">Airforce Video API (Multi-Key)</div>
@@ -112,8 +126,9 @@ window.ConfigWindowUI = {
                 function render() {
                     renderAuth();
                     renderVars();
-                    loadAirforceKey(); // Cargar la key de Airforce al iniciar
-                    loadGoogleKey();   // Cargar la key de Google al iniciar
+                    loadAirforceKey(); 
+                    loadGoogleKey();   
+                    loadGoogleCloudKey(); // Cargar la key de Google Cloud al iniciar
                 }
     
                 function renderAuth() {
@@ -135,7 +150,7 @@ window.ConfigWindowUI = {
                     }
                 }
     
-                // --- GESTIÓN GOOGLE API (NUEVO) ---
+                // --- GESTIÓN GOOGLE API ---
                 window.loadGoogleKey = function() {
                     const key = localStorage.getItem('google_api_key') || '';
                     const inp = document.getElementById('inp-google-sys');
@@ -152,11 +167,45 @@ window.ConfigWindowUI = {
                         ParentWindow.googleapikey = val; // Variable global padre
                         msg.textContent = "KEY GUARDADA OK";
                         msg.classList.add('text-green-600');
+                        msg.classList.remove('text-red-500');
                     } else {
                         localStorage.removeItem('google_api_key');
                         ParentWindow.googleapikey = null;
                         msg.textContent = "KEY ELIMINADA";
                         msg.classList.add('text-red-500');
+                        msg.classList.remove('text-green-600');
+                    }
+    
+                    setTimeout(() => {
+                        msg.className = "text-[9px] text-gray-400 mt-1 italic text-right";
+                        msg.textContent = "Guardado en LocalStorage";
+                    }, 3000);
+                }
+
+                // --- GESTIÓN GOOGLE CLOUD API (NUEVO) ---
+                window.loadGoogleCloudKey = function() {
+                    const key = localStorage.getItem('googlecloud_api_key') || '';
+                    const inp = document.getElementById('inp-googlecloud-sys');
+                    if(inp) inp.value = key;
+                }
+    
+                window.saveGoogleCloudKey = function() {
+                    const inp = document.getElementById('inp-googlecloud-sys');
+                    const msg = document.getElementById('googlecloud-msg');
+                    const val = inp.value.trim();
+                    
+                    if(val) {
+                        localStorage.setItem('googlecloud_api_key', val);
+                        ParentWindow.googlecloudapikey = val; // Variable global padre
+                        msg.textContent = "KEY GUARDADA OK";
+                        msg.classList.add('text-green-600');
+                        msg.classList.remove('text-red-500');
+                    } else {
+                        localStorage.removeItem('googlecloud_api_key');
+                        ParentWindow.googlecloudapikey = null;
+                        msg.textContent = "KEY ELIMINADA";
+                        msg.classList.add('text-red-500');
+                        msg.classList.remove('text-green-600');
                     }
     
                     setTimeout(() => {
@@ -187,9 +236,11 @@ window.ConfigWindowUI = {
                         if (count > 1) {
                             msg.textContent = \`\${count} KEYS GUARDADAS (MODO METRALLETA ACTIVO)\`;
                             msg.classList.add('text-blue-600');
+                            msg.classList.remove('text-green-600', 'text-red-500');
                         } else {
                             msg.textContent = "KEY ÚNICA GUARDADA";
                             msg.classList.add('text-green-600');
+                            msg.classList.remove('text-blue-600', 'text-red-500');
                         }
     
                     } else {
@@ -197,6 +248,7 @@ window.ConfigWindowUI = {
                         ParentWindow.apikeyairforce = null;
                         msg.textContent = "KEY ELIMINADA";
                         msg.classList.add('text-red-500');
+                        msg.classList.remove('text-green-600', 'text-blue-600');
                     }
     
                     setTimeout(() => {
