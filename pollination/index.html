@@ -906,21 +906,41 @@
         </button>
     </div>
 
-    <div id="login-modal" class="hidden absolute top-20 right-8 z-50 transition-opacity duration-300">
-        <div class="glass-card w-80 p-6 rounded-2xl flex flex-col items-center">
-            <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-purple-600 to-blue-500 flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(168,85,247,0.3)]">
-                <i class="fa-solid fa-bolt text-xl text-white"></i>
-            </div>
-            <h2 class="text-lg font-semibold mb-1 text-white" data-i18n="login_title">Connect to Pollination</h2>
-            <p class="text-xs text-gray-400 text-center mb-5" data-i18n="login_subtitle">Enter your token to use AI.</p>
-            <div class="w-full relative mb-4">
-                <i class="fa-solid fa-key absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm"></i>
-                <input type="password" id="pollination-token-input" data-i18n-placeholder="login_placeholder" placeholder="Token..." class="w-full bg-black/50 border border-white/5 text-white text-sm rounded-lg focus:ring-1 focus:ring-purple-500 focus:border-transparent block pl-9 p-2.5 transition-all outline-none font-mono">
-            </div>
-            <button id="btn-login" class="w-full bg-white text-black font-medium py-2.5 rounded-lg hover:bg-gray-200 transition-colors shadow-lg active:scale-95 text-sm" data-i18n="login_button">
-                Log In
+   <div id="login-modal" class="hidden fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm transition-opacity duration-300 opacity-0 flex items-center justify-center" onclick="toggleLoginModal()">
+        <div class="glass-card w-full max-w-md p-8 rounded-3xl flex flex-col items-center relative shadow-[0_0_50px_rgba(0,0,0,0.8)]" onclick="event.stopPropagation()">
+            <button onclick="toggleLoginModal()" class="absolute top-5 right-5 text-gray-500 hover:text-white transition-colors">
+                <i class="fa-solid fa-xmark text-xl"></i>
             </button>
-            <p class="mt-4 text-[10px] text-gray-500 text-center leading-tight" data-i18n="login_footer">The key is securely saved locally.</p>
+            
+            <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-purple-600 to-blue-500 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(168,85,247,0.4)]">
+                <i class="fa-solid fa-user-shield text-2xl text-white"></i>
+            </div>
+            
+            <h2 class="text-2xl font-semibold mb-2 text-white text-center" data-i18n="login_title">Conectar a Pollination</h2>
+            <p class="text-sm text-gray-400 text-center mb-8" data-i18n="login_subtitle">Introduce tu token para usar la IA.</p>
+            
+            <button onclick="loginWithPollinations()" class="w-full bg-[#1f1f23] border border-white/10 hover:bg-white/10 text-white font-medium py-3.5 rounded-xl transition-all flex items-center justify-center gap-3 mb-6 shadow-lg">
+                <img src="https://pollinations.ai/favicon.ico" alt="Pollinations Logo" class="w-5 h-5 rounded-sm">
+                <span>Continuar con Pollinations</span>
+                <i class="fa-solid fa-arrow-up-right-from-square text-xs text-gray-500 ml-1"></i>
+            </button>
+
+            <div class="w-full flex items-center gap-3 mb-6">
+                <div class="h-px bg-white/10 flex-1"></div>
+                <span class="text-[10px] text-gray-500 uppercase tracking-widest font-medium">O pega tu token</span>
+                <div class="h-px bg-white/10 flex-1"></div>
+            </div>
+
+            <div class="w-full relative mb-5">
+                <i class="fa-solid fa-key absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm"></i>
+                <input type="password" id="pollination-token-input" data-i18n-placeholder="login_placeholder" placeholder="Pega tu API Key..." class="w-full bg-black/50 border border-white/10 text-white text-sm rounded-xl focus:ring-1 focus:ring-purple-500 focus:border-transparent block pl-11 p-3.5 transition-all outline-none font-mono tracking-wider">
+            </div>
+            
+            <button id="btn-login" class="w-full bg-white text-black font-semibold py-3.5 rounded-xl hover:bg-gray-200 transition-colors shadow-lg active:scale-[0.98] text-sm uppercase tracking-widest" data-i18n="login_button">
+                Iniciar Sesión
+            </button>
+            
+            <p class="mt-6 text-[11px] text-gray-500 text-center leading-relaxed" data-i18n="login_footer">La clave se guarda localmente de forma segura en tu navegador.</p>
         </div>
     </div>
 
@@ -931,7 +951,30 @@
     <script src="voice.js"></script> 
     <script src="chat.js"></script> 
     
-    <script>
+   <script>
+        // --- INTERCEPTOR DE REDIRECCIÓN PARA LOGIN AUTOMÁTICO ---
+        (function checkAuthRedirect() {
+            const hash = window.location.hash;
+            if (!hash) return;
+            const params = new URLSearchParams(hash.substring(1));
+            const key = params.get('api_key') || params.get('key') || params.get('access_token');
+            
+            if (key && window.opener) {
+                // Ocultar body para evitar parpadeos visuales en el popup
+                if (document.body) document.body.style.display = 'none';
+                window.opener.postMessage({
+                    type: 'POLLI_AUTH_SUCCESS',
+                    key: key
+                }, '*');
+                window.close();
+            }
+        })();
+
+        function loginWithPollinations() {
+            const redirectUrl = encodeURIComponent(window.location.href);
+            window.open(`https://enter.pollinations.ai/authorize?redirect_url=${redirectUrl}`, 'PollinationsAuth', `width=500,height=700,left=${(screen.width/2-250)},top=${(screen.height/2-350)}`);
+        }
+
         // LÓGICA PARA MOSTRAR LA LANDING PAGE DE NUEVO
         function showLanding() {
             const landing = document.getElementById('landing-screen');
@@ -959,19 +1002,14 @@
 
         function toggleLoginModal() {
             const modal = document.getElementById('login-modal');
-            modal.classList.toggle('hidden');
-        }
-
-        document.addEventListener('click', function(event) {
-            const modal = document.getElementById('login-modal');
-            const btn = document.getElementById('header-login-btn');
-            
-            if (!modal.classList.contains('hidden')) {
-                if (!modal.contains(event.target) && !btn.contains(event.target)) {
-                    modal.classList.add('hidden');
-                }
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                setTimeout(() => modal.classList.remove('opacity-0'), 10);
+            } else {
+                modal.classList.add('opacity-0');
+                setTimeout(() => modal.classList.add('hidden'), 300);
             }
-        });
+        }
 
         // LÓGICA DEL MENÚ LATERAL (Tabs)
         document.querySelectorAll('.tool-btn').forEach(btn => {
@@ -994,14 +1032,36 @@
         });
 
         // LÓGICA DE API Y ESTADO DE CONEXIÓN
+        function setApiConnectedState(token) {
+            localStorage.setItem('pollinations_api_key', token);
+            document.getElementById('pollination-token-input').value = token;
+            
+            const dot = document.getElementById('status-dot');
+            if (dot) dot.classList.replace('bg-red-500', 'bg-green-500');
+            
+            const text = document.getElementById('status-text');
+            if (text) text.setAttribute('data-i18n', 'status_connected');
+            
+            if (typeof updateDOM === 'function') updateDOM(); 
+            
+            // Cerrar el modal si está abierto
+            const modal = document.getElementById('login-modal');
+            if (modal && !modal.classList.contains('hidden')) {
+                toggleLoginModal();
+            }
+        }
+
         document.getElementById('btn-login').addEventListener('click', () => {
             const token = document.getElementById('pollination-token-input').value.trim();
             if(token) {
-                localStorage.setItem('pollinations_api_key', token);
-                document.getElementById('status-dot').classList.replace('bg-red-500', 'bg-green-500');
-                document.getElementById('status-text').setAttribute('data-i18n', 'status_connected');
-                if (typeof updateDOM === 'function') updateDOM(); 
-                toggleLoginModal();
+                setApiConnectedState(token);
+            }
+        });
+
+        // Escuchar el evento del popup de la autenticación por API
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'POLLI_AUTH_SUCCESS' && event.data.key) {
+                setApiConnectedState(event.data.key);
             }
         });
 
@@ -1009,8 +1069,10 @@
             const savedKey = localStorage.getItem('pollinations_api_key');
             if(savedKey) {
                 document.getElementById('pollination-token-input').value = savedKey;
-                document.getElementById('status-dot').classList.replace('bg-red-500', 'bg-green-500');
-                document.getElementById('status-text').setAttribute('data-i18n', 'status_connected');
+                const dot = document.getElementById('status-dot');
+                if(dot) dot.classList.replace('bg-red-500', 'bg-green-500');
+                const text = document.getElementById('status-text');
+                if(text) text.setAttribute('data-i18n', 'status_connected');
             }
             
             if(typeof randomizeVideoSeed === 'function') randomizeVideoSeed();
