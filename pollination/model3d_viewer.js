@@ -18,29 +18,27 @@ export function setCurrentModelGroup(group) {
         scene.add(group);
         
         // --- EVOLUCIÓN DE LA CÁMARA: Auto-Encuadre y Pivot Dinámico ---
-        // 1. Calculamos la caja delimitadora (Bounding Box) del nuevo modelo
+        // 1. Calculamos la caja delimitadora (Bounding Box)
         const box = new THREE.Box3().setFromObject(group);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         
-        // 2. Obtenemos la dimensión mayor para saber cuánto alejarnos proporcionalmente
-        const maxDim = Math.max(size.x, size.y, size.z);
+        // 2. Obtenemos la dimensión mayor y evitamos el valor 0
+        const maxDim = Math.max(size.x, size.y, size.z, 1);
         const fov = camera.fov * (Math.PI / 180);
         let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-        cameraZ *= 1.5; // Margen de respiración para que no quede pegado a los bordes
+        cameraZ *= 1.5; // Margen de respiración
         
-        // 3. Actualizamos la posición de la cámara relativa al centro real del objeto
-        camera.position.set(center.x + cameraZ * 0.5, center.y + cameraZ * 0.5, center.x + cameraZ);
+        // 3. Reubicamos la cámara relativa al modelo real
+        camera.position.set(center.x + cameraZ * 0.5, center.y + (cameraZ * 0.3), center.x + cameraZ);
         
-        // 4. Establecemos el pivote exacto de los controles en el centro de masa del modelo
-        // Esto elimina por completo el "latigazo" al rotar
+        // 4. Centramos el pivote exacto
         controls.target.copy(center);
         
-        // 5. Ajustamos las distancias dinámicamente para evitar bloqueos del zoom
+        // 5. Ajustes límites
         controls.minDistance = maxDim * 0.1;
         controls.maxDistance = maxDim * 10;
         
-        // Actualizamos la cámara y los controles para aplicar los cambios de inmediato
         camera.updateProjectionMatrix();
         controls.update();
     }
@@ -55,27 +53,36 @@ export function initModel3DViewer() {
 
     scene = new THREE.Scene();
     
-    // Ajuste de cámara inicial - Ampliamos el plano lejano (far plane) a 1000 para evitar recortes al hacer zoom out
     camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-    camera.position.set(4, 3, 4); // Posición inicial más equilibrada
+    camera.position.set(4, 3, 4);
 
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    
+    // --- CORRECCIÓN BUG ABSURDO 1 Y 2: CSS y Eventos del Navegador ---
+    // Elimina el salto por micro-redimensiones de Flexbox y bloquea el scroll nativo.
+    renderer.domElement.style.display = 'block';
+    renderer.domElement.style.touchAction = 'none';
+
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     container.appendChild(renderer.domElement);
 
     controls = new OrbitControls(camera, renderer.domElement);
     
-    // --- FÍSICAS DE CÁMARA EVOLUCIONADAS (AJUSTE FINO) ---
-    controls.enableDamping = true; // Fundamental para la suavidad del movimiento
-    controls.dampingFactor = 0.05;  // Inercia suave y realista
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;  
     
-    // Ajustes de fricción y velocidad para evitar movimientos erráticos
-    controls.zoomSpeed = 0.6; // Reducido para mayor control en la rueda del ratón (antes estaba en 1)
-    controls.rotateSpeed = 0.7; // Rotación natural
-    controls.panSpeed = 0.5; // Desplazamiento lateral equilibrado
+    // --- CORRECCIÓN BUG ABSURDO 3: Trackpads hiper-sensibles ---
+    // Aplicamos tu propio comentario: drásticamente de 1.0 a 0.1
+    controls.zoomSpeed = 0.1;     
+    controls.rotateSpeed = 0.6;     
+    controls.panSpeed = 0.4;        
     
-    controls.target.set(0, 0.5, 0); // Apuntar al centro inicial del canvas vacío
+    // --- CORRECCIÓN BUG ABSURDO 4: Inversión de cámara ---
+    // Bloqueamos que la cámara pase por debajo del suelo y provoque un latigazo "Gimbal Lock"
+    controls.maxPolarAngle = Math.PI / 2 + 0.1;
+
+    controls.target.set(0, 0.5, 0); 
 
     const ambLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambLight);
@@ -88,7 +95,8 @@ export function initModel3DViewer() {
     scene.add(grid);
 
     window.addEventListener('resize', () => {
-        if(!container.clientWidth) return;
+        // Evitar divisiones por 0 que rompan la matriz si el contenedor se oculta
+        if(!container.clientWidth || container.clientWidth === 0) return;
         camera.aspect = container.clientWidth / container.clientHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(container.clientWidth, container.clientHeight);
@@ -96,7 +104,6 @@ export function initModel3DViewer() {
 
     function animate() {
         requestAnimationFrame(animate);
-        // El damping requiere que update se llame imperativamente en cada frame de la animación
         controls.update();
         renderer.render(scene, camera);
     }
