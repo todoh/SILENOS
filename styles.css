@@ -1,248 +1,138 @@
-open_canvas: SILENOS 4/PRESENTACION/styles.css
-/* ---------------------------------------------------------
-   STYLES.CSS (PRESENTATION LAYER)
-   Refined Nordic Minimalist Style - Silenos v4 Compatible
-   --------------------------------------------------------- */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;900&family=JetBrains+Mono:wght@400&display=swap');
+/* styles.css */
+/* DISEÑO EDITORIAL SILENOS - BRUTALISM & PURE BLACK/WHITE */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Space+Grotesk:wght@300;400;500;600&family=Syne:wght@400;700;800&display=swap');
 
 :root {
-    /* --- PALETA SILENOS V4 (ROOT) --- */
-    --bg-app: #fdfdfd;        /* Blanco casi puro */
-    --bg-card: #ffffff;
-    --text-primary: #1a1a1a;
-    --text-secondary: #737373;
-    --accent: #000000;
-    
-    --border-light: #e5e5e5;
-    --border-active: #d4d4d4;
-    
-    --grid-line: rgba(0, 0, 0, 0.03); /* Más sutil y delicado */
-    
-    /* Sombras Suaves (Elevation System) */
-    --shadow-card: 0 4px 20px -5px rgba(0, 0, 0, 0.06), 0 2px 8px -2px rgba(0, 0, 0, 0.02);
-    --shadow-hover: 0 10px 30px -5px rgba(0, 0, 0, 0.1), 0 5px 15px -3px rgba(0, 0, 0, 0.04);
+    --bg-color: #000000;
+    --text-color: #ffffff;
+    --accent-color: #ffffff;
 }
 
+html, body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    scroll-behavior: smooth;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tipografías: Contraste Brutalista */
+.font-display { font-family: 'Syne', sans-serif; letter-spacing: -0.05em; }
+.font-mono { font-family: 'Space Grotesk', monospace; letter-spacing: -0.02em; }
+body { font-family: 'Inter', sans-serif; } /* Tipografía base ultra limpia */
+
+/* ELIMINACIÓN TOTAL: Sombras, contornos y curvas (BRUTALISMO PURO) */
 * {
-    box-sizing: border-box;
+    box-shadow: none !important;
+    outline: none !important;
+    border-radius: 0 !important; 
 }
 
-body {
-    background-color: var(--bg-app);
-    color: var(--text-primary);
-    font-family: 'Inter', sans-serif;
-    font-weight: 300; /* Estilo fino por defecto */
-    overflow-x: hidden;
-    
-    /* Rejilla de fondo ultra-sutil */
-    background-image: 
-        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
-        linear-gradient(var(--grid-line) 1px, transparent 1px);
-    background-size: 40px 40px;
-    line-height: 1.6;
+/* Selección de texto: Inversión pura */
+::selection {
+    background-color: #ffffff;
+    color: #000000;
 }
 
-/* --- TIPOGRAFÍA --- */
-.font-mono { 
-    font-family: 'JetBrains Mono', monospace; 
-    font-size: 0.75rem; /* Textos técnicos pequeños */
-    letter-spacing: 0.05em;
-}
-
-.font-display { 
-    font-weight: 800; /* Ligeramente menos pesado que 900 */
-    letter-spacing: -0.04em;
-    color: var(--text-primary);
-}
-
-h1, h2, h3 { margin-top: 0; }
-
-/* --- ANIMACIONES --- */
-.reveal {
-    opacity: 0;
-    transform: translateY(20px); /* Movimiento más corto y sutil */
-    transition: all 1s cubic-bezier(0.16, 1, 0.3, 1); /* Curva 'delicate' */
-}
-.reveal.active {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* --- COMPONENTES UI --- */
-
-/* Botones: Estilo 'Taskbar' del OS */
-.btn-nordic {
-    display: inline-flex; 
-    align-items: center; 
-    justify-content: center;
-    background: white; 
-    border: 1px solid var(--border-light); 
-    color: var(--text-primary);
-    font-family: 'JetBrains Mono', monospace; 
-    font-size: 11px;
-    font-weight: 400;
-    text-transform: uppercase; 
-    letter-spacing: 0.05em;
-    padding: 10px 24px; 
-    transition: all 0.2s ease; 
-    cursor: pointer;
-    text-decoration: none;
-    border-radius: 4px; /* Redondeado sutil OS */
-    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-}
-
-.btn-nordic:hover {
-    border-color: var(--accent); 
-    background: var(--accent); 
-    color: #fff;
-    transform: translateY(-1px);
-}
-
-/* Tarjetas (Modules): Estilo 'Window' del OS */
-.card-module {
-    background: var(--bg-card);
-    border: 1px solid var(--border-light);
-    border-radius: 6px; /* Coincide con Silenos Windows */
-    padding: 2.5rem 2rem;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    position: relative;
-    overflow: hidden;
-    height: 100%;
-    box-shadow: var(--shadow-card);
-}
-
-.card-module:hover {
-    border-color: var(--border-active);
-    transform: translateY(-3px); /* Elevación sutil */
-    box-shadow: var(--shadow-hover);
-}
-
-.card-number {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px; 
-    color: #e5e5e5;
-    position: absolute; 
-    top: 1.5rem; 
-    right: 1.5rem;
-}
-
-/* Icon Containers dentro de cards */
-.card-module .w-10 {
-    border-radius: 4px; /* Suavizar esquinas de iconos */
-}
-
-/* Hero Section Typography */
-.hero-title span {
-    display: block;
-    line-height: 0.95;
-}
-
-/* Ecosystem Background Grid (Modificado para ser sutil) */
-.ecosystem-bg-grid {
-    background-image: 
-        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
-    background-size: 40px 40px;
-}
-
-/* Marquee (Barra inferior) */
-.marquee-container {
-    position: fixed; 
-    bottom: 0; 
-    left: 0; 
+/* Navegación Global */
+.nav-global {
+    position: fixed;
+    top: 0;
     width: 100%;
-    background: var(--accent); 
-    color: #fff;
-    padding: 6px 0; 
-    overflow: hidden; 
-    white-space: nowrap;
-    z-index: 100;
-    border-top: 1px solid #333;
-}
-
-#marquee-text {
-    background-color: #000000;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px; 
-    text-transform: uppercase; 
-    letter-spacing: 0.15em;
-    display: inline-block;
-    opacity: 0.9;
-}
-
-/* =========================================
-   ESTILOS PARA DOCUMENTACIÓN (ACORDEÓN)
-   ========================================= */
-
-.doc-accordion {
-    background: white;
-    border: 1px solid var(--border-light);
-    border-radius: 6px; /* Consistencia OS */
-    transition: all 0.3s ease;
-    overflow: hidden;
-    cursor: pointer;
-    margin-bottom: 12px;
-    box-shadow: var(--shadow-card);
-}
-
-.doc-accordion:hover {
-    border-color: var(--border-active);
-    transform: translateX(4px);
-    box-shadow: var(--shadow-hover);
-}
-
-/* Estado Expandido */
-.doc-accordion.expanded {
-    border-color: var(--border-active);
-    background: #fafafa; /* Fondo muy sutil al abrir */
-}
-
-/* Cabecera del acordeón */
-.doc-header {
+    z-index: 50;
+    mix-blend-mode: difference;
     padding: 1.5rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    pointer-events: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.doc-header h3 {
-    font-weight: 500;
-    font-size: 1rem;
-    margin: 0;
-    letter-spacing: -0.01em;
+.nav-global .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.5rem;
+    letter-spacing: -0.05em;
+    pointer-events: auto;
+    text-decoration: none;
+    color: white;
+    text-transform: uppercase;
 }
 
-/* Contenido */
-.doc-content {
-    max-height: 0;
-    overflow: hidden;
-    padding: 0 2rem;
-    opacity: 0;
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+.nav-global .links {
+    display: none;
+    gap: 2.5rem;
+    font-family: 'Space Grotesk', monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    pointer-events: auto;
 }
 
-.doc-accordion.expanded .doc-content {
-    max-height: 600px; 
-    padding-bottom: 2rem;
-    opacity: 1;
+@media (min-width: 768px) {
+    .nav-global .links { display: flex; }
 }
 
-.doc-content p {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    border-top: 1px solid var(--border-light);
-    padding-top: 1.5rem;
-    margin: 0;
+.nav-global .links a {
+    color: rgba(255, 255, 255, 0.4);
+    text-decoration: none;
+    transition: color 0s; /* Sin suavidad, directo */
 }
 
-.doc-icon {
-    font-size: 10px;
-    transition: transform 0.4s ease;
-    opacity: 0.4;
+.nav-global .links a:hover, .nav-global .links a.active {
+    color: #ffffff;
 }
 
-.doc-accordion.expanded .doc-icon {
-    transform: rotate(180deg);
-    opacity: 1;
-    color: var(--accent);
+/* Enlaces y Botones Editoriales: Líneas nítidas */
+.editorial-btn {
+    display: inline-block;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    transition: transform 0.1s linear, border-color 0s;
+    padding-bottom: 4px;
+    text-decoration: none;
+    color: white;
+}
+.editorial-btn:hover {
+    border-bottom: 1px solid #ffffff;
+    transform: translateX(4px);
+}
+
+/* Bloques de inversión (Hover brutalista - Golpe seco) */
+.hover-invert-block {
+    display: block;
+    text-decoration: none;
+    color: white;
+    transition: all 0s; /* Cero transición, cambio inmediato y rudo */
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background-color: transparent;
+}
+.hover-invert-block:hover {
+    background-color: #ffffff;
+    color: #000000;
+    border-color: #ffffff;
+}
+
+/* Forzar la inversión de colores en elementos internos al hacer hover */
+.hover-invert-block:hover * {
+    color: #000000 !important;
+    border-color: rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Ajustes específicos para tarjetas generadas por JS */
+.card-module {
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 2rem;
+    transition: all 0s;
+}
+.card-module:hover {
+    background-color: #ffffff;
+    color: #000000;
+}
+.card-module:hover * {
+    color: #000000 !important;
+    border-color: rgba(0, 0, 0, 0.2) !important;
 }

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CARTAS SILEN | Universo Silenos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Estilos base mantenidos del proyecto original */
+        .hover-invert-block { transition: all 0.3s ease; }
+        .hover-invert-block:hover { background-color: white; color: black; }
+    </style>
+</head>
+<body class="bg-black text-white antialiased selection:bg-white selection:text-black">
+
+    <nav class="nav-global z-50 relative">
+        <a href="index.html" class="logo">SILEN<span style="color:rgb(131, 33, 33);" >OS</span>.</a>
+        <div class="links">
+            <a href="index.html">Hub</a>
+            <a href="v4.html">Silenos V4</a>
+            <a href="obras.html">Obras</a>
+            <a href="pollination.html">Pollination</a>
+            <a href="cartas.html" class="active">Cartas Silen</a>
+            <a href="equipo.html">Equipo</a>
+            <a href="docs.html">Docs</a>
+        </div>
+    </nav>
+
+    <header class="pt-40 p-6 md:p-12 border-b-[1px] border-white/20 pb-20 relative overflow-hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
+            <div>
+                <p class="font-mono text-sm uppercase tracking-[0.3em] mb-6 text-gray-400">TRADING CARD GAME</p>
+                <h1 class="font-display text-6xl md:text-[8vw] leading-[0.8] tracking-tighter font-extrabold uppercase mb-8">
+                    CARTAS<br><span style="color:rgb(131, 33, 33);" >SILEN</span>.
+                </h1>
+                <p class="font-mono text-xl text-gray-300 max-w-lg leading-relaxed mb-12">
+                    Estrategia profunda nacida de nuestros propios datos generativos. Un ecosistema lúdico esculpido directamente del lore extraído de la base de datos de Koreh.
+                </p>
+                <a href="/cartas/index.html" class="editorial-btn inline-block border-[1px] border-white px-6 py-3 text-2xl font-display font-bold uppercase tracking-tight hover:bg-white hover:text-black transition-colors">
+                    ENTRAR AL JUEGO ↗
+                </a>
+            </div>
+            
+            <div id="hero-svg-container" class="hidden lg:flex justify-center items-center h-full min-h-[400px] w-full relative">
+                </div>
+        </div>
+    </header>
+
+    <section class="p-6 md:p-12 border-b-[1px] border-white/20 bg-white/5">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-12">
+                <h2 class="font-display text-4xl md:text-5xl font-extrabold uppercase tracking-tighter">Protocolos<br>de Combate</h2>
+                <p class="font-mono text-sm text-gray-400 max-w-sm text-right mt-4 md:mt-0">Manual de simulación táctica. Aprende las directrices básicas antes de entrar en la arena.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="flex flex-col group">
+                    <div id="svg-step-1" class="h-40 w-full border-[1px] border-white/10 mb-6 flex items-center justify-center bg-black transition-colors group-hover:border-white/40">
+                        </div>
+                    <div class="font-mono text-xs text-gray-500 mb-2">FASE 01</div>
+                    <h3 class="font-display text-2xl font-bold uppercase mb-3">Invocación & Robo</h3>
+                    <p class="font-mono text-sm text-gray-400 leading-relaxed">Extrae entidades del flujo de datos de tu mazo y posicionalas estratégicamente en las ranuras de tu zona de control.</p>
+                </div>
+                <div class="flex flex-col group">
+                    <div id="svg-step-2" class="h-40 w-full border-[1px] border-white/10 mb-6 flex items-center justify-center bg-black transition-colors group-hover:border-white/40">
+                        </div>
+                    <div class="font-mono text-xs text-gray-500 mb-2">FASE 02</div>
+                    <h3 class="font-display text-2xl font-bold uppercase mb-3">Resolución de Daño</h3>
+                    <p class="font-mono text-sm text-gray-400 leading-relaxed">Las estadísticas base (ATK vs DEF) chocan. El motor calcula las bajas y actualiza el estado del campo en tiempo real.</p>
+                </div>
+                <div class="flex flex-col group">
+                    <div id="svg-step-3" class="h-40 w-full border-[1px] border-white/10 mb-6 flex items-center justify-center bg-black transition-colors group-hover:border-white/40">
+                        </div>
+                    <div class="font-mono text-xs text-gray-500 mb-2">FASE 03</div>
+                    <h3 class="font-display text-2xl font-bold uppercase mb-3">Sinergias Activas</h3>
+                    <p class="font-mono text-sm text-gray-400 leading-relaxed">Combina arquetipos afines para desencadenar habilidades pasivas o efectos arcanos que alteran las reglas matemáticas.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="p-6 md:p-12 border-b-[1px] border-white/20">
+        <h2 class="font-display text-4xl md:text-5xl font-extrabold uppercase tracking-tighter mb-12 text-center">Clasificación de Entidades</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-0 border-[1px] border-white/20">
+            
+            <div class="p-8 border-[1px] border-white/10 hover-invert-block cursor-crosshair group flex flex-col items-center text-center">
+                <div id="svg-faction-nigro" class="w-16 h-16 mb-6 opacity-60 group-hover:opacity-100 transition-opacity"></div>
+                <h4 class="font-display text-xl font-bold uppercase mb-2">Nigromantes</h4>
+                <p class="font-mono text-xs opacity-70">Manipulación de vida y resurrección de datos obsoletos en el campo.</p>
+            </div>
+            
+            <div class="p-8 border-[1px] border-white/10 hover-invert-block cursor-crosshair group flex flex-col items-center text-center">
+                <div id="svg-faction-mecha" class="w-16 h-16 mb-6 opacity-60 group-hover:opacity-100 transition-opacity"></div>
+                <h4 class="font-display text-xl font-bold uppercase mb-2">Mechas</h4>
+                <p class="font-mono text-xs opacity-70">Artillería pesada y escudos de energía. Lentos pero letales.</p>
+            </div>
+
+            <div class="p-8 border-[1px] border-white/10 hover-invert-block cursor-crosshair group flex flex-col items-center text-center">
+                <div id="svg-faction-golem" class="w-16 h-16 mb-6 opacity-60 group-hover:opacity-100 transition-opacity"></div>
+                <h4 class="font-display text-xl font-bold uppercase mb-2">Golems</h4>
+                <p class="font-mono text-xs opacity-70">Constructos inquebrantables. La defensa perfecta para absorber asaltos.</p>
+            </div>
+
+            <div class="p-8 border-[1px] border-white/10 hover-invert-block cursor-crosshair group flex flex-col items-center text-center">
+                <div id="svg-faction-mago" class="w-16 h-16 mb-6 opacity-60 group-hover:opacity-100 transition-opacity"></div>
+                <h4 class="font-display text-xl font-bold uppercase mb-2">Magos Arcanos</h4>
+                <p class="font-mono text-xs opacity-70">Alteración de reglas globales. Débiles físicamente, inmensos en utilidad.</p>
+            </div>
+            
+        </div>
+    </section>
+
+    <section class="p-6 md:p-12 grid grid-cols-1 md:grid-cols-3 gap-12 border-b-[1px] border-white/20">
+        <div class="p-8 border-[1px] border-white/10 hover-invert-block relative overflow-hidden group">
+            <div id="svg-feature-deck" class="absolute right-[-10%] top-[-10%] w-64 h-64 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none"></div>
+            <h3 class="font-display text-3xl font-bold uppercase mb-4 relative z-10">Construcción de Mazos</h3>
+            <p class="font-mono text-sm text-gray-400 leading-relaxed relative z-10">Panel de control avanzado (Dashboard Deck) para organizar sinergias, mecánicas de soporte y optimizar tu estilo de juego.</p>
+        </div>
+        <div class="p-8 border-[1px] border-white/10 hover-invert-block relative overflow-hidden group">
+            <div id="svg-feature-ai" class="absolute right-[-10%] top-[-10%] w-64 h-64 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none"></div>
+            <h3 class="font-display text-3xl font-bold uppercase mb-4 relative z-10">IA y Oponentes</h3>
+            <p class="font-mono text-sm text-gray-400 leading-relaxed relative z-10">Enfrentamientos simulados mediante lógica estructurada. Entrena contra rutinas tácticas calculadas por nuestro motor de juego.</p>
+        </div>
+        <div class="p-8 border-[1px] border-white/10 hover-invert-block relative overflow-hidden group">
+            <div id="svg-feature-data" class="absolute right-[-10%] top-[-10%] w-64 h-64 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none"></div>
+            <h3 class="font-display text-3xl font-bold uppercase mb-4 relative z-10">Datos & Expansiones</h3>
+            <p class="font-mono text-sm text-gray-400 leading-relaxed relative z-10">Cada carta refleja una entidad real del Universo Silenos (Golems, Magos Arcanos, Mechas), equilibrados automáticamente.</p>
+        </div>
+    </section>
+
+    <section class="relative p-12 md:p-32 flex flex-col items-center justify-center text-center overflow-hidden min-h-[50vh]">
+        <div id="svg-cta-bg" class="absolute inset-0 z-0 opacity-20 flex items-center justify-center"></div>
+        
+        <div class="relative z-10">
+            <p class="font-mono text-sm text-gray-400 tracking-widest uppercase mb-4">SISTEMA EN LÍNEA</p>
+            <h2 class="font-display text-5xl md:text-7xl font-extrabold uppercase mb-10 tracking-tighter">Inicia el Ciclo</h2>
+            <a href="/cartas/index.html" class="inline-block border-[2px] bg-white text-black border-white px-10 py-5 font-display text-2xl font-bold uppercase hover:bg-black hover:text-white transition-colors">
+                ACCEDER AL DASHBOARD
+            </a>
+        </div>
+    </section>
+
+    <script src="svgscartas.js"></script>
+
+</body>
+</html>

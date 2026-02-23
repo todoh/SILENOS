@@ -1,25 +1,93 @@
 // content.js
-// Base de datos Maestra de Contenido para Silenos v4 & Koreh Suite
+// Base de datos Maestra del Ecosistema SILENOS (Hub Principal + Datos Core)
 // Última actualización: Sincronizada con Build 2026.02
 
 const APP_DATA = {
+    // ---------------------------------------------------------
+    // 1. DATOS DEL HUB GLOBAL
+    // ---------------------------------------------------------
     hero: {
-        version: "SISTEMA OPERATIVO WEB v4.0",
-        build: "2026.02.15",
+        version: "ECOSISTEMA CREATIVO & DESARROLLO",
+        build: "2026",
         title_lines: [
-            "INTELIGENCIA",
-            "ESTRUCTURADA.", 
-            "CREATIVIDAD",
-            "LÍQUIDA."       
+            "UNIVERSO",
+            "SILENOS.", 
+            "CÓDIGO Y",
+            "NARRATIVA."       
         ],
-        description: "Silenos es un entorno de escritorio web minimalista (OS) que opera sobre el sistema de archivos local (LocalFS). Integra <strong>KOREH</strong>, una orquestación de herramientas generativas diseñadas para el flujo de trabajo creativo completo: desde la concepción de datos hasta la producción audiovisual.",
+        description: "El portal central del <strong>Universo Silenos</strong>. Un ecosistema donde el desarrollo de software (Silenos OS, Koreh) converge con la producción artística, literaria y audiovisual (Silenos Films, Cartas Sile, Novelas).",
         buttons: [
-            { text: "EJECUTAR SILENOS", icon: "fa-power-off", link: "index.html", style: "solid" },
-            { text: "LEER DOCUMENTACIÓN", icon: "fa-book", link: "#docs", style: "transparent" }
+            { text: "INICIAR SILENOS OS v4", icon: "fa-power-off", link: "/4/index.html", style: "solid" },
+            { text: "VER SILENOS FILMS", icon: "fa-youtube", link: "https://www.youtube.com/@SILENOSFILMS", style: "transparent" }
         ]
     },
     
-    // Módulos de la Suite Koreh (Información extraída de los códigos fuente individuales)
+    entertainment: [
+        {
+            id: "FLM",
+            title: "Silenos Films",
+            icon: "fa-youtube",
+            desc: "Productora audiovisual del ecosistema. Películas, cortometrajes y animaciones generadas y producidas utilizando la tecnología de Silenos y herramientas de IA.",
+            link: "https://www.youtube.com/@SILENOSFILMS",
+            tags: ["Cine IA", "Animación", "YouTube"],
+            bg_icon: "black"
+        },
+        {
+            id: "GAM",
+            title: "Cartas Sile",
+            icon: "fa-gamepad",
+            desc: "Juego de cartas coleccionables y de estrategia basado en el lore del Universo Silenos. Diseñado y balanceado con herramientas Koreh.",
+            link: "/cartas/index.html",
+            tags: ["TCG", "Estrategia", "Lore"],
+            bg_icon: "white"
+        },
+        {
+            id: "LIT",
+            title: "La Tejedora de Mundos",
+            icon: "fa-book-open",
+            desc: "Publicaciones literarias oficiales en Amazon. Novelas y relatos que expanden las fronteras narrativas del ecosistema Silenos.",
+            link: "https://www.amazon.es/stores/La-Tejedora-de-Mundos-%28SILENOS%29/author/B0FMWTPBPQ",
+            tags: ["Amazon", "Novelas", "Fantasía"],
+            bg_icon: "white"
+        }
+    ],
+
+    creators: [
+        {
+            name: "Manuel Rodsua",
+            role: "Desarrollador Core & Autor",
+            icon: "fa-code",
+            desc: "Arquitecto de Silenos OS, Koreh Suite y autor de obras literarias dentro del ecosistema.",
+            link_web: "#",
+            link_amazon: "https://www.amazon.es/s?i=digital-text&rh=p_27%3AManuel%2B%2BRodsua",
+            color: "black"
+        },
+        {
+            name: "Cristina Lobo",
+            role: "Directora Creativa & Autora",
+            icon: "fa-pen-nib",
+            desc: "Mente creativa detrás del lore, diseño de personajes y autora de 'La Tejedora de Mundos'.",
+            link_web: "/Cristina_Lobo/index.html",
+            link_amazon: "https://www.amazon.es/stores/La-Tejedora-de-Mundos-%28SILENOS%29/author/B0FMWTPBPQ",
+            color: "gray-300"
+        }
+    ],
+
+    software_intro: [
+        {
+            id: "POL",
+            title: "Silenos x Pollination",
+            icon: "fa-network-wired",
+            desc: "Capa de inferencia unificada e integración con ecosistemas de IA avanzados para la generación de medios y procesamiento de red.",
+            link: "/pollination/index.html",
+            tags: ["Inferencia", "Red neuronal", "Cloud"],
+            bg_icon: "black"
+        }
+    ],
+
+    // ---------------------------------------------------------
+    // 2. CONTENIDO ORIGINAL DE SILENOS v4 / KOREH (INTACTO)
+    // ---------------------------------------------------------
     koreh_modules: [
         {
             id: "01",
@@ -39,7 +107,7 @@ const APP_DATA = {
             desc: "Motor narrativo de largo formato. Utiliza una arquitectura de 'Memoria Larga' (3000 tokens) y un sistema de tres agentes (Arquitecto, Escritor, Crítico) para escribir novelas coherentes sin bucles repetitivos.",
             tags: ["Anti-Loop Estricto", "Prosa Humana", "Estructura JSON"],
             bg_icon: "black",
-            technical_specs: "Ciclo: Planificación -> Escritura -> Edición -> Memorización. Detección automática de Lore y continuidad."
+            technical_specs: "Ciclo: Planificación -> Escritura -> Edición -> Memorización. Detección automática de Lore y continuity."
         },
         {
             id: "03",
@@ -93,7 +161,6 @@ const APP_DATA = {
         }
     ],
 
-    // Pipeline recomendado de uso
     pipeline_steps: [
         {
             title: "Génesis",
@@ -125,7 +192,6 @@ const APP_DATA = {
         }
     ],
 
-    // Especificaciones Técnicas del Sistema Operativo
     specs: [
         {
             title: "UNIVERSE ENGINE",
@@ -153,45 +219,5 @@ const APP_DATA = {
         }
     ],
 
-    // Documentación detallada (Consolidada de documentation.js)
-    docs: [
-        {
-            id: "doc-01",
-            category: "CORE SYSTEM",
-            title: "Arquitectura Silenos",
-            content: "Silenos v4 opera como un sistema operativo web sobre el LocalFS. Esto elimina la necesidad de subir archivos a servidores; el navegador lee y escribe directamente en tu disco. El núcleo 'Universe' visualiza estos archivos como nodos físicos interactivos."
-        },
-        {
-            id: "doc-02",
-            category: "CORE SYSTEM",
-            title: "Gestor de Ventanas",
-            content: "Implementa un entorno de escritorio completo (Desktop Environment) en el navegador. Las ventanas son instancias aisladas que pueden comunicarse entre sí y con el sistema de archivos a través del 'App Bridge'."
-        },
-        {
-            id: "doc-03",
-            category: "KOREH SUITE",
-            title: "Datos Studio (Chroma Tech)",
-            content: "Incluye un pipeline de procesamiento de imagen avanzado. Cuando se activa el modo 'Sin Fondo', la IA genera el objeto sobre verde puro (#00FF00). Luego, el algoritmo 'Chroma Core' analiza los canales RGB para realizar un 'Despill' (eliminación de reflejos verdes) y calcular una máscara alfa suave, resultando en PNGs transparentes profesionales."
-        },
-        {
-            id: "doc-04",
-            category: "KOREH SUITE",
-            title: "Generador de Libros (Lógica)",
-            content: "El motor OmniGen v5.3 no escribe a ciegas. Antes de cada párrafo, un agente 'Arquitecto' analiza lo escrito anteriormente y decide el modo (Acción, Diálogo, Descripción). Luego, el 'Escritor' genera el texto, y finalmente un 'Crítico' lo pule y verifica que no haya bucles repetitivos."
-        },
-        {
-            id: "doc-05",
-            category: "KOREH SUITE",
-            title: "Extractor (Map-Reduce)",
-            content: "Para analizar libros de 500 páginas, el Extractor divide el texto en bloques de 15.000 caracteres (Map). Analiza cada bloque en paralelo buscando entidades. Luego, consolida las listas eliminando duplicados (Reduce) y finalmente genera fichas detalladas para cada entidad única."
-        },
-        {
-            id: "doc-06",
-            category: "KOREH SUITE",
-            title: "Animation Studio (Director)",
-            content: "El 'Director IA' es un módulo que lee una descripción de escena y la desglosa en una lista de assets necesarios (Fondo + Sprites). Optimiza la lista para ahorrar recursos, fusionando conceptos (ej: 'Hombre con espada' en vez de 'Hombre' + 'Espada')."
-        }
-    ],
-
-    marquee_text: "SILENOS v4 :: KOREH AI SUITE :: OMNIGEN NARRATIVE ENGINE :: CHROMA DATA PROCESSING :: SWISS DESIGN SYSTEM :: LOCAL FILE SYSTEM ACCESS :: "
+    marquee_text: "UNIVERSO SILENOS :: KOREH AI SUITE :: SILENOS FILMS :: CARTAS SILE :: LA TEJEDORA DE MUNDOS :: SOFTWARE Y ARTE :: LOCAL FILE SYSTEM ACCESS :: "
 };

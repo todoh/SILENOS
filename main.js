@@ -1,22 +1,125 @@
 // main.js
-// Lógica principal y renderizado dinámico
+// Lógica principal y renderizado dinámico del Hub Silenos + Entorno Original
 
 document.addEventListener('DOMContentLoaded', () => {
     initApp();
 });
 
 function initApp() {
+    // 1. Renderizado Hub
+    renderHero();
+    renderEntertainment();
+    renderCreators();
+    renderSoftwareIntro();
+
+    // 2. Renderizado Original (Intacto)
     renderKorehModules();
     renderEcosystemPipeline();
     renderSpecs();
-    renderDocumentation(); // Lógica de acordeón actualizada
+    renderDocumentation(); 
+
+    // 3. Utilidades
     initAnimations();
     initMarquee();
 }
 
-/**
- * Renderiza las tarjetas de los módulos Koreh
- */
+// --- FUNCIONES DEL HUB GLOBAL ---
+
+function renderHero() {
+    const hero = APP_DATA.hero;
+    document.getElementById('hero-version').innerHTML = `${hero.version} <span class="text-black ml-2">BUILD ${hero.build}</span>`;
+    
+    document.getElementById('hero-title').innerHTML = `
+        <span>${hero.title_lines[0]}</span>
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-gray-200 to-gray-400">${hero.title_lines[1]}</span>
+        <span>${hero.title_lines[2]}</span>
+        <span class="italic font-serif text-red-600 tracking-normal">${hero.title_lines[3]}</span>
+    `;
+    
+    document.getElementById('hero-desc').innerHTML = hero.description;
+    
+    document.getElementById('hero-buttons').innerHTML = hero.buttons.map(btn => {
+        if (btn.style === 'solid') {
+            return `<a href="${btn.link}" class="btn-nordic"><i class="fa-solid ${btn.icon} mr-3 text-[9px]"></i> ${btn.text}</a>`;
+        } else {
+            return `<a target="_blank" href="${btn.link}" class="btn-nordic bg-transparent border-transparent hover:bg-gray-50 hover:border-gray-200 hover:text-black" style="padding-left: 10px;">
+                        ${btn.text} <i class="fa-solid ${btn.icon} ml-2 text-[11px] group-hover:scale-110 transition-transform"></i>
+                    </a>`;
+        }
+    }).join('');
+}
+
+function renderEntertainment() {
+    const container = document.getElementById('entertainment-grid');
+    if (!container) return;
+
+    container.innerHTML = APP_DATA.entertainment.map((item, index) => {
+        const delay = (index + 1) * 0.1;
+        const iconClass = item.bg_icon === 'black' ? 'bg-black text-white border-white/20 border' : 'bg-white text-black';
+        const tagsHtml = item.tags.map(tag => `<span class="text-[9px] border border-white/20 px-2 py-1 bg-white/5 text-gray-300">${tag}</span>`).join('');
+
+        return `
+            <a href="${item.link}" target="${item.link.startsWith('http') ? '_blank' : '_self'}" class="block reveal text-white no-underline group" style="transition-delay: ${delay}s;">
+                <div class="border border-white/10 rounded-lg p-8 bg-white/[0.02] backdrop-blur-sm hover:bg-white/[0.05] transition-all duration-300 h-full">
+                    <div class="w-12 h-12 rounded-full ${iconClass} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fa-solid ${item.icon}"></i>
+                    </div>
+                    <h3 class="font-bold text-xl mb-3 group-hover:text-red-500 transition-colors">${item.title}</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed mb-6">${item.desc}</p>
+                    <div class="flex gap-2 flex-wrap">${tagsHtml}</div>
+                </div>
+            </a>
+        `;
+    }).join('');
+}
+
+function renderCreators() {
+    const container = document.getElementById('creators-list');
+    if (!container) return;
+
+    container.innerHTML = APP_DATA.creators.map(creator => `
+        <div class="flex gap-4 group reveal bg-white p-6 rounded-lg border border-gray-100 hover:border-gray-300 transition-all shadow-[0_4px_20px_-5px_rgba(0,0,0,0.06)]">
+            <div class="w-1 h-full bg-${creator.color} min-h-[50px] transition-all group-hover:h-full"></div>
+            <div class="flex-1">
+                <div class="flex items-center gap-3 mb-1">
+                    <i class="fa-solid ${creator.icon} text-gray-400 text-sm"></i>
+                    <h4 class="font-bold text-lg tracking-tight">${creator.name}</h4>
+                </div>
+                <p class="text-[10px] font-mono text-gray-400 uppercase tracking-widest mb-3">${creator.role}</p>
+                <p class="text-sm text-gray-600 mb-4">${creator.desc}</p>
+                <div class="flex gap-3">
+                    ${creator.link_web !== '#' ? `<a href="${creator.link_web}" class="text-[10px] font-mono text-black hover:text-red-600 border-b border-black/20 pb-1">Ver Perfil</a>` : ''}
+                    <a href="${creator.link_amazon}" target="_blank" class="text-[10px] font-mono text-black hover:text-red-600 border-b border-black/20 pb-1">Obras en Amazon</a>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderSoftwareIntro() {
+    const container = document.getElementById('software-intro-grid');
+    if (!container) return;
+
+    container.innerHTML = APP_DATA.software_intro.map(item => {
+        const iconClass = item.bg_icon === 'black' ? 'bg-black text-white border-none' : 'bg-white text-black border border-black';
+        const tagsHtml = item.tags.map(tag => `<span class="text-[9px] border border-gray-200 px-2 py-1 bg-white">${tag}</span>`).join('');
+
+        return `
+            <a href="${item.link}" class="card-module block reveal text-black no-underline hover:text-black">
+                <div class="w-10 h-10 ${iconClass} flex items-center justify-center mb-6 rounded">
+                    <i class="fa-solid ${item.icon}"></i>
+                </div>
+                <h3 class="font-bold text-xl mb-2">${item.title}</h3>
+                <p class="text-sm text-gray-600 leading-relaxed mb-4">${item.desc}</p>
+                <div class="flex gap-2 flex-wrap">${tagsHtml}</div>
+            </a>
+        `;
+    }).join('');
+}
+
+
+// --- FUNCIONES ORIGINALES RESTAURADAS (INTACTAS) ---
+
 function renderKorehModules() {
     const container = document.getElementById('koreh-grid');
     if (!container) return;
@@ -50,9 +153,6 @@ function renderKorehModules() {
     container.innerHTML = html;
 }
 
-/**
- * Renderiza el pipeline del ecosistema
- */
 function renderEcosystemPipeline() {
     const container = document.getElementById('ecosystem-pipeline');
     if (!container) return;
@@ -99,9 +199,6 @@ function renderEcosystemPipeline() {
     container.innerHTML = html;
 }
 
-/**
- * Renderiza las especificaciones técnicas
- */
 function renderSpecs() {
     const container = document.getElementById('specs-list');
     if (!container) return;
@@ -119,9 +216,6 @@ function renderSpecs() {
     container.innerHTML = html;
 }
 
-/**
- * Renderiza la sección de documentación con efecto Acordeón
- */
 function renderDocumentation() {
     const container = document.getElementById('docs-grid');
     if (!container || typeof DOCS_DATA === 'undefined') return;
@@ -147,15 +241,10 @@ function renderDocumentation() {
 
     container.innerHTML = html;
 
-    // LÓGICA CORREGIDA: Usamos 'expanded' en lugar de 'active'
     const items = container.querySelectorAll('.doc-accordion');
     items.forEach(item => {
         item.addEventListener('click', () => {
             const isExpanded = item.classList.contains('expanded');
-            
-            // Opcional: Cerrar los demás si quieres comportamiento de acordeón estricto
-            // items.forEach(i => i.classList.remove('expanded'));
-
             if (!isExpanded) {
                 item.classList.add('expanded');
             } else {
@@ -165,15 +254,12 @@ function renderDocumentation() {
     });
 }
 
-/**
- * Inicializa animaciones (Scroll Reveal)
- */
+// --- UTILIDADES ---
+
 function initAnimations() {
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                // Esto añade 'active' para hacer visible el elemento (opacity 1)
-                // Ya no interfiere con el acordeón porque el acordeón usa 'expanded'
                 entry.target.classList.add('active');
             }
         });
@@ -184,9 +270,6 @@ function initAnimations() {
     }, 100);
 }
 
-/**
- * Controla el Marquee
- */
 function initMarquee() {
     const marquee = document.getElementById('marquee-text');
     if (!marquee) return;

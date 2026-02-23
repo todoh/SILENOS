@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOCS | Universo Silenos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-black text-white antialiased selection:bg-white selection:text-black">
+
+    <nav class="nav-global">
+        <a href="index.html" class="logo">SILEN<span style="color:rgb(131, 33, 33);" >OS</span>.</a>
+        <div class="links">
+            <a href="index.html">Hub</a>
+            <a href="v4.html">Silenos V4</a>
+            <a href="obras.html">Obras</a>
+            <a href="pollination.html">Pollination</a>
+            <a href="cartas.html">Cartas Silen</a>
+            <a href="equipo.html">Equipo</a>
+            <a href="docs.html" class="active">Docs</a>
+        </div>
+    </nav>
+
+    <header class="pt-40 p-6 md:p-12 border-b-[1px] border-white/20 pb-20">
+        <p class="font-mono text-sm uppercase tracking-[0.3em] mb-6 text-gray-400">MANUAL TÉCNICO V4</p>
+        <h1 class="font-display text-6xl md:text-[8vw] leading-[0.8] tracking-tighter font-extrabold uppercase">
+            DOCUMENTACIÓN.
+        </h1>
+    </header>
+
+    <section class="p-6 md:p-12 max-w-5xl">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-20 font-mono">
+
+            <div>
+                <span class="text-xs text-gray-500 uppercase tracking-widest block mb-2">SYSTEM.CORE</span>
+                <h3 class="font-display text-3xl font-bold uppercase mb-6 border-b-[1px] border-white/20 pb-4">APP BRIDGE & LOCALFS</h3>
+                <p class="text-sm text-gray-300 leading-relaxed">
+                    Silenos opera directamente sobre el disco duro del usuario utilizando la File System Access API nativa de los navegadores modernos. No existe base de datos en la nube para los archivos del usuario, garantizando soberanía total, privacidad absoluta y persistencia real en tiempo real.
+                </p>
+            </div>
+
+            <div>
+                <span class="text-xs text-gray-500 uppercase tracking-widest block mb-2">SYSTEM.UI</span>
+                <h3 class="font-display text-3xl font-bold uppercase mb-6 border-b-[1px] border-white/20 pb-4">UNIVERSE ENGINE</h3>
+                <p class="text-sm text-gray-300 leading-relaxed">
+                    El núcleo visual del sistema de archivos. Sustituye las convencionales listas de carpetas por un espacio físico interactivo renderizado en HTML5 Canvas, incorporando gravedad, colisiones y funciones de zoom infinito para organizar datos espaciales.
+                </p>
+            </div>
+
+            <div>
+                <span class="text-xs text-gray-500 uppercase tracking-widest block mb-2">SYSTEM.UX</span>
+                <h3 class="font-display text-3xl font-bold uppercase mb-6 border-b-[1px] border-white/20 pb-4">WINDOW MANAGER</h3>
+                <p class="text-sm text-gray-300 leading-relaxed">
+                    Sistema avanzado de gestión de ventanas flotantes. Soporta multitarea asíncrona real, redimensionado libre, anclaje (docking) y persistencia del estado visual. Implementa una rigurosa gestión de foco y z-index.
+                </p>
+            </div>
+
+            <div>
+                <span class="text-xs text-gray-500 uppercase tracking-widest block mb-2">SYSTEM.DATA</span>
+                <h3 class="font-display text-3xl font-bold uppercase mb-6 border-b-[1px] border-white/20 pb-4">ESTRUCTURA LORE</h3>
+                <p class="text-sm text-gray-300 leading-relaxed">
+                    Toda la narrativa generada por OmniGen y los datos creados en el Datos Studio se guardan en estructuras de array JSON estrictas. Esto permite que herramientas externas, como Nexus o el juego de cartas, consuman la base de datos de manera procedural sin errores.
+                </p>
+            </div>
+
+        </div>
+
+        <div class="mt-24 p-8 border-[1px] border-white/20 text-center">
+            <p class="font-mono text-sm text-gray-400 uppercase tracking-widest mb-6">Para acceder al código fuente y ver el enrutado interno del OS</p>
+            <a href="https://github.com/todoh/SILENOS" target="_blank" class="editorial-btn text-2xl font-display font-bold uppercase tracking-tight">VER REPOSITORIO DE GITHUB ↗</a>
+        </div>
+    </section>
+
+</body>
+</html>
