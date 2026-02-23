@@ -78,51 +78,234 @@
         
         <div class="relative w-full h-screen flex flex-col items-center justify-center shrink-0">
             <div class="absolute inset-0 w-full h-full pointer-events-none flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
-                  <defs>
-                    <style>
-                      @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@200&display=swap');
-                      .bg { fill: #000000; }
-                      .text-base { font-family: 'Montserrat', sans-serif; font-weight: 200; text-anchor: middle; opacity: 0; }
-                      .text-title { font-size: 100px; letter-spacing: 0.3em; }
-                      .text-x { font-size: 50px; letter-spacing: 0.1em; fill: #888888; }
-                      
-                      .silenos { animation: fadeSilenos 13s ease-in-out infinite; }
-                      .x-mark { animation: fadeX 13s ease-in-out infinite; }
-                      .pollination { animation: fadePollination 13s ease-in-out infinite; }
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <radialGradient id="glowRed" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#d31111" stop-opacity="0.15"/>
+        <stop offset="100%" stop-color="#d31111" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowPurple" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#a855f7" stop-opacity="0.15"/>
+        <stop offset="100%" stop-color="#a855f7" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowBlue" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.12"/>
+        <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+    </radialGradient>
 
-                      @keyframes fadeSilenos {
-                        0% { opacity: 0; transform: translateY(15px); }
-                        5%, 85% { opacity: 1; transform: translateY(0); }
-                        92%, 100% { opacity: 0; transform: translateY(-15px); }
-                      }
-                      @keyframes fadeX {
-                        0%, 15% { opacity: 0; transform: scale(0.9); }
-                        25%, 85% { opacity: 1; transform: scale(1); }
-                        92%, 100% { opacity: 0; transform: scale(1.1); }
-                      }
-                      @keyframes fadePollination {
-                        0%, 30% { opacity: 0; transform: translateY(15px); }
-                        40%, 85% { opacity: 1; transform: translateY(0); }
-                        92%, 100% { opacity: 0; transform: translateY(-15px); }
-                      }
-                    </style>
-                  </defs>
-                  <rect class="bg" width="100%" height="100%" />
-                  <g>
-                    <text class="text-base text-title silenos" x="960" y="420">
-                      <tspan fill="#ffffff">SILEN</tspan><tspan fill="#d31111">OS</tspan>
-                    </text>
-                    <text class="text-base text-x x-mark" x="960" y="565">X</text>
-                    <text class="text-base text-title pollination" x="960" y="730">
-                      <tspan fill="#ffffff">POLLINATION.</tspan><tspan fill="#d31111">AI</tspan>
-                    </text>
-                  </g>
-                </svg>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@200;400;600&amp;display=swap');
+      
+      .bg { fill: #000000; }
+      
+      /* Tipografías */
+      .text-base { font-family: 'Montserrat', sans-serif; font-weight: 200; text-anchor: middle; opacity: 0; }
+      .text-title { font-size: 110px; letter-spacing: 0.35em; }
+      .text-x { font-size: 40px; letter-spacing: 0.1em; fill: #666666; font-weight: 400; }
+      .text-sub { font-family: 'Montserrat', sans-serif; font-size: 24px; letter-spacing: 0.6em; fill: #888; font-weight: 400; text-anchor: middle; opacity: 0; animation: fadeSub 13s ease-in-out infinite; }
+      .text-modules { font-family: 'Montserrat', sans-serif; font-size: 16px; letter-spacing: 0.4em; fill: #555; font-weight: 600; text-anchor: middle; opacity: 0; animation: fadeModules 13s ease-in-out infinite 2s; }
+      
+      /* Animaciones de Texto Principales */
+      .silenos { animation: fadeSilenos 13s ease-in-out infinite; }
+      .x-mark-group { animation: fadeX 13s ease-in-out infinite; }
+      .pollination { animation: fadePollination 13s ease-in-out infinite; }
+
+      @keyframes fadeSilenos {
+        0% { opacity: 0; transform: translateY(30px); filter: blur(8px); }
+        10%, 85% { opacity: 1; transform: translateY(0); filter: blur(0px); }
+        92%, 100% { opacity: 0; transform: translateY(-30px); filter: blur(8px); }
+      }
+      
+      @keyframes fadeX {
+        0%, 15% { opacity: 0; transform: scale(0.3) rotate(-90deg); filter: blur(4px); }
+        25%, 85% { opacity: 1; transform: scale(1) rotate(0deg); filter: blur(0px); }
+        92%, 100% { opacity: 0; transform: scale(1.8) rotate(90deg); filter: blur(4px); }
+      }
+      
+      @keyframes fadePollination {
+        0%, 25% { opacity: 0; transform: translateY(30px); filter: blur(8px); }
+        35%, 85% { opacity: 1; transform: translateY(0); filter: blur(0px); }
+        92%, 100% { opacity: 0; transform: translateY(-30px); filter: blur(8px); }
+      }
+
+      @keyframes fadeSub {
+        0%, 5% { opacity: 0; letter-spacing: 0.2em; }
+        15%, 85% { opacity: 1; letter-spacing: 0.6em; }
+        92%, 100% { opacity: 0; letter-spacing: 0.8em; }
+      }
+
+      @keyframes fadeModules {
+        0%, 35% { opacity: 0; letter-spacing: 0.2em; transform: translateY(10px); }
+        45%, 85% { opacity: 1; letter-spacing: 0.4em; transform: translateY(0); }
+        92%, 100% { opacity: 0; letter-spacing: 0.6em; transform: translateY(-10px); }
+      }
+
+      /* Animación de Grid */
+      .grid-line { stroke: rgba(255,255,255,0.03); stroke-width: 1; }
+      .grid-moving { animation: panGrid 15s linear infinite; }
+      @keyframes panGrid {
+         0% { transform: translateY(-100px); }
+         100% { transform: translateY(100px); }
+      }
+
+      /* Animación de Nodos Neuronales */
+      .node-line { stroke: rgba(211, 17, 17, 0.3); stroke-width: 1.5; stroke-dasharray: 1000; stroke-dashoffset: 1000; fill: none; stroke-linecap: round; }
+      .n1 { animation: drawNode 6s ease-in-out infinite alternate; }
+      .n2 { animation: drawNode 8s ease-in-out infinite alternate 2s; }
+      .n3 { animation: drawNode 7s ease-in-out infinite alternate 4s; }
+      .n4 { animation: drawNode 9s ease-in-out infinite alternate 1s; }
+      
+      @keyframes drawNode {
+         0%, 10% { stroke-dashoffset: 1000; opacity: 0;}
+         50%, 100% { stroke-dashoffset: 0; opacity: 1;}
+      }
+      
+      /* Animación de Partículas Flotantes */
+      .particle { fill: #ffffff; opacity: 0; }
+      .p1 { animation: floatParticle 8s ease-in-out infinite; }
+      .p2 { animation: floatParticle 12s ease-in-out infinite 2s; }
+      .p3 { animation: floatParticle 10s ease-in-out infinite 4s; }
+      .p4 { animation: floatParticle 15s ease-in-out infinite 1s; }
+      .p5 { animation: floatParticle 9s ease-in-out infinite 5s; }
+      .p6 { animation: floatParticle 11s ease-in-out infinite 3s; }
+      
+      @keyframes floatParticle {
+         0% { transform: translate(0, 0) scale(0.1); opacity: 0; }
+         20% { opacity: 0.6; }
+         50% { transform: translate(60px, -80px) scale(1.5); opacity: 0.9; }
+         80% { opacity: 0.6; }
+         100% { transform: translate(120px, -160px) scale(0.1); opacity: 0; }
+      }
+
+      /* Animación de Pulsos y Anillos */
+      .glow-orb { animation: pulseOrb 8s ease-in-out infinite alternate; }
+      @keyframes pulseOrb {
+         0% { transform: scale(0.7); opacity: 0.4; }
+         100% { transform: scale(1.3); opacity: 1; }
+      }
+
+      .ring-pulse { fill: none; stroke: rgba(255,255,255,0.05); stroke-width: 1; animation: expandRing 4s infinite linear; }
+      .ring-pulse-2 { fill: none; stroke: rgba(211,17,17,0.1); stroke-width: 2; animation: expandRing 4s infinite linear 2s; }
+      
+      @keyframes expandRing {
+         0% { r: 10px; opacity: 1; }
+         100% { r: 150px; opacity: 0; }
+      }
+    </style>
+  </defs>
+
+  <rect class="bg" width="100%" height="100%" />
+
+  <g style="mix-blend-mode: screen;">
+      <circle class="glow-orb" cx="300" cy="200" r="500" fill="url(#glowPurple)" />
+      <circle class="glow-orb" cx="1620" cy="880" r="600" fill="url(#glowBlue)" style="animation-delay: -4s;" />
+      <circle class="glow-orb" cx="960" cy="540" r="700" fill="url(#glowRed)" style="animation-duration: 12s;" />
+  </g>
+
+  <g class="grid-moving">
+     <line class="grid-line" x1="0" y1="-200" x2="1920" y2="-200" />
+     <line class="grid-line" x1="0" y1="-100" x2="1920" y2="-100" />
+     <line class="grid-line" x1="0" y1="0" x2="1920" y2="0" />
+     <line class="grid-line" x1="0" y1="100" x2="1920" y2="100" />
+     <line class="grid-line" x1="0" y1="200" x2="1920" y2="200" />
+     <line class="grid-line" x1="0" y1="300" x2="1920" y2="300" />
+     <line class="grid-line" x1="0" y1="400" x2="1920" y2="400" />
+     <line class="grid-line" x1="0" y1="500" x2="1920" y2="500" />
+     <line class="grid-line" x1="0" y1="600" x2="1920" y2="600" />
+     <line class="grid-line" x1="0" y1="700" x2="1920" y2="700" />
+     <line class="grid-line" x1="0" y1="800" x2="1920" y2="800" />
+     <line class="grid-line" x1="0" y1="900" x2="1920" y2="900" />
+     <line class="grid-line" x1="0" y1="1000" x2="1920" y2="1000" />
+     <line class="grid-line" x1="0" y1="1100" x2="1920" y2="1100" />
+     <line class="grid-line" x1="0" y1="1200" x2="1920" y2="1200" />
+  </g>
+  
+  <g>
+     <line class="grid-line" x1="160" y1="0" x2="160" y2="1080" />
+     <line class="grid-line" x1="320" y1="0" x2="320" y2="1080" />
+     <line class="grid-line" x1="480" y1="0" x2="480" y2="1080" />
+     <line class="grid-line" x1="640" y1="0" x2="640" y2="1080" />
+     <line class="grid-line" x1="800" y1="0" x2="800" y2="1080" />
+     <line class="grid-line" x1="960" y1="0" x2="960" y2="1080" />
+     <line class="grid-line" x1="1120" y1="0" x2="1120" y2="1080" />
+     <line class="grid-line" x1="1280" y1="0" x2="1280" y2="1080" />
+     <line class="grid-line" x1="1440" y1="0" x2="1440" y2="1080" />
+     <line class="grid-line" x1="1600" y1="0" x2="1600" y2="1080" />
+     <line class="grid-line" x1="1760" y1="0" x2="1760" y2="1080" />
+  </g>
+
+  <g opacity="0.6">
+     <path class="node-line n1" d="M 160 850 L 480 700 L 800 600 L 960 550" />
+     <path class="node-line n2" d="M 1760 200 L 1440 350 L 1120 480 L 960 550" />
+     <path class="node-line n3" d="M 320 150 L 640 300 L 850 450 L 960 550" />
+     <path class="node-line n4" d="M 1600 950 L 1280 800 L 1050 650 L 960 550" />
+  </g>
+
+  <g fill="rgba(255,255,255,0.2)">
+      <circle cx="160" cy="850" r="4" />
+      <circle cx="480" cy="700" r="3" />
+      <circle cx="800" cy="600" r="5" fill="#d31111" />
+      <circle cx="1760" cy="200" r="4" />
+      <circle cx="1440" cy="350" r="3" />
+      <circle cx="1120" cy="480" r="5" fill="#3b82f6" />
+      <circle cx="320" cy="150" r="4" />
+      <circle cx="640" cy="300" r="3" />
+      <circle cx="1600" cy="950" r="4" />
+      <circle cx="1280" cy="800" r="3" />
+  </g>
+
+  <circle class="particle p1" cx="300" cy="750" r="4" />
+  <circle class="particle p2" cx="1500" cy="250" r="3" />
+  <circle class="particle p3" cx="650" cy="200" r="5" fill="#d31111" />
+  <circle class="particle p4" cx="1250" cy="850" r="4" fill="#a855f7" />
+  <circle class="particle p5" cx="850" cy="900" r="3" fill="#3b82f6" />
+  <circle class="particle p6" cx="1650" cy="550" r="4" />
+  <circle class="particle p1" cx="250" cy="450" r="3" style="animation-delay: 1.5s;" />
+  <circle class="particle p3" cx="1050" cy="150" r="5" fill="#d31111" style="animation-delay: 4.5s;" />
+  <circle class="particle p2" cx="700" cy="750" r="4" fill="#10b981" style="animation-delay: 2.5s;" />
+  <circle class="particle p4" cx="1350" cy="400" r="3" fill="#ec4899" style="animation-delay: 3.5s;" />
+
+  <g>
+     <text class="text-sub" x="960" y="300">GENERATIVE AI STUDIO</text>
+     
+     <text class="text-base text-title silenos" x="960" y="450">
+        <tspan fill="#ffffff">SILEN</tspan><tspan fill="#d31111">OS</tspan>
+     </text>
+     
+     <g transform="translate(960, 560)">
+         <g class="x-mark-group">
+             <circle class="ring-pulse" cx="0" cy="-15" r="10" />
+             <circle class="ring-pulse-2" cx="0" cy="-15" r="10" />
+             
+             <circle cx="0" cy="-15" r="45" fill="rgba(0,0,0,0.5)" stroke="rgba(255,255,255,0.05)" stroke-width="2" />
+             <circle cx="0" cy="-15" r="55" fill="none" stroke="rgba(211,17,17,0.15)" stroke-width="1" stroke-dasharray="4 4" />
+             <circle cx="0" cy="-15" r="35" fill="none" stroke="rgba(168,85,247,0.2)" stroke-width="1" />
+             
+             <text class="text-base text-x" x="0" y="0">X</text>
+         </g>
+     </g>
+     
+     <text class="text-base text-title pollination" x="960" y="730">
+        <tspan fill="#ffffff">POLLINATION.</tspan><tspan fill="#d31111">AI</tspan>
+     </text>
+     
+     <text class="text-modules" x="960" y="860">
+        <tspan fill="#a855f7">VISION</tspan> 
+        <tspan fill="#555555"> • </tspan> 
+        <tspan fill="#d31111">KINEMATICS</tspan> 
+        <tspan fill="#555555"> • </tspan> 
+        <tspan fill="#ec4899">SOUND</tspan> 
+        <tspan fill="#555555"> • </tspan> 
+        <tspan fill="#3b82f6">VOICE</tspan> 
+        <tspan fill="#555555"> • </tspan> 
+        <tspan fill="#10b981">COGNITION</tspan>
+     </text>
+  </g>
+</svg>
             </div>
 
-            <div class="z-10 mt-auto mb-12 flex flex-col items-center gap-8">
-                <button onclick="enterApp('video')" class="btn-enter-anim bg-white/5 hover:bg-white/10 border border-white/20 text-white px-8 py-3.5 rounded-full text-sm font-medium transition-all duration-300 backdrop-blur-md flex items-center gap-3 shadow-[0_0_20px_rgba(255,255,255,0.05)] hover:shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:scale-105 uppercase tracking-widest group">
+            <div style="position: absolute; top: 47%; " class="z-10 mt-auto mb-12 flex flex-col items-center gap-8">
+                <button  onclick="enterApp('video')" class="btn-enter-anim bg-white/5 hover:bg-white/10 border border-white/20 text-white px-8 py-3.5 rounded-full text-sm font-medium transition-all  duration-300 backdrop-blur-md flex items-center gap-3 shadow-[0_0_20px_rgba(255,255,255,0.05)] hover:shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:scale-105 uppercase tracking-widest group">
                     <span data-i18n="btn_enter_app">Enter Environment</span>
                     <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                 </button>
