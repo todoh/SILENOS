@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silenos Pollination</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .transparency-bg {
+            background-image: linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%), linear-gradient(-45deg, rgba(255,255,255,0.1) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.1) 75%), linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.1) 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            background-color: #0f0f0f;
+        }
+        .transparency-bg-lightbox {
+            background-image: linear-gradient(45deg, #1f1f1f 25%, transparent 25%), linear-gradient(-45deg, #1f1f1f 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1f1f1f 75%), linear-gradient(-45deg, transparent 75%, #1f1f1f 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            background-color: #0a0a0c;
+        }
+
+        .toggle-checkbox:checked + .toggle-label { background-color: #a855f7; }
+        .toggle-label {
+            width: 36px; height: 20px; background-color: rgba(255,255,255,0.1);
+            border-radius: 999px; position: relative; cursor: pointer; transition: background-color 0.2s; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .toggle-circle {
+            width: 14px; height: 14px; background-color: white; border-radius: 50%;
+            position: absolute; top: 2px; left: 2px; transition: transform 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .toggle-checkbox:checked + .toggle-label .toggle-circle { transform: translateX(16px); }
+
+        /* Animación para el botón y scroll de la Landing Page */
+        @keyframes customFadeIn {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .btn-enter-anim {
+            opacity: 0;
+            animation: customFadeIn 2s ease-in-out 6s forwards; 
+        }
+        .scroll-indicator-anim {
+            opacity: 0;
+            animation: customFadeIn 2s ease-in-out 7s forwards;
+        }
+        @keyframes bounceSlow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(10px); }
+        }
+        .animate-bounce-slow {
+            animation: bounceSlow 3s infinite ease-in-out;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#050505',
+                        panel: 'rgba(10, 10, 12, 0.6)', 
+                        borderGlow: 'rgba(255, 255, 255, 0.03)' 
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-dark text-gray-200 h-screen w-screen overflow-hidden flex font-sans selection:bg-purple-500 selection:text-white relative">
+
+    <div id="landing-screen" class="fixed inset-0 z-[100] bg-black overflow-y-auto custom-scrollbar scroll-smooth transition-opacity duration-1000">
+        
+        <div class="relative w-full h-screen flex flex-col items-center justify-center shrink-0">
+            <div class="absolute inset-0 w-full h-full pointer-events-none flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+                  <defs>
+                    <style>
+                      @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@200&display=swap');
+                      .bg { fill: #000000; }
+                      .text-base { font-family: 'Montserrat', sans-serif; font-weight: 200; text-anchor: middle; opacity: 0; }
+                      .text-title { font-size: 100px; letter-spacing: 0.3em; }
+                      .text-x { font-size: 50px; letter-spacing: 0.1em; fill: #888888; }
+                      
+                      .silenos { animation: fadeSilenos 13s ease-in-out infinite; }
+                      .x-mark { animation: fadeX 13s ease-in-out infinite; }
+                      .pollination { animation: fadePollination 13s ease-in-out infinite; }
+
+                      @keyframes fadeSilenos {
+                        0% { opacity: 0; transform: translateY(15px); }
+                        5%, 85% { opacity: 1; transform: translateY(0); }
+                        92%, 100% { opacity: 0; transform: translateY(-15px); }
+                      }
+                      @keyframes fadeX {
+                        0%, 15% { opacity: 0; transform: scale(0.9); }
+                        25%, 85% { opacity: 1; transform: scale(1); }
+                        92%, 100% { opacity: 0; transform: scale(1.1); }
+                      }
+                      @keyframes fadePollination {
+                        0%, 30% { opacity: 0; transform: translateY(15px); }
+                        40%, 85% { opacity: 1; transform: translateY(0); }
+                        92%, 100% { opacity: 0; transform: translateY(-15px); }
+                      }
+                    </style>
+                  </defs>
+                  <rect class="bg" width="100%" height="100%" />
+                  <g>
+                    <text class="text-base text-title silenos" x="960" y="420">
+                      <tspan fill="#ffffff">SILEN</tspan><tspan fill="#d31111">OS</tspan>
+                    </text>
+                    <text class="text-base text-x x-mark" x="960" y="565">X</text>
+                    <text class="text-base text-title pollination" x="960" y="730">
+                      <tspan fill="#ffffff">POLLINATION.</tspan><tspan fill="#d31111">AI</tspan>
+                    </text>
+                  </g>
+                </svg>
+            </div>
+
+            <div class="z-10 mt-auto mb-12 flex flex-col items-center gap-8">
+                <button onclick="enterApp('video')" class="btn-enter-anim bg-white/5 hover:bg-white/10 border border-white/20 text-white px-8 py-3.5 rounded-full text-sm font-medium transition-all duration-300 backdrop-blur-md flex items-center gap-3 shadow-[0_0_20px_rgba(255,255,255,0.05)] hover:shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:scale-105 uppercase tracking-widest group">
+                    <span data-i18n="btn_enter_app">Enter Environment</span>
+                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                </button>
+                <div class="scroll-indicator-anim text-gray-500 animate-bounce-slow text-sm tracking-widest uppercase flex flex-col items-center gap-2">
+                    Explore the Ecosystem
+                    <i class="fa-solid fa-chevron-down"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full min-h-[80vh] flex items-center justify-center border-t border-white/5 bg-gradient-to-b from-black to-[#050505] px-8 py-20">
+            <div class="max-w-6xl w-full flex flex-col md:flex-row items-center gap-16">
+                <div class="flex-1 space-y-6">
+                    <div class="flex items-center gap-3 text-purple-500 mb-2">
+                        <i class="fa-solid fa-cube"></i>
+                        <span class="text-xs uppercase tracking-[0.3em] font-semibold">Module 01</span>
+                    </div>
+                    <h2 class="text-4xl md:text-5xl font-light tracking-tight text-white">SYNTHETIC <span class="font-bold">VISION</span></h2>
+                    <p class="text-gray-400 leading-relaxed text-sm md:text-base font-light max-w-lg">Transform abstract concepts into high-fidelity images. Models like FLUX and NanoBanana at your disposal with native support for Chroma Key and iterative batch control.</p>
+                    <button onclick="enterApp('image')" class="mt-4 bg-transparent border border-purple-500/50 text-purple-400 hover:bg-purple-500/10 px-6 py-3 rounded-lg text-xs uppercase tracking-widest font-medium transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-image"></i> Start Canvas
+                    </button>
+                </div>
+                <div class="flex-1 w-full max-w-lg aspect-square relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="100%" height="100%">
+                      <defs>
+                        <style>
+                          .grid-line-img { stroke: rgba(255,255,255,0.03); stroke-width: 1; }
+                          .accent-box-img { fill: transparent; stroke: #a855f7; stroke-width: 2; opacity: 0; }
+                          .core-shape-img { fill: #ffffff; opacity: 0; }
+                          .scanline-img { stroke: #a855f7; stroke-width: 1; opacity: 0; animation: scanImg 4s linear infinite; }
+                          .anim-box-img { animation: drawBoxImg 6s ease-in-out infinite; }
+                          .anim-core-img { animation: pulseCoreImg 6s ease-in-out infinite; }
+                          @keyframes scanImg { 0% { transform: translateY(100px); opacity: 0; } 10%, 90% { opacity: 0.5; } 100% { transform: translateY(700px); opacity: 0; } }
+                          @keyframes drawBoxImg { 0%, 10% { stroke-dasharray: 0, 3000; opacity: 0; } 30%, 80% { stroke-dasharray: 3000, 0; opacity: 1; } 90%, 100% { opacity: 0; } }
+                          @keyframes pulseCoreImg { 0%, 20% { opacity: 0; transform: scale(0.8) translate(100px, 75px); } 40%, 70% { opacity: 1; transform: scale(1) translate(0, 0); } 85%, 100% { opacity: 0; transform: scale(1.1) translate(-20px, -15px); } }
+                        </style>
+                      </defs>
+                      <g>
+                        <line class="grid-line-img" x1="200" y1="0" x2="200" y2="800" /><line class="grid-line-img" x1="400" y1="0" x2="400" y2="800" /><line class="grid-line-img" x1="600" y1="0" x2="600" y2="800" />
+                        <line class="grid-line-img" x1="0" y1="200" x2="800" y2="200" /><line class="grid-line-img" x1="0" y1="400" x2="800" y2="400" /><line class="grid-line-img" x1="0" y1="600" x2="800" y2="600" />
+                      </g>
+                      <line class="scanline-img" x1="150" y1="0" x2="650" y2="0" />
+                      <rect class="accent-box-img anim-box-img" x="200" y="200" width="400" height="400" />
+                      <g class="anim-core-img">
+                        <polygon class="core-shape-img" points="400,280 520,480 280,480" />
+                        <circle class="core-shape-img" cx="400" cy="380" r="30" fill="#000" />
+                      </g>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full min-h-[80vh] flex items-center justify-center border-t border-white/5 bg-[#050505] px-8 py-20">
+            <div class="max-w-6xl w-full flex flex-col md:flex-row-reverse items-center gap-16">
+                <div class="flex-1 space-y-6">
+                    <div class="flex items-center gap-3 text-red-500 mb-2">
+                        <i class="fa-solid fa-film"></i>
+                        <span class="text-xs uppercase tracking-[0.3em] font-semibold">Module 02</span>
+                    </div>
+                    <h2 class="text-4xl md:text-5xl font-light tracking-tight text-white">AI <span class="font-bold">KINEMATICS</span></h2>
+                    <p class="text-gray-400 leading-relaxed text-sm md:text-base font-light max-w-lg">Bring your ideas to life. Engines like LTX-2 and Veo generate dynamic sequences with absolute control over duration, visual aesthetics, and framing format.</p>
+                    <button onclick="enterApp('video')" class="mt-4 bg-transparent border border-red-500/50 text-red-400 hover:bg-red-500/10 px-6 py-3 rounded-lg text-xs uppercase tracking-widest font-medium transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-video"></i> Open Studio
+                    </button>
+                </div>
+                <div class="flex-1 w-full max-w-lg aspect-square relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="100%" height="100%">
+                      <defs>
+                        <style>
+                          .vid-frame { fill: transparent; stroke: rgba(255,255,255,0.1); stroke-width: 2; }
+                          .vid-accent { fill: transparent; stroke: #d31111; stroke-width: 3; opacity: 0; animation: flashFrame 4s infinite; }
+                          .play-btn { fill: #ffffff; opacity: 0; animation: pulsePlay 4s infinite; transform-origin: center; }
+                          .film-hole { fill: rgba(255,255,255,0.05); }
+                          .anim-film { animation: slideFilm 20s linear infinite; }
+                          
+                          @keyframes flashFrame { 0%, 10% { opacity: 0; } 20%, 80% { opacity: 1; } 90%, 100% { opacity: 0; } }
+                          @keyframes pulsePlay { 0%, 15% { opacity: 0; transform: scale(0.5); } 30%, 70% { opacity: 1; transform: scale(1); } 85%, 100% { opacity: 0; transform: scale(1.5); } }
+                          @keyframes slideFilm { from { transform: translateX(0); } to { transform: translateX(-400px); } }
+                        </style>
+                      </defs>
+                      <g class="anim-film">
+                        <rect class="film-hole" x="50" y="150" width="40" height="20" /><rect class="film-hole" x="150" y="150" width="40" height="20" />
+                        <rect class="film-hole" x="250" y="150" width="40" height="20" /><rect class="film-hole" x="350" y="150" width="40" height="20" />
+                        <rect class="film-hole" x="450" y="150" width="40" height="20" /><rect class="film-hole" x="550" y="150" width="40" height="20" />
+                        <rect class="film-hole" x="650" y="150" width="40" height="20" /><rect class="film-hole" x="750" y="150" width="40" height="20" />
+                        <rect class="film-hole" x="850" y="150" width="40" height="20" /><rect class="film-hole" x="950" y="150" width="40" height="20" />
+                        <rect class="film-hole" x="1050" y="150" width="40" height="20" /><rect class="film-hole" x="1150" y="150" width="40" height="20" />
+                        <rect class="film-hole" x="50" y="630" width="40" height="20" /><rect class="film-hole" x="150" y="630" width="40" height="20" />
+                        <rect class="film-hole" x="250" y="630" width="40" height="20" /><rect class="film-hole" x="350" y="630" width="40" height="20" />
+                        <rect class="film-hole" x="450" y="630" width="40" height="20" /><rect class="film-hole" x="550" y="630" width="40" height="20" />
+                        <rect class="film-hole" x="650" y="630" width="40" height="20" /><rect class="film-hole" x="750" y="630" width="40" height="20" />
+                        <rect class="film-hole" x="850" y="630" width="40" height="20" /><rect class="film-hole" x="950" y="630" width="40" height="20" />
+                        <rect class="film-hole" x="1050" y="630" width="40" height="20" /><rect class="film-hole" x="1150" y="630" width="40" height="20" />
+                      </g>
+                      <rect class="vid-frame" x="150" y="200" width="500" height="400" />
+                      <rect class="vid-accent" x="150" y="200" width="500" height="400" />
+                      <polygon class="play-btn" points="350,300 480,400 350,500" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full min-h-[80vh] flex items-center justify-center border-t border-white/5 bg-gradient-to-b from-[#050505] to-black px-8 py-20">
+            <div class="max-w-6xl w-full flex flex-col md:flex-row items-center gap-16">
+                <div class="flex-1 space-y-6">
+                    <div class="flex items-center gap-3 text-pink-500 mb-2">
+                        <i class="fa-solid fa-music"></i>
+                        <span class="text-xs uppercase tracking-[0.3em] font-semibold">Module 03</span>
+                    </div>
+                    <h2 class="text-4xl md:text-5xl font-light tracking-tight text-white">SOUND <span class="font-bold">ARCHITECTURE</span></h2>
+                    <p class="text-gray-400 leading-relaxed text-sm md:text-base font-light max-w-lg">Compose full tracks from prompts or lyrics. Choose the tone and let musical models materialize the perfect atmosphere and rhythm.</p>
+                    <button onclick="enterApp('music')" class="mt-4 bg-transparent border border-pink-500/50 text-pink-400 hover:bg-pink-500/10 px-6 py-3 rounded-lg text-xs uppercase tracking-widest font-medium transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-headphones"></i> Create Track
+                    </button>
+                </div>
+                <div class="flex-1 w-full max-w-lg aspect-square relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="100%" height="100%">
+                      <defs>
+                        <style>
+                          .eq-bar { fill: rgba(255,255,255,0.1); }
+                          .eq-active { fill: #ec4899; animation: eqBounce 1.5s ease-in-out infinite alternate; transform-origin: bottom; }
+                          .eq-active:nth-child(2) { animation-delay: 0.2s; }
+                          .eq-active:nth-child(3) { animation-delay: 0.5s; }
+                          .eq-active:nth-child(4) { animation-delay: 0.1s; }
+                          .eq-active:nth-child(5) { animation-delay: 0.4s; }
+                          .eq-active:nth-child(6) { animation-delay: 0.3s; }
+                          .eq-active:nth-child(7) { animation-delay: 0.6s; }
+                          .sound-circle { fill: transparent; stroke: rgba(236, 72, 153, 0.3); stroke-width: 1; animation: ripple 3s infinite linear; transform-origin: center; }
+                          .sound-circle:nth-child(9) { animation-delay: 1.5s; }
+                          
+                          @keyframes eqBounce { 0% { transform: scaleY(0.2); opacity: 0.5; } 100% { transform: scaleY(1); opacity: 1; } }
+                          @keyframes ripple { 0% { r: 50px; opacity: 1; } 100% { r: 350px; opacity: 0; } }
+                        </style>
+                      </defs>
+                      <circle class="sound-circle" cx="400" cy="400" r="50" />
+                      <circle class="sound-circle" cx="400" cy="400" r="50" />
+                      
+                      <g transform="translate(0, 150)">
+                        <rect class="eq-bar" x="180" y="200" width="30" height="300" rx="15" />
+                        <rect class="eq-bar" x="250" y="100" width="30" height="400" rx="15" />
+                        <rect class="eq-bar" x="320" y="250" width="30" height="250" rx="15" />
+                        <rect class="eq-bar" x="390" y="50"  width="30" height="450" rx="15" />
+                        <rect class="eq-bar" x="460" y="150" width="30" height="350" rx="15" />
+                        <rect class="eq-bar" x="530" y="300" width="30" height="200" rx="15" />
+                        <rect class="eq-bar" x="600" y="200" width="30" height="300" rx="15" />
+                        
+                        <rect class="eq-active" x="180" y="200" width="30" height="300" rx="15" />
+                        <rect class="eq-active" x="250" y="100" width="30" height="400" rx="15" />
+                        <rect class="eq-active" x="320" y="250" width="30" height="250" rx="15" />
+                        <rect class="eq-active" x="390" y="50"  width="30" height="450" rx="15" />
+                        <rect class="eq-active" x="460" y="150" width="30" height="350" rx="15" />
+                        <rect class="eq-active" x="530" y="300" width="30" height="200" rx="15" />
+                        <rect class="eq-active" x="600" y="200" width="30" height="300" rx="15" />
+                      </g>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full min-h-[80vh] flex items-center justify-center border-t border-white/5 bg-[#050505] px-8 py-20">
+            <div class="max-w-6xl w-full flex flex-col md:flex-row-reverse items-center gap-16">
+                <div class="flex-1 space-y-6">
+                    <div class="flex items-center gap-3 text-blue-500 mb-2">
+                        <i class="fa-solid fa-microphone-lines"></i>
+                        <span class="text-xs uppercase tracking-[0.3em] font-semibold">Module 04</span>
+                    </div>
+                    <h2 class="text-4xl md:text-5xl font-light tracking-tight text-white">NEURAL <span class="font-bold">NARRATIVE</span></h2>
+                    <p class="text-gray-400 leading-relaxed text-sm md:text-base font-light max-w-lg">Professional-grade voice synthesis. Text-to-Speech with multiple vocal profiles (Alloy, Echo, Nova) to give the exact inflection and tone to every word of your script.</p>
+                    <button onclick="enterApp('voice')" class="mt-4 bg-transparent border border-blue-500/50 text-blue-400 hover:bg-blue-500/10 px-6 py-3 rounded-lg text-xs uppercase tracking-widest font-medium transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-microphone"></i> Synthesize Voice
+                    </button>
+                </div>
+                <div class="flex-1 w-full max-w-lg aspect-square relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="100%" height="100%">
+                      <defs>
+                        <style>
+                          .mic-base { fill: transparent; stroke: rgba(255,255,255,0.1); stroke-width: 4; stroke-linecap: round; }
+                          .mic-core { fill: #ffffff; }
+                          .voice-wave { fill: transparent; stroke: #3b82f6; stroke-width: 3; stroke-linecap: round; animation: broadcast 2s infinite ease-out; opacity: 0; transform-origin: center; }
+                          .voice-wave:nth-child(2) { animation-delay: 0.6s; }
+                          .voice-wave:nth-child(3) { animation-delay: 1.2s; }
+                          
+                          @keyframes broadcast { 0% { transform: scale(1); opacity: 1; stroke-width: 4; } 100% { transform: scale(2.5); opacity: 0; stroke-width: 1; } }
+                        </style>
+                      </defs>
+                      <g transform="translate(400, 400)">
+                        <path class="voice-wave" d="M -60 -60 A 85 85 0 0 1 60 -60 A 85 85 0 0 1 60 60 A 85 85 0 0 1 -60 60 A 85 85 0 0 1 -60 -60" />
+                        <path class="voice-wave" d="M -90 -90 A 127 127 0 0 1 90 -90 A 127 127 0 0 1 90 90 A 127 127 0 0 1 -90 90 A 127 127 0 0 1 -90 -90" />
+                        <path class="voice-wave" d="M -120 -120 A 170 170 0 0 1 120 -120 A 170 170 0 0 1 120 120 A 170 170 0 0 1 -120 120 A 170 170 0 0 1 -120 -120" />
+                        
+                        <rect class="mic-core" x="-25" y="-60" width="50" height="90" rx="25" />
+                        <path class="mic-base" d="M -45 -10 v 20 a 45 45 0 0 0 90 0 v -20" />
+                        <line class="mic-base" x1="0" y1="55" x2="0" y2="100" />
+                        <line class="mic-base" x1="-30" y1="100" x2="30" y2="100" />
+                      </g>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full min-h-[80vh] flex items-center justify-center border-t border-white/5 bg-gradient-to-b from-[#050505] to-black px-8 py-20">
+            <div class="max-w-6xl w-full flex flex-col md:flex-row items-center gap-16">
+                <div class="flex-1 space-y-6">
+                    <div class="flex items-center gap-3 text-emerald-500 mb-2">
+                        <i class="fa-solid fa-message"></i>
+                        <span class="text-xs uppercase tracking-[0.3em] font-semibold">Module 05</span>
+                    </div>
+                    <h2 class="text-4xl md:text-5xl font-light tracking-tight text-white">LOOP <span class="font-bold">COGNITION</span></h2>
+                    <p class="text-gray-400 leading-relaxed text-sm md:text-base font-light max-w-lg">Dialogue with the world's most advanced language models (Gemini, Claude, GPT, DeepSeek). Define the system context and maintain a persistent and fluid conversational memory.</p>
+                    <button onclick="enterApp('chat')" class="mt-4 bg-transparent border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 px-6 py-3 rounded-lg text-xs uppercase tracking-widest font-medium transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-terminal"></i> Open Terminal
+                    </button>
+                </div>
+                <div class="flex-1 w-full max-w-lg aspect-square relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="100%" height="100%">
+                      <defs>
+                        <style>
+                          .node-line { stroke: rgba(255,255,255,0.05); stroke-width: 2; }
+                          .active-line { stroke: #10b981; stroke-width: 2; opacity: 0; animation: tracePath 4s infinite linear; }
+                          .node-dot { fill: rgba(255,255,255,0.2); }
+                          .active-dot { fill: #10b981; opacity: 0; animation: blinkNode 4s infinite step-end; }
+                          .cursor-blink { fill: #ffffff; animation: blinkCursor 1s infinite step-end; }
+                          
+                          @keyframes tracePath { 0%, 10% { stroke-dasharray: 0, 1000; opacity: 0; } 20%, 80% { stroke-dasharray: 1000, 0; opacity: 1; } 90%, 100% { opacity: 0; } }
+                          @keyframes blinkNode { 0%, 20% { opacity: 0; } 25%, 75% { opacity: 1; box-shadow: 0 0 15px #10b981; } 80%, 100% { opacity: 0; } }
+                          @keyframes blinkCursor { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+                        </style>
+                      </defs>
+                      <g transform="translate(100, 200)">
+                        <rect x="0" y="0" width="600" height="400" fill="transparent" stroke="rgba(255,255,255,0.1)" stroke-width="2" rx="10" />
+                        <circle cx="30" cy="30" r="6" fill="rgba(255,255,255,0.1)" />
+                        <circle cx="50" cy="30" r="6" fill="rgba(255,255,255,0.1)" />
+                        <circle cx="70" cy="30" r="6" fill="rgba(255,255,255,0.1)" />
+                        <line x1="0" y1="60" x2="600" y2="60" stroke="rgba(255,255,255,0.1)" stroke-width="2" />
+                        
+                        <line class="node-line" x1="100" y1="150" x2="300" y2="250" />
+                        <line class="node-line" x1="300" y1="250" x2="500" y2="150" />
+                        <line class="node-line" x1="300" y1="250" x2="300" y2="350" />
+                        
+                        <line class="active-line" x1="100" y1="150" x2="300" y2="250" />
+                        <line class="active-line" x1="300" y1="250" x2="500" y2="150" style="animation-delay: 1s" />
+                        <line class="active-line" x1="300" y1="250" x2="300" y2="350" style="animation-delay: 2s" />
+                        
+                        <circle class="node-dot" cx="100" cy="150" r="8" />
+                        <circle class="active-dot" cx="100" cy="150" r="8" />
+                        <circle class="node-dot" cx="300" cy="250" r="12" />
+                        <circle class="active-dot" cx="300" cy="250" r="12" style="animation-delay: 1s" />
+                        <circle class="node-dot" cx="500" cy="150" r="8" />
+                        <circle class="active-dot" cx="500" cy="150" r="8" style="animation-delay: 2s" />
+                        <circle class="node-dot" cx="300" cy="350" r="8" />
+                        <circle class="active-dot" cx="300" cy="350" r="8" style="animation-delay: 3s" />
+                        
+                        <text x="50" y="120" fill="rgba(255,255,255,0.5)" font-family="monospace" font-size="20">> SYS_READY</text>
+                        <rect class="cursor-blink" x="180" y="102" width="12" height="22" />
+                      </g>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <nav class="w-64 h-full flex flex-col py-6 border-r border-borderGlow bg-panel backdrop-blur-2xl z-20 relative">
+        
+        <div onclick="showLanding()" class="mb-10 px-6 flex items-center gap-3 text-white font-bold tracking-tighter cursor-pointer hover:scale-105 transition-transform origin-left pointer-events-auto">
+            <i class="fa-solid fa-seedling text-purple-500 filter drop-shadow-[0_0_8px_rgba(168,85,247,0.5)] text-2xl"></i>
+            <span class="text-xl tracking-wide">Silenos X Pollination</span>
+        </div>
+
+        <div class="flex-1 flex flex-col gap-2 w-full px-4" id="tool-menu">
+            <button class="tool-btn active group" data-tool="video">
+                <i class="fa-solid fa-film"></i>
+                <span data-i18n="tool_video">Video</span>
+            </button>
+            <button class="tool-btn group" data-tool="image">
+                <i class="fa-solid fa-image"></i>
+                <span data-i18n="tool_image">Image</span>
+            </button>
+            <button class="tool-btn group" data-tool="music">
+                <i class="fa-solid fa-music"></i>
+                <span data-i18n="tool_music">Music</span>
+            </button>
+            <button class="tool-btn group" data-tool="voice">
+                <i class="fa-solid fa-microphone"></i>
+                <span data-i18n="tool_voice">Voice</span>
+            </button>
+            <button class="tool-btn group" data-tool="chat">
+                <i class="fa-solid fa-message"></i>
+                <span data-i18n="tool_chat">Chat</span>
+            </button>
+        </div>
+        </nav>
+
+    <main class="flex-1 h-full flex flex-col relative">
+        <header class="absolute top-0 left-0 w-full h-16 flex items-center justify-between px-8 z-10 pointer-events-none">
+            <h1 id="current-tool-title" class="text-xl font-medium tracking-wide pointer-events-auto" data-i18n="tool_video">Video</h1>
+            
+            <div class="flex items-center gap-4 pointer-events-auto">
+                
+                <div class="relative group bg-white/5 rounded-lg p-2 border border-white/5 hover:bg-white/10 transition-colors flex items-center">
+                    <i class="fa-solid fa-globe text-gray-500 text-sm"></i>
+                    <select id="language-selector" class="appearance-none bg-transparent text-xs text-gray-400 font-bold uppercase cursor-pointer hover:text-white transition-colors text-right outline-none w-full ml-2">
+                        <option value="en" class="bg-gray-900">English</option>
+                        <option value="es" class="bg-gray-900">Español</option>
+                        <option value="ca" class="bg-gray-900">Català</option>
+                        <option value="fr" class="bg-gray-900">Français</option>
+                    </select>
+                </div>
+
+                <div id="connection-status" class="flex items-center gap-2 ml-2">
+                    <div class="w-2 h-2 rounded-full bg-red-500" id="status-dot"></div>
+                    <span class="text-xs text-gray-400 font-mono" id="status-text" data-i18n="status_disconnected">Disconnected</span>
+                </div>
+                
+                <button onclick="toggleLoginModal()" class="bg-[#141416]/80 hover:bg-[#1f1f23] border border-white/10 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all backdrop-blur-md flex items-center gap-2 shadow-lg ml-2" id="header-login-btn">
+                    <i class="fa-solid fa-key text-purple-400"></i>
+                    <span data-i18n="login_button_header">Connect API</span>
+                </button>
+            </div>
+        </header>
+
+        <div id="app-canvas" class="flex-1 w-full h-full pt-20 px-8 pb-8 overflow-y-auto custom-scrollbar relative">
+            
+            <div id="section-video" class="tool-section w-full h-full flex gap-6 fade-in">
+                <div class="w-80 shrink-0 flex flex-col gap-6 bg-panel border border-white/5 rounded-2xl p-6 overflow-y-auto custom-scrollbar shadow-xl">
+                    <div>
+                        <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-2 block" data-i18n="video_prompt_label">Video Prompt</label>
+                        <textarea id="video-prompt" rows="5" class="w-full bg-black/50 border border-white/5 text-white text-sm rounded-lg focus:ring-1 focus:ring-purple-500 block p-3 outline-none resize-none placeholder-gray-600 transition-colors" data-i18n-placeholder="video_prompt_placeholder" placeholder="Describe action, kinematics, lighting..."></textarea>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-2 block" data-i18n="model_label">AI Model</label>
+                        <select id="video-model" class="w-full bg-black/50 border border-white/5 text-white text-sm rounded-lg focus:ring-1 focus:ring-purple-500 block p-2.5 outline-none font-mono cursor-pointer appearance-none">
+                            <option value="ltx-2">LTX-2 💎 (20🎬 0.010/sec)</option>
+                            <option value="wan">Wan 2.6 💎 (8🎬 0.050/sec)</option>
+                            <option value="seedance">Seedance Lite (7🎬 1.8/M)</option>
+                            <option value="seedance-pro">Seedance Pro-Fast 💎 (7🎬 1.0/M)</option>
+                            <option value="veo">Veo 3.1 Fast 💎</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-2 block" data-i18n="format_label">Format</label>
+                        <div class="flex gap-2">
+                            <button onclick="setVideoRatio('square', this)" class="ratio-btn flex-1 bg-black/50 border border-white/5 text-gray-400 py-2.5 rounded-lg hover:text-white hover:border-white/20 transition-all text-sm" data-ratio="square"><i class="fa-regular fa-square"></i></button>
+                            <button onclick="setVideoRatio('landscape', this)" class="ratio-btn flex-1 bg-purple-500/20 border border-purple-500/50 text-purple-400 py-2.5 rounded-lg transition-all text-sm active-ratio" data-ratio="landscape"><i class="fa-solid fa-image"></i></button>
+                            <button onclick="setVideoRatio('portrait', this)" class="ratio-btn flex-1 bg-black/50 border border-white/5 text-gray-400 py-2.5 rounded-lg hover:text-white hover:border-white/20 transition-all text-sm" data-ratio="portrait"><i class="fa-solid fa-mobile-screen"></i></button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-2 flex justify-between">
+                            <span data-i18n="video_duration_label">Duration (Blocks)</span>
+                            <span id="video-duration-val" class="text-white font-mono">5s</span>
+                        </label>
+                        <input type="range" id="video-duration" min="5" max="10" step="5" value="5" class="w-full accent-purple-500 cursor-pointer" oninput="document.getElementById('video-duration-val').innerText = this.value + 's'">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-2 flex justify-between">
+                            <span data-i18n="seed_label">Seed</span>
+                            <span id="video-seed-val" class="text-white font-mono text-[10px]" data-i18n="seed_random">Random</span>
+                        </label>
+                        <div class="flex gap-2">
+                            <input type="number" id="video-seed" class="w-full bg-black/50 border border-white/5 text-white text-sm rounded-lg focus:ring-1 focus:ring-purple-500 block p-2.5 outline-none font-mono" data-i18n-placeholder="seed_placeholder" placeholder="ID...">
+                            <button onclick="randomizeVideoSeed()" class="bg-white/5 border border-white/10 text-white px-3.5 rounded-lg hover:bg-white/10 transition-colors" title="Aleatorizar">
+                                <i class="fa-solid fa-shuffle"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-auto pt-4 border-t border-white/5">
+                        <button id="btn-generate-video" onclick="generateVideo()" class="w-full bg-white text-black font-semibold py-3.5 rounded-xl hover:bg-gray-200 active:scale-[0.98] transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 text-xs tracking-widest uppercase">
+                            <i class="fa-solid fa-video"></i> <span data-i18n="video_btn_generate">Generate Video</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-1 bg-panel border border-white/5 rounded-2xl p-6 flex flex-col relative overflow-hidden shadow-xl">
+                    <div id="video-placeholder" class="w-full h-full flex items-center justify-center text-gray-500 flex-col gap-4">
+                        <i class="fa-solid fa-film text-5xl opacity-20"></i>
+                        <p class="text-sm font-light tracking-wide" data-i18n="video_empty_text">Your generated videos will appear here.</p>
+                    </div>
+                    <div id="video-gallery" class="w-full h-full overflow-y-auto custom-scrollbar hidden">
+                        <div id="video-grid" class="grid grid-cols-1 xl:grid-cols-2 gap-6 pb-10"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-image" class="tool-section w-full h-full flex gap-6 fade-in hidden">
+                <div class="w-80 shrink-0 flex flex-col gap-6 bg-panel border border-white/5 rounded-2xl p-6 overflow-y-auto custom-scrollbar shadow-xl">
+                    <div>
+                        <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-2 block" data-i18n="image_prompt_label">Image Prompt</label>
+                        <textarea id="image-prompt" rows="5" class="w-full bg-black/50 border border-white/5 text-white text-sm rounded-lg focus:ring-1 focus:ring-purple-500 block p-3 outline-none resize-none placeholder-gray-600 transition-colors" data-i18n-placeholder="image_prompt_placeholder" placeholder="Describe the image visually, lighting, style..."></textarea>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-2 block" data-i18n="model_label">AI Model</label>
+                        <select id="image-model" class="w-full bg-black/50 border border-white/5 text-white text-sm rounded-lg focus:ring-1 focus:ring-purple-500 block p-2.5 outline-none font-mono cursor-pointer appearance-none">
+                            <option value="flux">Flux Schnell (5K🖼️ 0.0002/img)</option>
+                            <option value="zimage">Z-Image Turbo (5K🖼️ 0.0002/img)</option>
+                            <option value="klein">FLUX.2 Klein 4B (150🖼️ 0.008/img)</option>
+                            <option value="klein-large">FLUX.2 Klein 9B (85🖼️ 0.012/img)</option>
+                            <option value="gptimage">GPT Image 1 Mini (70💬 2.0/M)</option>
+                            <option value="seedream">Seedream 4.0 💎</option>
+                            <option value="kontext">FLUX.1 Kontext 💎</option>
+                            <option value="nanobanana">NanoBanana 💎</option>
+                            <option value="seedream-pro">Seedream 4.5 Pro 💎</option>
+                            <option value="gptimage-large">GPT Image 1.5 💎</option>
+                            <option value="nanobanana-pro">NanoBanana Pro 💎</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-2 block" data-i18n="format_label">Format</label>
+                        <div class="flex gap-2">
+                            <button onclick="setImageRatio('square', this)" class="ratio-btn-img flex-1 bg-black/50 border border-white/5 text-gray-400 py-2.5 rounded-lg hover:text-white hover:border-white/20 transition-all text-sm" data-ratio="square"><i class="fa-regular fa-square"></i></button>
+                            <button onclick="setImageRatio('landscape', this)" class="ratio-btn-img flex-1 bg-purple-500/20 border border-purple-500/50 text-purple-400 py-2.5 rounded-lg transition-all text-sm active-ratio" data-ratio="landscape"><i class="fa-solid fa-image"></i></button>
+                            <button onclick="setImageRatio('portrait', this)" class="ratio-btn-img flex-1 bg-black/50 border border-white/5 text-gray-400 py-2.5 rounded-lg hover:text-white hover:border-white/20 transition-all text-sm" data-ratio="portrait"><i class="fa-solid fa-mobile-screen"></i></button>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 items-end">
+                        <div class="flex-1">
+                            <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-2 block" data-i18n="image_batch_label">Amount</label>
+                            <input type="number" id="image-batch" value="1" min="1" max="10" class="w-full bg-black/50 border border-white/5 text-white text-sm rounded-lg focus:ring-1 focus:ring-purple-500 block p-2.5 outline-none font-mono text-center">
+                        </div>
+                        <div class="flex-1 flex flex-col">
+                            <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-2 block text-right" data-i18n="image_chroma_label">Chroma Key</label>
+                            <div class="flex items-center justify-end h-[38px]">
+                                <input type="checkbox" id="image-chroma-toggle" class="toggle-checkbox" style="display:none">
+                                <label for="image-chroma-toggle" class="toggle-label">
+                                    <div class="toggle-circle"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-2 flex justify-between">
+                            <span data-i18n="image_seed_batch_label">Seed (Batch 1)</span>
+                            <span id="image-seed-val" class="text-white font-mono text-[10px]" data-i18n="seed_random">Random</span>
+                        </label>
+                        <div class="flex gap-2">
+                            <input type="number" id="image-seed" class="w-full bg-black/50 border border-white/5 text-white text-sm rounded-lg focus:ring-1 focus:ring-purple-500 block p-2.5 outline-none font-mono" data-i18n-placeholder="seed_placeholder" placeholder="ID...">
+                            <button onclick="randomizeImageSeed()" class="bg-white/5 border border-white/10 text-white px-3.5 rounded-lg hover:bg-white/10 transition-colors" title="Aleatorizar">
+                                <i class="fa-solid fa-shuffle"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-auto pt-4 border-t border-white/5">
+                        <button id="btn-generate-image" onclick="generateImages()" class="w-full bg-white text-black font-semibold py-3.5 rounded-xl hover:bg-gray-200 active:scale-[0.98] transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 text-xs tracking-widest uppercase">
+                            <i class="fa-solid fa-image"></i> <span data-i18n="image_btn_generate">Generate Images</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-1 bg-panel border border-white/5 rounded-2xl p-6 flex flex-col relative overflow-hidden shadow-xl">
+                    <div id="image-placeholder" class="w-full h-full flex items-center justify-center text-gray-500 flex-col gap-4">
+                        <i class="fa-solid fa-cube text-5xl opacity-20"></i>
+                        <p class="text-sm font-light tracking-wide" data-i18n="image_empty_text">Your generated images will appear here.</p>
+                    </div>
+                    <div id="image-gallery" class="w-full h-full overflow-y-auto custom-scrollbar hidden">
+                        <div id="image-grid" class="grid grid-cols-2 xl:grid-cols-3 gap-6 pb-10"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-music" class="tool-section w-full h-full flex gap-6 fade-in hidden">
+                <div class="w-80 shrink-0 flex flex-col gap-6 bg-panel border border-white/5 rounded-2xl p-6 overflow-y-auto custom-scrollbar shadow-xl">
+                    <div>
+                        <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-2 block" data-i18n="music_prompt_label">Prompt / Lyrics</label>
+                        <textarea id="music-prompt" rows="5" class="w-full bg-black/50 border border-white/5 text-white text-sm rounded-lg focus:ring-1 focus:ring-purple-500 block p-3 outline-none resize-none placeholder-gray-600 transition-colors" data-i18n-placeholder="music_prompt_placeholder" placeholder="Describe the music or write the lyrics..."></textarea>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-2 block" data-i18n="model_label">AI Model</label>
+                        <select id="music-model" class="w-full bg-black/50 border border-white/5 text-white text-sm rounded-lg focus:ring-1 focus:ring-purple-500 block p-2.5 outline-none font-mono cursor-pointer appearance-none">
+                            <option value="elevenmusic">ElevenLabs Music (3🎬 0.0050/sec)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-2 block" data-i18n="music_voice_label">Tone / Base Voice</label>
+                        <select id="music-voice" class="w-full bg-black/50 border border-white/5 text-white text-sm rounded-lg focus:ring-1 focus:ring-purple-500 block p-2.5 outline-none font-mono cursor-pointer appearance-none">
+                            <option value="rachel">Rachel (ElevenLabs)</option>
+                            <option value="domi">Domi (ElevenLabs)</option>
+                            <option value="bella">Bella (ElevenLabs)</option>
+                            <option value="antoni">Antoni (ElevenLabs)</option>
+                            <option value="alloy">Alloy (OpenAI)</option>
+                            <option value="echo">Echo (OpenAI)</option>
+                        </select>
+                        <p class="text-[8px] text-gray-500 mt-2" data-i18n="music_voice_note">* API technical requirement, voice selection is required.</p>
+                    </div>
+                    <div class="mt-auto pt-4 border-t border-white/5">
+                        <button id="btn-generate-music" onclick="generateMusic()" class="w-full bg-white text-black font-semibold py-3.5 rounded-xl hover:bg-gray-200 active:scale-[0.98] transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 text-xs tracking-widest uppercase">
+                            <i class="fa-solid fa-music"></i> <span data-i18n="music_btn_generate">Generate Music</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-1 bg-panel border border-white/5 rounded-2xl p-6 flex flex-col relative overflow-hidden shadow-xl">
+                    <div id="music-placeholder" class="w-full h-full flex items-center justify-center text-gray-500 flex-col gap-4">
+                        <i class="fa-solid fa-headphones text-5xl opacity-20"></i>
+                        <p class="text-sm font-light tracking-wide" data-i18n="music_empty_text">Your music tracks will appear here.</p>
+                    </div>
+                    <div id="music-gallery" class="w-full h-full overflow-y-auto custom-scrollbar hidden">
+                        <div id="music-grid" class="flex flex-col gap-4 pb-10"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-voice" class="tool-section w-full h-full flex gap-6 fade-in hidden">
+                <div class="w-80 shrink-0 flex flex-col gap-6 bg-panel border border-white/5 rounded-2xl p-6 overflow-y-auto custom-scrollbar shadow-xl">
+                    <div>
+                        <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-2 block" data-i18n="voice_prompt_label">Text to Narrate</label>
+                        <textarea id="voice-prompt" rows="5" class="w-full bg-black/50 border border-white/5 text-white text-sm rounded-lg focus:ring-1 focus:ring-purple-500 block p-3 outline-none resize-none placeholder-gray-600 transition-colors" data-i18n-placeholder="voice_prompt_placeholder" placeholder="Write the text you want the AI to narrate..."></textarea>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-2 block" data-i18n="voice_model_label">Voice</label>
+                        <select id="voice-model" class="w-full bg-black/50 border border-white/5 text-white text-sm rounded-lg focus:ring-1 focus:ring-purple-500 block p-2.5 outline-none font-mono cursor-pointer appearance-none">
+                            <option value="alloy">Alloy (Neutra)</option>
+                            <option value="echo">Echo (Masculina suave)</option>
+                            <option value="fable">Fable (Masculina expresiva)</option>
+                            <option value="onyx">Onyx (Masculina grave)</option>
+                            <option value="nova">Nova (Femenina energética)</option>
+                            <option value="shimmer">Shimmer (Femenina clara)</option>
+                        </select>
+                    </div>
+                    <div class="mt-auto pt-4 border-t border-white/5">
+                        <button id="btn-generate-voice" onclick="generateVoice()" class="w-full bg-white text-black font-semibold py-3.5 rounded-xl hover:bg-gray-200 active:scale-[0.98] transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] flex items-center justify-center gap-2 text-xs tracking-widest uppercase">
+                            <i class="fa-solid fa-microphone"></i> <span data-i18n="voice_btn_generate">Generate Voice</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-1 bg-panel border border-white/5 rounded-2xl p-6 flex flex-col relative overflow-hidden shadow-xl">
+                    <div id="voice-placeholder" class="w-full h-full flex items-center justify-center text-gray-500 flex-col gap-4">
+                        <i class="fa-solid fa-waveform-lines text-5xl opacity-20"></i>
+                        <p class="text-sm font-light tracking-wide" data-i18n="voice_empty_text">Your generated narrations will appear here.</p>
+                    </div>
+                    <div id="voice-gallery" class="w-full h-full overflow-y-auto custom-scrollbar hidden">
+                        <div id="voice-grid" class="flex flex-col gap-4 pb-10"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-chat" class="tool-section w-full h-full flex gap-6 fade-in hidden">
+                <div class="w-80 shrink-0 flex flex-col gap-6 bg-panel border border-white/5 rounded-2xl p-6 overflow-y-auto custom-scrollbar shadow-xl">
+                   <div>
+                        <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-2 block" data-i18n="chat_model_label">Chat Model</label>
+                        <select id="chat-model" class="w-full bg-black/50 border border-white/5 text-white text-sm rounded-lg focus:ring-1 focus:ring-purple-500 block p-2.5 outline-none font-mono cursor-pointer appearance-none">
+                            <option value="qwen-safety">Qwen3Guard 8B (111.1K💬)</option>
+                            <option value="nova-fast">Amazon Nova Micro (22.2K💬)</option>
+                            <option value="mistral">Mistral Small 3.2 24B (4.3K💬)</option>
+                            <option value="gemini-fast">Google Gemini 2.5 Flash Lite 👁️🔍💻 (3.1K💬)</option>
+                            <option value="qwen-coder">Qwen3 Coder 30B (1.2K💬)</option>
+                            <option value="gemini-search">Google Gemini 2.5 Flash Lite Search 👁️🔍💻 (1.6K💬)</option>
+                            <option value="openai-fast">OpenAI GPT-5 Nano 👁️ (950💬)</option>
+                            <option value="openai">OpenAI GPT-5 Mini 👁️ (700💬)</option>
+                            <option value="grok">xAI Grok 4 Fast 💎 (550💬)</option>
+                            <option value="perplexity-fast">Perplexity Sonar 🔍 (450💬)</option>
+                            <option value="minimax">MiniMax M2.1 🧠 (450💬)</option>
+                            <option value="deepseek">DeepSeek V3.2 🧠 (250💬)</option>
+                            <option value="perplexity-reasoning">Perplexity Sonar Reasoning 🧠🔍 (200💬)</option>
+                            <option value="openai-audio">OpenAI GPT-4o Mini Audio 👁️🎙️🔊 (150💬)</option>
+                            <option value="chickytutor">ChickyTutor (100💬)</option>
+                            <option value="midijourney">MIDIjourney (100💬)</option>
+                            <option value="glm">Z.ai GLM-5 🧠 (100💬)</option>
+                            <option value="claude-fast">Anthropic Claude Haiku 4.5 👁️ (95💬)</option>
+                            <option value="openai-large">OpenAI GPT-5.2 👁️🧠 (90💬)</option>
+                            <option value="gemini">Google Gemini 3 Flash 💎 👁️🎙️🔍💻 (85💬)</option>
+                            <option value="kimi">Moonshot Kimi K2.5 👁️🧠 (85💬)</option>
+                            <option value="gemini-legacy">Google Gemini 2.5 Pro 💎 👁️🎙️🧠🔍💻 (30💬)</option>
+                            <option value="claude">Anthropic Claude Sonnet 4.5 💎 👁️ (25💬)</option>
+                            <option value="gemini-large">Google Gemini 3 Pro 💎 👁️🎙️🧠🔍 (25💬)</option>
+                            <option value="claude-large">Anthropic Claude Opus 4.6 💎 👁️ (10💬)</option>
+                            <option value="claude-legacy">Anthropic Claude Opus 4.5 💎 👁️ (7💬)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-2 block" data-i18n="chat_system_label">System Instructions (Context)</label>
+                        <textarea id="chat-system" rows="5" class="w-full bg-black/50 border border-white/5 text-white text-sm rounded-lg focus:ring-1 focus:ring-purple-500 block p-3 outline-none resize-none placeholder-gray-600 transition-colors" data-i18n-placeholder="chat_system_placeholder" placeholder="Define personality, format, role or general instructions..."></textarea>
+                    </div>
+                    <div class="mt-auto pt-4 border-t border-white/5">
+                        <button onclick="clearChatHistory()" class="w-full bg-red-500/10 text-red-400 border border-red-500/20 font-semibold py-3.5 rounded-xl hover:bg-red-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-xs tracking-widest uppercase">
+                            <i class="fa-solid fa-trash-can"></i> <span data-i18n="chat_btn_clear">Clear Memory</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-1 bg-panel border border-white/5 rounded-2xl flex flex-col relative overflow-hidden shadow-xl">
+                    <div id="chat-messages" class="flex-1 overflow-y-auto custom-scrollbar p-6 flex flex-col gap-4"></div>
+                    <div class="p-4 border-t border-white/5 bg-black/20">
+                        <div class="flex gap-4">
+                            <textarea id="chat-input" rows="1" class="flex-1 bg-black/50 border border-white/5 text-white text-sm rounded-xl focus:ring-1 focus:ring-purple-500 block p-4 outline-none resize-none placeholder-gray-500 transition-colors" data-i18n-placeholder="chat_input_placeholder" placeholder="Type a message... (Shift+Enter for new line)" onkeydown="handleChatKeydown(event)"></textarea>
+                            <button id="btn-send-chat" onclick="sendChatMessage()" class="w-14 shrink-0 bg-white text-black font-semibold rounded-xl hover:bg-gray-200 active:scale-[0.98] transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <canvas id="hidden-canvas" style="display: none;"></canvas>
+
+        </div>
+    </main>
+
+    <div id="lightbox-modal" onclick="closeLightbox()" class="fixed inset-0 z-[200] bg-black/95 hidden flex items-center justify-center cursor-zoom-out transition-opacity duration-300 opacity-0 backdrop-blur-sm">
+        <img id="lightbox-image" class="max-w-[95vw] max-h-[95vh] object-contain shadow-2xl rounded-lg" src="" alt="Full view" onclick="event.stopPropagation()">
+        <button onclick="closeLightbox()" class="absolute top-6 right-8 text-white/50 hover:text-white text-3xl transition-colors">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
+    <div id="login-modal" class="hidden absolute top-20 right-8 z-50 transition-opacity duration-300">
+        <div class="glass-card w-80 p-6 rounded-2xl flex flex-col items-center">
+            <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-purple-600 to-blue-500 flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(168,85,247,0.3)]">
+                <i class="fa-solid fa-bolt text-xl text-white"></i>
+            </div>
+            <h2 class="text-lg font-semibold mb-1 text-white" data-i18n="login_title">Connect to Pollination</h2>
+            <p class="text-xs text-gray-400 text-center mb-5" data-i18n="login_subtitle">Enter your token to use AI.</p>
+            <div class="w-full relative mb-4">
+                <i class="fa-solid fa-key absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm"></i>
+                <input type="password" id="pollination-token-input" data-i18n-placeholder="login_placeholder" placeholder="Token..." class="w-full bg-black/50 border border-white/5 text-white text-sm rounded-lg focus:ring-1 focus:ring-purple-500 focus:border-transparent block pl-9 p-2.5 transition-all outline-none font-mono">
+            </div>
+            <button id="btn-login" class="w-full bg-white text-black font-medium py-2.5 rounded-lg hover:bg-gray-200 transition-colors shadow-lg active:scale-95 text-sm" data-i18n="login_button">
+                Log In
+            </button>
+            <p class="mt-4 text-[10px] text-gray-500 text-center leading-tight" data-i18n="login_footer">The key is securely saved locally.</p>
+        </div>
+    </div>
+
+    <script src="i18n.js"></script>
+    <script src="video.js"></script>
+    <script src="image.js"></script>
+    <script src="music.js"></script> 
+    <script src="voice.js"></script> 
+    <script src="chat.js"></script> 
+    
+    <script>
+        // LÓGICA PARA MOSTRAR LA LANDING PAGE DE NUEVO
+        function showLanding() {
+            const landing = document.getElementById('landing-screen');
+            landing.style.display = 'block';
+            setTimeout(() => {
+                landing.style.opacity = '1';
+                landing.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 10);
+        }
+
+        // LÓGICA PARA ENTRAR DESDE LA LANDING PAGE
+        function enterApp(toolName = 'video') {
+            const landing = document.getElementById('landing-screen');
+            landing.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            setTimeout(() => {
+                landing.style.opacity = '0';
+                setTimeout(() => {
+                    landing.style.display = 'none';
+                    const btnTool = document.querySelector(`[data-tool="${toolName}"]`);
+                    if(btnTool) btnTool.click();
+                }, 1000); 
+            }, 300);
+        }
+
+        function toggleLoginModal() {
+            const modal = document.getElementById('login-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('login-modal');
+            const btn = document.getElementById('header-login-btn');
+            
+            if (!modal.classList.contains('hidden')) {
+                if (!modal.contains(event.target) && !btn.contains(event.target)) {
+                    modal.classList.add('hidden');
+                }
+            }
+        });
+
+        // LÓGICA DEL MENÚ LATERAL (Tabs)
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+                const buttonElement = e.currentTarget;
+                buttonElement.classList.add('active');
+                
+                const toolName = buttonElement.dataset.tool;
+                const toolTitle = buttonElement.querySelector('span').innerText;
+                document.getElementById('current-tool-title').innerText = toolTitle;
+                
+                document.querySelectorAll('.tool-section').forEach(sec => sec.classList.add('hidden'));
+                
+                const targetSection = document.getElementById(`section-${toolName}`);
+                if (targetSection) {
+                    targetSection.classList.remove('hidden');
+                }
+            });
+        });
+
+        // LÓGICA DE API Y ESTADO DE CONEXIÓN
+        document.getElementById('btn-login').addEventListener('click', () => {
+            const token = document.getElementById('pollination-token-input').value.trim();
+            if(token) {
+                localStorage.setItem('pollinations_api_key', token);
+                document.getElementById('status-dot').classList.replace('bg-red-500', 'bg-green-500');
+                document.getElementById('status-text').setAttribute('data-i18n', 'status_connected');
+                if (typeof updateDOM === 'function') updateDOM(); 
+                toggleLoginModal();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedKey = localStorage.getItem('pollinations_api_key');
+            if(savedKey) {
+                document.getElementById('pollination-token-input').value = savedKey;
+                document.getElementById('status-dot').classList.replace('bg-red-500', 'bg-green-500');
+                document.getElementById('status-text').setAttribute('data-i18n', 'status_connected');
+            }
+            
+            if(typeof randomizeVideoSeed === 'function') randomizeVideoSeed();
+            if(typeof randomizeImageSeed === 'function') randomizeImageSeed();
+        });
+    </script>
+</body>
+</html>

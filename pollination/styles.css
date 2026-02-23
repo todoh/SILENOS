@@ -1,0 +1,94 @@
+/* styles.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+body {
+    background-image: radial-gradient(circle at 50% 0%, #1a1a2e 0%, #050505 50%, #050505 100%);
+}
+
+/* Efectos Glassmorphism Premium */
+.glass-card {
+    background: rgba(10, 10, 12, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+}
+
+/* =========================================
+   BARRA LATERAL Y BOTONES (Estilo Expandido)
+   ========================================= */
+
+.tool-btn {
+    position: relative;
+    width: 100%;      /* Ocupa todo el ancho disponible */
+    height: 3rem;     /* 48px */
+    padding: 0 1rem;  /* Espaciado interno */
+    border-radius: 0.75rem; 
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* Alineado a la izquierda */
+    gap: 1rem;        /* Espacio entre el icono y el texto */
+    color: #6b7280;   
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: transparent;
+    overflow: hidden;
+}
+
+.tool-btn i {
+    font-size: 1.25rem;
+    width: 1.5rem; /* Ancho fijo para que los textos queden alineados */
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.tool-btn span {
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+/* Hover: Iluminamos el icono y damos un fondo muy sutil */
+.tool-btn:hover {
+    color: #e5e7eb;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Activo: El look premium */
+.tool-btn.active {
+    color: #ffffff;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%);
+    box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.2);
+}
+
+.tool-btn.active i {
+    color: #a855f7; 
+    filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.5)); 
+}
+
+/* Marcador lateral brillante para el elemento activo */
+.tool-btn.active::before {
+    content: '';
+    position: absolute;
+    left: -1rem; /* Compensamos el padding del contenedor padre para pegarlo al borde de la pantalla */
+    top: 50%;
+    transform: translateY(-50%);
+    height: 60%;
+    width: 4px;
+    background: #a855f7;
+    border-radius: 0 4px 4px 0;
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.8);
+}
+
+/* Scrollbar Minimalista y elegante */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
