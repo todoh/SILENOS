@@ -8,6 +8,7 @@ const translations = {
         "tool_voice": "Voz",
         "tool_chat": "Chat",
         "tool_storyboard": "Storyboard",
+        "tool_model3d": "Modelo 3D",
         "status_disconnected": "Desconectado",
         "status_connected": "Conectado",
         "login_button_header": "Conectar API",
@@ -65,7 +66,14 @@ const translations = {
         "sb_btn_generate": "Generar Storyboard",
         "sb_empty_text": "El Storyboard inmersivo aparecerá aquí.",
         "sb_scene_label": "Escena",
-        "sb_prompt_klein": "Prompt (Klein)"
+        "sb_prompt_klein": "Prompt (Klein)",
+        "model3d_prompt_label": "Prompt del Modelo 3D",
+        "model3d_prompt_placeholder": "Describe el objeto 3D (ej. Una espada láser futurista oxidada...)",
+        "model3d_btn_generate": "Generar Modelo 3D",
+        "model3d_empty_text": "Tu modelo 3D generado aparecerá aquí.",
+        "model3d_status_generating": "Diseñando plano 3D (Cerebro IA)...",
+        "model3d_status_textures": "Generando texturas 4K procedimentales...",
+        "model3d_status_assembling": "Ensamblando geometría espacial..."
     },
     en: {
         "tool_video": "Video",
@@ -74,6 +82,7 @@ const translations = {
         "tool_voice": "Voice",
         "tool_chat": "Chat",
         "tool_storyboard": "Storyboard",
+        "tool_model3d": "3D Model",
         "status_disconnected": "Disconnected",
         "status_connected": "Connected",
         "login_button_header": "Connect API",
@@ -131,7 +140,14 @@ const translations = {
         "sb_btn_generate": "Generate Storyboard",
         "sb_empty_text": "The immersive Storyboard will appear here.",
         "sb_scene_label": "Scene",
-        "sb_prompt_klein": "Prompt (Klein)"
+        "sb_prompt_klein": "Prompt (Klein)",
+        "model3d_prompt_label": "3D Model Prompt",
+        "model3d_prompt_placeholder": "Describe the 3D object (e.g. A rusty futuristic laser gun...)",
+        "model3d_btn_generate": "Generate 3D Model",
+        "model3d_empty_text": "Your generated 3D model will appear here.",
+        "model3d_status_generating": "Designing 3D Blueprint (AI Brain)...",
+        "model3d_status_textures": "Generating procedural 4K textures...",
+        "model3d_status_assembling": "Assembling spatial geometry..."
     },
     ca: {
         "tool_video": "Vídeo",
@@ -140,6 +156,7 @@ const translations = {
         "tool_voice": "Veu",
         "tool_chat": "Xat",
         "tool_storyboard": "Storyboard",
+        "tool_model3d": "Model 3D",
         "status_disconnected": "Desconnectat",
         "status_connected": "Connectat",
         "login_button_header": "Connectar API",
@@ -197,7 +214,14 @@ const translations = {
         "sb_btn_generate": "Generar Storyboard",
         "sb_empty_text": "L'Storyboard immersiu apareixerà aquí.",
         "sb_scene_label": "Escena",
-        "sb_prompt_klein": "Prompt (Klein)"
+        "sb_prompt_klein": "Prompt (Klein)",
+        "model3d_prompt_label": "Prompt del Model 3D",
+        "model3d_prompt_placeholder": "Descriu l'objecte 3D (ex. Una espasa làser futurista rovellada...)",
+        "model3d_btn_generate": "Generar Model 3D",
+        "model3d_empty_text": "El teu model 3D generat apareixerà aquí.",
+        "model3d_status_generating": "Dissenyant plànol 3D (Cervell IA)...",
+        "model3d_status_textures": "Generant textures 4K procedurals...",
+        "model3d_status_assembling": "Ensamblant geometria espacial..."
     },
     fr: {
         "tool_video": "Vidéo",
@@ -206,6 +230,7 @@ const translations = {
         "tool_voice": "Voix",
         "tool_chat": "Chat",
         "tool_storyboard": "Storyboard",
+        "tool_model3d": "Modèle 3D",
         "status_disconnected": "Déconnecté",
         "status_connected": "Connecté",
         "login_button_header": "Connecter l'API",
@@ -263,11 +288,17 @@ const translations = {
         "sb_btn_generate": "Générer Storyboard",
         "sb_empty_text": "Le Storyboard immersif apparaîtra ici.",
         "sb_scene_label": "Scène",
-        "sb_prompt_klein": "Prompt (Klein)"
+        "sb_prompt_klein": "Prompt (Klein)",
+        "model3d_prompt_label": "Prompt Modèle 3D",
+        "model3d_prompt_placeholder": "Décrivez l'objet 3D (ex. Un pistolet laser futuriste rouillé...)",
+        "model3d_btn_generate": "Générer Modèle 3D",
+        "model3d_empty_text": "Votre modèle 3D généré apparaîtra ici.",
+        "model3d_status_generating": "Conception de plan 3D (Cerveau IA)...",
+        "model3d_status_textures": "Génération de textures 4K procédurales...",
+        "model3d_status_assembling": "Assemblage de la géométrie spatiale..."
     }
 };
 
-// POR DEFECTO EN INGLÉS ('en')
 let currentLanguage = localStorage.getItem('silenos_lang') || 'en';
 
 function t(key) {

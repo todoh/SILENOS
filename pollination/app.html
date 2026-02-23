@@ -7,8 +7,20 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7136138379132657" crossorigin="anonymous"></script>
-  <style>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7136138379132657" crossorigin="anonymous"></script>
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+                "three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.7.0/build/index.module.js",
+                "three-bvh-csg": "https://cdn.jsdelivr.net/npm/three-bvh-csg@0.0.16/build/index.module.js"
+            }
+        }
+    </script>
+
+    <style>
         .transparency-bg {
             background-image: linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%), linear-gradient(-45deg, rgba(255,255,255,0.1) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.1) 75%), linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.1) 75%);
             background-size: 20px 20px;
@@ -80,11 +92,14 @@
                 <i class="fa-solid fa-message"></i>
                 <span data-i18n="tool_chat">Chat</span>
             </button>
-
             <button class="tool-btn group" data-tool="storyboard">
-    <i class="fa-solid fa-layer-group text-purple-400"></i>
-    <span data-i18n="tool_storyboard">Storyboard</span>
-</button>
+                <i class="fa-solid fa-layer-group text-purple-400"></i>
+                <span data-i18n="tool_storyboard">Storyboard</span>
+            </button>
+            <button class="tool-btn group" data-tool="model3d">
+                <i class="fa-solid fa-cube text-emerald-400"></i>
+                <span data-i18n="tool_model3d">Model 3D</span>
+            </button>
         </div>
     </nav>
 
@@ -339,24 +354,6 @@
                             <option value="gemini-search">Google Gemini 2.5 Flash Lite Search 👁️🔍💻 (1.6K💬)</option>
                             <option value="openai-fast">OpenAI GPT-5 Nano 👁️ (950💬)</option>
                             <option value="openai">OpenAI GPT-5 Mini 👁️ (700💬)</option>
-                            <option value="grok">xAI Grok 4 Fast 💎 (550💬)</option>
-                            <option value="perplexity-fast">Perplexity Sonar 🔍 (450💬)</option>
-                            <option value="minimax">MiniMax M2.1 🧠 (450💬)</option>
-                            <option value="deepseek">DeepSeek V3.2 🧠 (250💬)</option>
-                            <option value="perplexity-reasoning">Perplexity Sonar Reasoning 🧠🔍 (200💬)</option>
-                            <option value="openai-audio">OpenAI GPT-4o Mini Audio 👁️🎙️🔊 (150💬)</option>
-                            <option value="chickytutor">ChickyTutor (100💬)</option>
-                            <option value="midijourney">MIDIjourney (100💬)</option>
-                            <option value="glm">Z.ai GLM-5 🧠 (100💬)</option>
-                            <option value="claude-fast">Anthropic Claude Haiku 4.5 👁️ (95💬)</option>
-                            <option value="openai-large">OpenAI GPT-5.2 👁️🧠 (90💬)</option>
-                            <option value="gemini">Google Gemini 3 Flash 💎 👁️🎙️🔍💻 (85💬)</option>
-                            <option value="kimi">Moonshot Kimi K2.5 👁️🧠 (85💬)</option>
-                            <option value="gemini-legacy">Google Gemini 2.5 Pro 💎 👁️🎙️🧠🔍💻 (30💬)</option>
-                            <option value="claude">Anthropic Claude Sonnet 4.5 💎 👁️ (25💬)</option>
-                            <option value="gemini-large">Google Gemini 3 Pro 💎 👁️🎙️🧠🔍 (25💬)</option>
-                            <option value="claude-large">Anthropic Claude Opus 4.6 💎 👁️ (10💬)</option>
-                            <option value="claude-legacy">Anthropic Claude Opus 4.5 💎 👁️ (7💬)</option>
                         </select>
                     </div>
                     <div>
@@ -381,8 +378,43 @@
                     </div>
                 </div>
             </div>
+
             <div id="section-storyboard" class="tool-section w-full h-full flex gap-6 fade-in hidden">
-    </div>
+            </div>
+
+            <div id="section-model3d" class="tool-section w-full h-full flex gap-6 fade-in hidden">
+                <div class="w-80 shrink-0 flex flex-col gap-6 bg-panel border border-white/5 rounded-2xl p-6 overflow-y-auto custom-scrollbar shadow-xl">
+                    <div>
+                        <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-2 block" data-i18n="model3d_prompt_label">Prompt del Modelo 3D</label>
+                        <textarea id="model3d-prompt" rows="5" class="w-full bg-black/50 border border-white/5 text-white text-sm rounded-lg focus:ring-1 focus:ring-purple-500 block p-3 outline-none resize-none placeholder-gray-600 transition-colors" data-i18n-placeholder="model3d_prompt_placeholder" placeholder="Describe el objeto 3D (ej. Una espada láser futurista oxidada...)"></textarea>
+                    </div>
+                    
+                    <div class="mt-auto pt-4 border-t border-white/5">
+                        <button id="btn-generate-model3d" class="w-full bg-emerald-500 text-white font-semibold py-3.5 rounded-xl hover:bg-emerald-600 active:scale-[0.98] transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] flex items-center justify-center gap-2 text-xs tracking-widest uppercase">
+                            <i class="fa-solid fa-cube"></i> <span data-i18n="model3d_btn_generate">Generar Modelo 3D</span>
+                        </button>
+                    </div>
+
+                    <div id="model3d-export-options" class="pt-4 border-t border-white/5 hidden flex-col gap-3">
+                         <button onclick="exportGLB()" class="w-full bg-purple-600/20 text-purple-400 border border-purple-500/50 hover:bg-purple-600/40 font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2 text-xs tracking-widest uppercase shadow-lg">
+                            <i class="fa-solid fa-download"></i> Exportar GLB (Recomendado)
+                        </button>
+                        <button onclick="exportOBJ()" class="w-full bg-white/10 text-gray-300 border border-white/20 hover:bg-white/20 font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2 text-xs tracking-widest uppercase">
+                            <i class="fa-solid fa-download"></i> Exportar OBJ
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="flex-1 bg-panel border border-white/5 rounded-2xl flex flex-col relative overflow-hidden shadow-xl">
+                    <div id="model3d-placeholder" class="w-full h-full flex items-center justify-center text-gray-500 flex-col gap-4 absolute inset-0 z-10 transition-opacity bg-panel">
+                        <i class="fa-solid fa-cubes text-5xl opacity-20"></i>
+                        <p class="text-sm font-light tracking-wide" data-i18n="model3d_empty_text">Tu modelo 3D aparecerá aquí.</p>
+                        <p id="model3d-status" class="text-xs text-emerald-400 mt-2 font-mono tracking-widest uppercase"></p>
+                    </div>
+                    <div id="model3d-viewer" class="w-full h-full cursor-move" style="background: radial-gradient(circle at center, #1a1a24 0%, #050505 100%);"></div>
+                </div>
+            </div>
+
             <canvas id="hidden-canvas" style="display: none;"></canvas>
         </div>
     </main>
@@ -399,35 +431,28 @@
             <button onclick="toggleLoginModal()" class="absolute top-5 right-5 text-gray-500 hover:text-white transition-colors">
                 <i class="fa-solid fa-xmark text-xl"></i>
             </button>
-            
             <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-purple-600 to-blue-500 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(168,85,247,0.4)]">
                 <i class="fa-solid fa-user-shield text-2xl text-white"></i>
             </div>
-            
             <h2 class="text-2xl font-semibold mb-2 text-white text-center" data-i18n="login_title">Conectar a Pollination</h2>
             <p class="text-sm text-gray-400 text-center mb-8" data-i18n="login_subtitle">Introduce tu token para usar la IA.</p>
-            
             <button onclick="loginWithPollinations()" class="w-full bg-[#1f1f23] border border-white/10 hover:bg-white/10 text-white font-medium py-3.5 rounded-xl transition-all flex items-center justify-center gap-3 mb-6 shadow-lg">
                 <img src="https://pollinations.ai/favicon.ico" alt="Pollinations Logo" class="w-5 h-5 rounded-sm">
                 <span>Continuar con Pollinations</span>
                 <i class="fa-solid fa-arrow-up-right-from-square text-xs text-gray-500 ml-1"></i>
             </button>
-
             <div class="w-full flex items-center gap-3 mb-6">
                 <div class="h-px bg-white/10 flex-1"></div>
                 <span class="text-[10px] text-gray-500 uppercase tracking-widest font-medium">O pega tu token</span>
                 <div class="h-px bg-white/10 flex-1"></div>
             </div>
-
             <div class="w-full relative mb-5">
                 <i class="fa-solid fa-key absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm"></i>
                 <input type="password" id="pollination-token-input" data-i18n-placeholder="login_placeholder" placeholder="Pega tu API Key..." class="w-full bg-black/50 border border-white/10 text-white text-sm rounded-xl focus:ring-1 focus:ring-purple-500 focus:border-transparent block pl-11 p-3.5 transition-all outline-none font-mono tracking-wider">
             </div>
-            
             <button id="btn-login" class="w-full bg-white text-black font-semibold py-3.5 rounded-xl hover:bg-gray-200 transition-colors shadow-lg active:scale-[0.98] text-sm uppercase tracking-widest" data-i18n="login_button">
                 Iniciar Sesión
             </button>
-            
             <p class="mt-6 text-[11px] text-gray-500 text-center leading-relaxed" data-i18n="login_footer">La clave se guarda localmente de forma segura en tu navegador.</p>
         </div>
     </div>
@@ -443,6 +468,9 @@
     <script src="storyboard_adv.ui.js"></script>
     <script src="storyboard_adv.main.js"></script>
     <script src="storyboard_adv.export.js"></script>
+
+    <script type="module" src="model3d.js"></script>
+
     <script>
         // --- INTERCEPTOR DE REDIRECCIÓN PARA LOGIN AUTOMÁTICO ---
         (function checkAuthRedirect() {
@@ -466,7 +494,6 @@
             window.open(`https://enter.pollinations.ai/authorize?redirect_url=${redirectUrl}`, 'PollinationsAuth', `width=500,height=700,left=${(screen.width/2-250)},top=${(screen.height/2-350)}`);
         }
 
-        // Ahora en lugar de mostrar un div oculto, devolvemos al usuario a la página de inicio
         function showLanding() {
             window.location.href = 'index.html';
         }
@@ -499,6 +526,11 @@
                 if (targetSection) {
                     targetSection.classList.remove('hidden');
                 }
+
+                // Disparar evento de resize específico para que el canvas 3D se ajuste si se entra a la pestaña Model 3D
+                if (toolName === 'model3d') {
+                    setTimeout(() => window.dispatchEvent(new Event('resize')), 10);
+                }
             });
         });
 
@@ -515,7 +547,6 @@
             
             if (typeof updateDOM === 'function') updateDOM(); 
             
-            // Cerrar el modal si está abierto
             const modal = document.getElementById('login-modal');
             if (modal && !modal.classList.contains('hidden')) {
                 toggleLoginModal();
@@ -536,7 +567,6 @@
         });
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Revisar si venimos de un enlace desde index.html con el parámetro ?tool=...
             const params = new URLSearchParams(window.location.search);
             const toolFromUrl = params.get('tool');
             if (toolFromUrl) {
@@ -544,7 +574,6 @@
                 if (btnTool) btnTool.click();
             }
 
-            // Comprobar la conexión existente de la API
             const savedKey = localStorage.getItem('pollinations_api_key');
             if(savedKey) {
                 document.getElementById('pollination-token-input').value = savedKey;
