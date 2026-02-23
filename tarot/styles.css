@@ -1,0 +1,299 @@
+/* --- ESTILOS CSS MINIMALISTAS --- */
+:root {
+    --bg-color: #000000;
+    --text-color: #ffffff;
+    --muted-text: #888888;
+    --border-color: #222222;
+    --card-width: 260px;
+    --card-height: 420px;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    font-weight: 300;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* HEADER & LOGIN */
+header {
+    width: 100%;
+    padding: 20px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-color);
+    box-sizing: border-box;
+    position: fixed;
+    top: 0;
+    z-index: 100;
+}
+
+.header-title h1 {
+    color: var(--text-color);
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 400;
+    letter-spacing: 4px;
+}
+
+.auth-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted-text);
+    padding: 0;
+    cursor: pointer;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: color 0.3s;
+    font-family: inherit;
+}
+
+.auth-btn:hover { color: var(--text-color); }
+.auth-on { color: var(--text-color); }
+.auth-off { color: var(--muted-text); }
+
+/* ZONA DE JUEGO */
+.main-container {
+    margin-top: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 1200px;
+    padding-bottom: 80px;
+}
+
+.controls { margin: 20px 0 40px 0; }
+
+.btn-play {
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    padding: 10px 0;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    font-weight: 300;
+    font-family: inherit;
+    border-bottom: 1px solid transparent;
+}
+
+.btn-play:hover {
+    opacity: 0.7;
+    border-bottom: 1px solid var(--text-color);
+}
+
+.waiting-text {
+    color: var(--muted-text);
+    margin-top: 40px;
+    font-size: 1rem;
+    letter-spacing: 1px;
+}
+
+#game-area {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 40px;
+    padding: 20px;
+    width: 100%;
+}
+
+/* CARTA (3D FLIP) */
+.card-container {
+    perspective: 1200px;
+    width: var(--card-width);
+    height: var(--card-height);
+    cursor: pointer;
+    opacity: 0;
+    animation: fadeIn 0.8s forwards;
+}
+
+@keyframes fadeIn { to { opacity: 1; } }
+
+.card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+}
+
+.card-container.flipped .card-inner { transform: rotateY(180deg); }
+.card-container.flipped { cursor: default; }
+
+.card-front, .card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 20px;
+    box-sizing: border-box;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+}
+
+/* DORSO */
+.card-front {
+    justify-content: center;
+    color: var(--muted-text);
+}
+
+.pattern {
+    font-size: 2rem;
+    opacity: 0.2;
+    margin-bottom: 20px;
+}
+
+.card-front small {
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+/* CARA */
+.card-back {
+    transform: rotateY(180deg);
+    justify-content: flex-start;
+}
+
+.card-position {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--muted-text);
+    margin-bottom: 20px;
+}
+
+.card-title {
+    font-weight: 400;
+    font-size: 1.2rem;
+    color: var(--text-color);
+    margin-bottom: 30px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.card-illustration {
+    width: 100%;
+    height: 160px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 30px;
+    color: var(--text-color);
+}
+
+.card-illustration svg {
+    width: 100px;
+    height: 100px;
+}
+
+.card-meaning {
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--muted-text);
+    overflow-y: auto;
+    text-align: center;
+    width: 100%;
+    padding: 0 10px;
+    font-weight: 300;
+}
+
+.card-meaning::-webkit-scrollbar { width: 2px; }
+.card-meaning::-webkit-scrollbar-track { background: transparent; }
+.card-meaning::-webkit-scrollbar-thumb { background: var(--border-color); }
+
+/* ZONA RESULTADO IA */
+#ai-result-container {
+    width: 100%;
+    max-width: 800px;
+    background: transparent;
+    border-top: 1px solid var(--border-color);
+    padding: 40px 20px;
+    margin-top: 60px;
+    display: none;
+    animation: fadeIn 1s forwards;
+    box-sizing: border-box;
+}
+
+.ai-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 40px;
+    color: var(--text-color);
+    font-size: 1rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
+.ai-content {
+    color: #cccccc;
+    line-height: 1.8;
+    font-size: 1rem;
+    font-weight: 300;
+}
+
+.ai-content strong { color: var(--text-color); font-weight: 600; }
+.ai-content em { color: var(--muted-text); font-style: normal; }
+.ai-content h3 { color: var(--text-color); margin-top: 30px; font-size: 1.1rem; font-weight: 400; letter-spacing: 1px; }
+.ai-content p { margin-bottom: 20px; }
+
+/* Loader minimalista */
+.loader {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--border-color);
+    border-top-color: var(--text-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* RESPONSIVE MÓVIL */
+@media (max-width: 850px) {
+    #game-area {
+        flex-direction: column;
+        align-items: center;
+        gap: 30px;
+    }
+    
+    .card-container {
+        width: 85vw;
+        max-width: 320px;
+        height: 400px;
+    }
+}
+
+@media (max-width: 480px) {
+    header { padding: 20px; }
+    .header-title h1 { font-size: 1rem; }
+    .auth-btn { font-size: 0.7rem; }
+    .btn-play { font-size: 0.9rem; }
+    
+    .card-container { height: 380px; }
+    .card-illustration { height: 120px; margin-bottom: 20px; }
+    .card-illustration svg { width: 80px; height: 80px; }
+    .card-title { font-size: 1.1rem; margin-bottom: 20px; }
+    
+    #ai-result-container { padding: 30px 15px; }
+    .ai-content { font-size: 0.95rem; }
+}

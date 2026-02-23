@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarot</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+    <header>
+        <div class="header-title">
+            <h1>TAROT</h1>
+        </div>
+        <button id="auth-btn" onclick="ai.login()" class="auth-btn auth-off">
+            CONECTAR AI
+        </button>
+    </header>
+
+    <div class="main-container">
+        
+        <div class="controls">
+            <button class="btn-play" onclick="game.startSpread()">Barajar y Tirar</button>
+        </div>
+
+        <div id="game-area">
+            <p class="waiting-text">Tu destino espera.</p>
+        </div>
+
+        <div id="ai-result-container">
+            <div class="ai-header">
+                <span id="ai-loader" class="loader" style="display:none;"></span>
+                <span id="ai-status-text">Interpretación</span>
+            </div>
+            <div id="ai-content" class="ai-content"></div>
+        </div>
+
+    </div>
+
+    <script src="svgs.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
