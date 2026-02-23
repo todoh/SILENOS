@@ -79,6 +79,11 @@
                 <i class="fa-solid fa-message"></i>
                 <span data-i18n="tool_chat">Chat</span>
             </button>
+
+            <button class="tool-btn group" data-tool="storyboard">
+    <i class="fa-solid fa-layer-group text-purple-400"></i>
+    <span data-i18n="tool_storyboard">Storyboard</span>
+</button>
         </div>
     </nav>
 
@@ -375,7 +380,8 @@
                     </div>
                 </div>
             </div>
-            
+            <div id="section-storyboard" class="tool-section w-full h-full flex gap-6 fade-in hidden">
+    </div>
             <canvas id="hidden-canvas" style="display: none;"></canvas>
         </div>
     </main>
@@ -431,7 +437,11 @@
     <script src="music.js"></script> 
     <script src="voice.js"></script> 
     <script src="chat.js"></script> 
-    
+    <script src="storyboard_adv.ai.js"></script>
+    <script src="storyboard_adv.renderer.js"></script>
+    <script src="storyboard_adv.ui.js"></script>
+    <script src="storyboard_adv.main.js"></script>
+    <script src="storyboard_adv.export.js"></script>
     <script>
         // --- INTERCEPTOR DE REDIRECCIÓN PARA LOGIN AUTOMÁTICO ---
         (function checkAuthRedirect() {
