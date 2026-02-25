@@ -74,7 +74,7 @@ export function initModel3DViewer() {
     
     // --- CORRECCIÓN BUG ABSURDO 3: Trackpads hiper-sensibles ---
     // Aplicamos tu propio comentario: drásticamente de 1.0 a 0.1
-    controls.zoomSpeed = 0.1;     
+    controls.zoomSpeed = 0.5;     
     controls.rotateSpeed = 0.6;     
     controls.panSpeed = 0.4;        
     
