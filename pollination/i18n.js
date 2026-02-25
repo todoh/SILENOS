@@ -73,7 +73,12 @@ const translations = {
         "model3d_empty_text": "Tu modelo 3D generado aparecerá aquí.",
         "model3d_status_generating": "Diseñando plano 3D (Cerebro IA)...",
         "model3d_status_textures": "Generando texturas 4K procedimentales...",
-        "model3d_status_assembling": "Ensamblando geometría espacial..."
+        "model3d_status_assembling": "Ensamblant geometria espacial...",
+        "ctx_label": "Contextos Guardados",
+        "ctx_name_placeholder": "Nombre del Contexto...",
+        "ctx_btn_new": "Nuevo",
+        "ctx_btn_save": "Guardar",
+        "ctx_btn_delete": "Borrar"
     },
     en: {
         "tool_video": "Video",
@@ -147,7 +152,12 @@ const translations = {
         "model3d_empty_text": "Your generated 3D model will appear here.",
         "model3d_status_generating": "Designing 3D Blueprint (AI Brain)...",
         "model3d_status_textures": "Generating procedural 4K textures...",
-        "model3d_status_assembling": "Assembling spatial geometry..."
+        "model3d_status_assembling": "Assembling spatial geometry...",
+        "ctx_label": "Saved Contexts",
+        "ctx_name_placeholder": "Context Name...",
+        "ctx_btn_new": "New",
+        "ctx_btn_save": "Save",
+        "ctx_btn_delete": "Delete"
     },
     ca: {
         "tool_video": "Vídeo",
@@ -221,7 +231,12 @@ const translations = {
         "model3d_empty_text": "El teu model 3D generat apareixerà aquí.",
         "model3d_status_generating": "Dissenyant plànol 3D (Cervell IA)...",
         "model3d_status_textures": "Generant textures 4K procedurals...",
-        "model3d_status_assembling": "Ensamblant geometria espacial..."
+        "model3d_status_assembling": "Ensamblant geometria espacial...",
+        "ctx_label": "Contextos Guardats",
+        "ctx_name_placeholder": "Nom del Context...",
+        "ctx_btn_new": "Nou",
+        "ctx_btn_save": "Desar",
+        "ctx_btn_delete": "Esborrar"
     },
     fr: {
         "tool_video": "Vidéo",
@@ -295,7 +310,12 @@ const translations = {
         "model3d_empty_text": "Votre modèle 3D généré apparaîtra ici.",
         "model3d_status_generating": "Conception de plan 3D (Cerveau IA)...",
         "model3d_status_textures": "Génération de textures 4K procédurales...",
-        "model3d_status_assembling": "Assemblage de la géométrie spatiale..."
+        "model3d_status_assembling": "Assemblage de la géométrie spatiale...",
+        "ctx_label": "Contextes Sauvegardés",
+        "ctx_name_placeholder": "Nom du Contexte...",
+        "ctx_btn_new": "Nouveau",
+        "ctx_btn_save": "Sauvegarder",
+        "ctx_btn_delete": "Supprimer"
     }
 };
 

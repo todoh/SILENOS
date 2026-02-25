@@ -346,19 +346,58 @@
                    <div>
                         <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-2 block" data-i18n="chat_model_label">Chat Model</label>
                         <select id="chat-model" class="w-full bg-black/50 border border-white/5 text-white text-sm rounded-lg focus:ring-1 focus:ring-purple-500 block p-2.5 outline-none font-mono cursor-pointer appearance-none">
-                            <option value="qwen-safety">Qwen3Guard 8B (111.1K💬)</option>
+                            <option value="qwen-safety">Qwen3Guard 8B (125K💬)</option>
                             <option value="nova-fast">Amazon Nova Micro (22.2K💬)</option>
-                            <option value="mistral">Mistral Small 3.2 24B (4.3K💬)</option>
-                            <option value="gemini-fast">Google Gemini 2.5 Flash Lite 👁️🔍💻 (3.1K💬)</option>
-                            <option value="qwen-coder">Qwen3 Coder 30B (1.2K💬)</option>
-                            <option value="gemini-search">Google Gemini 2.5 Flash Lite Search 👁️🔍💻 (1.6K💬)</option>
-                            <option value="openai-fast">OpenAI GPT-5 Nano 👁️ (950💬)</option>
+                            <option value="mistral">Mistral Small 3.2 24B (4.6K💬)</option>
+                            <option value="gemini-fast">Google Gemini 2.5 Flash Lite 👁️🔍💻 (3K💬)</option>
+                            <option value="gemini-search">Google Gemini 2.5 Flash Lite Search 👁️🔍💻 (1.9K💬)</option>
+                            <option value="qwen-coder">Qwen3 Coder 30B (1.5K💬)</option>
+                            <option value="openai-fast">OpenAI GPT-5 Nano 👁️ (1.1K💬)</option>
                             <option value="openai">OpenAI GPT-5 Mini 👁️ (700💬)</option>
+                            <option value="grok">💎 xAI Grok 4 Fast (550💬)</option>
+                            <option value="perplexity-fast">Perplexity Sonar 🔍 (450💬)</option>
+                            <option value="minimax">MiniMax M2.1 🧠 (450💬)</option>
+                            <option value="deepseek">DeepSeek V3.2 🧠 (250💬)</option>
+                            <option value="chickytutor">ChickyTutor AI Language Tutor (250💬)</option>
+                            <option value="perplexity-reasoning">Perplexity Sonar Reasoning 🧠🔍 (200💬)</option>
+                            <option value="openai-audio">OpenAI GPT-4o Mini Audio 👁️🎙️🔊 (150💬)</option>
+                            <option value="gemini">💎 Google Gemini 3 Flash 👁️🎙️🔍💻 (150💬)</option>
+                            <option value="openai-large">OpenAI GPT-5.2 👁️🧠 (100💬)</option>
+                            <option value="midijourney">MIDIjourney (100💬)</option>
+                            <option value="glm">Z.ai GLM-5 🧠 (100💬)</option>
+                            <option value="claude-fast">Anthropic Claude Haiku 4.5 👁️ (95💬)</option>
+                            <option value="kimi">Moonshot Kimi K2.5 👁️🧠 (80💬)</option>
+                            <option value="gemini-legacy">💎 Google Gemini 2.5 Pro 👁️🎙️🧠🔍💻 (55💬)</option>
+                            <option value="claude">💎 Anthropic Claude Sonnet 4.6 👁️ (40💬)</option>
+                            <option value="gemini-large">💎 Google Gemini 3 Pro 👁️🎙️🧠🔍 (25💬)</option>
+                            <option value="claude-large">💎 Anthropic Claude Opus 4.6 👁️ (10💬)</option>
+                            <option value="claude-legacy">💎 Anthropic Claude Opus 4.5 👁️ (8💬)</option>
+                            <option value="nomnom">NomNom by @Itachi-1824 🧠🔍 (⚠️ ALPHA)</option>
+                            <option value="polly">Polly by @Itachi-1824 👁️🧠🔍💻 (⚠️ ALPHA)</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-2 block" data-i18n="chat_system_label">System Instructions (Context)</label>
-                        <textarea id="chat-system" rows="5" class="w-full bg-black/50 border border-white/5 text-white text-sm rounded-lg focus:ring-1 focus:ring-purple-500 block p-3 outline-none resize-none placeholder-gray-600 transition-colors" data-i18n-placeholder="chat_system_placeholder" placeholder="Define personality, format, role or general instructions..."></textarea>
+
+                    <div class="flex flex-col gap-2 p-3 bg-white/5 border border-white/5 rounded-lg">
+                        <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium block" data-i18n="ctx_label">Saved Contexts</label>
+                        
+                        <div class="flex gap-2">
+                             <select id="chat-context-list" onchange="selectContext(this.value)" class="flex-1 bg-black/50 border border-white/10 text-white text-xs rounded-lg p-2 outline-none font-mono cursor-pointer"></select>
+                             <button onclick="createNewContext()" class="px-3 bg-purple-600/20 text-purple-400 border border-purple-500/50 rounded-lg hover:bg-purple-600/40 text-xs transition-colors" title="New" data-i18n="ctx_btn_new">New</button>
+                        </div>
+                        
+                        <div class="h-px bg-white/5 my-1"></div>
+
+                        <input type="text" id="chat-context-name" class="w-full bg-black/50 border border-white/10 text-white text-xs rounded-lg p-2 outline-none placeholder-gray-600 mb-1" data-i18n-placeholder="ctx_name_placeholder" placeholder="Context Name...">
+                        
+                        <div>
+                            <label class="text-[10px] text-gray-400 uppercase tracking-widest font-medium mb-1 block" data-i18n="chat_system_label">System Instructions (Context)</label>
+                            <textarea id="chat-system" rows="5" class="w-full bg-black/50 border border-white/5 text-white text-sm rounded-lg focus:ring-1 focus:ring-purple-500 block p-3 outline-none resize-none placeholder-gray-600 transition-colors" data-i18n-placeholder="chat_system_placeholder" placeholder="Define personality, format, role or general instructions..."></textarea>
+                        </div>
+
+                        <div class="flex gap-2 mt-2">
+                            <button onclick="saveCurrentContext()" class="flex-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 py-2 rounded-lg text-xs uppercase tracking-wider font-semibold transition-colors" data-i18n="ctx_btn_save">Save</button>
+                            <button onclick="deleteCurrentContext()" class="flex-1 bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 py-2 rounded-lg text-xs uppercase tracking-wider font-semibold transition-colors" data-i18n="ctx_btn_delete">Delete</button>
+                        </div>
                     </div>
                     <div class="mt-auto pt-4 border-t border-white/5">
                         <button onclick="clearChatHistory()" class="w-full bg-red-500/10 text-red-400 border border-red-500/20 font-semibold py-3.5 rounded-xl hover:bg-red-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-xs tracking-widest uppercase">
