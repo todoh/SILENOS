@@ -1,10 +1,14 @@
 // chat.js
 
 let chatHistory = JSON.parse(localStorage.getItem('silenos_chat_history')) || [];
+let savedContexts = JSON.parse(localStorage.getItem('silenos_chat_contexts')) || [];
+let currentContextId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Renderizar historial inicial si existe al cargar
+    // Inicializar chat
     renderChat();
+    // Inicializar contextos
+    loadContexts();
 });
 
 function saveChatHistory() {
@@ -25,6 +29,98 @@ function handleChatKeydown(e) {
         sendChatMessage();
     }
 }
+
+// --- CONTEXT MANAGER LOGIC ---
+
+function loadContexts() {
+    savedContexts = JSON.parse(localStorage.getItem('silenos_chat_contexts')) || [];
+    renderContextList();
+}
+
+function renderContextList() {
+    const list = document.getElementById('chat-context-list');
+    list.innerHTML = '<option value="">-- General (No Saved) --</option>';
+    
+    savedContexts.forEach(ctx => {
+        const option = document.createElement('option');
+        option.value = ctx.id;
+        option.textContent = ctx.name;
+        list.appendChild(option);
+    });
+
+    if (currentContextId) {
+        list.value = currentContextId;
+    }
+}
+
+function selectContext(id) {
+    currentContextId = id;
+    const nameInput = document.getElementById('chat-context-name');
+    const systemInput = document.getElementById('chat-system');
+    
+    if (!id) {
+        // Modo general
+        nameInput.value = "";
+        systemInput.value = ""; 
+        return;
+    }
+
+    const ctx = savedContexts.find(c => c.id == id);
+    if (ctx) {
+        nameInput.value = ctx.name;
+        systemInput.value = ctx.content;
+    }
+}
+
+function createNewContext() {
+    currentContextId = null;
+    document.getElementById('chat-context-list').value = "";
+    document.getElementById('chat-context-name').value = "";
+    document.getElementById('chat-system').value = "";
+    document.getElementById('chat-context-name').focus();
+}
+
+function saveCurrentContext() {
+    const name = document.getElementById('chat-context-name').value.trim();
+    const content = document.getElementById('chat-system').value.trim();
+    
+    if (!name) return alert("Please provide a name for this context.");
+
+    if (currentContextId) {
+        // Actualizar existente
+        const index = savedContexts.findIndex(c => c.id == currentContextId);
+        if (index !== -1) {
+            savedContexts[index].name = name;
+            savedContexts[index].content = content;
+        }
+    } else {
+        // Crear nuevo
+        const newId = Date.now().toString();
+        savedContexts.push({
+            id: newId,
+            name: name,
+            content: content
+        });
+        currentContextId = newId;
+    }
+
+    localStorage.setItem('silenos_chat_contexts', JSON.stringify(savedContexts));
+    renderContextList();
+    alert("Context saved successfully.");
+}
+
+function deleteCurrentContext() {
+    if (!currentContextId) return;
+    
+    if (confirm("Are you sure you want to delete this context preset?")) {
+        savedContexts = savedContexts.filter(c => c.id != currentContextId);
+        localStorage.setItem('silenos_chat_contexts', JSON.stringify(savedContexts));
+        createNewContext(); // Resetea a modo nuevo
+        renderContextList();
+    }
+}
+
+// --- END CONTEXT MANAGER LOGIC ---
 
 async function sendChatMessage() {
     const inputEl = document.getElementById('chat-input');
