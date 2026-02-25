@@ -5,24 +5,42 @@ import { GeometryModifiers } from './model3d_modifiers.js';
 import { setCurrentModelGroup, initModel3DViewer, createFallbackTexture } from './model3d_viewer.js';
 
 // --- GEOMETRÍA PERSONALIZADA: CUÑA (WEDGE) ---
+// CORRECCIÓN TÉCNICA SILENCIOSA: Centramos la geometría en el eje Y (-height/2 a +height/2)
+// Esto hace que se comporte igual que un cubo estándar de Three.js, corrigiendo el techo flotante
+// sin tener que cambiar los prompts de la IA.
 function createWedgeGeometry(width = 1, height = 1, depth = 1) {
     const geometry = new THREE.BufferGeometry();
+    const h2 = height / 2; // Mitad de la altura
+    const w2 = width / 2;
+    const d2 = depth / 2;
+
     const vertices = new Float32Array([
-        -width/2, 0, -depth/2,   width/2, 0, -depth/2,  -width/2, 0,  depth/2,
-         width/2, 0, -depth/2,   width/2, 0,  depth/2,  -width/2, 0,  depth/2,
-        -width/2, 0, -depth/2,  -width/2, height, -depth/2,   width/2, 0, -depth/2,
-         width/2, 0, -depth/2,  -width/2, height, -depth/2,   width/2, height, -depth/2,
-        -width/2, 0, depth/2,    width/2, 0, depth/2,    -width/2, height, -depth/2,
-         width/2, 0, depth/2,    width/2, height, -depth/2,  -width/2, height, -depth/2,
-        -width/2, 0, -depth/2,  -width/2, 0, depth/2,   -width/2, height, -depth/2,
-         width/2, 0, -depth/2,   width/2, height, -depth/2,   width/2, 0, depth/2
+        // Base (Ahora en -h2)
+        -w2, -h2, -d2,   w2, -h2, -d2,  -w2, -h2,  d2,
+         w2, -h2, -d2,   w2, -h2,  d2,  -w2, -h2,  d2,
+        
+        // Cara Frontal (Vertical)
+        -w2, -h2, -d2,  -w2,  h2, -d2,   w2, -h2, -d2,
+         w2, -h2, -d2,  -w2,  h2, -d2,   w2,  h2, -d2,
+        
+        // Rampa (La hipotenusa)
+        -w2, -h2, d2,    w2, -h2, d2,    -w2,  h2, -d2,
+         w2, -h2, d2,    w2,  h2, -d2,  -w2,  h2, -d2,
+        
+        // Lado Izquierdo
+        -w2, -h2, -d2,  -w2, -h2, d2,   -w2,  h2, -d2,
+        
+        // Lado Derecho
+         w2, -h2, -d2,   w2,  h2, -d2,   w2, -h2, d2
     ]);
+
     const uvs = new Float32Array([
         0, 1,  1, 1,  0, 0,   1, 1,  1, 0,  0, 0,
         1, 0,  1, 1,  0, 0,   0, 0,  1, 1,  0, 1,
         0, 0,  1, 0,  0, 1,   1, 0,  1, 1,  0, 1,
         0, 0,  1, 0,  0, 1,   1, 0,  1, 1,  0, 0
     ]);
+
     geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
     geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
     geometry.computeVertexNormals();
@@ -82,7 +100,7 @@ window.generateModel3D = async function() {
 
     try {
         // ====================================================================
-        // FASE 1: EL ARQUITECTO (Instrucciones Anti-Caos Espacial)
+        // FASE 1: EL ARQUITECTO (PROMPT RESTAURADO AL ORIGINAL)
         // ====================================================================
         const sysPromptArchitect = `Eres un Arquitecto de Ensamblaje 3D (Lego Builder). Tu objetivo es construir objetos tridimensionales robustos, lógicos y proporcionados usando primitivas.
 RESPONDE EXCLUSIVAMENTE CON UN JSON VÁLIDO. NO USES MARKDOWN.
