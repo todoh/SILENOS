@@ -4,7 +4,24 @@
 document.addEventListener('DOMContentLoaded', () => {
     initApp();
 });
+// Función para inyectar el favicon en todas las páginas que carguen este script
+(function() {
+    function setFavicon(url) {
+        let link = document.querySelector("link[rel~='icon']");
+        if (!link) {
+            link = document.createElement('link');
+            link.rel = 'icon';
+            document.head.appendChild(link);
+        }
+        link.href = url;
+        link.type = 'image/x-icon';
+    }
 
+    // Cambia 'favicon.ico' por la ruta correcta de tu icono
+    setFavicon('favicon.ico');
+    
+    console.log("Favicon inyectado dinámicamente.");
+})();
 function initApp() {
     // 1. Renderizado Hub
     renderHero();
@@ -285,4 +302,5 @@ function initMarquee() {
         requestAnimationFrame(animate);
     }
     animate();
+
 }
