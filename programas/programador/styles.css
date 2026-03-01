@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap');
+
+:root {
+    --bg-app: #ffffff;
+    --text-main: #1a1a1a;
+    --border-node: #e5e5e5;
+    --node-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    color: var(--text-main);
+    background: var(--bg-app);
+    overflow: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 2px; }
+
+/* Botones */
+.btn-primary {
+    background: #1a1a1a; color: white;
+    font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+    border: 1px solid transparent; transition: all 0.2s;
+}
+.btn-primary:hover { background: #333; }
+.btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+
+.btn-nordic {
+    background: white; border: 1px solid #e5e5e5; color: #1a1a1a;
+    font-size: 10px; font-weight: 500; text-transform: uppercase;
+    padding: 6px 12px; transition: all 0.2s;
+}
+.btn-nordic:hover { border-color: #1a1a1a; }
+
+/* Nodos */
+.node-draggable { cursor: grab; padding: 8px; border: 1px dashed transparent; }
+.node-draggable:hover { border-color: #e5e5e5; background: #fafafa; }
+
+.koreh-node {
+    position: absolute;
+    width: 240px;
+    background: white;
+    border: 1px solid var(--border-node);
+    border-radius: 4px;
+    box-shadow: var(--node-shadow);
+    display: flex; flex-direction: column;
+    user-select: none;
+    pointer-events: auto; /* IMPORTANTE: Nodos interactivos dentro de capa ignorada */
+}
+.koreh-node.selected { border-color: #1a1a1a; z-index: 50; }
+
+.node-header {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+    display: flex; justify-content: space-between; align-items: center;
+    background: #fafafa; cursor: grab;
+    border-radius: 4px 4px 0 0;
+}
+.node-header:active { cursor: grabbing; }
+
+.node-body { padding: 12px; font-size: 11px; }
+
+/* Puertos */
+.port {
+    width: 10px; height: 10px; background: white; border: 2px solid #999;
+    border-radius: 50%; position: absolute;
+    cursor: crosshair; transition: all 0.2s;
+    z-index: 20;
+}
+.port:hover { border-color: #1a1a1a; transform: scale(1.2); background: #1a1a1a; }
+.port-in { top: 50%; left: -6px; transform: translateY(-50%); }
+.port-out { top: 50%; right: -6px; transform: translateY(-50%); }
+
+/* Inputs dentro de Nodos */
+.node-input {
+    width: 100%; background: #f9f9f9; border: 1px solid #eee;
+    padding: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    outline: none; resize: none;
+}
+.node-input:focus { border-color: #1a1a1a; background: white; }
+
+/* SVG Cables */
+path.connection-line {
+    fill: none; stroke: #b0b0b0; stroke-width: 2px;
+    transition: stroke 0.2s; pointer-events: stroke; /* Interactuar con el trazo */
+}
+path.connection-line:hover { stroke: #ef4444; stroke-width: 4px; cursor: pointer; }
+
+/* Tipos de Nodo específicos */
+.koreh-node[data-type="ai-text"] { border-top: 3px solid #000; }
+.koreh-node[data-type="ai-image"] { border-top: 3px solid #9ca3af; }
+.koreh-node[data-type="folder"] { border-top: 3px solid #fbbf24; }
+.koreh-node[data-type="input"] { border-top: 3px solid #e5e5e5; }
+.koreh-node[data-type="viewer"] { border-top: 3px solid #a855f7; } /* MORADO */
+.koreh-node[data-type="ai-gemini"] { border-top: 3px solid #4285F4; }
