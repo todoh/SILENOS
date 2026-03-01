@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studio Datos v4.0.0 - Omega Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div id="loading-bar" class="loading-bar" style="width: 0%"></div>
+
+    <div id="msg-modal" class="fixed inset-0 z-[120] flex items-center justify-center bg-black/20 hidden backdrop-blur-sm transition-opacity">
+        <div class="bg-white border border-gray-200 shadow-2xl p-6 max-w-sm w-full flex flex-col gap-4">
+            <h3 id="msg-title" class="label-text text-black text-center tracking-widest mb-1">NOTIFICACIÓN</h3>
+            <div id="msg-content" class="text-sm font-light text-center leading-relaxed text-gray-700"></div>
+            <div class="flex gap-2 justify-center mt-2 pt-4 border-t border-gray-50" id="msg-actions"></div>
+        </div>
+    </div>
+
+    <div id="tramas-expand-modal" class="fixed inset-0 z-[130] flex items-center justify-center bg-black/40 hidden backdrop-blur-sm transition-opacity">
+        <div oncontextmenu="return false;" class="bg-white border border-gray-200 shadow-2xl p-8 max-w-md w-full flex flex-col gap-4">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="label-text text-black tracking-widest"><i class="fa-solid fa-code-branch text-indigo-500 mr-2"></i>EXPANDIR EVENTO CON IA</h3>
+                <button onclick="if(window.TramasUI) TramasUI.closeExpandModal()" class="text-gray-300 hover:text-red-500"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="bg-indigo-50/50 p-3 rounded text-xs text-indigo-900 border border-indigo-100 mb-2">
+                <span class="font-bold">Nodo Origen:</span> <span id="expand-node-title" class="italic">...</span>
+            </div>
+
+            <div>
+                <span class="label-text">¿Hacia dónde va la trama ahora? (Premisa / Dirección)</span>
+                <textarea id="expand-direction" rows="3" class="config-input resize-none" placeholder="Ej. El personaje decide traicionar a su gremio y huir por las alcantarillas..."></textarea>
+            </div>
+
+            <div>
+                <span class="label-text">Nuevos eventos a generar en esta rama</span>
+                <input type="number" id="expand-count" class="config-input" value="2" min="1" max="5">
+            </div>
+
+            <div class="flex gap-2 justify-end mt-4 pt-4 border-t border-gray-50">
+                <button onclick="if(window.TramasUI) TramasUI.closeExpandModal()" class="btn-nordic text-gray-400 border-none hover:bg-gray-50">Cancelar</button>
+                <button onclick="if(window.TramasUI) TramasUI.confirmExpandNode()" class="btn-primary w-auto px-6 bg-indigo-600 hover:bg-indigo-700"><i class="fa-solid fa-wand-magic-sparkles"></i> EXPANDIR</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="folder-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-white/95 p-8 hidden transition-opacity">
+        <div class="bg-white w-full max-w-lg flex flex-col max-h-[70vh] border border-gray-200 shadow-xl">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h2 class="text-xs font-medium tracking-[0.2em] text-gray-400 uppercase">Seleccionar Origen</h2>
+                <button onclick="ui.toggleFolderModal()" class="text-gray-300 hover:text-black transition-colors text-xl font-light">&times;</button>
+            </div>
+            <div id="folder-list" class="p-0 overflow-y-auto flex-1 h-64 bg-white">
+                <div class="p-12 text-center text-gray-300 font-light text-sm italic">Escaneando sistema...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="name-modal" class="fixed inset-0 z-[110] flex items-center justify-center bg-white/95 p-8 hidden transition-opacity">
+        <div class="bg-white w-full max-w-sm border border-gray-200 shadow-xl p-6 flex flex-col gap-4">
+            <div class="flex justify-between items-center">
+                <h2 class="label-text text-black tracking-widest">CREAR NUEVO DATO</h2>
+                <button onclick="ui.toggleNameModal()" class="text-gray-300 hover:text-black">&times;</button>
+            </div>
+            <input type="text" id="new-item-name" class="config-input text-lg font-medium text-center" placeholder="Nombre del archivo..." onkeydown="if(event.key==='Enter') app.confirmCreate()">
+            <div class="flex gap-2 justify-end mt-2 pt-4 border-t border-gray-50">
+                <button onclick="ui.toggleNameModal()" class="btn-nordic text-gray-400 border-none hover:bg-gray-50">Cancelar</button>
+                <button onclick="app.confirmCreate()" class="btn-primary w-auto px-6">CREAR</button>
+            </div>
+        </div>
+    </div>
+
+    <header class="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-6 z-10 shrink-0 relative">
+        <div class="flex items-center gap-4">
+            <button onclick="ui.toggleGenerator()" id="btn-toggle-gen" class="w-8 h-8 flex items-center justify-center text-black border border-gray-200 hover:bg-black hover:text-white transition-colors">
+                <i class="fa-solid fa-bars-staggered text-sm"></i>
+            </button>
+            <div class="flex flex-col">
+                <h1 class="font-medium text-black text-xs tracking-[0.15em] leading-tight">STUDIO DATOS<span class="text-gray-400 ml-1">v4.0</span></h1>
+            </div>
+            
+            <div class="flex items-center gap-6 ml-8 h-full pt-1">
+                <button id="btn-tab-datos" onclick="ui.switchTab('datos')" class="text-xs font-bold tracking-widest uppercase pb-1 border-b-2 border-black transition-colors">Datos</button>
+                <button id="btn-tab-tramas" onclick="ui.switchTab('tramas')" class="text-xs font-bold tracking-widest uppercase pb-1 border-b-2 border-transparent text-gray-400 hover:text-black transition-colors">Tramas</button>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <div class="flex flex-col items-end gap-1 mr-4">
+                <span class="label-text">API Status</span>
+                <div class="flex items-center gap-2">
+                    <span id="status-text" class="text-[10px] font-medium text-gray-300 uppercase tracking-wider">OFFLINE</span>
+                    <span id="status-indicator" class="w-1.5 h-1.5 rounded-full bg-gray-200"></span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 border-r border-gray-100 pr-6 mr-2 h-8">
+                <span class="label-text mb-0 cursor-pointer text-[9px]" onclick="document.getElementById('chroma-toggle').click()">SIN FONDO</span>
+                <div class="relative">
+                    <input type="checkbox" id="chroma-toggle" class="toggle-checkbox hidden">
+                    <label for="chroma-toggle" class="toggle-label block w-7 h-4 bg-gray-200 rounded-full cursor-pointer relative transition-colors">
+                        <div class="toggle-circle absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform"></div>
+                    </label>
+                </div>
+            </div>
+
+            <button onclick="app.illustrateAll()" id="btn-illustrate-all" class="btn-nordic mr-2" title="Generar imágenes para elementos sin imagen">
+                <i class="fa-solid fa-palette text-[10px]"></i> Ilustrar Todo
+            </button>
+
+            <button onclick="app.createNewItem()" class="btn-nordic">
+                <i class="fa-solid fa-plus text-[10px]"></i> Nuevo
+            </button>
+            
+            <button onclick="ui.toggleFolderModal()" id="folder-label-btn" class="btn-nordic min-w-[140px] justify-between">
+                <span>Seleccionar Carpeta</span>
+                <i class="fa-solid fa-folder-open text-gray-400"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden relative bg-gray-50/30">
+        
+        <div id="tab-datos" class="w-full h-full flex relative overflow-hidden transition-opacity duration-300">
+            <aside id="generator-sidebar" class="sidebar sidebar-left">
+                <div class="h-16 border-b border-gray-100 flex items-center justify-between px-6 bg-white shrink-0">
+                    <span class="label-text text-black tracking-widest">MOTOR DE GÉNESIS</span>
+                    <i class="fa-solid fa-bolt text-xs text-gray-300"></i>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                    <div class="space-y-4">
+                        <div>
+                            <span class="label-text text-blue-500">Enfoque de Realidad</span>
+                            <select id="gen-mode" class="config-input text-blue-900 font-medium bg-blue-50/50">
+                                <option value="fiction">Fantasía / Sci-Fi (Creativo)</option>
+                                <option value="real">Realidad / Histórico (Estricto)</option>
+                                <option value="search">Deep Research (Perplexity + Reasoning)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <span class="label-text">Premisa / Semilla</span>
+                            <textarea id="gen-premise" rows="3" class="config-input resize-none leading-relaxed" placeholder="Ej. Una facción de magos... O Personajes de la Revolución Francesa..."></textarea>
+                        </div>
+
+                        <div>
+                            <span class="label-text">Estilo Visual Global</span>
+                            <textarea id="gen-visual" rows="2" class="config-input resize-none" placeholder="Ej. Cyberpunk, óleo clásico, fotografía realista..."></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <span class="label-text">Categoría</span>
+                                <select id="gen-type" class="config-input">
+                                <optgroup label="Seres y Biología">
+                                    <option value="Dato">Dato</option>
+                                    <option value="Personaje">Personaje / NPC</option>
+                                    <option value="Criatura">Criatura / Fauna</option>
+                                    <option value="Flora">Flora / Vegetación</option>
+                                    <option value="Raza">Raza / Especie</option>
+                                </optgroup>
+                                <optgroup label="Geografía y Espacio">
+                                    <option value="Lugar">Lugar / Región</option>
+                                    <option value="Asentamiento">Ciudad / Pueblo</option>
+                                    <option value="Estructura">Edificio / Monumento</option>
+                                    <option value="Cosmología">Planeta / Astro</option>
+                                </optgroup>
+                                <optgroup label="Objetos y Bienes">
+                                    <option value="Objeto">Objeto / Artefacto</option>
+                                    <option value="Arma">Arma / Equipo</option>
+                                    <option value="Vehículo">Vehículo / Transporte</option>
+                                    <option value="Recurso">Material / Recurso</option>
+                                    <option value="Comida">Alimento / Poción</option>
+                                </optgroup>
+                                <optgroup label="Sociedad y Cultura">
+                                    <option value="Facción">Facción / Organización</option>
+                                    <option value="Religión">Religión / Mitología</option>
+                                    <option value="Idioma">Idioma / Dialecto</option>
+                                    <option value="Profesión">Profesión / Título</option>
+                                </optgroup>
+                                <optgroup label="Historia y Metafísica">
+                                    <option value="Evento">Evento Histórico</option>
+                                    <option value="Hechizo">Hechizo / Habilidad</option>
+                                    <option value="Ley">Ley / Documento</option>
+                                    <option value="Misión">Misión / Quest</option>
+                                    <option value="Concepto">Concepto / Lore</option>
+                                </optgroup>
+                            </select>
+                            </div>
+                            <div>
+                                <span class="label-text">Cantidad</span>
+                                <input type="number" id="gen-count" class="config-input" value="3" min="1" max="10">
+                            </div>
+                        </div>
+
+                        <button onclick="app.generateBatch()" id="btn-gen-batch" class="btn-primary mt-4">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> GENERAR LOTE
+                        </button>
+                    </div>
+
+                    <div class="pt-6 border-t border-gray-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="label-text">Registro de Sistema</span>
+                            <button onclick="document.getElementById('gen-logs').innerHTML=''" class="text-[9px] text-gray-300 hover:text-red-400">BORRAR</button>
+                        </div>
+                        <div id="gen-logs" class="log-console h-40 bg-gray-50 p-2 border border-gray-100">
+                            <div class="log-entry info">Sistema listo.</div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="flex-1 overflow-y-auto relative transition-all duration-300" id="main-scroll">
+                <div id="grid-container" class="grid-container">
+                    <div class="col-span-full flex flex-col items-center justify-center h-64 text-gray-300">
+                        <i class="fa-solid fa-cube text-4xl mb-4 opacity-20"></i>
+                        <p class="text-xs tracking-widest uppercase">Selecciona una carpeta para comenzar</p>
+                    </div>
+                </div>
+            </div>
+
+            <aside id="editor-sidebar" class="sidebar sidebar-right">
+                <div class="h-16 border-b border-gray-100 flex items-center justify-between px-6 bg-white shrink-0">
+                    <span class="label-text text-black">Editor de Propiedades</span>
+                    <button onclick="ui.closeSidebar()" class="text-gray-300 hover:text-red-400 transition-colors"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-end">
+                            <span class="label-text">Representación Visual</span>
+                            <button onclick="app.generateImage()" class="text-[9px] font-bold text-black border-b border-gray-200 hover:border-black uppercase tracking-wider transition-all">Generar (Klein)</button>
+                        </div>
+                        <div class="aspect-square bg-gray-50 border border-gray-100 relative group overflow-hidden flex items-center justify-center" id="editor-img-container">
+                            <i class="fa-regular fa-image text-gray-300 text-2xl"></i>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <span class="label-text">Título / Nombre</span>
+                            <input type="text" id="inp-title" class="config-input font-medium text-lg" placeholder="Nombre...">
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <span class="label-text">Etiqueta</span>
+                                <input type="text" id="inp-tag" class="config-input" placeholder="Ej. Personaje">
+                            </div>
+                            <div>
+                                <span class="label-text">ID Archivo</span>
+                                <input type="text" id="inp-id" class="config-input text-gray-400" disabled>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-end mb-1">
+                                <span class="label-text">Descripción Narrativa</span>
+                                <button onclick="app.refineText('desc')" class="text-[9px] text-gray-400 hover:text-black uppercase tracking-wider transition-colors"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>Refinar</button>
+                            </div>
+                            <textarea id="inp-desc" rows="6" class="config-input resize-none leading-relaxed text-gray-600 border-b border-gray-200" placeholder="Descripción..."></textarea>
+                        </div>
+
+                        <div>
+                            <span class="label-text text-purple-400">Prompt Visual (IA)</span>
+                            <textarea id="inp-visual" rows="3" class="config-input resize-none font-mono text-xs text-purple-800 bg-purple-50/50 p-2 border-purple-100" placeholder="Prompt..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6 border-t border-gray-100 bg-white shrink-0 flex gap-4">
+                    <button onclick="app.deleteCurrentItem()" class="btn-nordic text-red-400 border-red-100 hover:bg-red-50 hover:border-red-200">
+                        <i class="fa-regular fa-trash-can"></i>
+                    </button>
+                    <button onclick="app.saveCurrentItem()" id="btn-save" class="btn-primary">
+                        GUARDAR CAMBIOS
+                    </button>
+                </div>
+
+                <div id="sidebar-loader" class="loader-overlay">
+                    <i class="fa-solid fa-circle-notch fa-spin text-2xl text-black mb-2"></i>
+                    <span class="text-[10px] uppercase tracking-widest text-gray-500 font-medium">Procesando IA...</span>
+                </div>
+            </aside>
+        </div>
+
+        <div id="tab-tramas" class="w-full h-full flex relative overflow-hidden transition-opacity duration-300 hidden">
+            
+            <aside id="tramas-generator-sidebar" class="sidebar sidebar-left">
+                <div class="h-16 border-b border-gray-100 flex items-center justify-between px-6 bg-indigo-50 shrink-0">
+                    <span class="label-text text-indigo-900 tracking-widest font-bold">IA TRAMAS (ORÁCULO)</span>
+                    <button onclick="if(window.TramasUI) TramasUI.toggleTramasGenerator()" class="text-indigo-300 hover:text-red-400 transition-colors"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-6 space-y-8">
+                    <div class="space-y-4">
+                        <div class="border-b border-gray-200 pb-2 mb-4">
+                            <h3 class="text-xs font-bold uppercase tracking-widest text-gray-800">Crear Trama desde 0</h3>
+                            <p class="text-[10px] text-gray-400 mt-1">Genera una secuencia lineal de eventos.</p>
+                        </div>
+                        
+                        <div>
+                            <span class="label-text">Premisa Inicial / Sinopsis</span>
+                            <textarea id="tramas-gen-premise" rows="3" class="config-input resize-none leading-relaxed" placeholder="Ej. Un detective investiga un asesinato en una estación espacial abandonada..."></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <span class="label-text">Tono / Estilo</span>
+                                <input type="text" id="tramas-gen-tone" class="config-input" placeholder="Ej. Oscuro, Misterio">
+                            </div>
+                            <div>
+                                <span class="label-text">Nº de Eventos</span>
+                                <input type="number" id="tramas-gen-count" class="config-input" value="5" min="2" max="15">
+                            </div>
+                        </div>
+
+                        <button onclick="if(window.TramasUI) TramasUI.generatePlotFromScratch()" id="btn-tramas-gen-scratch" class="btn-primary bg-indigo-600 hover:bg-indigo-700 mt-2">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> CREAR TRAMA
+                        </button>
+                    </div>
+
+                    <div class="space-y-4 pt-6 border-t border-gray-100">
+                        <div class="border-b border-gray-200 pb-2 mb-4">
+                            <h3 class="text-xs font-bold uppercase tracking-widest text-gray-800">Expandir Trama Global</h3>
+                            <p class="text-[10px] text-gray-400 mt-1">Añade eventos sueltos que continúan el lore general.</p>
+                        </div>
+
+                        <div>
+                            <span class="label-text">Dirección de la Expansión</span>
+                            <textarea id="tramas-expand-premise" rows="2" class="config-input resize-none leading-relaxed" placeholder="Ej. Revela qué pasó con la facción rebelde..."></textarea>
+                        </div>
+
+                        <div>
+                            <span class="label-text">Nº de Eventos Extras</span>
+                            <input type="number" id="tramas-expand-count" class="config-input" value="3" min="1" max="10">
+                        </div>
+
+                        <button onclick="if(window.TramasUI) TramasUI.expandExistingPlot()" id="btn-tramas-expand-existing" class="btn-nordic w-full justify-center border-indigo-200 text-indigo-700 hover:bg-indigo-50 mt-2">
+                            <i class="fa-solid fa-plus"></i> GENERAR EXPANSIÓN
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="flex-1 relative bg-gray-50/50 overflow-hidden" id="tramas-canvas-container">
+                <canvas id="tramas-canvas" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
+                
+                <div class="absolute top-6 left-6 flex gap-2 z-30">
+                    <button class="btn-primary bg-indigo-600 hover:bg-indigo-700 w-auto px-4 py-3 shadow-lg flex items-center gap-2" onclick="if(window.TramasUI) TramasUI.toggleTramasGenerator()" title="Motor de IA para Tramas">
+                        <i class="fa-solid fa-brain"></i>
+                    </button>
+                    <div class="w-px h-10 bg-gray-300 mx-1 self-center"></div>
+
+                    <button class="btn-primary w-auto px-6 py-3 shadow-lg flex items-center gap-2" onclick="if(window.TramasUI) TramasUI.createNewOmega()">
+                        <i class="fa-solid fa-circle-nodes"></i> NUEVO EVENTO
+                    </button>
+                    <button class="btn-nordic bg-white w-auto px-6 py-3 shadow-lg flex items-center gap-2" onclick="if(window.TramasUI) TramasUI.createNewRegion()">
+                        <i class="fa-regular fa-square"></i> NUEVA REGIÓN
+                    </button>
+                    <button class="btn-nordic bg-white w-auto px-6 py-3 shadow-lg flex items-center gap-2" onclick="if(window.TramasUI) TramasUI.autoLayout()">
+                        <i class="fa-solid fa-layer-group"></i> ORDENAR TRAMA
+                    </button>
+                </div>
+
+                <div class="absolute top-6 left-[620px] flex gap-2 z-30 bg-white p-2 rounded shadow-sm border border-gray-200 items-center">
+                    <i class="fa-solid fa-filter text-gray-400 text-[10px] ml-2"></i>
+                    <select id="filter-type" class="config-input text-[10px] uppercase font-bold tracking-wider border-none w-36 cursor-pointer outline-none" onchange="if(window.TramasUI) TramasUI.updateFilterUI()">
+                        <option value="">SIN FILTRO VISUAL</option>
+                        <option value="pov">FILTRAR PERSONAJE</option>
+                        <option value="tension">PICOS DE TENSIÓN</option>
+                        <option value="status">COMPLETADOS</option>
+                    </select>
+                    <select id="filter-value" class="config-input text-[10px] uppercase border-none w-36 hidden cursor-pointer outline-none" onchange="if(window.TramasUI) TramasUI.applyFilter()">
+                    </select>
+                </div>
+
+                <div class="absolute bottom-6 right-6 flex flex-col gap-2 z-30">
+                    <div class="bg-white border border-gray-200 flex flex-col shadow-sm">
+                        <button class="btn-nordic w-8 h-8 p-0 flex items-center justify-center border-none border-b border-gray-100" onclick="if(window.TramasCanvas) TramasCanvas.zoomIn()"><i class="fa-solid fa-plus text-[10px]"></i></button>
+                        <button class="btn-nordic w-8 h-8 p-0 flex items-center justify-center border-none" onclick="if(window.TramasCanvas) TramasCanvas.zoomOut()"><i class="fa-solid fa-minus text-[10px]"></i></button>
+                    </div>
+                    <button class="btn-nordic bg-white shadow-sm" onclick="if(window.TramasCanvas) TramasCanvas.resetView()">CENTRAR</button>
+                </div>
+            </div>
+
+            <aside id="omega-sidebar" class="sidebar sidebar-right">
+                <div class="h-16 border-b border-gray-100 flex items-center justify-between px-6 bg-white shrink-0">
+                    <span class="label-text text-black">Inspector Omega</span>
+                    <button onclick="document.getElementById('omega-sidebar').classList.remove('open')" class="text-gray-300 hover:text-red-400 transition-colors"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto p-6 space-y-6" id="omega-sidebar-content">
+                    <div class="text-center text-gray-300 text-xs italic mt-10">Selecciona un nodo omega en el canvas...</div>
+                </div>
+
+                <div class="p-6 border-t border-gray-100 bg-white shrink-0 flex gap-4 hidden" id="omega-sidebar-actions">
+                    <button onclick="if(window.TramasUI) TramasUI.deleteCurrentOmega()" class="btn-nordic text-red-400 border-red-100 hover:bg-red-50 hover:border-red-200">
+                        <i class="fa-regular fa-trash-can"></i>
+                    </button>
+                    <button onclick="if(window.TramasUI) TramasUI.saveCurrentOmega()" class="btn-primary">
+                        GUARDAR CAMBIOS
+                    </button>
+                </div>
+            </aside>
+        </div>
+
+    </main>
+    
+    <canvas id="hidden-canvas" style="display: none;"></canvas>
+
+    <script src="ai.core.js"></script>
+    <script src="ai.text.js"></script>
+    <script src="ai.image.js"></script>
+
+    <script src="tramas.config.js"></script>
+    <script src="tramas.state.js"></script>
+    <script src="tramas.connections.js"></script> 
+    <script src="tramas.render.js"></script>
+    <script src="tramas.events.js"></script>
+    <script src="tramas.canvas.js"></script>
+    <script src="tramas.ui.ai.js"></script>
+         <script src="tramas.ui.core.js"></script>
+    <script src="tramas.ui.filters.js"></script>
+    <script src="tramas.ui.inspector.js"></script>
+
+    <script src="logic.utils.js"></script>
+    <script src="logic.ui.js"></script>    
+    <script src="logic.core.js"></script>
+    <script src="chroma.core.js"></script>
+    <script src="chroma.ui.js"></script>
+    <script src="coherence.core.js"></script>
+    <script src="imagen.batch.js"></script>
+    <script src="imagen.core.js"></script>
+    <script src="imagen.text.js"></script>
+    <script src="main.js"></script>
+    
+    </body>
+</html>
