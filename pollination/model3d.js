@@ -137,7 +137,7 @@ ESTRUCTURA JSON REQUERIDA:
             method: 'POST',
             headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                model: 'openai-large',
+                model: 'openai',
                 messages: [
                     { role: 'system', content: sysPromptArchitect },
                     { role: 'user', content: promptInput }
@@ -171,7 +171,7 @@ ESTRUCTURA JSON REQUERIDA:
                         const mathRes = await fetch(endpoint, {
                             method: 'POST',
                             headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ model: 'openai-large', messages: [{ role: 'system', content: sysPromptMath }], temperature: 0.1 })
+                            body: JSON.stringify({ model: 'openai', messages: [{ role: 'system', content: sysPromptMath }], temperature: 0.1 })
                         });
                         if (mathRes.ok) {
                             const mathData = await mathRes.json();
