@@ -1,0 +1,267 @@
+// live gemini/chat_tools.js
+// ─── CHAT & TOOLS ───────────────────────────────────────────────────
+
+async function getLatestReport() {
+  if (!analysisHandle) return "No hay espacio de trabajo seleccionado. Esta es una sesión nueva sin contexto previo.";
+  try {
+    let summaries = [];
+    let voices = [];
+    let reportText = "";
+
+    try {
+        const coreFile = await analysisHandle.getFileHandle('memoria_core.json');
+        const file = await coreFile.getFile();
+        const coreText = await file.text();
+        reportText += "=== MEMORIA CORE A LARGO PLAZO (PERFIL E HISTORIA VITAL DEL USUARIO) ===\n";
+        reportText += "Usa esta información para empatizar y sentirte humano conociendo el contexto vital de la persona con la que hablas.\n";
+        reportText += coreText + "\n\n";
+    } catch(e) {}
+
+    for await (const entry of analysisHandle.values()) {
+      if (entry.kind === 'file') {
+        const file = await entry.getFile();
+        if (entry.name.startsWith('resumen_interno-')) {
+          summaries.push(file);
+        } else if (entry.name.startsWith('informe_voz-')) {
+          voices.push(file);
+        }
+      }
+    }
+
+    summaries.sort((a, b) => b.lastModified - a.lastModified);
+    voices.sort((a, b) => b.lastModified - a.lastModified);
+
+    const recentSummaries = summaries.slice(0, 5).reverse();
+    const recentVoices = voices.slice(0, 3).reverse();
+
+    try {
+        if (typeof conversationsHandle !== 'undefined' && conversationsHandle) {
+            const masivoHandle = await conversationsHandle.getDirectoryHandle('analisis_masivo');
+            const indexFileHandle = await masivoHandle.getFileHandle('INDICE_GENERAL_DECANTADO.txt');
+            const indexFile = await indexFileHandle.getFile();
+            const indexText = await indexFile.text();
+            reportText += "=== CONTEXTO DE TRABAJO A LARGO PLAZO (ÍNDICE MAESTRO DEL PROYECTO) ===\n";
+            reportText += indexText + "\n\n";
+        }
+    } catch(e) {}
+
+    if (recentSummaries.length > 0) {
+      reportText += "=== ÚLTIMOS 5 RESÚMENES INTERNOS DE MEMORIA (Evolución de la charla a medio plazo) ===\n";
+      for (const file of recentSummaries) {
+          reportText += `--- ${file.name} ---\n` + await file.text() + "\n\n";
+      }
+    }
+
+    if (recentVoices.length > 0) {
+      reportText += "=== ÚLTIMOS INFORMES DE COMPORTAMIENTO Y CONTEXTO EMOCIONAL ===\n";
+      for (const file of recentVoices) {
+          reportText += `--- ${file.name} ---\n` + await file.text() + "\n\n";
+      }
+    }
+
+    if (reportText) {
+      return "Contexto recuperado de las memorias de corto, medio y largo plazo del usuario:\n\n" + reportText;
+    } else {
+      return "Es la primera vez que interactúas en esta carpeta. Aún no hay informes de memoria ni contexto.";
+    }
+  } catch (e) {
+    return "Error al leer la memoria persistente.";
+  }
+}
+
+// ─── TEXT CHAT ────────────────────────────────────────────────────────
+function sendTextMessage() {
+  if (!isConnected || !session?.ws) return;
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  
+  addMessage('user', text); 
+  input.value = '';
+  autoResize(input);
+
+  session.ws.send(JSON.stringify({
+    realtimeInput: { text }
+  }));
+}
+
+function handleKeyDown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendTextMessage();
+  }
+}
+
+// ─── SEARCH TOOLS (Gemini) ──────────────────────────────────────
+async function doGeminiSearch(query, model) {
+  return "Las búsquedas de internet mediante IA REST han sido desactivadas en el sistema. Solo opera Gemini Live.";
+}
+
+// ─── WEB BROWSING TOOLS ────────────────────────────────────────────────
+const webBrowser = {
+  async browse(url, analyzeModel) {
+    let useModel = (analyzeModel && analyzeModel !== 'none' && analyzeModel !== false) ? analyzeModel : false;
+
+    if (!url.startsWith('http')) {
+      try {
+        let cleanPath = decodeURIComponent(url.replace(/^(file|local):\/\/\/?/i, '').replace(/^(file|local):/i, ''));
+        if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
+
+        let content = await explorerLens.openFileText(cleanPath);
+
+        if (content.startsWith('Error: Ruta no encontrada')) {
+            const targetName = cleanPath.split('/').pop();
+            
+            async function deepSearch(dirHandle, target) {
+                const cleanTarget = target.toLowerCase().replace(/[^a-z0-9.]/g, '');
+                for await (const [name, handle] of dirHandle.entries()) {
+                    const cleanName = name.toLowerCase().replace(/[^a-z0-9.]/g, '');
+                    if (cleanName === cleanTarget || (cleanName.includes(cleanTarget.replace('.html', '')) && name.endsWith('.html'))) {
+                        return handle;
+                    }
+                    if (handle.kind === 'directory' && !['node_modules', '.git', 'dist', 'build', '.next'].includes(name)) {
+                        const found = await deepSearch(handle, target);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            }
+
+            if (workspaceHandle) {
+                const foundHandle = await deepSearch(workspaceHandle, targetName);
+                if (foundHandle) {
+                    const file = await foundHandle.getFile();
+                    content = await file.text();
+                    cleanPath = file.name; 
+                } else {
+                    return content; 
+                }
+            } else {
+                return content;
+            }
+        } else if (content.startsWith('Error:')) {
+            return content; 
+        }
+
+        const ext = cleanPath.split('.').pop().toLowerCase();
+        let mimeType = 'text/plain';
+        if (ext === 'html') mimeType = 'text/html';
+        else if (ext === 'css') mimeType = 'text/css';
+        else if (ext === 'js') mimeType = 'text/javascript';
+        else if (ext === 'svg') mimeType = 'image/svg+xml'; 
+
+        const blob = new Blob([content], { type: mimeType });
+        const blobUrl = URL.createObjectURL(blob);
+
+        if (typeof uiWeb !== 'undefined') {
+          const m = document.getElementById('webModal');
+          m.classList.remove('hidden', 'minimized');
+          if (!uiWeb.isMaximized) m.classList.remove('maximized');
+          document.getElementById('webModalUrl').value = `local://${cleanPath}`;
+          document.getElementById('webIframe').src = blobUrl;
+        }
+
+        if (useModel) {
+          return `=== ANÁLISIS DESACTIVADO DEL ARCHIVO LOCAL ${cleanPath} ===\n\nEl análisis de navegación ha sido desactivado. Solo opera Gemini Live.`;
+        } else {
+          return `Comando ejecutado: Archivo local '${cleanPath}' encontrado exitosamente y renderizado visualmente en el navegador IA del usuario.`;
+        }
+      } catch (e) {
+        return `Error crítico abriendo archivo local ${url}: ${e.message}`;
+      }
+    }
+
+    if (typeof uiWeb !== 'undefined') {
+      uiWeb.open(url);
+    }
+    
+    try {
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+      const response = await fetch(proxyUrl);
+      const data = await response.json();
+      
+      if (!data.contents) return `Error: No se pudo obtener el contenido de ${url}`;
+      
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(data.contents, 'text/html');
+      let textContent = doc.body ? doc.body.innerText.replace(/\s+/g, ' ').trim() : '';
+      
+      if (textContent.length > 30000) textContent = textContent.substring(0, 30000) + "... [Contenido truncado]";
+
+      if (useModel) {
+        return `=== ANÁLISIS DESACTIVADO DE LA WEB ${url} ===\n\nEl análisis de navegación ha sido desactivado. Solo opera Gemini Live.`;
+      } else {
+        return `=== CONTENIDO DE LA WEB ${url} ===\n\n${textContent}`;
+      }
+    } catch (err) {
+      return `Error navegando a ${url}: ${err.message}`;
+    }
+  },
+
+  async interact(args) {
+    const { action, param, x, y, selector } = args;
+
+    if (action === 'navigate') {
+      return await this.browse(param, 'none');
+    } 
+
+    const iframe = document.getElementById('webIframe');
+    if (!iframe) return "Error: No hay ningún navegador abierto en la interfaz.";
+
+    try {
+      const win = iframe.contentWindow;
+      const doc = iframe.contentDocument || win.document;
+
+      if (action === 'scroll') {
+        win.scrollBy(x || 0, y || 0);
+        return `Comando ejecutado: Scroll realizado horizontalmente (${x || 0}px) y verticalmente (${y || 0}px).`;
+      
+      } else if (action === 'zoom') {
+        doc.body.style.zoom = param || '1';
+        return `Comando ejecutado: Nivel de zoom ajustado a ${param}.`;
+      
+      } else if (action === 'click' || action === 'right_click') {
+        if (!selector) return "Error: Se necesita especificar un 'selector' CSS válido para hacer clic.";
+        
+        const element = doc.querySelector(selector);
+        if (!element) return `Error: No se encontró ningún elemento en la web con el selector CSS '${selector}'.`;
+        
+        if (action === 'click') {
+          element.click();
+          return `Comando ejecutado: Clic izquierdo realizado exitosamente en el elemento '${selector}'.`;
+        } else {
+          const ev = new MouseEvent('contextmenu', {
+            bubbles: true,
+            cancelable: false,
+            view: win,
+            button: 2,
+            buttons: 2
+          });
+          element.dispatchEvent(ev);
+          return `Comando ejecutado: Clic derecho simulado en el elemento '${selector}'.`;
+        }
+      } else {
+        return `Error: Acción '${action}' no reconocida.`;
+      }
+    } catch (err) {
+      return `Aviso técnico: El navegador bloqueó la manipulación directa del DOM por políticas de seguridad Cross-Origin (CORS). Detalle del error: ${err.message}`;
+    }
+  }
+};
+
+// ─── DELEGACIÓN A MODELOS Y HERRAMIENTAS DINÁMICAS ─────────────────────
+
+async function askExternalAI(prompt, model) {
+  return "Delegación a modelos externos desactivada. Solo opera Gemini Live.";
+}
+
+async function executeDynamicTool(code) {
+  try {
+    const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
+    const dynamicFn = new AsyncFunction(code);
+    const result = await dynamicFn();
+    return `Ejecución dinámica exitosa. Resultado:\n${typeof result === 'object' ? JSON.stringify(result, null, 2) : result}`;
+  } catch (e) {
+    return `Error en la compilación o ejecución de la herramienta dinámica:\n${e.message}\nRevisa tu código JavaScript inyectado e inténtalo de nuevo.`;
+  }
+}

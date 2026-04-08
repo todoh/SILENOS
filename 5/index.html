@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SILENOS 5</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles2.css">
+<link rel="stylesheet" href="stylesgame.css">
+</head>
+<body>
+
+<header style="padding: 10px; display: flex; align-items: center; justify-content: space-between;">
+   <div class="logo">SILEN<span style="color: red;" >OS</span> 5</div>
+
+   <div class="top-bar-controls" style="position: fixed; top: 16px; right: 70px; display: flex; align-items: center; gap: 15px; z-index: 1000;">
+      <div class="status-bar">
+         <div class="status-dot" id="statusDot"></div>
+         <span id="statusText">DESCONECTADO</span>
+      </div>
+
+      <button class="header-btn" id="connectBtn" onclick="toggleConnection()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+        </svg> CONECTAR
+      </button>
+
+      <button class="header-btn connected-btn" id="disconnectBtn" onclick="disconnect()" disabled style="display:none;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg> DESCONECTAR
+      </button>
+
+      <button class="header-btn" id="micBtn" onclick="toggleMic()" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" id="micIcon">
+          <rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3M9 21h6"/>
+        </svg> MICRÓFONO
+      </button>
+   </div>
+
+    <button class="menu-btn" onclick="toggleSettingsMenu()" title="Configuración y Herramientas">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+</header>
+
+<div id="settingsMenu" class="settings-drawer">
+  <div class="drawer-header">
+    <span class="panel-title" style="margin: 0;">CONFIGURACION</span>
+    <button class="drawer-close" onclick="toggleSettingsMenu()">✕</button>
+  </div>
+  
+  <div class="drawer-scroll">
+    <div class="panel-section">
+      <div class="panel-title">CREDenciales</div>
+      <div class="api-bar">
+        <label>API KEY GEMINI</label>
+        <input type="password" class="api-input" id="apiKeyInput" placeholder="AIza..." autocomplete="off">
+        <button class="btn-save" onclick="saveApiKey()">GUARDAR</button>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-title">PERSONALIZACIÓN DE IA</div>
+      <div class="api-bar" style="gap: 8px;">
+        <label>PERSONALIDAD DEL MODELO</label>
+        <textarea id="aiPersonalityInput" style="width: 100%; background: transparent; font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text); border: 1px solid var(--text-dim); border-radius: 4px; padding: 8px; resize: vertical; outline: none;" rows="3" placeholder="Ej. Eres sarcástico y muy poético..."></textarea>
+        
+        <label style="margin-top: 10px;">INSTRUCCIONES Y DATOS</label>
+        <textarea id="aiInstructionsInput" style="width: 100%; background: transparent; font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text); border: 1px solid var(--text-dim); border-radius: 4px; padding: 8px; resize: vertical; outline: none;" rows="4" placeholder="Ej. El usuario se llama Alex, trabaja en IT..."></textarea>
+        
+        <button class="btn-save" onclick="savePersonalitySettings()" style="margin-top: 5px; background: var(--text); color: var(--surface); padding: 8px 12px;">GUARDAR PERSONALIZACIÓN</button>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-title">ENTORNO LOCAL</div>
+      <div class="controls" style="grid-template-columns: 1fr;">
+        <button class="ctrl-btn ctrl-btn-full" id="workspaceBtn" onclick="selectWorkspace()">
+          <svg width="18" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+          SELECCIONAR CARPETA
+        </button>
+        <div id="workspaceStatus" style="font-family: 'Space Mono', monospace; font-size: 9px; color: var(--text-dim); text-align: center; margin-top: 8px; word-break: break-all;">Ninguna carpeta seleccionada</div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-title">CÁMARA</div>
+      <div class="video-container">
+        <div class="video-overlay" id="videoOverlay">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <rect x="1" y="6" width="18" height="16" rx="3" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M19 11l8-4v14l-8-4V11z" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+          SIN CÁMARA
+        </div>
+        <video id="localVideo" autoplay muted playsinline></video>
+        <div class="video-status" id="videoStatus">● EN VIVO</div>
+      </div>
+    </div>
+ 
+
+    <div class="panel-section" style="flex:1;">
+      <div class="panel-title">HERRAMIENTAS COMPLEMENTARIAS</div>
+      <div class="controls">
+
+        <button class="ctrl-btn" id="videoBtn" onclick="toggleVideo()" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="1" y="5" width="15" height="14" rx="3"/><path d="M16 10l7-3v10l-7-3V10z"/>
+          </svg>
+          CÁMARA
+        </button>
+
+        <button class="ctrl-btn" id="screenBtn" onclick="toggleScreen()" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="2" y="3" width="20" height="15" rx="2"/><path d="M8 21h8M12 18v3"/>
+          </svg>
+          PANTALLA
+        </button>
+
+        <button class="ctrl-btn ctrl-btn-full" id="coderStudioBtn" onclick="coderStudioUI.open()"  >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>
+          </svg>
+          CODER STUDIO
+        </button>
+
+        <button class="ctrl-btn ctrl-btn-full" id="svgStudioBtn" onclick="svgStudioUI.open()" >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+          </svg>
+          SVG STUDIO
+        </button>
+
+        <button class="ctrl-btn ctrl-btn-full" id="visualizerBtn" onclick="visualizadorUI.open()" style="background:var(--surface2);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line>
+          </svg>
+          VISUALIZADOR / EDITOR
+        </button>
+        
+        <button class="ctrl-btn ctrl-btn-full" id="gamebookBtn" onclick="gamebookUI.open()" style="background:var(--surface2);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+          </svg>
+          LIBROJUEGO STUDIO
+        </button>
+
+        <button class="ctrl-btn ctrl-btn-full" id="datosStudioBtn" onclick="datosStudioUI.open()" style="background:var(--surface2);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line>
+          </svg>
+          DATOS STUDIO
+        </button>
+
+        <button class="ctrl-btn ctrl-btn-full" id="processDataBtn" onclick="startDataProcessing()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+          </svg>
+          PROCESAR DATOS
+        </button>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="chat-panel">
+    
+    <div class="processes-bar" id="processesBar">
+      <div class="processes-list" style="opacity: 0;">
+        <div class="proc-item" id="proc-classifier">
+            <div class="proc-dot"></div> CLASIFICADOR
+        </div>
+        <div class="proc-item" id="proc-summarizer">
+            <div class="proc-dot"></div> RESUMEN INTERNO
+        </div>
+        <div class="proc-item" id="proc-voicereport">
+            <div class="proc-dot"></div> INFORME VOZ
+        </div>
+      </div>
+    </div>
+
+    <div class="messages" id="messages">
+      <div class="empty-state" id="emptyState">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+          <circle cx="18" cy="18" r="17" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <circle cx="18" cy="18" r="8" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="18" cy="18" r="3" fill="currentColor"/>
+        </svg>
+        CONECTA PARA COMENZAR
+      </div>
+    </div>
+    
+    <div class="transcript-live" id="transcriptLive"></div>
+
+    <div class="input-bar">
+      <textarea class="chat-input" id="chatInput" placeholder="Escribe un mensaje..." rows="1" 
+        onkeydown="handleKeyDown(event)" oninput="autoResize(this)"></textarea> 
+      <button class="btn-send" id="sendBtn" onclick="sendTextMessage()" disabled>ENVIAR</button>
+     </div> <div class="voice-viz" id="voiceViz"></div>
+  </div>   
+</div>
+
+<div id="webModal" class="web-modal hidden" style="width: 75%; height: 100vh; top: 0vh; left: 0%; border-radius: 0;">
+  <div class="web-modal-header" id="webModalHeader">
+    <span class="web-modal-title">NAVEGADOR IA</span>
+    <div class="web-modal-controls">
+      <button onclick="uiWeb.reload()" title="Recargar">↻</button>
+      <button onclick="uiWeb.minimize()" title="Minimizar">_</button>
+      <button onclick="uiWeb.maximize()" title="Maximizar">□</button>
+      <button onclick="uiWeb.close()" title="Cerrar">×</button>
+    </div>
+  </div>
+  <div class="web-modal-address">
+    <input type="text" id="webModalUrl" readonly />
+  </div>
+  <div class="web-modal-body">
+    <iframe id="webIframe" allow="camera; microphone; display-capture; fullscreen"></iframe>
+  </div>
+</div>
+
+<div id="coderStudioModal" class="web-modal hidden"  style="width: 75%; height: 100vh; top: 0vh; left: 0%; border-radius: 0;">
+  <div class="web-modal-header" id="csModalHeader">
+    <span class="web-modal-title">CODER STUDIO (Delegación y Ejecución IA)</span>
+    <div class="web-modal-controls" style="display:flex; align-items:center;">
+      <button onclick="coderStudioUI.runCode()" title="Ejecutar Código" style="font-size: 11px; margin-right: 15px; border: 1px solid #1a73e8; color: #1a73e8; padding: 4px 12px; border-radius: 4px; font-family: monospace;">▶ REPRODUCIR</button>
+      <button onclick="coderStudioUI.saveCode()" title="Guardar a Disco" style="font-size: 11px; margin-right: 15px; border: 1px solid var(--text-dim); padding: 4px 12px; border-radius: 4px; font-family: monospace;">💾 GUARDAR</button>
+      <button onclick="coderStudioUI.close()" title="Cerrar">×</button>
+    </div>
+  </div>
+  <div class="ide-layout" style="display: flex; height: calc(100% - 41px); background: var(--surface);">
+    <div style="flex: 1; border-right: 1px solid var(--text-dim); display: flex; flex-direction: column;">
+        <textarea id="csEditor" style="flex: 1; width: 100%; padding: 16px; font-family: 'Space Mono', monospace; font-size: 13px; background: var(--surface2); color: var(--text); resize: none; border: none; outline: none; white-space: pre; overflow: auto;" spellcheck="false" placeholder=""></textarea>
+    </div>
+    <div style="flex: 1; display: flex; flex-direction: column; background: #ffffff; position: relative;">
+        <iframe id="csPreviewIframe" style="width: 100%; height: 100%; border: none;" allow="camera; microphone; display-capture; fullscreen; geolocation"></iframe>
+    </div>
+  </div>
+</div>
+
+<div id="svgStudioModal" class="web-modal hidden"  style="width: 75%; height: 100vh; top: 0vh; left: 0%; border-radius: 0;">
+  <div class="web-modal-header" id="svgModalHeader">
+    <span class="web-modal-title">SVG STUDIO (Creador de Arte Vectorial)</span>
+    <div class="web-modal-controls" style="display:flex; align-items:center;">
+      <input type="number" id="svgWidthInp" placeholder="Ancho (px)" value="1024" style="width:80px; font-size:10px; padding:4px; margin-right:5px; border-radius:4px; border:1px solid var(--text-dim); text-align:center;">
+      <input type="number" id="svgHeightInp" placeholder="Alto (px)" value="1024" style="width:80px; font-size:10px; padding:4px; margin-right:15px; border-radius:4px; border:1px solid var(--text-dim); text-align:center;">
+      <button onclick="svgStudioUI.saveSvg()" title="Guardar a Disco como SVG" style="font-size: 11px; margin-right: 5px; border: 1px solid var(--text-dim); padding: 4px 12px; border-radius: 4px; font-family: monospace;">💾 GUARDAR SVG</button>
+      <button onclick="svgStudioUI.savePng()" title="Exportar a PNG en el tamaño indicado" style="font-size: 11px; margin-right: 15px; border: 1px solid #1a73e8; color: #1a73e8; padding: 4px 12px; border-radius: 4px; font-family: monospace;">🖼️ EXPORTAR PNG</button>
+      <button onclick="svgStudioUI.close()" title="Cerrar">×</button>
+    </div>
+  </div>
+  <div class="ide-layout" style="display: flex; height: calc(100% - 41px); background: var(--surface);">
+    <div style="flex: 1; border-right: 1px solid var(--text-dim); display: flex; flex-direction: column;">
+        <textarea id="svgStudioEditor" oninput="svgStudioUI.updatePreview()" style="flex: 1; width: 100%; padding: 16px; font-family: 'Space Mono', monospace; font-size: 13px; background: var(--surface2); color: var(--text); resize: none; border: none; outline: none; white-space: pre; overflow: auto;" spellcheck="false" placeholder="Escribe o pega aquí tu código <svg>..."></textarea>
+    </div>
+    <div style="flex: 1; display: flex; flex-direction: column; background: transparent; position: relative; align-items: center; justify-content: center; overflow: auto;">
+        <div id="svgPreviewContainer" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+            </div>
+    </div>
+  </div>
+</div>
+
+<div id="gamebookModal" class="web-modal hidden"  style="width: 75%; height: 100vh; top: 0vh; left: 0%; border-radius: 0;">
+  <div class="web-modal-header" id="gbModalHeader">
+    
+  </div>
+  <div class="gb-layout">
+    
+    <div class="gb-canvas-container" id="gbCanvasContainer">
+      <svg id="gbEdges" class="gb-edges"></svg>
+      <div id="gbNodes" class="gb-nodes"></div>
+      
+      <div class="gb-canvas-controls">
+        <button onclick="gamebookUI.addNode()" title="Añadir Nodo">+</button>
+        <button onclick="gamebookUI.autoLayout()" title="Ordenar Automáticamente">✨</button>
+        <button onclick="gamebookUI.resetView()" title="Centrar Vista">⌖</button>
+      </div>
+    </div>
+
+    <div class="gb-sidebar">
+      <div class="gb-toolbar">
+        <button class="btn-save" onclick="gamebookUI.loadFromFile()" style="background:var(--surface); border:1px solid var(--text-dim);">Abrir JSON</button>
+        <button class="btn-save" onclick="gamebookUI.saveToFile()" style="background:var(--text); color:var(--surface);">Guardar</button>
+      <button onclick="gamebookUI.close()" title="Cerrar">×</button></div>
+      
+      <div class="gb-editor-scroll">
+        <label>TÍTULO DEL LIBRO</label>
+        <input type="text" id="gbTitleInput" class="gb-input" oninput="gamebookUI.updateTitle(this.value)" placeholder="Título del juego">
+
+        <label style="margin-top: 15px; display: block;">ESTILO VISUAL (PROMPT BASE)</label>
+        <textarea id="gbStyleInput" class="gb-input" rows="3" oninput="gamebookUI.updateStyle(this.value)" placeholder="Ej. Cyberpunk oscuro, hiperrealista, estilo anime de los 90..."></textarea>
+
+        <div id="gbNodeEditor" class="hidden" style="margin-top: 20px; border-top: 1px dashed var(--text-dim); padding-top: 20px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+            <label>EDITANDO NODO: <span id="gbNodeIdLabel" style="color:var(--text);"></span></label>
+            <button onclick="gamebookUI.deleteSelectedNode()" style="background:transparent; color:var(--gem-red); cursor:pointer; font-weight:bold; font-size:10px;">BORRAR</button>
+          </div>
+          
+          <div id="gb-visual-tools" style="margin-bottom: 15px; padding: 10px; background: var(--surface2); border-radius: 4px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <label>ARTE DE LA ESCENA</label>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="gamebookVisual.triggerUpload(gamebookUI.selectedNodeId)" title="Subir Imagen desde PC" style="background:transparent; cursor:pointer; color:var(--text); font-weight:bold; font-size:10px;">⬆️ Subir</button>
+                    <button id="gb-btn-del-img" onclick="gamebookVisual.deleteImage(gamebookUI.selectedNodeId)" title="Borrar Imagen" style="background:transparent; cursor:pointer; color:var(--gem-red); font-weight:bold; font-size:10px; display:none;">🗑️ Borrar</button>
+                </div>
+            </div>
+            <div id="gb-img-preview" class="hidden" style="width: 100%; height: 140px; background-size: cover; background-position: center; border-radius: 4px; margin-bottom: 10px; border: 1px solid var(--text-dim);"></div>
+            <button id="gb-btn-illustrate" onclick="gamebookVisual.illustrateNode(gamebookUI.selectedNodeId)" style="width:100%; background:var(--text); color:var(--surface); padding:10px; border-radius:4px; cursor:pointer; font-size:11px; font-weight:bold;">✨ ILUSTRAR ESCENA</button>
+            <input type="file" id="gb-hidden-file" accept="image/*" class="hidden" onchange="gamebookVisual.handleFileUpload(event)">
+          </div>
+
+          <label>NARRATIVA DE LA ESCENA</label>
+          <textarea id="gbNodeText" class="gb-input" rows="8" oninput="gamebookUI.saveNodeEdits()" placeholder="Escribe lo que sucede..."></textarea>
+          
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; margin-bottom:10px;">
+            <label>DECISIONES / OPCIONES</label>
+            <button onclick="gamebookUI.addChoice()" style="background:var(--text); color:var(--surface); border-radius:4px; padding:2px 8px; font-size:10px; cursor:pointer;">+ OPCIÓN</button>
+          </div>
+          
+          <div id="gbChoicesList" style="display:flex; flex-direction:column; gap:10px;"></div>
+        </div>
+        
+        <div id="gbEmptyState" style="margin-top: 40px; text-align:center; font-family:'Space Mono', monospace; font-size:10px; color:var(--text-dim);">
+          Selecciona un nodo en el mapa para editarlo.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="datosStudioModal" class="web-modal hidden" style="width: 75%; height: 100vh; top: 0vh; left: 0%; border-radius: 0;">
+  <div class="web-modal-header" id="dsModalHeader">
+    <span class="web-modal-title">DATOS STUDIO <span id="dsFolderLabel" style="font-family: monospace; font-size: 10px; color: var(--text-dim); margin-left: 10px; font-weight: normal;"></span></span>
+    <div class="web-modal-controls">
+      <button onclick="datosStudioUI.selectFolder()" title="Cambiar Carpeta" style="font-size: 11px; margin-right: 15px; border: 1px solid var(--text-dim); padding: 2px 8px; border-radius: 4px;">📁 CARPETA</button>
+      <button onclick="datosStudioUI.close()" title="Cerrar">×</button>
+    </div>
+  </div>
+  <div class="ide-layout" style="display: flex; height: calc(100% - 41px); background: var(--surface2);">
+    
+    <div style="flex: 1; padding: 20px; overflow-y: auto;">
+        <div id="dsGridContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;">
+             </div>
+    </div>
+
+    <div id="dsEditorPanel" class="hidden" style="width: 320px; background: var(--surface); border-left: 1px solid var(--text-dim); display: flex; flex-direction: column;">
+        <div style="padding: 15px; border-bottom: 1px solid var(--text-dim); display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-family: monospace; font-size: 11px; font-weight: bold;">EDITOR DE DATOS</span>
+            <button onclick="datosStudioEditor.closeItem()" style="background:none; border:none; cursor:pointer;">×</button>
+        </div>
+        
+        <div style="flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px;">
+            <div id="dsImgPreview" style="width: 100%; aspect-ratio: 1; background: var(--surface2); border-radius: 4px; overflow: hidden;"></div>
+            
+            <div>
+                <label style="font-family: monospace; font-size: 9px; color: var(--text-dim); display: block; margin-bottom: 4px;">NOMBRE</label>
+                <input type="text" id="dsInpTitle" oninput="datosStudioEditor.saveUIEdits()" style="width: 100%; padding: 8px; border: 1px solid var(--text-dim); border-radius: 4px; font-family: 'Syne', sans-serif;">
+            </div>
+            
+            <div>
+                <label style="font-family: monospace; font-size: 9px; color: var(--text-dim); display: block; margin-bottom: 4px;">TIPO / CATEGORÍA</label>
+                <input type="text" id="dsInpType" oninput="datosStudioEditor.saveUIEdits()" style="width: 100%; padding: 8px; border: 1px solid var(--text-dim); border-radius: 4px; font-family: 'Syne', sans-serif;">
+            </div>
+
+            <div>
+                <label style="font-family: monospace; font-size: 9px; color: var(--text-dim); display: block; margin-bottom: 4px;">LORE / DESCRIPCIÓN</label>
+                <textarea id="dsInpDesc" rows="6" oninput="datosStudioEditor.saveUIEdits()" style="width: 100%; padding: 8px; border: 1px solid var(--text-dim); border-radius: 4px; font-family: 'Syne', sans-serif; resize: none;"></textarea>
+            </div>
+
+            <div>
+                <label style="font-family: monospace; font-size: 9px; color: var(--text-dim); display: block; margin-bottom: 4px;">PROMPT VISUAL</label>
+                <textarea id="dsInpVisual" rows="3" oninput="datosStudioEditor.saveUIEdits()" style="width: 100%; padding: 8px; border: 1px solid var(--text-dim); border-radius: 4px; font-family: monospace; font-size: 10px; resize: none;"></textarea>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+
+<div id="visualizerModal" class="web-modal hidden"  style="width: 75%; height: 100vh; top: 0vh; left: 0%; border-radius: 0;">
+  <div class="web-modal-header" id="visModalHeader">
+    <span class="web-modal-title">VISUALIZADOR Y EDITOR DE ARCHIVOS <span id="visFolderLabel" style="font-family: monospace; font-size: 10px; color: var(--text-dim); margin-left: 10px; font-weight: normal;"></span></span>
+    <div class="web-modal-controls" style="display:flex; align-items:center;">
+      <button onclick="visualizadorUI.createFile()" title="Nuevo Archivo" style="font-size: 11px; margin-right: 5px; border: 1px solid var(--text-dim); padding: 4px 12px; border-radius: 4px; font-family: monospace;">+ ARCHIVO</button>
+      <button onclick="visualizadorUI.createFolder()" title="Nueva Carpeta" style="font-size: 11px; margin-right: 5px; border: 1px solid var(--text-dim); padding: 4px 12px; border-radius: 4px; font-family: monospace;">+ CARPETA</button>
+      <button onclick="visualizadorUI.paste()" title="Pegar" style="font-size: 11px; margin-right: 15px; border: 1px solid var(--text-dim); padding: 4px 12px; border-radius: 4px; font-family: monospace;">📋 PEGAR</button>
+      
+      <button id="visBtnUp" onclick="visualizadorUI.goUp()" title="Subir a carpeta padre" style="font-size: 11px; margin-right: 15px; border: 1px solid var(--text-dim); padding: 4px 12px; border-radius: 4px; font-family: monospace;">⬆️ SUBIR NIVEL</button>
+      <button onclick="visualizadorUI.close()" title="Cerrar">×</button>
+    </div>
+  </div>
+  <div class="ide-layout" style="display: flex; height: calc(100% - 41px); background: var(--surface2); position: relative;">
+    
+    <div id="visGridContainer" style="flex: 1; max-width: 60%;  padding: 25px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 20px; align-content: start;">
+    </div>
+
+    <div id="visFilePreviewPanel" class="hidden" style="position: absolute; right: 0; top: 0; bottom: 0; width: 450px; background: var(--surface); border-left: 1px solid var(--text-dim); display: flex; flex-direction: column; box-shadow: -10px 0 30px rgba(0,0,0,0.15); z-index: 10;">
+        <div style="padding: 15px 20px; border-bottom: 1px solid var(--text-dim); display: flex; justify-content: space-between; align-items: center; background: var(--surface2);">
+            <span id="visPreviewTitle" style="font-family: monospace; font-size: 11px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">ARCHIVO</span>
+            
+            <div style="display: flex; gap: 8px;">
+                <button onclick="visualizadorUI.copyCurrentFile()" style="font-size: 10px; border: 1px solid var(--text-dim); border-radius: 4px; padding: 4px 8px; font-family: monospace;">📋 COPIAR</button>
+                <button onclick="visualizadorUI.deleteCurrentFile()" style="font-size: 10px; border: 1px solid var(--gem-red); color: var(--gem-red); border-radius: 4px; padding: 4px 8px; font-family: monospace;">🗑️ BORRAR</button>
+                <button onclick="visualizadorUI.saveFile()" style="font-size: 10px; background:var(--text); color:var(--surface); border-radius: 4px; padding: 4px 8px; font-family: monospace;">💾 GUARDAR</button>
+                <button onclick="visualizadorUI.previewHTML()" style="font-size: 10px; border: 1px solid var(--text-dim); border-radius: 4px; padding: 4px 8px; font-family: monospace;">▶ PREVISUALIZAR</button>
+                <button onclick="visualizadorUI.closePreview()" style="background:none; border:none; cursor:pointer; font-size: 18px; color: var(--text); margin-left: 10px;">×</button>
+            </div>
+        </div>
+        <div id="visPreviewContent" style="flex: 1; overflow: auto; padding: 20px; display: flex; flex-direction: column; background: var(--surface);">
+        </div>
+    </div>
+  </div>
+</div>
+
+<div id="window-taskbar"></div>
+<div class="toast" id="toast"></div>
+
+<script src="globals.js"></script>
+<script src="explorer.js"></script>
+<script src="agents.js"></script>
+<script src="agents_tasks.js"></script>
+<script src="data_processor.js"></script>
+
+<script src="coder_agents.js"></script>
+<script src="coder_studio.js"></script>
+<script src="svg_studio.js"></script> 
+<script src="ui.js"></script>
+<script src="chat_ui.js"></script>
+<script src="workspace.js"></script>
+<script src="media.js"></script>
+<script src="chat_tools.js"></script>
+<script src="audio_handler.js"></script>
+
+
+<script src="server_handler_fileops.js"></script>
+<script src="server_handler_visualizer.js"></script>
+<script src="server_handler_gamebook.js"></script>
+<script src="server_handler.js"></script>
+
+
+<script src="system_prompt.js"></script>
+<script src="tools_config.js"></script>
+<script src="connection.js"></script>
+
+<script src="visualizador.js"></script>
+
+<script src="gamebook.js"></script>
+<script src="gamebook_visual.js"></script>
+<script src="gamebook_canvas.js"></script>
+<script src="gamebook_editor.js"></script>
+
+<script src="datos_studio.js"></script>
+<script src="datos_studio_grid.js"></script>
+<script src="datos_studio_editor.js"></script>
+<script src="datos_studio_tools.js"></script>
+
+</body>
+</html>
