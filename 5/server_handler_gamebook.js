@@ -24,24 +24,35 @@ async function handleGamebookTool(args) {
             if (!node_id) return "Error: Falta especificar el 'node_id' para ilustrar.";
             if (typeof gamebookVisual !== 'undefined') {
                 gamebookVisual.illustrateNode(node_id);
-                return `Comando en proceso: Se ha ordenado al motor visual ilustrar el nodo '${node_id}'. Ocurrirá en segundo plano.`;
+                return `Comando UI en proceso: Se ha solicitado ilustrar el nodo '${node_id}' con SVG. Genera el código vectorial en tu próxima llamada a 'illustrate_node_svg'.`;
             }
             return "Error: Motor visual no cargado.";
         } else if (action === 'illustrate_all') {
             if (typeof gamebookVisual !== 'undefined') {
                 gamebookVisual.illustrateAllNodes();
-                return "Comando en proceso: Se ha ordenado al motor visual ilustrar TODOS los nodos secuencialmente. Ocurrirá en segundo plano y puede tardar.";
+                return "Comando UI en proceso: Se ha solicitado ilustrar TODOS los nodos con SVG. Hazlo secuencialmente llamando a 'illustrate_node_svg' por cada uno.";
             }
             return "Error: Motor visual no cargado.";
         }
 
         let activeFileHandle = null;
-        if (typeof gamebookUI !== 'undefined' && gamebookUI.currentFileHandle) {
+        if (typeof gamebookUI !== 'undefined' && gamebookUI.currentFileHandle && !filename) {
             activeFileHandle = gamebookUI.currentFileHandle;
         } else if (filename) {
-            activeFileHandle = await workspaceHandle.getFileHandle(filename, { create: true });
+            try {
+                // Resolución dinámica para carpetas
+                const parts = filename.replace(/\\/g, '/').split('/').filter(p => p && p !== '.');
+                let name = parts.pop();
+                let curr = workspaceHandle;
+                for (const p of parts) {
+                    curr = await curr.getDirectoryHandle(p, { create: true });
+                }
+                activeFileHandle = await curr.getFileHandle(name, { create: true });
+            } catch(e) {
+                return `Error al acceder o crear la ruta del archivo: ${e.message}`;
+            }
         } else {
-            return "Error: Se requiere 'filename' para inicializar la carga del archivo.";
+            return "Error: Se requiere 'filename' para inicializar la carga del archivo, o tener uno ya abierto en la interfaz.";
         }
 
         if (action === 'illustrate_node_svg') {
@@ -71,6 +82,10 @@ async function handleGamebookTool(args) {
             await w.write(JSON.stringify(data, null, 2));
             await w.close();
 
+            if (typeof gamebookVisual !== 'undefined') {
+                gamebookVisual.generatingNodes.delete(node_id);
+            }
+
             if (typeof gamebookUI !== 'undefined') {
                 gamebookUI.currentFileHandle = activeFileHandle;
                 gamebookUI.data = data;
@@ -81,7 +96,7 @@ async function handleGamebookTool(args) {
             }
             if (typeof showToast === 'function') showToast(`Arte SVG insertado en ${node_id}`, 'success');
 
-            historyManager.logAction('IA (Librojuego)', `Generó ilustración SVG para el nodo ${node_id}`);
+            if (typeof historyManager !== 'undefined') historyManager.logAction('IA (Librojuego)', `Generó ilustración SVG para el nodo ${node_id}`);
             return `Nodo '${node_id}' ilustrado exitosamente con tu arte nativo SVG. Archivo guardado como ${svgFilename}.`;
         }
 
@@ -100,10 +115,11 @@ async function handleGamebookTool(args) {
                 if (styleInput) styleInput.value = data.visualStyle;
                 gamebookUI.selectedNodeId = null;
                 gamebookUI.updateEditorPanel();
+                gamebookUI.open();
                 gamebookUI.render();
             }
-            historyManager.logAction('IA (Librojuego)', `Creó el librojuego ${activeFileHandle.name}`);
-            return `Librojuego creado exitosamente como ${activeFileHandle.name}. La interfaz visual ha sido actualizada.`;
+            if (typeof historyManager !== 'undefined') historyManager.logAction('IA (Librojuego)', `Creó el librojuego ${activeFileHandle.name}`);
+            return `Librojuego creado exitosamente como ${activeFileHandle.name}. La interfaz visual ha sido abierta y actualizada.`;
         
         } else if (action === 'update_settings') {
             const f = await activeFileHandle.getFile();
@@ -141,13 +157,16 @@ async function handleGamebookTool(args) {
             
             if (typeof gamebookUI !== 'undefined') {
                 try {
-                    const data = JSON.parse(textContent);
+                    const data = JSON.parse(textContent || '{"title":"Aventura Recuperada","visualStyle":"","nodes":[]}');
                     gamebookUI.currentFileHandle = activeFileHandle;
                     gamebookUI.data = data;
-                    document.getElementById('gbTitleInput').value = data.title || "Sin título";
+                    const titleInput = document.getElementById('gbTitleInput');
+                    if (titleInput) titleInput.value = data.title || "Sin título";
                     const styleInput = document.getElementById('gbStyleInput');
                     if (styleInput) styleInput.value = data.visualStyle || "";
-                    await gamebookUI.cacheImages();
+                    if (typeof gamebookUI.cacheImages === 'function') await gamebookUI.cacheImages();
+                    
+                    gamebookUI.open(); 
                     gamebookUI.focusAll(); 
                 } catch(e) { console.warn("Archivo leído pero no es un JSON válido aún."); }
             }
@@ -159,7 +178,7 @@ async function handleGamebookTool(args) {
             
             let data;
             try {
-                data = JSON.parse(jsonText);
+                data = JSON.parse(jsonText || '{"title":"Aventura Nueva","visualStyle":"","nodes":[]}');
             } catch(e) {
                 data = { title: "Aventura Recuperada", visualStyle: "", nodes: [] };
             }
@@ -168,7 +187,7 @@ async function handleGamebookTool(args) {
             if (choices) {
                 try { 
                     parsedChoices = typeof choices === 'string' ? JSON.parse(choices) : choices; 
-                } catch(e) { return "Error: choices no es un formato válido."; }
+                } catch(e) { return "Error: choices no es un formato válido JSON."; }
             }
 
             let node = data.nodes.find(n => n.id === node_id);
@@ -184,12 +203,12 @@ async function handleGamebookTool(args) {
                 }
                 node = { id: node_id, text: text || "", choices: parsedChoices, x: vx + (Math.random()*150), y: vy + (Math.random()*150) };
                 data.nodes.push(node);
-                historyManager.logAction('IA (Librojuego)', `Añadió el nodo ${node_id}`);
+                if (typeof historyManager !== 'undefined') historyManager.logAction('IA (Librojuego)', `Añadió el nodo ${node_id}`);
             } else {
                 if (!node) return `Error: El nodo ${node_id} no existe. Usa add_node.`;
-                if (text) node.text = text;
-                if (choices) node.choices = parsedChoices;
-                historyManager.logAction('IA (Librojuego)', `Editó el nodo ${node_id}`);
+                if (text !== undefined) node.text = text;
+                if (choices !== undefined) node.choices = parsedChoices;
+                if (typeof historyManager !== 'undefined') historyManager.logAction('IA (Librojuego)', `Editó el nodo ${node_id}`);
             }
 
             const w = await activeFileHandle.createWritable();
@@ -204,13 +223,44 @@ async function handleGamebookTool(args) {
                 const styleInput = document.getElementById('gbStyleInput');
                 if (styleInput) styleInput.value = data.visualStyle || "";
                 
-                await gamebookUI.cacheImages();
+                if (typeof gamebookUI.cacheImages === 'function') await gamebookUI.cacheImages();
                 
                 gamebookUI.selectedNodeId = node_id; 
                 gamebookUI.updateEditorPanel();
                 gamebookUI.render();
             }
             return `Nodo '${node_id}' guardado correctamente en ${activeFileHandle.name}. La interfaz visual ha sido actualizada enfocando el nodo.`;
+            
+        } else if (action === 'delete_node') {
+            const f = await activeFileHandle.getFile();
+            const jsonText = await f.text();
+            let data = JSON.parse(jsonText);
+            
+            const nodeIndex = data.nodes.findIndex(n => n.id === node_id);
+            if (nodeIndex === -1) return `Error: Nodo '${node_id}' no encontrado.`;
+            
+            data.nodes.splice(nodeIndex, 1);
+            
+            data.nodes.forEach(n => {
+                if (n.choices) {
+                    n.choices = n.choices.filter(c => c.targetId !== node_id);
+                }
+            });
+            
+            const w = await activeFileHandle.createWritable();
+            await w.write(JSON.stringify(data, null, 2));
+            await w.close();
+            
+            if (typeof gamebookUI !== 'undefined') {
+                gamebookUI.data = data;
+                if (gamebookUI.selectedNodeId === node_id) {
+                    gamebookUI.selectedNodeId = null;
+                    gamebookUI.updateEditorPanel();
+                }
+                gamebookUI.render();
+            }
+            if (typeof historyManager !== 'undefined') historyManager.logAction('IA (Librojuego)', `Eliminó el nodo ${node_id}`);
+            return `Nodo '${node_id}' eliminado y desenlazado correctamente.`;
             
         } else {
             return `Error: Acción '${action}' no reconocida.`;

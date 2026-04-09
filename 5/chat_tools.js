@@ -92,9 +92,84 @@ function handleKeyDown(e) {
   }
 }
 
-// ─── SEARCH TOOLS (Gemini) ──────────────────────────────────────
+// ─── SEARCH TOOLS (GRATIS SIN API KEY) ──────────────────────────────────────
 async function doGeminiSearch(query, model) {
-  return "Las búsquedas de internet mediante IA REST han sido desactivadas en el sistema. Solo opera Gemini Live.";
+  try {
+    if (typeof showToast === 'function') showToast(`Buscando en red: ${query}...`, 'listening');
+    
+    // Intento 1: API de Respuestas Rápidas de DuckDuckGo
+    const ddgUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
+    const ddgResponse = await fetch(ddgUrl);
+    const ddgData = await ddgResponse.json();
+
+    if (ddgData.AbstractText) {
+        return `=== RESULTADO DE INTERNET (DuckDuckGo) ===\n\nResumen: ${ddgData.AbstractText}\nFuente: ${ddgData.AbstractURL}`;
+    }
+
+    // Intento 2: Búsqueda abierta en Wikipedia
+    const wikiUrl = `https://es.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&utf8=&format=json&origin=*`;
+    const wikiResponse = await fetch(wikiUrl);
+    const wikiData = await wikiResponse.json();
+
+    if (wikiData.query && wikiData.query.search.length > 0) {
+        const pageId = wikiData.query.search[0].pageid;
+        const textUrl = `https://es.wikipedia.org/w/api.php?action=query&prop=extracts&pageids=${pageId}&explaintext=1&exchars=2000&format=json&origin=*`;
+        const textResponse = await fetch(textUrl);
+        const textData = await textResponse.json();
+        const extract = textData.query.pages[pageId].extract;
+        
+        return `=== RESULTADO DE INTERNET (Wikipedia) ===\n\nTítulo: ${wikiData.query.search[0].title}\nResumen: ${extract}`;
+    }
+
+    return `La búsqueda en internet finalizó pero no encontró resúmenes directos para la consulta: "${query}".`;
+  } catch (err) {
+    return `Error ejecutando la búsqueda en red: ${err.message}`;
+  }
+}
+
+// ─── WEATHER TOOL (GRATIS SIN API KEY) ──────────────────────────────────────
+async function getWeather(location) {
+  try {
+    if (typeof showToast === 'function') showToast(`Consultando clima de ${location}...`, 'listening');
+
+    // 1. Geocodificación: Buscar latitud y longitud de la ciudad
+    const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1&language=es&format=json`;
+    const geoResponse = await fetch(geoUrl);
+    if (!geoResponse.ok) throw new Error("Servicio de coordenadas inactivo.");
+
+    const geoData = await geoResponse.json();
+    if (!geoData.results || geoData.results.length === 0) {
+        return `Aviso: No se ha encontrado ninguna ciudad llamada "${location}".`;
+    }
+
+    const { latitude, longitude, name, country } = geoData.results[0];
+
+    // 2. Consulta del clima usando las coordenadas exactas
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`;
+    const weatherResponse = await fetch(weatherUrl);
+    if (!weatherResponse.ok) throw new Error("Servicio meteorológico inactivo.");
+
+    const weatherData = await weatherResponse.json();
+    const current = weatherData.current_weather;
+
+    // Diccionario de códigos WMO (Organización Meteorológica Mundial) al español
+    const wmo = {
+        0: "Despejado ☀️", 1: "Mayormente despejado 🌤️", 2: "Parcialmente nublado ⛅", 3: "Nublado ☁️",
+        45: "Niebla 🌫️", 48: "Niebla escarchada 🌫️", 51: "Llovizna ligera 🌧️", 53: "Llovizna moderada 🌧️", 55: "Llovizna densa 🌧️",
+        61: "Lluvia leve 🌦️", 63: "Lluvia moderada 🌧️", 65: "Lluvia fuerte 🌧️", 71: "Nieve leve 🌨️", 73: "Nieve moderada ❄️", 75: "Nieve fuerte ❄️",
+        95: "Tormenta eléctrica ⛈️", 96: "Tormenta con granizo leve ⛈️", 99: "Tormenta con granizo fuerte ⛈️"
+    };
+
+    const conditionText = wmo[current.weathercode] || "Condiciones variables";
+
+    return `=== REPORTE DEL CLIMA PARA ${name.toUpperCase()} (${country}) ===
+Estado: ${conditionText}
+Temperatura Actual: ${current.temperature}°C
+Viento: ${current.windspeed} km/h (Dirección: ${current.winddirection}°)
+`;
+  } catch (err) {
+    return `Aviso técnico: Fallo al consultar el clima de ${location}. Error: ${err.message}.`;
+  }
 }
 
 // ─── WEB BROWSING TOOLS ────────────────────────────────────────────────
@@ -250,10 +325,6 @@ const webBrowser = {
 };
 
 // ─── DELEGACIÓN A MODELOS Y HERRAMIENTAS DINÁMICAS ─────────────────────
-
-async function askExternalAI(prompt, model) {
-  return "Delegación a modelos externos desactivada. Solo opera Gemini Live.";
-}
 
 async function executeDynamicTool(code) {
   try {

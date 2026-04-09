@@ -14,9 +14,9 @@
   --gem-green: #999999;
   --gem-red: #aaaaaa;
   
-  --text: #666666;
+  --text: #1b1b1b;
   --text-dim: #bbbbbb;
-  --text-bright: #333333;
+  --text-bright: #000000;
   
   --glow-blue: none;
   --glow-cyan: none;
@@ -283,7 +283,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 32px;
-  scroll-behavior: smooth; padding: 20px;
+  scroll-behavior: smooth; padding: 40px;
 }
 .messages::-webkit-scrollbar { width: 0px; }
 
@@ -342,9 +342,10 @@ body {
 
 /* INPUT BAR */
 .input-bar {
+ 
   display: flex;
   gap: 16px;
-  padding: 24px 0;
+   padding: 30px;
   background: transparent;
   align-items: flex-end;
   border-top: 1px solid var(--border); /* Única línea de separación sutil */

@@ -34,7 +34,6 @@ async function handleDatosStudioTool(args) {
 
     try {
         if (action === 'create_data') {
-            // CORRECCIÓN: Permitir que la IA especifique el nombre del archivo para no perder la referencia
             let newFilename = filename;
             if (!newFilename) {
                 const cleanName = (name || "Nuevo Dato").trim().replace(/[^a-z0-9]/gi, '_').toLowerCase();
@@ -51,9 +50,13 @@ async function handleDatosStudioTool(args) {
                 imagen64: null
             };
 
-            // CORRECCIÓN: Procesar el SVG mediante Blob (Memory Safe) en el mismo paso de creación si se aporta
             if (svg_content) {
-                const blob = new Blob([svg_content], { type: 'image/svg+xml' });
+                let safeSvg = svg_content;
+                // Reparación automática del namespace SVG si la IA lo omite (crítico para renderizado en Base64/img)
+                if (!safeSvg.includes('xmlns=')) {
+                    safeSvg = safeSvg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+                }
+                const blob = new Blob([safeSvg], { type: 'image/svg+xml' });
                 const reader = new FileReader();
                 const base64Promise = new Promise((resolve) => {
                     reader.onloadend = () => resolve(reader.result);
@@ -86,9 +89,12 @@ async function handleDatosStudioTool(args) {
             if (desc) data.desc = desc;
             if (visual_desc) data.visualDesc = visual_desc;
 
-            // CORRECCIÓN: Soporte de SVG inyectado durante una actualización ordinaria
             if (svg_content) {
-                const blob = new Blob([svg_content], { type: 'image/svg+xml' });
+                let safeSvg = svg_content;
+                if (!safeSvg.includes('xmlns=')) {
+                    safeSvg = safeSvg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+                }
+                const blob = new Blob([safeSvg], { type: 'image/svg+xml' });
                 const reader = new FileReader();
                 const base64Promise = new Promise((resolve) => {
                     reader.onloadend = () => resolve(reader.result);
@@ -190,8 +196,12 @@ async function handleDatosStudioTool(args) {
             const text = await file.text();
             let data = JSON.parse(text);
 
-            // CORRECCIÓN PROFUNDA: Reemplazar el inestable btoa() con una conversión de memoria Blob pura nativa a Base64.
-            const blob = new Blob([svg_content], { type: 'image/svg+xml' });
+            let safeSvg = svg_content;
+            if (!safeSvg.includes('xmlns=')) {
+                safeSvg = safeSvg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+            }
+
+            const blob = new Blob([safeSvg], { type: 'image/svg+xml' });
             const reader = new FileReader();
             const base64Promise = new Promise((resolve) => {
                 reader.onloadend = () => resolve(reader.result);

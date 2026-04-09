@@ -43,25 +43,45 @@ const geminiToolsConfig = [{
         parameters: {
             type: "OBJECT",
             properties: {
-            action: { type: "STRING", description: "Acción a realizar: 'open', 'close', 'delegate_code', o 'write_code'." },
-            prompt: { type: "STRING", description: "Instrucciones precisas (sólo para 'delegate_code')." },
-            model: { type: "STRING", description: "El modelo externo a usar." },
+            action: { type: "STRING", description: "Acción a realizar: 'open', 'close', o 'write_code'." },
             code: { type: "STRING", description: "El código fuente a insertar en el editor y ejecutar en vivo (sólo para 'write_code')." }
             },
             required: ["action"]
         }
         },
         {
-        name: "manage_svg_studio",
-        description: "Abre, cierra y controla el SVG Studio para crear arte vectorial SVG.",
+        name: "manage_game_studio",
+        description: "Controla el Game Studio. Permite inyectar niveles base, inyectar SVG parciales a entidades por ID sin reescribir todo, y jugar por voz.",
         parameters: {
             type: "OBJECT",
             properties: {
-            action: { type: "STRING", description: "Acción a realizar: 'open', 'close', 'create_svg', 'save_svg', 'save_png'." },
-            code: { type: "STRING", description: "Código fuente SVG completo (solo para 'create_svg')." },
+            action: { type: "STRING", description: "Acción: 'open', 'close', 'build_level', 'voice_command', 'update_svg', 'add_platform', 'update_settings'." },
+            level_code: { type: "STRING", description: "JSON completo del nivel inicial (sólo para 'build_level')." },
+            command: { type: "STRING", description: "El comando direccional: 'left', 'right', 'jump' o 'stop' (sólo 'voice_command')." },
+            entity_id: { type: "STRING", description: "ID de la entidad a modificar, ej: 'player' o 'floor_1' (sólo 'update_svg')." },
+            svg_code: { type: "STRING", description: "Código vectorial SVG puro a inyectar en la entidad (sólo 'update_svg')." },
+            platform_data: { type: "STRING", description: "JSON string de una nueva plataforma: {\"id\":\"p2\",\"x\":10,\"y\":10,\"w\":50,\"h\":10} (sólo 'add_platform')." },
+            settings_data: { type: "STRING", description: "JSON string de ajustes, ej: {\"gravity\": 800, \"bgColor\": \"#000\"} (sólo 'update_settings')." }
+            },
+            required: ["action"]
+        }
+        },
+        {
+        name: "manage_svg_studio",
+        description: "Abre, cierra y controla el SVG Studio para crear arte vectorial SVG hiper-realista mediante el motor Architect o editar SVG directamente.",
+        parameters: {
+            type: "OBJECT",
+            properties: {
+            action: { type: "STRING", description: "Acción a realizar: 'open', 'close', 'create_svg', 'append_svg', 'replace_in_svg', 'save_svg', 'save_png', 'architect_start', 'architect_add_part', 'architect_render'." },
+            code: { type: "STRING", description: "Código fuente SVG completo (solo para 'create_svg' o 'append_svg')." },
+            old_code: { type: "STRING", description: "Fragmento de código exacto a reemplazar (solo 'replace_in_svg')." },
+            new_code: { type: "STRING", description: "Nuevo fragmento de código que sustituirá al antiguo (solo 'replace_in_svg')." },
             filename: { type: "STRING", description: "Ruta o nombre del archivo." },
             width: { type: "NUMBER", description: "Ancho en píxeles para exportar." },
-            height: { type: "NUMBER", description: "Alto en píxeles para exportar." }
+            height: { type: "NUMBER", description: "Alto en píxeles para exportar." },
+            layersConfig: { type: "STRING", description: "JSON string con el plan de capas, ej: '[{\"id\": \"fondo\"}, {\"id\": \"luces\"}]' (Solo para 'architect_start'). No requiere número de partes." },
+            layerId: { type: "STRING", description: "ID de la capa a la que pertenece la pieza actual (Solo para 'architect_add_part')." },
+            layerCode: { type: "STRING", description: "Código SVG puro (<path>, <polygon>, etc.) a inyectar. Puedes enviar múltiples elementos a la vez (Solo para 'architect_add_part')." }
             },
             required: ["action"]
         }
@@ -132,18 +152,28 @@ const geminiToolsConfig = [{
         },
         {
         name: "manage_gamebook",
-        description: "Crea, inspecciona e ilustra Librojuegos.",
+        description: "Crea, inspecciona e ilustra Librojuegos. Permite generar, leer y editar el flujo de nodos y opciones de una historia interactiva.",
         parameters: {
             type: "OBJECT",
             properties: {
-            action: { type: "STRING" },
-            filename: { type: "STRING" },
-            title: { type: "STRING" },
-            visual_style: { type: "STRING" },
-            node_id: { type: "STRING" },
-            text: { type: "STRING" },
-            svg_content: { type: "STRING" },
-            choices: { type: "ARRAY", items: { type: "OBJECT", properties: { text: { type: "STRING" }, targetId: { type: "STRING" } } } },
+            action: { type: "STRING", description: "Acción requerida: 'create_book', 'get_book' (carga y abre en pantalla), 'add_node', 'edit_node', 'delete_node', 'update_settings', 'auto_layout', 'reset_view', 'move_view', 'illustrate_node', 'illustrate_all', 'illustrate_node_svg'" },
+            filename: { type: "STRING", description: "Ruta del archivo .json del librojuego (ej. 'juegos/aventura.json')" },
+            title: { type: "STRING", description: "Título del librojuego" },
+            visual_style: { type: "STRING", description: "Estilo visual global" },
+            node_id: { type: "STRING", description: "ID único del nodo a crear/editar/eliminar (ej. 'inicio')" },
+            text: { type: "STRING", description: "Texto narrativo del nodo" },
+            svg_content: { type: "STRING", description: "Código vectorial SVG (sólo illustrate_node_svg)" },
+            choices: { 
+                type: "ARRAY", 
+                description: "Lista de opciones que conectan con otros nodos.",
+                items: { 
+                    type: "OBJECT", 
+                    properties: { 
+                        text: { type: "STRING", description: "Texto del botón (ej. 'Abrir puerta')" }, 
+                        targetId: { type: "STRING", description: "ID del nodo destino" } 
+                    } 
+                } 
+            },
             x: { type: "NUMBER" },
             y: { type: "NUMBER" },
             zoom: { type: "NUMBER" }
@@ -209,6 +239,27 @@ const geminiToolsConfig = [{
         }
         },
         {
+        name: "get_weather",
+        description: "Consulta el clima actual y el pronóstico para una ubicación específica en tiempo real.",
+        parameters: {
+            type: "OBJECT",
+            properties: {
+            location: { type: "STRING", description: "Nombre de la ciudad o ubicación (ej. 'Madrid', 'Buenos Aires')." }
+            },
+            required: ["location"]
+        }
+        },
+        {
+        name: "get_news",
+        description: "Consulta las noticias más recientes. Puedes buscar un tema específico o dejarlo vacío para ver los titulares generales.",
+        parameters: {
+            type: "OBJECT",
+            properties: {
+            query: { type: "STRING", description: "Tema a buscar (ej. 'tecnología', 'España'). Déjalo vacío para noticias generales." }
+            }
+        }
+        },
+        {
         name: "browse_web",
         description: "Abre una página web en el navegador visual del sistema.",
         parameters: {
@@ -233,18 +284,6 @@ const geminiToolsConfig = [{
             selector: { type: "STRING" }
             },
             required: ["action"]
-        }
-        },
-        {
-        name: "ask_external_ai",
-        description: "Delega una tarea, consulta o procesamiento pesado a un modelo de IA externo.",
-        parameters: {
-            type: "OBJECT",
-            properties: {
-            prompt: { type: "STRING" },
-            model: { type: "STRING" }
-            },
-            required: ["prompt", "model"]
         }
         },
         {

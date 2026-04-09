@@ -11,10 +11,20 @@
 <body>
 
 <header style="padding: 10px; display: flex; align-items: center; justify-content: space-between;">
-   <div class="logo">SILEN<span style="color: red;" >OS</span> 5</div>
+   <div class="logo" style="font-size: larger; position: fixed; top: 45%; left: 25%;" >SILEN<span style="color: red;  " >OS</span> 5</div>
 
    <div class="top-bar-controls" style="position: fixed; top: 16px; right: 70px; display: flex; align-items: center; gap: 15px; z-index: 1000;">
-      <div class="status-bar">
+     <button class="ctrl-btn ctrl-btn-full" id="workspaceBtn" onclick="selectWorkspace()">
+          <svg width="18" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+          SELECCIONAR CARPETA
+        </button>
+        <div id="workspaceStatus" style="font-family: 'Space Mono', monospace; font-size: 9px; color: var(--text-dim); text-align: center; margin-top: 8px; word-break: break-all;">Ninguna carpeta seleccionada</div>
+      
+    
+    
+    <div class="status-bar"  >
          <div class="status-dot" id="statusDot"></div>
          <span id="statusText">DESCONECTADO</span>
       </div>
@@ -79,14 +89,7 @@
     <div class="panel-section">
       <div class="panel-title">ENTORNO LOCAL</div>
       <div class="controls" style="grid-template-columns: 1fr;">
-        <button class="ctrl-btn ctrl-btn-full" id="workspaceBtn" onclick="selectWorkspace()">
-          <svg width="18" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-          </svg>
-          SELECCIONAR CARPETA
-        </button>
-        <div id="workspaceStatus" style="font-family: 'Space Mono', monospace; font-size: 9px; color: var(--text-dim); text-align: center; margin-top: 8px; word-break: break-all;">Ninguna carpeta seleccionada</div>
-      </div>
+        </div>
     </div>
 
     <div class="panel-section">
@@ -121,6 +124,13 @@
             <rect x="2" y="3" width="20" height="15" rx="2"/><path d="M8 21h8M12 18v3"/>
           </svg>
           PANTALLA
+        </button>
+        
+        <button class="ctrl-btn ctrl-btn-full" id="gameStudioBtn" onclick="gameStudioUI.open()" style="background:var(--surface2);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="2" y="6" width="20" height="12" rx="2" ry="2"></rect><circle cx="16" cy="12" r="1"></circle><circle cx="18" cy="12" r="1"></circle><path d="M6 12h4"></path><path d="M8 10v4"></path>
+          </svg>
+          GAME STUDIO (2D & VOZ)
         </button>
 
         <button class="ctrl-btn ctrl-btn-full" id="coderStudioBtn" onclick="coderStudioUI.open()"  >
@@ -205,7 +215,7 @@
       <textarea class="chat-input" id="chatInput" placeholder="Escribe un mensaje..." rows="1" 
         onkeydown="handleKeyDown(event)" oninput="autoResize(this)"></textarea> 
       <button class="btn-send" id="sendBtn" onclick="sendTextMessage()" disabled>ENVIAR</button>
-     </div> <div class="voice-viz" id="voiceViz"></div>
+     </div>  
   </div>   
 </div>
 
@@ -224,6 +234,24 @@
   </div>
   <div class="web-modal-body">
     <iframe id="webIframe" allow="camera; microphone; display-capture; fullscreen"></iframe>
+  </div>
+</div>
+
+<div id="gameStudioModal" class="web-modal hidden"  style="width: 75%; height: 100vh; top: 0vh; left: 0%; border-radius: 0;">
+  <div class="web-modal-header" id="gsModalHeader">
+    <span class="web-modal-title">GAME STUDIO (Editor y Motor 2D)</span>
+    <div class="web-modal-controls" style="display:flex; align-items:center;">
+      <button onclick="gameStudioUI.applyCode()" title="Aplicar Código" style="font-size: 11px; margin-right: 15px; border: 1px solid #1a73e8; color: #1a73e8; padding: 4px 12px; border-radius: 4px; font-family: monospace;">▶ APLICAR JSON</button>
+      <button onclick="gameStudioUI.close()" title="Cerrar">×</button>
+    </div>
+  </div>
+  <div class="ide-layout" style="display: flex; height: calc(100% - 41px); background: var(--surface);">
+    <div style="flex: 1; border-right: 1px solid var(--text-dim); display: flex; flex-direction: column;">
+        <textarea id="gsEditor" style="flex: 1; width: 100%; padding: 16px; font-family: 'Space Mono', monospace; font-size: 13px; background: var(--surface2); color: var(--text); resize: none; border: none; outline: none; white-space: pre; overflow: auto;" spellcheck="false" placeholder="Escribe el JSON del nivel aquí..."></textarea>
+    </div>
+    <div style="flex: 2; display: flex; align-items: center; justify-content: center; background: #222; position: relative;">
+        <canvas id="gsCanvas" width="800" height="450" style="background: #111; max-width: 100%; box-shadow: 0 0 20px rgba(0,0,0,0.5); border-radius: 8px;"></canvas>
+    </div>
   </div>
 </div>
 
@@ -252,6 +280,7 @@
     <div class="web-modal-controls" style="display:flex; align-items:center;">
       <input type="number" id="svgWidthInp" placeholder="Ancho (px)" value="1024" style="width:80px; font-size:10px; padding:4px; margin-right:5px; border-radius:4px; border:1px solid var(--text-dim); text-align:center;">
       <input type="number" id="svgHeightInp" placeholder="Alto (px)" value="1024" style="width:80px; font-size:10px; padding:4px; margin-right:15px; border-radius:4px; border:1px solid var(--text-dim); text-align:center;">
+      <button onclick="svgStudioUI.undo()" title="Deshacer último cambio de la IA" style="font-size: 11px; margin-right: 5px; border: 1px solid var(--text-dim); padding: 4px 12px; border-radius: 4px; font-family: monospace;">↩ DESHACER</button>
       <button onclick="svgStudioUI.saveSvg()" title="Guardar a Disco como SVG" style="font-size: 11px; margin-right: 5px; border: 1px solid var(--text-dim); padding: 4px 12px; border-radius: 4px; font-family: monospace;">💾 GUARDAR SVG</button>
       <button onclick="svgStudioUI.savePng()" title="Exportar a PNG en el tamaño indicado" style="font-size: 11px; margin-right: 15px; border: 1px solid #1a73e8; color: #1a73e8; padding: 4px 12px; border-radius: 4px; font-family: monospace;">🖼️ EXPORTAR PNG</button>
       <button onclick="svgStudioUI.close()" title="Cerrar">×</button>
@@ -399,10 +428,10 @@
   </div>
   <div class="ide-layout" style="display: flex; height: calc(100% - 41px); background: var(--surface2); position: relative;">
     
-    <div id="visGridContainer" style="flex: 1; max-width: 60%;  padding: 25px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 20px; align-content: start;">
+    <div id="visGridContainer" style="flex: 1; max-width: 69%;  padding: 25px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 20px; align-content: start;">
     </div>
 
-    <div id="visFilePreviewPanel" class="hidden" style="position: absolute; right: 0; top: 0; bottom: 0; width: 450px; background: var(--surface); border-left: 1px solid var(--text-dim); display: flex; flex-direction: column; box-shadow: -10px 0 30px rgba(0,0,0,0.15); z-index: 10;">
+    <div id="visFilePreviewPanel" class="hidden" style="position: absolute; right: 0; top: 0; bottom: 0; width: 450px; background: var(--surface); border-left: 1px solid var(--text-dim); display: flex; flex-direction: column; z-index: 10;">
         <div style="padding: 15px 20px; border-bottom: 1px solid var(--text-dim); display: flex; justify-content: space-between; align-items: center; background: var(--surface2);">
             <span id="visPreviewTitle" style="font-family: monospace; font-size: 11px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">ARCHIVO</span>
             
@@ -428,23 +457,22 @@
 <script src="agents.js"></script>
 <script src="agents_tasks.js"></script>
 <script src="data_processor.js"></script>
-
-<script src="coder_agents.js"></script>
+ 
 <script src="coder_studio.js"></script>
-<script src="svg_studio.js"></script> 
+<script src="svg_studio.js"></script>
+<script src="game_studio.js"></script>
 <script src="ui.js"></script>
 <script src="chat_ui.js"></script>
 <script src="workspace.js"></script>
 <script src="media.js"></script>
+<script src="news_tools.js"></script>
 <script src="chat_tools.js"></script>
 <script src="audio_handler.js"></script>
-
 
 <script src="server_handler_fileops.js"></script>
 <script src="server_handler_visualizer.js"></script>
 <script src="server_handler_gamebook.js"></script>
 <script src="server_handler.js"></script>
-
 
 <script src="system_prompt.js"></script>
 <script src="tools_config.js"></script>

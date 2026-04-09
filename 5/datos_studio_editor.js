@@ -23,7 +23,11 @@ window.datosStudioEditor = {
         const imgPreview = document.getElementById('dsImgPreview');
         if (imgPreview) {
             if (item.data.imagen64) {
-                imgPreview.innerHTML = `<img src="${item.data.imagen64}" style="width:100%; height:100%; object-fit:contain; border-radius: 4px;">`;
+                if (item.data.imagen64.trim().startsWith('<svg')) {
+                    imgPreview.innerHTML = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; overflow:hidden;">${item.data.imagen64}</div>`;
+                } else {
+                    imgPreview.innerHTML = `<img src="${item.data.imagen64}" style="width:100%; height:100%; object-fit:contain; border-radius: 4px;">`;
+                }
             } else {
                 imgPreview.innerHTML = `<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-dim); border: 1px dashed var(--text-dim); border-radius: 4px; font-family: monospace; font-size: 10px;">SIN IMAGEN</div>`;
             }

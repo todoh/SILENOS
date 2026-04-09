@@ -15,7 +15,7 @@
   flex-direction: column;
   overflow: hidden;
   transition: width 0.3s ease, height 0.3s ease, top 0.3s ease, left 0.3s ease, transform 0.3s ease;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+ 
 }
 .web-modal.hidden { display: none; }
 .web-modal.minimized {
@@ -125,7 +125,7 @@
 /* ESTILOS DEL VISUALIZADOR */
 .vis-item-card {
   background: var(--surface);
-  border: 1px solid var(--text-dim);
+  border: 0px solid var(--text-dim);
   border-radius: 8px;
   cursor: pointer;
   display: flex;

@@ -21,8 +21,12 @@ window.datosStudioGrid = {
 
             let imgHTML = '<div style="height: 150px; background: var(--surface2); display: flex; align-items: center; justify-content: center; color: var(--text-dim); font-size: 10px; font-family: monospace;">SIN IMAGEN</div>';
             if (item.data.imagen64) {
-                // Soporte nativo para Base64 inyectado por la IA
-                imgHTML = `<img src="${item.data.imagen64}" style="width: 100%; height: 150px; object-fit: cover;">`;
+                // Soporte robusto: Renderiza tanto SVGs inyectados crudos como Base64 (imágenes raster o svg)
+                if (item.data.imagen64.trim().startsWith('<svg')) {
+                    imgHTML = `<div style="width: 100%; height: 150px; overflow: hidden; display: flex; align-items: center; justify-content: center;">${item.data.imagen64}</div>`;
+                } else {
+                    imgHTML = `<img src="${item.data.imagen64}" style="width: 100%; height: 150px; object-fit: cover;">`;
+                }
             }
 
             card.innerHTML = `

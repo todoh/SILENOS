@@ -206,6 +206,7 @@ function toggleSettingsMenu() {
 let topZIndex = 2000;
 const windowNames = {
     'webModal': 'Navegador IA',
+    'gameStudioModal': 'Game Studio',
     'coderStudioModal': 'Coder Studio',
     'svgStudioModal': 'SVG Studio',
     'gamebookModal': 'Librojuego',

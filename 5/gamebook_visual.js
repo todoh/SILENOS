@@ -105,20 +105,61 @@ const gamebookVisual = {
     },
 
     async generateNodePrompt(nodeId) {
-        // LLAMADA REST DESACTIVADA
-        return "Imagen generada deshabilitada.";
+        return "Imagen generada por IA nativa en formato SVG.";
     },
 
     async illustrateNode(nodeId) {
-        if (typeof showToast === 'function') showToast(`Generación de imágenes con IA desactivada`, "error");
-        this.generatingNodes.delete(nodeId);
         const node = gamebookUI.data.nodes.find(n => n.id === nodeId);
-        if (node && gamebookUI.selectedNodeId === nodeId) this.updateUI(node);
-        return;
+        if (!node) return;
+
+        if (!isConnected || !session?.ws) {
+            if (typeof showToast === 'function') showToast(`Error: Conecta a VOZ SILENOS primero`, "error");
+            return;
+        }
+
+        if (typeof showToast === 'function') showToast(`Pidiendo arte SVG a la IA...`, "listening");
+        
+        this.generatingNodes.add(nodeId);
+        if (gamebookUI.selectedNodeId === nodeId) this.updateUI(node);
+
+        const promptText = `Por favor, ilustra el nodo '${nodeId}' de mi librojuego usando arte vectorial SVG de alta calidad.
+Contexto de la escena: "${node.text || 'Sin texto'}".
+Estilo visual del libro: "${gamebookUI.data.visualStyle || 'Estilo libre'}".
+Usa la herramienta 'manage_gamebook' con la acción 'illustrate_node_svg' e inyecta el código SVG final.`;
+
+        try {
+            session.ws.send(JSON.stringify({
+                realtimeInput: { text: promptText }
+            }));
+            if (typeof addMessage === 'function') {
+                addMessage('user', `[Comando UI]: Ilustrar nodo '${nodeId}' con SVG.`);
+            }
+        } catch (err) {
+            console.error(err);
+            this.generatingNodes.delete(nodeId);
+            if (gamebookUI.selectedNodeId === nodeId) this.updateUI(node);
+        }
     },
 
     async illustrateAllNodes() {
-        if (typeof showToast === 'function') showToast("Ilustración masiva desactivada", "error");
+        if (!isConnected || !session?.ws) {
+            if (typeof showToast === 'function') showToast(`Error: Conecta a VOZ SILENOS primero`, "error");
+            return;
+        }
+        if (typeof showToast === 'function') showToast("Pidiendo ilustración masiva SVG...", "listening");
+        
+        const promptText = `Por favor, ilustra TODOS los nodos de mi librojuego uno por uno usando arte vectorial SVG. Usa tu herramienta 'manage_gamebook' con la acción 'illustrate_node_svg' para cada uno. El estilo del libro es: "${gamebookUI.data.visualStyle || 'Estilo libre'}".`;
+        
+        try {
+            session.ws.send(JSON.stringify({
+                realtimeInput: { text: promptText }
+            }));
+            if (typeof addMessage === 'function') {
+                addMessage('user', `[Comando UI]: Ilustrar TODOS los nodos con SVG.`);
+            }
+        } catch (err) {
+            console.error(err);
+        }
     },
 
     updateUI(node) {
@@ -139,11 +180,11 @@ const gamebookVisual = {
         }
 
         if (this.generatingNodes.has(node.id)) {
-            illBtn.innerText = "GENERANDO EN 2º PLANO...";
+            illBtn.innerText = "PINTANDO SVG (IA TRABAJANDO)...";
             illBtn.disabled = true;
             illBtn.style.opacity = "0.5";
         } else {
-            illBtn.innerText = "✨ ILUSTRAR ESCENA";
+            illBtn.innerText = "✨ ILUSTRAR CON SVG (IA)";
             illBtn.disabled = false;
             illBtn.style.opacity = "1";
         }

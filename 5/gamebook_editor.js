@@ -74,10 +74,28 @@ Object.assign(window.gamebookUI, {
 
     deleteSelectedNode() {
         if (!this.selectedNodeId) return;
-        if (typeof showToast === 'function') {
-            showToast("⚠️ PROTECCIÓN ACTIVA: La eliminación de nodos está bloqueada para evitar pérdida de datos. Puedes aislar o reutilizar este nodo.", "error");
-        } else {
-            alert("Protección Activa: No se pueden borrar nodos.");
+        
+        if (confirm(`¿Estás seguro de eliminar permanentemente el nodo '${this.selectedNodeId}' y borrar todas sus conexiones?`)) {
+            const nodeId = this.selectedNodeId;
+            const nodeIndex = this.data.nodes.findIndex(n => n.id === nodeId);
+            
+            if (nodeIndex !== -1) {
+                // Elimina el nodo
+                this.data.nodes.splice(nodeIndex, 1);
+                
+                // Desenlaza y limpia las conexiones que apuntaban a este nodo
+                this.data.nodes.forEach(n => {
+                    if (n.choices) {
+                        n.choices = n.choices.filter(c => c.targetId !== nodeId);
+                    }
+                });
+                
+                this.selectedNodeId = null;
+                this.updateEditorPanel();
+                this.render();
+                this.autoSave();
+                if (typeof showToast === 'function') showToast("Nodo eliminado correctamente", "success");
+            }
         }
     },
 
@@ -92,15 +110,13 @@ Object.assign(window.gamebookUI, {
     },
 
     removeChoice(index) {
-        if (confirm("⚠️ ¿Confirmas que borrar esta conexión es de ESTRICTA NECESIDAD LOGÍSTICA ARGUMENTAL? \n\nEsta acción eliminará el flujo narrativo de esta opción permanentemente y no se puede deshacer.")) {
+        if (confirm("¿Estás seguro de eliminar esta decisión/conexión?")) {
             const node = this.data.nodes.find(n => n.id === this.selectedNodeId);
             if (node && node.choices) {
                 node.choices.splice(index, 1);
                 this.saveNodeEdits();
-                if (typeof showToast === 'function') showToast("Conexión eliminada (Necesidad Logística)", "success");
+                if (typeof showToast === 'function') showToast("Conexión eliminada", "success");
             }
-        } else {
-            if (typeof showToast === 'function') showToast("Eliminación de conexión cancelada", "");
         }
     },
 

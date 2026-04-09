@@ -12,6 +12,12 @@ async function selectWorkspace() {
 
     document.getElementById('workspaceStatus').textContent = `Carpeta: ${workspaceHandle.name}`;
     if (typeof showToast === 'function') showToast('Espacio de trabajo listo ✓', 'success');
+
+    // NUEVO: Abrir el visualizador automáticamente al seleccionar la carpeta
+    if (typeof visualizadorUI !== 'undefined') {
+        visualizadorUI.open(workspaceHandle);
+    }
+
   } catch (e) {
     console.error(e);
     if (e.name !== 'AbortError' && typeof showToast === 'function') showToast('Error al seleccionar carpeta', 'error');

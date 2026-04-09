@@ -1,86 +1,142 @@
-// live gemini/datos_studio.js
+// live gemini/coder_studio.js
+// ─── CODER STUDIO (INTERFAZ Y EJECUCIÓN EN VIVO) ──────────────────────────
 
-window.datosStudioUI = {
-    items: [],
+window.coderStudioUI = {
     currentFileHandle: null,
-    currentData: null,
-    currentFolderHandle: null, // Carpeta independiente para Datos Studio
 
-    async selectFolder() {
-        try {
-            this.currentFolderHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-            const label = document.getElementById('dsFolderLabel');
-            if(label) label.innerText = `(${this.currentFolderHandle.name})`;
-            if (typeof showToast === 'function') showToast(`Carpeta de Datos: ${this.currentFolderHandle.name}`, 'success');
-            await this.loadFiles();
-        } catch(e) {
-            console.warn("Selección de carpeta cancelada", e);
-        }
-    },
-
-    async open() {
-        if (!this.currentFolderHandle) {
-            if (workspaceHandle) {
-                this.currentFolderHandle = workspaceHandle; // Por defecto hereda la raíz
-            } else {
-                if (typeof showToast === 'function') showToast('Selecciona una carpeta para Datos Studio', 'error');
-                return;
-            }
-        }
-        
-        const modal = document.getElementById('datosStudioModal');
+    open() {
+        const modal = document.getElementById('coderStudioModal');
         if (modal) {
             modal.classList.remove('hidden');
-        } else {
-            console.warn("Falta el modal 'datosStudioModal' en el HTML. Se requiere para visualización.");
+            if (typeof makeDraggable === 'function' && !this._dragBound) {
+                makeDraggable(modal, document.getElementById('csModalHeader'));
+                this._dragBound = true;
+            }
         }
-
-        const label = document.getElementById('dsFolderLabel');
-        if(label && this.currentFolderHandle) label.innerText = `(${this.currentFolderHandle.name})`;
-
-        await this.loadFiles();
     },
 
     close() {
-        const modal = document.getElementById('datosStudioModal');
+        const modal = document.getElementById('coderStudioModal');
         if (modal) modal.classList.add('hidden');
     },
 
-    async loadFiles() {
-        if (!this.currentFolderHandle) return;
-        this.items = [];
-        try {
-            for await (const entry of this.currentFolderHandle.values()) {
-                if (entry.kind === 'file' && entry.name.endsWith('.json') && !entry.name.includes('TIMELINE') && !entry.name.includes('RESUMEN') && !entry.name.includes('TRAMAS')) {
-                    try {
-                        const file = await entry.getFile();
-                        const text = await file.text();
-                        const json = JSON.parse(text);
-                        this.items.push({ handle: entry, data: json, name: entry.name });
-                    } catch(e) {
-                        console.warn("Archivo omitido o JSON inválido en Datos Studio:", entry.name);
+    async runCode() {
+        let code = document.getElementById('csEditor').value;
+        const iframe = document.getElementById('csPreviewIframe');
+        
+        if (!iframe) return;
+        
+        // Destruir iframe antiguo y crear uno nuevo para evitar fugas de memoria o variables persistentes
+        const container = iframe.parentElement;
+        iframe.remove();
+        
+        const newIframe = document.createElement('iframe');
+        newIframe.id = 'csPreviewIframe';
+        newIframe.style.cssText = "width: 100%; height: 100%; border: none;";
+        newIframe.setAttribute('allow', 'camera; microphone; display-capture; fullscreen; geolocation');
+        container.appendChild(newIframe);
+
+        // Procesar inyección de módulos locales si detectamos HTML y hay una carpeta activa
+        if ((code.toLowerCase().includes('<html') || code.toLowerCase().includes('<!doctype') || code.toLowerCase().includes('<body')) && typeof explorerLens !== 'undefined' && workspaceHandle) {
+            if (typeof showToast === 'function') showToast('Compilando e inyectando módulos locales...', 'listening');
+            try {
+                // Inyectar CSS local referenciado
+                const cssRegex = /<link[^>]+href=["']([^"']+\.css)["'][^>]*>/gi;
+                let cssMatch;
+                while ((cssMatch = cssRegex.exec(code)) !== null) {
+                    const cssPath = cssMatch[1];
+                    if (!cssPath.startsWith('http')) {
+                        try {
+                            const handle = await explorerLens.getHandleFromPath(cssPath);
+                            const file = await handle.getFile();
+                            const cssText = await file.text();
+                            code = code.replace(cssMatch[0], `<style>\n/* Módulo Local Inyectado: ${cssPath} */\n${cssText}\n</style>`);
+                        } catch (e) { console.warn(`No se pudo inyectar el CSS local: ${cssPath}`, e); }
                     }
                 }
+
+                // Inyectar JS local referenciado
+                const jsRegex = /<script[^>]+src=["']([^"']+\.js)["'][^>]*><\/script>/gi;
+                let jsMatch;
+                while ((jsMatch = jsRegex.exec(code)) !== null) {
+                    const jsPath = jsMatch[1];
+                    if (!jsPath.startsWith('http')) {
+                        try {
+                            const handle = await explorerLens.getHandleFromPath(jsPath);
+                            const file = await handle.getFile();
+                            const jsText = await file.text();
+                            code = code.replace(jsMatch[0], `<script>\n/* Módulo Local Inyectado: ${jsPath} */\n${jsText}\n</script>`);
+                        } catch (e) { console.warn(`No se pudo inyectar el JS local: ${jsPath}`, e); }
+                    }
+                }
+            } catch(e) {
+                console.error("Error inyectando dependencias modulares en Coder Studio", e);
             }
-            if (typeof datosStudioGrid !== 'undefined') {
-                datosStudioGrid.render();
-            }
-        } catch(e) {
-            console.error("Error profundo cargando archivos en Datos Studio", e);
+        }
+
+        // Compilar y reproducir
+        const blob = new Blob([code], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        newIframe.src = url;
+        
+        if (typeof showToast === 'function') showToast('Código Compilado y en Ejecución ▶', 'success');
+    },
+
+    async saveCode() {
+        if (!workspaceHandle) {
+            if (typeof showToast === 'function') showToast('Selecciona una carpeta local primero', 'error');
+            return;
+        }
+        
+        const filename = prompt("Nombre del archivo para guardar el código (ej: aplicacion.html):", "index.html");
+        if (!filename) return;
+
+        try {
+            const fileHandle = await workspaceHandle.getFileHandle(filename, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(document.getElementById('csEditor').value);
+            await writable.close();
+            this.currentFileHandle = fileHandle;
+            if (typeof showToast === 'function') showToast(`Código guardado como ${filename}`, 'success');
+        } catch (e) {
+            if (typeof showToast === 'function') showToast(`Error al guardar: ${e.message}`, 'error');
         }
     },
 
-    async saveCurrentItem() {
-        if (!this.currentFileHandle || !this.currentData) return;
-        try {
-            const writable = await this.currentFileHandle.createWritable();
-            await writable.write(JSON.stringify(this.currentData, null, 2));
-            await writable.close();
-            await this.loadFiles();
-            if (typeof showToast === 'function') showToast('Dato guardado correctamente', 'success');
-        } catch (e) {
-            console.error(e);
-            if (typeof showToast === 'function') showToast('Error al guardar dato', 'error');
+    updateEditor(newCode) {
+        const editor = document.getElementById('csEditor');
+        if (editor) {
+            editor.value = newCode;
+            this.runCode(); // Auto-reproducir cuando se inyecta nuevo código
         }
     }
 };
+
+// Herramienta nativa para ser invocada por VOZ SILENOS
+async function handleCoderStudioTool(args) {
+    const { action, code } = args;
+    
+    try {
+        if (action === 'open') {
+            if (typeof coderStudioUI !== 'undefined') coderStudioUI.open();
+            return "Interfaz de Coder Studio abierta al usuario. El entorno de ejecución en vivo está listo.";
+        } 
+        else if (action === 'close') {
+            if (typeof coderStudioUI !== 'undefined') coderStudioUI.close();
+            return "Interfaz de Coder Studio cerrada.";
+        } 
+        else if (action === 'write_code') {
+            if (!code) return "Error: Se requiere el parámetro 'code'.";
+            if (typeof coderStudioUI !== 'undefined') {
+                coderStudioUI.open();
+                coderStudioUI.updateEditor(code);
+                return "Has inyectado el código directamente en el Coder Studio. Se está ejecutando en tiempo real en la pantalla del usuario.";
+            }
+            return "Error: Coder Studio no está disponible en la interfaz actual.";
+        }
+        
+        return `Acción '${action}' no reconocida para la herramienta Coder Studio.`;
+    } catch (e) {
+        return `Fallo crítico en el sistema de Coder Studio: ${e.message}`;
+    }
+}

@@ -13,8 +13,9 @@ async function handleServerMessage(data) {
     for (const call of data.toolCall.functionCalls) {
       let result = "";
       
-      const backgroundTools = ["analyze_target", "light_search", "advanced_search", "browse_web", "ask_external_ai"];
-      const isBackground = backgroundTools.includes(call.name) || (call.name === "manage_coder_studio" && call.args.action === "delegate_code");
+      // Agregamos get_news a las herramientas de segundo plano
+      const backgroundTools = ["analyze_target", "light_search", "advanced_search", "browse_web", "get_weather", "get_news"];
+      const isBackground = backgroundTools.includes(call.name);
 
       if (!isBackground) {
           try {
@@ -54,6 +55,13 @@ async function handleServerMessage(data) {
             } else if (call.name === "file_operations") {
               result = await handleFileOperationsTool(call.args);
               addSystemMsg(`VOZ SILENOS movió/copió archivos (${call.args.action})`);
+            } else if (call.name === "manage_game_studio") {
+              if (typeof handleGameStudioTool !== 'undefined') {
+                  result = await handleGameStudioTool(call.args);
+              } else {
+                  result = "Error: El módulo Game Studio no está cargado.";
+              }
+              addSystemMsg(`VOZ SILENOS usó Game Studio (${call.args.action})`);
             } else if (call.name === "manage_coder_studio") {
               if (typeof handleCoderStudioTool !== 'undefined') {
                   result = await handleCoderStudioTool(call.args);
@@ -169,10 +177,10 @@ async function handleServerMessage(data) {
                       asyncResult = await doGeminiSearch(call.args.query, call.args.model || 'gemini-1.5-pro');
                   } else if (call.name === "browse_web") {
                       asyncResult = await webBrowser.browse(call.args.url, call.args.analyze_model || 'none');
-                  } else if (call.name === "ask_external_ai") {
-                      asyncResult = await askExternalAI(call.args.prompt, call.args.model || 'gemini-1.5-flash');
-                  } else if (call.name === "manage_coder_studio" && call.args.action === "delegate_code") {
-                      asyncResult = await handleCoderStudioTool(call.args);
+                  } else if (call.name === "get_weather") {
+                      asyncResult = await getWeather(call.args.location);
+                  } else if (call.name === "get_news") {
+                      asyncResult = await getLatestNews(call.args.query);
                   }
               } catch (err) {
                   asyncResult = "Error ejecutando en segundo plano: " + err.message;
