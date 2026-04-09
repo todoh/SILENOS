@@ -9,15 +9,26 @@ window.gameStudioUI = {
     lastTime: 0,
     keys: {},
     svgCache: {},
-    camera: { x: 0, y: 0 }, // Nueva variable para controlar el scroll lateral
+    camera: { x: 0, y: 0 },
 
-    // Nueva Arquitectura: Orientada a Entidades con ID
+    // Arquitectura Expandida: Mundos grandes, cielo, parallax, enemigos, interactuables e inventario
     levelData: {
-        settings: { gravity: 900, bgColor: '#111111' },
-        player: { id: 'player', x: 50, y: 200, w: 40, h: 40, vx: 0, vy: 0, speed: 200, jumpForce: -450, color: '#00f0ff', svg: '' },
+        settings: { gravity: 900, skyColor: '#87CEEB', bgColor: '#111111', worldWidth: 3000, worldHeight: 1200 },
+        player: { id: 'player', x: 50, y: 200, w: 40, h: 40, vx: 0, vy: 0, speed: 250, jumpForce: -500, color: '#00f0ff', svg: '', inventory: [] },
+        backgrounds: [
+            { id: 'bg_nubes', x: 0, y: 50, w: 800, h: 200, color: '#ffffff', svg: '', parallax: 0.8 },
+            { id: 'bg_montanas', x: 0, y: 150, w: 1200, h: 300, color: '#4a5a6a', svg: '', parallax: 0.5 }
+        ],
         platforms: [
-            { id: 'floor_1', x: 0, y: 400, w: 800, h: 50, color: '#333333', svg: '' },
-            { id: 'plat_1', x: 300, y: 300, w: 150, h: 20, color: '#555555', svg: '' }
+            { id: 'floor_main', x: 0, y: 400, w: 3000, h: 800, color: '#2d8a3c', svg: '' }, // Suelo masivo
+            { id: 'plat_1', x: 300, y: 300, w: 150, h: 20, color: '#555555', svg: '' },
+            { id: 'plat_2', x: 600, y: 200, w: 150, h: 20, color: '#555555', svg: '' }
+        ],
+        enemies: [
+            { id: 'enemy_1', x: 450, y: 360, w: 40, h: 40, vx: 100, vy: 0, speed: 100, patrolMin: 350, patrolMax: 550, color: '#ff0044', svg: '', isAlive: true }
+        ],
+        interactables: [
+            { id: 'key_1', x: 650, y: 160, w: 30, h: 30, type: 'item', name: 'Llave Dorada', color: '#ffd700', svg: '', collected: false }
         ]
     },
 
@@ -49,11 +60,10 @@ window.gameStudioUI = {
 
     abriendo_la_funcion_del_canvas() {
         this.canvas = document.getElementById('gsCanvas');
-        if (!this.canvas) return; // Evitar fallos si no existe en el DOM
+        if (!this.canvas) return; 
         
         this.ctx = this.canvas.getContext('2d');
         
-        // Limpiar listeners anteriores para no duplicar eventos
         document.onkeydown = e => this.keys[e.code] = true;
         document.onkeyup = e => this.keys[e.code] = false;
 
@@ -69,9 +79,13 @@ window.gameStudioUI = {
         this.svgCache = {};
         if (!this.levelData) return;
         if (this.levelData.player) await this.cacheSingleSVG(this.levelData.player.id, this.levelData.player.svg);
-        if (this.levelData.platforms) {
-            for (let plat of this.levelData.platforms) {
-                await this.cacheSingleSVG(plat.id, plat.svg);
+        
+        const lists = ['platforms', 'backgrounds', 'enemies', 'interactables'];
+        for (let listName of lists) {
+            if (this.levelData[listName]) {
+                for (let item of this.levelData[listName]) {
+                    await this.cacheSingleSVG(item.id, item.svg);
+                }
             }
         }
     },
@@ -82,7 +96,6 @@ window.gameStudioUI = {
             return;
         }
         
-        // SANITIZACIÓN ESTRICTA
         let safeSvg = svgString.trim();
         if (!safeSvg.includes('xmlns=')) {
             safeSvg = safeSvg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
@@ -96,7 +109,6 @@ window.gameStudioUI = {
 
         return new Promise((resolve) => {
             const img = new Image();
-            // Codificación robusta en Base64 para evitar bloqueos del Canvas
             const svg64 = btoa(unescape(encodeURIComponent(safeSvg)));
             const b64Start = 'data:image/svg+xml;base64,';
             const image64 = b64Start + svg64;
@@ -138,8 +150,14 @@ window.gameStudioUI = {
         let target = null;
         if (this.levelData.player && (entityId === 'player' || this.levelData.player.id === entityId)) {
             target = this.levelData.player;
-        } else if (this.levelData.platforms) {
-            target = this.levelData.platforms.find(p => p.id === entityId);
+        } else {
+            const lists = ['platforms', 'backgrounds', 'enemies', 'interactables'];
+            for (let listName of lists) {
+                if (this.levelData[listName]) {
+                    target = this.levelData[listName].find(item => item.id === entityId);
+                    if (target) break;
+                }
+            }
         }
 
         if (target) {
@@ -193,6 +211,7 @@ window.gameStudioUI = {
         
         const p = this.levelData.player;
         const gravity = this.levelData.settings?.gravity ?? 900;
+        const worldWidth = this.levelData.settings?.worldWidth ?? 3000;
 
         if (this.keys['ArrowRight'] || this.keys['KeyD']) p.vx = p.speed;
         else if (this.keys['ArrowLeft'] || this.keys['KeyA']) p.vx = -p.speed;
@@ -208,6 +227,10 @@ window.gameStudioUI = {
         p.x += p.vx * dt;
         p.y += p.vy * dt;
 
+        // Limitar jugador al mundo
+        if (p.x < 0) { p.x = 0; p.vx = 0; }
+        if (p.x + p.w > worldWidth) { p.x = worldWidth - p.w; p.vx = 0; }
+
         p.isGrounded = false;
         if (this.levelData.platforms) {
             for (let plat of this.levelData.platforms) {
@@ -220,34 +243,98 @@ window.gameStudioUI = {
             }
         }
 
+        // Físicas y lógica de los enemigos (Patrulla horizontal y colisiones letales)
+        if (this.levelData.enemies) {
+            for (let e of this.levelData.enemies) {
+                if (!e.isAlive) continue;
+                
+                e.x += e.vx * dt;
+                if (e.x < e.patrolMin) { e.x = e.patrolMin; e.vx = Math.abs(e.speed); }
+                if (e.x + e.w > e.patrolMax) { e.x = e.patrolMax - e.w; e.vx = -Math.abs(e.speed); }
+                
+                // Colisión Jugador vs Enemigo
+                if (p.x < e.x + e.w && p.x + p.w > e.x && p.y < e.y + e.h && p.y + p.h > e.y) {
+                    p.x = 50; 
+                    p.y = 100; 
+                    p.vx = 0; 
+                    p.vy = 0;
+                    if (typeof showToast === 'function') showToast('¡Has muerto!', 'error');
+                }
+            }
+        }
+
+        // Lógica de Objetos Interaccionables
+        if (this.levelData.interactables) {
+            for (let item of this.levelData.interactables) {
+                if (item.collected) continue;
+                
+                // Colisión Jugador vs Objeto
+                if (p.x < item.x + item.w && p.x + p.w > item.x && p.y < item.y + item.h && p.y + p.h > item.y) {
+                    if (item.type === 'item') {
+                        item.collected = true;
+                        if (!p.inventory) p.inventory = [];
+                        p.inventory.push(item.name);
+                        if (typeof showToast === 'function') showToast(`Recogido: ${item.name}`, 'success');
+                        this.syncEditor(); // Actualizamos el JSON con el objeto recogido
+                    }
+                }
+            }
+        }
+
         if (this.canvas) {
-            // Eliminar tope derecho para permitir exploración de mapas extensos
-            if (p.x < 0) { p.x = 0; p.vx = 0; }
-            // Si cae mucho, reiniciar
-            if (p.y > this.canvas.height + 1000) {
+            // Reiniciar si cae al abismo
+            if (p.y > (this.levelData.settings?.worldHeight || 1500)) {
                 p.x = 50;
-                p.y = 50;
+                p.y = 100;
                 p.vy = 0;
                 p.vx = 0;
             }
 
-            // Actualizar la posición de la cámara (Scroll Lateral)
+            // Actualizar la posición de la cámara dinámica (Scroll Lateral fluido)
             this.camera.x = p.x - (this.canvas.width / 2) + (p.w / 2);
-            if (this.camera.x < 0) this.camera.x = 0; // Bloquear cámara para que no vea la izquierda del inicio
+            if (this.camera.x < 0) this.camera.x = 0; 
+            if (this.camera.x > worldWidth - this.canvas.width) this.camera.x = Math.max(0, worldWidth - this.canvas.width);
         }
     },
 
     draw() {
         if (!this.ctx || !this.canvas || !this.levelData) return;
         
-        // Dibujar el fondo estático (no afectado por la cámara)
-        this.ctx.fillStyle = this.levelData.settings?.bgColor || '#111111';
+        // 1. Dibujar Cielo
+        this.ctx.fillStyle = this.levelData.settings?.skyColor || '#87CEEB';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         this.ctx.save();
-        // Aplicar transformación para el Scroll Lateral
-        this.ctx.translate(-this.camera.x, 0);
+        this.ctx.translate(-this.camera.x, 0); // Desplazamiento global de la cámara
 
+        // 2. Dibujar Fondos (Parallax)
+        if (this.levelData.backgrounds) {
+            for (let bg of this.levelData.backgrounds) {
+                // Cálculo de la posición paralaje (0.0=fijo al mundo, 1.0=fijo a la cámara)
+                let renderX = bg.x + this.camera.x * (bg.parallax || 0);
+                if (this.svgCache[bg.id]) {
+                    this.ctx.drawImage(this.svgCache[bg.id], renderX, bg.y, bg.w, bg.h);
+                } else {
+                    this.ctx.fillStyle = bg.color || '#444444';
+                    this.ctx.fillRect(renderX, bg.y, bg.w, bg.h);
+                }
+            }
+        }
+
+        // 3. Dibujar Objetos Interactuables
+        if (this.levelData.interactables) {
+            for (let item of this.levelData.interactables) {
+                if (item.collected) continue;
+                if (this.svgCache[item.id]) {
+                    this.ctx.drawImage(this.svgCache[item.id], item.x, item.y, item.w, item.h);
+                } else {
+                    this.ctx.fillStyle = item.color || '#ffd700';
+                    this.ctx.fillRect(item.x, item.y, item.w, item.h);
+                }
+            }
+        }
+
+        // 4. Dibujar Plataformas y Suelos
         if (this.levelData.platforms) {
             for (let plat of this.levelData.platforms) {
                 if (this.svgCache[plat.id]) {
@@ -259,6 +346,20 @@ window.gameStudioUI = {
             }
         }
 
+        // 5. Dibujar Enemigos
+        if (this.levelData.enemies) {
+            for (let e of this.levelData.enemies) {
+                if (!e.isAlive) continue;
+                if (this.svgCache[e.id]) {
+                    this.ctx.drawImage(this.svgCache[e.id], e.x, e.y, e.w, e.h);
+                } else {
+                    this.ctx.fillStyle = e.color || '#ff0000';
+                    this.ctx.fillRect(e.x, e.y, e.w, e.h);
+                }
+            }
+        }
+
+        // 6. Dibujar Jugador
         if (this.levelData.player) {
             const p = this.levelData.player;
             if (this.svgCache[p.id]) {
@@ -270,6 +371,16 @@ window.gameStudioUI = {
         }
 
         this.ctx.restore();
+
+        // 7. Dibujar Interfaz de Usuario / HUD (Fijo a la cámara)
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        this.ctx.fillRect(10, 10, 350, 40);
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = '14px monospace';
+        const inventarioText = (this.levelData.player?.inventory && this.levelData.player.inventory.length > 0) 
+            ? this.levelData.player.inventory.join(', ') 
+            : 'Vacío';
+        this.ctx.fillText(`Inventario: ${inventarioText}`, 20, 35);
     }
 };
 
@@ -295,7 +406,7 @@ async function handleGameStudioTool(args) {
                     editor.value = level_code;
                     gameStudioUI.applyCode();
                 }
-                return "Nivel base inyectado masivamente. Usar inyecciones parciales a partir de ahora.";
+                return "Nivel inyectado masivamente. Usar inyecciones parciales de SVG a partir de ahora.";
             }
         }
         else if (action === 'voice_command') {
@@ -308,7 +419,7 @@ async function handleGameStudioTool(args) {
         else if (action === 'update_svg') {
             if (!entity_id || !svg_code) return "Error: Faltan 'entity_id' o 'svg_code'.";
             if (typeof gameStudioUI !== 'undefined') {
-                gameStudioUI.open(); // Asegurar que el modal esté abierto para que haya canvas y loop
+                gameStudioUI.open(); 
                 const success = await gameStudioUI.updateSVG(entity_id, svg_code);
                 if (success) return `Gráfico SVG inyectado en vivo a la entidad '${entity_id}'.`;
                 return `Error: La entidad '${entity_id}' no existe en el motor.`;
