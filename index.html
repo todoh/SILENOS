@@ -3,161 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UNIVERSO SILENOS | Hub Principal</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>SILENOS | Inicio</title>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-black text-white antialiased selection:bg-white selection:text-black relative">
+<body>
 
-    <div id="svg-canvas-container" class="absolute top-0 left-0 w-full h-full z-0 pointer-events-none overflow-hidden"></div>
+    <div class="layout">
+        <aside class="sidebar">
+            <a href="index.html" class="logo sans">SILEN<span style="color: red;" >OS</span>.</a>
+            
+            <nav class="nav-links sans">
+                <a href="index.html" class="text-main">Inicio</a>
+                <a href="catalogo.html">Catálogo</a>
+                <a href="ecosistema.html">Ecosistema</a>
+                <a href="cartas.html">Cartas</a>
+                <a href="equipo.html">Equipo</a>
+            </nav>
+        </aside>
 
-    <nav class="nav-global relative z-10 bg-black/50 backdrop-blur-sm">
-        <a href="index.html" class="logo">SILEN<span style="color:rgb(131, 33, 33);" >OS</span>.</a>
-        <div class="links">
-            <a href="index.html" class="active">Hub</a>
-            <a href="v4.html">Silenos V4</a>
-            <a href="obras.html">Obras</a>
-            <a href="pollination.html">Pollination</a>
-            <a href="cartas.html">Cartas Silen</a>
-            <a href="equipo.html">Equipo</a>
-            <a href="docs.html">Docs</a>
-        </div>
-    </nav>
-
-    <header class="min-h-screen flex flex-col justify-end p-6 md:p-12 pb-24 relative z-10 pointer-events-none">
-        <div class="max-w-7xl pointer-events-auto">
-            <p class="font-mono text-sm md:text-base uppercase tracking-[0.3em] mb-6 text-gray-400">
-                ECOSISTEMA CREATIVO & ENTORNO DE DESARROLLO.
-            </p>
-            <h1 class="font-display text-[10vw] leading-[0.8] tracking-tighter font-extrabold uppercase mb-8 drop-shadow-2xl">
-                SILEN<span style="color:rgb(131, 33, 33);" >OS</span>
-            </h1>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-end mt-12">
-                <p class="font-mono text-base md:text-xl font-light text-gray-300 leading-relaxed max-w-xl bg-black/20 p-4 rounded backdrop-blur-sm">
-                    Una fusión radical entre código local, inteligencia orquestada y producción artística masiva. El motor detrás de películas, novelas y sistemas operativos soberanos.
+        <main class="main-content" style="display: flex; flex-direction: column; justify-content: center; min-height: 100vh; padding-bottom: 10vh;">
+            <div class="simple-page">
+                <p class="serif text-main" style="font-size: 2.2rem; line-height: 1.6; margin-bottom: 40px;">
+                    Un entorno de desarrollo narrativo donde la literatura converge con el código.
                 </p>
-                <div class="flex md:justify-end">
-                    <a href="v4.html" class="editorial-btn text-2xl md:text-4xl font-display font-bold uppercase tracking-tight bg-black/50 p-2 hover:bg-white hover:text-black transition-all">INICIAR SISTEMA V4 →</a>
-                </div>
+                <p class="serif text-muted" style="font-size: 2.2rem; line-height: 1.6; margin-bottom: 40px;">
+                    Orquestación de inteligencia artificial para worldbuilding y cinematografía.
+                </p>
+                <p class="serif text-muted" style="font-size: 2.2rem; line-height: 1.6;">
+                    Soberanía total y privacidad absoluta sobre tu disco duro local.
+                </p>
             </div>
-        </div>
-    </header>
-
-    <section class="py-32 p-6 md:p-12 bg-black/90 backdrop-blur-md border-t-[1px] border-white/20 relative z-10">
-        <div class="mb-20">
-            <h2 class="font-display text-6xl md:text-8xl font-bold tracking-tighter uppercase mb-4">NOVEDADES.</h2>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-16 border-t-[1px] border-white/20 pt-16">
-            
-            <article class="hover-invert-block p-6 transition-colors">
-                <div class="flex justify-between items-start mb-8 font-mono text-xs uppercase tracking-widest text-gray-400">
-                    <span>FEB 2026</span><span>SOFTWARE</span>
-                </div>
-                <h3 class="font-display text-3xl font-bold tracking-tight leading-tight mb-4">Silenos OS v4.0 Liberado</h3>
-                <p class="font-mono text-sm leading-relaxed opacity-80">El sistema operativo web sin nube, operando directamente sobre tu File System local con el nuevo Universe Engine.</p>
-            </article>
-
-            <article class="hover-invert-block p-6 transition-colors">
-                <div class="flex justify-between items-start mb-8 font-mono text-xs uppercase tracking-widest text-gray-400">
-                    <span>ENE 2026</span><span>LITERATURA</span>
-                </div>
-                <h3 class="font-display text-3xl font-bold tracking-tight leading-tight mb-4">La Tejedora de Mundos</h3>
-                <p class="font-mono text-sm leading-relaxed opacity-80">Cristina Lobo lanza la primera novela escrita en simbiosis total con el motor OmniGen de Koreh Suite.</p>
-            </article>
-
-            <article class="hover-invert-block p-6 transition-colors">
-                <div class="flex justify-between items-start mb-8 font-mono text-xs uppercase tracking-widest text-gray-400">
-                    <span>DIC 2025</span><span>GAMING</span>
-                </div>
-                <h3 class="font-display text-3xl font-bold tracking-tight leading-tight mb-4">Cartas Silen: Edición Alfa</h3>
-                <p class="font-mono text-sm leading-relaxed opacity-80">El juego de cartas coleccionables impulsado por nuestro propio motor de balanceo y lore procedural.</p>
-            </article>
-
-        </div>
-    </section>
-
-    <section class="bg-black relative z-10 border-t-[1px] border-white/20">
-        <div class="p-6 md:p-12 border-b-[1px] border-white/20">
-             <div class="flex flex-col md:flex-row justify-between md:items-end gap-6">
-                <h2 class="font-display text-6xl md:text-8xl font-bold tracking-tighter uppercase leading-[0.8]">ARCHIVO<br>VISUAL.</h2>
-                <div class="font-mono text-xs uppercase tracking-widest text-gray-400 text-right">
-                    <span class="block">RENDER // OUTPUT</span>
-                    <span class="block">KOREH SUITE V4</span>
-                </div>
-             </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-0">
-            
-            <div class="relative w-full aspect-square md:aspect-video border-b-[1px] md:border-r-[1px] border-white/20 group overflow-hidden">
-                <video autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-500 grayscale group-hover:grayscale-0">
-                    <source src="assets/reina.mp4" type="video/mp4">
-                </video>
-                <div class="absolute top-4 right-4 z-20">
-                    <span class="font-mono text-[10px] bg-red-900 text-white px-2 py-1 uppercase tracking-widest animate-pulse">REC ●</span>
-                </div>
-                <div class="absolute bottom-6 left-6 z-20 pointer-events-none">
-                    <span class="font-mono text-xs bg-white text-black px-3 py-1 font-bold uppercase">CINEMATIC // TEJEDORA</span>
-                </div>
-            </div>
-
-            
-<div class="relative w-full aspect-square md:aspect-video border-b-[1px] md:border-r-[1px] border-white/20 group overflow-hidden bg-white/5">
-                <video autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-500 grayscale group-hover:grayscale-0">
-                    <source src="assets/egipto.mp4" type="video/mp4">
-                </video>
-                <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz4KPC9zdmc+')] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-                <div class="absolute bottom-6 left-6 z-20 pointer-events-none">
-                    <span class="font-mono text-xs bg-white text-black px-3 py-1 font-bold uppercase">RENDER // EGYPT</span>
-                </div>
-            </div>
-            <div class="relative w-full aspect-square md:aspect-video border-b-[1px] md:border-r-[1px] border-white/20 group overflow-hidden bg-white/5">
-                <video autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-500 grayscale group-hover:grayscale-0">
-                    <source src="assets/caballo.mp4" type="video/mp4">
-                </video>
-                <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz4KPC9zdmc+')] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-                <div class="absolute bottom-6 left-6 z-20 pointer-events-none">
-                    <span class="font-mono text-xs bg-white text-black px-3 py-1 font-bold uppercase">RENDER // CRUSADER</span>
-                </div>
-            </div>
-
-            <div class="relative w-full aspect-square md:aspect-video border-b-[1px] border-white/20 group overflow-hidden">
-                <video autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-500 grayscale group-hover:grayscale-0">
-                    <source src="assets/leon.mp4" type="video/mp4">
-                </video>
-                <div class="absolute top-4 right-4 z-20">
-                    <span class="font-mono text-[10px] border border-white/40 text-gray-400 px-2 py-1 uppercase tracking-widest">NO_AUDIO</span>
-                </div>
-                <div class="absolute bottom-6 left-6 z-20 pointer-events-none">
-                    <span class="font-mono text-xs bg-white text-black px-3 py-1 font-bold uppercase">SCENE // LION_RETURN</span>
-                </div>
-            </div>
-            
-             <div class="relative w-full aspect-square md:aspect-video md:border-r-[1px] border-b-[1px] md:border-b-0 border-white/20 group overflow-hidden cursor-crosshair">
-                <img src="assets/ave.webp" alt="3D Model" class="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-300 grayscale group-hover:grayscale-0 hover:scale-105">
-                <div class="absolute bottom-6 left-6 z-20 pointer-events-none">
-                    <span class="font-mono text-xs border border-white text-white px-3 py-1 uppercase backdrop-blur-sm">3D // PAVO REAL</span>
-                </div>
-            </div>
-
-            <div class="relative w-full aspect-square md:aspect-video border-white/20 group overflow-hidden cursor-crosshair">
-                <img src="assets/cronologia.webp" alt="Timeline UI" class="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-300 grayscale group-hover:grayscale-0 hover:scale-105">
-                <div class="absolute bottom-6 left-6 z-20 pointer-events-none">
-                    <span class="font-mono text-xs border border-white text-white px-3 py-1 uppercase backdrop-blur-sm">UI // TIMELINE V7</span>
-                </div>
-            </div>
- 
-        </div>
-
-        
-    </section>
-
-    <footer class="p-6 md:p-12 border-t-[1px] border-white/20 flex justify-between items-end mt-0 bg-black relative z-10">
-        <h2 class="font-display text-5xl tracking-tighter font-extrabold uppercase">SILENOS HUB.</h2>
-        <p class="font-mono text-xs text-gray-400 uppercase tracking-widest">© 2026 Universo Silenos</p>
-    </footer>
-
-    <script src="svginicio.js"></script>
+        </main>
+    </div>
 
 </body>
 </html>

@@ -1,0 +1,49 @@
+{
+  "categorias": [
+    {
+      "id": "mitologia-griega",
+      "nombre": "Mitología Griega",
+      "colecciones": [
+        {
+          "titulo": "El Panteón Clásico",
+          "sinopsis": "Relatos épicos y secretos insondables del Panteón clásico, explorando las luces y sombras de deidades como Zelo, Cerbero y otros mitos olvidados.",
+          "enlace": "https://www.amazon.com/-/es/dp/B0FQPGBJT7?binding=kindle_edition&ref=dbs_dp_rwt_sb_pc_tkin"
+        }
+      ]
+    },
+    {
+      "id": "misterios-egipto",
+      "nombre": "Misterios de Egipto",
+      "colecciones": [
+        {
+          "titulo": "Los Secretos del Duat",
+          "sinopsis": "Una profunda exploración sobre la vida, la muerte y deidades antiguas como Babi y Resjef, que sobrevivieron a su propia muerte y al olvido.",
+          "enlace": "https://www.amazon.com/-/es/dp/B0G92W2S5B?binding=kindle_edition&ref=dbs_dp_rwt_sb_pc_tkin"
+        }
+      ]
+    },
+    {
+      "id": "cabala-misterio",
+      "nombre": "Cábala y Misticismo",
+      "colecciones": [
+        {
+          "titulo": "El Despertar de la Luz Oculta",
+          "sinopsis": "Una colección enfocada en el misticismo occidental, el conocimiento hermético y el análisis del poder en las sombras a través de textos como el Sefer Habahir.",
+          "enlace": "https://www.amazon.com/-/es/dp/B0GRHN91PL?binding=kindle_edition&ref=dbs_dp_rwt_sb_pc_tkin"
+        }
+      ]
+    },
+   
+    {
+      "id": "ensayo-poder",
+      "nombre": "Política y Sociedad",
+      "colecciones": [
+        {
+          "titulo": "Anatomía del Poder",
+          "sinopsis": "Exploraciones contemporáneas sobre las finanzas, el control de las élites, los legados y el deber de la memoria en la estructura social.",
+          "enlace": "https://www.amazon.com/dp/B0GRS6FDXF?binding=kindle_edition&ref_=ast_author_bsi"
+        }
+      ]
+    }
+  ]
+}

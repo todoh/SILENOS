@@ -1,138 +1,186 @@
-/* styles.css */
-/* DISEÑO EDITORIAL SILENOS - BRUTALISM & PURE BLACK/WHITE */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Space+Grotesk:wght@300;400;500;600&family=Syne:wght@400;700;800&display=swap');
-
-:root {
-    --bg-color: #000000;
-    --text-color: #ffffff;
-    --accent-color: #ffffff;
-}
-
-html, body {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    scroll-behavior: smooth;
+/* RESET BRUTALISTA */
+* {
     margin: 0;
     padding: 0;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-/* Tipografías: Contraste Brutalista */
-.font-display { font-family: 'Syne', sans-serif; letter-spacing: -0.05em; }
-.font-mono { font-family: 'Space Grotesk', monospace; letter-spacing: -0.02em; }
-body { font-family: 'Inter', sans-serif; } /* Tipografía base ultra limpia */
-
-/* ELIMINACIÓN TOTAL: Sombras, contornos y curvas (BRUTALISMO PURO) */
-* {
+    box-sizing: border-box;
     box-shadow: none !important;
+    border-radius: 0 !important;
     outline: none !important;
-    border-radius: 0 !important; 
+    border: none !important;
 }
 
-/* Selección de texto: Inversión pura */
-::selection {
+body {
     background-color: #ffffff;
+    color: #000000;
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* TIPOGRAFÍAS */
+.serif { font-family: 'Playfair Display', serif; }
+.sans { font-family: 'Inter', sans-serif; }
+
+.text-muted { color: #737373; }
+.text-main { color: #000000; }
+
+a {
+    text-decoration: none;
+    color: #737373;
+    transition: color 0.1s ease;
+    cursor: pointer;
+}
+
+a:hover {
     color: #000000;
 }
 
-/* Navegación Global */
-.nav-global {background-color: #000000;
-    position: fixed;
-    top: 0;
-    width: 100%;
-    z-index: 50;
-     
-    padding: 1.5rem 2rem;
+/* ESTRUCTURA GENERAL (SPLIT SCREEN) */
+.layout {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    pointer-events: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    min-height: 100vh;
 }
 
-.nav-global .logo {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
+/* BARRA LATERAL (FIJA) */
+.sidebar {
+    width: 300px;
+    position: fixed;
+    height: 100vh;
+    padding: 60px 40px;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Permite scroll si hay muchas colecciones */
+}
+
+/* Ocultar barra de scroll en la barra lateral para máximo minimalismo */
+.sidebar::-webkit-scrollbar { display: none; }
+.sidebar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.logo {
     font-size: 1.5rem;
+    font-weight: 500;
     letter-spacing: -0.05em;
-    pointer-events: auto;
-    text-decoration: none;
-    color: white;
-    text-transform: uppercase;
-}
-
-.nav-global .links {
-    display: none;
-    gap: 2.5rem;
-    font-family: 'Space Grotesk', monospace;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    pointer-events: auto;
-}
-
-@media (min-width: 768px) {
-    .nav-global .links { display: flex; }
-}
-
-.nav-global .links a {
-    color: rgba(255, 255, 255, 0.4);
-    text-decoration: none;
-    transition: color 0s; /* Sin suavidad, directo */
-}
-
-.nav-global .links a:hover, .nav-global .links a.active {
-    color: #ffffff;
-}
-
-/* Enlaces y Botones Editoriales: Líneas nítidas */
-.editorial-btn {
-    display: inline-block;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    transition: transform 0.1s linear, border-color 0s;
-    padding-bottom: 4px;
-    text-decoration: none;
-    color: white;
-}
-.editorial-btn:hover {
-    border-bottom: 1px solid #ffffff;
-    transform: translateX(4px);
-}
-
-/* Bloques de inversión (Hover brutalista - Golpe seco) */
-.hover-invert-block {
-    display: block;
-    text-decoration: none;
-    color: white;
-    transition: all 0s; /* Cero transición, cambio inmediato y rudo */
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    background-color: transparent;
-}
-.hover-invert-block:hover {
-    background-color: #ffffff;
-    color: #000000;
-    border-color: #ffffff;
-}
-
-/* Forzar la inversión de colores en elementos internos al hacer hover */
-.hover-invert-block:hover * {
-    color: #000000 !important;
-    border-color: rgba(0, 0, 0, 0.2) !important;
-}
-
-/* Ajustes específicos para tarjetas generadas por JS */
-.card-module {
-    border: 1px solid rgba(255,255,255,0.15);
-    padding: 2rem;
-    transition: all 0s;
-}
-.card-module:hover {
-    background-color: #ffffff;
+    margin-bottom: 60px;
     color: #000000;
 }
-.card-module:hover * {
-    color: #000000 !important;
-    border-color: rgba(0, 0, 0, 0.2) !important;
+
+.nav-links {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 60px;
+}
+
+.nav-links a {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.collection-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.collection-item {
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.collection-item.active {
+    color: #000000;
+}
+
+/* ÁREA PRINCIPAL */
+.main-content {
+    margin-left: 300px;
+    padding: 60px 80px;
+    flex: 1;
+}
+
+.page-title {
+    font-size: 3rem;
+    font-weight: 400;
+    margin-bottom: 20px;
+    letter-spacing: -0.02em;
+}
+
+.page-desc {
+    font-size: 1rem;
+    line-height: 1.6;
+    max-width: 600px;
+    margin-bottom: 80px;
+}
+
+/* GRID DE LIBROS - DISEÑO MASONRY (ALTURA FLUIDA) */
+.books-grid {
+    column-count: 3; /* Número de columnas base */
+    column-gap: 60px; /* Espacio horizontal entre columnas */
+    width: 100%;
+}
+
+/* Adaptabilidad a pantallas más pequeñas */
+@media (max-width: 1400px) {
+    .books-grid { column-count: 2; }
+}
+@media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    .sidebar { position: relative; width: 100%; height: auto; padding: 40px; }
+    .main-content { margin-left: 0; padding: 40px; }
+    .books-grid { column-count: 1; }
+}
+
+.book-card {
+    break-inside: avoid; /* Evita que una tarjeta se parta entre dos columnas */
+    page-break-inside: avoid;
+    margin-bottom: 80px; /* Espacio vertical entre libros */
+    display: flex;
+    flex-direction: column;
+}
+
+.book-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    line-height: 1.3;
+    word-wrap: break-word; /* Asegura que palabras muy largas no rompan el layout */
+}
+
+.book-synopsis {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-bottom: 25px;
+    /* Eliminamos cualquier restricción de altura u ocultamiento de texto */
+    height: auto; 
+    overflow: visible;
+}
+
+.book-link {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #000000;
+    margin-top: auto; /* Empuja el enlace al final si el título es corto */
+}
+
+.book-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+
+/* LAYOUT PÁGINAS SIMPLES (Ecosistema / Equipo) */
+.simple-page {
+    max-width: 800px;
+}
+
+.section-block {
+    margin-bottom: 80px;
+}
+
+.section-title {
+    font-size: 2rem;
+    margin-bottom: 20px;
 }

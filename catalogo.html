@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SILENOS | Catálogo de Colecciones</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <a href="index.html" class="logo sans">SILEN<span style="color: red;" >OS</span>.</a>
+            
+            <nav class="nav-links sans">
+                <a href="index.html">Inicio</a>
+                <a href="catalogo.html" class="text-main">Catálogo</a>
+                <a href="ecosistema.html">Ecosistema</a>
+                <a href="cartas.html">Cartas</a>
+                <a href="equipo.html">Equipo</a>
+            </nav>
+
+            <div class="text-muted sans" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 20px;">Categorías</div>
+            <div id="collections-container" class="collection-list serif">
+                <span class="text-muted" style="font-size: 0.8rem;">Cargando catálogo...</span>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <h1 id="view-title" class="page-title serif text-main">Catálogo de Colecciones</h1>
+            <p id="view-desc" class="page-desc sans text-muted">Explora nuestras sagas y series editoriales completas. Obras generadas en simbiosis entre el ingenio humano y el motor narrativo de Silenos.</p>
+
+            <div id="books-container" class="books-grid">
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            fetch('catalogo.json')
+                .then(response => {
+                    if (!response.ok) throw new Error("Error en red");
+                    return response.json();
+                })
+                .then(data => {
+                    renderCollectionsMenu(data.categorias);
+                    renderCatalog(data.categorias, 'all');
+                })
+                .catch(error => {
+                    console.error('Error cargando el catálogo:', error);
+                    document.getElementById('collections-container').innerHTML = '<span class="text-muted">Error al cargar datos.</span>';
+                });
+        });
+
+        let currentData = [];
+
+        function renderCollectionsMenu(categorias) {
+            currentData = categorias;
+            const menu = document.getElementById('collections-container');
+            
+            menu.innerHTML = `<a class="collection-item active" onclick="renderCatalog(currentData, 'all', this)">Ver Todo</a>`;
+            
+            categorias.forEach(cat => {
+                menu.innerHTML += `<a class="collection-item" onclick="renderCatalog(currentData, '${cat.id}', this)">${cat.nombre}</a>`;
+            });
+        }
+
+        function renderCatalog(categorias, filterId, element = null) {
+            const container = document.getElementById('books-container');
+            const viewTitle = document.getElementById('view-title');
+            container.innerHTML = ''; 
+
+            if (element) {
+                document.querySelectorAll('.collection-item').forEach(el => el.classList.remove('active', 'text-main'));
+                element.classList.add('active', 'text-main');
+            }
+
+            let coleccionesMostrar = [];
+
+            if (filterId === 'all') {
+                viewTitle.innerText = "Catálogo de Colecciones";
+                categorias.forEach(cat => {
+                    coleccionesMostrar = coleccionesMostrar.concat(cat.colecciones);
+                });
+            } else {
+                const categoriaSeleccionada = categorias.find(c => c.id === filterId);
+                if (categoriaSeleccionada) {
+                    viewTitle.innerText = categoriaSeleccionada.nombre;
+                    coleccionesMostrar = categoriaSeleccionada.colecciones;
+                }
+            }
+
+            coleccionesMostrar.forEach(coleccion => {
+                container.innerHTML += `
+                    <article class="book-card">
+                        <h2 class="book-title serif text-main">${coleccion.titulo}</h2>
+                        <p class="book-synopsis sans text-muted">${coleccion.sinopsis}</p>
+                        <a href="${coleccion.enlace}" target="_blank" class="book-link sans">Ver Colección en Amazon →</a>
+                    </article>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>
