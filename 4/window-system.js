@@ -110,7 +110,6 @@ const WindowManager = {
 
     generateContentHTML(type, source, id) {
         if (type === 'iframe' || type === 'html') {
-            // CORRECCIÓN CRÍTICA: Se añade 'allow-downloads' al sandbox
             return `<iframe srcdoc="${(typeof source === 'string' ? source : '').replace(/"/g, '&quot;')}" class="w-full h-full border-none" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-presentation allow-popups allow-downloads"></iframe>`;
         } else if (type === 'image') {
             return `<div class="w-full h-full flex items-center justify-center bg-gray-100">
@@ -368,6 +367,10 @@ const WindowManager = {
         });
     }
 };
+
+// FIX CRÍTICO: Exponer explícitamente el WindowManager al objeto window
+// para que Silenos Voz (o cualquier iframe hijo) pueda leer window.parent.WindowManager
+window.WindowManager = WindowManager;
 
 window.spawnWindow = function(title, content, type) {
     WindowManager.openWindow(title, content, type);
