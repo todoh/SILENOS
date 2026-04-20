@@ -9,8 +9,8 @@ window.Koreh.Core = {
     config: {
         textBaseUrl: 'https://gen.pollinations.ai/v1/chat/completions',
         imageBaseUrl: 'https://gen.pollinations.ai/image/',
-        defaultTextModel: 'openai-large',
-        defaultImageModel: 'flux'
+        defaultTextModel: 'openai',
+        defaultImageModel: 'klein'
     },
 
     // Obtiene la API Key del sistema padre (Silenos) o localStorage local
