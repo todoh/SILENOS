@@ -2,15 +2,15 @@
 
 // Elementos DOM Globales
 const btnSelectDir = document.getElementById('btn-select-dir');
-const btnPasteTrigger = document.getElementById('btn-paste-trigger');
-const btnCreateFolder = document.getElementById('btn-create-folder');
-const btnRefresh = document.getElementById('btn-refresh');
+const btnPasteTrigger = document.getElementById('btn-menu-paste');
+const btnCreateFolder = document.getElementById('btn-menu-mkdir');
+const btnRefresh = document.getElementById('btn-menu-refresh');
 
 const introScreen = document.getElementById('intro-screen');
 const appInterface = document.getElementById('app-interface');
 const fileTreeEl = document.getElementById('file-tree');
 const currentPathEl = document.getElementById('current-path');
-const mobilePathEl = document.getElementById('mobile-path'); // Puede ser null si se quita del HTML
+const mobilePathEl = document.getElementById('mobile-path'); 
 const errorMsg = document.getElementById('error-msg');
 const toastEl = document.getElementById('toast');
 const lastActionEl = document.getElementById('last-action');
@@ -39,8 +39,6 @@ function showToast(msg) {
 
 function updatePathDisplay(subpath = '', rootName = 'UNKNOWN') {
     const text = `ROOT/${rootName.toUpperCase()}${subpath ? '/' + subpath.toUpperCase() : ''}`;
-    
-    // Blindaje contra nulos: Solo actualiza si el elemento existe en el HTML
     if (currentPathEl) currentPathEl.textContent = text;
     if (mobilePathEl) mobilePathEl.textContent = text; 
 }
@@ -68,11 +66,7 @@ function toggleInterface(showApp) {
 // --- MODAL LOGIC ---
 
 function openRenameModal(currentName, onConfirm) {
-    if (!renameModal) {
-        console.error("ERROR CRÍTICO: No se encuentra el elemento #rename-modal en el HTML.");
-        return;
-    }
-
+    if (!renameModal) return;
     if(renameInput) renameInput.value = currentName;
     pendingRenameCallback = onConfirm;
     renameModal.classList.remove('hidden');

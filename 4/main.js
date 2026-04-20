@@ -3,7 +3,7 @@
 // Bandera para evitar bucles infinitos de sincronización
 window.isSyncing = false;
 
-// Función auxiliar para detectar dónde pegar (Ventana activa o Escritorio)
+// Función auxiliar para detectar dónde pegar
 function getActiveTargetHandle() {
     if (typeof WindowManager !== 'undefined' && WindowManager.windows.length > 0) {
         const visibleWindows = WindowManager.windows.filter(w => !w.minimized);
@@ -36,7 +36,7 @@ async function processClipboardItems(items, targetHandle = null) {
             const blob = item.getAsFile();
             if (blob.type.startsWith('image/')) {
                 let ext = blob.type.split('/')[1] || 'png';
-                if (ext.includes('svg')) ext = 'svg'; // Soporte para image/svg+xml
+                if (ext.includes('svg')) ext = 'svg'; 
                 const filename = generateFilename('IMG', ext); 
                 await writeFileToSystem(filename, blob, true, destHandle);
                 found = true;
@@ -100,7 +100,7 @@ async function handlePasteEvent(e) {
     await processClipboardItems(items, targetHandle);
 }
 
-// --- LOGICA DE DESCARGA AUTOMÁTICA GITHUB (SMART SYNC) ---
+// --- LOGICA DE DESCARGA AUTOMÁTICA GITHUB ---
 
 async function checkFileExists(rootHandle, filePath) {
     const parts = filePath.split('/');
@@ -108,15 +108,13 @@ async function checkFileExists(rootHandle, filePath) {
     let currentDir = rootHandle;
 
     try {
-        // Navegar hasta la carpeta contenedora
         for (const part of parts) {
             currentDir = await currentDir.getDirectoryHandle(part);
         }
-        // Intentar obtener el archivo
         await currentDir.getFileHandle(filename);
-        return true; // Existe
+        return true;
     } catch (e) {
-        return false; // No existe (o error de acceso)
+        return false;
     }
 }
 
@@ -132,7 +130,6 @@ window.downloadGithubPrograms = async function(rootHandle, forceUpdate = false) 
 
     window.isSyncing = true; 
     
-    // Mostrar Modal
     if(modal) {
         modal.classList.remove('hidden');
         if(statusText) statusText.textContent = "Connecting to Repository...";
@@ -149,12 +146,10 @@ window.downloadGithubPrograms = async function(rootHandle, forceUpdate = false) 
     const treeUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/git/trees/${branch}?recursive=1`;
 
     try {
-        // 1. Obtener lista de archivos
         const resp = await fetch(treeUrl);
         if (!resp.ok) throw new Error(`GitHub API Error: ${resp.status}`);
         const data = await resp.json();
 
-        // 2. Filtrar
         const filesToDownload = data.tree.filter(item => 
             item.path.startsWith(`${targetFolder}/`) && item.type === 'blob'
         );
@@ -162,7 +157,6 @@ window.downloadGithubPrograms = async function(rootHandle, forceUpdate = false) 
         const totalFiles = filesToDownload.length;
         if(progressBar) progressBar.style.width = '30%';
 
-        // 3. DESCARGA
         const batchSize = 10;
         let downloaded = 0;
         let skipped = 0;
@@ -173,16 +167,14 @@ window.downloadGithubPrograms = async function(rootHandle, forceUpdate = false) 
             
             await Promise.all(batch.map(async (item) => {
                 try {
-                    // Si NO es forzado, verificamos existencia
                     if (!forceUpdate) {
                         const exists = await checkFileExists(rootHandle, item.path);
                         if (exists) {
                             skipped++;
-                            return; // Salir de este map, ir al finally
+                            return;
                         }
                     }
 
-                    // Descarga
                     const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${item.path}`;
                     const contentResp = await fetch(rawUrl);
                     const blob = await contentResp.blob();
@@ -193,7 +185,6 @@ window.downloadGithubPrograms = async function(rootHandle, forceUpdate = false) 
                     console.warn(`SYNC FAIL: ${item.path}`, err);
                 } finally {
                     processed++;
-                    // Actualizar UI Modal
                     if(statusText) statusText.textContent = `Downloading: ${processed}/${totalFiles} files...`;
                     if(progressBar) {
                         const pct = 30 + Math.floor((processed / totalFiles) * 70);
@@ -205,8 +196,6 @@ window.downloadGithubPrograms = async function(rootHandle, forceUpdate = false) 
 
         if(statusText) statusText.textContent = "Finalizing...";
         if(progressBar) progressBar.style.width = '100%';
-
-        // Pequeña pausa para ver el 100%
         await new Promise(r => setTimeout(r, 500));
 
         if (downloaded > 0) {
@@ -224,7 +213,6 @@ window.downloadGithubPrograms = async function(rootHandle, forceUpdate = false) 
         await new Promise(r => setTimeout(r, 2000));
     } finally {
         window.isSyncing = false;
-        // Ocultar Modal
         if(modal) modal.classList.add('hidden');
         if(progressBar) progressBar.style.width = '0';
     }
@@ -233,26 +221,20 @@ window.downloadGithubPrograms = async function(rootHandle, forceUpdate = false) 
 async function saveFileRecursively(rootHandle, filePath, blob) {
     const parts = filePath.split('/'); 
     const filename = parts.pop();      
-    
     let currentDir = rootHandle;
 
-    // Navegar o crear carpetas intermedias
     for (const part of parts) {
         currentDir = await currentDir.getDirectoryHandle(part, { create: true });
     }
 
-    // Escribir el archivo
     const fileHandle = await currentDir.getFileHandle(filename, { create: true });
     const writable = await fileHandle.createWritable();
     await writable.write(blob);
     await writable.close();
 }
 
-// --- LOGICA RECURSIVA DEL VISUALIZADOR DE PROGRAMAS ---
-
 async function scanHtmlFilesRecursive(dirHandle, pathPrefix = '') {
     let results = [];
-    
     for await (const entry of dirHandle.values()) {
         if (entry.kind === 'directory') {
             const subResults = await scanHtmlFilesRecursive(entry, pathPrefix + entry.name + ' / ');
@@ -266,7 +248,6 @@ async function scanHtmlFilesRecursive(dirHandle, pathPrefix = '') {
             });
         }
     }
-    
     return results;
 }
 
@@ -278,7 +259,6 @@ async function populateProgramsWindow(winId, programsHandle) {
 
     try {
         const files = await scanHtmlFilesRecursive(programsHandle);
-
         container.innerHTML = ''; 
 
         const header = document.createElement('div');
@@ -307,25 +287,18 @@ async function populateProgramsWindow(winId, programsHandle) {
                 : `<span class="text-[9px] font-mono text-gray-400 group-hover:text-gray-300 uppercase tracking-wide">ROOT</span>`;
 
             btn.innerHTML = nameHtml + pathHtml;
-            
             btn.onclick = () => {
-                if (typeof handleOpenFile === 'function') {
-                    handleOpenFile(item.entry, item.parentHandle);
-                }
+                if (typeof handleOpenFile === 'function') handleOpenFile(item.entry, item.parentHandle);
             };
-
             list.appendChild(btn);
         });
 
         container.appendChild(list);
-
     } catch (e) {
         console.error("Error escaneando programas:", e);
         container.innerHTML = `<div class="text-red-500 text-xs font-mono p-4">ERROR READING PROGRAMS: ${e.message}</div>`;
     }
 }
-
-// --- MANEJADOR DEL BOTÓN PROGRAMAS ---
 
 async function handleOpenPrograms() {
     if (!window.currentHandle) {
@@ -338,10 +311,8 @@ async function handleOpenPrograms() {
         
         if (typeof WindowManager !== 'undefined') {
             const winId = WindowManager.openWindow('PROGRAMAS INSTALADOS', programsHandle, 'programs');
-            
             await populateProgramsWindow(winId, programsHandle);
 
-            // Llamada inicial estándar (force=false)
             downloadGithubPrograms(window.currentHandle, false).then(async () => {
                 if (document.getElementById(`win-programs-${winId}`)) {
                     console.log("SYNC: Actualizando lista de programas tras descarga...");
@@ -350,7 +321,6 @@ async function handleOpenPrograms() {
                 }
                 if (typeof Universe !== 'undefined') await Universe.loadDirectory(window.currentHandle);
             });
-
         } else {
             console.error("WindowManager not found");
         }
@@ -360,7 +330,7 @@ async function handleOpenPrograms() {
     }
 }
 
-// --- EVENT LISTENERS GLOBALES ---
+// --- EVENT LISTENERS GLOBALES Y MENÚ DESPLEGABLE ---
 
 window.addEventListener('contextmenu', (e) => {
     if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
@@ -368,9 +338,26 @@ window.addEventListener('contextmenu', (e) => {
     }
 }, false);
 
-const btnSortTrigger = document.getElementById('btn-sort-trigger');
-const btnProgramsTrigger = document.getElementById('btn-programs-trigger');
-const btnClearWindows = document.getElementById('btn-clear-windows');
+// Referencias a los nuevos botones
+const btnSortTrigger = document.getElementById('btn-menu-sort');
+const btnProgramsTrigger = document.getElementById('btn-sys-programs');
+const btnSysMenu = document.getElementById('btn-sys-menu');
+const sysDropdown = document.getElementById('sys-dropdown');
+
+// Logica del dropdown SYS
+if(btnSysMenu && sysDropdown) {
+    btnSysMenu.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sysDropdown.classList.toggle('hidden');
+    });
+    
+    // Cerrar al clickar fuera
+    document.addEventListener('click', () => {
+        if(!sysDropdown.classList.contains('hidden')) {
+            sysDropdown.classList.add('hidden');
+        }
+    });
+}
 
 if(typeof btnSelectDir !== 'undefined' && btnSelectDir) btnSelectDir.addEventListener('click', initFileSystem);
 if(typeof btnPasteTrigger !== 'undefined' && btnPasteTrigger) btnPasteTrigger.addEventListener('click', handleGlobalPaste);
@@ -392,14 +379,6 @@ if(btnSortTrigger) {
             Universe.sortMode = Universe.sortMode === 'name' ? 'type' : 'name';
             if (typeof showToast === 'function') showToast(`REFRESH & SORT: ${Universe.sortMode.toUpperCase()}`);
             await Universe.loadDirectory(window.currentHandle);
-        }
-    });
-}
-
-if(btnClearWindows) {
-    btnClearWindows.addEventListener('click', () => {
-        if(typeof WindowManager !== 'undefined' && WindowManager.windows) {
-            [...WindowManager.windows].forEach(w => WindowManager.closeWindow(w.id));
         }
     });
 }

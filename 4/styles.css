@@ -25,7 +25,6 @@
 
 * {
     box-sizing: border-box;
-    /* Eliminamos el reset agresivo de sombras para permitir las suaves */
 }
 
 body {
@@ -60,10 +59,10 @@ body {
 #app-interface {
     display: grid;
     grid-template-columns: 1fr; 
-    grid-template-rows: 50px 1fr; /* Header un poco más alto para aire */
+    grid-template-rows: 1fr; /* Cambiado: Un solo bloque, sin cabecera */
     height: 100%;
     width: 100%;
-    gap: 0; /* Sin gaps visibles */
+    gap: 0;
     background-color: var(--bg-app);
 }
 
@@ -78,11 +77,10 @@ body {
     position: absolute;
     background-color: var(--bg-window);
     border: 1px solid var(--border-light);
-    border-radius: 6px; /* Redondeo suave */
+    border-radius: 6px; 
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    /* Sombra difusa en lugar de sólida */
     box-shadow: var(--shadow-window) !important;
     min-width: 200px;
     min-height: 100px;
@@ -93,12 +91,12 @@ body {
 .silenos-window.active {
     border-color: var(--border-active);
     box-shadow: var(--shadow-active) !important;
-    z-index: 101; /* Asegurar que la activa esté encima */
+    z-index: 101; 
 }
 
 .window-header {
-    height: 36px; /* Cabecera más ligera */
-    background-color: var(--bg-window); /* Fondo blanco */
+    height: 36px;
+    background-color: var(--bg-window);
     border-bottom: 1px solid var(--border-light);
     color: var(--text-primary);
     display: flex;
@@ -120,7 +118,7 @@ body {
     font-weight: 500;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: var(--text-secondary); /* Título en gris */
+    color: var(--text-secondary);
     pointer-events: none; 
     white-space: nowrap;
     overflow: hidden;
@@ -136,7 +134,7 @@ body {
 .win-btn {
     background: transparent;
     border: none;
-    color: var(--border-active); /* Iconos gris claro */
+    color: var(--border-active);
     font-family: var(--font-ui);
     cursor: pointer;
     font-size: 14px;
@@ -146,7 +144,7 @@ body {
 }
 
 .win-btn:hover {
-    color: var(--text-primary); /* Negro al pasar el mouse */
+    color: var(--text-primary); 
 }
 
 .window-content {
@@ -159,12 +157,12 @@ body {
 .window-overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(255,255,255,0.5); /* Overlay blanco sutil */
+    background: rgba(255,255,255,0.5); 
     z-index: 10;
     display: none; 
 }
 
-/* --- RESIZE HANDLES (Invisibles pero funcionales) --- */
+/* --- RESIZE HANDLES --- */
 .resize-handle { position: absolute; z-index: 20; }
 .res-n { top: 0; left: 0; right: 0; height: 6px; cursor: n-resize; }
 .res-s { bottom: 0; left: 0; right: 0; height: 6px; cursor: s-resize; }
@@ -175,16 +173,16 @@ body {
 .res-se { bottom: 0; right: 0; width: 12px; height: 12px; cursor: se-resize; z-index: 21; }
 .res-sw { bottom: 0; left: 0; width: 12px; height: 12px; cursor: sw-resize; z-index: 21; }
 
-/* TOAST (Minimalista) */
+/* TOAST */
 .toast {
     position: fixed;
     bottom: 30px;
     left: 50%;
     transform: translateX(-50%) translateY(100px);
-    background: var(--text-primary); /* Negro suave */
+    background: var(--text-primary);
     color: white;
     padding: 10px 20px;
-    border-radius: 4px; /* Ligeramente redondeado */
+    border-radius: 4px;
     font-family: var(--font-ui);
     font-size: 11px;
     font-weight: 400;
@@ -197,9 +195,7 @@ body {
     transform: translateX(-50%) translateY(0);
 }
 
-/* --- NORDIC TASKBAR (Píldoras flotantes) --- */
-/* Contenedor asumido en el HTML, pero estilizamos los items */
-
+/* --- NORDIC TASKBAR --- */
 .taskbar-item {
     pointer-events: auto;
     background: var(--bg-window);
@@ -217,9 +213,9 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Sombra muy sutil */
-    border-radius: 4px; /* Redondeado */
-    margin-right: 8px; /* Espaciado lateral */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05); 
+    border-radius: 4px; 
+    margin-right: 8px; 
     margin-bottom: 0;
 }
 
@@ -231,7 +227,7 @@ body {
 }
 
 .taskbar-item.active {
-    background: var(--text-primary); /* Activo es negro */
+    background: var(--text-primary); 
     color: white;
     border-color: var(--text-primary);
     box-shadow: 0 4px 10px -2px rgba(0,0,0,0.2);
