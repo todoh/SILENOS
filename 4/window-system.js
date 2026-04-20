@@ -171,7 +171,16 @@ const WindowManager = {
                     if (isImage) {
                         try {
                             const file = await entry.getFile();
-                            const blobUrl = URL.createObjectURL(file);
+                            let blobUrl;
+                            // --- SVG MIME TYPE ENFORCEMENT ---
+                            if (entry.name.toLowerCase().endsWith('.svg')) {
+                                const text = await file.text();
+                                const svgBlob = new Blob([text], { type: 'image/svg+xml' });
+                                blobUrl = URL.createObjectURL(svgBlob);
+                            } else {
+                                blobUrl = URL.createObjectURL(file);
+                            }
+
                             visualContent = `<div class="w-10 h-10 flex items-center justify-center overflow-hidden bg-gray-50 border border-gray-200">
                                                 <img src="${blobUrl}" class="w-full h-full object-cover" style="pointer-events: none;">
                                              </div>`;
@@ -368,8 +377,6 @@ const WindowManager = {
     }
 };
 
-// FIX CRÍTICO: Exponer explícitamente el WindowManager al objeto window
-// para que Silenos Voz (o cualquier iframe hijo) pueda leer window.parent.WindowManager
 window.WindowManager = WindowManager;
 
 window.spawnWindow = function(title, content, type) {

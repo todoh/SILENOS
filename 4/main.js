@@ -35,7 +35,8 @@ async function processClipboardItems(items, targetHandle = null) {
         if (item.kind === 'file') {
             const blob = item.getAsFile();
             if (blob.type.startsWith('image/')) {
-                const ext = blob.type.split('/')[1] || 'png';
+                let ext = blob.type.split('/')[1] || 'png';
+                if (ext.includes('svg')) ext = 'svg'; // Soporte para image/svg+xml
                 const filename = generateFilename('IMG', ext); 
                 await writeFileToSystem(filename, blob, true, destHandle);
                 found = true;
@@ -119,7 +120,6 @@ async function checkFileExists(rootHandle, filePath) {
     }
 }
 
-// MODIFICADO: Ahora acepta forceUpdate y muestra Modal
 window.downloadGithubPrograms = async function(rootHandle, forceUpdate = false) {
     if (window.isSyncing) {
         console.log("SYNC: Ya hay una sincronización en curso. Omitiendo.");
@@ -270,7 +270,6 @@ async function scanHtmlFilesRecursive(dirHandle, pathPrefix = '') {
     return results;
 }
 
-// MODIFICADO: Usa parentHandle del item
 async function populateProgramsWindow(winId, programsHandle) {
     const container = document.getElementById(`win-programs-${winId}`);
     if (!container) return;

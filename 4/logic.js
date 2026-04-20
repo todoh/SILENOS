@@ -2,6 +2,8 @@
 
 function detectTextType(content) {
     const trimmed = content.trim();
+    // Detección de SVG explícita y robusta
+    if (trimmed.match(/<svg[\s>]/i) && trimmed.match(/<\/svg>/i)) return 'svg';
     if (trimmed.startsWith('<') && trimmed.includes('>')) return 'html';
     if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
         try { JSON.parse(trimmed); return 'json'; } catch(e){}

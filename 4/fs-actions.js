@@ -3,14 +3,13 @@
 // Estado global de acciones
 window.Actions = {
     clipboard: {
-        operation: null, // 'copy' o 'cut'
-        entries: [],     // Array de FileSystemHandles (Interno)
+        operation: null, 
+        entries: [],     
         sourceDir: null  
     },
 
     // --- MENÚ CONTEXTUAL ---
     openContextMenu(x, y, targets, parentHandle) {
-        // Normalizamos 'targets' siempre a un array, aunque venga null o uno solo
         let entries = [];
         if (targets) {
             entries = Array.isArray(targets) ? targets : [targets];
@@ -28,20 +27,16 @@ window.Actions = {
         let options = [];
 
         if (entries.length > 0) {
-            // -- ACCIONES SOBRE SELECCIÓN --
             const count = entries.length;
             const labelSuffix = count > 1 ? ` (${count})` : '';
 
-            // Solo abrir si es uno solo
             if (count === 1) {
-                // AQUÍ PASAMOS parentHandle CORRECTAMENTE AL ABRIR
                 options.push({ label: 'OPEN', action: () => this.executeOpen(entries[0], parentHandle) });
             }
 
             options.push({ label: `COPY${labelSuffix}`, action: () => this.setClipboard('copy', entries, parentHandle) });
             options.push({ label: `CUT${labelSuffix}`, action: () => this.setClipboard('cut', entries, parentHandle) });
             
-            // Renombrar solo si es uno
             if (count === 1) {
                 options.push({ label: 'RENAME', action: () => triggerRenameFlow(entries[0]) });
             }
@@ -49,7 +44,6 @@ window.Actions = {
             options.push({ label: `DELETE${labelSuffix}`, action: () => handleDelete(entries, parentHandle) });
 
         } else {
-            // -- ACCIONES GLOBALES (Fondo) --
             if (this.clipboard.entries.length > 0) {
                 const opName = this.clipboard.operation === 'cut' ? 'MOVE HERE' : 'PASTE HERE';
                 const count = this.clipboard.entries.length;
@@ -70,7 +64,6 @@ window.Actions = {
             menu.appendChild(btn);
         });
 
-        // Cerrar al hacer click fuera
         setTimeout(() => {
             document.addEventListener('click', function closeCtx() {
                 if (menu) menu.remove();
@@ -81,15 +74,12 @@ window.Actions = {
         document.body.appendChild(menu);
     },
 
-    // --- LOGICA DEL PORTAPAPELES (MULTI) ---
     setClipboard(op, entries, sourceDir) {
-        // Guardamos array
         const list = Array.isArray(entries) ? entries : [entries];
         this.clipboard = { operation: op, entries: list, sourceDir: sourceDir };
         showToast(`${op.toUpperCase()}: ${list.length} ITEMS`);
     },
 
-    // Ejecutar pegado interno (archivos de Silenos)
     async executePaste(targetDirHandle) {
         
         if (this.clipboard.entries.length === 0) return;
@@ -101,10 +91,8 @@ window.Actions = {
             showToast(`Processing ${entries.length} items...`);
             
             for (const entry of entries) {
-                // Copiar
                 await this.copyEntryToHandle(entry, targetDirHandle);
 
-                // Si es cortar, borrar original
                 if (operation === 'cut' && sourceDir) {
                     if (await sourceDir.isSameEntry(targetDirHandle)) {
                         console.warn(`Skipping delete for ${entry.name} (same dir)`);
@@ -118,7 +106,6 @@ window.Actions = {
                 this.clipboard = { operation: null, entries: [], sourceDir: null };
             }
 
-            // Refrescar vistas
             this.refreshViews(targetDirHandle);
             if (operation === 'cut' && sourceDir) this.refreshViews(sourceDir);
 
@@ -145,12 +132,10 @@ window.Actions = {
     },
 
     async refreshViews(handle) {
-        // Refrescar Universo si es la carpeta actual
         if (window.currentHandle && await window.currentHandle.isSameEntry(handle)) {
             if (typeof Universe !== 'undefined') await Universe.loadDirectory(handle);
         }
         
-        // Refrescar Ventanas abiertas que muestren esta carpeta
         if (typeof WindowManager !== 'undefined') {
             WindowManager.windows.forEach(async w => {
                 if (w.type === 'dir' && w.handle && await w.handle.isSameEntry(handle)) {
@@ -160,7 +145,6 @@ window.Actions = {
         }
     },
 
-    // AHORA ACEPTA parentHandle
     executeOpen(entry, parentHandle) {
         if (entry.kind === 'directory') {
             if (typeof WindowManager !== 'undefined') {
@@ -194,7 +178,8 @@ window.Actions = {
                 for (const item of items) {
                     if (item.types.some(t => t.startsWith('image/'))) {
                         const blob = await item.getType(item.types.find(t => t.startsWith('image/')));
-                        const ext = blob.type.split('/')[1] || 'png';
+                        let ext = blob.type.split('/')[1] || 'png';
+                        if (ext.includes('svg')) ext = 'svg'; // Soporte SVG seguro
                         const filename = (typeof generateFilename === 'function') 
                             ? generateFilename('IMG', ext) 
                             : `paste_${Date.now()}.${ext}`;
@@ -256,15 +241,11 @@ window.Actions = {
     }
 };
 
-// --- HANDLERS GLOBALES (ACTUALIZADOS) ---
+// --- HANDLERS GLOBALES ---
 
-// Se añade parentHandle opcional. Si no se da, usa el global (Desktop)
 async function handleOpenFile(entry, parentHandle) {
     if (!entry) return;
     
-    // Contexto de resolución: ¿De dónde sacamos los assets hermanos?
-    // Si viene parentHandle (desde una ventana), usamos ese.
-    // Si no, usamos el directorio actual montado (Escritorio).
     const contextHandle = parentHandle || window.currentHandle;
 
     try {

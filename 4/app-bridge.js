@@ -15,7 +15,15 @@ async function openFileInSilenos(entry, dirHandle) {
         }
     } 
     else if (type === 'image') {
-        const blobUrl = URL.createObjectURL(file);
+        // --- PRECAUCIÓN SVG MIME TYPE PARA VISOR ---
+        let blobUrl;
+        if (entry.name.toLowerCase().endsWith('.svg')) {
+            const text = await file.text();
+            const svgBlob = new Blob([text], { type: 'image/svg+xml' });
+            blobUrl = URL.createObjectURL(svgBlob);
+        } else {
+            blobUrl = URL.createObjectURL(file);
+        }
         spawnWindow(entry.name, blobUrl, 'image');
     }
     else if (type === 'video') {
@@ -31,16 +39,12 @@ async function openFileInSilenos(entry, dirHandle) {
             try {
                 const json = JSON.parse(text);
                 
-                // 0. DETECCIÓN DATA STUDIO (Objeto con Imagen)
-                // Si tiene 'imagen64', es un objeto de datos visual
                 if (json.imagen64 && typeof DataStudio !== 'undefined') {
                     console.log("BRIDGE: Objeto de Datos detectado. Lanzando Data Studio.");
                     DataStudio.init(entry, json);
                     return;
                 }
 
-                // 1. DETECCIÓN NUEVO FORMATO LIBRO (Generador Libros v5+)
-                // Estructura: { title: "...", chapters: [...] }
                 if (json.chapters && Array.isArray(json.chapters)) {
                      if (typeof BookStudio !== 'undefined') {
                         console.log("BRIDGE: Libro Estructurado detectado (v5). Lanzando Book Studio.");
@@ -49,7 +53,6 @@ async function openFileInSilenos(entry, dirHandle) {
                     }
                 }
 
-                // 2. DETECCIÓN FORMATO ANTIGUO LIBRO (Array plano)
                 const dataArray = Array.isArray(json) ? json : Object.values(json);
                 if (dataArray.length > 0 && dataArray[0].section !== undefined && dataArray[0].content !== undefined) {
                     if (typeof BookStudio !== 'undefined') {
