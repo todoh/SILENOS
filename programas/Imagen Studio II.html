@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imagen Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Tipografías */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #ffffff; 
+            color: #1a1a1a; 
+            height: 100vh; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            font-weight: 300;
+        }
+
+        /* Scrollbar Invisible/Minimal */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #d4d4d4; }
+
+        /* Componentes UI Base */
+        .loading-bar { 
+            position: fixed; top: 0; left: 0; height: 2px; background: #1a1a1a; 
+            transition: width 0.4s ease; z-index: 1000; 
+        }
+        
+        .font-mono { font-family: 'JetBrains Mono', monospace; letter-spacing: -0.02em; }
+
+        .config-input {
+            background: transparent;
+            border-bottom: 1px solid #e5e5e5;
+            color: #1a1a1a;
+            padding: 8px 0;
+            border-radius: 0; 
+            font-size: 0.8rem;
+            outline: none;
+            transition: border-color 0.3s;
+            width: 100%;
+        }
+        .config-input:focus { border-bottom: 1px solid #1a1a1a; }
+        
+        select.config-input { cursor: pointer; background-color: white; }
+
+        /* Botones */
+        .btn-nordic { 
+            background: #ffffff;
+            color: #1a1a1a;
+            text-transform: uppercase; 
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            font-weight: 500;
+            border: 1px solid #e5e5e5;
+            padding: 8px 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .btn-nordic:hover { border-color: #1a1a1a; background: #fafafa; }
+        .btn-nordic.active { background: #1a1a1a; color: white; border-color: #1a1a1a; }
+
+        .btn-primary {
+            background: #1a1a1a; color: #ffffff; border: none;
+            font-family: 'Inter', sans-serif; text-transform: uppercase;
+            font-size: 11px; letter-spacing: 0.15em; padding: 16px;
+            transition: opacity 0.3s; width: 100%;
+        }
+        .btn-primary:hover { opacity: 0.8; }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-primary:disabled { background: #e5e5e5; color: #a3a3a3; cursor: not-allowed; }
+
+        .label-text {
+            font-size: 9px; text-transform: uppercase; letter-spacing: 0.2em;
+            color: #9ca3af; font-weight: 500; margin-bottom: 4px; display: block;
+        }
+
+        /* Galería Minimalista */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            padding: 2rem;
+            width: 100%;
+        }
+
+        .gallery-item {
+            position: relative;
+            background: #f9f9f9;
+            border: 1px solid #f0f0f0;
+            aspect-ratio: 1; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .gallery-item:hover { border-color: #d4d4d4; transform: translateY(-2px); }
+        
+        .gallery-img {
+            max-width: 100%; max-height: 100%; object-fit: contain;
+        }
+        
+        /* Grid de transparencia suave para PNGs */
+        .transparency-bg {
+            background-image: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        .item-overlay {
+            position: absolute; inset: 0;
+            background: rgba(255,255,255,0.9);
+            opacity: 0; transition: opacity 0.2s;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 8px;
+            cursor: zoom-in; /* Cursor de lupa */
+        }
+        .gallery-item:hover .item-overlay { opacity: 1; }
+
+        /* Toggle Minimalista */
+        .toggle-checkbox:checked + .toggle-label { background-color: #1a1a1a; }
+        .toggle-label {
+            width: 32px; height: 18px; background-color: #e5e5e5;
+            border-radius: 999px; position: relative; cursor: pointer; transition: background-color 0.2s;
+        }
+        .toggle-circle {
+            width: 14px; height: 14px; background-color: white; border-radius: 50%;
+            position: absolute; top: 2px; left: 2px; transition: transform 0.2s;
+        }
+        .toggle-checkbox:checked + .toggle-label .toggle-circle { transform: translateX(14px); }
+    </style>
+</head>
+<body>
+
+    <div id="loading-bar" class="loading-bar" style="width: 0%"></div>
+
+    <div id="folder-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-white/95 p-8 hidden transition-opacity">
+        <div class="bg-white w-full max-w-lg flex flex-col max-h-[60vh] border border-gray-200 shadow-xl">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h2 class="text-xs font-medium tracking-[0.2em] text-gray-400 uppercase">Seleccionar Destino</h2>
+                <button onclick="document.getElementById('folder-modal').classList.add('hidden')" class="text-gray-300 hover:text-black transition-colors text-xl font-light">&times;</button>
+            </div>
+            <div id="folder-list" class="p-0 overflow-y-auto flex-1 h-64 bg-white">
+                <div class="p-12 text-center text-gray-300 font-light text-sm italic">Escaneando sistema de archivos...</div>
+            </div>
+        </div>
+    </div>
+
+    <header class="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-8 z-10 shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="w-8 h-8 flex items-center justify-center text-black border border-gray-100">
+                <i class="fa-solid fa-camera-retro text-lg"></i>
+            </div>
+            <div class="flex flex-col">
+                <h1 class="font-medium text-black text-xs tracking-[0.15em] leading-tight">Imagen Studio<span class="text-gray-400 ml-1">v2.3</span></h1>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-8">
+            <div class="flex flex-col items-end gap-1">
+                <span class="label-text">Estado API</span>
+                <div class="flex items-center gap-2 cursor-pointer" onclick="app.manualAuth()">
+                    <span id="status-text" class="text-[10px] font-medium text-gray-300 uppercase tracking-wider">OFFLINE</span>
+                    <span id="status-indicator" class="w-1.5 h-1.5 rounded-full bg-gray-200"></span>
+                </div>
+            </div>
+
+            <div class="h-8 w-px bg-gray-100"></div>
+
+            <div class="flex flex-col items-end gap-1">
+                <span class="label-text">Auto-Guardado en</span>
+                <button onclick="app.showFolderModal()" id="target-folder-label" class="text-[10px] font-medium text-black border-b border-gray-200 hover:border-black truncate max-w-[150px] transition-colors pb-0.5">
+                    Seleccionar Carpeta
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        <div class="w-80 flex flex-col p-0 border-r border-gray-100 bg-white overflow-y-auto">
+            
+            <div class="p-8 space-y-8">
+                <div>
+                    <h2 class="label-text">Prompt Narrativo</h2>
+                    <textarea id="prompt-input" rows="4" class="config-input resize-none leading-relaxed text-gray-600 placeholder-gray-300" 
+                    placeholder="Describe tus imágenes. Separa diferentes ideas con un punto (.)"></textarea>
+                </div>
+
+                <div>
+                    <h2 class="label-text">Modelo IA</h2>
+                    <select id="model-select" class="config-input text-gray-600">
+                        <option value="flux">Flux Schnell (Estándar)</option>
+                        <option value="zimage">Z-Image Turbo</option>
+                        <option value="imagen-4">Imagen 4 GOOGLE</option>
+                        <option value="klein">FLUX.2 Klein 4B</option>
+                        <option value="klein-large">FLUX.2 Klein 9B</option>
+                        <option value="gptimage">GPT Imagen 1</option>
+                        
+                    </select>
+                </div>
+
+                <div>
+                    <h2 class="label-text">Formato</h2>
+                    <div class="flex gap-2 mt-2">
+                        <button onclick="app.setRatio('square')" id="btn-square" class="btn-nordic flex-1 text-center"><i class="fa-regular fa-square"></i></button>
+                        <button onclick="app.setRatio('landscape')" id="btn-landscape" class="btn-nordic flex-1 text-center active"><i class="fa-solid fa-image"></i></button>
+                        <button onclick="app.setRatio('portrait')" id="btn-portrait" class="btn-nordic flex-1 text-center"><i class="fa-solid fa-mobile-screen"></i></button>
+                    </div>
+                </div>
+
+                <div class="flex gap-6">
+                    <div class="flex-1">
+                        <h2 class="label-text">Cantidad por Prompt</h2>
+                        <input type="number" id="batch-input" value="1" min="1" max="50" class="config-input text-center">
+                    </div>
+                    <div class="flex-1 flex flex-col items-end">
+                        <h2 class="label-text mb-2">Chroma Key</h2>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="chroma-toggle" class="toggle-checkbox" style="display:none">
+                            <label for="chroma-toggle" class="toggle-label">
+                                <div class="toggle-circle"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="folder-warning" class="text-[10px] text-orange-400 font-mono hidden">
+                    <i class="fa-solid fa-triangle-exclamation mr-1"></i> No se guardará en disco (solo visualización).
+                </div>
+
+            </div>
+
+            <div class="mt-auto p-8 border-t border-gray-50">
+                <button onclick="app.generateBatch()" id="btn-generate" class="btn-primary flex items-center justify-center gap-3">
+                    <span>GENERAR IMÁGENES</span>
+                    <i class="fa-solid fa-layer-group text-[10px]"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex-1 bg-gray-50/50 relative flex flex-col">
+            
+            <div class="h-10 border-b border-gray-100 flex items-center px-6 bg-white justify-between">
+                <span id="process-status" class="text-[10px] font-mono text-gray-400 uppercase">Esperando instrucciones...</span>
+                <span id="counter" class="text-[10px] font-mono text-black font-bold">0 / 0</span>
+            </div>
+
+            <div id="gallery-container" class="flex-1 overflow-y-auto p-8">
+                
+                <div id="placeholder" class="h-full flex flex-col items-center justify-center opacity-20">
+                    <i class="fa-solid fa-cube text-6xl text-gray-400 mb-4"></i>
+                    <p class="text-xs font-light text-gray-500 tracking-widest uppercase">Lienzo vacío</p>
+                </div>
+
+                <div id="gallery-grid" class="gallery-grid hidden"></div>
+            </div>
+        </div>
+    </main>
+
+    <canvas id="hidden-canvas" style="display: none;"></canvas>
+
+    <div id="lightbox-modal" onclick="app.closeLightbox()" class="fixed inset-0 z-[200] bg-black/95 hidden flex items-center justify-center cursor-zoom-out transition-opacity duration-300 opacity-0">
+        <img id="lightbox-image" class="max-w-[95vw] max-h-[95vh] object-contain shadow-2xl" src="" alt="Full view">
+    </div>
+
+    <script>
+        // --- BRIDGE CON SISTEMA DE ARCHIVOS ---
+        const Sys = window.parent.SystemConfig;
+        const FS = window.parent; 
+
+        // --- CLASE PRINCIPAL ---
+        class FluxStudio {
+            constructor() {
+                this.targetHandle = null; 
+                this.apiKey = localStorage.getItem('pollinations_api_key') || (Sys ? Sys.authKey : null);
+                this.currentRatio = 'landscape';
+                
+                // Contadores globales para procesamiento en paralelo
+                this.totalRequested = 0;
+                this.totalCompleted = 0;
+                this.imageCounter = 0;
+            }
+
+            async init() {
+                this.updateAuthUI();
+                await this.refreshFolderList();
+                
+                window.addEventListener('message', (event) => {
+                    if (event.data && event.data.type === 'POLLI_AUTH_SUCCESS' && event.data.key) {
+                        this.apiKey = event.data.key;
+                        localStorage.setItem('pollinations_api_key', this.apiKey);
+                        this.updateAuthUI();
+                    }
+                });
+            }
+
+            updateAuthUI() {
+                const indicator = document.getElementById('status-indicator');
+                const text = document.getElementById('status-text');
+
+                if (this.apiKey) {
+                    indicator.className = "w-1.5 h-1.5 rounded-full bg-black"; 
+                    text.innerText = "ONLINE";
+                    text.className = "text-[10px] font-medium text-black uppercase tracking-wider";
+                } else {
+                    indicator.className = "w-1.5 h-1.5 rounded-full bg-gray-200"; 
+                    text.innerText = "OFFLINE";
+                }
+            }
+
+            manualAuth() {
+                if(this.apiKey && confirm("¿Desconectar API Key?")) {
+                    this.apiKey = null;
+                    localStorage.removeItem('pollinations_api_key');
+                    this.updateAuthUI();
+                    return;
+                }
+                const redirectUrl = encodeURIComponent(window.location.href); 
+                window.open(`https://enter.pollinations.ai/authorize?redirect_url=${redirectUrl}`, 'PollinationsAuth', `width=500,height=700`);
+            }
+
+            async refreshFolderList() {
+                const list = document.getElementById('folder-list'); 
+                list.innerHTML = '';
+                if (!FS || !FS.rootHandle) {
+                    list.innerHTML = '<div class="p-8 text-center text-xs text-red-400 font-light">No se detectó el sistema de archivos padre. La función de auto-guardado no estará disponible sin permisos.</div>';
+                    document.getElementById('folder-warning').classList.remove('hidden');
+                    return;
+                }
+                this.addFolderOption(list, FS.rootHandle, 'ROOT', true);
+                await this.scanDirRecursive(FS.rootHandle, list, 'ROOT');
+            }
+
+            async scanDirRecursive(dirHandle, listElement, pathString, depth = 0) {
+                if (depth > 2) return; 
+                for await (const entry of dirHandle.values()) {
+                    if (entry.kind === 'directory') {
+                        const currentPath = `${pathString} / ${entry.name}`;
+                        this.addFolderOption(listElement, entry, currentPath);
+                        await this.scanDirRecursive(entry, listElement, currentPath, depth + 1);
+                    }
+                }
+            }
+
+            addFolderOption(container, handle, displayName, isRoot = false) {
+                const el = document.createElement('div');
+                el.className = "px-6 py-3 cursor-pointer border-b border-gray-50 flex items-center gap-4 text-xs font-light text-gray-600 hover:bg-gray-50 transition-colors";
+                const iconClass = isRoot ? 'fa-database text-black' : 'fa-folder text-gray-300';
+                
+                el.innerHTML = `<i class="fa-solid ${iconClass} text-[10px]"></i><span class="truncate w-full tracking-wide">${displayName}</span>`;
+                el.onclick = () => {
+                    this.targetHandle = handle;
+                    document.getElementById('target-folder-label').innerText = displayName; 
+                    document.getElementById('folder-modal').classList.add('hidden');
+                    document.getElementById('folder-warning').classList.add('hidden');
+                };
+                container.appendChild(el);
+            }
+
+            showFolderModal() { 
+                this.refreshFolderList(); 
+                document.getElementById('folder-modal').classList.remove('hidden'); 
+            }
+
+            setRatio(ratio) {
+                this.currentRatio = ratio;
+                document.querySelectorAll('.btn-nordic').forEach(b => b.classList.remove('active'));
+                document.getElementById(`btn-${ratio}`).classList.add('active');
+            }
+
+            getDimensions() {
+                switch(this.currentRatio) {
+                    case 'portrait': return { w: 768, h: 1344 };
+                    case 'square': return { w: 1024, h: 1024 };
+                    case 'landscape': default: return { w: 1344, h: 768 };
+                }
+            }
+
+            generateBatch() {
+                const rawText = document.getElementById('prompt-input').value;
+                // Separar por puntos, limpiar espacios y descartar vacíos
+                const prompts = rawText.split('.').map(p => p.trim()).filter(p => p.length > 0);
+                const count = Math.min(Math.max(parseInt(document.getElementById('batch-input').value) || 1, 1), 50);
+                const isChroma = document.getElementById('chroma-toggle').checked;
+                const model = document.getElementById('model-select').value;
+
+                if (prompts.length === 0) return alert("Por favor, escribe al menos un prompt.");
+
+                // Preparamos la UI
+                document.getElementById('placeholder').classList.add('hidden');
+                const gallery = document.getElementById('gallery-grid');
+                gallery.classList.remove('hidden');
+
+                const dim = this.getDimensions();
+                
+                // Actualizamos contadores globales
+                const newRequests = prompts.length * count;
+                this.totalRequested += newRequests;
+                this.updateGlobalProgressUI();
+
+                // Disparamos todo en paralelo
+                prompts.forEach((promptText) => {
+                    let finalPrompt = promptText;
+                    if (isChroma) {
+                        finalPrompt += ", isolated on pure vivid green background, hex color #00FF00, studio lighting, no shadows on background, hard rim lighting, crisp edges";
+                    }
+
+                    for (let i = 0; i < count; i++) {
+                        const seed = Math.floor(Math.random() * 9999999);
+                        this.imageCounter++;
+                        const currentId = this.imageCounter;
+
+                        // Ejecución asíncrona sin bloquear el bucle
+                        this.processSingleImage(finalPrompt, model, dim, seed, currentId, isChroma)
+                            .finally(() => {
+                                this.totalCompleted++;
+                                this.updateGlobalProgressUI();
+                            });
+                    }
+                });
+            }
+
+            updateGlobalProgressUI() {
+                const status = document.getElementById('process-status');
+                const counter = document.getElementById('counter');
+                const bar = document.getElementById('loading-bar');
+
+                if (this.totalCompleted < this.totalRequested) {
+                    status.innerText = "Generando en paralelo...";
+                    counter.innerText = `${this.totalCompleted} / ${this.totalRequested}`;
+                    const percent = (this.totalCompleted / this.totalRequested) * 100;
+                    bar.style.width = `${percent}%`;
+                } else {
+                    status.innerText = "Todas las tareas completadas.";
+                    counter.innerText = `${this.totalCompleted} / ${this.totalRequested}`;
+                    bar.style.width = `100%`;
+                    
+                    // Ocultar la barra suavemente tras finalizar
+                    setTimeout(() => {
+                        if (this.totalCompleted === this.totalRequested) {
+                            bar.style.width = '0%';
+                        }
+                    }, 1500);
+                }
+            }
+
+            async processSingleImage(prompt, model, dim, seed, imageId, isChroma) {
+                const safePrompt = encodeURIComponent(prompt);
+                let url = `https://gen.pollinations.ai/image/${safePrompt}?model=${model}&width=${dim.w}&height=${dim.h}&seed=${seed}&nologo=true`;
+                if (this.apiKey) url += `&key=${this.apiKey}`;
+
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error("API Error");
+
+                    let blob = await response.blob();
+                    let extension = "jpg";
+
+                    if (isChroma) {
+                        blob = await this.processGreenScreen(blob);
+                        extension = "png";
+                    }
+
+                    let savedFileName = null;
+                    if (this.targetHandle) {
+                        // Nombre único usando timestamp, ID y un aleatorio para evitar colisiones en paralelo
+                        savedFileName = `IMG_${Date.now()}_${imageId}_${Math.floor(Math.random()*1000)}.${extension}`;
+                        await this.saveToDisk(blob, savedFileName);
+                    }
+
+                    this.addToGallery(blob, imageId, isChroma, savedFileName);
+
+                } catch (e) {
+                    console.error("Fallo al generar la imagen " + imageId, e);
+                }
+            }
+
+            // --- PRO KEYING ALGORITHM (Despill + Soft Mask) ---
+            processGreenScreen(blob) {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.crossOrigin = "Anonymous";
+                    img.src = URL.createObjectURL(blob);
+                    
+                    img.onload = () => {
+                        const canvas = document.getElementById('hidden-canvas');
+                        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                        
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0);
+                        
+                        const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const data = frame.data;
+                        
+                        // Variables para Bounding Box
+                        let minX = canvas.width, minY = canvas.height, maxX = 0, maxY = 0;
+                        let foundPixel = false;
+
+                        for (let i = 0; i < data.length; i += 4) {
+                            let r = data[i];
+                            let g = data[i+1];
+                            let b = data[i+2];
+
+                            // ALGORITMO DE SUPRESIÓN DE DERRAME (DESPILL)
+                            // 1. Calcular el límite esperado del verde basado en rojo y azul.
+                            // Si el verde supera al rojo y al azul, es probable que sea fondo o reflejo.
+                            const rbMax = Math.max(r, b);
+                            
+                            // Si el verde es el canal dominante...
+                            if (g > rbMax) {
+                                // 2. "Clamping": Bajamos el verde para que coincida con el máximo de los otros canales.
+                                // Esto convierte el verde brillante en gris/blanco/marrón (neutraliza el tinte).
+                                // Esto arregla los pelos verdes del perro.
+                                data[i+1] = rbMax;
+                                
+                                // 3. Calcular Alpha basado en qué tan "excesivo" era el verde original.
+                                // Cuanto más verde "extra" tenía, más transparente debe ser.
+                                const spillAmount = (g - rbMax);
+                                
+                                // Si el exceso de verde es masivo (>60), es fondo seguro -> transparencia total.
+                                // Si el exceso es poco, es borde -> transparencia parcial.
+                                if (spillAmount > 60) {
+                                    data[i+3] = 0; // Transparente total
+                                } else if (spillAmount > 20) {
+                                    // Borde suave (gradiente)
+                                    // Mapeamos el exceso (20 a 60) a opacidad (255 a 0)
+                                    const alpha = 255 - ((spillAmount - 20) * (255 / 40));
+                                    data[i+3] = alpha;
+                                }
+                                // Si spillAmount < 20, asumimos que es reflejo leve en el objeto (ya corregido en paso 2) y mantenemos opacidad.
+                            }
+
+                            // Chequeo de bounding box si el pixel sigue siendo visible
+                            if (data[i+3] > 10) {
+                                const x = (i / 4) % canvas.width;
+                                const y = Math.floor((i / 4) / canvas.width);
+                                if (x < minX) minX = x;
+                                if (x > maxX) maxX = x;
+                                if (y < minY) minY = y;
+                                if (y > maxY) maxY = y;
+                                foundPixel = true;
+                            }
+                        }
+
+                        ctx.putImageData(frame, 0, 0);
+
+                        if (!foundPixel) {
+                            canvas.toBlob(b => resolve(b), 'image/png');
+                            return;
+                        }
+
+                        // Crop
+                        const margin = 10; // Un poco más de margen para no cortar pelos
+                        const w = maxX - minX + 1;
+                        const h = maxY - minY + 1;
+                        const sx = Math.max(0, minX - margin);
+                        const sy = Math.max(0, minY - margin);
+                        const sw = Math.min(canvas.width - sx, w + margin * 2);
+                        const sh = Math.min(canvas.height - sy, h + margin * 2);
+
+                        const cropCanvas = document.createElement('canvas');
+                        cropCanvas.width = sw;
+                        cropCanvas.height = sh;
+                        cropCanvas.getContext('2d').drawImage(canvas, sx, sy, sw, sh, 0, 0, sw, sh);
+
+                        cropCanvas.toBlob(b => {
+                            URL.revokeObjectURL(img.src);
+                            resolve(b);
+                        }, 'image/png');
+                    };
+                    img.onerror = reject;
+                });
+            }
+
+            async saveToDisk(blob, filename) {
+                try {
+                    const fileHandle = await this.targetHandle.getFileHandle(filename, { create: true });
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    console.log(`Guardado: ${filename}`);
+                } catch(e) {
+                    console.error("Error al guardar en disco:", e);
+                }
+            }
+
+            addToGallery(blob, imageId, isPng, fileName) {
+                const url = URL.createObjectURL(blob);
+                const gallery = document.getElementById('gallery-grid');
+                
+                const div = document.createElement('div');
+                div.className = isPng ? "gallery-item transparency-bg" : "gallery-item";
+                
+                const statusIcon = fileName ? '<i class="fa-solid fa-check text-green-500"></i>' : '<i class="fa-solid fa-floppy-disk text-gray-300"></i>';
+                
+                div.innerHTML = `
+                    <img src="${url}" class="gallery-img">
+                    <div class="item-overlay" onclick="app.openLightbox('${url}', ${isPng})">
+                        <span class="text-[10px] font-mono uppercase tracking-widest text-black mb-2">IMG #${imageId}</span>
+                        <div class="flex gap-2" onclick="event.stopPropagation()">
+                             <a href="${url}" download="flux-${imageId}.png" class="btn-nordic bg-black text-white border-black hover:bg-gray-800 text-[10px] py-1 px-3">
+                                <i class="fa-solid fa-download"></i>
+                            </a>
+                            <div class="btn-nordic py-1 px-3 cursor-default" title="${fileName ? 'Guardado Auto' : 'No Guardado'}">
+                                ${statusIcon}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                gallery.prepend(div);
+            }
+
+            // --- FUNCIONES LIGHTBOX ---
+            openLightbox(url, isPng) {
+                const modal = document.getElementById('lightbox-modal');
+                const img = document.getElementById('lightbox-image');
+                
+                img.src = url;
+                if (isPng) img.classList.add('transparency-bg');
+                else img.classList.remove('transparency-bg');
+
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                }, 10);
+            }
+
+            closeLightbox() {
+                const modal = document.getElementById('lightbox-modal');
+                modal.classList.add('opacity-0');
+                
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    document.getElementById('lightbox-image').src = '';
+                }, 300);
+            }
+        }
+
+        const app = new FluxStudio();
+        window.onload = () => app.init();
+
+    </script>
+</body>
+</html>
