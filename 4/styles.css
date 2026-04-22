@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------
    STYLES.CSS
    High-end web design interface, Nordic Minimalist Style
-   v5.1 - Silenos Clean Edition
+   v5.2 - Silenos Clean Edition (Right Floating Header)
 --------------------------------------------------------- */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400&display=swap');
 
@@ -59,7 +59,7 @@ body {
 #app-interface {
     display: grid;
     grid-template-columns: 1fr; 
-    grid-template-rows: 1fr; /* Cambiado: Un solo bloque, sin cabecera */
+    grid-template-rows: 1fr; 
     height: 100%;
     width: 100%;
     gap: 0;
@@ -94,18 +94,27 @@ body {
     z-index: 101; 
 }
 
+/* CABECERA FLOTANTE A LA DERECHA */
 .window-header {
-    height: 36px;
-    background-color: var(--bg-window);
+    position: absolute;
+    top: 0;
+    right: 0; /* Cambiado a la derecha */
+    left: auto;
+    z-index: 50;
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(4px);
     border-bottom: 1px solid var(--border-light);
+    border-left: 1px solid var(--border-light); /* Borde a la izquierda */
+    border-right: none;
+    border-bottom-left-radius: 8px; /* Redondeo a la izquierda */
+    border-bottom-right-radius: 0;
     color: var(--text-primary);
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 0 12px;
+    padding: 6px 12px;
     cursor: grab;
     user-select: none;
-    flex-shrink: 0;
+    box-shadow: -2px 2px 10px rgba(0,0,0,0.05); /* Sombra invertida */
 }
 
 .window-header:active {
@@ -123,7 +132,7 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 70%;
+    max-width: 150px;
 }
 
 .window-controls {

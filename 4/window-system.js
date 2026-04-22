@@ -63,9 +63,10 @@ const WindowManager = {
         winEl.style.zIndex = winData.zIndex;
 
         const pasteBtn = winData.type === 'dir' 
-            ? `<button class="win-btn ml-2 border border-white px-1 text-[10px]" onclick="Actions.pasteToWindow('${winData.id}')">[PASTE]</button>` 
+            ? `<button class="win-btn ml-2 border border-black px-1 text-[10px] hover:bg-black hover:text-white transition-colors" onclick="Actions.pasteToWindow('${winData.id}')">[PASTE]</button>` 
             : '';
 
+        // MODIFICADO: Estructura header para acomodar el menú superpuesto a la izquierda
         winEl.innerHTML = `
             <div class="resize-handle res-n" onmousedown="WindowInteraction.startResize(event, '${winData.id}', 'n')"></div>
             <div class="resize-handle res-s" onmousedown="WindowInteraction.startResize(event, '${winData.id}', 's')"></div>
@@ -77,18 +78,18 @@ const WindowManager = {
             <div class="resize-handle res-sw" onmousedown="WindowInteraction.startResize(event, '${winData.id}', 'sw')"></div>
 
             <div class="window-header" onmousedown="WindowInteraction.startDrag(event, '${winData.id}')">
-                <div class="flex items-center gap-2 overflow-hidden">
+                <div class="window-controls">
+                    <button class="win-btn font-bold text-red-500 hover:text-black-700" onclick="WindowManager.closeWindow('${winData.id}')">X</button>
+                    <button class="win-btn font-bold" onclick="WindowManager.minimizeWindow('${winData.id}')">_</button>
+                    <button class="win-btn font-bold" onclick="WindowManager.toggleMaximize('${winData.id}')">[ ]</button>
+                </div>
+                <div class="flex items-center gap-2 overflow-hidden ml-4">
                     <span class="window-title">${winData.title}</span>
                     ${pasteBtn}
                 </div>
-                <div class="window-controls">
-                    <button class="win-btn" onclick="WindowManager.minimizeWindow('${winData.id}')">_</button>
-                    <button class="win-btn" onclick="WindowManager.toggleMaximize('${winData.id}')">[ ]</button>
-                    <button class="win-btn" onclick="WindowManager.closeWindow('${winData.id}')">X</button>
-                </div>
             </div>
 
-            <div class="window-content bg-white relative">
+            <div class="window-content bg-white relative w-full h-full">
                 <div class="window-overlay"></div> 
                 ${this.generateContentHTML(winData.type, contentSource, winData.id)}
             </div>
@@ -120,13 +121,15 @@ const WindowManager = {
                         <video src="${source}" controls autoplay class="max-w-full max-h-full outline-none"></video>
                     </div>`;
         } else if (type === 'txt') {
-            return `<textarea class="w-full h-full p-2 bg-white font-mono text-sm resize-none border-none outline-none" readonly>${source}</textarea>`;
+            // Un poco de padding superior para que el texto no quede escondido por los botones iniciales
+            return `<textarea class="w-full h-full p-2 pt-12 bg-white font-mono text-sm resize-none border-none outline-none" readonly>${source}</textarea>`;
         } else if (type === 'dir') {
-            return `<div id="win-dir-${id}" class="w-full h-full p-4 overflow-auto grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))] gap-4 content-start">
+            // Padding superior ajustado para la carpeta, así no oculta iconos arriba a la izquierda
+            return `<div id="win-dir-${id}" class="w-full h-full p-4 pt-12 overflow-auto grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))] gap-4 content-start">
                         <div class="text-xs font-mono text-gray-400 col-span-full">LOADING...</div>
                     </div>`;
         } else if (type === 'programs') {
-            return `<div id="win-programs-${id}" class="w-full h-full p-8 overflow-auto bg-white flex flex-col">
+            return `<div id="win-programs-${id}" class="w-full h-full p-8 pt-12 overflow-auto bg-white flex flex-col">
                         <div class="text-xs font-mono text-gray-400 animate-pulse">ESCANEANDO PROGRAMAS...</div>
                     </div>`;
         }
@@ -172,7 +175,6 @@ const WindowManager = {
                         try {
                             const file = await entry.getFile();
                             let blobUrl;
-                            // --- SVG MIME TYPE ENFORCEMENT ---
                             if (entry.name.toLowerCase().endsWith('.svg')) {
                                 const text = await file.text();
                                 const svgBlob = new Blob([text], { type: 'image/svg+xml' });
