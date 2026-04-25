@@ -86,19 +86,22 @@ const App = () => {
                     if(doc.exists) {
                         setUserData(doc.data());
                         
-                        // --- CORRECCIÓN IMPORTANTE AQUÍ ---
-                        // Usamos la forma funcional setAppState(prev => ...) para leer el estado ACTUAL.
-                        // El código anterior leía el estado "viejo" ('loading') y forzaba el Dashboard,
-                        // cerrando el juego cuando se actualizaba Firebase (al borrar el desafío).
                         setAppState(prev => {
-                            // Solo si estamos cargando o en login vamos al dashboard.
-                            // Si ya estamos en 'game', NOS QUEDAMOS en 'game'.
                             if (prev === 'loading' || prev === 'auth') {
                                 return 'dashboard';
                             }
                             return prev; 
                         });
+                    } else {
+                        // CORRECCIÓN: Si el documento no existe, evitamos el bucle infinito de carga
+                        console.error("El usuario está autenticado pero no existe en Firestore.");
+                        auth.signOut();
+                        setAppState('auth');
                     }
+                }, (error) => {
+                    // CORRECCIÓN: Manejo de errores en caso de fallo de lectura de base de datos (Ej. Reglas denegadas)
+                    console.error("Error leyendo datos de Firebase:", error);
+                    setAppState('auth');
                 });
                 return () => unsubDoc();
             } else {

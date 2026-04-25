@@ -11,7 +11,7 @@ const Dashboard = ({ user, userData, onLogout, onStartGame }) => {
             {/* --- MODAL DE CARTA GRANDE (ZOOM GLOBAL) --- */}
             {selectedCard && (
                 <div 
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-transparent backdrop-blur p-4 animate-in fade-in duration-200"
                     onClick={() => setSelectedCard(null)} 
                 >
                     <div 
@@ -22,7 +22,7 @@ const Dashboard = ({ user, userData, onLogout, onStartGame }) => {
                         
                         <button 
                             onClick={() => setSelectedCard(null)}
-                            className="absolute -top-4 -right-4 bg-red-500 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold shadow-lg hover:scale-110 transition-transform"
+                            className="absolute -top-4 -right-4 bg-red-500 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold shadow-lg hover:scale-110 transition-transform z-50"
                         >
                             ✕
                         </button>
@@ -59,26 +59,52 @@ const Dashboard = ({ user, userData, onLogout, onStartGame }) => {
                 </div>
             )}
 
-            {/* Header Neumorfista */}
-            <header className="p-4 flex justify-between items-center z-10 neo-box rounded-none border-t-0 border-x-0 mb-6">
-                <div className="flex items-center gap-4">
-                    <h1 className="text-xl md:text-2xl text-[var(--text-main)] font-bold tracking-widest pl-2"><span className="text-red-500">CARTAS </span>SILEN</h1>
+            {/* Header Neumorfista Adaptable a Móvil */}
+            <header className="p-4 flex flex-col md:flex-row justify-between items-center z-10 neo-box rounded-none border-t-0 border-x-0 mb-4 gap-4">
+                {/* Fila 1 en móvil: Logo y Usuario */}
+                <div className="flex items-center justify-between w-full md:w-auto">
+                    <h1 className="text-xl md:text-2xl text-[var(--text-main)] font-bold tracking-widest pl-2">
+                        <span className="text-red-500">CARTAS </span>SILEN
+                    </h1>
+                    
+                    {/* Perfil en móvil */}
+                    <div className="flex md:hidden items-center gap-3">
+                        <div className="flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-yellow-500">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/>
+                                <path d="M12 18V6"/>
+                            </svg>
+                            <span className="font-bold text-slate-600 text-xs">{userData.korehs}</span>
+                        </div>
+                        <div className="w-8 h-8 neo-box rounded-full flex items-center justify-center overflow-hidden p-0.5">
+                            {userData.photoURL ? 
+                                <img src={userData.photoURL} alt="Av" className="w-full h-full rounded-full object-cover" /> : 
+                                <span className="text-slate-500 font-bold text-xs">{userData.username?.[0]}</span>
+                            }
+                        </div>
+                        <Button variant="secondary" onClick={onLogout} className="px-2 py-1 text-[10px]">Salir</Button>
+                    </div>
                 </div>
-                <div className="flex items-center gap-4 md:gap-6">
-                    <div className="neo-inset px-4 py-2 rounded-full flex items-center gap-2">
-                     {/* Nav Tabs */}
-                <div >
-                    <Button variant={view === 'home' ? 'primary' : 'secondary'} onClick={() => setView('home')}>Jugar</Button>
-                    <Button variant={view === 'deck' ? 'primary' : 'secondary'} onClick={() => setView('deck')}>Colección</Button>
-                    <Button variant={view === 'shop' ? 'primary' : 'secondary'} onClick={() => setView('shop')}>Tienda</Button>
+
+                {/* Nav Tabs - Scrollable en móvil */}
+                <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto no-scrollbar pb-1 justify-start md:justify-center">
+                    <div className="flex gap-2 flex-nowrap">
+                        <Button variant={view === 'home' ? 'primary' : 'secondary'} onClick={() => setView('home')} className="whitespace-nowrap">Jugar</Button>
+                        <Button variant={view === 'deck' ? 'primary' : 'secondary'} onClick={() => setView('deck')} className="whitespace-nowrap">Colección</Button>
+                        <Button variant={view === 'shop' ? 'primary' : 'secondary'} onClick={() => setView('shop')} className="whitespace-nowrap">Tienda</Button>
+                    </div>
                 </div>
                 
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-yellow-500">
+                {/* Perfil en Desktop */}
+                <div className="hidden md:flex items-center gap-6">
+                    <div className="neo-inset px-4 py-2 rounded-full flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-yellow-500">
                             <circle cx="12" cy="12" r="10"/>
                             <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/>
                             <path d="M12 18V6"/>
                         </svg>
-                        <span className="font-bold text-slate-300 text-sm">{userData.korehs}</span>
+                        <span className="font-bold text-slate-600 text-sm">{userData.korehs}</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-10 h-10 neo-box rounded-full flex items-center justify-center overflow-hidden p-1">
@@ -87,19 +113,16 @@ const Dashboard = ({ user, userData, onLogout, onStartGame }) => {
                                 <span className="text-slate-500 font-bold">{userData.username?.[0]}</span>
                             }
                         </div>
-                        <span className="font-bold text-sm hidden md:inline text-slate-400">{userData.username}</span>
+                        <span className="font-bold text-sm text-slate-500">{userData.username}</span>
                     </div>
                     <Button variant="secondary" onClick={onLogout}>Salir</Button>
                 </div>
             </header>
 
             {/* Main Content */}
-            <div className="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full">
+            <div className="flex-1 p-2 md:p-6 max-w-7xl mx-auto w-full">
                 
-               
-
                 {/* --- RENDERIZADO DE SUB-COMPONENTES --- */}
-                
                 {view === 'home' && (
                     <DashboardHome 
                         user={user} 

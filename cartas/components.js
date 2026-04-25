@@ -1,4 +1,4 @@
-// --- COMPONENTES UI REUTILIZABLES (CORREGIDO) ---
+// --- COMPONENTES UI REUTILIZABLES ---
 // Guardar como: Cartas Silen/components.js
 
 const Button = ({ children, onClick, disabled, className = "", variant = "primary" }) => {
@@ -16,40 +16,17 @@ const Button = ({ children, onClick, disabled, className = "", variant = "primar
 const CardDisplay = ({ card, size = "normal", onClick, canInteract = false }) => {
     if (!card) return null;
 
-    // --- CONFIGURACIÓN DE TAMAÑOS ---
-    let containerClasses;
-    let textSizeMain = "text-[10px] md:text-xs";
-    let textSizeTiny = "text-[8px] md:text-[9px]";
-    let costSize = "w-6 h-6 md:w-8 md:h-8 text-xs md:text-sm";
-    
-    // Configuración de la imagen según tamaño
-    let imageContainerClass = "relative w-full flex-1 overflow-hidden bg-slate-900 group-hover:brightness-110 transition-all";
-
-    if (size === "small") {
-        containerClasses = "w-24 h-36 md:w-28 md:h-48";
-        textSizeMain = "text-[8px]";
-    } else if (size === "large") {
-        containerClasses = "w-80 h-[36rem]"; 
-        textSizeMain = "text-sm md:text-base";
-        textSizeTiny = "text-xs";
-        costSize = "w-10 h-10 md:w-12 md:h-12 text-lg";
-        
-        imageContainerClass = "relative w-full h-64 shrink-0 overflow-hidden bg-slate-900 group-hover:brightness-110 transition-all border-b border-slate-800";
-    } else if (size === "normal" || !size) {
-        containerClasses = "w-32 h-52 md:w-44 md:h-72";
-    } else {
-        // Si 'size' no es una de las palabras clave, se asume que es una clase de tamaño (p.ej. 'w-full aspect-[2/3]')
-        containerClasses = size;
-    }
-
-    // --- RENDERIZADO REVERSO ---
     if (card.hidden) {
+        let hiddenClasses = "w-32 h-48 md:w-44 md:h-64";
+        if (size === "small") hiddenClasses = "w-24 h-36 md:w-28 md:h-44";
+        if (size === "large") hiddenClasses = "w-[40rem] h-[28rem]";
+        
         return (
             <div 
                 onClick={() => (onClick && onClick(card))}
-                className={`${containerClasses} neo-card flex items-center justify-center m-1 flex-shrink-0 !bg-[#0a0a0a] border border-slate-800 shadow-xl rounded-xl cursor-pointer`}
+                className={`${hiddenClasses} flex items-center justify-center m-1 flex-shrink-0 bg-[#111] border border-white/5 rounded-xl cursor-pointer shadow-lg transition-transform hover:scale-105`}
             >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10 text-slate-700 opacity-50">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-white/20">
                     <circle cx="12" cy="12" r="10"/>
                     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
                     <path d="M12 17h.01"/>
@@ -58,16 +35,166 @@ const CardDisplay = ({ card, size = "normal", onClick, canInteract = false }) =>
         );
     }
 
-    // --- CÁLCULO DE VIDA ---
     const currentHp = card.currentHp !== undefined ? card.currentHp : card.maxHp;
     const hpPct = Math.max(0, Math.min(100, (currentHp / card.maxHp) * 100));
     
-    let hpBarColor = "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]";
-    if (hpPct <= 50) hpBarColor = "bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]";
-    if (hpPct <= 20) hpBarColor = "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]";
+    let hpBarColor = "bg-green-400";
+    if (hpPct <= 50) hpBarColor = "bg-yellow-400";
+    if (hpPct <= 20) hpBarColor = "bg-red-500";
 
-    // --- OBTENER TIPOS (Seguridad si no están definidos) ---
-    const cardTypes = card.types || ["Neutro", "Base", "Común"];
+    const cardTypes = card.types || ["Neutro", "Base"];
+
+    // --- VISTA GRANDE (ZOOM GLOBAL - MINIMALISTA PURE) ---
+    if (size === "large") {
+        return (
+            <div 
+                onClick={() => (onClick && onClick(card))}
+                className={`
+                    w-[90vw] max-w-[850px] h-[80vh] md:h-[65vh] max-h-[600px]
+                    relative flex flex-col md:flex-row m-1 select-none group flex-shrink-0 
+                    rounded-2xl overflow-hidden transition-all duration-300
+                    bg-[#0a0a0c] shadow-2xl border border-white/10
+                `}
+            >
+                {/* LADO IZQUIERDO: Imagen 100% limpia, sin degradados ni sombras */}
+                <div className="relative w-full md:w-5/12 h-1/2 md:h-full flex-shrink-0 bg-black">
+                    {typeof card.image === 'string' ? (
+                        <img 
+                            src={card.image} 
+                            alt={card.name} 
+                            className="w-full h-full object-cover object-center"
+                            onError={(e) => { e.target.style.display = 'none'; }} 
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-900">{card.image}</div>
+                    )}
+                    
+                    {/* Coste Minimalista en la esquina */}
+                    <div className="absolute top-4 left-4 z-20">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center font-black text-white bg-black/40 backdrop-blur-md border border-white/20 text-lg">
+                            {card.cost}
+                        </div>
+                    </div>
+
+                    {/* Estado de Congelación (Efecto cristal claro, no oscuro) */}
+                    {card.isFrozen && (
+                        <div className="absolute inset-0 bg-blue-400/10 backdrop-blur-[2px] z-10 flex items-center justify-center">
+                            <div className="bg-white/10 backdrop-blur-md p-3 rounded-full border border-blue-300/30">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-blue-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                    <path d="M12 3v18M3 12h18m-6.36-6.36l-9.28 9.28m0-9.28l9.28 9.28" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* LADO DERECHO: Información organizada, sin cajas negras de fondo */}
+                <div className="w-full md:w-7/12 flex flex-col h-1/2 md:h-full p-6 md:p-8 text-white">
+                    
+                    {/* Cabecera: Nombre y Tipos */}
+                    <div className="mb-6">
+                        <h2 className="text-3xl md:text-4xl font-black tracking-tight leading-none mb-3">
+                            {card.name}
+                        </h2>
+                        <div className="flex gap-2 flex-wrap">
+                            {cardTypes.map((type, idx) => {
+                                const styleClass = window.GameLogicSynergies?.getTypeColor(type) || 'text-gray-400';
+                                // Extraer solo el color del texto para un look minimalista
+                                const textColor = styleClass.split(' ')[0]; 
+                                return (
+                                    <span key={idx} className={`text-xs font-bold uppercase tracking-widest ${textColor}`}>
+                                        {type}
+                                    </span>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Barra de Vida Minimalista */}
+                    <div className="mb-8">
+                        <div className="flex justify-between items-end mb-1.5">
+                            <span className="text-xs text-gray-500 font-bold uppercase tracking-widest">Vitalidad</span>
+                            <span className="text-sm font-mono font-bold">
+                                {currentHp} <span className="text-gray-600">/ {card.maxHp}</span>
+                            </span>
+                        </div>
+                        <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
+                            <div className={`h-full ${hpBarColor} transition-all duration-500`} style={{ width: `${hpPct}%` }}></div>
+                        </div>
+                    </div>
+
+                    {/* Estadísticas (Puro texto, sin bordes ni cajas) */}
+                    <div className="flex justify-between items-center mb-8 px-2">
+                        <div className="flex flex-col items-center">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">ATK</span>
+                            <span className="text-2xl font-light text-red-400">{card.attack || 0}</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">SATK</span>
+                            <span className="text-2xl font-light text-orange-400">{card.specialAttack || 0}</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">DEF</span>
+                            <span className="text-2xl font-light text-blue-400">{card.defense || 0}</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">SDEF</span>
+                            <span className="text-2xl font-light text-cyan-400">{card.specialDefense || 0}</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">POW</span>
+                            <span className="text-2xl font-light text-yellow-400">{card.power || 0}</span>
+                        </div>
+                    </div>
+
+                    {/* Lista de Habilidades */}
+                    <div className="flex-1 overflow-y-auto pr-4 custom-scrollbar">
+                        {card.abilities && card.abilities.length > 0 ? (
+                            <div className="flex flex-col gap-5">
+                                {card.abilities.map((ab, idx) => (
+                                    <div key={idx} className="group">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className={`w-1.5 h-1.5 rounded-full 
+                                                ${ab.type === 'interaction' ? 'bg-red-400' : 
+                                                  ab.type === 'response' ? 'bg-blue-400' : 'bg-purple-400'}
+                                            `}></span>
+                                            <span className="text-sm font-bold text-gray-200 tracking-wide uppercase">{ab.name}</span>
+                                            {ab.cost > 0 && (
+                                                <span className="ml-auto text-[10px] text-yellow-500 font-mono border border-yellow-500/30 px-1.5 py-0.5 rounded">
+                                                    {ab.cost} ENG
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-sm text-gray-400 leading-relaxed pl-3.5 font-light">
+                                            {ab.desc}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-sm text-gray-600 font-light mt-4">Sin habilidades especiales.</div>
+                        )}
+                    </div>
+                    
+                    {/* Lore / Descripción */}
+                    {card.desc && (
+                        <div className="mt-6 pt-4 border-t border-white/5 flex-shrink-0">
+                            <p className="text-gray-500 italic text-xs font-serif leading-relaxed">
+                                "{card.desc}"
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // --- VISTA NORMAL/PEQUEÑA (Full Art Minimalista para Tablero/Mano) ---
+    let containerClasses = size === "small" ? "w-[6rem] h-[8.5rem] md:w-[6.5rem] md:h-[9.5rem]" : "w-[8.5rem] h-[12rem] md:w-40 md:h-[14rem]";
+    let nameSize = size === "small" ? "text-[8px]" : "text-[10px]";
+    let costSize = size === "small" ? "w-5 h-5 text-[9px]" : "w-6 h-6 text-[11px]";
+    let statsSize = size === "small" ? "text-[8px]" : "text-[10px]";
+    let statsLabelSize = size === "small" ? "text-[4px]" : "text-[5px]";
 
     return (
         <div 
@@ -75,181 +202,80 @@ const CardDisplay = ({ card, size = "normal", onClick, canInteract = false }) =>
             className={`
                 ${containerClasses} 
                 relative flex flex-col m-1 select-none group flex-shrink-0 
-                rounded-xl overflow-hidden transition-all duration-300
-                border border-slate-800 bg-[#121212]
-                ${canInteract ? 'cursor-pointer ring-2 ring-yellow-500/50 hover:ring-yellow-400' : ''}
-                ${size !== 'large' ? 'hover:-translate-y-1 hover:shadow-2xl' : ''}
+                rounded-lg overflow-hidden transition-all duration-300
+                bg-[#0a0a0a] border border-white/10
+                ${canInteract ? 'cursor-pointer hover:-translate-y-1 hover:border-white/40 shadow-[0_4px_12px_rgba(0,0,0,0.5)]' : 'shadow-md'}
             `}
         >
-            {/* --- CABECERA --- */}
-            <div className="absolute top-0 left-0 right-0 h-8 z-20 flex justify-between items-start p-1 pointer-events-none">
-                <div className={`${costSize} rounded-full flex items-center justify-center font-black text-[#121212] bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg border border-blue-300 z-30`}>
+            {/* Imagen 100% visible sin gradientes oscurecedores arriba */}
+            {typeof card.image === 'string' ? (
+                <img 
+                    src={card.image} 
+                    alt={card.name} 
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    onError={(e) => { e.target.style.display = 'none'; }} 
+                />
+            ) : (
+                <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">{card.image}</div>
+            )}
+
+            {/* Efecto Congelado suave */}
+            {card.isFrozen && (
+                <div className="absolute inset-0 bg-white/10 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-blue-200 drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 3v18M3 12h18m-6.36-6.36l-9.28 9.28m0-9.28l9.28 9.28" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                </div>
+            )}
+
+            {/* Coste Minimalista */}
+            <div className="absolute top-1.5 left-1.5 z-20">
+                <div className={`${costSize} rounded-full flex items-center justify-center font-bold text-white bg-black/60 backdrop-blur-sm border border-white/20`}>
                     {card.cost}
                 </div>
+            </div>
+
+            {/* Nombre (Flotante arriba a la derecha con sombra de texto sutil, sin caja) */}
+            <div className="absolute top-2 right-2 z-20 max-w-[70%] text-right pointer-events-none">
+                <div className={`${nameSize} font-bold text-white uppercase tracking-wider leading-tight`} style={{ textShadow: '0px 1px 3px rgba(0,0,0,0.9), 0px 0px 1px rgba(0,0,0,1)' }}>
+                    {card.name}
+                </div>
+            </div>
+
+            {/* Panel Inferior: Stats y Vida (Cristalino y ultra fino) */}
+            <div className="absolute bottom-0 left-0 right-0 z-20 bg-black/40 backdrop-blur-md border-t border-white/10 pt-1 pb-1.5 px-1.5 pointer-events-none">
                 
-                <div className="bg-black/80 backdrop-blur-md px-2 py-1 rounded-bl-lg rounded-tr-lg border-b border-l border-slate-700 ml-auto max-w-[80%]">
-                    <div className={`${textSizeMain} font-bold text-gray-100 truncate tracking-tight`}>
-                        {card.name}
+                {/* Cuadrícula de Stats */}
+                <div className="flex justify-between items-center mb-1 px-0.5">
+                    <div className="flex flex-col items-center">
+                        <span className={`${statsLabelSize} text-gray-300 uppercase`}>Atk</span>
+                        <span className={`${statsSize} font-bold text-red-400 leading-none`}>{card.attack || 0}</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                        <span className={`${statsLabelSize} text-gray-300 uppercase`}>Sat</span>
+                        <span className={`${statsSize} font-bold text-orange-400 leading-none`}>{card.specialAttack || 0}</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                        <span className={`${statsLabelSize} text-gray-300 uppercase`}>Def</span>
+                        <span className={`${statsSize} font-bold text-blue-400 leading-none`}>{card.defense || 0}</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                        <span className={`${statsLabelSize} text-gray-300 uppercase`}>Sdf</span>
+                        <span className={`${statsSize} font-bold text-cyan-400 leading-none`}>{card.specialDefense || 0}</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                        <span className={`${statsLabelSize} text-gray-300 uppercase`}>Pow</span>
+                        <span className={`${statsSize} font-bold text-yellow-400 leading-none`}>{card.power || 0}</span>
+                    </div>
+                </div>
+
+                {/* Barra de HP super fina */}
+                <div className="px-0.5">
+                    <div className="w-full h-1 bg-black/60 rounded-full overflow-hidden">
+                        <div className={`h-full ${hpBarColor}`} style={{ width: `${hpPct}%` }}></div>
                     </div>
                 </div>
             </div>
-
-            {/* --- ZONA 1: IMAGEN --- */}
-            <div className={imageContainerClass}>
-                <div className="w-full h-full flex items-center justify-center">
-                    {typeof card.image === 'string' ? (
-                        <img 
-                            src={card.image} 
-                            alt={card.name} 
-                            className="w-full h-full object-cover opacity-90"
-                            onError={(e) => { e.target.style.display = 'none'; }} 
-                        />
-                    ) : (
-                        card.image
-                    )}
-                </div>
-
-                {card.isFrozen && (
-                    <div className="absolute inset-0 bg-blue-500/20 backdrop-blur-[2px] z-10 flex items-center justify-center">
-                        <div className="bg-black/60 p-2 rounded-full border border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.5)]">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-blue-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M12 3v18M3 12h18m-6.36-6.36l-9.28 9.28m0-9.28l9.28 9.28" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                        </div>
-                    </div>
-                )}
-
-                {/* --- INDICADORES DE HABILIDADES (ICONOS) --- */}
-                {card.abilities && size !== 'large' && (
-                    <div className="absolute top-10 right-1 flex flex-col gap-1 z-20 items-end">
-                        {card.abilities.map((ab, idx) => {
-                            let iconColor = "bg-gray-600";
-                            let pathData = "";
-
-                            if (ab.type === 'interaction') { 
-                                iconColor = "bg-red-600 border-red-400";
-                                pathData = "M14.5 17.5L3 6V3h3l11.5 11.5m-5 2.5 6-6m-4 4 4 4m3 1 2-2";
-                            } else if (ab.type === 'response') { 
-                                iconColor = "bg-blue-600 border-blue-400";
-                                pathData = "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z";
-                            } else if (ab.type === 'preparation') { 
-                                iconColor = "bg-purple-600 border-purple-400";
-                                pathData = "m12 3-1.9 5.8a2 2 0 0 1-1.2 1.3l-6.1 2 6.1 2a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.2-1.3l6.1-2-6.1-2a2 2 0 0 1-1.3-1.3z";
-                            }
-
-                            return (
-                                <div key={idx} className={`w-4 h-4 md:w-5 md:h-5 rounded-full ${iconColor} border flex items-center justify-center shadow-lg`} title={ab.name}>
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-2.5 h-2.5 text-white">
-                                        <path d={pathData} />
-                                    </svg>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-
-                {/* --- BARRA DE VIDA INTEGRADA --- */}
-                <div className="absolute bottom-0 left-0 right-0 z-20">
-                    <div className="bg-gradient-to-t from-black via-black/90 to-transparent pt-4 pb-1 px-2">
-                        <div className="flex justify-between items-end mb-0.5">
-                            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">HP</span>
-                            <span className="text-[10px] md:text-xs font-mono font-bold text-white drop-shadow-md">
-                                {currentHp} <span className="text-gray-500 text-[8px]">/ {card.maxHp}</span>
-                            </span>
-                        </div>
-                        <div className="w-full h-1.5 md:h-2 bg-gray-800 rounded-full overflow-hidden border border-gray-700">
-                            <div 
-                                className={`h-full ${hpBarColor} transition-all duration-500 ease-out`} 
-                                style={{ width: `${hpPct}%` }}
-                            ></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* --- ZONA 2: STATS (INAMOVIBLE) --- */}
-            <div className="grid grid-cols-3 divide-x divide-slate-800 bg-[#0F0F0F] h-8 md:h-10 border-t border-b border-slate-800 flex-shrink-0 z-10 relative">
-                 <div className="flex flex-col items-center justify-center pt-0.5">
-                    <span className="text-[6px] md:text-[7px] text-red-500 font-bold uppercase tracking-widest">STR</span>
-                    <span className="text-[10px] md:text-sm font-bold text-gray-200">{card.strength}</span>
-                </div>
-                 <div className="flex flex-col items-center justify-center pt-0.5">
-                    <span className="text-[6px] md:text-[7px] text-blue-500 font-bold uppercase tracking-widest">INT</span>
-                    <span className="text-[10px] md:text-sm font-bold text-gray-200">{card.intelligence}</span>
-                </div>
-                 <div className="flex flex-col items-center justify-center pt-0.5">
-                    <span className="text-[6px] md:text-[7px] text-purple-500 font-bold uppercase tracking-widest">POW</span>
-                    <span className="text-[10px] md:text-sm font-bold text-gray-200">{card.power}</span>
-                </div>
-            </div>
-
-            {/* --- ZONA TIPOS (MODIFICADA: LETRAS GRANDES EN MODAL, ABREVIADAS EN TABLERO) --- */}
-            <div className="flex justify-center items-center gap-1.5 py-1 px-1 bg-[#0c0c0c] border-b border-slate-800 min-h-[22px] flex-wrap z-10">
-                {cardTypes.map((type, idx) => {
-                    const styleClass = window.GameLogicSynergies?.getTypeColor(type) || 'text-slate-400 border-slate-700';
-                    
-                    // LÓGICA DE VISUALIZACIÓN DE TIPOS
-                    const isLarge = size === 'large';
-                    // Si es inspección (large), nombre completo. Si es tablero/mano, solo 3 letras.
-                    const displayType = isLarge ? type : type.substring(0, 3);
-                    // Si es inspección (large), letra mucho más grande. Si es tablero, pequeña.
-                    const fontClass = isLarge ? "text-xs md:text-sm px-2 py-1" : "text-[7px] md:text-[8px] px-1.5 py-0.5";
-
-                    return (
-                        <span 
-                            key={idx} 
-                            className={`${fontClass} font-bold rounded border ${styleClass} uppercase tracking-wider`}
-                            title={type} // Tooltip para ver el nombre completo si está abreviado
-                        >
-                            {displayType}
-                        </span>
-                    );
-                })}
-            </div>
-
-            {/* --- ZONA 3: CONTENIDO VARIABLE (SCROLLABLE - SOLO LARGE) --- */}
-            {size === 'large' ? (
-                <div className="flex-1 overflow-y-auto bg-[#151515] p-0 flex flex-col no-scrollbar">
-                    {/* Lista de Habilidades */}
-                    {card.abilities && card.abilities.length > 0 && (
-                        <div className="px-4 py-3 flex flex-col gap-3">
-                            <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest border-b border-slate-700 pb-1 flex justify-between">
-                                <span>Habilidades</span>
-                                <span className="text-[8px]">Coste</span>
-                            </div>
-                            {card.abilities.map((ab, idx) => (
-                                <div key={idx} className="flex flex-col">
-                                    <div className="flex justify-between items-center mb-0.5">
-                                        <span className={`text-xs font-bold flex items-center gap-2
-                                            ${ab.type === 'interaction' ? 'text-red-400' : 
-                                              ab.type === 'response' ? 'text-blue-400' : 'text-purple-400'}
-                                        `}>
-                                            <span className={`w-1.5 h-1.5 rounded-full inline-block
-                                                 ${ab.type === 'interaction' ? 'bg-red-500' : 
-                                                   ab.type === 'response' ? 'bg-blue-500' : 'bg-purple-500'}
-                                            `}></span>
-                                            {ab.name}
-                                        </span>
-                                        <span className="text-[7px] text-yellow-500 font-mono font-bold bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">
-                                            {ab.cost > 0 ? ab.cost : '0'}
-                                        </span>
-                                    </div>
-                                    <span className="text-[11px] text-slate-400 leading-snug pl-3.5 opacity-80">
-                                        {ab.desc}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                    
-                    {/* Descripción Narrativa */}
-                    <div className="mt-auto p-4 border-t border-slate-800 bg-[#111]">
-                        <p className="text-gray-500 italic text-xs md:text-sm text-center font-serif leading-relaxed">
-                            "{card.desc}"
-                        </p>
-                    </div>
-                </div>
-            ) : null}
         </div>
     );
 };
