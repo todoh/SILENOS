@@ -7,15 +7,15 @@ Object.assign(window.Core, {
         title: "Nuevo Librojuego", 
         visualBible: "", 
         nodes: [],
-        initialState: { vida: 10, poder: 10, inventario: [] },
+        initialState: { vida: 10, vidaMax: 10, ataque: 5, defensa: 5, agilidad: 5, destreza: 5, inventario: [] },
         gameItems: [],
-        mapElements: { areas: [], emojis: [] } // Soporte para Modo Mapa
+        mapElements: { areas: [], emojis: [] }
     },
     selectedNodeId: null,
     currentNodeId: null,
     currentScore: 0,
-    playerState: { vida: 10, poder: 10, inventario: [] },
-    pendingDeathTarget: null, // Guardará el destino de muerte
+    playerState: { vida: 10, vidaMax: 10, ataque: 5, defensa: 5, agilidad: 5, destreza: 5, inventario: [] },
+    pendingDeathTarget: null, 
 
     init() {
         if (this.initStorage) this.initStorage();
@@ -27,10 +27,6 @@ Object.assign(window.Core, {
         }
         
         if (typeof Canvas !== 'undefined' && Canvas.render) Canvas.render();
-
-        if (this.rootHandle && typeof UI !== 'undefined' && UI.toggleFolderModal) {
-            setTimeout(() => UI.toggleFolderModal(), 500);
-        }
     },
 
     setTitle(title) { 
@@ -43,7 +39,7 @@ Object.assign(window.Core, {
         const px = x !== null ? x : (window.innerWidth / 2) - 110; 
         const py = y !== null ? y : (window.innerHeight / 2) - 140;
 
-        this.book.nodes.push({ id: nodeId, text: text, choices: [], x: px, y: py, scoreImpact: 0 });
+        this.book.nodes.push({ id: nodeId, text: text, choices: [], effs: [], x: px, y: py, scoreImpact: 0 });
         if (typeof Canvas !== 'undefined' && Canvas.render) Canvas.render();
         this.selectNode(nodeId);
         if (this.scheduleSave) this.scheduleSave();
@@ -71,15 +67,22 @@ Object.assign(window.Core, {
 
     startGame() {
         if (this.book.nodes.length > 0) {
-            let startNode = this.book.nodes.find(n => n.isStartNode);
-            if (!startNode) startNode = this.book.nodes[0];
+            let startNode = this.book.nodes.find(n => n.isStartNode) || this.book.nodes[0];
             
             this.currentNodeId = startNode.id;
             this.currentScore = this.getNode(this.currentNodeId).scoreImpact || 0;
             this.pendingDeathTarget = null;
             
-            const init = this.book.initialState || { vida: 10, poder: 10, inventario: [] };
-            this.playerState = { vida: init.vida, poder: init.poder, inventario: [...init.inventario] };
+            const init = this.book.initialState || { vida: 10, vidaMax: 10, ataque: 5, defensa: 5, agilidad: 5, destreza: 5, inventario: [] };
+            this.playerState = { 
+                vida: init.vida ?? 10, 
+                vidaMax: init.vidaMax ?? 10, 
+                ataque: init.ataque ?? 5, 
+                defensa: init.defensa ?? 5, 
+                agilidad: init.agilidad ?? 5, 
+                destreza: init.destreza ?? 5, 
+                inventario: [...(init.inventario || [])] 
+            };
             
             if (typeof UI !== 'undefined' && typeof UI.renderPlayer === 'function') UI.renderPlayer();
             if (typeof Player !== 'undefined' && Player.start) Player.start();
@@ -88,7 +91,7 @@ Object.assign(window.Core, {
         }
     },
 
-    makeChoice(targetId, effect = null) {
+    makeChoice(targetId, effectsList = null) {
         const node = this.getNode(targetId);
         if (node) {
             this.currentNodeId = targetId;
@@ -97,39 +100,51 @@ Object.assign(window.Core, {
             let deathTarget = null;
             const wasAlive = this.playerState.vida > 0;
 
-            const checkDeath = (eff) => {
-                if (eff && eff.type === 'vida' && eff.op === '-' && this.playerState.vida <= 0) {
-                    if (eff.deathTarget) deathTarget = eff.deathTarget;
+            const applyEffs = (effs) => {
+                const list = Array.isArray(effs) ? effs : (effs ? [effs] : []);
+                list.forEach(eff => {
+                    if (!eff || !eff.type) return;
+                    if (['vida', 'vidaMax', 'ataque', 'defensa', 'agilidad', 'destreza'].includes(eff.type)) {
+                        let val = Number(eff.val);
+                        if (!isNaN(val)) {
+                            if (eff.op === '+') this.playerState[eff.type] += val;
+                            if (eff.op === '-') this.playerState[eff.type] -= val;
+                        }
+                    } else if (eff.type === 'item') {
+                        let qty = Number(eff.qty) || 1;
+                        if (eff.op === 'ADD') {
+                            for(let i=0; i<qty; i++) this.playerState.inventario.push(eff.val);
+                        }
+                        if (eff.op === 'REM') {
+                            for(let i=0; i<qty; i++) {
+                                const idx = this.playerState.inventario.indexOf(eff.val);
+                                if (idx > -1) this.playerState.inventario.splice(idx, 1);
+                            }
+                        }
+                    }
+                });
+                
+                if (this.playerState.vida > this.playerState.vidaMax) {
+                    this.playerState.vida = this.playerState.vidaMax;
                 }
             };
 
-            const applyEff = (eff) => {
-                if (!eff || !eff.type) return;
-                if (eff.type === 'vida' || eff.type === 'poder') {
-                    let val = Number(eff.val);
-                    if (!isNaN(val)) {
-                        if (eff.op === '+') this.playerState[eff.type] += val;
-                        if (eff.op === '-') this.playerState[eff.type] -= val;
+            const checkDeath = (effs) => {
+                const list = Array.isArray(effs) ? effs : (effs ? [effs] : []);
+                list.forEach(eff => {
+                    if (eff && eff.type === 'vida' && eff.op === '-' && this.playerState.vida <= 0) {
+                        if (eff.deathTarget) deathTarget = eff.deathTarget;
                     }
-                } else if (eff.type === 'item') {
-                    if (eff.op === 'ADD' && !this.playerState.inventario.includes(eff.val)) {
-                        this.playerState.inventario.push(eff.val);
-                    }
-                    if (eff.op === 'REM') {
-                        this.playerState.inventario = this.playerState.inventario.filter(i => i !== eff.val);
-                    }
-                }
+                });
             };
 
-            // 1. Aplicar efecto de la decisión
-            applyEff(effect);
-            checkDeath(effect);
+            applyEffs(effectsList);
+            checkDeath(effectsList);
             
-            // 2. Aplicar efecto pasivo del nodo de destino (al llegar)
-            applyEff(node.eff);
-            checkDeath(node.eff);
+            const nodeEffs = node.effs || (node.eff ? [node.eff] : []);
+            applyEffs(nodeEffs);
+            checkDeath(nodeEffs);
 
-            // 3. Comprobar muerte y armar la ruta de destino
             if (wasAlive && this.playerState.vida <= 0) {
                 if (!deathTarget) {
                     let nodes = this.book?.nodes || this.bookData?.nodes;
@@ -143,7 +158,6 @@ Object.assign(window.Core, {
 
             if (typeof UI !== 'undefined' && typeof UI.renderPlayer === 'function') UI.renderPlayer();
             if (typeof Player !== 'undefined' && typeof Player.render === 'function') Player.render();
-
         } else {
             alert("El nodo de destino no existe.");
         }

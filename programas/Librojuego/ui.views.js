@@ -4,30 +4,50 @@ window.UI = window.UI || {};
 
 Object.assign(window.UI, {
     switchTab(tab) {
-        document.getElementById('panel-canvas').classList.add('hidden');
-        document.getElementById('panel-ai').classList.add('hidden');
-        if(document.getElementById('panel-visual')) document.getElementById('panel-visual').classList.add('hidden');
-        if(document.getElementById('panel-audio')) document.getElementById('panel-audio').classList.add('hidden');
-        if(document.getElementById('panel-video')) document.getElementById('panel-video').classList.add('hidden');
+        const panels = ['project', 'items', 'canvas', 'ai', 'canon', 'visual', 'audio', 'video'];
         
-        document.getElementById('tab-btn-canvas').className = "text-[11px] font-bold text-gray-400 hover:text-black transition-colors";
-        document.getElementById('tab-btn-ai').className = "text-[11px] font-bold text-gray-400 hover:text-black transition-colors";
-        if(document.getElementById('tab-btn-visual')) document.getElementById('tab-btn-visual').className = "text-[11px] font-bold text-gray-400 hover:text-black transition-colors";
-        if(document.getElementById('tab-btn-audio')) document.getElementById('tab-btn-audio').className = "text-[11px] font-bold text-gray-400 hover:text-black transition-colors";
-        if(document.getElementById('tab-btn-video')) document.getElementById('tab-btn-video').className = "text-[11px] font-bold text-gray-400 hover:text-black transition-colors";
+        panels.forEach(p => {
+            const panelEl = document.getElementById(`panel-${p}`);
+            const btnEl = document.getElementById(`tab-btn-${p}`);
+            if (panelEl) panelEl.classList.add('hidden');
+            if (btnEl) btnEl.className = "text-[11px] font-bold text-gray-400 hover:text-black transition-colors";
+        });
 
-        document.getElementById(`panel-${tab}`).classList.remove('hidden');
-        document.getElementById(`tab-btn-${tab}`).className = "text-[11px] font-bold text-black transition-colors";
+        const activePanel = document.getElementById(`panel-${tab}`);
+        const activeBtn = document.getElementById(`tab-btn-${tab}`);
+        
+        if (activePanel) activePanel.classList.remove('hidden');
+        if (activeBtn) activeBtn.className = "text-[11px] font-bold text-black transition-colors";
+    },
+
+    toggleBottomBar() {
+        const bar = document.getElementById('bottom-bar');
+        const btnIcon = document.querySelector('#btn-toggle-bottom-bar i');
+        
+        if (bar.classList.contains('collapsed')) {
+            bar.classList.remove('collapsed');
+            if(btnIcon) {
+                btnIcon.classList.remove('fa-chevron-up');
+                btnIcon.classList.add('fa-chevron-down');
+            }
+        } else {
+            bar.classList.add('collapsed');
+            if(btnIcon) {
+                btnIcon.classList.remove('fa-chevron-down');
+                btnIcon.classList.add('fa-chevron-up');
+            }
+        }
+        
+        // Repintar edges del canvas tras la animación para ajustar las líneas
+        setTimeout(() => {
+            if (typeof Canvas !== 'undefined' && Canvas.render) Canvas.render();
+        }, 310);
     },
 
     toggleFolderModal() {
-        const modal = document.getElementById('folder-modal');
-        modal.classList.toggle('hidden');
-        if(!modal.classList.contains('hidden')) {
-            modal.classList.add('flex');
-            if(Core.scanRoot) Core.scanRoot();
-        } else {
-            modal.classList.remove('flex');
+        // Usamos el acceso directo de almacenamiento sin desplegar el modal viejo
+        if (Core.selectProjectFolder) {
+            Core.selectProjectFolder();
         }
     },
 
@@ -36,6 +56,7 @@ Object.assign(window.UI, {
         const msgEl = document.getElementById('loading-msg');
         
         if (!overlay) return;
+
         if (isLoading) {
             overlay.classList.remove('hidden');
             overlay.classList.add('flex', 'flex-col', 'items-center', 'justify-center');
@@ -69,7 +90,9 @@ Object.assign(window.UI, {
                 `;
                 overlay.appendChild(progressContainer);
             }
+
             progressContainer.classList.remove('hidden');
+
             if (totalPct !== null) {
                 document.getElementById('kp-total-msg').innerText = msg;
                 document.getElementById('kp-total-val').innerText = Math.round(totalPct) + '%';

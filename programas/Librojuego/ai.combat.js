@@ -1,31 +1,29 @@
 // Archivo: Librojuego/ai.combat.js
 
 window.AICombat = {
+    generatingNodes: new Set(),
+
     async generateCombatStructure(nodeId) {
+        if (this.generatingNodes.has(nodeId)) return;
+
         const parent = Core.getNode(nodeId);
         if (!parent) return;
 
         const parentContext = parent.text || "Un enemigo bloquea el paso.";
 
-        try {
-            // ==========================================
-            // FASE 1: ANÁLISIS DE CONTEXTO
-            // ==========================================
-            UI.setLoading(true, "Fase 1/4: Analizando Contexto...", 10, "Estudiando la historia previa", 10);
-            const analysisReport = await window.AISupport.analyzeContext(nodeId);
+        this.generatingNodes.add(nodeId);
+        if (typeof Canvas !== 'undefined') Canvas.renderNodes();
+        if (typeof ContextMenu !== 'undefined') ContextMenu.hide();
 
-            // ==========================================
-            // FASE 2: TOPOLOGÍA Y PENALIZACIONES
-            // ==========================================
-            UI.setLoading(true, "Fase 2/4: Preparando Topología...", 20, "Definiendo daños y estructura", 20);
+        try {
+            const analysisReport = await window.AISupport.analyzeContext(nodeId);
             
             const startX = parent.x + 350;
             const startY = parent.y;
 
-            const getSevere = () => Math.floor(Math.random() * 3) + 2; // 2 a 4
-            const getBot = () => Math.floor(Math.random() * 4) + 1; // 1 a 4
+            const getSevere = () => Math.floor(Math.random() * 3) + 2; 
+            const getBot = () => Math.floor(Math.random() * 4) + 1; 
 
-            // Definición de los 16 nodos de la matriz de combate
             const topo = {
                 'A': { desc: "Inicio del combate", pen: 0, x: startX, y: startY },
                 'B0': { desc: "Ronda 1: Éxito total sin recibir daño", pen: 0, x: startX + 350, y: startY - 300, parent: 'A' },
@@ -45,11 +43,6 @@ window.AICombat = {
                 'E':  { desc: "El combate termina con tu victoria. El enemigo cae.", pen: 0, x: startX + 1400, y: startY, multiParent: true }
             };
 
-            // ==========================================
-            // FASE 3: ARMAZÓN LÓGICO (GEMINI-FAST)
-            // ==========================================
-            UI.setLoading(true, "Fase 3/4: Armazón Lógico...", 35, "gemini-fast mapeando 16 nodos", 35);
-
             const sysPromptSkel = "Eres un Diseñador Táctico de librojuegos. Diseña las acciones (textos de los botones) y los resúmenes narrativos para una matriz de combate. OBLIGATORIO: Las acciones deben ser tácticas neutrales y ciegas respecto a su resultado. Devuelve ESTRICTAMENTE JSON PURO.";
             const userPromptSkel = `
                 SITUACIÓN PREVIA: "${parentContext}"
@@ -59,12 +52,11 @@ window.AICombat = {
                 Debes definir el "armazón lógico" para los 16 nodos de este combate. 
                 Para cada clave (A, B0... E), proporciona:
                 - "accion_previa": Representa el texto del botón que el jugador pulsará para llegar a este nodo.
-                - "resumen": Una frase de 1 línea indicando qué ocurre en ese nodo, respetando la descripción teórica obligatoria.
+                - "resumen": Una frase de 1 línea indicando qué ocurre en ese nodo.
 
                 INSTRUCCIÓN CRÍTICA DE DISEÑO PARA 'accion_previa':
-                Debe ser una decisión táctica NEUTRAL y EQUILIBRADA (ej: "Lanzar una estocada al pecho", "Esquivar hacia la izquierda", "Protegerse con el escudo", "Aprovechar el entorno"). 
-                ESTÁ TERMINANTEMENTE PROHIBIDO usar palabras que anticipen el resultado (como "Atacar con éxito", "Tropezar", "Fallar", "Golpe letal", "Roce"). 
-                Todas las opciones deben parecer igual de válidas y buenas para el jugador. El fracaso o éxito solo se revela después, en el 'resumen'.
+                Debe ser una decisión táctica NEUTRAL y EQUILIBRADA (ej: "Lanzar una estocada al pecho", "Esquivar hacia la izquierda"). 
+                ESTÁ TERMINANTEMENTE PROHIBIDO usar palabras que anticipen el resultado (como "Atacar con éxito", "Fallar", "Roce"). 
 
                 DESCRIPCIONES TEÓRICAS OBLIGATORIAS POR NODO (Para el resumen):
                 ${Object.entries(topo).map(([k, v]) => `- ${k}: ${v.desc} (Penalización de vida: -${v.pen})`).join('\n')}
@@ -86,7 +78,6 @@ window.AICombat = {
 
             const skel = skeletonData.nodos;
 
-            // Inyección de nodos físicos en el Core basados en el esqueleto
             const nodeIds = {};
             for (const key in topo) {
                 const nodeData = topo[key];
@@ -98,7 +89,7 @@ window.AICombat = {
                 const newNode = {
                     id: nId, text: "", choices: [],
                     x: nodeData.x, y: nodeData.y, scoreImpact: 0,
-                    _combatResumen: skelNode.resumen // Dato temporal
+                    _combatResumen: skelNode.resumen 
                 };
 
                 if (nodeData.pen > 0) {
@@ -107,7 +98,6 @@ window.AICombat = {
                 Core.book.nodes.push(newNode);
             }
 
-            // Conexiones topológicas
             if (!parent.choices) parent.choices = [];
             parent.choices.push({ text: skel.A?.accion_previa || "Iniciar combate", targetId: nodeIds['A'] });
 
@@ -123,7 +113,6 @@ window.AICombat = {
             link('B1', ['C3', 'C4', 'C5']);
             link('B2', ['C6', 'C7', 'C8']);
             
-            // Los 9 nodos C van a D0 y D1
             ['C0','C1','C2','C3','C4','C5','C6','C7','C8'].forEach(cKey => {
                 link(cKey, ['D0', 'D1']);
             });
@@ -131,16 +120,9 @@ window.AICombat = {
             link('D0', ['E']);
             link('D1', ['E']);
 
-            // ==========================================
-            // FASE 4: CASCADA LITERARIA (NOVA-FAST)
-            // ==========================================
-            let nodesWritten = 0;
             const writeLiterature = async (key, contextText) => {
                 const n = Core.getNode(nodeIds[key]);
                 if (!n) return;
-
-                let pct = 40 + ((nodesWritten / 16) * 55);
-                UI.setLoading(true, `Fase 4/4: Narrativa de Combate...`, pct, `nova-fast redactando nodo ${key} (16 totales)`, pct);
 
                 const sysPromptLit = "Eres un escritor experto en literatura de combate para librojuegos. Escribes en segunda persona. Describe la acción de forma épica, visceral e inmersiva. RESPONDE ÚNICAMENTE CON LITERATURA PLANA (1-2 párrafos, sin JSON ni introducciones).";
                 
@@ -162,22 +144,18 @@ window.AICombat = {
                 } catch(e) {
                     n.text = `[Fallo literario] ${n._combatResumen}`;
                 }
-                delete n._combatResumen; // Limpiar variable temporal
-                nodesWritten++;
+                delete n._combatResumen; 
                 return n.text;
             };
 
-            // Nivel 1
             const txtA = await writeLiterature('A', parentContext);
 
-            // Nivel 2
             const txtBs = await Promise.all([
                 writeLiterature('B0', txtA + `\n>> El jugador intentó: ${skel.B0?.accion_previa} <<`),
                 writeLiterature('B1', txtA + `\n>> El jugador intentó: ${skel.B1?.accion_previa} <<`),
                 writeLiterature('B2', txtA + `\n>> El jugador intentó: ${skel.B2?.accion_previa} <<`)
             ]);
 
-            // Nivel 3
             const txtCs = await Promise.all([
                 writeLiterature('C0', txtBs[0] + `\n>> El jugador intentó: ${skel.C0?.accion_previa} <<`),
                 writeLiterature('C1', txtBs[0] + `\n>> El jugador intentó: ${skel.C1?.accion_previa} <<`),
@@ -190,31 +168,23 @@ window.AICombat = {
                 writeLiterature('C8', txtBs[2] + `\n>> El jugador intentó: ${skel.C8?.accion_previa} <<`)
             ]);
 
-            // Nivel 4 (Cuello de botella)
-            const dContext = "Tras una agotadora segunda ronda, el combate alcanza su punto crítico. Se abre la última oportunidad de definir el duelo.";
+            const dContext = "Tras una agotadora segunda ronda, el combate alcanza su punto crítico.";
             const txtDs = await Promise.all([
                 writeLiterature('D0', dContext + `\n>> El jugador intentó: ${skel.D0?.accion_previa} <<`),
                 writeLiterature('D1', dContext + `\n>> El jugador intentó: ${skel.D1?.accion_previa} <<`)
             ]);
 
-            // Nivel 5 (Desenlace)
             const eContext = "El clímax del enfrentamiento acaba de ocurrir. Es el momento del golpe de gracia y el fin de la batalla.";
             await writeLiterature('E', eContext + `\n>> El jugador intentó: ${skel.E?.accion_previa} <<`);
 
-            // ==========================================
-            // FINALIZACIÓN
-            // ==========================================
-            UI.setLoading(true, "Finalizando...", 100, "Conectando nodos al lienzo", 100);
-
-            if (typeof Canvas !== 'undefined' && Canvas.render) Canvas.render();
             if (Core.scheduleSave) Core.scheduleSave();
             
         } catch (error) {
             console.error("Error al generar combate IA:", error);
             alert("Error al generar combate en red: " + error.message);
         } finally {
-            if (typeof UI !== 'undefined' && UI.setLoading) UI.setLoading(false);
-            if (typeof ContextMenu !== 'undefined') ContextMenu.hide();
+            this.generatingNodes.delete(nodeId);
+            if (typeof Canvas !== 'undefined' && Canvas.render) Canvas.render();
         }
     }
 };

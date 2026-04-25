@@ -75,7 +75,13 @@ window.ContextMenu = {
                     <button class="w-full text-left px-3 py-2 hover:bg-purple-50 transition-colors flex items-center gap-2 text-gray-700" onclick="AIEnhancer.completeNode('${nodeId}')">
                         <i class="fa-solid fa-pen-nib w-4 text-center text-purple-500"></i> Auto-Escribir (IA)
                     </button>
-                    <div class="flex border-b border-gray-50">
+                    <button class="w-full text-left px-3 py-2 hover:bg-purple-50 transition-colors flex items-center gap-2 text-gray-700" onclick="AILinks.rewriteLinks('${nodeId}')">
+                        <i class="fa-solid fa-link w-4 text-center text-purple-500"></i> Reescribir Enlaces (IA)
+                    </button>
+                    <button class="w-full text-left px-3 py-2 hover:bg-purple-50 transition-colors flex items-center gap-2 text-gray-700" onclick="AIBitacora.updateLogbook('${nodeId}')">
+                        <i class="fa-solid fa-book-bookmark w-4 text-center text-purple-500"></i> Resumir en Bitácora (IA)
+                    </button>
+                    <div class="flex border-b border-gray-50 border-t border-gray-50">
                         <button class="flex-1 text-center px-2 py-2 hover:bg-gray-100 transition-colors text-[10px] text-gray-600 border-r border-gray-50" onclick="AIAdvanced.changePerspective('${nodeId}', 'primera')">1ª Pers (IA)</button>
                         <button class="flex-1 text-center px-2 py-2 hover:bg-gray-100 transition-colors text-[10px] text-gray-600" onclick="AIAdvanced.changePerspective('${nodeId}', 'tercera')">3ª Pers (IA)</button>
                     </div>

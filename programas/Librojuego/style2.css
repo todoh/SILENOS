@@ -1,4 +1,4 @@
-/* Archivo: Librojuego/style2.css - Estilos de la barra lateral izquierda y UI */
+/* Archivo: Librojuego/style2.css - Estilos de la barra inferior y UI */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap');
 
@@ -7,82 +7,89 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-.custom-scrollbar::-webkit-scrollbar { width: 0px; background: transparent; }
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 10px; }
 
-/* --- ESTRUCTURA DE LA BARRA LATERAL (Extraída del HTML) --- */
-.sidebar-left {
-    width: 28rem; 
+/* --- ESTRUCTURA DE LA BARRA INFERIOR --- */
+.bottom-bar { 
+    width: 100%; 
+    height: 38vh;
+    min-height: 320px;
     background-color: #ffffff;
-    height: 100%;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     z-index: 20;
     flex-shrink: 0;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 -10px 15px -3px rgba(0, 0, 0, 0.05), 0 -4px 6px -2px rgba(0, 0, 0, 0.025);
+    /* Transición suave para el plegado */
+    transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden; /* Oculta el contenido al reducir tamaño */
 }
 
-.sidebar-header {
-    padding: 2rem;
-    padding-bottom: 1.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+/* Clase dinámica para plegar el panel */
+.bottom-bar.collapsed {
+    height: 2% !important;
+    min-height: 2% !important;
+    border: none;
 }
 
-.sidebar-title {
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: #9ca3af;
-}
-
-.sidebar-folder-btn-container {
-    padding-left: 2rem;
-    padding-right: 2rem;
-    padding-bottom: 1.5rem;
-}
-
-.sidebar-tabs {
-    display: flex;
-    padding-left: 2rem;
-    padding-right: 2rem;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-}
-
-.sidebar-content-area {
-    flex: 1 1 0%;
-    overflow-y: auto;
-    padding-left: 2rem;
-    padding-right: 2rem;
-    padding-bottom: 2rem;
-    position: relative;
-}
-
-.sidebar-footer {
-    padding: 2rem;
-    padding-top: 1rem;
-    background-color: #ffffff;
-    margin-top: auto;
-    border-top: 1px solid #f9fafb;
+.bottom-bar-sidebar {
+    width: 16rem;
+    background-color: #f9fafb;
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
+    padding: 1.5rem;
+    border-right: 1px solid #f3f4f6;
+}
+
+.bottom-bar-header {
+    margin-bottom: 1.5rem;
+}
+
+.bottom-bar-title {
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #6b7280;
+}
+
+.bottom-bar-main {
+    flex: 1 1 0%;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.bottom-bar-tabs {
+    display: flex;
+    padding: 1rem 2rem;
     gap: 0.75rem;
+    flex-wrap: wrap;
+    border-bottom: 1px solid #f3f4f6;
+    flex-shrink: 0;
+}
+
+.bottom-bar-content-area {
+    flex: 1 1 0%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 1.5rem 2rem;
+    position: relative;
 }
 
 /* --- COMPONENTES LIQUID (INPUTS Y BOTONES DE LA BARRA) --- */
 .liquid-input {
-    height: 120px;
+    min-height: 48px;
     width: 100%;
     background-color: #f3f4f6;
     color: #000000;
     border: none !important;
     outline: none !important;
     box-shadow: none !important;
-    padding: 16px 20px;
-    border-radius: 24px;
+    padding: 12px 16px;
+    border-radius: 16px;
     font-size: 0.875rem;
     transition: background-color 0.3s ease;
 }
@@ -97,6 +104,8 @@ select.liquid-input {
 }
 
 .liquid-btn-primary {
+    height: 18px;
+    width: auto;
     background-color: #000000;
     color: #ffffff;
     border: none;

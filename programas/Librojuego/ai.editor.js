@@ -129,6 +129,7 @@ window.AIEnhancer = {
         const choicesContext = node.choices.map(c => ({ targetId: c.targetId, currentText: c.text }));
         
         const geoContext = typeof window.AISupport !== 'undefined' && typeof window.AISupport.getGeographicContext === 'function' ? window.AISupport.getGeographicContext(nodeId) : ""; // Inyección cartográfica
+        const canonContext = typeof window.AISupport !== 'undefined' && typeof window.AISupport.getCanonInstruction === 'function' ? window.AISupport.getCanonInstruction() : ""; 
 
         const userPrompt = `
             SÍNTESIS DE LA HISTORIA HASTA ESTE PUNTO (Solo la rama del jugador):
@@ -137,6 +138,7 @@ window.AIEnhancer = {
             UBICACIÓN EXACTA DEL NODO:
             ${location}
             ${geoContext}
+            ${canonContext}
 
             CONTEXTO INMEDIATO (Lo que acaba de pasar y qué decisión tomó el jugador para llegar aquí):
             ${parentTexts || "Este es el comienzo de la aventura o un nodo huérfano. Inicia la historia aquí."}
@@ -175,6 +177,13 @@ window.AIEnhancer = {
         });
 
         if (Core.scheduleSave) Core.scheduleSave();
+
+        // -------------------------------------------------------------------------
+        // NUEVO: Auto-disparador de la Bitácora IA después de actualizar la historia
+        // -------------------------------------------------------------------------
+        if (typeof window.AIBitacora !== 'undefined') {
+            window.AIBitacora.updateLogbook(nodeId);
+        }
     },
 
     calculateDepth(nodes, targetId) {

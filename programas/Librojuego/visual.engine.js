@@ -46,19 +46,21 @@ window.VisualEngine = {
         if (!node) return;
 
         try {
-            UI.setLoading(true, "Subiendo Imagen...", 50, "Guardando en disco local", 50);
+            UI.setLoading(true, "Subiendo y Procesando Imagen...", 50, "Reescalando a 1920px", 50);
 
-            const extension = file.name.split('.').pop() || "png";
-            const filename = `IMG_UPLOAD_${nodeId}_${Date.now()}.${extension}`;
+            // Reescalar y mejorar usando la clase ImageProcessor (JPG Forzado)
+            const processedBlob = await window.ImageProcessor.process(file, 1920, 0.15);
+            
+            const filename = `IMG_UPLOAD_${nodeId}_${Date.now()}.jpg`;
             
             const fileHandle = await Core.targetHandle.getFileHandle(filename, { create: true });
             const writable = await fileHandle.createWritable();
-            await writable.write(file);
+            await writable.write(processedBlob);
             await writable.close();
 
             node.imageUrl = filename;
             node.imagePrompt = "Imagen cargada manualmente desde el PC."; 
-            node._cachedImageUrl = URL.createObjectURL(file);
+            node._cachedImageUrl = URL.createObjectURL(processedBlob);
 
             Core.scheduleSave();
 
@@ -263,8 +265,7 @@ window.VisualEngine = {
             return alert("Selecciona una carpeta raíz primero en el menú superior para poder guardar la imagen en disco.");
         }
 
-        const model = document.getElementById('visual-model')?.value || 'flux';
-        const dim = this.getDimensions();
+        const engine = document.getElementById('visual-engine-select')?.value || 'pollinations';
 
         this.generatingNodes.add(nodeId);
         
@@ -277,22 +278,155 @@ window.VisualEngine = {
 
         try {
             console.log(`[Segundo Plano] Calculando Prompt Visual para el nodo ${nodeId}...`);
-            const prompt = await window.AIVisual.generateNodePrompt(nodeId);
+            // ACTUALIZACIÓN DE REFERENCIA A AIVisual2
+            const prompt = await window.AIVisual2.generateNodePrompt(nodeId);
             
-            console.log(`[Segundo Plano] Descargando render del nodo ${nodeId}...`);
-            const safePrompt = encodeURIComponent(prompt);
-            const seed = Math.floor(Math.random() * 9999999);
-            let url = `https://gen.pollinations.ai/image/${safePrompt}?model=${model}&width=${dim.w}&height=${dim.h}&seed=${seed}&nologo=true`;
+            console.log(`[Segundo Plano] Ejecutando render (${engine}) para el nodo ${nodeId}...`);
             
-            const apiKey = window.Koreh.Core.getAuthKey();
-            if (apiKey) url += `&key=${apiKey}`;
+            let blob;
+            let extension = "jpg";
 
-            const response = await fetch(url);
-            if (!response.ok) throw new Error("API Error / Fallo en el servidor gráfico.");
+            if (engine === 'pollinations') {
+                const dim = this.getDimensions();
+                const model = document.getElementById('visual-model')?.value || 'flux';
+                const safePrompt = encodeURIComponent(prompt);
+                const seed = Math.floor(Math.random() * 9999999);
+                let url = `https://gen.pollinations.ai/image/${safePrompt}?model=${model}&width=${dim.w}&height=${dim.h}&seed=${seed}&nologo=true`;
+                
+                const apiKey = window.Koreh.Core.getAuthKey();
+                if (apiKey) url += `&key=${apiKey}`;
 
-            const blob = await response.blob();
-            const extension = "jpg";
-            
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("API Error / Fallo en el servidor gráfico de Pollinations.");
+
+                blob = await response.blob();
+            } else if (engine === 'comfyui') {
+                const comfyUrl = document.getElementById('comfyui-url')?.value || 'http://127.0.0.1:8188';
+                const comfyModel = document.getElementById('comfyui-model')?.value || 'sd_xl_turbo_1.0_fp16.safetensors';
+                const comfySteps = parseInt(document.getElementById('comfyui-steps')?.value) || 20;
+                const comfyCfg = parseFloat(document.getElementById('comfyui-cfg')?.value) || 8.0;
+                const comfySampler = document.getElementById('comfyui-sampler')?.value || 'euler';
+                const comfyWidth = parseInt(document.getElementById('comfyui-width')?.value) || 1024;
+                const comfyHeight = parseInt(document.getElementById('comfyui-height')?.value) || 1024;
+                
+                const clientId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+                const seed = Math.floor(Math.random() * 10000000000);
+
+                const promptWorkflow = {
+                    "3": {
+                        "class_type": "KSampler",
+                        "inputs": {
+                            "seed": seed,
+                            "steps": comfySteps,
+                            "cfg": comfyCfg,
+                            "sampler_name": comfySampler,
+                            "scheduler": "normal",
+                            "denoise": 1,
+                            "model": ["4", 0],
+                            "positive": ["6", 0],
+                            "negative": ["7", 0],
+                            "latent_image": ["5", 0]
+                        }
+                    },
+                    "4": {
+                        "class_type": "CheckpointLoaderSimple",
+                        "inputs": {
+                            "ckpt_name": comfyModel
+                        }
+                    },
+                    "5": {
+                        "class_type": "EmptyLatentImage",
+                        "inputs": {
+                            "batch_size": 1,
+                            "width": comfyWidth,
+                            "height": comfyHeight
+                        }
+                    },
+                    "6": {
+                        "class_type": "CLIPTextEncode",
+                        "inputs": {
+                            "text": prompt,
+                            "clip": ["4", 1]
+                        }
+                    },
+                    "7": {
+                        "class_type": "CLIPTextEncode",
+                        "inputs": {
+                            "text": "bad anatomy, blurry, watermark, worst quality, messy, deformed, ugly, missing limbs",
+                            "clip": ["4", 1]
+                        }
+                    },
+                    "8": {
+                        "class_type": "VAEDecode",
+                        "inputs": {
+                            "samples": ["3", 0],
+                            "vae": ["4", 2]
+                        }
+                    },
+                    "9": {
+                        "class_type": "SaveImage",
+                        "inputs": {
+                            "filename_prefix": "librojuego_gen",
+                            "images": ["8", 0]
+                        }
+                    }
+                };
+
+                blob = await new Promise((resolve, reject) => {
+                    const wsUrl = comfyUrl.replace("http://", "ws://").replace("https://", "wss://") + `/ws?clientId=${clientId}`;
+                    const ws = new WebSocket(wsUrl);
+                    
+                    ws.onopen = async () => {
+                        try {
+                            const response = await fetch(`${comfyUrl}/prompt`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ prompt: promptWorkflow, client_id: clientId })
+                            });
+
+                            if (!response.ok) throw new Error(`ERROR ComfyUI: ${response.status}`);
+
+                            const responseData = await response.json();
+                            const promptId = responseData.prompt_id;
+
+                            ws.onmessage = async (event) => {
+                                const message = JSON.parse(event.data);
+                                
+                                if (message.type === 'executed' && message.data.prompt_id === promptId) {
+                                    const outputImages = message.data.output.images;
+                                    if (outputImages && outputImages.length > 0) {
+                                        const imageObj = outputImages[0];
+                                        const imageUrl = `${comfyUrl}/view?filename=${imageObj.filename}&subfolder=${imageObj.subfolder}&type=${imageObj.type}`;
+                                        
+                                        const imgResponse = await fetch(imageUrl);
+                                        if (!imgResponse.ok) throw new Error("Fallo al descargar la imagen final desde ComfyUI.");
+                                        const imgBlob = await imgResponse.blob();
+                                        
+                                        ws.close();
+                                        resolve(imgBlob);
+                                    } else {
+                                        ws.close();
+                                        reject(new Error("ComfyUI no devolvió imágenes en el output."));
+                                    }
+                                }
+                            };
+                        } catch (err) {
+                            ws.close();
+                            reject(err);
+                        }
+                    };
+
+                    ws.onerror = () => {
+                        reject(new Error("Error conectando al WebSocket de ComfyUI. Verifica que ComfyUI esté ejecutándose en la URL especificada y permita el acceso CORS (--cors-header *)."));
+                    };
+                });
+            }
+
+            // PROCESAR Y ESCALAR LA IMAGEN A 1920PX
+            console.log(`[Segundo Plano] Mejorando y escalando a 1920px (Conservando formato)...`);
+            blob = await window.ImageProcessor.process(blob, 1920, 0.15); // Leve sharpening
+            extension = "jpg"; // Forzamos JPG de alta calidad
+
             console.log(`[Segundo Plano] Guardando imagen generada en disco (${nodeId})...`);
             const filename = `IMG_${nodeId}_${Date.now()}.${extension}`;
             const fileHandle = await Core.targetHandle.getFileHandle(filename, { create: true });
@@ -365,20 +499,15 @@ window.VisualEngine = {
         try {
             console.log(`[Koreh] Iniciando Collage para nodo ${nodeId}...`);
             
-            // Búsqueda robusta de la carpeta Koreh (sensibilidad a mayúsculas/minúsculas y ubicación)
             let korehDir = null;
             
-            // 1. Probar en la raíz (Koreh)
             try { korehDir = await Core.rootHandle.getDirectoryHandle('Koreh'); } catch(e) {}
-            // 2. Probar en la raíz (koreh)
             if (!korehDir) {
                 try { korehDir = await Core.rootHandle.getDirectoryHandle('koreh'); } catch(e) {}
             }
-            // 3. Probar dentro del proyecto actual (Koreh)
             if (!korehDir) {
                 try { korehDir = await Core.targetHandle.getDirectoryHandle('Koreh'); } catch(e) {}
             }
-            // 4. Probar dentro del proyecto actual (koreh)
             if (!korehDir) {
                 try { korehDir = await Core.targetHandle.getDirectoryHandle('koreh'); } catch(e) {}
             }
@@ -387,7 +516,6 @@ window.VisualEngine = {
                 throw new Error("No se encontró la carpeta 'Koreh' (o 'koreh') ni en la raíz de Silenos ni dentro de la carpeta de tu proyecto.");
             }
             
-            // 1. Inyección de script dinámico para evitar bloqueos del procesador HTML de Silenos
             if (typeof window.KorehCollage === 'undefined') {
                 try {
                     const scriptHandle = await korehDir.getFileHandle('koreh.collage.js');
@@ -403,11 +531,9 @@ window.VisualEngine = {
                 }
             }
 
-            // 2. Extracción dinámica de archivos en la galería Koreh (Vía nativa Silenos FileSystem)
             let galeriaHandle = null;
             let availableAssets = [];
             try {
-                // Intentar 'Galeria' o 'galeria'
                 try {
                     galeriaHandle = await korehDir.getDirectoryHandle('Galeria');
                 } catch (e) {
@@ -427,7 +553,6 @@ window.VisualEngine = {
                 throw new Error("La Galería en 'Koreh/Galeria' está vacía o no existe. Añade gráficos para que Koreh pueda componer.");
             }
 
-            // 3. Wrapper de IA (Nova-fast)
             const llmCallerWrapper = async (sys, usr) => {
                 return await window.Koreh.Text.generateWithRetry(sys, usr, {
                     model: 'nova-fast', 
@@ -436,8 +561,6 @@ window.VisualEngine = {
                 }, (d) => d && d.elements && Array.isArray(d.elements));
             };
 
-            // 4. Wrapper del Lector Gráfico
-            // Al usar la API FileSystem nativa de Google sorteamos los bloqueos de iframes
             const customAssetLoader = async (src) => {
                 if (!galeriaHandle) throw new Error("Acceso a Galería restringido en ejecución.");
                 const fileHandle = await galeriaHandle.getFileHandle(src);
@@ -447,7 +570,7 @@ window.VisualEngine = {
                 return new Promise((resolve, reject) => {
                     const img = new Image();
                     img.onload = () => {
-                        URL.revokeObjectURL(url); // Liberación memoria obligatoria
+                        URL.revokeObjectURL(url); 
                         resolve(img);
                     };
                     img.onerror = () => {
@@ -460,8 +583,7 @@ window.VisualEngine = {
 
             const dim = this.getDimensions();
 
-            // 5. Motor Abstracto
-            const blob = await window.KorehCollage.generate(node.text, {
+            let blob = await window.KorehCollage.generate(node.text, {
                 llmCaller: llmCallerWrapper,
                 assetLoader: customAssetLoader, 
                 availableAssets: availableAssets,
@@ -469,8 +591,11 @@ window.VisualEngine = {
                 height: dim.h
             });
 
-            // 6. Guardado Local
-            const extension = "png";
+            // PROCESAR Y ESCALAR EL COLLAGE A 1920PX
+            console.log(`[Koreh] Mejorando y escalando a 1920px (Conservando formato)...`);
+            blob = await window.ImageProcessor.process(blob, 1920, 0.15);
+            const extension = "jpg";
+
             const filename = `COLLAGE_${nodeId}_${Date.now()}.${extension}`;
             
             const fileHandle = await Core.targetHandle.getFileHandle(filename, { create: true });

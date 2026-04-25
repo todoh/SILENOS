@@ -22,14 +22,18 @@ const UI = {
     },
 
     switchTab(tab) {
+        if(document.getElementById('panel-project')) document.getElementById('panel-project').classList.add('hidden');
         document.getElementById('panel-canvas').classList.add('hidden');
         document.getElementById('panel-ai').classList.add('hidden');
+        if(document.getElementById('panel-canon')) document.getElementById('panel-canon').classList.add('hidden');
         if(document.getElementById('panel-visual')) document.getElementById('panel-visual').classList.add('hidden');
         if(document.getElementById('panel-audio')) document.getElementById('panel-audio').classList.add('hidden');
         if(document.getElementById('panel-video')) document.getElementById('panel-video').classList.add('hidden');
         
+        if(document.getElementById('tab-btn-project')) document.getElementById('tab-btn-project').className = "text-[11px] font-bold text-gray-400 hover:text-black transition-colors";
         document.getElementById('tab-btn-canvas').className = "text-[11px] font-bold text-gray-400 hover:text-black transition-colors";
         document.getElementById('tab-btn-ai').className = "text-[11px] font-bold text-gray-400 hover:text-black transition-colors";
+        if(document.getElementById('tab-btn-canon')) document.getElementById('tab-btn-canon').className = "text-[11px] font-bold text-gray-400 hover:text-black transition-colors";
         if(document.getElementById('tab-btn-visual')) document.getElementById('tab-btn-visual').className = "text-[11px] font-bold text-gray-400 hover:text-black transition-colors";
         if(document.getElementById('tab-btn-audio')) document.getElementById('tab-btn-audio').className = "text-[11px] font-bold text-gray-400 hover:text-black transition-colors";
         if(document.getElementById('tab-btn-video')) document.getElementById('tab-btn-video').className = "text-[11px] font-bold text-gray-400 hover:text-black transition-colors";
@@ -38,14 +42,34 @@ const UI = {
         document.getElementById(`tab-btn-${tab}`).className = "text-[11px] font-bold text-black transition-colors";
     },
 
-    toggleFolderModal() {
-        const modal = document.getElementById('folder-modal');
-        modal.classList.toggle('hidden');
-        if(!modal.classList.contains('hidden')) {
-            modal.classList.add('flex');
-            if(Core.scanRoot) Core.scanRoot();
+    toggleBottomBar() {
+        const bar = document.getElementById('bottom-bar');
+        const btnIcon = document.querySelector('#btn-toggle-bottom-bar i');
+        
+        if (bar.classList.contains('collapsed')) {
+            bar.classList.remove('collapsed');
+            if(btnIcon) {
+                btnIcon.classList.remove('fa-chevron-up');
+                btnIcon.classList.add('fa-chevron-down');
+            }
         } else {
-            modal.classList.remove('flex');
+            bar.classList.add('collapsed');
+            if(btnIcon) {
+                btnIcon.classList.remove('fa-chevron-down');
+                btnIcon.classList.add('fa-chevron-up');
+            }
+        }
+        
+        // Repintar edges del canvas tras la animación para ajustar las líneas
+        setTimeout(() => {
+            if (typeof Canvas !== 'undefined' && Canvas.render) Canvas.render();
+        }, 310);
+    },
+
+    toggleFolderModal() {
+        // En lugar de abrir el modal antiguo, llamamos directamente a la API nativa
+        if (Core.selectProjectFolder) {
+            Core.selectProjectFolder();
         }
     },
 
@@ -61,7 +85,6 @@ const UI = {
             
             if (msgEl && msg) msgEl.innerText = msg;
 
-            // Inyectar contenedor de barras dobles dinámicamente si no existe
             let progressContainer = document.getElementById('koreh-progress-bars');
             if (!progressContainer) {
                 progressContainer = document.createElement('div');

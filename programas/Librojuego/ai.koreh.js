@@ -32,11 +32,11 @@ window.Koreh = {
         },
         async generate(sysPrompt, userPrompt, config = {}) {
             const ollamaConfig = JSON.parse(localStorage.getItem('ollama_config')) || { enabled: false };
+            const geminiConfig = JSON.parse(localStorage.getItem('gemini_config')) || { enabled: false };
             
             if (ollamaConfig.enabled) {
                 // FLUJO OLLAMA LOCAL
                 const url = ollamaConfig.url || 'http://localhost:11434';
-                // gemini-fast era el modelo de estructura/lógica, nova-fast el narrativo
                 let modelName = config.model === 'gemini-fast' ? ollamaConfig.logic : ollamaConfig.narrative;
                 if (!modelName) modelName = ollamaConfig.logic || ollamaConfig.narrative; 
                 
@@ -56,7 +56,7 @@ window.Koreh = {
                 
                 if (config.jsonMode) {
                     body.messages[0].content += " RESPOND ONLY IN STRICT JSON. DO NOT TRUNCATE.";
-                    body.format = "json"; // Formato nativo de Ollama
+                    body.format = "json";
                 }
                 
                 const response = await fetch(`${url}/api/chat`, {
@@ -78,6 +78,57 @@ window.Koreh = {
                     }
                 }
                 return content;
+                
+            } else if (geminiConfig.enabled && geminiConfig.apikey) {
+                // FLUJO GEMINI API DIRECTA
+                let modelName = config.model === 'gemini-fast' ? geminiConfig.logic : geminiConfig.narrative;
+                if (!modelName) modelName = geminiConfig.logic || geminiConfig.narrative || 'gemini-2.5-flash-lite';
+
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiConfig.apikey}`;
+                
+                const body = {
+                    systemInstruction: {
+                        parts: [{ text: sysPrompt }]
+                    },
+                    contents: [
+                        { role: "user", parts: [{ text: userPrompt }] }
+                    ],
+                    generationConfig: {
+                        temperature: config.temperature ?? 0.7,
+                    }
+                };
+
+                if (config.jsonMode) {
+                    body.generationConfig.responseMimeType = "application/json";
+                    // Ayuda extra para asegurar que responda en JSON puro
+                    body.contents[0].parts[0].text += "\n\nRESPOND ONLY IN STRICT JSON FORMAT.";
+                }
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                
+                if (!response.ok) throw new Error(`Gemini API Error: ${await response.text()}`);
+                const data = await response.json();
+                
+                if (!data.candidates || data.candidates.length === 0) {
+                    throw new Error("Gemini API no devolvió contenido (posible bloqueo de seguridad).");
+                }
+                
+                const content = data.candidates[0].content.parts[0].text;
+                
+                if (config.jsonMode) {
+                    try {
+                        return JSON.parse(this.cleanJSON(content));
+                    } catch (e) {
+                        console.error("Error parseando el JSON de Gemini Directo:", e.message, "\nContenido problemático:\n", content.substring(0, 200));
+                        throw new Error("JSON malformado.");
+                    }
+                }
+                return content;
+
             } else {
                 // FLUJO ORIGINAL (Pollinations / Cloud)
                 const body = {

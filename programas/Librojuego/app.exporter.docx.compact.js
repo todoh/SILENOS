@@ -3,29 +3,40 @@
 window.DocxExporterCompact = {
     formatPrintableChoice(c, idToPassage, defaultDeathPassage) {
         let result = c.text;
+        
         if (c.cond && c.cond.type) {
             let req = "";
             if (c.cond.type === 'item') {
-                req = c.cond.op === 'HAS' ? `Tener el objeto: ${c.cond.val}` : `No tener el objeto: ${c.cond.val}`;
+                if (c.cond.op === 'HAS' || c.cond.op === '!HAS') {
+                    req = c.cond.op === 'HAS' ? `Tener el objeto: ${c.cond.val}` : `No tener el objeto: ${c.cond.val}`;
+                } else {
+                    let opMap = {'>': 'más de', '<': 'menos de', '==': 'exactamente'};
+                    req = `Tener ${opMap[c.cond.op] || c.cond.op} ${c.cond.qty} de ${c.cond.val}`;
+                }
             } else {
                 let opMap = {'>': 'más de', '<': 'menos de', '==': 'exactamente'};
                 req = `Tener ${opMap[c.cond.op] || c.cond.op} ${c.cond.val} de ${c.cond.type.charAt(0).toUpperCase() + c.cond.type.slice(1)}`;
             }
             result = `[Requisito: ${req}] ` + result;
         }
-        if (c.eff && c.eff.type) {
-            let eff = "";
-            if (c.eff.type === 'item') {
-                eff = c.eff.op === 'ADD' ? `Consigues el objeto: ${c.eff.val}` : `Pierdes el objeto: ${c.eff.val}`;
-            } else {
-                let actMap = {'+': 'Ganas', '-': 'Pierdes'};
-                eff = `${actMap[c.eff.op] || c.eff.op} ${c.eff.val} de ${c.eff.type.charAt(0).toUpperCase() + c.eff.type.slice(1)}`;
-                if (c.eff.type === 'vida' && c.eff.op === '-') {
-                    let targetPas = c.eff.deathTarget ? idToPassage[c.eff.deathTarget] : defaultDeathPassage;
-                    eff += `. Si tu vida es cero o menos, ve al pasaje ${targetPas || '???'}`;
+        
+        let effs = c.effs || (c.eff ? [c.eff] : []);
+        if (effs.length > 0) {
+            let effTexts = effs.map(eff => {
+                if (eff.type === 'item') {
+                    let qtyStr = (eff.qty > 1) ? ` ${eff.qty}x` : '';
+                    return eff.op === 'ADD' ? `Consigues${qtyStr}: ${eff.val}` : `Pierdes${qtyStr}: ${eff.val}`;
+                } else {
+                    let actMap = {'+': 'Ganas', '-': 'Pierdes'};
+                    let eStr = `${actMap[eff.op] || eff.op} ${eff.val} de ${eff.type.charAt(0).toUpperCase() + eff.type.slice(1)}`;
+                    if (eff.type === 'vida' && eff.op === '-') {
+                        let targetPas = eff.deathTarget ? idToPassage[eff.deathTarget] : defaultDeathPassage;
+                        eStr += `. Si tu vida es cero o menos, ve al pasaje ${targetPas || '???'}`;
+                    }
+                    return eStr;
                 }
-            }
-            result += ` (Consecuencia: ${eff})`;
+            }).join(' | ');
+            result += ` (Consecuencia: ${effTexts})`;
         }
         return result;
     },
@@ -137,21 +148,26 @@ window.DocxExporterCompact = {
                 }));
 
                 let nodeEffText = "";
-                if (node.eff && node.eff.type) {
-                    if (node.eff.type === 'vida' && node.eff.op === '-') {
-                        let targetPas = node.eff.deathTarget ? idToPassage[node.eff.deathTarget] : defaultDeathPassage;
-                        nodeEffText = `Pierdes ${node.eff.val} de vida. Si tu vida es cero o menos, ve al pasaje ${targetPas || '???'}`;
-                    } else if (node.eff.type === 'item') {
-                        nodeEffText = node.eff.op === 'ADD' ? `Consigues el objeto: ${node.eff.val}` : `Pierdes el objeto: ${node.eff.val}`;
-                    } else {
-                        let actMap = {'+': 'Ganas', '-': 'Pierdes'};
-                        nodeEffText = `${actMap[node.eff.op] || node.eff.op} ${node.eff.val} de ${node.eff.type.charAt(0).toUpperCase() + node.eff.type.slice(1)}`;
-                    }
+                let nEffs = node.effs || (node.eff ? [node.eff] : []);
+                
+                if (nEffs.length > 0) {
+                    nodeEffText = nEffs.map(eff => {
+                        if (eff.type === 'vida' && eff.op === '-') {
+                            let targetPas = eff.deathTarget ? idToPassage[eff.deathTarget] : defaultDeathPassage;
+                            return `Pierdes ${eff.val} de vida. Si tu vida es cero o menos, ve al pasaje ${targetPas || '???'}`;
+                        } else if (eff.type === 'item') {
+                            let qtyStr = (eff.qty > 1) ? ` ${eff.qty}x` : '';
+                            return eff.op === 'ADD' ? `Consigues${qtyStr}: ${eff.val}` : `Pierdes${qtyStr}: ${eff.val}`;
+                        } else {
+                            let actMap = {'+': 'Ganas', '-': 'Pierdes'};
+                            return `${actMap[eff.op] || eff.op} ${eff.val} de ${eff.type.charAt(0).toUpperCase() + eff.type.slice(1)}`;
+                        }
+                    }).join(' | ');
                 }
 
                 if (nodeEffText) {
                     docChildren.push(new Paragraph({
-                        children: [new TextRun({ text: `[Efecto al llegar: ${nodeEffText}]`, italics: true, size: 18 })],
+                        children: [new TextRun({ text: `[Efectos al llegar: ${nodeEffText}]`, italics: true, size: 18 })],
                         alignment: AlignmentType.CENTER,
                         spacing: { before: 100, after: 100 },
                         keepNext: true,
@@ -168,6 +184,15 @@ window.DocxExporterCompact = {
                         keepNext: true,
                         keepLines: true
                     }));
+                }
+
+                // ---> INTEGRACIÓN DE MÓDULOS EN WORD (COMBATE Y TIENDA) <---
+                let nEffsDocx = node.effs || (node.eff ? [node.eff] : []);
+                for (let eff of nEffsDocx) {
+                    if (eff.type.startsWith('module_') && window.Modules) {
+                        const moduleElements = window.Modules.getDocxElements(eff, docx);
+                        moduleElements.forEach(el => docChildren.push(el));
+                    }
                 }
 
                 if (node.choices && node.choices.length > 0) {

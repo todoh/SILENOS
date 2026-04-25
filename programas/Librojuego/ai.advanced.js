@@ -1,25 +1,29 @@
 // Archivo: Librojuego/ai.advanced.js
 
 window.AIAdvanced = {
+    generatingNodes: new Set(),
+    extractingNodes: new Set(), 
     
     // ----------------------------------------------------
-    // PUNTO 2: SUB-TRAMA FRACTAL (CON MEJORA DE 3 FASES)
+    // PUNTO 2: SUB-TRAMA FRACTAL (EN 2º PLANO)
     // ----------------------------------------------------
     async generateFractal(nodeId) {
+        if (this.generatingNodes.has(nodeId)) return;
+
         const parent = Core.getNode(nodeId);
         if (!parent || !parent.text) return alert("El nodo necesita texto base para generar una subtrama.");
 
-        try {
-            UI.setLoading(true, "Fase 1/3: Analizando Historial (BFS)...", 20, "Escaneando estado actual", 20);
-            const analysisReport = await window.AISupport.analyzeContext(nodeId);
+        this.generatingNodes.add(nodeId);
+        if (typeof Canvas !== 'undefined') Canvas.renderNodes();
+        if (typeof ContextMenu !== 'undefined') ContextMenu.hide();
 
-            UI.setLoading(true, "Fase 2/3: Diseñando Estructura Fractal...", 50, "Creando nudos narrativos", 50);
+        try {
+            const analysisReport = await window.AISupport.analyzeContext(nodeId);
             const taskInstructions = "Diseñar una subtrama fractal: 2 caminos divergentes derivados del nodo actual que, hagan lo que hagan, convergen ineludiblemente en un mismo punto o sala final.";
             const optionsReport = await window.AISupport.getOptionsReport(analysisReport, parent.text, taskInstructions);
 
-            UI.setLoading(true, "Fase 3/3: Forjando Topología...", 80, "Inyectando 3 nodos interconectados", 80);
             const sysPrompt = "Eres un Arquitecto de Librojuegos. Genera una aventura fractal basada fielmente en los informes previos. Devuelve ESTRICTAMENTE JSON PURO.";
-            const geoContext = window.AISupport && typeof window.AISupport.getGeographicContext === 'function' ? window.AISupport.getGeographicContext(nodeId) : ""; // Inyección cartográfica
+            const geoContext = window.AISupport && typeof window.AISupport.getGeographicContext === 'function' ? window.AISupport.getGeographicContext(nodeId) : ""; 
 
             const userPrompt = `
                 INFORME DE DISEÑO PREVIO:
@@ -57,34 +61,35 @@ window.AIAdvanced = {
             Core.getNode(idA).choices.push({ text: data.convergencia.accion_boton, targetId: idConv });
             Core.getNode(idB).choices.push({ text: data.convergencia.accion_boton, targetId: idConv });
 
-            Canvas.render();
-            Core.scheduleSave();
+            if (Core.scheduleSave) Core.scheduleSave();
         } catch (e) {
             alert("Error del Oráculo Fractal: " + e.message);
         } finally {
-            UI.setLoading(false);
-            if (typeof ContextMenu !== 'undefined') ContextMenu.hide();
+            this.generatingNodes.delete(nodeId);
+            if (typeof Canvas !== 'undefined') Canvas.render();
         }
     },
 
     // ----------------------------------------------------
-    // PUNTO 3: PUZLES MORTALES (CON MEJORA DE 3 FASES)
+    // PUNTO 3: PUZLES MORTALES (EN 2º PLANO)
     // ----------------------------------------------------
     async generatePuzzle(nodeId) {
+        if (this.generatingNodes.has(nodeId)) return;
+
         const node = Core.getNode(nodeId);
         if (!node) return;
 
-        try {
-            UI.setLoading(true, "Fase 1/3: Analizando Historial (BFS)...", 20, "Revisando inventario y entorno", 20);
-            const analysisReport = await window.AISupport.analyzeContext(nodeId);
+        this.generatingNodes.add(nodeId);
+        if (typeof Canvas !== 'undefined') Canvas.renderNodes();
+        if (typeof ContextMenu !== 'undefined') ContextMenu.hide();
 
-            UI.setLoading(true, "Fase 2/3: Diseñando Engaño Lógico...", 50, "Mapeando trampas y salidas", 50);
+        try {
+            const analysisReport = await window.AISupport.analyzeContext(nodeId);
             const taskInstructions = "Diseñar un acertijo, trampa mortal o enigma mecánico coherente con el inventario y estado del jugador. Debe tener 1 opción correcta para avanzar y 2 opciones de trampa letales o dañinas.";
             const optionsReport = await window.AISupport.getOptionsReport(analysisReport, node.text || "Una sala vacía", taskInstructions);
 
-            UI.setLoading(true, "Fase 3/3: Forjando Trampa en Canvas...", 80, "Conectando consecuencias", 80);
             const sysPrompt = "Eres un Game Designer experto. Convierte la situación en una trampa mortal basada en el diseño previo. Devuelve ESTRICTAMENTE JSON PURO.";
-            const geoContext = window.AISupport && typeof window.AISupport.getGeographicContext === 'function' ? window.AISupport.getGeographicContext(nodeId) : ""; // Inyección cartográfica
+            const geoContext = window.AISupport && typeof window.AISupport.getGeographicContext === 'function' ? window.AISupport.getGeographicContext(nodeId) : ""; 
 
             const userPrompt = `
                 INFORME DE DISEÑO PREVIO:
@@ -123,32 +128,33 @@ window.AIAdvanced = {
             node.choices.push({ text: data.opcion_falsa_1.texto_boton, targetId: idFalse1 });
             node.choices.push({ text: data.opcion_falsa_2.texto_boton, targetId: idFalse2 });
 
-            Canvas.render();
-            Core.scheduleSave();
+            if (Core.scheduleSave) Core.scheduleSave();
         } catch (e) {
             alert("Error al crear Puzzle: " + e.message);
         } finally {
-            UI.setLoading(false);
-            ContextMenu.hide();
+            this.generatingNodes.delete(nodeId);
+            if (typeof Canvas !== 'undefined') Canvas.render();
         }
     },
 
     // ----------------------------------------------------
-    // PUNTO 4: CAMBIO DE PERSPECTIVA (CON MEJORA DE 3 FASES)
+    // PUNTO 4: CAMBIO DE PERSPECTIVA
     // ----------------------------------------------------
     async changePerspective(nodeId, perspective) {
         const node = Core.getNode(nodeId);
         if (!node || !node.text) return;
 
+        if (typeof ContextMenu !== 'undefined') ContextMenu.hide();
+        UI.setLoading(true, "Analizando Historial...", 20, "Capturando tono original", 20);
+
         try {
-            UI.setLoading(true, "Fase 1/3: Analizando Historial (BFS)...", 20, "Capturando tono original", 20);
             const analysisReport = await window.AISupport.analyzeContext(nodeId);
 
-            UI.setLoading(true, "Fase 2/3: Procesando Guía de Estilo...", 50, "Traduciendo gramática", 50);
+            UI.setLoading(true, "Procesando Guía de Estilo...", 50, "Traduciendo gramática", 50);
             const taskInstructions = `Proponer directrices estilísticas estrictas para reescribir ESTE TEXTO EXACTO a ${perspective} persona, manteniendo absolutamente la coherencia con el tono y el estado mental del jugador.`;
             const optionsReport = await window.AISupport.getOptionsReport(analysisReport, node.text, taskInstructions);
 
-            UI.setLoading(true, `Fase 3/3: Aplicando ${perspective} Persona...`, 80, "Modificando prosa final", 80);
+            UI.setLoading(true, `Aplicando ${perspective} Persona...`, 80, "Modificando prosa final", 80);
             const sysPrompt = `Eres un editor literario de élite. Reescribe el texto proporcionado ESTRICTAMENTE en ${perspective} persona. Mantén el mismo tono y detalles guiándote por el informe. RESPONDE SOLO CON EL TEXTO LITERARIO, NADA MÁS.`;
             const userPrompt = `
                 GUÍA ESTILÍSTICA OBTENIDA:
@@ -164,13 +170,12 @@ window.AIAdvanced = {
 
             node.text = rewritten.trim();
             if (Core.selectedNodeId === nodeId && typeof Editor !== 'undefined') Editor.loadNode(nodeId);
-            Canvas.renderNodes();
-            Core.scheduleSave();
+            if (typeof Canvas !== 'undefined') Canvas.renderNodes();
+            if (Core.scheduleSave) Core.scheduleSave();
         } catch (e) {
             alert("Error al cambiar perspectiva: " + e.message);
         } finally {
             UI.setLoading(false);
-            ContextMenu.hide();
         }
     },
 
@@ -180,6 +185,7 @@ window.AIAdvanced = {
         if (!node || !node.text) return;
 
         UI.setLoading(true, "Analizando Tensión...", 50, "Midiendo pulso narrativo", 50);
+        if (typeof ContextMenu !== 'undefined') ContextMenu.hide();
 
         try {
             const sysPrompt = "Analiza la tensión dramática, urgencia y peligro de este texto. Devuelve ESTRICTAMENTE JSON PURO.";
@@ -203,19 +209,22 @@ window.AIAdvanced = {
             alert("Fallo al analizar tensión: " + e.message);
         } finally {
             UI.setLoading(false);
-            ContextMenu.hide();
         }
     },
 
-    // 🔮 6. Extracción de Lore Visual a la Biblia (Totalmente rediseñado)
+    // 🔮 6. Extracción de Lore Visual a la Biblia (A SEGUNDO PLANO)
     async extractLore(nodeId) {
+        if (this.extractingNodes.has(nodeId)) return;
         const node = Core.getNode(nodeId);
         if (!node || !node.text) return;
 
-        UI.setLoading(true, "Fase 1/3: Escaneando Nodo...", 20, "Buscando elementos que falten en la Biblia Visual", 20);
+        if (typeof ContextMenu !== 'undefined') ContextMenu.hide();
+        
+        // Bloqueamos el nodo y renderizamos para pintar el indicador visual de lore
+        this.extractingNodes.add(nodeId);
+        if (typeof Canvas !== 'undefined') Canvas.renderNodes();
 
         try {
-            // 1. Obtener el estado actual de la biblia para evitar repeticiones
             let bible = Core.bookData?.visualBible || Core.book?.visualBible;
             if (typeof bible !== 'object') {
                 bible = { style: typeof bible === 'string' ? bible : "", characters: "", places: "", flora_fauna: "", objects_tech: "", clothing: "", magic_fx: "" };
@@ -230,89 +239,105 @@ window.AIAdvanced = {
                 magic_fx: bible.magic_fx
             });
 
-            // 2. Extraer novedades con gemini-fast
-            const sysPromptExtract = "Eres un extractor de entidades de worldbuilding. Lee el texto y localiza personajes, lugares, criaturas u objetos clave que NO ESTÉN ya definidos en el LORE ACTUAL proporcionado. Devuelve ESTRICTAMENTE JSON PURO.";
+            const sysPromptExtract = "Eres un extractor de entidades de worldbuilding. Lee el texto y localiza personajes, lugares, criaturas u objetos clave. Separa los que ya existan en el LORE ACTUAL de los que sean totalmente NUEVOS. Devuelve ESTRICTAMENTE JSON PURO.";
             const userPromptExtract = `
                 LORE ACTUAL EN LA BIBLIA VISUAL:
                 ${currentLoreContext}
                 
-                TEXTO A ANALIZAR (Busca novedades aquí):
+                TEXTO A ANALIZAR:
                 "${node.text}"
                 
-                INSTRUCCIONES: Identifica únicamente elementos NUEVOS. Si no hay elementos nuevos y relevantes, devuelve un array vacío.
-                Las categorías permitidas son: "characters", "places", "flora_fauna", "objects_tech", "clothing", "magic_fx".
+                INSTRUCCIONES: 
+                1. "nuevos_elementos": Identifica elementos NUEVOS que NO ESTÉN en el lore actual (categorías: characters, places, flora_fauna, objects_tech, clothing, magic_fx).
+                2. "elementos_presentes": Lista los NOMBRES EXACTOS de TODAS las entidades relevantes que aparecen en este texto (tanto las nuevas como las que ya existen en el lore).
 
                 FORMATO JSON ESPERADO:
                 {
                     "nuevos_elementos": [
                         { "nombre": "Nombre del Elemento", "categoria": "characters" }
-                    ]
+                    ],
+                    "elementos_presentes": ["Nombre1", "Nombre2"]
                 }
             `;
 
             const extractData = await window.Koreh.Text.generateWithRetry(sysPromptExtract, userPromptExtract, {
                 model: 'gemini-fast', jsonMode: true, temperature: 0.3
-            }, (d) => d && Array.isArray(d.nuevos_elementos));
+            }, (d) => d && Array.isArray(d.elementos_presentes));
 
-            if (!extractData.nuevos_elementos || extractData.nuevos_elementos.length === 0) {
-                alert("No se detectaron elementos o conceptos visuales NUEVOS en este nodo que no estén ya en la Biblia Visual.");
-                return;
-            }
-
-            // 3. Generar descripciones ULTRA DETALLADAS individualmente usando nova-fast
             let elementosAñadidos = [];
             const validCats = ['characters', 'places', 'flora_fauna', 'objects_tech', 'clothing', 'magic_fx'];
 
-            for (let i = 0; i < extractData.nuevos_elementos.length; i++) {
-                const el = extractData.nuevos_elementos[i];
-                let pct = 30 + ((i / extractData.nuevos_elementos.length) * 60);
-                
-                UI.setLoading(true, "Fase 2/3: Forjando Concept Art...", pct, `Describiendo con nova-fast: ${el.nombre}`, pct);
-
-                const sysPromptDesc = "Eres un Concept Artist y Worldbuilder experto. Tu tarea es describir de forma ULTRA DETALLADA el aspecto físico, diseño visual, materiales, colores y aura del elemento solicitado. NO narres acciones ni contexto argumental. Enfócate exclusiva y exhaustivamente en el DISEÑO VISUAL para una futura ilustración. Escribe de 1 a 2 párrafos densos.";
-                const userPromptDesc = `
-                    Elemento a detallar: "${el.nombre}"
-                    Categoría del elemento: "${el.categoria}"
-                    Contexto narrativo de donde surge: "${node.text}"
+            if (extractData.nuevos_elementos && Array.isArray(extractData.nuevos_elementos)) {
+                for (let i = 0; i < extractData.nuevos_elementos.length; i++) {
+                    const el = extractData.nuevos_elementos[i];
                     
-                    Genera ahora la descripción estricta y ultra detallada de su aspecto:
-                `;
+                    const cleanName = el.nombre.toUpperCase().replace(/\s+/g, '_').replace(/[^A-Z0-9_ÁÉÍÓÚÑ]/g, '');
+                    const targetCat = validCats.includes(el.categoria) ? el.categoria : 'characters';
 
-                const description = await window.Koreh.Text.generateWithRetry(sysPromptDesc, userPromptDesc, {
-                    model: 'nova-fast', jsonMode: false, temperature: 0.5
-                }, (d) => d && d.length > 20);
+                    if (!bible[targetCat].includes(`@${cleanName}:`)) {
+                        const sysPromptDesc = "Eres un Concept Artist y Worldbuilder experto. Escribe una ficha visual técnica usando TAGS (etiquetas separadas por comas) describiendo físicamente este elemento. PROHIBIDO frases completas, verbos o contexto.";
+                        const userPromptDesc = `
+                            Elemento a detallar: "${el.nombre}"
+                            Categoría: "${el.categoria}"
+                            Contexto de la historia: "${node.text}"
+                            
+                            Genera las etiquetas físicas en inglés:
+                        `;
 
-                // 4. Agrupar y ensamblar en la categoría correcta de la Biblia Visual
-                const targetCat = validCats.includes(el.categoria) ? el.categoria : 'characters';
-                
-                // Formateamos para que encaje como etiqueta de la biblia: [NOMBRE]: Descripción
-                const newEntry = `\n[${el.nombre.toUpperCase()}]: ${description.trim()}\n`;
-                bible[targetCat] = (bible[targetCat] || "") + newEntry;
-                
-                elementosAñadidos.push(el.nombre);
+                        const description = await window.Koreh.Text.generateWithRetry(sysPromptDesc, userPromptDesc, {
+                            model: 'nova-fast', jsonMode: false, temperature: 0.5
+                        }, (d) => d && d.length > 5);
+
+                        const newEntry = `\n@${cleanName}: ${description.trim()}\n`;
+                        bible[targetCat] += newEntry;
+                        
+                        elementosAñadidos.push(`@${cleanName}`);
+                    }
+                }
             }
 
-            // 5. Guardado final de la Biblia Visual y sincronización global
-            UI.setLoading(true, "Fase 3/3: Ensamblando y Guardando...", 95, "Sincronizando el núcleo", 95);
+            let etiquetasFinales = [];
+            if (extractData.elementos_presentes && Array.isArray(extractData.elementos_presentes)) {
+                extractData.elementos_presentes.forEach(name => {
+                    let clean = name.toUpperCase().replace(/\s+/g, '_').replace(/[^A-Z0-9_ÁÉÍÓÚÑ]/g, '');
+                    if (!clean.startsWith('@')) clean = '@' + clean;
+                    if (!etiquetasFinales.includes(clean)) etiquetasFinales.push(clean);
+                });
+            }
+
+            if (etiquetasFinales.length > 0) {
+                // Reemplazamos si ya existía para evitar sobreescribirlo de mala manera
+                node.text = node.text.replace(/\n\n\[Canon Visual:.*?\]/g, '');
+                // Inyectamos al final del todo
+                node.text += `\n\n[Canon Visual: ${etiquetasFinales.join(', ')}]`;
+            }
 
             if (Core.bookData) Core.bookData.visualBible = bible;
             if (Core.book) Core.book.visualBible = bible;
 
-            // Intentamos cargar la nueva información visual en el UI si la ventana de la Biblia estuviera inicializada
             if (typeof AIVisual !== 'undefined' && AIVisual.loadManualBible) {
                 AIVisual.loadManualBible(bible);
             }
 
-            Core.scheduleSave();
+            if (Core.scheduleSave) Core.scheduleSave();
 
-            alert(`📚 Extracción exitosa. Se han añadido los siguientes elementos a la Biblia Visual:\n\n- ${elementosAñadidos.join('\n- ')}`);
+            if (elementosAñadidos.length > 0 || etiquetasFinales.length > 0) {
+                let msg = "📚 Extracción exitosa.\n";
+                if (elementosAñadidos.length > 0) msg += `\nAñadidos a la Biblia:\n- ${elementosAñadidos.join('\n- ')}`;
+                if (etiquetasFinales.length > 0) msg += `\n\nEtiquetas inyectadas al nodo:\n${etiquetasFinales.join(', ')}`;
+                alert(msg);
+            } else {
+                alert("No se detectaron entidades relevantes en este pasaje.");
+            }
 
         } catch (e) {
             alert("Error al extraer lore visual: " + e.message);
-            console.error("Fallo detallado en extractLore:", e);
         } finally {
-            UI.setLoading(false);
-            if (typeof ContextMenu !== 'undefined') ContextMenu.hide();
+            // Liberamos y renderizamos canvas
+            this.extractingNodes.delete(nodeId);
+            if (typeof Canvas !== 'undefined') Canvas.renderNodes();
+            // Actualizar vista del editor si estamos en él
+            if (Core.selectedNodeId === nodeId && typeof Editor !== 'undefined') Editor.loadNode(nodeId);
         }
     },
 

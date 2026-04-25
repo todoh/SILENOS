@@ -1,8 +1,6 @@
 // Archivo: Librojuego/ai.context.js
 
-// Motor de Soporte Global para Algoritmos Avanzados
 window.AISupport = {
-    // --- NUEVO: MOTOR CARTOGRÁFICO (Cálculo Físico-Espacial) ---
     getGeographicContext(nodeId) {
         const node = Core.getNode(nodeId);
         if (!node) return "";
@@ -10,19 +8,16 @@ window.AISupport = {
         const elements = Core.book?.mapElements || Core.bookData?.mapElements || { areas: [], emojis: [] };
         if (!elements.areas && !elements.emojis) return "";
 
-        // Calculamos el centro del nodo basándonos en sus medidas del CSS (220x280)
         const nX = node.x + 110; 
         const nY = node.y + 140; 
         let geoParts = [];
 
-        // 1. Colisión con Áreas (Cajas delimitadoras - AABB)
         const activeAreas = (elements.areas || []).filter(a => nX >= a.x && nX <= (a.x + a.width) && nY >= a.y && nY <= (a.y + a.height));
         if (activeAreas.length > 0) {
             const aNames = activeAreas.map(a => `[${a.name}]${a.description ? ` (Detalles: ${a.description})` : ''}`).join(', ');
             geoParts.push(`ZONA GEOGRÁFICA ACTUAL (Área del Mapa): La escena ocurre físicamente dentro de ${aNames}.`);
         }
 
-        // 2. Colisión con Marcadores/Emojis (Radio de influencia)
         const activeMarkers = (elements.emojis || []).filter(e => {
             if (!e.zoneSize || e.zoneSize <= 0) return false;
             const radius = e.zoneSize / 2;
@@ -39,138 +34,85 @@ window.AISupport = {
         }
         return "";
     },
-
-    // 1. Algoritmo BFS para reconstruir la historia real del jugador
-    getPathText(targetId) {
-        const nodes = Core.book?.nodes || Core.bookData?.nodes || [];
-        if (!nodes.length) return "";
-        let queue = [[nodes[0].id]];
-        let visited = new Set();
-        let pathIds = [];
-        
-        while (queue.length > 0) {
-            let path = queue.shift();
-            let curr = path[path.length - 1];
-            if (curr === targetId) { pathIds = path; break; }
-            if (!visited.has(curr)) {
-                visited.add(curr);
-                let n = nodes.find(x => x.id === curr);
-                if (n && n.choices) {
-                    for (let c of n.choices) queue.push([...path, c.targetId]);
+    
+    getCanonInstruction() {
+        const bible = Core.book?.visualBible || Core.bookData?.visualBible || {};
+        const tags = new Set();
+        const regex = /@[a-zA-Z0-9_áéíóúÁÉÍÓÚñÑ]+/g;
+        Object.values(bible).forEach(text => {
+            if (typeof text === 'string') {
+                let m;
+                while ((m = regex.exec(text)) !== null) {
+                    tags.add(m[0]);
                 }
             }
+        });
+        if (tags.size > 0) {
+            return `\n*** ENTIDADES DEL CANON (BIBLIA VISUAL) ***\nElementos registrados: [${Array.from(tags).join(', ')}]\n-> INSTRUCCIÓN CRÍTICA OBLIGATORIA: Si en tu respuesta (ya sea en la descripción narrativa, consecuencia o en el botón de acción) mencionas a alguno de estos elementos, DEBES escribirlo exactamente con su etiqueta usando la arroba (ejemplo: "Atacar al @ORCO", "Huyes hacia el @BOSQUE_OSCURO"). NUNCA uses sus nombres sin la arroba inicial.\n`;
         }
-        if (pathIds.length === 0) pathIds = [targetId];
-        
-        let storyParts = [];
-        for (let i = 0; i < pathIds.length; i++) {
-            let n = nodes.find(x => x.id === pathIds[i]);
-            if (n && n.text && n.text.length > 5) {
-                let part = n.text;
-                if (i < pathIds.length - 1) {
-                    let nextId = pathIds[i + 1];
-                    let chosenChoice = n.choices ? n.choices.find(c => c.targetId === nextId) : null;
-                    if (chosenChoice && chosenChoice.text) {
-                        part += `\n\n>> [EL JUGADOR DECIDIÓ: ${chosenChoice.text}] <<`;
-                    }
-                }
-                storyParts.push(part);
-            }
-        }
-        return storyParts.join("\n\n---\n\n");
-    },
-
-    // LLAMADA DE APOYO 1: Informe Histórico y de Estado
-    async analyzeContext(nodeId) {
-        const pathText = this.getPathText(nodeId);
-        const geoContext = this.getGeographicContext(nodeId); // Inyección cartográfica
-
-        const sysPrompt = "Eres un Analista Lógico de librojuegos. Analiza la ruta narrativa hasta el momento actual. Devuelve ESTRICTAMENTE JSON PURO.";
-        const userPrompt = `
-            Ruta exacta del jugador hasta el nodo actual:
-            ${pathText.substring(0, 10000)}
-            ${geoContext}
-
-            Genera un informe analizando:
-            1. Resumen de la trama actual y qué acaba de suceder.
-            2. Cambios en la lógica del juego y estado del jugador (físico/mental/heridas).
-            3. Objetos, pistas o aliados relevantes obtenidos (inventario implícito).
-            4. Tono y atmósfera predominante.
-            
-            FORMATO JSON EXACTO:
-            {
-                "resumen": "...",
-                "estado_logica": "...",
-                "inventario_implicito": "...",
-                "tono": "..."
-            }
-        `;
-        return await window.Koreh.Text.generateWithRetry(sysPrompt, userPrompt, { model: 'nova-fast', jsonMode: true, temperature: 0.3 }, d => d && d.resumen);
-    },
-
-    // LLAMADA DE APOYO 2: Informe de Opciones y Avance
-    async getOptionsReport(analysis, currentNodeText, taskInstructions) {
-        const sysPrompt = "Eres un Diseñador de Narrativa Estratégica. Propón directrices geniales para continuar la historia basándote en el informe del estado actual. Devuelve ESTRICTAMENTE JSON PURO.";
-        const userPrompt = `
-            INFORME DE CONTEXTO PREVIO:
-            Resumen: ${analysis.resumen}
-            Estado y Lógica: ${analysis.estado_logica}
-            Inventario Implícito: ${analysis.inventario_implicito}
-            Tono: ${analysis.tono}
-
-            TEXTO DEL NODO ACTUAL (Donde se tomará la decisión/acción):
-            "${currentNodeText}"
-
-            TAREA ESPECÍFICA DE DISEÑO A RESOLVER:
-            ${taskInstructions}
-
-            Genera un informe con las opciones o enfoques más interesantes, coherentes y emocionantes para cumplir la tarea, asegurándote de usar los objetos o el estado actual del jugador.
-            
-            FORMATO JSON EXACTO:
-            {
-                "enfoques_propuestos": ["idea de diseño detallada 1", "idea de diseño detallada 2", "idea de diseño detallada 3"],
-                "justificacion_de_diseño": "Por qué estas ideas encajan perfectamente..."
-            }
-        `;
-        return await window.Koreh.Text.generateWithRetry(sysPrompt, userPrompt, { model: 'nova-fast', jsonMode: true, temperature: 0.7 }, d => d && Array.isArray(d.enfoques_propuestos));
+        return "";
     }
 };
 
 window.AIContext = {
-    // ----------------------------------------------------
-    // PUNTO 1: BIFURCAR / TRIFURCAR (CON MEJORA DE 3 FASES)
-    // ----------------------------------------------------
+    generatingNodes: new Set(),
+
     async bifurcateWithAI(nodeId, branchesCount) {
+        if (this.generatingNodes.has(nodeId)) {
+            console.warn(`[AIContext] El nodo ${nodeId} ya se está bifurcando en segundo plano.`);
+            return;
+        }
+
         const parent = Core.getNode(nodeId);
         if (!parent) return;
 
-        const contextText = parent.text || "Un lugar misterioso.";
-        if (contextText.length < 15) {
-            return alert("El nodo actual necesita más texto narrativo para que la IA entienda el contexto y pueda bifurcarlo con sentido.");
-        }
+        // Añadimos el nodo al Set para que el Canvas dibuje el icono de "Cargando en 2º plano"
+        this.generatingNodes.add(nodeId);
+        if (typeof Canvas !== 'undefined') Canvas.renderNodes();
+        if (typeof ContextMenu !== 'undefined') ContextMenu.hide();
 
         try {
-            UI.setLoading(true, "Fase 1/3: Analizando Historial (BFS)...", 20, "Reconstruyendo decisiones previas", 20);
-            const analysisReport = await window.AISupport.analyzeContext(nodeId);
+            // 1. CARGAR MACRO-TRAMA DE LA BITÁCORA
+            let bitacoraMacro = "";
+            if (typeof window.AIBitacora !== 'undefined') {
+                try {
+                    const bitacora = await window.AIBitacora.loadBitacora();
+                    if (bitacora.resumen_general && bitacora.resumen_general.length > 10) {
+                        bitacoraMacro = `
+                        *** MACRO-TRAMA GLOBAL (BITÁCORA) ***
+                        Resumen General: ${bitacora.resumen_general}
+                        Hitos Clave: ${(bitacora.puntos_singulares && bitacora.puntos_singulares.length > 0) ? bitacora.puntos_singulares.join(" | ") : 'Sin hitos destacados'}
+                        `;
+                    }
+                } catch(e) { console.warn("No se pudo cargar la bitácora en 2º plano."); }
+            }
 
-            UI.setLoading(true, "Fase 2/3: Ideando Estrategias...", 50, `Calculando ${branchesCount} caminos lógicos óptimos`, 50);
-            const taskInstructions = `Diseñar exactamente ${branchesCount} caminos divergentes y lógicos para continuar desde el nodo actual.`;
-            const optionsReport = await window.AISupport.getOptionsReport(analysisReport, contextText, taskInstructions);
-
-            UI.setLoading(true, "Fase 3/3: Tejiendo Ramas Definitivas...", 80, `Escribiendo literatura y botones`, 80);
+            // 2. CARGAR MICRO-CONTEXTO
+            let fullStoryContext = "Contexto no disponible.";
+            if (typeof window.AIRouteAnalyzer !== 'undefined') {
+                fullStoryContext = window.AIRouteAnalyzer.getFullStoryContext(nodeId);
+            } else {
+                fullStoryContext = parent.text || "Un lugar misterioso."; 
+            }
             
-            const sysPrompt = `Eres un Oráculo Director de librojuegos. Genera EXACTAMENTE ${branchesCount} rutas o acciones basadas CUIDADOSAMENTE en los informes de diseño. Devuelve ESTRICTAMENTE JSON PURO.`;
-            const geoContext = window.AISupport.getGeographicContext(nodeId); // Inyección cartográfica
+            let recentContext = fullStoryContext;
+            if (recentContext.length > 6000) {
+                recentContext = "...(Historia anterior resumida en la Bitácora)...\n\n" + recentContext.substring(recentContext.length - 6000);
+            }
+
+            const sysPrompt = `Eres un Oráculo Director de librojuegos. Analiza la historia global y los sucesos recientes, y genera EXACTAMENTE ${branchesCount} rutas o acciones lógicas divergentes para continuar desde el momento actual. Devuelve ESTRICTAMENTE JSON PURO.`;
+            const geoContext = window.AISupport.getGeographicContext(nodeId); 
+            const canonContext = window.AISupport.getCanonInstruction();
 
             const userPrompt = `
-                INFORME DE DISEÑO PREVIO:
-                Enfoques sugeridos: ${JSON.stringify(optionsReport.enfoques_propuestos)}
-                Justificación: ${optionsReport.justificacion_de_diseño}
+                ${bitacoraMacro}
 
-                SITUACIÓN ACTUAL: "${contextText}"
+                HISTORIA DETALLADA RECIENTE HASTA EL PUNTO ACTUAL:
+                ${recentContext}
                 ${geoContext}
+                ${canonContext}
                 
-                Siguiendo los enfoques sugeridos, genera ${branchesCount} opciones divergentes y sus consecuencias inmediatas (1 o 2 frases).
+                Siguiendo el hilo de toda la trama, genera ${branchesCount} opciones divergentes y sus consecuencias inmediatas (1 o 2 frases).
                 - La "accion" debe ser en imperativo o primera persona (Ej: "Usar la llave de hierro", "Atacar al orco").
                 - El "texto_destino" debe ser la consecuencia directa de esa acción para iniciar el nuevo nodo.
 
@@ -182,6 +124,8 @@ window.AIContext = {
                 }
             `;
 
+            console.log(`[AIContext] Procesando bifurcación automática para el nodo ${nodeId} en segundo plano...`);
+
             const data = await window.Koreh.Text.generateWithRetry(sysPrompt, userPrompt, {
                 model: 'nova-fast',
                 jsonMode: true,
@@ -199,36 +143,98 @@ window.AIContext = {
                 parent.choices.push({ text: ruta.accion, targetId: childId });
             });
 
-            Canvas.render();
-            Core.scheduleSave();
+            if (Core.scheduleSave) Core.scheduleSave();
+            console.log(`[AIContext] Bifurcación completada con éxito para el nodo ${nodeId}.`);
 
         } catch (error) {
             console.error("Fallo al bifurcar con IA:", error);
-            alert("El Oráculo falló al crear las rutas: " + error.message);
+            alert("El Oráculo falló al crear las rutas en 2º plano: " + error.message);
         } finally {
-            UI.setLoading(false);
-            if (typeof ContextMenu !== 'undefined') ContextMenu.hide();
+            this.generatingNodes.delete(nodeId);
+            if (typeof Canvas !== 'undefined') Canvas.render();
         }
     },
 
-    // ----------------------------------------------------
-    // BIFURCACIÓN CON DIRECTOR (SLIDERS + GRAVEDAD)
-    // ----------------------------------------------------
     async bifurcateWithDirectorAI(nodeId, branchesCount, directorConfig) {
+        if (this.generatingNodes.has(nodeId)) {
+            console.warn(`[AIContext] El nodo ${nodeId} ya se está bifurcando en segundo plano.`);
+            return;
+        }
+
         const parent = Core.getNode(nodeId);
         if (!parent) return;
 
-        const contextText = parent.text || "Un lugar misterioso.";
-        if (contextText.length < 15) {
-            return alert("El nodo actual necesita más texto narrativo para que la IA entienda el contexto y pueda bifurcarlo con sentido.");
-        }
+        // Mostrar indicador visual de trabajo en 2º plano
+        this.generatingNodes.add(nodeId);
+        if (typeof Canvas !== 'undefined') Canvas.renderNodes();
+        if (typeof ContextMenu !== 'undefined') ContextMenu.hide();
 
         try {
-            UI.setLoading(true, "Fase 1/3: Analizando Historial...", 20, "Reconstruyendo decisiones previas", 20);
-            const analysisReport = await window.AISupport.analyzeContext(nodeId);
+            console.log(`[AIContext] El Director IA está procesando el nodo ${nodeId} en segundo plano...`);
 
-            UI.setLoading(true, "Fase 2/3: Evaluando Directrices del Director...", 50, `Aplicando Gravedad y Sliders`, 50);
-            
+            // 1. CARGAR MACRO-TRAMA DE LA BITÁCORA
+            let bitacoraMacro = "";
+            if (typeof window.AIBitacora !== 'undefined') {
+                try {
+                    const bitacora = await window.AIBitacora.loadBitacora();
+                    if (bitacora.resumen_general && bitacora.resumen_general.length > 10) {
+                        bitacoraMacro = `
+                        *** MACRO-TRAMA GLOBAL (BITÁCORA) ***
+                        Resumen General: ${bitacora.resumen_general}
+                        Hitos Clave: ${(bitacora.puntos_singulares && bitacora.puntos_singulares.length > 0) ? bitacora.puntos_singulares.join(" | ") : 'Sin hitos destacados'}
+                        `;
+                    }
+                } catch(e) { console.warn("No se pudo cargar la bitácora en 2º plano."); }
+            }
+
+            // 2. RECUPERACIÓN DE LORE RECIENTE
+            let fullStoryContext = "Contexto no disponible.";
+            if (typeof window.AIRouteAnalyzer !== 'undefined') {
+                fullStoryContext = window.AIRouteAnalyzer.getFullStoryContext(nodeId);
+            } else {
+                fullStoryContext = parent.text || "Un lugar misterioso."; 
+            }
+
+            if (fullStoryContext.length < 15) {
+                throw new Error("El nodo actual necesita texto narrativo para iniciar el análisis del Director.");
+            }
+
+            let recentContext = fullStoryContext;
+            if (recentContext.length > 6000) {
+                recentContext = "...(Historia anterior resumida en la Bitácora)...\n\n" + recentContext.substring(recentContext.length - 6000);
+            }
+
+            let tension = directorConfig.tension;
+            let mystery = directorConfig.mystery;
+            let action = directorConfig.action;
+
+            // MODO AUTO: La IA deduce los sliders basándose en la trama silenciosamente
+            if (directorConfig.autoMode) {
+                const autoPromptSys = "Eres un Director de Juego. Analiza el transcurso de la historia hasta este punto y decide los niveles perfectos de Tensión, Misterio y Acción (de 0 a 100) para la siguiente bifurcación, para mantener una curva dramática perfecta. Devuelve ESTRICTAMENTE JSON PURO.";
+                const autoPromptUsr = `
+                    ${bitacoraMacro}
+                    HISTORIA RECIENTE HASTA AHORA:
+                    ${recentContext}
+
+                    Genera los valores para la siguiente ramificación:
+                    - tension: (0-100)
+                    - mystery: (0-100)
+                    - action: (0-100)
+                    
+                    FORMATO JSON:
+                    { "tension": 80, "mystery": 20, "action": 90 }
+                `;
+
+                const autoVals = await window.Koreh.Text.generateWithRetry(autoPromptSys, autoPromptUsr, {
+                    model: 'gemini-fast', jsonMode: true, temperature: 0.5
+                }, (d) => d && typeof d.tension !== 'undefined');
+
+                tension = autoVals.tension || 50;
+                mystery = autoVals.mystery || 50;
+                action = autoVals.action || 50;
+            }
+
+            // INSTRUCCIONES DE GRAVEDAD / DISTANCIA
             let gravityInstruction = "";
             if (directorConfig.targetPin) {
                 let distConcept = "";
@@ -239,23 +245,31 @@ window.AIContext = {
                 gravityInstruction = `\n[META DE GRAVEDAD]: Tienes la obligación ineludible de guiar las opciones generadas hacia este destino: "${directorConfig.targetPin}".\n[DISTANCIA ACTUAL]: ${distConcept}\n`;
             }
 
+            // DIRECTRIZ MANUAL DEL USUARIO
+            let customGuidanceInstruction = "";
+            if (directorConfig.customGuidance && directorConfig.customGuidance.trim() !== "") {
+                customGuidanceInstruction = `\n[DIRECTRIZ MANUAL DEL DIRECTOR (PRIORIDAD MÁXIMA)]: Haz que las opciones y sucesos generados sigan esta intención o idea específica: "${directorConfig.customGuidance.trim()}"\n`;
+            }
+
             const sysPrompt = `Eres un Director de Juego (Oráculo) de ficción interactiva altamente estricto. Vas a generar EXACTAMENTE ${branchesCount} rutas cortas. Devuelve ESTRICTAMENTE JSON PURO.`;
-            const geoContext = window.AISupport.getGeographicContext(nodeId); // Inyección cartográfica
+            const geoContext = typeof window.AISupport !== 'undefined' ? window.AISupport.getGeographicContext(nodeId) : "";
+            const canonContext = typeof window.AISupport !== 'undefined' ? window.AISupport.getCanonInstruction() : "";
 
             const userPrompt = `
-                INFORME DEL JUGADOR ACTUAL:
-                Resumen: ${analysisReport.resumen}
-                Estado Mental/Físico: ${analysisReport.estado_logica}
-                
-                SITUACIÓN ACTUAL DE LA ESCENA: "${contextText}"
+                ${bitacoraMacro}
+
+                HISTORIA DETALLADA RECIENTE HASTA EL PUNTO ACTUAL:
+                ${recentContext}
                 ${geoContext}
+                ${canonContext}
 
                 *** CONSOLA DEL DIRECTOR DE JUEGO (OBLIGATORIO OBEDECER) *** ${gravityInstruction}
-                - Nivel de TENSIÓN / PELIGRO: ${directorConfig.tension} sobre 100. (A mayor valor, las opciones deben implicar trampas, daño, pánico o ataques inminentes. A 0, total calma).
-                - Nivel de MISTERIO / LORE: ${directorConfig.mystery} sobre 100. (A mayor valor, las opciones deben enfocarse en descubrir secretos, examinar lo oculto, esoterismo o puzzles).
-                - Nivel de ACCIÓN CINÉTICA: ${directorConfig.action} sobre 100. (A mayor valor, opciones de salto, carrera, combate, reflejos físicos. A menor valor, opciones de diálogo, observación estática o sigilo lento).
+                ${customGuidanceInstruction}
+                - Nivel de TENSIÓN / PELIGRO: ${tension} sobre 100. (A mayor valor, las opciones implican trampas, daño, o ataques. A 0, total calma).
+                - Nivel de MISTERIO / LORE: ${mystery} sobre 100. (A mayor valor, las opciones se enfocan en descubrir secretos o examinar lo oculto).
+                - Nivel de ACCIÓN CINÉTICA: ${action} sobre 100. (A mayor valor, opciones de salto, carrera o combate. A menor valor, diálogo o sigilo).
                 
-                Basándote en la Consola del Director, genera ${branchesCount} opciones divergentes y sus consecuencias inmediatas (1 o 2 frases).
+                Basándote en la Macro-Trama, lo Reciente y la Consola del Director, genera ${branchesCount} opciones divergentes coherentes para salir de esta situación y sus consecuencias inmediatas (1 o 2 frases).
                 - "accion": Verbo en imperativo o 1ª persona ("Correr a la puerta").
                 - "texto_destino": Consecuencia directa (lo que pasa justo al elegir).
 
@@ -266,8 +280,6 @@ window.AIContext = {
                     ]
                 }
             `;
-
-            UI.setLoading(true, "Fase 3/3: Tejiendo Ramas Condicionadas...", 80, `Escribiendo literatura y botones`, 80);
             
             const data = await window.Koreh.Text.generateWithRetry(sysPrompt, userPrompt, {
                 model: 'nova-fast',
@@ -286,15 +298,16 @@ window.AIContext = {
                 parent.choices.push({ text: ruta.accion, targetId: childId });
             });
 
-            Canvas.render();
-            Core.scheduleSave();
+            if (Core.scheduleSave) Core.scheduleSave();
+            console.log(`[AIContext] El Director IA ha completado las rutas para el nodo ${nodeId}.`);
 
         } catch (error) {
             console.error("Fallo del Director IA:", error);
-            alert("El Director falló al crear las rutas: " + error.message);
+            alert("El Director falló al crear las rutas en 2º plano: " + error.message);
         } finally {
-            UI.setLoading(false);
-            if (typeof ContextMenu !== 'undefined') ContextMenu.hide();
+            this.generatingNodes.delete(nodeId);
+            // Forzamos un repintado del canvas para quitar el spinner azul de procesamiento y mostrar las nuevas ramas
+            if (typeof Canvas !== 'undefined') Canvas.render();
         }
     }
 };
