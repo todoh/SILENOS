@@ -13,6 +13,10 @@ const Utils = {
         reader.onloadend = () => resolve(reader.result);
         reader.readAsDataURL(blob);
     }),
+    base64ToBlob: async (base64) => {
+        const res = await fetch(base64);
+        return await res.blob();
+    },
     log: (msg, type='info') => {
         const c = document.getElementById('gen-logs');
         const d = document.createElement('div');

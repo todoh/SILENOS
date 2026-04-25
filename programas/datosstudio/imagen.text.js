@@ -16,6 +16,11 @@ DataStudio.prototype.refineText = async function(field) {
        
        document.getElementById(`inp-${field}`).value = refinedText;
 
+       // NUEVO: Guardar automáticamente tras la IA refinar el texto
+       if (typeof app !== 'undefined' && app.scheduleSave) {
+           app.scheduleSave();
+       }
+
     } catch(e) { 
         ui.alert("Error al refinar: " + e.message); 
     } finally { 

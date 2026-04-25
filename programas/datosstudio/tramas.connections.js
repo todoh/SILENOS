@@ -4,35 +4,32 @@
 const TramasConnections = {
     portRadius: 6,
 
-    // --- DIBUJO DE PUERTOS ---
     drawPorts(ctx, node, nodeWidth, nodeHeight) {
         ctx.lineWidth = 2;
 
         // Puerto de Entrada (Izquierda)
         ctx.fillStyle = '#f9fafb';
-        ctx.strokeStyle = '#10b981'; // Verde esmeralda
+        ctx.strokeStyle = '#10b981';
         ctx.beginPath();
         ctx.arc(node.x, node.y + nodeHeight / 2, this.portRadius, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
-        // Puerto de Salida (Derecha)
+        // Puerto de Salida (Derecha) - Adaptamos ligeramente al color del hilo si lo tiene
         ctx.fillStyle = '#f9fafb';
-        ctx.strokeStyle = '#6366f1'; // Índigo
+        ctx.strokeStyle = node.threadName ? node.threadColor : '#6366f1';
         ctx.beginPath();
         ctx.arc(node.x + nodeWidth, node.y + nodeHeight / 2, this.portRadius, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
     },
 
-    // --- DETECCIÓN DE HIT EN PUERTO ---
     getPortAt(worldX, worldY, node, nodeWidth, nodeHeight) {
         const inX = node.x;
         const inY = node.y + nodeHeight / 2;
         const outX = node.x + nodeWidth;
         const outY = node.y + nodeHeight / 2;
 
-        // Margen generoso para facilitar el clic
         const hitRadius = this.portRadius + 6; 
 
         if (Math.hypot(worldX - inX, worldY - inY) <= hitRadius) return 'in';
@@ -40,14 +37,14 @@ const TramasConnections = {
         return null;
     },
 
-    // --- DIBUJO DE CONEXIÓN (BEZIER CÚBICO) ---
-    drawConnection(ctx, fromNode, toNode, nodeWidth, nodeHeight, isHovered) {
+    // ACEPTAMOS forceColor para pintar los hilos de trama
+    drawConnection(ctx, fromNode, toNode, nodeWidth, nodeHeight, isHovered, forceColor = null) {
         const startX = fromNode.x + nodeWidth;
         const startY = fromNode.y + nodeHeight / 2;
         const endX = toNode.x;
         const endY = toNode.y + nodeHeight / 2;
 
-        this.drawCubicBezier(ctx, startX, startY, endX, endY, isHovered);
+        this.drawCubicBezier(ctx, startX, startY, endX, endY, isHovered, forceColor);
     },
 
     drawTempConnection(ctx, startNode, currentX, currentY, nodeWidth, nodeHeight) {
@@ -60,7 +57,6 @@ const TramasConnections = {
     },
 
     drawCubicBezier(ctx, startX, startY, endX, endY, isHovered, forceColor = null) {
-        // Puntos de control para la curva "S" horizontal
         const distance = Math.abs(endX - startX) * 0.5 + 20; 
         const cp1x = startX + distance;
         const cp1y = startY;
@@ -72,28 +68,26 @@ const TramasConnections = {
         ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
         
         if (isHovered) {
-            ctx.strokeStyle = '#ef4444'; // Rojo (indicando posible borrado)
+            ctx.strokeStyle = '#ef4444'; 
             ctx.lineWidth = 4;
             ctx.shadowColor = 'rgba(239, 68, 68, 0.4)';
             ctx.shadowBlur = 8;
         } else {
-            ctx.strokeStyle = forceColor || '#8b5cf6'; // Morado por defecto
-            ctx.lineWidth = 2.5;
+            // El color dominante lo define el Hilo, sino el clásico morado.
+            ctx.strokeStyle = forceColor || '#8b5cf6'; 
+            ctx.lineWidth = forceColor ? 3.5 : 2.5; // Hacemos las líneas de hilos más gruesas e imponentes
             ctx.shadowColor = 'transparent';
         }
         ctx.stroke();
-        ctx.shadowColor = 'transparent'; // Resetear sombra
+        ctx.shadowColor = 'transparent'; 
 
-        // Dibujar Flecha al final (justo antes de llegar al punto)
         this.drawArrow(ctx, endX, endY, cp2x, cp2y, isHovered ? '#ef4444' : (forceColor || '#8b5cf6'));
     },
 
     drawArrow(ctx, x, y, cpX, cpY, color) {
-        // Calcular ángulo tangente en el punto final
         const angle = Math.atan2(y - cpY, x - cpX);
         const radius = 7;
         
-        // Retrasamos la flecha un poco para que no se superponga con el puerto
         const offset = this.portRadius + 2;
         const adjustedX = x - offset * Math.cos(angle);
         const adjustedY = y - offset * Math.sin(angle);
@@ -106,7 +100,6 @@ const TramasConnections = {
         ctx.fill();
     },
 
-    // --- DETECCIÓN DE HIT EN CONEXIÓN ---
     getHoveredConnection(worldX, worldY, nodes, nodeWidth, nodeHeight) {
         for (let node of nodes) {
             if (!node.connections) continue;
@@ -134,7 +127,7 @@ const TramasConnections = {
         const cp2x = x2 - distance;
         const cp2y = y2;
 
-        const steps = 30; // Muestreo de la curva
+        const steps = 30; 
         let lastX = x1, lastY = y1;
 
         for (let i = 1; i <= steps; i++) {
@@ -144,7 +137,7 @@ const TramasConnections = {
             const cy = mt*mt*mt*y1 + 3*mt*mt*t*cp1y + 3*mt*t*t*cp2y + t*t*t*y2;
 
             const dist = this.distToSegment(px, py, lastX, lastY, cx, cy);
-            if (dist < 8) return true; // Tolerancia de 8 pixeles
+            if (dist < 8) return true; 
 
             lastX = cx;
             lastY = cy;

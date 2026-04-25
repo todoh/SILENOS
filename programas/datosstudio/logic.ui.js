@@ -23,7 +23,6 @@ const ui = {
             app.renderGrid();
         }
         if (tabId === 'tramas' && typeof window.TramasCanvas !== 'undefined') {
-            // CORRECCIÓN CLAVE: Al hacerse visible, forzamos recalcular tamaño antes de pintar
             window.TramasCanvas.resize(); 
         }
     },
@@ -48,10 +47,18 @@ const ui = {
         document.getElementById('btn-toggle-gen').classList.toggle('text-white');
     },
     openSidebar: () => document.getElementById('editor-sidebar').classList.add('open'),
-    closeSidebar: () => {
+    
+    // BLINDAJE: Si se cierra el editor, forzamos el volcado de memoria pendiente
+    closeSidebar: async () => {
+        if (typeof app !== 'undefined' && app.saveTimer) {
+            clearTimeout(app.saveTimer);
+            app.saveTimer = null;
+            await app.saveCurrentItem(true);
+        }
         document.getElementById('editor-sidebar').classList.remove('open');
-        app.currentFileHandle = null; 
+        if (typeof app !== 'undefined') app.currentFileHandle = null; 
     },
+    
     setLoading: (loading, msg = "Procesando...") => {
         const loader = document.getElementById('sidebar-loader');
         loader.querySelector('span').innerText = msg;
@@ -68,7 +75,6 @@ const ui = {
             text.className = "text-[10px] font-medium text-gray-300 uppercase tracking-wider";
         }
     },
-    // Custom Alerts
     alert: (msg) => {
         const modal = document.getElementById('msg-modal');
         const content = document.getElementById('msg-content');

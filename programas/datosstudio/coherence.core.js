@@ -1,4 +1,4 @@
-// --- SISTEMA DE COHERENCIA Y CONTEXTO (Refactorizado con Librerías Koreh) ---
+// --- SISTEMA DE COHERENCIA Y CONTEXTO (Modificado para evitar IA en segundo plano) ---
 
 const Coherence = {
     FILE_NAME: 'RESUMEN_GLOBAL.json',
@@ -28,43 +28,16 @@ const Coherence = {
         }
     },
 
-    // Genera un resumen conciso usando IA
+    // Genera un resumen conciso (SIN IA)
     generateSingleSummary: async (itemData) => {
-        // Check rápido de auth (la librería valida a fondo)
-        if (!window.Koreh.Core.getAuthKey()) return null;
-
-        const prompt = `
-            ANALIZA ESTE DATO JSON Y CREA UN RESUMEN DE CONTEXTO  (Máx 5 frases).
-            DATO: ${JSON.stringify(itemData)}
-            
-            SALIDA ESPERADA (Solo JSON):
-            {
-                "name": "${itemData.name}",
-                "type": "${itemData.type}",
-                "summary": "Breve descripción narrativa.",
-                "visualKey": "Rasgos visuales clave."
-            }
-        `;
-
-        try {
-            // CORRECCIÓN: Usamos 'gemini-fast' en lugar de 'gemini-1.5-flash'
-            const result = await window.Koreh.Text.generate(
-                'Output JSON only.', 
-                prompt, 
-                { model: 'gemini-fast', jsonMode: true }
-            );
-            return result;
-
-        } catch (e) {
-            console.error("Fallo al generar resumen IA:", e);
-            // Fallback manual para que no rompa el flujo
-            return {
-                name: itemData.name,
-                type: itemData.type,
-                summary: itemData.desc ? itemData.desc.substring(0, 100) : "Sin descripción",
-                visualKey: itemData.visualDesc ? itemData.visualDesc.substring(0, 50) : "N/A"
-            };
-        }
+        // Se ha eliminado la llamada a gemini-fast en segundo plano.
+        // Ahora siempre devuelve el fallback manual directamente para no consumir saldo ni dar error 402.
+        return {
+            name: itemData.name,
+            type: itemData.type,
+            summary: itemData.desc ? itemData.desc.substring(0, 100) : "Sin descripción",
+            visualKey: itemData.visualDesc ? itemData.visualDesc.substring(0, 50) : "N/A"
+        };
     },
 
     updateItem: async (itemData) => {

@@ -1,7 +1,7 @@
 /**
- * TRAMAS RENDER - Motor de dibujo especializado (Restaurado)
+ * TRAMAS RENDER - Motor de dibujo especializado
  */
-const TramasRender = {
+window.TramasRender = {
     ctx: null,
     canvas: null,
 
@@ -33,7 +33,7 @@ const TramasRender = {
         // 1. DIBUJAR REGIONES
         regions.forEach(r => this.drawRegion(r));
 
-        // 2. DIBUJAR CONEXIONES
+        // 2. DIBUJAR CONEXIONES (Aceptando color del Hilo y Filtros)
         this.ctx.globalAlpha = 1.0;
         nodes.forEach(node => {
             if (!node.connections) return;
@@ -41,7 +41,22 @@ const TramasRender = {
                 const target = nodes.find(n => n.id === targetId);
                 if (target) {
                     const isHovered = state.hoveredConnection?.from === node.id && state.hoveredConnection?.to === targetId;
-                    window.TramasConnections.drawConnection(this.ctx, node, target, config.nodeWidth, config.nodeHeight, isHovered);
+                    
+                    // Atenuación de conexiones por Filtro de Hilos
+                    if (state.filterMode) {
+                        if (state.filterMode === 'thread' && node.threadName !== state.filterValue) {
+                            this.ctx.globalAlpha = 0.08;
+                        } else if (state.filterMode !== 'thread') {
+                            this.ctx.globalAlpha = 0.15;
+                        }
+                    } else {
+                        this.ctx.globalAlpha = 1.0;
+                    }
+
+                    // Propagamos el color del hilo del nodo origen a la línea
+                    const lineColor = node.threadName ? node.threadColor : null;
+                    window.TramasConnections.drawConnection(this.ctx, node, target, config.nodeWidth, config.nodeHeight, isHovered, lineColor);
+                    this.ctx.globalAlpha = 1.0; // Reset
                 }
             });
         });
@@ -86,7 +101,10 @@ const TramasRender = {
         let isDimmed = false;
         if (state.filterMode === 'pov') isDimmed = !node.dataRefs?.includes(state.filterValue);
         if (state.filterMode === 'tension') isDimmed = node.tension !== 5;
-        this.ctx.globalAlpha = isDimmed && state.filterMode ? 0.2 : 1.0;
+        if (state.filterMode === 'status') isDimmed = node.status !== 'Completado';
+        if (state.filterMode === 'thread') isDimmed = node.threadName !== state.filterValue;
+
+        this.ctx.globalAlpha = isDimmed && state.filterMode ? 0.08 : 1.0;
 
         // Cuerpo y Sombra
         this.ctx.fillStyle = '#ffffff';
@@ -127,13 +145,34 @@ const TramasRender = {
             this.ctx.fillText(refsCount, node.x + config.nodeWidth - 14, node.y + 12);
         }
 
+        // --- BADGE DE HILO NARRATIVO ---
+        if (node.threadName) {
+            this.ctx.font = 'bold 8px Inter';
+            const text = node.threadName.toUpperCase();
+            const textWidth = this.ctx.measureText(text).width + 16;
+            const pillX = node.x + config.nodeWidth - textWidth + 10; // Sobresale un poco
+            const pillY = node.y - 10;
+
+            this.ctx.fillStyle = node.threadColor || '#8b5cf6';
+            this.ctx.shadowColor = 'rgba(0,0,0,0.1)';
+            this.ctx.shadowBlur = 4;
+            this.ctx.beginPath();
+            this.ctx.roundRect(pillX, pillY, textWidth, 18, 9);
+            this.ctx.fill();
+            this.ctx.shadowColor = 'transparent';
+
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(text, pillX + (textWidth / 2), pillY + 12);
+        }
+
         // Título
         this.ctx.fillStyle = '#111827';
         this.ctx.font = '600 12px Inter';
         this.ctx.textAlign = 'left';
         this.ctx.fillText(node.name?.substring(0, 22) || "Sin Nombre", node.x + 12, node.y + 36);
 
-        // Estado y Metadatos (Reloj, POV, Tensión)
+        // Estado y Metadatos
         this.ctx.fillStyle = node.status === 'Completado' ? '#10b981' : (node.status === 'Activo' ? '#3b82f6' : '#9ca3af');
         this.ctx.font = '9px JetBrains Mono';
         let statusIcon = node.status === 'Completado' ? '✓ ' : (node.status === 'Activo' ? '▶ ' : '✎ ');
@@ -167,7 +206,7 @@ const TramasRender = {
         const w = region.width || 600;
         const h = region.height || 400;
 
-        this.ctx.globalAlpha = state.filterMode ? 0.15 : 1.0;
+        this.ctx.globalAlpha = state.filterMode ? 0.05 : 1.0;
         this.ctx.fillStyle = region.color || '#f3f4f6';
         this.ctx.beginPath();
         this.ctx.roundRect(region.x, region.y, w, h, 8);
@@ -217,5 +256,3 @@ const TramasRender = {
         this.ctx.fillText("Clic derecho para selección múltiple. SUPR para borrar.", 20, this.canvas.height - 20);
     }
 };
-
-window.TramasRender = TramasRender;

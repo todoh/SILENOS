@@ -4,10 +4,11 @@ class DataStudio {
         this.rootHandle = null;     
         this.targetHandle = null;   
         this.items = [];            
-        this.tramas = []; // NUEVO: Memoria para los Nodos de Datos Omega (Tramas)
+        this.tramas = []; 
         this.currentFileHandle = null; 
         this.currentData = null;    
         this.processingIds = new Set();
+        this.saveTimer = null; 
     }
 
     init() {
@@ -15,6 +16,25 @@ class DataStudio {
         window.parent.addEventListener('silenos:config-updated', ui.updateAuthUI);
         if(typeof FS !== 'undefined' && FS.rootHandle) this.rootHandle = FS.rootHandle;
         setTimeout(() => ui.toggleFolderModal(), 500);
+
+        const inputs = ['inp-title', 'inp-tag', 'inp-desc', 'inp-visual'];
+        inputs.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', () => this.scheduleSave());
+            }
+        });
+    }
+
+    scheduleSave() {
+        const btn = document.getElementById('btn-save');
+        if (btn && btn.innerText !== "GUARDANDO...") {
+            btn.innerText = "ESPERANDO...";
+            btn.classList.remove('bg-green-600');
+        }
+        clearTimeout(this.saveTimer);
+        // Autoguardado silencioso tras 1.5s
+        this.saveTimer = setTimeout(() => this.saveCurrentItem(true), 1500); 
     }
 
     // --- SISTEMA DE ARCHIVOS ---
@@ -61,31 +81,37 @@ class DataStudio {
 
         try {
             for await (const entry of this.targetHandle.values()) {
-                // FILTRO: Ignoramos TIMELINE, RESUMEN_GLOBAL y TRAMAS_GLOBAL
                 if (entry.kind === 'file' && entry.name.endsWith('.json') && !entry.name.includes('TIMELINE') && !entry.name.includes('RESUMEN_GLOBAL') && !entry.name.includes('TRAMAS_GLOBAL')) {
                     const file = await entry.getFile();
                     const text = await file.text();
                     try {
                         const json = JSON.parse(text);
-                        this.items.push({ handle: entry, data: json, name: entry.name });
+                        let displayImage = json.imagen64; 
+                        
+                        if (json.imageFile) {
+                            try {
+                                const imgHandle = await this.targetHandle.getFileHandle(json.imageFile);
+                                const imgFile = await imgHandle.getFile();
+                                displayImage = URL.createObjectURL(imgFile);
+                            } catch(e) { console.warn("Imagen enrutada no encontrada:", json.imageFile); }
+                        }
+
+                        this.items.push({ handle: entry, data: json, name: entry.name, displayImage: displayImage });
                     } catch(e) { console.warn("JSON corrupto", entry.name); }
                 }
             }
 
-            // NUEVO: CARGAR TRAMAS_GLOBAL.json (Datos Omega)
             try {
                 const tramasHandle = await this.targetHandle.getFileHandle('TRAMAS_GLOBAL.json');
                 const tramasFile = await tramasHandle.getFile();
                 const tramasText = await tramasFile.text();
                 this.tramas = JSON.parse(tramasText);
             } catch (e) {
-                // Si no existe el archivo, inicializamos el array vacío sin problema
                 this.tramas = [];
             }
 
             this.renderGrid();
 
-            // Si el motor de Tramas ya está cargado, forzar un render del canvas
             if (typeof window.TramasCanvas !== 'undefined') {
                 window.TramasCanvas.render();
             }
@@ -93,7 +119,6 @@ class DataStudio {
         } catch(e) { console.error(e); }
     }
 
-    // NUEVO: Rutina de guardado específica para los nodos Omega
     async saveTramas() {
         if(!this.targetHandle) return;
         try {
@@ -117,6 +142,12 @@ class DataStudio {
             return;
         }
 
+        this.items.sort((a, b) => {
+            const nameA = (a.data.name || a.data.title || "Sin Nombre").toLowerCase();
+            const nameB = (b.data.name || b.data.title || "Sin Nombre").toLowerCase();
+            return nameA.localeCompare(nameB);
+        });
+
         this.items.forEach(item => {
             const card = document.createElement('div');
             card.className = "data-card group";
@@ -125,9 +156,10 @@ class DataStudio {
             let imgHTML = '<i class="fa-solid fa-cube text-3xl text-gray-200"></i>';
             if (this.processingIds.has(item.name)) {
                  imgHTML = `<div class="card-loading-overlay"><i class="fa-solid fa-palette fa-spin text-xl mb-2"></i><span class="text-[10px] font-bold">PINTANDO</span></div>`;
-            } else if (item.data.imagen64) {
-                if(item.data.imagen64.startsWith('<svg')) imgHTML = item.data.imagen64; 
-                else imgHTML = `<img src="${item.data.imagen64}" class="card-img" loading="lazy">`;
+            } else if (item.displayImage || item.data.imagen64) {
+                const src = item.displayImage || item.data.imagen64;
+                if(src.startsWith('<svg')) imgHTML = src; 
+                else imgHTML = `<img src="${src}" class="card-img" loading="lazy">`;
             }
 
             card.innerHTML = `
@@ -144,6 +176,13 @@ class DataStudio {
 
     // --- EDITOR ---
     async openEditor(item) {
+        // BLINDAJE: Si había un guardado pendiente, lo forzamos ANTES de cambiar de archivo
+        if (this.saveTimer) {
+            clearTimeout(this.saveTimer);
+            this.saveTimer = null;
+            await this.saveCurrentItem(true); 
+        }
+        
         this.currentFileHandle = item.handle;
         this.currentData = item.data; 
         
@@ -154,9 +193,12 @@ class DataStudio {
         document.getElementById('inp-visual').value = this.currentData.visualDesc || "";
 
         const imgContainer = document.getElementById('editor-img-container');
-        if (this.currentData.imagen64 && !this.currentData.imagen64.startsWith('<svg')) {
-            // object-contain para asegurar que se vea completa
-            imgContainer.innerHTML = `<img src="${this.currentData.imagen64}" class="w-full h-full object-contain">`;
+        const src = item.displayImage || this.currentData.imagen64;
+        
+        if (src && !src.startsWith('<svg')) {
+            imgContainer.innerHTML = `<img src="${src}" class="w-full h-full object-contain">`;
+        } else if (src && src.startsWith('<svg')) {
+            imgContainer.innerHTML = src;
         } else {
             imgContainer.innerHTML = '<i class="fa-regular fa-image text-gray-300 text-2xl"></i>';
         }
@@ -178,7 +220,7 @@ class DataStudio {
 
         const newData = {
             name: name, type: "General", desc: "Pendiente...", 
-            visualDesc: `Representation of ${name}`, imagen64: null
+            visualDesc: `Representation of ${name}`, imagen64: null, imageFile: null
         };
 
         try {
@@ -187,7 +229,6 @@ class DataStudio {
             await writable.write(JSON.stringify(newData, null, 2));
             await writable.close();
             
-            // COHERENCE HOOK: Actualizar resumen al crear
             Coherence.updateItem(newData); 
 
             await this.loadFiles(); 
@@ -196,26 +237,29 @@ class DataStudio {
         } catch(e) { console.error(e); }
     }
 
-    async saveCurrentItem() {
+    async saveCurrentItem(isAutoSave = false) {
         if(!this.currentFileHandle) return;
         
         const newName = document.getElementById('inp-title').value;
         const newFilename = newName.trim().replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.json';
         const oldFilename = this.currentFileHandle.name;
-        const oldName = this.currentData.name; // Guardamos el nombre antiguo por si cambia
+        const oldName = this.currentData.name;
 
-        // 1. ACTUALIZAR OBJETO DE REFERENCIA EN MEMORIA
         this.currentData.name = newName;
         this.currentData.type = document.getElementById('inp-tag').value;
         this.currentData.desc = document.getElementById('inp-desc').value;
         this.currentData.visualDesc = document.getElementById('inp-visual').value;
 
         const btn = document.getElementById('btn-save');
-        btn.innerText = "GUARDANDO..."; btn.disabled = true;
+        if (!isAutoSave) {
+            btn.innerText = "GUARDANDO..."; 
+            btn.disabled = true;
+        }
 
         try {
-            // 2. ESCRIBIR EN DISCO (RENOMBRAR O SOBRESCRIBIR)
-            if (newFilename !== oldFilename) {
+            let needsFullReload = false;
+
+            if (newFilename !== oldFilename && !isAutoSave) {
                 let alreadyExists = false;
                 try {
                     await this.targetHandle.getFileHandle(newFilename);
@@ -233,48 +277,84 @@ class DataStudio {
                 }
 
                 const newFileHandle = await this.targetHandle.getFileHandle(newFilename, { create: true });
+                
+                if (this.currentData.imageFile) {
+                    try {
+                        const oldImgHandle = await this.targetHandle.getFileHandle(this.currentData.imageFile);
+                        const oldImgFile = await oldImgHandle.getFile();
+                        
+                        const ext = this.currentData.imageFile.substring(this.currentData.imageFile.lastIndexOf('.'));
+                        const newImgName = newFilename.replace('.json', ext);
+                        
+                        const newImgHandle = await this.targetHandle.getFileHandle(newImgName, { create: true });
+                        const imgWritable = await newImgHandle.createWritable();
+                        await imgWritable.write(oldImgFile);
+                        await imgWritable.close();
+                        
+                        await this.targetHandle.removeEntry(this.currentData.imageFile);
+                        this.currentData.imageFile = newImgName;
+                    } catch(e) { console.error("Error renombrando imagen asociada", e); }
+                }
+
                 const writable = await newFileHandle.createWritable();
                 await writable.write(JSON.stringify(this.currentData, null, 2));
                 await writable.close();
 
                 await this.targetHandle.removeEntry(oldFilename);
 
-                // COHERENCE HOOK: Si cambia el nombre, borramos el resumen viejo
                 if (oldName !== newName) await Coherence.removeItem(oldName);
 
                 this.currentFileHandle = newFileHandle;
                 document.getElementById('inp-id').value = newFilename; 
                 Utils.log(`Renombrado: ${oldFilename} -> ${newFilename}`, "info");
-
+                needsFullReload = true;
             } else {
-                // Mismo archivo
                 const writable = await this.currentFileHandle.createWritable();
                 await writable.write(JSON.stringify(this.currentData, null, 2));
                 await writable.close();
             }
 
-            // 3. ACTUALIZAR COHERENCIA
-            await Coherence.updateItem(this.currentData);
-
-            // 4. SINCRONIZACIÓN NUCLEAR (Aquí estaba el fallo)
-            // Recargamos todo desde el disco para asegurarnos que la Grid muestra la verdad absoluta
-            await this.loadFiles();
-
-            // Re-conectamos la memoria del editor con el nuevo objeto recién cargado
-            // para que futuras ediciones no usen referencias rotas
-            const refreshedItem = this.items.find(i => i.name === (newFilename !== oldFilename ? newFilename : oldFilename));
-            if (refreshedItem) {
-                this.currentData = refreshedItem.data;
-                this.currentFileHandle = refreshedItem.handle;
+            if (!isAutoSave || (oldName !== newName)) {
+                await Coherence.updateItem(this.currentData);
             }
 
-            setTimeout(() => { btn.innerText = "GUARDADO"; btn.classList.add('bg-green-600'); }, 500);
-            setTimeout(() => { btn.innerText = "GUARDAR CAMBIOS"; btn.classList.remove('bg-green-600'); btn.disabled = false; }, 1500);
+            if (!isAutoSave) {
+                if (needsFullReload) {
+                    await this.loadFiles();
+                    const refreshedItem = this.items.find(i => i.name === (newFilename !== oldFilename ? newFilename : oldFilename));
+                    if (refreshedItem) {
+                        this.currentData = refreshedItem.data;
+                        this.currentFileHandle = refreshedItem.handle;
+                    }
+                } else {
+                    this.renderGrid();
+                }
+
+                setTimeout(() => { btn.innerText = "GUARDADO"; btn.classList.add('bg-green-600'); }, 100);
+                setTimeout(() => { btn.innerText = "GUARDAR CAMBIOS"; btn.classList.remove('bg-green-600'); btn.disabled = false; }, 1500);
+            } else {
+                // Modo Silencioso: Mantiene los datos en memoria y actualiza el grid sin parpadeos bruscos
+                const memoryItem = this.items.find(i => i.name === oldFilename);
+                if (memoryItem) memoryItem.data = this.currentData;
+                
+                this.renderGrid(); // Refleja el cambio visual al instante en la tarjeta
+                
+                if (btn && btn.innerText === "ESPERANDO...") {
+                    btn.innerText = "Sincronizado";
+                    btn.classList.add('text-gray-400');
+                    setTimeout(() => {
+                        if (btn && btn.innerText === "Sincronizado") {
+                            btn.innerText = "GUARDAR CAMBIOS";
+                            btn.classList.remove('text-gray-400');
+                        }
+                    }, 1000);
+                }
+            }
 
         } catch(e) { 
             console.error(e);
-            ui.alert("Error al guardar: " + e.message); 
-            btn.disabled = false; 
+            if (!isAutoSave) ui.alert("Error al guardar: " + e.message); 
+            if (btn) btn.disabled = false; 
         }
     }
 
@@ -284,14 +364,66 @@ class DataStudio {
         
         ui.confirm("¿Estás seguro de que quieres eliminar este elemento?", async () => {
             try {
-                await this.targetHandle.removeEntry(this.currentFileHandle.name);
-                
-                // COHERENCE HOOK: Eliminar del resumen
-                Coherence.removeItem(nameToDelete);
+                if (this.currentData.imageFile) {
+                    try { await this.targetHandle.removeEntry(this.currentData.imageFile); } 
+                    catch(e) { console.warn("No se pudo borrar la imagen asociada", e); }
+                }
 
+                await this.targetHandle.removeEntry(this.currentFileHandle.name);
+                Coherence.removeItem(nameToDelete);
                 ui.closeSidebar();
-                await this.loadFiles(); // Refrescamos la grid
+                await this.loadFiles();
             } catch(e) { console.error(e); }
+        });
+    }
+
+    async migrateBase64Images() {
+        if (!this.targetHandle) return ui.alert("Abre una carpeta primero.");
+        
+        const targets = this.items.filter(i => i.data.imagen64 && i.data.imagen64.startsWith('data:image'));
+        if (targets.length === 0) return ui.alert("Todo en orden. No hay imágenes antiguas en Base64 para migrar.");
+
+        ui.confirm(`¿Quieres extraer las imágenes de los ${targets.length} JSONs antiguos para guardarlas como archivos separados y optimizar el espacio?`, async () => {
+            ui.setLoading(true, "Migrando imágenes (Esto puede llevar unos segundos)...");
+            let count = 0;
+            try {
+                for (const item of targets) {
+                    const base64Str = item.data.imagen64;
+                    const blob = await Utils.base64ToBlob(base64Str);
+                    
+                    let ext = 'png';
+                    if (blob.type === 'image/jpeg') ext = 'jpg';
+                    if (blob.type === 'image/webp') ext = 'webp';
+                    
+                    const imgFilename = item.name.replace('.json', `.${ext}`);
+                    const imgHandle = await this.targetHandle.getFileHandle(imgFilename, { create: true });
+                    const imgWritable = await imgHandle.createWritable();
+                    await imgWritable.write(blob);
+                    await imgWritable.close();
+
+                    item.data.imageFile = imgFilename;
+                    item.data.imagen64 = null; 
+                    item.displayImage = URL.createObjectURL(blob);
+
+                    const writable = await item.handle.createWritable();
+                    await writable.write(JSON.stringify(item.data, null, 2));
+                    await writable.close();
+
+                    count++;
+                }
+                Utils.log(`Se han extraído ${count} imágenes exitosamente.`, "success");
+                this.renderGrid();
+                
+                if (this.currentFileHandle) {
+                    const activeItem = this.items.find(i => i.name === this.currentFileHandle.name);
+                    if (activeItem) this.openEditor(activeItem);
+                }
+            } catch(e) {
+                console.error(e);
+                ui.alert("Error durante la migración: " + e.message);
+            } finally {
+                ui.setLoading(false);
+            }
         });
     }
 }
