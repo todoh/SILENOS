@@ -21,9 +21,10 @@ window.ConfigWindowUI = {
         <html lang="es">
         <head>
             <meta charset="UTF-8">
-            <link rel="stylesheet" href="styles.css">
-            <script src="https://cdn.tailwindcss.com"></script>
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+            
+           <link rel="stylesheet" href="styles.css">
+    <script src="lib/tailwind.min.js"></script>
+    <link rel="stylesheet" href="lib/fontawesome.min.css">
             <style>
                 /* Aseguramos scrollbar visible y estilo limpio */
                 ::-webkit-scrollbar { width: 6px; }

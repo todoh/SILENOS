@@ -50,8 +50,8 @@ window.BookStudio = {
         <html lang="es">
         <head>
             <meta charset="UTF-8">
-            <script src="https://cdn.tailwindcss.com"></script>
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="lib/tailwind.min.js"></script>
+    <link rel="stylesheet" href="lib/fontawesome.min.css">
             <style>
                 body { background: #ffffff; font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
                 
