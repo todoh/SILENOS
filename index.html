@@ -1,40 +1,66 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SILENOS | Inicio</title>
-    <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SILENOS — Entorno narrativo interactivo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  :root{
+    --bg:#FFFFFF;
+    --ink:#0A0A0A;
+    --ink-soft:#1A1A1A;
+    --mute:#7A7A7A;
+    --mute-2:#A8A8A8;
+    --line:#E8E8E8;
+    --line-strong:#D6D6D6;
+    --wine:#5C1A2B;          /* rojo vino reservado para SILENOS OS */
+    --wine-soft:#7A2336;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{
+    background:var(--bg);color:var(--ink);
+    font-family:'Montserrat',sans-serif;
+    font-weight:300;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    letter-spacing:.005em;
+  }
+  a{color:inherit;text-decoration:none}
+  ::selection{background:var(--ink);color:var(--bg)}
+  .serif{font-family:'Cormorant Garamond',serif;font-weight:300}
+  .container{max-width:1280px;margin:0 auto;padding:0 40px}
+  @media (max-width:640px){.container{padding:0 24px}}
+  #root{min-height:100vh}
+  .hairline{height:1px;background:var(--line);width:100%}
+  button{font-family:inherit}
+</style>
 </head>
 <body>
+  <div id="root"></div>
 
-    <div class="layout">
-        <aside class="sidebar">
-            <a href="index.html" class="logo sans">SILEN<span style="color: red;" >OS</span>.</a>
-            
-            <nav class="nav-links sans">
-                <a href="index.html" class="text-main">Inicio</a>
-                <a href="catalogo.html">Catálogo</a>
-                <a href="ecosistema.html">Ecosistema</a>
-                <a href="cartas.html">Cartas</a>
-                <a href="equipo.html">Equipo</a>
-            </nav>
-        </aside>
+  <script>
+    window.__TWEAK_DEFAULTS__ = /*EDITMODE-BEGIN*/{
+      "tagline": "La versión definitiva y más avanzada de nuestro entorno interactivo.",
+      "showWineAccents": false,
+      "heroLayout": "split",
+      "useSerifTitles": true
+    }/*EDITMODE-END*/;
+  </script>
 
-        <main class="main-content" style="display: flex; flex-direction: column; justify-content: center; min-height: 100vh; padding-bottom: 10vh;">
-            <div class="simple-page">
-                <p class="serif text-main" style="font-size: 2.2rem; line-height: 1.6; margin-bottom: 40px;">
-                    Un entorno de desarrollo narrativo donde la literatura converge con el código.
-                </p>
-                <p class="serif text-muted" style="font-size: 2.2rem; line-height: 1.6; margin-bottom: 40px;">
-                    Orquestación de inteligencia artificial para worldbuilding y cinematografía.
-                </p>
-                <p class="serif text-muted" style="font-size: 2.2rem; line-height: 1.6;">
-                    Soberanía total y privacidad absoluta sobre tu disco duro local.
-                </p>
-            </div>
-        </main>
-    </div>
-
+  <script type="text/babel" src="components/Header.jsx"></script>
+  <script type="text/babel" src="components/Hero.jsx"></script>
+  <script type="text/babel" src="components/Cards.jsx"></script>
+  <script type="text/babel" src="components/Books.jsx"></script>
+  <script type="text/babel" src="components/Docs.jsx"></script>
+  <script type="text/babel" src="components/Team.jsx"></script>
+  <script type="text/babel" src="components/Footer.jsx"></script>
+  <script type="text/babel" src="components/Tweaks.jsx"></script>
+  <script type="text/babel" src="app.jsx"></script>
 </body>
 </html>
