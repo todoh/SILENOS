@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SILENOS MIDI with GEMINI</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="sidebar">
+  <div id="sidebar-title">SILENOS <span style="color: red;" >MIDI</span></div>
+  <button id="new-chat-btn">+ nueva</button>
+  <div id="conversations-list"></div>
+</div>
+
+<div id="divider"></div>
+
+<div id="main">
+
+  <div id="topbar">
+    <select id="model-select"></select>
+    <div id="topbar-actions">
+      <button class="top-btn" id="log-btn">Registro</button>
+      <button class="top-btn" id="config-btn">Config</button>
+    </div>
+  </div>
+
+  <div id="messages">
+    <div id="empty-state">
+      <div class="big">SILENOS MIDI</div>
+      <div class="small">Escribe para componer o charlar</div>
+    </div>
+  </div>
+
+  <div id="input-area">
+    <div id="mode-selector">
+      <button class="mode-btn active" data-mode="chat">💬 Chat</button>
+      <button class="mode-btn" data-mode="midi">🎵 Generador MIDI</button>
+      <button class="mode-btn" data-mode="conversor">🔄 Conversor JSON a MIDI</button>
+    </div>
+
+    <div id="input-row">
+      <textarea id="user-input" rows="1" placeholder="Escribe un mensaje…"></textarea>
+      <button id="send-btn">enviar</button>
+    </div>
+    <div id="input-meta">
+      <span id="meta-model"></span>
+      <span>↵ nueva línea · ctrl+↵ enviar</span>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="config-modal">
+  <div class="modal">
+    <div class="modal-title">
+      <span>Configuración</span>
+      <button class="modal-close" id="config-close">cerrar</button>
+    </div>
+    <div id="config-label">API Key de Google AI Studio</div>
+    <input type="password" id="api-key-input" placeholder="AIza…" autocomplete="off" spellcheck="false">
+    <div id="config-line"></div>
+    <button id="save-config-btn">Guardar</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="log-modal">
+  <div class="modal">
+    <div class="modal-title">
+      <span>Registro de llamadas</span>
+      <div style="display:flex;gap:16px;align-items:center">
+        <button class="log-clear-btn" id="log-clear">limpiar</button>
+        <button class="modal-close" id="log-close">cerrar</button>
+      </div>
+    </div>
+    <div id="log-body"></div>
+  </div>
+</div>
+
+<script src="main.js"></script>
+<script src="ui.js"></script>
+<script src="ui.barra.js"></script>
+<script src="ai.js"></script>
+<script src="ai.midi.js"></script>
+</body>
+</html>
