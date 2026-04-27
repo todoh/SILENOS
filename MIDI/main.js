@@ -16,9 +16,9 @@ const MODELS = [
   { id: 'gemma-3-27b-it',                label: 'Gemma 3 27B' },
   { id: 'gemma-3-2b-it',                 label: 'Gemma 3 2B' },
   { id: 'gemma-4-26b-it',                label: 'Gemma 4 26B' },
-  { id: 'gemma-4-31b-it',                label: 'Gemma 4 31B' },
+  { id: 'gemma-4-31b-it',                label: '@ Gemma 4 31B' },
   { id: 'gemini-3.0-flash-preview',      label: 'Gemini 3 Flash' },
-  { id: 'gemini-3.1-flash-lite-preview', label: 'Gemini 3.1 Flash Lite' },
+  { id: 'gemini-3.1-flash-lite-preview', label: '@ Gemini 3.1 Flash Lite' },
   { id: 'gemini-3.1-pro-preview',        label: 'Gemini 3.1 Pro' },
   { id: 'gemini-2.5-flash-lite-preview', label: 'Gemini 2.5 Flash Lite' },
 ];
