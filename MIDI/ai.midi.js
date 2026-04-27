@@ -10,7 +10,7 @@ window.procesarMidi = async function(rawInput, ts, msgId) {
   try {
     const promptMidi = `Actúa como un compositor experto e ingeniero MIDI. Genera una estructura musical en formato JSON estrictamente válido basándote en esta petición: "${rawInput}".
     
-EL JSON DEBE TENER ESTA ESTRUCTURA EXACTA (puedes usar múltiples pistas, acordes y controles como attack, release, reverb, chorus. También puedes usar "pitchBend" (0 a 16383, centro en 8192) y "customControllers" mapeando el número de CC a su valor):
+EL JSON DEBE TENER ESTA ESTRUCTURA EXACTA (soportas canal 10 para percusión, automatizaciones, aftertouch, letras, sysex y cambios de tempo/compás dinámicos):
 {
     "bpm": 120,
     "timeSignature": [4, 4],
@@ -18,12 +18,23 @@ EL JSON DEBE TENER ESTA ESTRUCTURA EXACTA (puedes usar múltiples pistas, acorde
     "tracks": [
         {
             "name": "Piano",
+            "channel": 1,
             "program": 0,
             "volume": 100,
             "pan": 64,
             "reverb": 40,
             "pitchBend": 8192,
             "customControllers": { "1": 127, "11": 100 },
+            "tempoChanges": [ { "bpm": 100, "start_beat": 8 } ],
+            "timeSignatureChanges": [ { "signature": [3, 4], "start_beat": 16 } ],
+            "automation": [
+                { "type": "volume", "value": 85, "start_beat": 2 },
+                { "type": "pitchBend", "value": 10000, "start_beat": 4 },
+                { "type": "cc", "number": 1, "value": 127, "start_beat": 5 },
+                { "type": "aftertouch", "value": 90, "start_beat": 6 }
+            ],
+            "textEvents": [ { "type": "marker", "text": "Estribillo", "start_beat": 8 } ],
+            "sysex": [ { "data": [240, 65, 16, 66, 18, 64, 0, 127, 0, 65, 247], "start_beat": 0 } ],
             "notes": [
                 { "note": ["C4", "E4", "G4"], "duration": "4", "velocity": 100, "start_beat": 0 },
                 { "note": "E4", "duration": "4", "velocity": 100, "start_beat": 1 }
@@ -52,7 +63,8 @@ Devuelve ÚNICAMENTE código JSON puro, sin bloques markdown (como \`\`\`json), 
     const trackList = [];
     parsedData.tracks.forEach((t, index) => {
         const track = new MidiWriter.Track();
-        const midiChannel = (index % 16) + 1; 
+        // ─── CANAL 10 Y ASIGNACIÓN EXPLÍCITA ───
+        const midiChannel = t.channel !== undefined ? t.channel : ((index % 16) + 1); 
 
         track.setTempo(parsedData.bpm || 120);
         
@@ -80,7 +92,6 @@ Devuelve ÚNICAMENTE código JSON puro, sin bloques markdown (como \`\`\`json), 
         if (t.attack !== undefined) track.addEvent(new MidiWriter.ControllerChangeEvent({ controllerNumber: 73, controllerValue: t.attack, channel: midiChannel }));
         if (t.cutoff !== undefined) track.addEvent(new MidiWriter.ControllerChangeEvent({ controllerNumber: 74, controllerValue: t.cutoff, channel: midiChannel }));
 
-        // ─── NUEVAS POSIBILIDADES GLOBALES ───
         if (t.pitchBend !== undefined) {
             track.addEvent(new MidiWriter.PitchBendEvent({ bend: t.pitchBend, channel: midiChannel }));
         }
@@ -88,6 +99,73 @@ Devuelve ÚNICAMENTE código JSON puro, sin bloques markdown (como \`\`\`json), 
             for (const [ccNum, ccVal] of Object.entries(t.customControllers)) {
                 track.addEvent(new MidiWriter.ControllerChangeEvent({ controllerNumber: parseInt(ccNum, 10), controllerValue: parseInt(ccVal, 10), channel: midiChannel }));
             }
+        }
+
+        // ─── TEMPO DINÁMICO ───
+        if (t.tempoChanges && Array.isArray(t.tempoChanges)) {
+            t.tempoChanges.forEach(tc => {
+                let sTick = Math.round((tc.start_beat || 0) * 128);
+                try { if (MidiWriter.TempoEvent) track.addEvent(new MidiWriter.TempoEvent({ bpm: tc.bpm, tick: sTick })); } catch(e){}
+            });
+        }
+
+        // ─── COMPÁS DINÁMICO ───
+        if (t.timeSignatureChanges && Array.isArray(t.timeSignatureChanges)) {
+            t.timeSignatureChanges.forEach(tsc => {
+                let sTick = Math.round((tsc.start_beat || 0) * 128);
+                try { 
+                    if (MidiWriter.TimeSignatureEvent && tsc.signature && tsc.signature.length === 2) {
+                        track.addEvent(new MidiWriter.TimeSignatureEvent({ numerator: tsc.signature[0], denominator: tsc.signature[1], tick: sTick })); 
+                    }
+                } catch(e){}
+            });
+        }
+
+        // ─── AUTOMATIZACIÓN EN EL TIEMPO Y AFTERTOUCH ───
+        if (t.automation && Array.isArray(t.automation)) {
+            t.automation.forEach(auto => {
+                let sTick = Math.round((auto.start_beat || 0) * 128);
+                try {
+                    if (auto.type === "pitchBend") {
+                        track.addEvent(new MidiWriter.PitchBendEvent({ bend: auto.value, channel: midiChannel, tick: sTick }));
+                    } else if (auto.type === "cc") {
+                        track.addEvent(new MidiWriter.ControllerChangeEvent({ controllerNumber: auto.number, controllerValue: auto.value, channel: midiChannel, tick: sTick }));
+                    } else if (auto.type === "volume") {
+                        track.addEvent(new MidiWriter.ControllerChangeEvent({ controllerNumber: 7, controllerValue: auto.value, channel: midiChannel, tick: sTick }));
+                    } else if (auto.type === "pan") {
+                        track.addEvent(new MidiWriter.ControllerChangeEvent({ controllerNumber: 10, controllerValue: auto.value, channel: midiChannel, tick: sTick }));
+                    } else if (auto.type === "aftertouch") {
+                        if (MidiWriter.ChannelAftertouchEvent) {
+                            track.addEvent(new MidiWriter.ChannelAftertouchEvent({ pressure: auto.value, channel: midiChannel, tick: sTick }));
+                        } else { // Fallback a Expresión (CC11) si no existe soporte nativo de aftertouch
+                            track.addEvent(new MidiWriter.ControllerChangeEvent({ controllerNumber: 11, controllerValue: auto.value, channel: midiChannel, tick: sTick }));
+                        }
+                    }
+                } catch(e){}
+            });
+        }
+
+        // ─── EVENTOS DE TEXTO, LETRAS Y MARCADORES ───
+        if (t.textEvents && Array.isArray(t.textEvents)) {
+            t.textEvents.forEach(te => {
+                try {
+                    if (te.type === "marker" && track.addMarker) { track.addMarker(te.text); }
+                    else if (te.type === "lyric" && track.addLyric) { track.addLyric(te.text); }
+                    else if (te.type === "text" && track.addText) { track.addText(te.text); }
+                } catch(e){}
+            });
+        }
+
+        // ─── SYSEX (SISTEMA EXCLUSIVO) ───
+        if (t.sysex && Array.isArray(t.sysex)) {
+            t.sysex.forEach(sx => {
+                let sTick = Math.round((sx.start_beat || 0) * 128);
+                try {
+                    if (MidiWriter.SysExEvent) {
+                        track.addEvent(new MidiWriter.SysExEvent({ data: sx.data, tick: sTick }));
+                    }
+                } catch(e) {}
+            });
         }
 
         if (t.notes && Array.isArray(t.notes)) {
@@ -154,7 +232,8 @@ window.procesarJsonAMidi = async function(rawInput, msgId) {
     const trackList = [];
     parsedData.tracks.forEach((t, index) => {
         const track = new MidiWriter.Track();
-        const midiChannel = (index % 16) + 1; 
+        // ─── CANAL 10 Y ASIGNACIÓN EXPLÍCITA ───
+        const midiChannel = t.channel !== undefined ? t.channel : ((index % 16) + 1); 
 
         track.setTempo(parsedData.bpm || 120);
         
@@ -182,7 +261,6 @@ window.procesarJsonAMidi = async function(rawInput, msgId) {
         if (t.attack !== undefined) track.addEvent(new MidiWriter.ControllerChangeEvent({ controllerNumber: 73, controllerValue: t.attack, channel: midiChannel }));
         if (t.cutoff !== undefined) track.addEvent(new MidiWriter.ControllerChangeEvent({ controllerNumber: 74, controllerValue: t.cutoff, channel: midiChannel }));
 
-        // ─── NUEVAS POSIBILIDADES GLOBALES ───
         if (t.pitchBend !== undefined) {
             track.addEvent(new MidiWriter.PitchBendEvent({ bend: t.pitchBend, channel: midiChannel }));
         }
@@ -190,6 +268,73 @@ window.procesarJsonAMidi = async function(rawInput, msgId) {
             for (const [ccNum, ccVal] of Object.entries(t.customControllers)) {
                 track.addEvent(new MidiWriter.ControllerChangeEvent({ controllerNumber: parseInt(ccNum, 10), controllerValue: parseInt(ccVal, 10), channel: midiChannel }));
             }
+        }
+
+        // ─── TEMPO DINÁMICO ───
+        if (t.tempoChanges && Array.isArray(t.tempoChanges)) {
+            t.tempoChanges.forEach(tc => {
+                let sTick = Math.round((tc.start_beat || 0) * 128);
+                try { if (MidiWriter.TempoEvent) track.addEvent(new MidiWriter.TempoEvent({ bpm: tc.bpm, tick: sTick })); } catch(e){}
+            });
+        }
+
+        // ─── COMPÁS DINÁMICO ───
+        if (t.timeSignatureChanges && Array.isArray(t.timeSignatureChanges)) {
+            t.timeSignatureChanges.forEach(tsc => {
+                let sTick = Math.round((tsc.start_beat || 0) * 128);
+                try { 
+                    if (MidiWriter.TimeSignatureEvent && tsc.signature && tsc.signature.length === 2) {
+                        track.addEvent(new MidiWriter.TimeSignatureEvent({ numerator: tsc.signature[0], denominator: tsc.signature[1], tick: sTick })); 
+                    }
+                } catch(e){}
+            });
+        }
+
+        // ─── AUTOMATIZACIÓN EN EL TIEMPO Y AFTERTOUCH ───
+        if (t.automation && Array.isArray(t.automation)) {
+            t.automation.forEach(auto => {
+                let sTick = Math.round((auto.start_beat || 0) * 128);
+                try {
+                    if (auto.type === "pitchBend") {
+                        track.addEvent(new MidiWriter.PitchBendEvent({ bend: auto.value, channel: midiChannel, tick: sTick }));
+                    } else if (auto.type === "cc") {
+                        track.addEvent(new MidiWriter.ControllerChangeEvent({ controllerNumber: auto.number, controllerValue: auto.value, channel: midiChannel, tick: sTick }));
+                    } else if (auto.type === "volume") {
+                        track.addEvent(new MidiWriter.ControllerChangeEvent({ controllerNumber: 7, controllerValue: auto.value, channel: midiChannel, tick: sTick }));
+                    } else if (auto.type === "pan") {
+                        track.addEvent(new MidiWriter.ControllerChangeEvent({ controllerNumber: 10, controllerValue: auto.value, channel: midiChannel, tick: sTick }));
+                    } else if (auto.type === "aftertouch") {
+                        if (MidiWriter.ChannelAftertouchEvent) {
+                            track.addEvent(new MidiWriter.ChannelAftertouchEvent({ pressure: auto.value, channel: midiChannel, tick: sTick }));
+                        } else { 
+                            track.addEvent(new MidiWriter.ControllerChangeEvent({ controllerNumber: 11, controllerValue: auto.value, channel: midiChannel, tick: sTick }));
+                        }
+                    }
+                } catch(e){}
+            });
+        }
+
+        // ─── EVENTOS DE TEXTO, LETRAS Y MARCADORES ───
+        if (t.textEvents && Array.isArray(t.textEvents)) {
+            t.textEvents.forEach(te => {
+                try {
+                    if (te.type === "marker" && track.addMarker) { track.addMarker(te.text); }
+                    else if (te.type === "lyric" && track.addLyric) { track.addLyric(te.text); }
+                    else if (te.type === "text" && track.addText) { track.addText(te.text); }
+                } catch(e){}
+            });
+        }
+
+        // ─── SYSEX (SISTEMA EXCLUSIVO) ───
+        if (t.sysex && Array.isArray(t.sysex)) {
+            t.sysex.forEach(sx => {
+                let sTick = Math.round((sx.start_beat || 0) * 128);
+                try {
+                    if (MidiWriter.SysExEvent) {
+                        track.addEvent(new MidiWriter.SysExEvent({ data: sx.data, tick: sTick }));
+                    }
+                } catch(e) {}
+            });
         }
 
         if (t.notes && Array.isArray(t.notes)) {
