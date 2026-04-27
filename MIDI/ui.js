@@ -276,4 +276,6 @@ modeBtns.forEach(btn => {
 // ─── BOOT ─────────────────────────────────────────────────────
 renderSidebar();
 renderMessages();
-if (!state.apiKeys.length) openConfig();
+// Hemos quitado la apertura automática de openConfig() para no molestar 
+// a los que solo quieren usar el conversor. La app pedirá la clave 
+// automáticamente si intentan usar "Chat" o "MIDI".

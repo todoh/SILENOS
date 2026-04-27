@@ -89,7 +89,12 @@ async function send() {
   const rawText = input.value.trim();
   
   if (!rawText || state.isLoading) return;
-  if (state.apiKeys.length === 0) { openConfig(); return; }
+  
+  // Permitir usar el modo conversor aunque no haya API Key configurada
+  if (state.apiKeys.length === 0 && mode !== 'conversor') { 
+    openConfig(); 
+    return; 
+  }
 
   if (!state.activeConvId) {
     const id = Date.now().toString();
