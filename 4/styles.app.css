@@ -1,0 +1,403 @@
+/* --- STYLES.APP.CSS — ULTRA MINIMAL (puro, fino, claro) --- */
+
+/* 1. Tokens. Monocromo absoluto, sin grises de relleno. */
+:root {
+    --fin-bg: #ffffff;
+    --fin-fg: #000000;
+    --fin-border: rgba(0, 0, 0, 0.08);
+    --fin-border-strong: rgba(0, 0, 0, 0.55);
+    --fin-border-focus: #000000;
+    --fin-muted: rgba(0, 0, 0, 0.35);
+    --fin-faint: rgba(0, 0, 0, 0.55);
+    --fin-hover: rgba(0, 0, 0, 0.02);
+    --fin-track: rgba(0, 0, 0, 0.02);
+}
+
+/* 2. Scrollbar invisible hasta hover. 2px. */
+.custom-scrollbar::-webkit-scrollbar,
+::-webkit-scrollbar {
+    width: 2px !important;
+    height: 2px !important;
+}
+.custom-scrollbar::-webkit-scrollbar-track,
+::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-thumb {
+    background: transparent !important;
+    border-radius: 0 !important;
+}
+*:hover > ::-webkit-scrollbar-thumb,
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: var(--fin-border) !important;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:hover {
+    background: var(--fin-muted) !important;
+}
+
+/* 3. Paneles y contenedores: papel limpio. */
+.glass-panel,
+body {
+    background: var(--fin-bg) !important;
+    border: 1px solid var(--fin-border) !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    backdrop-filter: none !important;
+}
+
+body {
+    border: none !important;
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    color: var(--fin-fg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: 0.005em;
+}
+
+/* 4. Tipografía. Fina, callada, espaciada. */
+h1, h2, .window-title-app {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 11px !important;
+    font-weight: 300 !important;
+    letter-spacing: 0.22em !important;
+    text-transform: uppercase !important;
+    border: none !important;
+    border-bottom: 1px solid var(--fin-border) !important;
+    padding: 0 0 14px 0 !important;
+    margin: 0 0 28px 0 !important;
+    color: var(--fin-fg) !important;
+}
+
+h3, h4, h5 {
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 400 !important;
+    font-size: 12px !important;
+    letter-spacing: 0.04em !important;
+    color: var(--fin-fg) !important;
+}
+
+p {
+    font-weight: 300 !important;
+    font-size: 13px !important;
+    line-height: 1.7 !important;
+    color: var(--fin-fg) !important;
+}
+
+label, .label-minimal {
+    display: block !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 9px !important;
+    letter-spacing: 0.24em !important;
+    text-transform: uppercase !important;
+    margin-bottom: 10px !important;
+    color: var(--fin-muted) !important;
+    font-weight: 400 !important;
+}
+
+/* 5. Inputs: hairline inferior. Sin caja, sin relleno. */
+select,
+textarea,
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="email"],
+input[type="search"] {
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 300 !important;
+    width: 100% !important;
+    padding: 10px 0 !important;
+    border: none !important;
+    border-bottom: 1px solid var(--fin-border) !important;
+    font-size: 13px !important;
+    outline: none !important;
+    background: transparent !important;
+    color: var(--fin-fg) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    transition: border-color 0.4s ease !important;
+    letter-spacing: 0.01em !important;
+}
+
+textarea {
+    padding: 12px 0 !important;
+    line-height: 1.7 !important;
+    resize: vertical !important;
+    min-height: 80px !important;
+}
+
+select {
+    padding: 10px 0 !important;
+    cursor: pointer !important;
+    background-image: none !important;
+}
+
+select:focus,
+textarea:focus,
+input:focus {
+    border-bottom-color: var(--fin-border-focus) !important;
+}
+
+::placeholder {
+    color: var(--fin-muted) !important;
+    font-weight: 300 !important;
+    letter-spacing: 0.01em !important;
+    opacity: 1 !important;
+}
+
+/* 6. Botones: ultra planos. Texto y hairline, nada más. */
+button {
+    background: transparent !important;
+    color: var(--fin-fg) !important;
+    border: 1px solid var(--fin-border) !important;
+    cursor: pointer !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 400 !important;
+    font-size: 9px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.22em !important;
+    transition: border-color 0.4s ease, background-color 0.4s ease, color 0.4s ease !important;
+    padding: 11px 18px !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+button:hover {
+    background: transparent !important;
+    border-color: var(--fin-border-focus) !important;
+    color: var(--fin-fg) !important;
+}
+
+button:active {
+    background: var(--fin-hover) !important;
+}
+
+button:disabled {
+    opacity: 0.25 !important;
+    cursor: not-allowed !important;
+    border-color: var(--fin-border) !important;
+    background: transparent !important;
+}
+
+/* Botón primario: inverso, sin halo. */
+button.primary,
+#send-btn,
+#btn-send-chat,
+.bg-indigo-600 {
+    background: var(--fin-fg) !important;
+    color: var(--fin-bg) !important;
+    border: 1px solid var(--fin-fg) !important;
+}
+
+button.primary:hover,
+#send-btn:hover,
+#btn-send-chat:hover,
+.bg-indigo-600:hover {
+    background: var(--fin-bg) !important;
+    color: var(--fin-fg) !important;
+    border-color: var(--fin-fg) !important;
+}
+
+/* 7. Output / consola. Hairline, mono solo aquí. */
+#output,
+#chat-messages {
+    margin-top: 12px !important;
+    padding: 24px 0 !important;
+    border: none !important;
+    border-top: 1px solid var(--fin-border) !important;
+    background: transparent !important;
+    min-height: 150px;
+    white-space: pre-wrap;
+    line-height: 1.85 !important;
+    font-size: 12px !important;
+    font-family: 'JetBrains Mono', 'IBM Plex Mono', 'Courier New', monospace !important;
+    font-weight: 300 !important;
+    color: var(--fin-fg) !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+
+#chat-messages > div {
+    border-radius: 0 !important;
+    border: none !important;
+    border-bottom: 1px solid var(--fin-border) !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    color: var(--fin-fg) !important;
+    padding: 14px 0 !important;
+    font-family: 'JetBrains Mono', 'IBM Plex Mono', 'Courier New', monospace !important;
+    font-size: 12px !important;
+    font-weight: 300 !important;
+    line-height: 1.7 !important;
+}
+
+#chat-messages > div.self-end {
+    background: transparent !important;
+    border-bottom-color: var(--fin-border-focus) !important;
+    color: var(--fin-fg) !important;
+}
+
+/* 8. Neutralizadores Tailwind. Todo a blanco / negro / hairline. */
+.bg-gray-50, .bg-gray-100, .bg-gray-200, .bg-white, .bg-gray-50\/50,
+.bg-slate-50, .bg-slate-100, .bg-zinc-50, .bg-zinc-100,
+.bg-neutral-50, .bg-neutral-100 {
+    background-color: var(--fin-bg) !important;
+}
+.text-gray-800, .text-black, .text-gray-900,
+.text-slate-800, .text-slate-900, .text-zinc-800, .text-zinc-900 {
+    color: var(--fin-fg) !important;
+}
+.text-gray-500, .text-gray-600, .text-gray-400,
+.text-slate-500, .text-slate-600, .text-zinc-500, .text-zinc-600 {
+    color: var(--fin-muted) !important;
+}
+.shadow, .shadow-sm, .shadow-md, .shadow-lg, .shadow-inner, .shadow-xl, .shadow-2xl,
+.drop-shadow, .drop-shadow-sm, .drop-shadow-md, .drop-shadow-lg {
+    box-shadow: none !important;
+    filter: none !important;
+}
+.rounded, .rounded-sm, .rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl, .rounded-full {
+    border-radius: 0 !important;
+}
+.border-gray-100, .border-gray-200, .border-gray-300, .border-gray-400,
+.border-slate-100, .border-slate-200, .border-zinc-100, .border-zinc-200 {
+    border-color: var(--fin-border) !important;
+}
+
+/* 9. Canvas: nodos como hojas, no como tarjetas. */
+.canvas-node {
+    position: absolute;
+    background-color: var(--fin-bg);
+    border-radius: 0;
+    padding: 14px;
+    width: 200px;
+    min-height: 260px;
+    display: flex;
+    flex-direction: column;
+    cursor: grab;
+    user-select: none;
+    transition: border-color 0.3s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid var(--fin-border);
+    box-shadow: none;
+}
+
+.canvas-node:hover {
+    border-color: var(--fin-faint);
+}
+
+.canvas-node:active {
+    cursor: grabbing;
+    transform: scale(0.99);
+}
+
+.canvas-node.selected {
+    background-color: var(--fin-fg);
+    color: var(--fin-bg);
+    border-color: var(--fin-fg);
+}
+
+.canvas-node.selected .node-text-preview {
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.node-image {
+    width: 100%;
+    height: 170px;
+    border-radius: 0;
+    background-size: cover;
+    background-position: center;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+    border: 1px solid var(--fin-border);
+    background-color: var(--fin-track);
+}
+
+.node-text-preview {
+    font-size: 11px;
+    color: var(--fin-muted);
+    line-height: 1.6;
+    font-weight: 300;
+    letter-spacing: 0.01em;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    pointer-events: none;
+    flex: 1;
+}
+
+/* 10. Aristas del grafo: hairline. */
+.edge-path {
+    stroke: var(--fin-border-strong);
+    stroke-width: 1px;
+    fill: none;
+    stroke-linecap: round;
+    opacity: 0.6;
+}
+
+/* 11. Botones de elección del player: como links tipográficos. */
+.player-choice-btn {
+    background-color: transparent;
+    color: var(--fin-fg);
+    border: none;
+    border-bottom: 1px solid var(--fin-border);
+    border-radius: 0;
+    padding: 18px 0;
+    font-size: 13px;
+    font-weight: 300;
+    letter-spacing: 0.01em;
+    text-align: left;
+    cursor: pointer;
+    transition: padding-left 0.3s ease, border-color 0.3s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.player-choice-btn:hover {
+    background-color: transparent;
+    padding-left: 8px;
+    border-bottom-color: var(--fin-border-focus);
+}
+
+.canvas-area {
+    transition: border-color 0.2s ease;
+}
+
+.canvas-emoji {
+    transition: transform 0.2s ease;
+}
+
+/* 12. Selección de texto: monocroma. */
+::selection {
+    background: var(--fin-fg);
+    color: var(--fin-bg);
+}
+
+/* 13. Foco global: hairline negra, sin halo de color. */
+*:focus-visible {
+    outline: 1px solid var(--fin-fg) !important;
+    outline-offset: 2px !important;
+}
+
+/* 14. <hr>: línea pura. */
+hr {
+    border: none !important;
+    border-top: 1px solid var(--fin-border) !important;
+    margin: 24px 0 !important;
+}
+
+/* 15. Links: subrayado fino, sin color. */
+a {
+    color: var(--fin-fg) !important;
+    text-decoration: none !important;
+    border-bottom: 1px solid var(--fin-border) !important;
+    transition: border-color 0.3s ease !important;
+    padding-bottom: 1px !important;
+}
+
+a:hover {
+    border-bottom-color: var(--fin-fg) !important;
+}

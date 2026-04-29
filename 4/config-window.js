@@ -1,7 +1,5 @@
 // --- CONFIG-WINDOW.JS (UI RENDERER) ---
-
 window.ConfigWindowUI = {
-
     open() {
         if (typeof WindowManager === 'undefined') return;
         
@@ -21,10 +19,9 @@ window.ConfigWindowUI = {
         <html lang="es">
         <head>
             <meta charset="UTF-8">
-            
-           <link rel="stylesheet" href="styles.css">
-    <script src="lib/tailwind.min.js"></script>
-    <link rel="stylesheet" href="lib/fontawesome.min.css">
+            <link rel="stylesheet" href="styles.css">
+            <script src="lib/tailwind.min.js"></script>
+            <link rel="stylesheet" href="lib/fontawesome.min.css">
             <style>
                 /* Aseguramos scrollbar visible y estilo limpio */
                 ::-webkit-scrollbar { width: 6px; }
@@ -51,7 +48,21 @@ window.ConfigWindowUI = {
                     </button>
                 </div>
             </div>
-    
+
+            <div class="mb-8">
+                <div class="font-bold text-sm mb-2 border-b-2 border-black pb-1 uppercase">DeepSeek API</div>
+                <p class="text-xs mb-2 text-gray-500">Motor para inteligencia DeepSeek (Fast/Pro).</p>
+                
+                <div class="bg-gray-50 p-3 border border-gray-200">
+                    <label class="text-[10px] font-bold text-gray-400 block mb-1">API KEY</label>
+                    <div class="flex gap-2">
+                        <input type="password" id="inp-deepseek-sys" class="border border-gray-300 p-1 text-xs w-full outline-none focus:border-black font-mono" placeholder="sk-..." onchange="saveDeepseekKey()">
+                        <button class="border border-black bg-white px-2 py-1 text-xs font-bold uppercase hover:bg-black hover:text-white transition-all" onclick="saveDeepseekKey()"><i class="fa-solid fa-floppy-disk"></i></button>
+                    </div>
+                    <p class="text-[9px] text-gray-400 mt-1 italic text-right" id="deepseek-msg">Guardado en LocalStorage</p>
+                </div>
+            </div>
+            
             <div class="mb-8">
                 <div class="font-bold text-sm mb-2 border-b-2 border-black pb-1 uppercase">Google Gemini API</div>
                 <p class="text-xs mb-2 text-gray-500">Motor para inteligencia general y razonamiento (Gemini 1.5/2.0).</p>
@@ -79,7 +90,7 @@ window.ConfigWindowUI = {
                     <p class="text-[9px] text-gray-400 mt-1 italic text-right" id="googlecloud-msg">Guardado en LocalStorage</p>
                 </div>
             </div>
-    
+            
             <div class="mb-8">
                 <div class="font-bold text-sm mb-2 border-b-2 border-black pb-1 uppercase">Airforce Video API (Multi-Key)</div>
                 <p class="text-xs mb-2 text-gray-500">Motor para generación de video Grok (Escaleta AI).</p>
@@ -94,7 +105,7 @@ window.ConfigWindowUI = {
                     <p class="text-[9px] text-gray-400 mt-1 italic text-right" id="airforce-msg">Guardado en LocalStorage</p>
                 </div>
             </div>
-    
+            
             <div class="mb-8">
                 <div class="font-bold text-sm mb-2 border-b-2 border-black pb-1 uppercase">System Update</div>
                 <p class="text-xs mb-4 text-gray-500">Forzar descarga de la última versión de los programas base.</p>
@@ -102,7 +113,7 @@ window.ConfigWindowUI = {
                     <i class="fa-solid fa-cloud-arrow-down"></i> ACTUALIZAR PROGRAMAS (FORCE)
                 </button>
             </div>
-    
+            
             <div class="mb-8">
                 <div class="font-bold text-sm mb-2 border-b-2 border-black pb-1 uppercase">System Variables</div>
                 <div class="bg-gray-50 p-2 mb-4 border border-gray-200">
@@ -112,32 +123,32 @@ window.ConfigWindowUI = {
                     </div>
                     <button class="border border-black bg-white px-2 py-1 text-xs font-bold uppercase hover:bg-black hover:text-white w-full transition-all" onclick="addVar()">[ + ADD VARIABLE ]</button>
                 </div>
-    
+                
                 <div id="vars-list" class="flex flex-col gap-2">
-                    </div>
+                </div>
             </div>
-
             <div class="h-10"></div>
-    
+            
             <script>
                 // --- LOGICA INTERNA DEL IFRAME ---
                 const Sys = window.parent.SystemConfig;
                 const ParentWindow = window.parent;
-    
+                
                 function render() {
                     renderAuth();
                     renderVars();
-                    loadAirforceKey(); 
-                    loadGoogleKey();   
-                    loadGoogleCloudKey(); // Cargar la key de Google Cloud al iniciar
+                    loadAirforceKey();
+                    loadGoogleKey();
+                    loadGoogleCloudKey();
+                    loadDeepseekKey(); // Añadida la carga de DeepSeek
                 }
-    
+                
                 function renderAuth() {
                     const key = Sys.authKey;
                     const statusEl = document.getElementById('auth-status');
                     const btnLogin = document.getElementById('btn-login');
                     const btnLogout = document.getElementById('btn-logout');
-    
+                    
                     if (key) {
                         statusEl.textContent = "CONNECTED";
                         statusEl.className = "inline-block px-1.5 py-0.5 text-[10px] border border-black ml-2 bg-green-100 text-green-800";
@@ -150,14 +161,46 @@ window.ConfigWindowUI = {
                         btnLogout.classList.add('hidden');
                     }
                 }
-    
+                
+                // --- GESTIÓN DEEPSEEK API ---
+                window.loadDeepseekKey = function() {
+                    const key = localStorage.getItem('deepseek_api_key') || '';
+                    const inp = document.getElementById('inp-deepseek-sys');
+                    if(inp) inp.value = key;
+                }
+                
+                window.saveDeepseekKey = function() {
+                    const inp = document.getElementById('inp-deepseek-sys');
+                    const msg = document.getElementById('deepseek-msg');
+                    const val = inp.value.trim();
+                    
+                    if(val) {
+                        localStorage.setItem('deepseek_api_key', val);
+                        ParentWindow.deepseekapikey = val; // Variable global padre
+                        msg.textContent = "KEY GUARDADA OK";
+                        msg.classList.add('text-green-600');
+                        msg.classList.remove('text-red-500');
+                    } else {
+                        localStorage.removeItem('deepseek_api_key');
+                        ParentWindow.deepseekapikey = null;
+                        msg.textContent = "KEY ELIMINADA";
+                        msg.classList.add('text-red-500');
+                        msg.classList.remove('text-green-600');
+                    }
+                    
+                    setTimeout(() => {
+                        msg.className = "text-[9px] text-gray-400 mt-1 italic text-right";
+                        msg.textContent = "Guardado en LocalStorage";
+                    }, 3000);
+                }
+
                 // --- GESTIÓN GOOGLE API ---
                 window.loadGoogleKey = function() {
                     const key = localStorage.getItem('google_api_key') || '';
                     const inp = document.getElementById('inp-google-sys');
                     if(inp) inp.value = key;
                 }
-    
+                
                 window.saveGoogleKey = function() {
                     const inp = document.getElementById('inp-google-sys');
                     const msg = document.getElementById('google-msg');
@@ -176,20 +219,20 @@ window.ConfigWindowUI = {
                         msg.classList.add('text-red-500');
                         msg.classList.remove('text-green-600');
                     }
-    
+                    
                     setTimeout(() => {
                         msg.className = "text-[9px] text-gray-400 mt-1 italic text-right";
                         msg.textContent = "Guardado en LocalStorage";
                     }, 3000);
                 }
 
-                // --- GESTIÓN GOOGLE CLOUD API (NUEVO) ---
+                // --- GESTIÓN GOOGLE CLOUD API ---
                 window.loadGoogleCloudKey = function() {
                     const key = localStorage.getItem('googlecloud_api_key') || '';
                     const inp = document.getElementById('inp-googlecloud-sys');
                     if(inp) inp.value = key;
                 }
-    
+                
                 window.saveGoogleCloudKey = function() {
                     const inp = document.getElementById('inp-googlecloud-sys');
                     const msg = document.getElementById('googlecloud-msg');
@@ -208,20 +251,20 @@ window.ConfigWindowUI = {
                         msg.classList.add('text-red-500');
                         msg.classList.remove('text-green-600');
                     }
-    
+                    
                     setTimeout(() => {
                         msg.className = "text-[9px] text-gray-400 mt-1 italic text-right";
                         msg.textContent = "Guardado en LocalStorage";
                     }, 3000);
                 }
-    
+                
                 // --- GESTIÓN AIRFORCE ---
                 window.loadAirforceKey = function() {
                     const key = localStorage.getItem('airforce_key') || '';
                     const inp = document.getElementById('inp-airforce-sys');
                     if(inp) inp.value = key;
                 }
-    
+                
                 window.saveAirforceKey = function() {
                     const inp = document.getElementById('inp-airforce-sys');
                     const msg = document.getElementById('airforce-msg');
@@ -243,7 +286,6 @@ window.ConfigWindowUI = {
                             msg.classList.add('text-green-600');
                             msg.classList.remove('text-blue-600', 'text-red-500');
                         }
-    
                     } else {
                         localStorage.removeItem('airforce_key');
                         ParentWindow.apikeyairforce = null;
@@ -251,13 +293,13 @@ window.ConfigWindowUI = {
                         msg.classList.add('text-red-500');
                         msg.classList.remove('text-green-600', 'text-blue-600');
                     }
-    
+                    
                     setTimeout(() => {
                         msg.className = "text-[9px] text-gray-400 mt-1 italic text-right";
                         msg.textContent = "Guardado en LocalStorage";
                     }, 3000);
                 }
-    
+                
                 // --- GESTIÓN VARIABLES ---
                 function renderVars() {
                     const list = document.getElementById('vars-list');
@@ -268,7 +310,7 @@ window.ConfigWindowUI = {
                         list.innerHTML = '<div class="text-xs text-gray-400 text-center italic">// NO DATA</div>';
                         return;
                     }
-    
+                    
                     for (const [key, val] of Object.entries(vars)) {
                         const row = document.createElement('div');
                         row.className = 'flex gap-2 mb-1 items-center group';
@@ -280,17 +322,17 @@ window.ConfigWindowUI = {
                         list.appendChild(row);
                     }
                 }
-    
+                
                 // --- ACTIONS ---
                 window.handleLogin = function() { Sys.login(); }
-    
+                
                 window.handleLogout = function() {
                     if(confirm('¿Desconectar Pollinations?')) {
                         Sys.logout();
                         render();
                     }
                 }
-    
+                
                 window.handleUpdatePrograms = function() {
                     if(confirm('¿Sobreescribir todos los programas base con la última versión de GitHub? Se perderán cambios locales en /programas.')) {
                         if (ParentWindow.downloadGithubPrograms && ParentWindow.currentHandle) {
@@ -300,7 +342,7 @@ window.ConfigWindowUI = {
                         }
                     }
                 }
-    
+                
                 window.addVar = function() {
                     const k = document.getElementById('new-key').value.trim();
                     const v = document.getElementById('new-val').value.trim();
@@ -310,14 +352,14 @@ window.ConfigWindowUI = {
                     document.getElementById('new-val').value = '';
                     render();
                 }
-    
+                
                 window.deleteVar = function(key) {
                     if(confirm('Delete ' + key + '?')) {
                         Sys.deleteVar(key);
                         render();
                     }
                 }
-    
+                
                 window.parent.addEventListener('silenos:config-updated', render);
                 render();
             </script>

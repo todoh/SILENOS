@@ -3,37 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SILENOS 4</title>
+    <title>SILENOS V4</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
-   <script src="tailwind.min.js"></script>
-<link rel="stylesheet" href="fontawesome.min.css">
-<link rel="stylesheet" href="styles.css">
+    <script src="lib/tailwind.min.js"></script>
+    <link rel="stylesheet" href="fontawesome.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.app.css">
 </head>
 <body>
-
     <div id="intro-screen" class="w-full h-full flex flex-col justify-center px-8 md:px-24 relative bg-white overflow-hidden">
         <div class="absolute inset-0 pointer-events-none" style="background-image: linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px); background-size: 40px 40px;"></div>
+        
         <div class="max-w-5xl z-10 relative animate-entry">
             <p class="font-mono text-xs text-gray-400 mb-6 tracking-widest uppercase">Sistema Operativo Web v4.0</p>
             <h1 class="font-display text-6xl md:text-9xl mb-8 leading-none tracking-tighter text-[#1a1a1a]">
                 SILEN<span class="text-red-600">OS</span>
             </h1>
             <p class="max-w-xl text-lg md:text-xl font-light text-gray-600 leading-relaxed mb-10">
-                Entorno de escritorio local minimalista.<br>
-                <span class="text-sm font-mono text-gray-400">By Manuel Rodsua &copy; 2026</span>
+                Entorno creativo minimalista.<br>
+                <span class="text-sm font-mono text-gray-400">Creado por Manuel Rodsua &copy; 2026</span>
             </p>
+            
             <div class="flex flex-col items-start gap-4">
                 <button id="btn-select-dir" class="border border-black bg-white px-6 py-3 font-mono text-sm hover:bg-black hover:text-white transition-all uppercase tracking-widest">
-                    <i class="fa-solid fa-folder-open mr-2"></i> INICIAR SISTEMA (ABRIR DIR)
+                    <i class="fa-solid fa-folder-open mr-2"></i> INICIAR SISTEMA (ABRIR DIRECTORIO LOCAL)
                 </button>
                 <p id="error-msg" class="text-red-600 font-mono text-[10px] hidden bg-red-50 px-2 py-1 border border-red-200">
-                    ⚠️ ERROR: API no soportada. Use Chrome/Edge.
+                      ERROR: API no soportada. Use Chrome/Edge.
                 </p>
             </div>
         </div>
+        
         <div class="absolute right-0 top-1/2 -translate-y-1/2 w-1/3 h-2/3 border-l border-gray-100 hidden lg:flex items-center justify-center opacity-30 pointer-events-none">
             <i class="fa-solid fa-cube text-9xl text-gray-100"></i>
         </div>
@@ -53,6 +56,7 @@
                 <div id="system-tray" class="flex items-end gap-1 pointer-events-auto relative ml-4">
                     <button id="btn-sys-programs" class="taskbar-item font-bold !bg-black !text-white !border-black hover:!bg-gray-800 transition-colors">[ PROG ]</button>
                     <button id="btn-sys-config" class="taskbar-item font-bold !bg-black !text-white !border-black hover:!bg-gray-800 transition-colors">[ CFG ]</button>
+                    
                     <div class="relative">
                         <button id="btn-sys-menu" class="taskbar-item font-bold !bg-black !text-white !border-black hover:!bg-gray-800 transition-colors m-0">[ SYS ]</button>
                         
@@ -64,7 +68,6 @@
                         </div>
                     </div>
                 </div>
-
             </div>
 
             <div id="last-action" class="absolute top-4 right-4 typo-mono text-[10px] bg-black text-white p-2 hidden z-50">
@@ -100,7 +103,10 @@
     <div id="toast" class="toast">NOTIFICACION</div>
 
     <script src="logic.js"></script>
-    <script src="ui.js"></script>
+    
+    <script src="logic2.js"></script>
+    <script src="ai.models.js"></script> <!-- LÓGICA DE MODELOS IA AÑADIDA AQUÍ -->
+    <script src="ui.js"></script>    <script src="chat-ui.js"></script>
     <script src="html-processor.js"></script>
     <script src="window-interaction.js"></script>
     <script src="window-system.js"></script>
@@ -116,6 +122,7 @@
     
     <script src="fs-core.js"></script>
     <script src="fs-actions.js"></script>
+
     <script src="config-core.js"></script>
     <script src="config-window.js"></script>
     <script src="config-boot.js"></script>
@@ -123,6 +130,7 @@
     <script src="book-studio-actions.js"></script>
     <script src="book-studio-export.js"></script>
     <script src="book-studio-core.js"></script>
+
     <script src="data-studio.js"></script>
 
     <script src="main.js"></script>

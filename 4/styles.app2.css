@@ -1,0 +1,300 @@
+/* --- STYLES.APP2.CSS — BARRA INFERIOR Y LIQUID (versión ultra minimal) --- */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color: #000000;
+    background: #ffffff;
+}
+
+/* --- BARRA INFERIOR: papel sobre papel, separada por hairline --- */
+.bottom-bar {
+    width: 100%;
+    height: 38vh;
+    min-height: 320px;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: row;
+    z-index: 20;
+    flex-shrink: 0;
+    box-shadow: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1), min-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+.bottom-bar.collapsed {
+    height: 2% !important;
+    min-height: 2% !important;
+    border: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.bottom-bar-sidebar {
+    width: 14rem;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1.75rem 1.5rem;
+    overflow-y: auto;
+    border-right: 1px solid rgba(0, 0, 0, 0.08);
+    margin-bottom: 40px;
+}
+
+.bottom-bar-header {
+    margin-bottom: 1.75rem;
+}
+
+.bottom-bar-title {
+    font-size: 0.625rem;
+    font-weight: 400;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: rgba(0, 0, 0, 0.45);
+}
+
+.bottom-bar-main {
+    flex: 1 1 0%;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.bottom-bar-tabs {
+    display: flex;
+    padding: 1.25rem 2rem;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
+}
+
+.bottom-bar-content-area {
+    flex: 1 1 0%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 1.75rem 2rem;
+    position: relative;
+}
+
+/* --- LIQUID: ahora es seco. Hairline + tipografía, sin pastillas. --- */
+.liquid-input {
+    min-height: 40px;
+    width: 100%;
+    background-color: transparent;
+    color: #000000;
+    border: none !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+    outline: none !important;
+    box-shadow: none !important;
+    padding: 10px 0;
+    border-radius: 0;
+    font-size: 0.8125rem;
+    font-weight: 300;
+    letter-spacing: 0.01em;
+    transition: border-color 0.4s ease;
+}
+
+.liquid-input::placeholder {
+    color: rgba(0, 0, 0, 0.35);
+    font-weight: 300;
+}
+
+.liquid-input:focus {
+    background-color: transparent;
+    border-bottom-color: #000000 !important;
+}
+
+select.liquid-input {
+    appearance: none;
+    cursor: pointer;
+    background-image: none;
+}
+
+/* Botón primario: rectángulo negro puro. */
+.liquid-btn-primary {
+    height: auto;
+    width: auto;
+    background-color: #000000;
+    color: #ffffff;
+    border: 1px solid #000000;
+    border-radius: 0;
+    padding: 11px 22px;
+    font-size: 0.625rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    cursor: pointer;
+    transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+.liquid-btn-primary:hover {
+    opacity: 1;
+    background-color: #ffffff;
+    color: #000000;
+}
+
+/* Botón secundario: solo hairline. */
+.liquid-btn-secondary {
+    height: auto;
+    background-color: transparent;
+    color: #000000;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 0;
+    padding: 11px 22px;
+    font-size: 0.625rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    cursor: pointer;
+    transition: border-color 0.4s ease;
+}
+
+.liquid-btn-secondary:hover {
+    background-color: transparent;
+    border-color: #000000;
+}
+
+/* --- ESTILOS LÓGICA / HTML INLINE --- */
+.canvas-edges-visible {
+    overflow: visible !important;
+}
+
+.edit-node-text-fixed {
+    display: flex !important;
+    position: fixed !important;
+    left: 0% !important;
+    top: 27% !important;
+    bottom: 43% !important;
+    height: auto !important;
+    width: 312px !important;
+    z-index: 100 !important;
+}
+
+.edit-node-visual-tools-fixed {
+    display: flex !important;
+    position: fixed !important;
+    background: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: none !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    top: 0px !important;
+    left: 0px !important;
+}
+
+.img-preview-default {
+    background-image: url('tu-imagen.jpg');
+}
+
+/* Edge badges: monocromos, sin color. Pequeñísimos. */
+.edge-badge-req {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid rgba(0, 0, 0, 0.55) !important;
+    border-radius: 0 !important;
+    width: 16px !important;
+    height: 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 9px !important;
+    font-weight: 400 !important;
+    letter-spacing: 0 !important;
+    pointer-events: auto !important;
+}
+
+.edge-badge-eff {
+    background: #000000 !important;
+    color: #ffffff !important;
+    border: 1px solid #000000 !important;
+    border-radius: 0 !important;
+    width: 16px !important;
+    height: 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 9px !important;
+    font-weight: 400 !important;
+    letter-spacing: 0 !important;
+    pointer-events: auto !important;
+}
+
+.edge-badge-container {
+    display: flex !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.edge-path-dragging {
+    stroke: #000000 !important;
+    stroke-width: 1px !important;
+    stroke-dasharray: 3,4 !important;
+    opacity: 0.7 !important;
+}
+
+/* --- COMPONENTES JS --- */
+
+.nota-final-hud {
+    margin-top: 16px;
+    text-align: center;
+    color: #000000;
+    font-size: 0.6875rem;
+    font-weight: 400;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    background: transparent;
+    padding: 14px 0;
+    border-radius: 0;
+    border: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Death choice: monocromo, sólo borde más fuerte. */
+.btn-death-choice {
+    background-color: transparent !important;
+    color: #000000 !important;
+    border-color: #000000 !important;
+    border-style: solid !important;
+    border-width: 1px !important;
+}
+
+.btn-death-choice:hover {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+}
+
+.choice-death-header {
+    display: flex;
+    justify-content: center;
+    text-transform: uppercase;
+    font-weight: 400;
+    letter-spacing: 0.22em;
+    font-size: 0.625rem;
+    width: 100%;
+    align-items: center;
+}
+
+.icon-skull-death {
+    margin-right: 10px;
+    opacity: 0.55;
+}
+
+.empty-story-msg {
+    padding: 24px 0;
+    color: rgba(0, 0, 0, 0.35);
+    font-size: 0.8125rem;
+    font-weight: 300;
+    letter-spacing: 0.01em;
+    text-align: center;
+}
+
+/* Anchos top fijos del canvas — sin cambios estructurales */
+.top-88px { top: 88px !important; }
+.top-128px { top: 128px !important; }

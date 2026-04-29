@@ -310,7 +310,7 @@ async function handleOpenPrograms() {
         const programsHandle = await window.currentHandle.getDirectoryHandle('programas', { create: true });
         
         if (typeof WindowManager !== 'undefined') {
-            const winId = WindowManager.openWindow('PROGRAMAS INSTALADOS', programsHandle, 'programs');
+            const winId = WindowManager.openWindow('PROGRAMAS', programsHandle, 'programs');
             await populateProgramsWindow(winId, programsHandle);
 
             downloadGithubPrograms(window.currentHandle, false).then(async () => {
