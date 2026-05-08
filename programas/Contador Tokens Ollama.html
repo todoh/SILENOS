@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ollama TPS Benchmark</title>
+    <style>
+        :root {
+            --bg-color: #f4f4f9;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --border-color: #d1d5db;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+        }
+
+        .warning-box {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        select, textarea, button {
+            font-family: inherit;
+            font-size: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.75rem;
+        }
+
+        select {
+            flex: 1;
+            background-color: #fff;
+            cursor: pointer;
+        }
+
+        textarea {
+            width: 100%;
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background-color: #f3f4f6;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: #e5e7eb;
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.1rem;
+            margin-top: 1rem;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-box {
+            background-color: #f8fafc;
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .tps-highlight {
+            color: var(--success);
+        }
+
+        /* Output Area */
+        .output-area {
+            background-color: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            min-height: 150px;
+            white-space: pre-wrap;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Medidor de Rendimiento Ollama (TPS)</h1>
+
+    <div class="warning-box">
+        <strong>⚠️ Requisito de CORS:</strong> Recuerda iniciar Ollama con permisos CORS para que el navegador pueda conectarse. Usa: <code>OLLAMA_ORIGINS="*" ollama serve</code>
+    </div>
+
+    <div class="card">
+        <div class="form-group">
+            <label for="modelSelect">1. Selecciona el Modelo Local:</label>
+            <div class="input-row">
+                <select id="modelSelect">
+                    <option value="">Cargando modelos...</option>
+                </select>
+                <button id="refreshBtn" class="btn-secondary">Actualizar</button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="promptInput">2. Escribe el Prompt para el Benchmark:</label>
+            <textarea id="promptInput">Actúa como un experto en tecnología. Escribe una explicación detallada de unos 4 párrafos sobre cómo funciona la arquitectura de un modelo de lenguaje grande (LLM), utilizando analogías sencillas de entender.</textarea>
+        </div>
+
+        <button id="generateBtn" class="generate-btn">Iniciar Benchmark</button>
+    </div>
+
+    <div class="card" id="resultsCard" style="display: none;">
+        <h2 style="margin-bottom: 1.5rem; font-size: 1.25rem;">Resultados de Rendimiento</h2>
+        
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-title">Tokens / Segundo</div>
+                <div class="stat-value tps-highlight" id="tpsValue">0.00</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-title">Tokens Generados</div>
+                <div class="stat-value" id="tokensValue">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-title">Tiempo de Generación</div>
+                <div class="stat-value" id="timeValue">0.00s</div>
+            </div>
+        </div>
+
+        <h3 style="margin-bottom: 1rem; font-size: 1rem; color: #64748b;">Respuesta del modelo:</h3>
+        <div class="output-area" id="outputArea"></div>
+    </div>
+</div>
+
+<script>
+    const baseUrl = 'http://localhost:11434';
+    
+    // Elementos del DOM
+    const modelSelect = document.getElementById('modelSelect');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const generateBtn = document.getElementById('generateBtn');
+    const promptInput = document.getElementById('promptInput');
+    const resultsCard = document.getElementById('resultsCard');
+    const tpsValue = document.getElementById('tpsValue');
+    const tokensValue = document.getElementById('tokensValue');
+    const timeValue = document.getElementById('timeValue');
+    const outputArea = document.getElementById('outputArea');
+
+    // Función para obtener los modelos instalados en Ollama
+    async function fetchModels() {
+        modelSelect.innerHTML = '<option value="">Cargando...</option>';
+        try {
+            const response = await fetch(`${baseUrl}/api/tags`);
+            if (!response.ok) throw new Error('Error al conectar con la API de Ollama');
+            
+            const data = await response.json();
+            modelSelect.innerHTML = '';
+            
+            if (!data.models || data.models.length === 0) {
+                modelSelect.innerHTML = '<option value="">No hay modelos instalados</option>';
+                return;
+            }
+
+            data.models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model.name;
+                option.textContent = `${model.name} (${(model.size / 1024 / 1024 / 1024).toFixed(2)} GB)`;
+                modelSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error(error);
+            modelSelect.innerHTML = '<option value="">Error de conexión. ¿Está activo Ollama?</option>';
+        }
+    }
+
+    // Función principal para generar y medir
+    async function runBenchmark() {
+        const selectedModel = modelSelect.value;
+        const promptText = promptInput.value.trim();
+
+        if (!selectedModel || !promptText) {
+            alert('Por favor, selecciona un modelo y escribe un prompt.');
+            return;
+        }
+
+        // Preparar UI
+        generateBtn.disabled = true;
+        generateBtn.textContent = 'Procesando... (Espera, midiendo la velocidad final)';
+        resultsCard.style.display = 'block';
+        outputArea.textContent = 'Generando respuesta en segundo plano...';
+        tpsValue.textContent = '---';
+        tokensValue.textContent = '---';
+        timeValue.textContent = '---';
+
+        try {
+            // Usamos stream: false para que Ollama nos devuelva directamente las métricas exactas al final
+            const response = await fetch(`${baseUrl}/api/generate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: selectedModel,
+                    prompt: promptText,
+                    stream: false 
+                })
+            });
+
+            if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+
+            const data = await response.json();
+
+            // Ollama devuelve eval_duration en nanosegundos. Lo convertimos a segundos.
+            // 1 segundo = 1,000,000,000 nanosegundos
+            const evalDurationSeconds = data.eval_duration / 1e9;
+            const evalCount = data.eval_count; // Tokens de salida generados
+            
+            // Cálculo exacto de Tokens por Segundo
+            const tps = evalCount / evalDurationSeconds;
+
+            // Actualizar UI con resultados
+            tpsValue.textContent = tps.toFixed(2);
+            tokensValue.textContent = evalCount;
+            timeValue.textContent = evalDurationSeconds.toFixed(2) + 's';
+            outputArea.textContent = data.response;
+
+        } catch (error) {
+            console.error(error);
+            outputArea.textContent = `Se produjo un error: ${error.message}\n\nAsegúrate de que Ollama está en ejecución y de haber configurado OLLAMA_ORIGINS="*"`;
+        } finally {
+            generateBtn.disabled = false;
+            generateBtn.textContent = 'Iniciar Benchmark';
+        }
+    }
+
+    // Event Listeners
+    refreshBtn.addEventListener('click', fetchModels);
+    generateBtn.addEventListener('click', runBenchmark);
+
+    // Carga inicial
+    fetchModels();
+</script>
+
+</body>
+</html>
