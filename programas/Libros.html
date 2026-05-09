@@ -926,7 +926,7 @@ window.ProgressBar = ProgressBar;
 // --- Empaquetado: ai.js --- 
 // --- AI CORE AND CHAT MODE (ai.js) ---
 
-async function fetchAI(promptText, history = []) {
+async function fetchAI(promptText, history = [], onChunk = null) {
     const provider = state.selectedProvider;
     const selectedModelId = state.selectedModel;
     let attempts = 0;
@@ -938,7 +938,6 @@ async function fetchAI(promptText, history = []) {
                 
                 if (!aiSystem) throw new Error("Sistema nativo DeepSeekAI no encontrado. Ejecuta dentro de Silenos y asegúrate de que logic2.js esté cargado en tu index.html raíz.");
                 
-                // Mapeo nativo de Silenos 4 para la API de DeepSeek
                 let apiModel = selectedModelId;
                 if (selectedModelId === 'deepseek') apiModel = 'deepseek-chat';
                 if (selectedModelId === 'deepseek-pro') apiModel = 'deepseek-reasoner';
@@ -953,7 +952,6 @@ async function fetchAI(promptText, history = []) {
                 return { text: res.text || res, usage: res.usage || { total_tokens: 'N/A' } };
                 
             } else if (provider === 'gemini') {
-                // --- NUEVO FLUJO: API OFICIAL GEMINI ---
                 const aiSystem = window.GeminiOfficialAI || (window.parent && window.parent.GeminiOfficialAI);
 
                 if (!aiSystem) throw new Error("Sistema nativo GeminiOfficialAI no encontrado. Asegúrate de que ai.gemini.js esté cargado.");
@@ -968,13 +966,94 @@ async function fetchAI(promptText, history = []) {
                 if (typeof res === 'string') return { text: res, usage: { total_tokens: 'N/A' } };
                 return { text: res.text || res, usage: res.usage || { total_tokens: 'N/A' } };
 
+            } else if (provider === 'ollama') {
+                // --- NUEVO FLUJO: STREAMING NATIVO DIRECTO A LA API LOCAL ---
+                let oldConfig = localStorage.getItem('ollama_config');
+                const conf = JSON.parse(oldConfig) || { enabled: true, url: 'http://localhost:11434' };
+                conf.enabled = true;
+                conf.logic = selectedModelId;
+                conf.narrative = selectedModelId;
+                localStorage.setItem('ollama_config', JSON.stringify(conf));
+
+                // System prompt limpio, sin directivas forzadas.
+                let systemPrompt = "Eres un asistente experto.";
+
+                try {
+                    const url = conf.url || 'http://localhost:11434';
+                    
+                    const messages = [];
+                    messages.push({ role: 'system', content: systemPrompt });
+                    
+                    if (history && history.length > 0) {
+                        history.forEach(m => {
+                            messages.push({ role: m.role, content: m.content });
+                        });
+                    }
+                    messages.push({ role: 'user', content: promptText });
+
+                    const response = await fetch(`${url}/api/chat`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            model: selectedModelId,
+                            messages: messages,
+                            stream: true,
+                            think: false, // Propiedad inyectada según lo solicitado
+                            options: { temperature: 0.7 }
+                        })
+                    });
+
+                    if (!response.ok) throw new Error(`Error en Ollama local: ${response.statusText}`);
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder("utf-8");
+                    let fullText = "";
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        
+                        const chunk = decoder.decode(value, { stream: true });
+                        const lines = chunk.split('\n').filter(l => l.trim() !== '');
+                        
+                        for (const line of lines) {
+                            try {
+                                const data = JSON.parse(line);
+                                if (data.message && data.message.content) {
+                                    const token = data.message.content;
+                                    fullText += token;
+                                    if (onChunk) onChunk(token);
+                                }
+                            } catch (e) {
+                                // Fragmentos JSON cortados en medio de la trama de red, se ignoran hasta completarse
+                            }
+                        }
+                    }
+
+                    if (oldConfig) localStorage.setItem('ollama_config', oldConfig);
+                    else localStorage.removeItem('ollama_config');
+
+                    // LIMPIEZA POST-PROCESO: Si el modelo de razonamiento saca <think> por fuerza bruta, 
+                    // lo extirpamos aquí de forma profunda y transparente para el usuario.
+                    let finalText = fullText.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+                    if (finalText !== fullText && onChunk) {
+                        onChunk('', finalText); // Bandera para sobreescribir el contenido UI
+                    }
+
+                    return { text: finalText, usage: { total_tokens: 'N/A' } };
+
+                } catch (innerErr) {
+                    if (oldConfig) localStorage.setItem('ollama_config', oldConfig);
+                    else localStorage.removeItem('ollama_config');
+                    throw innerErr;
+                }
+
             } else {
-                // Para TODOS los demás modelos de la lista (Pollinations y Ollama)
+                // --- PROVEEDORES CLOUD RESTANTES (POLLINATIONS) ---
                 const Engine = window.SilenosAI || (window.parent && window.parent.SilenosAI);
                 
                 if (!Engine) throw new Error("Motor SilenosAI no encontrado.");
                 
-                // SilenosAI global espera un string único en el prompt, así que empaquetamos el historial
                 let fullPrompt = "";
                 if (history && history.length > 0) {
                     history.forEach(m => {
@@ -985,41 +1064,15 @@ async function fetchAI(promptText, history = []) {
                     fullPrompt = promptText;
                 }
                 
-                let oldConfig = localStorage.getItem('ollama_config');
+                const resText = await Engine.generate({
+                    prompt: fullPrompt,
+                    system: "Eres un asistente experto.",
+                    model: selectedModelId,
+                    temperature: 0.7,
+                    think: false
+                });
                 
-                if (provider === 'ollama') {
-                    // Mismo protocolo de parseo seguro y persistencia que pruebas2.html
-                    const conf = JSON.parse(localStorage.getItem('ollama_config')) || { enabled: true, url: 'http://localhost:11434' };
-                    conf.enabled = true;
-                    conf.logic = selectedModelId;
-                    conf.narrative = selectedModelId; // Mantener mapeo doble para modo libro si hace falta internamente
-                    localStorage.setItem('ollama_config', JSON.stringify(conf));
-                } else {
-                    const conf = JSON.parse(localStorage.getItem('ollama_config')) || {};
-                    conf.enabled = false;
-                    localStorage.setItem('ollama_config', JSON.stringify(conf));
-                }
-                
-                try {
-                    const resText = await Engine.generate({
-                        prompt: fullPrompt,
-                        system: "Eres un asistente experto.",
-                        model: selectedModelId,
-                        temperature: 0.7
-                    });
-                    
-                    // Restauramos la configuración original
-                    if (oldConfig) localStorage.setItem('ollama_config', oldConfig);
-                    else localStorage.removeItem('ollama_config');
-                    
-                    return { text: resText, usage: { total_tokens: 'N/A' } };
-                    
-                } catch (innerErr) {
-                    // Limpiamos rastro si algo peta
-                    if (oldConfig) localStorage.setItem('ollama_config', oldConfig);
-                    else localStorage.removeItem('ollama_config');
-                    throw innerErr;
-                }
+                return { text: resText, usage: { total_tokens: 'N/A' } };
             }
         } catch (err) {
             if ((err.message.includes("429") || err.message.includes("503") || err.message.includes("fetch")) && attempts < 3) {
@@ -1079,12 +1132,27 @@ async function send() {
         const ts = new Date().toISOString();
         if (mode === 'chat') {
             const history = conv.messages.slice(0, -1);
-            const res = await fetchAI(rawText, history);
+            
+            // PRE-RENDER DEL MENSAJE ASISTENTE (VACÍO) PARA RELLENARLO EN VIVO
             const astMsgId = 'ast_' + Date.now().toString() + Math.random().toString(36).substr(2,5);
-            const astMsg = { id: astMsgId, role: 'assistant', content: res.text, mode: mode };
+            const astMsg = { id: astMsgId, role: 'assistant', content: '', mode: mode };
             conv.messages.push(astMsg);
-            save();
             appendMessageEl(astMsg);
+            
+            // LLAMADA A LA IA CON CALLBACK DE CHUNKS
+            const res = await fetchAI(rawText, history, (chunk, fullReplace) => {
+                if (fullReplace !== undefined) {
+                    astMsg.content = fullReplace; // Sobre-escribe si hubo limpieza profunda (ej. <think>)
+                } else {
+                    astMsg.content += chunk;
+                }
+                
+                if (window.actualizarMensajeUI) {
+                    window.actualizarMensajeUI(astMsgId);
+                }
+            });
+            
+            save();
             addLog({ status: 'ok', model: state.selectedModel, ts, prompt: rawText.slice(0, 80), tokens: res.usage });
             
         } else if (mode === 'escaleta') {

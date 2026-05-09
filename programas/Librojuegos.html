@@ -1130,13 +1130,17 @@ window.Koreh = {
                 
                 if (!modelName) throw new Error("Ollama está activado pero no has seleccionado un modelo en los Ajustes.");
 
+                // Prompt de sistema limpio, sin directivas basura para el modelo
+                let finalSysPrompt = sysPrompt;
+
                 const body = {
                     model: modelName,
                     messages: [
-                        { role: 'system', content: sysPrompt },
+                        { role: 'system', content: finalSysPrompt },
                         { role: 'user', content: userPrompt }
                     ],
                     stream: false,
+                    think: false, // LA CLAVE PARA OLLAMA: En la raíz del JSON
                     options: {
                         temperature: config.temperature ?? 0.7
                     }
@@ -1155,8 +1159,13 @@ window.Koreh = {
                 
                 if (!response.ok) throw new Error(`Ollama Error: ${await response.text()}`);
                 const data = await response.json();
-                const content = data.message.content;
+                let content = data.message.content;
                 
+                // LIMPIEZA RESIDUAL: Por si acaso se cuela alguna etiqueta o el modelo ignora el think: false
+                if (content) {
+                    content = content.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+                }
+
                 if (config.jsonMode) {
                     try {
                         return JSON.parse(this.cleanJSON(content));
