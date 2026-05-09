@@ -9,65 +9,99 @@ window.GeminiOfficialAI = {
         }
 
         // TRADUCCIÓN PROFUNDA DE MODELO: Aislamos los IDs del frontend a la API de Google.
-        // El error 404 se produce si el ID enviado no existe en el catálogo de Google.
-        let officialGoogleModel = 'gemini-2.5-flash'; // Valor seguro por defecto y existente
+        let officialGoogleModel = 'gemini-2.5-flash'; // Valor seguro por defecto
 
-        if (model === 'gemini-large') {
-            officialGoogleModel = 'gemini-1.5-pro'; // ID oficial de la versión Pro
-        } else if (model === 'gemini-fast' || model === 'gemini-flash-lite-3.1' || model === 'gemini' || model === 'gemini-search') {
-            officialGoogleModel = 'gemini-2.5-flash'; // Modelo rápido y existente en producción
+        const modelMapping = {
+            'gemini-large': 'gemini-1.5-pro',
+            'gemini-fast': 'gemini-2.5-flash',
+            'gemini-flash-lite-3.1': 'gemini-2.5-flash',
+            'gemini': 'gemini-2.5-flash',
+            'gemini-search': 'gemini-2.5-flash',
+            'gemma-4-26b-a4b-it': 'gemini-2.5-flash',
+            'gemma-4-31b': 'gemini-2.5-flash',
+            'gemma-3-27b': 'gemini-2.5-flash',
+            'gemini-3.1-flash-lite-preview': 'gemini-2.5-flash'
+        };
+
+        if (modelMapping[model]) {
+            officialGoogleModel = modelMapping[model];
+        } else if (model.includes('1.5-pro') || model.includes('2.5-flash') || model.includes('2.0-flash')) {
+            officialGoogleModel = model;
+        }
+
+        // CONEXIÓN NATIVA PROFUNDA: Usamos el endpoint oficial de Gemini (evita errores CORS del wrapper de OpenAI)
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${officialGoogleModel}:generateContent?key=${apiKey}`;
+
+        // Estructuración nativa estricta (Gemini exige alternancia perfecta de roles)
+        const geminiContents = [];
+        let lastRole = null;
+
+        if (history && history.length > 0) {
+            history.forEach(m => {
+                let currentRole = m.role === 'user' ? 'user' : 'model'; // Gemini usa 'model', no 'assistant'
+                
+                if (currentRole === lastRole) {
+                    // Evita el colapso 400 Bad Request si hay dos mensajes seguidos del mismo rol
+                    geminiContents[geminiContents.length - 1].parts[0].text += `\n\n${m.content}`;
+                } else {
+                    geminiContents.push({
+                        role: currentRole,
+                        parts: [{ text: m.content }]
+                    });
+                    lastRole = currentRole;
+                }
+            });
+        }
+
+        // Incorporar el prompt final asegurando la alternancia
+        if (lastRole === 'user') {
+            geminiContents[geminiContents.length - 1].parts[0].text += `\n\n${prompt}`;
         } else {
-            // Validación de emergencia por si se inyecta un modelo desconocido
-            officialGoogleModel = model.includes('gemini') ? model : 'gemini-2.5-flash';
+            geminiContents.push({
+                role: 'user',
+                parts: [{ text: prompt }]
+            });
         }
 
-        // Utilizamos el endpoint de Google Gemini compatible con la estructura de OpenAI para máxima compatibilidad
-        const url = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+        const requestBody = {
+            contents: geminiContents,
+            generationConfig: {
+                temperature: temperature,
+                maxOutputTokens: 8192
+            }
+        };
 
-        // Estructurar los mensajes basándonos en el historial
-        const messages = history.map(m => ({
-            role: m.role === 'user' ? 'user' : 'assistant',
-            content: m.content
-        }));
-
+        // El prompt de sistema nativo tiene su propia estructura en Gemini
         if (system) {
-            messages.unshift({ role: 'system', content: system });
+            requestBody.systemInstruction = {
+                parts: [{ text: system }]
+            };
         }
-
-        messages.push({ role: 'user', content: prompt });
 
         try {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
+                    'Content-Type': 'application/json'
+                    // Eliminamos el Authorization Bearer; la key va en la URL. Esto soluciona la conexión.
                 },
-                body: JSON.stringify({
-                    model: officialGoogleModel, // Inyectamos el ID oficial traducido y válido aquí
-                    messages: messages,
-                    temperature: temperature,
-                    max_tokens: 8192
-                })
+                body: JSON.stringify(requestBody)
             });
-
-            if (!response.ok) {
-                let errorMsg = response.statusText;
-                try {
-                    const errData = await response.json();
-                    if (errData.error && errData.error.message) {
-                        errorMsg = errData.error.message;
-                    }
-                } catch(e) { }
-
-                throw new Error(`API de Gemini respondió con error: ${response.status} - ${errorMsg}`);
-            }
 
             const data = await response.json();
 
+            if (!response.ok) {
+                let errorMsg = data.error?.message || response.statusText;
+                throw new Error(`API Nativa de Gemini rechazó la petición: ${response.status} - ${errorMsg}`);
+            }
+
+            if (!data.candidates || data.candidates.length === 0) {
+                throw new Error("Respuesta vacía de Gemini (posible bloqueo de seguridad).");
+            }
+
             return {
-                text: data.choices[0].message.content,
-                usage: data.usage
+                text: data.candidates[0].content.parts[0].text,
+                usage: data.usageMetadata ? { total_tokens: data.usageMetadata.totalTokenCount } : { total_tokens: 'N/A' }
             };
 
         } catch (e) {
