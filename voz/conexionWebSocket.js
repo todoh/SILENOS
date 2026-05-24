@@ -10,7 +10,6 @@ async function toggleConnection() {
     const apiKey = document.getElementById('apiKey').value.trim();
     if (!apiKey) return alert("Pega tu API Key primero.");
 
-    // Guardar la API Key en LocalStorage
     localStorage.setItem('gemini_api_key_standalone', apiKey);
 
     document.getElementById('statusText').innerText = "🟡 CONECTANDO...";
@@ -28,97 +27,101 @@ async function toggleConnection() {
                         speech_config: { voice_config: { prebuilt_voice_config: { voice_name: 'Aoede' } } }
                     },
                     system_instruction: {
-                        parts: [{ text: "Tu nombre es VOZ. Eres un asistente brillante, reflexivo y observador. Tienes acceso a los archivos .txt de una carpeta local del usuario a través de herramientas (tools). Recibirás mensajes ocultos con el formato (AVISO DEL SISTEMA: ...) que te informarán en tiempo real sobre qué archivo tiene abierto el usuario, si guarda algo, y te darán la lista de archivos continuamente, ADEMÁS DEL CONTEXTO DE LA MEMORIA COGNITIVA PARALELA analizada por otros modelos. Usa esta información SILENCIOSAMENTE para saber en todo momento el contexto. NO leas los avisos del sistema en voz alta ni los menciones a menos que sea pertinente. Si el usuario te pide leer, crear, modificar, borrar o ABRIR archivos en su pantalla, DEBES usar las herramientas a tu disposición. Puedes deshacer y rehacer cambios libremente. También puedes hacer ediciones parciales (reemplazar texto o añadir al final) sin reescribir todo el archivo. Puedes leer fragmentos específicos de un archivo para no gastar memoria, buscar palabras clave en todos los archivos, y renombrarlos. IMPORTANTE: Si al intentar usar una herramienta da error indicando que la carpeta no está conectada, infórmale amablemente al usuario y dile que pulse el botón '📂 ABRIR CARPETA TXT'. Tu forma de hablar es extremadamente natural, humana, empática y conversacional. Evita sonar como un robot. Respira en tus pausas, sé cercano y directo." }]
+                        parts: [{ text: "Tu nombre es VOZ. Eres un asistente y arquitecto de desarrollo web brillante y observador. Tienes acceso completo a una carpeta local de trabajo a través de herramientas especializadas. Puedes leer, crear, modificar y eliminar archivos de texto (.txt) y código fuente (.html, .css, .js). Cuando el usuario te pida construir una aplicación web o una nueva característica, DEBES PLANIFICAR primero la estructura general en tu mente (o proponerla en voz alta de forma ágil) y ejecutar llamadas de análisis/generación en paralelo a tu submodelo secundario (gemini-3.1-flash-lite) mediante la herramienta 'analizarContenido'. Puedes planificar de forma inteligente qué instrucciones precisas enviarle a cada llamada paralela de Gemini (por ejemplo, una llamada dedicada exclusivamente al desarrollo estructurado del 'index.html', otra para los estilos limpios de 'style.css' y otra para la lógica asíncrona de 'script.js'). Sabes gestionar los formatos correspondientes guardando cada archivo con la extensión exacta requerida (.html, .css, .js) de manera completamente funcional y limpia de markdown. Recibirás avisos ocultos del sistema con el formato (AVISO DEL SISTEMA: ...) que te mantendrán actualizado sobre el espacio de trabajo. Tu voz es natural, empática y resolutiva. Hablas con fluidez técnica y humana, evitando rigideces de robot." }]
                     },
                     tools: [{
                         functionDeclarations: [
                             {
                                 name: "listarArchivos",
-                                description: "Obtiene la lista de todos los archivos .txt en la carpeta. Úsala para saber qué archivos existen o buscar uno."
+                                description: "Obtiene la lista de todos los archivos compatibles (.txt, .html, .css, .js) presentes en la raíz de la carpeta de trabajo del usuario."
                             },
                             {
                                 name: "leerArchivo",
-                                description: "Lee el contenido exacto de un archivo .txt. Debes proporcionar el nombre completo.",
+                                description: "Lee el contenido exacto de un archivo específico de la carpeta. Requiere especificar el nombre completo junto con su extensión (.txt, .html, .css o .js).",
                                 parameters: {
                                     type: "OBJECT",
-                                    properties: { nombre: { type: "STRING", description: "Nombre del archivo (ej. lore.txt)" } },
+                                    properties: { nombre: { type: "STRING", description: "Nombre exacto del archivo con su extensión correspondiente (ej: index.html, app.js, notas.txt)" } },
                                     required: ["nombre"]
                                 }
                             },
                             {
+                                name: "leerTodosLosArchivos",
+                                description: "Lee y compila por completo TODOS los archivos de texto y código fuente de la carpeta raíz de golpe. Úsala cuando necesites una visión o auditoría global de todo el proyecto de desarrollo."
+                            },
+                            {
                                 name: "leerLineas",
-                                description: "Lee un fragmento específico de un archivo por número de línea. Úsala para no gastar memoria leyendo archivos enteros si solo necesitas revisar una parte.",
+                                description: "Lee un fragmento específico de líneas de un archivo de código o texto. Útil para inspeccionar funciones o bloques concretos de código sin leer todo el fichero.",
                                 parameters: {
                                     type: "OBJECT",
                                     properties: { 
-                                        nombre: { type: "STRING", description: "Nombre del archivo" },
-                                        lineaInicio: { type: "INTEGER", description: "Número de línea inicial (ej: 1)" },
-                                        lineaFin: { type: "INTEGER", description: "Número de línea final (ej: 50)" }
+                                        nombre: { type: "STRING", description: "Nombre del archivo de código o texto" },
+                                        lineaInicio: { type: "INTEGER", description: "Línea inicial" },
+                                        lineaFin: { type: "INTEGER", description: "Línea final" }
                                     },
                                     required: ["nombre", "lineaInicio", "lineaFin"]
                                 }
                             },
                             {
                                 name: "buscarEnArchivos",
-                                description: "Busca una palabra clave o frase corta en todos los archivos de la carpeta y te dice en cuáles aparece. Úsala para encontrar información rápido sin abrir todos los archivos.",
+                                description: "Busca una palabra, selector CSS, id o función de JS en todos los archivos de la carpeta.",
                                 parameters: {
                                     type: "OBJECT",
-                                    properties: { textoBuscado: { type: "STRING", description: "El texto a buscar en todos los archivos" } },
+                                    properties: { textoBuscado: { type: "STRING", description: "Texto o código exacto a buscar" } },
                                     required: ["textoBuscado"]
                                 }
                             },
                             {
                                 name: "escribirArchivo",
-                                description: "Crea o sobrescribe un archivo .txt entero con contenido nuevo. Úsala para crear nuevos o si el cambio es masivo.",
+                                description: "Crea o sobrescribe por completo un archivo en el espacio de trabajo. Puede escribir código fuente web indicando el formato adecuado en el nombre.",
                                 parameters: {
                                     type: "OBJECT",
                                     properties: { 
-                                        nombre: { type: "STRING", description: "Nombre del archivo (ej. lore.txt)" },
-                                        contenido: { type: "STRING", description: "Texto completo que se va a guardar" }
+                                        nombre: { type: "STRING", description: "Nombre completo del archivo respetando su formato (ej: index.html, style.css, main.js, log.txt)" },
+                                        contenido: { type: "STRING", description: "Código o texto completo que se guardará" }
                                     },
                                     required: ["nombre", "contenido"]
                                 }
                             },
                             {
                                 name: "reemplazarTexto",
-                                description: "Busca una cadena de texto exacta en el archivo y la reemplaza por otra nueva. Ideal para corregir o modificar partes concretas sin tener que reescribir todo el archivo.",
+                                description: "Busca un bloque de código o texto exacto y lo sustituye por una versión nueva o corregida. Ideal para refactorizaciones parciales en código html, css o js sin tocar el resto.",
                                 parameters: {
                                     type: "OBJECT",
                                     properties: {
                                         nombre: { type: "STRING", description: "Nombre del archivo" },
-                                        textoBuscado: { type: "STRING", description: "El texto exacto que se quiere reemplazar (debe coincidir exactamente con lo que hay en el archivo)" },
-                                        textoNuevo: { type: "STRING", description: "El nuevo texto que se insertará en su lugar" }
+                                        textoBuscado: { type: "STRING", description: "Código o texto exacto actual" },
+                                        textoNuevo: { type: "STRING", description: "Código o texto nuevo de sustitución" }
                                     },
                                     required: ["nombre", "textoBuscado", "textoNuevo"]
                                 }
                             },
                             {
                                 name: "agregarAlFinal",
-                                description: "Añade texto directamente al final de un archivo .txt existente sin tocar el resto del contenido.",
+                                description: "Añade texto o funciones de código directamente al final de un archivo sin modificar lo anterior.",
                                 parameters: {
                                     type: "OBJECT",
                                     properties: {
                                         nombre: { type: "STRING", description: "Nombre del archivo" },
-                                        textoAgregar: { type: "STRING", description: "El texto que se añadirá al final del archivo" }
+                                        textoAgregar: { type: "STRING", description: "El fragmento de código o texto a añadir" }
                                     },
                                     required: ["nombre", "textoAgregar"]
                                 }
                             },
                             {
                                 name: "renombrarArchivo",
-                                description: "Cambia el nombre de un archivo existente.",
+                                description: "Cambia el nombre o la extensión de un archivo.",
                                 parameters: {
                                     type: "OBJECT",
                                     properties: { 
-                                        nombreAntiguo: { type: "STRING", description: "Nombre actual (ej: borrador.txt)" },
-                                        nombreNuevo: { type: "STRING", description: "Nuevo nombre (ej: final.txt)" }
+                                        nombreAntiguo: { type: "STRING", description: "Nombre actual" },
+                                        nombreNuevo: { type: "STRING", description: "Nuevo nombre" }
                                     },
                                     required: ["nombreAntiguo", "nombreNuevo"]
                                 }
                             },
                             {
                                 name: "borrarArchivo",
-                                description: "Elimina de forma permanente un archivo .txt.",
+                                description: "Elimina permanentemente un archivo de la carpeta.",
                                 parameters: {
                                     type: "OBJECT",
                                     properties: { nombre: { type: "STRING", description: "Nombre del archivo a borrar" } },
@@ -127,20 +130,46 @@ async function toggleConnection() {
                             },
                             {
                                 name: "abrirArchivoEnEditor",
-                                description: "Abre un archivo .txt directamente en la interfaz visual del usuario para que él mismo pueda leerlo o editarlo manualmente.",
+                                description: "Abre el archivo en el editor de la interfaz del usuario.",
                                 parameters: {
                                     type: "OBJECT",
-                                    properties: { nombre: { type: "STRING", description: "Nombre del archivo a abrir (ej. notas.txt)" } },
+                                    properties: { nombre: { type: "STRING", description: "Nombre del archivo a abrir" } },
                                     required: ["nombre"]
                                 }
                             },
                             {
                                 name: "deshacerAccion",
-                                description: "Deshace la última acción en un archivo (creación, edición completa, edición parcial o borrado)."
+                                description: "Deshace la última modificación en los archivos."
                             },
                             {
                                 name: "rehacerAccion",
-                                description: "Rehace la acción previamente deshecha en un archivo."
+                                description: "Rehace la acción deshecha."
+                            },
+                            {
+                                name: "analizarContenido",
+                                description: "Envía una solicitud estructurada en paralelo a gemini-3.1-flash-lite. Úsala para orquestar la generación paralela planificada de código de software (.html, .css, .js) o análisis de conceptos complejos, guardando de forma directa el resultado limpio de código en el archivo de destino indicado.",
+                                parameters: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        tipoAnalisis: { 
+                                            type: "STRING", 
+                                            description: "Debe ser obligatoriamente: 'archivo' (para procesar ficheros específicos), 'carpeta_completa' (para auditar el proyecto entero), o 'concepto' (para pasarle una planificación, idea abstracta, o instrucciones de generación de una nueva aplicación)." 
+                                        },
+                                        objetivo: { 
+                                            type: "STRING", 
+                                            description: "Si el tipo de análisis es 'archivo', indica el nombre o lista de nombres de archivos separados por comas. Si es 'concepto', introduce aquí detalladamente la especificación de lo que se va a programar, diseñar o planificar." 
+                                        },
+                                        instrucciones: { 
+                                            type: "STRING", 
+                                            description: "Directrices críticas sobre qué debe buscar, estructurar o escribir el modelo en el archivo final (ej: 'Escribe solo el código CSS completo para un diseño responsive y dark mode', 'Desarrolla la lógica JS pura con eventos para controlar el canvas')." 
+                                        },
+                                        nombreResultado: { 
+                                            type: "STRING", 
+                                            description: "Nombre del archivo final donde se guardará el resultado de forma asíncrona en su formato correspondiente (ej: 'index.html', 'style.css', 'app.js')." 
+                                        }
+                                    },
+                                    required: ["tipoAnalisis", "objetivo", "instrucciones", "nombreResultado"]
+                                }
                             }
                         ]
                     }],
@@ -159,15 +188,12 @@ async function toggleConnection() {
             document.getElementById('textInput').disabled = false;
             document.getElementById('sendBtn').disabled = false;
 
-            // Inicializar Sistema de Audio y Cadena de Procesamiento
             audioContext = new AudioContext({ sampleRate: 24000 });
             
-            // 1. Filtro LowPass: Elimina ruido digital agudo y siseos
             voiceFilter = audioContext.createBiquadFilter();
             voiceFilter.type = "lowpass";
             voiceFilter.frequency.setValueAtTime(8500, audioContext.currentTime);
             
-            // 2. Compresor Dinámico: Nivela el volumen, evita picos de saturación
             voiceCompressor = audioContext.createDynamicsCompressor();
             voiceCompressor.threshold.setValueAtTime(-24, audioContext.currentTime);
             voiceCompressor.knee.setValueAtTime(30, audioContext.currentTime);
@@ -175,21 +201,16 @@ async function toggleConnection() {
             voiceCompressor.attack.setValueAtTime(0.003, audioContext.currentTime);
             voiceCompressor.release.setValueAtTime(0.25, audioContext.currentTime);
             
-            // 3. Ganancia Maestra: Pequeño boost final
             masterGain = audioContext.createGain();
             masterGain.gain.setValueAtTime(1.1, audioContext.currentTime);
 
-            // Conectar la cadena: Filtro -> Compresor -> Ganancia -> Salida del PC
             voiceFilter.connect(voiceCompressor);
             voiceCompressor.connect(masterGain);
             masterGain.connect(audioContext.destination);
 
-            // --- NUEVO: ENVIAR LISTA INICIAL Y CONTEXTO DE MEMORIA AL CONECTAR ---
             if (directoryHandle) {
                 try {
                     const archivos = await listarArchivos();
-                    
-                    // Extraer los datos de la memoria cognitiva si existen
                     let contextoCognitivo = "";
                     if (typeof leerMemoria === 'function') {
                         const analCorto = await leerMemoria('analisis_corto_plazo.txt');
@@ -218,14 +239,12 @@ async function toggleConnection() {
             
             const data = JSON.parse(textData);
 
-            // --- DETECCIÓN DE LLAMADAS A HERRAMIENTAS (TOOL CALLS) ---
             if (data.toolCall && data.toolCall.functionCalls) {
                 if (typeof manejarLlamadasHerramientas === 'function') {
                     manejarLlamadasHerramientas(data.toolCall.functionCalls);
                 }
             }
             
-            // --- DETECCIÓN DE INTERRUPCIÓN PROVENIENTE DEL SERVIDOR ---
             if (data.serverContent && data.serverContent.interrupted) {
                 if (typeof interruptAudio === 'function') interruptAudio();
             }
@@ -235,13 +254,11 @@ async function toggleConnection() {
                 let hasAudio = false;
 
                 for (const part of data.serverContent.modelTurn.parts) {
-                    // Reproducción de audio
                     if (part.inlineData && part.inlineData.mimeType.startsWith('audio/')) {
                         const pcm = base64ToFloat32(part.inlineData.data);
                         if (typeof queueAudio === 'function') queueAudio(pcm);
                         hasAudio = true;
                     }
-                    // Texto recibido
                     if (part.text) {
                         textTurn += part.text;
                     }
@@ -279,9 +296,9 @@ function disconnect() {
     
     if (currentActiveSource) {
         try { currentActiveSource.stop(); } catch(e) {}
+        currentActiveSource = null;
     }
 
-    // Desconectar nodos
     if (voiceFilter) {
         voiceFilter.disconnect();
         voiceCompressor.disconnect();

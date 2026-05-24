@@ -83,7 +83,6 @@ async function ejecutarAnalisisParalelo(tipo, promptSistema) {
     const promptFinal = `${promptSistema}\n\n[CONTEXTO ACTUAL DE CHARLA Y ACCIONES]:\n${contextoChat}\n\nEscribe tu análisis:`;
 
     try {
-        // Llamada explícita a Gemma 4 31B usando la API de Gemini
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemma-4-31b-it:generateContent?key=${apiKey}`;
         
         const response = await fetch(url, {
@@ -99,13 +98,12 @@ async function ejecutarAnalisisParalelo(tipo, promptSistema) {
             if (data.candidates && data.candidates.length > 0) {
                 const analisis = data.candidates[0].content.parts[0].text;
                 
-                // Sobrescribir en la carpeta Memoria el análisis vigente
                 if (typeof escribirMemoria === 'function') {
                     await escribirMemoria(`analisis_${tipo}.txt`, analisis);
                 }
             }
         }
     } catch (error) {
-        // Fallos silenciosos para no entorpecer la ejecución en caso de límite de cuota o caídas de red
+        // Fallos silenciosos para resiliencia
     }
 }

@@ -398,3 +398,43 @@ button:disabled {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--text-dim);
 }
+/* --- ESTILOS DEL MENÚ CONTEXTUAL PERSONALIZADO (CLIC DERECHO) --- */
+.custom-menu {
+    background-color: #252526;
+    color: #ffffff;
+    border: 1px solid #454545;
+    border-radius: 4px;
+    padding: 5px 0;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.5);
+    font-family: sans-serif;
+    font-size: 13px;
+    min-width: 150px;
+}
+
+.custom-menu div {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.custom-menu div:hover {
+    background-color: #37373d;
+    color: #007acc;
+}
+
+/* --- ADAPTACIÓN PARA EL MODAL DE PREVISUALIZACIÓN --- */
+.preview-content {
+    background-color: #1e1e1e !important;
+    color: #ffffff !important;
+    border: 1px solid #3c3c3c !important;
+    border-radius: 6px;
+}
+
+.close-preview {
+    color: #aaaaaa;
+    transition: color 0.2s;
+}
+
+.close-preview:hover {
+    color: #ff3333;
+}

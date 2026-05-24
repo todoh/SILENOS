@@ -21,22 +21,27 @@ async function manejarLlamadasHerramientas(calls) {
         try {
             if (call.name === 'listarArchivos') {
                 const archivos = await listarArchivos();
-                resultadoTexto = archivos.length > 0 ? "Archivos encontrados: " + archivos.join(', ') : "La carpeta está vacía o no hay archivos .txt.";
+                resultadoTexto = archivos.length > 0 ? "Archivos encontrados: " + archivos.join(', ') : "La carpeta está vacía o no hay archivos compatibles.";
             
             } else if (call.name === 'leerArchivo') {
                 const contenido = await leerArchivo(args.nombre || "");
                 resultadoTexto = `Contenido de ${args.nombre}:\n${contenido}`;
             
+            } else if (call.name === 'leerLineas') {
+                resultadoTexto = await leerLineas(args.nombre || "", args.lineaInicio || 1, args.lineaFin || 100);
+
+            } else if (call.name === 'buscarEnArchivos') {
+                resultadoTexto = await buscarEnArchivos(args.textoBuscado || "");
+
             } else if (call.name === 'escribirArchivo') {
-                const nombreArchivo = args.nombre || "sin_nombre.txt";
+                const nombreArchivo = args.nombre || "index.html";
                 const contenidoArchivo = String(args.contenido || "");
                 
                 await escribirArchivo(nombreArchivo, contenidoArchivo);
-                resultadoTexto = `Archivo ${nombreArchivo} guardado y actualizado completamente.`;
+                resultadoTexto = `Archivo ${nombreArchivo} guardado y actualizado completamente en su formato correcto.`;
                 
-                // ACTUALIZACIÓN VISUAL INMEDIATA EN EL EDITOR
-                const nombreConExt = nombreArchivo.toLowerCase().endsWith('.txt') ? nombreArchivo : nombreArchivo + '.txt';
-                document.getElementById('editorFilename').value = nombreConExt;
+                // ACTUALIZACIÓN VISUAL ADAPTATIVA EN EL EDITOR
+                document.getElementById('editorFilename').value = nombreArchivo;
                 document.getElementById('editorContent').value = contenidoArchivo;
                 document.getElementById('editorPanel').style.display = 'flex';
 
@@ -46,11 +51,9 @@ async function manejarLlamadasHerramientas(calls) {
                 const textoNuevo = args.textoNuevo || "";
                 
                 const nuevoContenido = await reemplazarTextoArchivo(nombreArchivo, textoBuscado, textoNuevo);
-                resultadoTexto = `Texto reemplazado con éxito en ${nombreArchivo}.`;
+                resultadoTexto = `Texto modificado con éxito en ${nombreArchivo}.`;
 
-                // ACTUALIZACIÓN VISUAL
-                const nombreConExt = nombreArchivo.toLowerCase().endsWith('.txt') ? nombreArchivo : nombreArchivo + '.txt';
-                if (document.getElementById('editorFilename').value === nombreConExt) {
+                if (document.getElementById('editorFilename').value === nombreArchivo) {
                     document.getElementById('editorContent').value = nuevoContenido;
                 }
 
@@ -61,24 +64,14 @@ async function manejarLlamadasHerramientas(calls) {
                 const nuevoContenido = await agregarAlFinalArchivo(nombreArchivo, textoAgregar);
                 resultadoTexto = `Texto añadido al final de ${nombreArchivo} con éxito.`;
 
-                // ACTUALIZACIÓN VISUAL
-                const nombreConExt = nombreArchivo.toLowerCase().endsWith('.txt') ? nombreArchivo : nombreArchivo + '.txt';
-                if (document.getElementById('editorFilename').value === nombreConExt) {
+                if (document.getElementById('editorFilename').value === nombreArchivo) {
                     document.getElementById('editorContent').value = nuevoContenido;
                 }
-
-            } else if (call.name === 'leerLineas') {
-                resultadoTexto = await leerLineas(args.nombre || "", args.lineaInicio || 1, args.lineaFin || 100);
-
-            } else if (call.name === 'buscarEnArchivos') {
-                resultadoTexto = await buscarEnArchivos(args.textoBuscado || "");
 
             } else if (call.name === 'renombrarArchivo') {
                 resultadoTexto = await renombrarArchivoLocal(args.nombreAntiguo || "", args.nombreNuevo || "");
                 
-                // CIERRE VISUAL DEL EDITOR SI SE RENOMBRÓ EL QUE ESTABA ABIERTO
-                const nombreConExt = (args.nombreAntiguo || "").toLowerCase().endsWith('.txt') ? args.nombreAntiguo : args.nombreAntiguo + '.txt';
-                if (document.getElementById('editorFilename').value === nombreConExt) {
+                if (document.getElementById('editorFilename').value === args.nombreAntiguo) {
                     document.getElementById('editorPanel').style.display = 'none';
                     document.getElementById('editorFilename').value = '';
                     document.getElementById('editorContent').value = '';
@@ -89,9 +82,7 @@ async function manejarLlamadasHerramientas(calls) {
                 await borrarArchivo(nombreArchivo);
                 resultadoTexto = `Archivo ${nombreArchivo} eliminado permanentemente.`;
                 
-                // CIERRE VISUAL DEL EDITOR SI EL ARCHIVO BORRADO ESTABA ABIERTO
-                const nombreConExt = nombreArchivo.toLowerCase().endsWith('.txt') ? nombreArchivo : nombreArchivo + '.txt';
-                if (document.getElementById('editorFilename').value === nombreConExt) {
+                if (document.getElementById('editorFilename').value === nombreArchivo) {
                     document.getElementById('editorPanel').style.display = 'none';
                     document.getElementById('editorFilename').value = '';
                     document.getElementById('editorContent').value = '';
@@ -107,6 +98,17 @@ async function manejarLlamadasHerramientas(calls) {
 
             } else if (call.name === 'rehacerAccion') {
                 resultadoTexto = await rehacerAccionSistema();
+
+            } else if (call.name === 'leerTodosLosArchivos') {
+                resultadoTexto = await leerTodosLosArchivos();
+
+            } else if (call.name === 'analizarContenido') {
+                resultadoTexto = await analizarContenido(
+                    args.tipoAnalisis, 
+                    args.objetivo, 
+                    args.instrucciones, 
+                    args.nombreResultado
+                );
 
             } else {
                 resultadoTexto = "Error: Función de herramienta no reconocida.";

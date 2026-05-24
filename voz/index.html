@@ -63,6 +63,18 @@
         </div>
     </div>
 
+    <div id="customContextMenu" class="custom-menu" style="display: none; position: absolute; z-index: 10000;">
+        <div onclick="ejecutarPrevisualizarDesdeMenu()">🌐 PREVISUALIZAR</div>
+    </div>
+
+    <div id="previewModal" class="modal" style="display: none;">
+        <div class="modal-content preview-content" style="width: 90%; max-width: 1200px; height: 85vh; padding: 10px; position: relative; display: flex; flex-direction: column;">
+            <span class="close-preview" onclick="cerrarPrevisualizacion()" style="position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; z-index: 1001;">&times;</span>
+            <h3 id="previewTitle" style="margin: 5px 0 10px 0;">Previsualización Local Virtual</h3>
+            <iframe id="previewFrame" style="width: 100%; flex-grow: 1; border: 1px solid #ccc; background: white;"></iframe>
+        </div>
+    </div>
+
     <script src="main.js"></script>
     <script src="ui.js"></script>
     <script src="reproductorAudio.js"></script>
