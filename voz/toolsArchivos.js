@@ -103,11 +103,13 @@ async function manejarLlamadasHerramientas(calls) {
                 resultadoTexto = await leerTodosLosArchivos();
 
             } else if (call.name === 'analizarContenido') {
+                // MODIFICADO: Mapea correctamente el argumento del modelo seleccionado para el análisis controlado
                 resultadoTexto = await analizarContenido(
                     args.tipoAnalisis, 
                     args.objetivo, 
                     args.instrucciones, 
-                    args.nombreResultado
+                    args.nombreResultado,
+                    args.modelo || 'gemini-3.1-flash-lite'
                 );
 
             } else {

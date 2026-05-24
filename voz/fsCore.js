@@ -278,8 +278,8 @@ async function leerTodosLosArchivos() {
     return compiladoTotal;
 }
 
-// MODIFICADO: Ahora el motor de llamadas en segundo plano de Gemini 3.1 Flash Lite acepta planificaciones de código estructurado en cualquier formato web (.html, .css, .js)
-async function analizarContenido(tipoAnalisis, objetivo, instrucciones, nombreResultado) {
+// MODIFICADO: Ahora acepta el parámetro 'modelo' para alternar dinámicamente entre gemini-3.1-flash-lite y gemini-3.5-flash
+async function analizarContenido(tipoAnalisis, objetivo, instrucciones, nombreResultado, modelo) {
     if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: No puedes ejecutar esta acción porque el usuario no ha conectado la carpeta.");
     
     const apiKey = localStorage.getItem('gemini_api_key_standalone');
@@ -313,7 +313,13 @@ async function analizarContenido(tipoAnalisis, objetivo, instrucciones, nombreRe
 
     const promptFinal = `Actúa como un ingeniero de software experto de alta precisión. Procesa el siguiente contexto y genera el código o análisis estrictamente limpio, libre de explicaciones innecesarias o markdown invasivo fuera del formato solicitado.\n\nDIRECTRICES:\n"${instrucciones}"\n\n${datosAEnviar}\n\nResultado completo:`;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
+    // Selección inteligente del modelo basado en la orden del usuario
+    let modeloId = "gemini-3.1-flash-lite";
+    if (modelo === 'gemini-3.5-flash') {
+        modeloId = "gemini-3.5-flash";
+    }
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modeloId}:generateContent?key=${apiKey}`;
     
     const response = await fetch(url, {
         method: 'POST',
@@ -324,7 +330,7 @@ async function analizarContenido(tipoAnalisis, objetivo, instrucciones, nombreRe
     });
 
     if (!response.ok) {
-        throw new Error(`Error en la llamada paralela de Gemini Lite: ${response.statusText}`);
+        throw new Error(`Error en la llamada paralela de ${modeloId}: ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -350,5 +356,5 @@ async function analizarContenido(tipoAnalisis, objetivo, instrucciones, nombreRe
     
     await escribirArchivo(nombreArchivoFinal, resultadoAnalisis);
     
-    return `Generación y análisis finalizado. Los datos estructurados han sido guardados con éxito en "${nombreArchivoFinal}".`;
+    return `Generación y análisis finalizado utilizando ${modeloId}. Los datos estructurados han sido guardados con éxito en "${nombreArchivoFinal}".`;
 }
