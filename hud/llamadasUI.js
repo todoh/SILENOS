@@ -24,7 +24,7 @@ function iniciarSonidoTimbre() {
             ganancia = audioCtx.createGain();
             
             oscilador.type = "sine";
-            oscilador.frequency.setValueAtTime(440, audioCtx.currentTime); 
+            oscilador.frequency.setValueAtTime(440, audioCtx.currentTime);
             
             ganancia.gain.setValueAtTime(0, audioCtx.currentTime);
             ganancia.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.1);
@@ -36,7 +36,6 @@ function iniciarSonidoTimbre() {
             oscilador.start();
             oscilador.stop(audioCtx.currentTime + 1.8);
         };
-
         reproducirTono();
         intervaloTimbre = setInterval(reproducirTono, 3000);
     } catch (e) {
@@ -65,12 +64,23 @@ export function abrirInterfazLlamada(chatId, myRealId, esLlamante) {
 
     contenedorLlamada = document.createElement("div");
     contenedorLlamada.id = "silenos-video-modal";
-    contenedorLlamada.className = "video-modal-overlay"; // Inicia a pantalla completa por defecto
+    contenedorLlamada.className = "video-modal-overlay";
+
     contenedorLlamada.innerHTML = `
         <div class="video-modal-content">
-            <div class="video-feeds">
-                <video id="remote-video" autoplay playsinline class="video-remote-frame"></video>
-                <video id="local-video" autoplay playsinline muted class="video-local-frame"></video>
+            <div class="video-layout-manager state-standard-grid" id="video-layout-manager">
+                <div class="video-shares-zone" id="video-shares-zone">
+                    </div>
+                <div class="video-cameras-zone" id="video-cameras-zone">
+                    <div class="video-frame-wrapper" id="wrapper-remote">
+                        <video id="remote-video" autoplay playsinline class="video-stream-element"></video>
+                        <div class="video-user-label">REMOTO</div>
+                    </div>
+                    <div class="video-frame-wrapper" id="wrapper-local">
+                        <video id="local-video" autoplay playsinline muted class="video-stream-element"></video>
+                        <div class="video-user-label">TÚ</div>
+                    </div>
+                </div>
             </div>
             
             <div class="setup-media-controls" id="media-pre-setup">
@@ -84,12 +94,12 @@ export function abrirInterfazLlamada(chatId, myRealId, esLlamante) {
             
             <div class="video-controls" id="video-controls-bar">
                 ${esLlamante 
-                    ? `<span class="link-action" id="btn-rtc-confirmar-llamar" style="color: #a1c580; margin-right:15px;">[Iniciar Llamada]</span>
-                       <span class="link-action link-danger" id="btn-rtc-colgar">[Cancelar]</span>`
-                    : `
-                        <span class="link-action" id="btn-rtc-aceptar" style="color: #a1c580; margin-right:15px;">[Aceptar]</span>
-                        <span class="link-action link-danger" id="btn-rtc-rechazar">[Rechazar]</span>
-                      `
+                      ? `<span class="link-action" id="btn-rtc-confirmar-llamar" style="color: #a1c580; margin-right:15px;">[Iniciar Llamada]</span>
+                         <span class="link-action link-danger" id="btn-rtc-colgar">[Cancelar]</span>`
+                      : `
+                         <span class="link-action" id="btn-rtc-aceptar" style="color: #a1c580; margin-right:15px;">[Aceptar]</span>
+                         <span class="link-action link-danger" id="btn-rtc-rechazar">[Rechazar]</span>
+                        `
                 }
             </div>
             <div class="video-status-msg" id="rtc-status-text">
@@ -152,9 +162,6 @@ export function abrirInterfazLlamada(chatId, myRealId, esLlamante) {
     }
 }
 
-/**
- * Reemplaza los controles iniciales por el panel avanzado de operación en caliente.
- */
 function inyectarControlesEnLlamada(chatId) {
     const bar = document.getElementById("video-controls-bar");
     if (!bar) return;
@@ -168,7 +175,6 @@ function inyectarControlesEnLlamada(chatId) {
         <span class="link-action link-danger" id="btn-rtc-colgar">[Colgar]</span>
     `;
 
-    // Evento Minimizar / Maximizar ventana
     const btnMinimize = document.getElementById("btn-media-minimize");
     const btnMaximize = document.getElementById("btn-media-maximize");
 
@@ -184,7 +190,6 @@ function inyectarControlesEnLlamada(chatId) {
         btnMinimize.classList.remove("hidden");
     });
 
-    // Mute / Unmute Audio
     const btnMute = document.getElementById("btn-media-mute");
     btnMute.addEventListener("click", () => {
         micMutear = !micMutear;
@@ -198,13 +203,8 @@ function inyectarControlesEnLlamada(chatId) {
         }
     });
 
-    // On / Off Video Cámara
     const btnCam = document.getElementById("btn-media-cam");
     btnCam.addEventListener("click", () => {
-        if (compartiendoPantalla) {
-            alert("Detén la captura de pantalla antes de alterar la cámara.");
-            return;
-        }
         camApagada = !camApagada;
         alternarTrackLocal("video", !camApagada);
         if (camApagada) {
@@ -216,7 +216,6 @@ function inyectarControlesEnLlamada(chatId) {
         }
     });
 
-    // Compartir Pestaña/Ventana/Pantalla
     const btnScreen = document.getElementById("btn-media-screen");
     btnScreen.addEventListener("click", async () => {
         if (!compartiendoPantalla) {
@@ -225,31 +224,115 @@ function inyectarControlesEnLlamada(chatId) {
                 compartiendoPantalla = true;
                 btnScreen.innerText = "[Dejar de Compartir]";
                 btnScreen.classList.add("media-disabled");
-                // Forzar encendido visual circunstancial si la cámara estaba apagada
-                btnCam.classList.add("hidden");
             }
         } else {
             await conmutarCompartirPantalla(false, !camApagada);
             compartiendoPantalla = false;
             btnScreen.innerText = "[Compartir Pantalla]";
             btnScreen.classList.remove("media-disabled");
-            btnCam.classList.remove("hidden");
         }
     });
 
     document.getElementById("btn-rtc-colgar").addEventListener("click", () => colgarLlamada(chatId));
 }
 
-export function setFlujosVideo(localStream, remoteStream) {
+/**
+ * Recibe y rutea los flujos multimedia.
+ * Se implementa una validación robusta y un flag explícito para asegurar que la captura de pantalla 
+ * jamás sea interceptada erróneamente por el contenedor de vídeo del rostro.
+ */
+export function setFlujosVideo(localStream, remoteStream, esPantallaCompartida = false) {
     const localVideo = document.getElementById("local-video");
     const remoteVideo = document.getElementById("remote-video");
     const statusText = document.getElementById("rtc-status-text");
-    if (localStream && localVideo) {
-        localVideo.srcObject = localStream;
+    const layoutManager = document.getElementById("video-layout-manager");
+    const sharesZone = document.getElementById("video-shares-zone");
+
+    if (!layoutManager || !sharesZone) return;
+
+    // --- PROCESAMIENTO DE FLUJO LOCAL ---
+    if (localStream) {
+        const videoTracks = localStream.getVideoTracks();
+        if (videoTracks.length > 0) {
+            const track = videoTracks[0];
+            // Determinación robusta: flag explícito, pista o indicación de pantalla
+            const esCapturaPantalla = esPantallaCompartida || 
+                                     (track.label && track.label.toLowerCase().includes("screen")) || 
+                                     (track.contentHint === "detail");
+
+            if (esCapturaPantalla) {
+                let localShareVideo = document.getElementById("local-share-video");
+                if (!localShareVideo) {
+                    const wrapper = document.createElement("div");
+                    wrapper.className = "video-frame-wrapper share-wrapper";
+                    wrapper.id = "wrapper-local-share";
+                    wrapper.innerHTML = `
+                        <video id="local-share-video" autoplay playsinline muted class="video-stream-element fit-contain"></video>
+                        <div class="video-user-label">TU PANTALLA COMPARTIDA</div>
+                    `;
+                    sharesZone.appendChild(wrapper);
+                    localShareVideo = document.getElementById("local-share-video");
+                }
+                if (localShareVideo.srcObject !== localStream) {
+                    localShareVideo.srcObject = localStream;
+                }
+            } else {
+                if (localVideo && localVideo.srcObject !== localStream) {
+                    localVideo.srcObject = localStream;
+                }
+                const existingLocalShare = document.getElementById("wrapper-local-share");
+                if (existingLocalShare) existingLocalShare.remove();
+            }
+        }
     }
-    if (remoteStream && remoteVideo) {
-        remoteVideo.srcObject = remoteStream;
-        if (statusText) statusText.innerText = "Conexión Establecida";
+
+    // --- PROCESAMIENTO DE FLUJO REMOTO ---
+    if (remoteStream) {
+        const remoteTracks = remoteStream.getVideoTracks();
+        if (remoteTracks.length > 0) {
+            const track = remoteTracks[0];
+            // Determinación robusta para el flujo remoto
+            const esCapturaPantallaRemota = esPantallaCompartida || 
+                                           (track.label && track.label.toLowerCase().includes("screen")) || 
+                                           (track.contentHint === "detail");
+
+            if (esCapturaPantallaRemota) {
+                let remoteShareVideo = document.getElementById("remote-share-video");
+                if (!remoteShareVideo) {
+                    const wrapper = document.createElement("div");
+                    wrapper.className = "video-frame-wrapper share-wrapper";
+                    wrapper.id = "wrapper-remote-share";
+                    wrapper.innerHTML = `
+                        <video id="remote-share-video" autoplay playsinline class="video-stream-element fit-contain"></video>
+                        <div class="video-user-label">PANTALLA COMPARTIDA DEL CONTACTO</div>
+                    `;
+                    sharesZone.appendChild(wrapper);
+                    remoteShareVideo = document.getElementById("remote-share-video");
+                }
+                if (remoteShareVideo.srcObject !== remoteStream) {
+                    remoteShareVideo.srcObject = remoteStream;
+                }
+                if (statusText) statusText.innerText = "Conexión Establecida - Viendo Pantalla";
+            } else {
+                if (remoteVideo && remoteVideo.srcObject !== remoteStream) {
+                    remoteVideo.srcObject = remoteStream;
+                }
+                // Si la pista remota volvió a ser una cámara normal, limpiamos la zona de pantallas compartidas
+                const existingRemoteShare = document.getElementById("wrapper-remote-share");
+                if (existingRemoteShare) existingRemoteShare.remove();
+                if (statusText) statusText.innerText = "Conexión Establecida";
+            }
+        }
+    }
+
+    // Actualización y renderizado dinámico de estados del layout manager por CSS absoluto
+    const totalShares = sharesZone.querySelectorAll(".share-wrapper").length;
+    if (totalShares === 1) {
+        layoutManager.className = "video-layout-manager state-single-share";
+    } else if (totalShares >= 2) {
+        layoutManager.className = "video-layout-manager state-dual-share";
+    } else {
+        layoutManager.className = "video-layout-manager state-standard-grid";
     }
 }
 

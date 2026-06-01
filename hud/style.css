@@ -1,6 +1,6 @@
 /* ==========================================================================
-    SILENOS OS // NETWORK - ESTÉTICA NEO-HERMÉTICA & ALTA COSTURA
-   ========================================================================== */
+     SILENOS OS // NETWORK - ESTÉTICA NEO-HERMÉTICA & ALTA COSTURA
+    ========================================================================== */
 
 * {
     box-sizing: border-box;
@@ -360,10 +360,8 @@ li:last-child {
 }
 
 /* ==========================================================================
-    BARRA INFERIOR ESTILO TUENTI & VENTANAS DE CHAT EN TIEMPO REAL
-   ========================================================================== */
-
-/* Barra Inferior del viewport global de la ventana */
+     BARRA INFERIOR ESTILO TUENTI & VENTANAS DE CHAT EN TIEMPO REAL
+    ========================================================================== */
 #tuenti-chat-bar {
     position: fixed;
     bottom: 0;
@@ -375,7 +373,6 @@ li:last-child {
     z-index: 9999;
 }
 
-/* Pestañas individuales estilo Tuenti */
 .tuenti-tab {
     background: #0f0f0f;
     border: 1px solid rgba(255, 255, 255, 0.12);
@@ -412,7 +409,7 @@ li:last-child {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #a1c580; /* Indicador conectado */
+    background: #a1c580;
 }
 
 .tuenti-tab-close {
@@ -425,7 +422,6 @@ li:last-child {
     color: #ff5555;
 }
 
-/* Animación intermitente clásica de notificación Tuenti */
 .tuenti-tab-flash {
     animation: tuentiFlasher 1s infinite alternate;
     border-color: #c5a880 !important;
@@ -436,7 +432,6 @@ li:last-child {
     100% { background: #3d3120; }
 }
 
-/* Contenedor Flotante de Ventanas de Diálogo */
 #chat-windows-container {
     position: fixed;
     bottom: 36px;
@@ -446,7 +441,7 @@ li:last-child {
     gap: 12px;
     align-items: flex-end;
     z-index: 9998;
-    pointer-events: none; /* No obstruye clics fuera de las cajas */
+    pointer-events: none;
 }
 
 .chat-window {
@@ -461,7 +456,6 @@ li:last-child {
     transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), height 0.2s;
 }
 
-/* Comportamiento al minimizar la pestaña de la barra */
 .chat-window-minimized {
     transform: translateY(100%);
     height: 0px !important;
@@ -507,7 +501,6 @@ li:last-child {
     display: none;
 }
 
-/* Burbujas de mensajes minimalistas */
 .chat-msg {
     max-width: 85%;
     padding: 8px 12px;
@@ -542,129 +535,257 @@ li:last-child {
 }
 
 /* ==========================================================================
-    SISTEMA DE LLAMADAS AVANZADO - FULLSCREEN & MINIMIZED (CORREGIDO ANCHO)
-   ========================================================================== */
-
-.video-modal-overlay { 
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    width: 100vw; 
-    height: 100vh; 
-    background: #050505; 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    justify-content: center; 
-    z-index: 10000; 
-    font-family: 'Montserrat', sans-serif; 
-    transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1); 
+     SISTEMA DE LLAMADAS AVANZADO - PRIORIZACIÓN DE COMPARTICIÓN (BRUTALISTA)
+    ========================================================================== */
+.video-modal-overlay {
+     position: fixed;
+     top: 0;
+     left: 0;
+     width: 100vw;
+     height: 100vh;
+     background: #050505;
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     justify-content: center;
+     z-index: 10000;
+     font-family: 'Montserrat', sans-serif;
+     transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.video-modal-content { 
-    position: relative; 
-    width: 100%;       /* Corregido: Ocupa todo el ancho disponible */
-    height: 100%;      /* Corregido: Ocupa todo el alto disponible */
-    max-width: 100vw;  /* Corregido: Eliminada la restricción de 800px */
-    background: #050505; 
-    padding: 20px; 
-    display: flex; 
-    flex-direction: column; 
-    text-align: center; 
+.video-modal-content {
+     position: relative;
+     width: 100%;
+     height: 100%;
+     max-width: 100vw;
+     background: #050505;
+     padding: 20px;
+     display: flex;
+     flex-direction: column;
 }
 
-.video-feeds { 
-    position: relative; 
-    flex: 1; 
-    width: 100%; 
-    background: #000; 
-    margin-bottom: 15px; 
-    overflow: hidden; 
-    border: 1px solid rgba(255,255,255,0.05); 
+/* Administrador de Distribución Avanzado */
+.video-layout-manager {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 15px;
+    overflow: hidden;
+    position: relative;
 }
 
-.video-remote-frame { 
-    width: 100%; 
-    height: 100%; 
-    object-fit: cover; 
-}
-
-.video-local-frame { 
-    position: absolute; 
-    bottom: 15px; 
-    right: 15px; 
-    width: 180px; 
-    height: 135px; 
-    border: 1px solid #c5a880; 
-    object-fit: cover; 
-    background: #111; 
-    transition: all 0.2s; 
-}
-
-.video-controls { 
-    margin-top: 5px; 
-    display: flex; 
-    justify-content: center; 
-    gap: 16px; 
-    flex-wrap: wrap; 
-}
-
-.video-status-msg { 
-    margin-top: 10px; 
-    font-size: 11px; 
-    color: #666666; 
-    text-transform: uppercase; 
-    letter-spacing: 1px; 
-}
-
-/* Estado Minimizado: Plegado en la esquina junto a la barra de chats */
-.video-modal-overlay.video-modal-minimized {
-    top: auto;
-    left: auto;
-    bottom: 36px;
-    right: 310px; /* Desplazado para no solapar las ventanas de chat abiertas */
-    width: 280px;
-    height: 210px;
-    border: 1px solid #c5a880;
-    box-shadow: 0 -5px 25px rgba(0,0,0,0.9);
-    background: #0a0a0a;
-}
-
-.video-modal-minimized .video-modal-content {
-    padding: 6px;
+/* Zona de Pantallas Compartidas: Ocupará siempre el background principal de la llamada */
+.video-shares-zone {
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
     width: 100%;
     height: 100%;
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+/* Zona de Cámaras de los Participantes */
+.video-cameras-zone {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 15px;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+/* Caja contenedora de vídeo minimalista */
+.video-frame-wrapper {
+    position: relative;
+    background: #000000;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.video-stream-element {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #000000;
+}
+
+/* Evita que la pantalla compartida sufra recortes destructivos */
+.video-stream-element.fit-contain {
+    object-fit: contain !important;
     max-width: 100%;
+    max-height: 100%;
 }
 
-.video-modal-minimized .video-feeds {
-    margin-bottom: 4px;
+/* Etiquetas de interfaz */
+.video-user-label {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background: rgba(5, 5, 5, 0.85);
+    padding: 3px 8px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #c5a880;
+    border: 1px solid rgba(197, 168, 128, 0.2);
+    z-index: 10;
 }
 
-/* Adaptación del feed local cuando está minimizado */
-.video-modal-minimized .video-local-frame {
-    width: 70px;
-    height: 52px;
-    bottom: 5px;
-    right: 5px;
+/* ==========================================================================
+     ESTADOS DINÁMICOS REDISEÑADOS PARA SUPERPOSICIÓN DE PANTALLA
+    ========================================================================== */
+
+/* Modo Estándar: Sin compartir pantalla (Malla simétrica 50% / 50%) */
+.state-standard-grid .video-shares-zone {
+    display: none !important;
+}
+.state-standard-grid .video-cameras-zone {
+    flex: 1 !important;
+    display: flex !important;
+    position: relative !important;
+    top: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    flex-direction: row !important;
+}
+.state-standard-grid .video-cameras-zone .video-frame-wrapper {
+    flex: 1 !important;
+    width: 100% !important;
+    height: 100% !important;
+    box-shadow: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
+/* Modo Protagonista (Una Pantalla Compartida): Se superpone en grande y las caras flotan encima */
+.state-single-share .video-shares-zone {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 1 !important;
+    display: flex !important;
+}
+.state-single-share .video-shares-zone .video-frame-wrapper {
+    width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+}
+.state-single-share .video-cameras-zone {
+    position: absolute !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: auto !important;
+    height: auto !important;
+    flex-direction: column !important;
+    z-index: 5 !important;
+}
+.state-single-share .video-cameras-zone .video-frame-wrapper {
+    width: 240px !important;
+    height: 150px !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.9) !important;
+    border: 1px solid rgba(197, 168, 128, 0.5) !important;
+}
+
+/* Modo Dual Compartido: Malla partida si coinciden dos capturas */
+.state-dual-share .video-shares-zone {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 1 !important;
+    display: flex !important;
+}
+.state-dual-share .video-shares-zone .video-frame-wrapper {
+    flex: 1 !important;
+    height: 100% !important;
+}
+.state-dual-share .video-cameras-zone {
+    position: absolute !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: auto !important;
+    flex-direction: column !important;
+    z-index: 5 !important;
+}
+.state-dual-share .video-cameras-zone .video-frame-wrapper {
+    width: 180px !important;
+    height: 115px !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.9) !important;
+    border: 1px solid rgba(197, 168, 128, 0.4) !important;
+}
+
+/* Controles e interfaz inferior */
+.video-controls {
+     margin-top: 15px;
+     display: flex;
+     justify-content: center;
+     gap: 16px;
+     flex-wrap: wrap;
+     z-index: 10;
+}
+
+.video-status-msg {
+     margin-top: 10px;
+     font-size: 11px;
+     color: #666666;
+     text-transform: uppercase;
+     letter-spacing: 1px;
+     text-align: center;
+     z-index: 10;
+}
+
+/* Estado Minimizado General */
+.video-modal-overlay.video-modal-minimized {
+    top: auto !important;
+    left: auto !important;
+    bottom: 36px !important;
+    right: 310px !important;
+    width: 280px !important;
+    height: 210px !important;
+    border: 1px solid #c5a880 !important;
+    box-shadow: 0 -5px 25px rgba(0,0,0,0.9) !important;
+    background: #0a0a0a !important;
+}
+.video-modal-minimized .video-modal-content {
+    padding: 6px !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+.video-modal-minimized .video-layout-manager {
+    gap: 4px !important;
+    position: relative !important;
+}
+.video-modal-minimized .video-shares-zone {
+    position: relative !important;
+    display: flex !important;
+    flex: 1 !important;
+    height: 100% !important;
+}
+.video-modal-minimized .video-cameras-zone {
+    display: none !important;
+}
 .video-modal-minimized .video-controls {
-    gap: 8px;
+    gap: 8px !important;
+    margin-top: 4px !important;
 }
-
 .video-modal-minimized .video-status-msg {
-    display: none; /* Ocultar textos auxiliares en vista miniatura */
+    display: none !important;
 }
 
-/* Auxiliares de control de estados activos */
 .link-action.media-disabled {
     color: #8a3333 !important;
 }
 
-/* ==========================================================================
-    AGREGADO: PRE-CONFIGURACIÓN DE HARDWARE (MICRO Y CÁMARA)
-   ========================================================================== */
 .setup-media-controls {
     display: flex;
     justify-content: center;
@@ -673,6 +794,7 @@ li:last-child {
     background: rgba(255, 255, 255, 0.02);
     padding: 10px;
     border: 1px dashed rgba(197, 168, 128, 0.2);
+    z-index: 10;
 }
 
 .media-checkbox-label {
