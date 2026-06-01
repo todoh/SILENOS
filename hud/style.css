@@ -1,5 +1,5 @@
 /* ==========================================================================
-   SILENOS OS // NETWORK - ESTÉTICA NEO-HERMÉTICA & ALTA COSTURA
+    SILENOS OS // NETWORK - ESTÉTICA NEO-HERMÉTICA & ALTA COSTURA
    ========================================================================== */
 
 * {
@@ -111,7 +111,7 @@ h2 {
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    border: 1px solid #c5a880;
+    border: 1px solid #ffffff;
     object-fit: cover;
     background: #000000;
 }
@@ -242,9 +242,9 @@ input[type="text"]::placeholder {
 
 /* Enlaces de Acción: Se eliminan subrayados toscos por interactividad limpia */
 .link-action {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
-    color: #c5a880;
+    color: #ffffff;
     text-decoration: none;
     cursor: pointer;
     text-transform: uppercase;
@@ -360,7 +360,7 @@ li:last-child {
 }
 
 /* ==========================================================================
-   BARRA INFERIOR ESTILO TUENTI & VENTANAS DE CHAT EN TIEMPO REAL
+    BARRA INFERIOR ESTILO TUENTI & VENTANAS DE CHAT EN TIEMPO REAL
    ========================================================================== */
 
 /* Barra Inferior del viewport global de la ventana */
@@ -541,42 +541,10 @@ li:last-child {
     padding: 6px 2px;
 }
 
-.video-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 10000; font-family: 'Montserrat', sans-serif; }
-.video-modal-content { position: relative; width: 80%; max-width: 800px; background: #111; padding: 20px; border-radius: 8px; border: 1px solid #333; text-align: center; }
-.video-feeds { display: flex; position: relative; width: 100%; height: 450px; background: #000; background-size: cover; margin-bottom: 20px; border-radius: 4px; overflow: hidden; }
-.video-remote-frame { width: 100%; height: 100%; object-fit: cover; }
-.video-local-frame { position: absolute; bottom: 15px; right: 15px; width: 180px; height: 135px; border: 2px solid #a1c580; object-fit: cover; border-radius: 4px; background: #222; }
-.video-controls { margin-top: 10px; }
-.video-status-msg { margin-top: 15px; font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-
 /* ==========================================================================
-   AGREGADO: PRE-CONFIGURACIÓN DE HARDWARE (MICRO Y CÁMARA)
+    SISTEMA DE LLAMADAS AVANZADO - FULLSCREEN & MINIMIZED (CORREGIDO ANCHO)
    ========================================================================== */
-.setup-media-controls {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    margin: 15px 0;
-    background: rgba(255, 255, 255, 0.02);
-    padding: 10px;
-    border: 1px dashed rgba(197, 168, 128, 0.2);
-}
-.media-checkbox-label {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #cccccc;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.media-checkbox-label input[type="checkbox"] {
-    accent-color: #c5a880;
-    cursor: pointer;
-}/* ==========================================================================
-   SISTEMA DE LLAMADAS AVANZADO - FULLSCREEN & MINIMIZED
-   ========================================================================== */
+
 .video-modal-overlay { 
     position: fixed; 
     top: 0; 
@@ -585,53 +553,34 @@ li:last-child {
     height: 100vh; 
     background: #050505; 
     display: flex; 
-    flex-direction: column;
+    flex-direction: column; 
     align-items: center; 
     justify-content: center; 
     z-index: 10000; 
-    font-family: 'Montserrat', sans-serif;
-    transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-/* Estado Minimizado: Plegado en la esquina junto a la barra de chats */
-.video-modal-overlay.video-modal-minimized {
-    top: auto;
-    left: auto;
-    bottom: 36px;
-    right: 310px; /* Desplazado para no solapar las ventanas de chat abiertas */
-    width: 280px;
-    height: 210px;
-    border: 1px solid #c5a880;
-    box-shadow: 0 -5px 25px rgba(0,0,0,0.9);
-    background: #0a0a0a;
+    font-family: 'Montserrat', sans-serif; 
+    transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1); 
 }
 
 .video-modal-content { 
     position: relative; 
-    width: 100%; 
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
+    width: 100%;       /* Corregido: Ocupa todo el ancho disponible */
+    height: 100%;      /* Corregido: Ocupa todo el alto disponible */
+    max-width: 100vw;  /* Corregido: Eliminada la restricción de 800px */
+    background: #050505; 
+    padding: 20px; 
+    display: flex; 
+    flex-direction: column; 
     text-align: center; 
-}
-
-.video-modal-minimized .video-modal-content {
-    padding: 6px;
 }
 
 .video-feeds { 
     position: relative; 
-    flex: 1;
+    flex: 1; 
     width: 100%; 
     background: #000; 
     margin-bottom: 15px; 
     overflow: hidden; 
-    border: 1px solid rgba(255,255,255,0.05);
-}
-
-.video-modal-minimized .video-feeds {
-    margin-bottom: 4px;
+    border: 1px solid rgba(255,255,255,0.05); 
 }
 
 .video-remote-frame { 
@@ -649,27 +598,15 @@ li:last-child {
     border: 1px solid #c5a880; 
     object-fit: cover; 
     background: #111; 
-    transition: all 0.2s;
-}
-
-/* Adaptación del feed local cuando está minimizado */
-.video-modal-minimized .video-local-frame {
-    width: 70px;
-    height: 52px;
-    bottom: 5px;
-    right: 5px;
+    transition: all 0.2s; 
 }
 
 .video-controls { 
     margin-top: 5px; 
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-    flex-wrap: wrap;
-}
-
-.video-modal-minimized .video-controls {
-    gap: 8px;
+    display: flex; 
+    justify-content: center; 
+    gap: 16px; 
+    flex-wrap: wrap; 
 }
 
 .video-status-msg { 
@@ -680,6 +617,42 @@ li:last-child {
     letter-spacing: 1px; 
 }
 
+/* Estado Minimizado: Plegado en la esquina junto a la barra de chats */
+.video-modal-overlay.video-modal-minimized {
+    top: auto;
+    left: auto;
+    bottom: 36px;
+    right: 310px; /* Desplazado para no solapar las ventanas de chat abiertas */
+    width: 280px;
+    height: 210px;
+    border: 1px solid #c5a880;
+    box-shadow: 0 -5px 25px rgba(0,0,0,0.9);
+    background: #0a0a0a;
+}
+
+.video-modal-minimized .video-modal-content {
+    padding: 6px;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+}
+
+.video-modal-minimized .video-feeds {
+    margin-bottom: 4px;
+}
+
+/* Adaptación del feed local cuando está minimizado */
+.video-modal-minimized .video-local-frame {
+    width: 70px;
+    height: 52px;
+    bottom: 5px;
+    right: 5px;
+}
+
+.video-modal-minimized .video-controls {
+    gap: 8px;
+}
+
 .video-modal-minimized .video-status-msg {
     display: none; /* Ocultar textos auxiliares en vista miniatura */
 }
@@ -687,4 +660,33 @@ li:last-child {
 /* Auxiliares de control de estados activos */
 .link-action.media-disabled {
     color: #8a3333 !important;
+}
+
+/* ==========================================================================
+    AGREGADO: PRE-CONFIGURACIÓN DE HARDWARE (MICRO Y CÁMARA)
+   ========================================================================== */
+.setup-media-controls {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin: 15px 0;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 10px;
+    border: 1px dashed rgba(197, 168, 128, 0.2);
+}
+
+.media-checkbox-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #cccccc;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.media-checkbox-label input[type="checkbox"] {
+    accent-color: #c5a880;
+    cursor: pointer;
 }
