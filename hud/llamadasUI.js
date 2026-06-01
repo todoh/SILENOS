@@ -219,7 +219,7 @@ function inyectarControlesEnLlamada(chatId) {
     const btnScreen = document.getElementById("btn-media-screen");
     btnScreen.addEventListener("click", async () => {
         if (!compartiendoPantalla) {
-            const exito = await conmutarCompartirPantalla(true);
+            const exito = await conmutarCompartirPantalla(true, !camApagada);
             if (exito) {
                 compartiendoPantalla = true;
                 btnScreen.innerText = "[Dejar de Compartir]";
@@ -237,9 +237,7 @@ function inyectarControlesEnLlamada(chatId) {
 }
 
 /**
- * Recibe y rutea los flujos multimedia.
- * Se implementa una validación robusta y un flag explícito para asegurar que la captura de pantalla 
- * jamás sea interceptada erróneamente por el contenedor de vídeo del rostro.
+ * Recibe, rutea y limpia de forma robusta los flujos multimedia.
  */
 export function setFlujosVideo(localStream, remoteStream, esPantallaCompartida = false) {
     const localVideo = document.getElementById("local-video");
@@ -255,7 +253,6 @@ export function setFlujosVideo(localStream, remoteStream, esPantallaCompartida =
         const videoTracks = localStream.getVideoTracks();
         if (videoTracks.length > 0) {
             const track = videoTracks[0];
-            // Determinación robusta: flag explícito, pista o indicación de pantalla
             const esCapturaPantalla = esPantallaCompartida || 
                                      (track.label && track.label.toLowerCase().includes("screen")) || 
                                      (track.contentHint === "detail");
@@ -280,6 +277,7 @@ export function setFlujosVideo(localStream, remoteStream, esPantallaCompartida =
                 if (localVideo && localVideo.srcObject !== localStream) {
                     localVideo.srcObject = localStream;
                 }
+                // Si ya no se está compartiendo pantalla local, borramos el wrapper del DOM inmediatamente
                 const existingLocalShare = document.getElementById("wrapper-local-share");
                 if (existingLocalShare) existingLocalShare.remove();
             }
@@ -291,7 +289,6 @@ export function setFlujosVideo(localStream, remoteStream, esPantallaCompartida =
         const remoteTracks = remoteStream.getVideoTracks();
         if (remoteTracks.length > 0) {
             const track = remoteTracks[0];
-            // Determinación robusta para el flujo remoto
             const esCapturaPantallaRemota = esPantallaCompartida || 
                                            (track.label && track.label.toLowerCase().includes("screen")) || 
                                            (track.contentHint === "detail");
@@ -317,7 +314,7 @@ export function setFlujosVideo(localStream, remoteStream, esPantallaCompartida =
                 if (remoteVideo && remoteVideo.srcObject !== remoteStream) {
                     remoteVideo.srcObject = remoteStream;
                 }
-                // Si la pista remota volvió a ser una cámara normal, limpiamos la zona de pantallas compartidas
+                // Si el track remoto volvió a la normalidad o es falso, borramos el wrapper remoto
                 const existingRemoteShare = document.getElementById("wrapper-remote-share");
                 if (existingRemoteShare) existingRemoteShare.remove();
                 if (statusText) statusText.innerText = "Conexión Establecida";
@@ -325,13 +322,22 @@ export function setFlujosVideo(localStream, remoteStream, esPantallaCompartida =
         }
     }
 
-    // Actualización y renderizado dinámico de estados del layout manager por CSS absoluto
+    // Si ambos flujos se han limpiado o no se pasa ninguna pantalla compartida activa, purgamos remanentes
+    if (!esPantallaCompartida) {
+        const existingLocalShare = document.getElementById("wrapper-local-share");
+        if (existingLocalShare) existingLocalShare.remove();
+        const existingRemoteShare = document.getElementById("wrapper-remote-share");
+        if (existingRemoteShare) existingRemoteShare.remove();
+    }
+
+    // Recalcular de forma exacta el número de comparticiones activas para actualizar las clases CSS
     const totalShares = sharesZone.querySelectorAll(".share-wrapper").length;
     if (totalShares === 1) {
         layoutManager.className = "video-layout-manager state-single-share";
     } else if (totalShares >= 2) {
         layoutManager.className = "video-layout-manager state-dual-share";
     } else {
+        // Al dar 0, destruye los estilos flotantes y regresa al grid nativo 50/50 de las cámaras
         layoutManager.className = "video-layout-manager state-standard-grid";
     }
 }

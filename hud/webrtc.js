@@ -10,11 +10,37 @@ let mensajesProcesados = new Set();
 let iceBuffer = []; 
 let desuscripcionPresencia = null; 
 
+// Nodos del mezclador de Audio para compartir pantalla + micrófono a la vez de forma limpia
+let audioContextMixer = null;
+let micAudioSource = null;
+let screenAudioSource = null;
+let mixedAudioDestination = null;
+let currentSenderAudio = null;
+
 const rtcConfig = {     
     iceServers: [         
         { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] }     
     ] 
 };
+
+/**
+ * Realiza una oferta de re-negociación limpia garantizando la sincronización de estados.
+ */
+async function forzarReNegociacionSegura() {
+    if (!peerConnection || !activeChatId || !currentMyRealId) return;
+    try {
+        if (peerConnection.signalingState === "stable") {
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            await conexion.sendMessage(activeChatId, currentMyRealId, "[RE-NEGOCIACION MULTIMEDIA]", {
+                signalType: "renegotiation_offer",
+                offer: { type: offer.type, sdp: offer.sdp }
+            });
+        }
+    } catch (err) {
+        console.error("Error crítico durante la re-negociación segura:", err);
+    }
+}
 
 export async function alternarTrackLocal(tipo, habilitar) {     
     if (!localStream) return;     
@@ -38,19 +64,12 @@ export async function alternarTrackLocal(tipo, habilitar) {
                             await videoSender.replaceTrack(newVideoTrack);                         
                         } else {                             
                             peerConnection.addTrack(newVideoTrack, localStream);                                                          
-                            if (peerConnection.signalingState === "stable") {                                 
-                                const offer = await peerConnection.createOffer();                                 
-                                await peerConnection.setLocalDescription(offer);                                 
-                                conexion.sendMessage(activeChatId, currentMyRealId, "[RE-NEGOCIACION VIDEO]", {                                     
-                                    signalType: "renegotiation_offer",                                     
-                                    offer: { type: offer.type, sdp: offer.sdp }                                 
-                                });                             
-                            }                         
+                            await forzarReNegociacionSegura();
                         }                     
                     }                 
                 }             
             } catch (err) {                 
-                console.error("Error al activar la c mara en caliente:", err);             
+                console.error("Error al activar la cámara en caliente:", err);             
             }         
         }     
     } 
@@ -59,32 +78,89 @@ export async function alternarTrackLocal(tipo, habilitar) {
 export async function conmutarCompartirPantalla(activar, camaraDeberiaEstarActiva = true) {     
     try {         
         if (activar) {             
+            // Solicitamos la captura de pantalla incluyendo de forma robusta pistas de audio del sistema
             displayStream = await navigator.mediaDevices.getDisplayMedia({ 
                 video: {
-                    cursor: "always"
+                    cursor: "always",
+                    displaySurface: "monitor"
                 },
-                audio: false 
+                audio: {
+                    echoCancellation: false,
+                    noiseSuppression: false,
+                    autoGainControl: false,
+                    systemAudio: "include" 
+                }
             });             
             
-            const screenTrack = displayStream.getVideoTracks()[0];             
+            const screenVideoTrack = displayStream.getVideoTracks()[0];             
+            const screenAudioTrack = displayStream.getAudioTracks()[0]; 
             
             if (peerConnection) {                 
                 const senders = peerConnection.getSenders();                 
+                
+                // 1. Reemplazar pista de vídeo comercial en caliente
                 const videoSender = senders.find(s => s.track && s.track.kind === "video");                 
                 if (videoSender) {                     
-                    await videoSender.replaceTrack(screenTrack);                 
-                }             
+                    await videoSender.replaceTrack(screenVideoTrack);                 
+                } else {
+                    peerConnection.addTrack(screenVideoTrack, displayStream);
+                }            
+
+                // 2. Mezclador Avanzado de Audio (Micrófono + Audio de Sistema de Escritorio)
+                const micAudioTrack = localStream ? localStream.getAudioTracks()[0] : null;
+                
+                if (screenAudioTrack && micAudioTrack) {
+                    // Inicializamos contexto de audio nativo si no existiera
+                    if (!audioContextMixer) {
+                        audioContextMixer = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    if (audioContextMixer.state === "suspended") {
+                        await audioContextMixer.resume();
+                    }
+
+                    mixedAudioDestination = audioContextMixer.createMediaStreamDestination();
+                    
+                    // Conectamos micrófono original al mezclador
+                    const micStream = new MediaStream([micAudioTrack]);
+                    micAudioSource = audioContextMixer.createMediaStreamSource(micStream);
+                    micAudioSource.connect(mixedAudioDestination);
+                    
+                    // Conectamos audio de la pantalla capturada al mezclador
+                    const screenAudioStream = new MediaStream([screenAudioTrack]);
+                    screenAudioSource = audioContextMixer.createMediaStreamSource(screenAudioStream);
+                    screenAudioSource.connect(mixedAudioDestination);
+                    
+                    // Extraemos la pista combinada resultante
+                    const blendedAudioTrack = mixedAudioDestination.stream.getAudioTracks()[0];
+                    
+                    if (currentSenderAudio) {
+                        await currentSenderAudio.replaceTrack(blendedAudioTrack);
+                    } else {
+                        const audioSender = senders.find(s => s.track && s.track.kind === "audio");
+                        if (audioSender) {
+                            currentSenderAudio = audioSender;
+                            await audioSender.replaceTrack(blendedAudioTrack);
+                        }
+                    }
+                } else if (screenAudioTrack) {
+                    // Si no hay micro, mandamos directo el audio del sistema
+                    const audioSender = senders.find(s => s.track && s.track.kind === "audio");
+                    if (audioSender) {
+                        await audioSender.replaceTrack(screenAudioTrack);
+                    }
+                }
             }                          
             
-            // Avisar al extremo remoto de forma explícita mediante el canal de señalización
-            conexion.sendMessage(activeChatId, currentMyRealId, "[COMPARTIENDO PANTALLA]", {
+            // Avisar al extremo remoto de forma explícita mediante la red de datos
+            await conexion.sendMessage(activeChatId, currentMyRealId, "[COMPARTIENDO PANTALLA]", {
                 signalType: "screen_sharing_on"
             });
 
-            // Forzar el renderizado local de la pantalla en la zona grande superior
+            // Forzar renderizado local de la pantalla en la zona grande de la UI
             setFlujosVideo(displayStream, null, true);             
             
-            screenTrack.onended = async () => {                 
+            // Escuchar si el usuario detiene la compartición desde la barra flotante nativa del OS
+            screenVideoTrack.onended = async () => {                 
                 await conmutarCompartirPantalla(false, camaraDeberiaEstarActiva);                 
                 const btnScreen = document.getElementById("btn-media-screen");                 
                 const btnCam = document.getElementById("btn-media-cam");                 
@@ -96,35 +172,69 @@ export async function conmutarCompartirPantalla(activar, camaraDeberiaEstarActiv
             };             
             return true;         
         } else {             
+            // Limpieza del flujo de pantalla y detención segura de hardware
             if (displayStream) {                 
                 displayStream.getTracks().forEach(t => t.stop());                 
                 displayStream = null;             
             }             
+
+            // Destrucción de conexiones previas del mezclador de audio
+            if (micAudioSource) { micAudioSource.disconnect(); micAudioSource = null; }
+            if (screenAudioSource) { screenAudioSource.disconnect(); screenAudioSource = null; }
+            if (audioContextMixer) {
+                if (audioContextMixer.state !== "closed") await audioContextMixer.close();
+                audioContextMixer = null;
+            }
             
             if (localStream) {                 
                 const videoTrack = localStream.getVideoTracks()[0];                 
-                if (videoTrack) {                     
-                    videoTrack.enabled = camaraDeberiaEstarActiva;                     
-                    if (peerConnection) {                         
-                        const senders = peerConnection.getSenders();                         
+                const audioTrack = localStream.getAudioTracks()[0];
+
+                if (peerConnection) {                         
+                    const senders = peerConnection.getSenders();                         
+                    
+                    // Restaurar de inmediato la cámara original
+                    if (videoTrack) {                     
+                        videoTrack.enabled = camaraDeberiaEstarActiva;                     
                         const videoSender = senders.find(s => s.track && s.track.kind === "video");                         
                         if (videoSender) {                             
                             await videoSender.replaceTrack(videoTrack);                         
                         }                     
                     }                 
+
+                    // Restaurar de forma imperativa el micrófono original puro del usuario
+                    if (audioTrack) {
+                        const audioSender = senders.find(s => s.track && s.track.kind === "audio");
+                        if (audioSender) {
+                            await audioSender.replaceTrack(audioTrack);
+                        }
+                    }
                 }                 
+                // Forzamos explícitamente a que limpie la zona de pantallas pasándole false
                 setFlujosVideo(localStream, null, false);             
             }             
 
-            // Notificar el fin de la captura de pantalla
-            conexion.sendMessage(activeChatId, currentMyRealId, "[DEJAR DE COMPARTIR PANTALLA]", {
+            // Notificar el fin de la captura de pantalla a la base de datos
+            await conexion.sendMessage(activeChatId, currentMyRealId, "[DEJAR DE COMPARTIR PANTALLA]", {
                 signalType: "screen_sharing_off"
             });
 
+            await forzarReNegociacionSegura();
             return false;         
         }     
     } catch (err) {         
-        console.error("Error al conmutar captura de pantalla:", err);         
+        console.error("Error crítico al conmutar captura de pantalla. Cancelación o denegación:", err);         
+        // Fallback defensivo: Si falla la inicialización de pantalla, restauramos el flujo nativo
+        if (localStream && peerConnection) {
+            const senders = peerConnection.getSenders();
+            const videoTrack = localStream.getVideoTracks()[0];
+            const audioTrack = localStream.getAudioTracks()[0];
+            const videoSender = senders.find(s => s.track && s.track.kind === "video");
+            const audioSender = senders.find(s => s.track && s.track.kind === "audio");
+            if (videoSender && videoTrack) await videoSender.replaceTrack(videoTrack);
+            if (audioSender && audioTrack) await audioSender.replaceTrack(audioTrack);
+            setFlujosVideo(localStream, null, false);
+        }
         return false;     
     } 
 }
@@ -148,7 +258,6 @@ export async function iniciarVideollamada(chatId, myRealId, targetRealId) {
             
             peerConnection.ontrack = (event) => {                 
                 if (event.streams && event.streams[0]) {
-                    // Por defecto se asume falso, la orden explícita del signalType cambiará el layout
                     setFlujosVideo(null, event.streams[0], false);             
                 }
             };             
@@ -206,7 +315,6 @@ export function escucharLlamadasEntrantes(chatId, myRealId) {
             }             
             else if (msg.signalType === "screen_sharing_on") {
                 mensajesProcesados.add(msgId);
-                // Forzamos al receptor remoto a enrutar el flujo actual hacia la zona grande superior
                 if (peerConnection) {
                     const receivers = peerConnection.getReceivers();
                     const remoteVideoReceiver = receivers.find(r => r.track && r.track.kind === "video");
@@ -218,7 +326,6 @@ export function escucharLlamadasEntrantes(chatId, myRealId) {
             }
             else if (msg.signalType === "screen_sharing_off") {
                 mensajesProcesados.add(msgId);
-                // Devolvemos el flujo remoto al contenedor de su cámara web estándar
                 if (peerConnection) {
                     const receivers = peerConnection.getReceivers();
                     const remoteVideoReceiver = receivers.find(r => r.track && r.track.kind === "video");
@@ -238,7 +345,7 @@ export function escucharLlamadasEntrantes(chatId, myRealId) {
                             signalType: "renegotiation_answer",                             
                             answer: { type: answer.type, sdp: answer.sdp }                         
                         });                     
-                    }).catch(err => console.error("Error al procesar oferta de renegociaci n:", err));                 
+                    }).catch(err => console.error("Error al procesar oferta de renegociación:", err));                 
                 }             
             }             
             else if (msg.signalType === "answer") {                 
@@ -350,6 +457,13 @@ export function finalizarLlamadaLocal() {
         localStream.getTracks().forEach(track => track.stop());         
         localStream = null;     
     }     
+    if (micAudioSource) { micAudioSource = null; }
+    if (screenAudioSource) { screenAudioSource = null; }
+    if (audioContextMixer) {
+        try { audioContextMixer.close(); } catch(e){}
+        audioContextMixer = null;
+    }
+    currentSenderAudio = null;
     if (peerConnection) {         
         peerConnection.close();         
         peerConnection = null;     
@@ -378,7 +492,7 @@ function vincularMonitoreoPresencia(chatId, myRealId) {
 
 window.addEventListener("beforeunload", () => {     
     if (activeChatId && currentMyRealId) {         
-        conexion.sendMessage(activeChatId, currentMyRealId, "[DESCONEXI N INVOLUNTARIA]", { signalType: "hangup" });     
+        conexion.sendMessage(activeChatId, currentMyRealId, "[DESCONEXION INVOLUNTARIA]", { signalType: "hangup" });     
     } 
 });
 
