@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SILENOS OS // NETWORK</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="network-container">
+        
+
+        <!-- PANTALLA: LOGIN -->
+        <div id="auth-section" class="viewport-screen auth-centered">
+            <span class="link-action" id="btn-login">LOG IN WITH GOOGLE</span>
+        </div>
+
+        <!-- PANTALLA: REGISTRO -->
+        <div id="setup-section" class="viewport-screen hidden">
+            <div class="screen-content">
+                <h2>Registro de Identidad</h2>
+                <p class="section-desc">Configura tu perfil inicial en la red.</p>
+                <div class="input-container">
+                    <input type="text" id="input-setup-username" placeholder="Nombre de ID" />
+                    <input type="text" id="input-setup-avatar" placeholder="URL de Imagen de Perfil (Opcional)" />
+                    <div class="action-row">
+                        <span class="link-action" id="btn-submit-setup">[Establecer Identidad]</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL PRINCIPAL (CONTENEDOR DE PANTALLAS ENCAJADAS) -->
+        <div id="main-panel" class="viewport-screen hidden">
+            
+            <!-- TARJETA DE PERFIL SUPERIOR -->
+            <div class="profile-container">
+                <div class="profile-meta-block">
+                    <img src="" id="profile-avatar-img" class="profile-avatar" alt="Avatar">
+                    <div class="profile-info">
+                        <div id="profile-username" class="profile-name"></div>
+                        <div class="profile-id">Real ID: <span id="profile-real-id"></span></div>
+                    </div>
+                </div>
+                <div class="profile-menu">
+                    <span class="link-action link-small" id="menu-opt-friends">Contactos</span>
+                    <span class="link-action link-small" id="menu-opt-name">Nombre</span>
+                    <span class="link-action link-small" id="menu-opt-image">Imagen de Perfil</span>
+                    <span class="link-action link-small link-danger" id="btn-logout">Cerrar Sesión</span>
+                </div>
+            </div>
+
+            <!-- CONTENEDOR DESLIZABLE INTERNO (SUB-PANELES ENCAJADOS) -->
+            <div class="sub-panels-viewport">
+                
+                <div id="sub-panel-name" class="sub-panel hidden">
+                    <h2>Cambiar Nombre</h2>
+                    <div class="input-container">
+                        <input type="text" id="input-change-username" placeholder="Nuevo Nombre" />
+                        <div class="action-row">
+                            <span class="link-action" id="btn-change-username">[Guardar Nombre]</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sub-panel-image" class="sub-panel hidden">
+                    <h2>Editar Imagen de Perfil</h2>
+                    <div class="input-container">
+                        <input type="text" id="input-change-avatar" placeholder="Nueva URL de Imagen (HTTPS)" />
+                        <div class="action-row">
+                            <span class="link-action" id="btn-change-avatar">[Actualizar Imagen]</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sub-panel-friends" class="sub-panel">
+                    <div class="friends-layout">
+                        <!-- SECCIÓN ACCESIBLE POR SCROLL INTERNO SILENCIOSO SI ES NECESARIO -->
+                        <div class="scrollable-content-pure">
+
+                            <div class="panel-section">
+                                <h2>Contactos</h2>
+                                <ul id="list-friends"></ul>
+                            </div>
+                            <div class="panel-section">
+                                <h2>Peticiones Recibidas</h2>
+                                <ul id="list-requests"></ul>
+                            </div>
+                            <div class="panel-section">
+                                <h2>Ampliar Contactos</h2>
+                                <div class="input-container">
+                                    <input type="text" id="input-search-username" placeholder="Nombre de ID del destinatario" />
+                                    <div class="action-row">
+                                        <span class="link-action" id="btn-send-request">[Enviar Toque]</span>
+                                    </div>
+                                </div>
+                                <p id="search-error" class="status-msg error-msg"></p>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENEDORES FLOTANTES PARA EL CHAT DE RED -->
+    <div id="chat-windows-container"></div>
+    <div id="tuenti-chat-bar"></div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>
