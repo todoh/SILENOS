@@ -1,29 +1,40 @@
 // export_html.js
-// --- EXPORTACI N A HTML JUGABLE AUTOCONTENIDO ---
-// Genera un  nico .html con todo el librojuego embebido. Sin dependencias externas.
-// Est tica minimalista brutalista adaptada a formato Novela Visual Inmersiva con Panel Paralelo.
+// --- EXPORTACIÓN A HTML JUGABLE AUTOCONTENIDO CON LOGICA RPG Y MULTI-INVENTARIO ACUMULATIVO ---
+// Genera un único .html con todo el librojuego embebido. Sin dependencias externas.
+// Estética minimalista brutalista adaptada a formato Novela Visual Inmersiva con Panel Paralelo.
 function exportPlayableHTML() {
     if (!data.nodes.length) {
-        alert('El proyecto est  vac o.');
+        alert('El proyecto está vacío.');
         return;
     }
     const startNode = data.nodes.find(n => !data.connections.some(c => c.to === n.id)) || data.nodes[0];
+    
     const safeData = {
         name: data.name,
+        initialMetrics: {
+            health: data.initialMetrics.health ?? 100,
+            maxHealth: data.initialMetrics.maxHealth ?? 100,
+            gold: data.initialMetrics.gold ?? 0
+        },
         nodes: data.nodes.map(n => ({
             id: n.id,
             title: n.title || '',
             content: n.content || '',
             isEnding: !!n.isEnding,
-            image: n.image || null
+            image: n.image || null,
+            rewards: n.rewards || {
+                rpg: { healthMod: 0, maxHealthMod: 0, goldMod: 0, addItems: [], removeItems: [] }
+            }
         })),
         connections: data.connections.map(c => ({
             from: c.from,
             to: c.to,
-            label: c.label || ''
+            label: c.label || '',
+            conditions: c.conditions || { requiredGold: 0, requiredItems: [], forbiddenItems: [] }
         })),
         startId: startNode.id
     };
+
     const html = `<!DOCTYPE html>
 <html lang="es" data-theme="dark">
 <head>
@@ -57,7 +68,6 @@ body {
     width: 100vw;
     transition: background 0.3s, color 0.3s;
 }
-/* Fondo de pantalla completa corregido para evitar distorsiones */
 #visual-bg {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -75,11 +85,10 @@ body {
     background-size: 16px 16px;
     pointer-events: none;
 }
-/* Barra superior */
 .top-bar {
     position: fixed;
     top: 0; left: 0; right: 0;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+    background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
     padding: 14px 24px;
     display: flex;
     justify-content: space-between;
@@ -90,6 +99,17 @@ body {
     letter-spacing: 2px;
 }
 .top-bar h1 { font-size: 11px; font-weight: 900; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+.rpg-hud {
+    display: flex;
+    gap: 16px;
+    font-family: monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.rpg-hud .stat-hp { color: #34d399; }
+.rpg-hud .stat-gold { color: #fbbf24; }
+.rpg-hud .stat-inv { color: #cbd5e1; opacity: 0.85; font-size: 10px; }
 .top-bar-actions { display: flex; gap: 8px; }
 .btn-mini {
     border: 1px solid var(--border-color);
@@ -109,7 +129,6 @@ body {
     color: #000;
 }
 .btn-mini:hover { background: var(--fg); color: var(--bg); border-color: var(--fg); }
-/* Distribuci n e Interfaz reducida en altura */
 main {
     position: relative;
     z-index: 5;
@@ -132,16 +151,15 @@ main {
     padding: 20px;
     box-shadow: 0 4px 30px rgba(0,0,0,0.3);
     display: flex;
-    flex-direction: row; /* Colocaci n horizontal */
+    flex-direction: row;
     gap: 24px;
-    max-height: 35vh; /* Altura compacta */
+    max-height: 35vh;
     animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @keyframes slideUp {
     from { opacity: 0; transform: translateY(15px); }
     to { opacity: 1; transform: translateY(0); }
 }
-/* Columna de Texto */
 .text-column {
     flex: 1;
     display: flex;
@@ -175,6 +193,16 @@ h2 {
     margin-left: auto;
     font-weight: bold;
 }
+.dead-badge {
+    font-size: 7px;
+    background: #ef4444;
+    color: #fff;
+    padding: 1px 6px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-left: 6px;
+    font-weight: bold;
+}
 .content {
     font-family: 'Georgia', serif;
     font-size: 15px;
@@ -186,7 +214,6 @@ h2 {
 }
 .content::-webkit-scrollbar { width: 3px; }
 .content::-webkit-scrollbar-thumb { background: var(--border-color); }
-/* Columna de Decisiones (A la derecha) - Se limpia el desbordamiento horizontal y se permite multi-l nea */
 .options-column {
     width: 340px;
     flex-shrink: 0;
@@ -260,9 +287,14 @@ h2 {
 <div id="visual-bg"><div id="visual-bg-overlay"></div></div>
 <div class="top-bar">
     <h1>${escapeHtml(data.name)}</h1>
+    <div class="rpg-hud">
+        <span class="stat-hp" id="hud-hp">HP: --/--</span>
+        <span class="stat-gold" id="hud-gold">ORO: --</span>
+        <span class="stat-inv" id="hud-inv">INV: []</span>
+    </div>
     <div class="top-bar-actions">
         <button class="btn-mini" onclick="toggleTheme()">  Tema</button>
-        <button class="btn-mini" id="history-back-btn" style="display:none;" onclick="goBack()">Atr s</button>
+        <button class="btn-mini" id="history-back-btn" style="display:none;" onclick="goBack()">Atrás</button>
         <button class="btn-mini" onclick="restart()">Reiniciar</button>
     </div>
 </div>
@@ -272,19 +304,65 @@ h2 {
 <script>
 const STORY = ${JSON.stringify(safeData)};
 let history = [];
+
+let gameState = {
+    health: 100,
+    maxHealth: 100,
+    gold: 0,
+    inventory: []
+};
+
 function escapeHtml(s) {
     return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+
 function toggleTheme() {
     const root = document.documentElement;
     const current = root.getAttribute('data-theme');
     root.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
 }
-function render(nodeId, fromHistory) {
+
+function updateHUD() {
+    const counts = {};
+    gameState.inventory.forEach(i => counts[i] = (counts[i] || 0) + 1);
+    const invStr = Object.entries(counts).map(([item, qty]) => qty > 1 ? item + " (x" + qty + ")" : item).join(', ');
+
+    document.getElementById('hud-hp').textContent = "HP: " + gameState.health + "/" + gameState.maxHealth;
+    document.getElementById('hud-gold').textContent = "ORO: " + gameState.gold;
+    document.getElementById('hud-inv').textContent = "INV: [" + invStr + "]";
+}
+
+function render(nodeId, fromHistory = false) {
     const node = STORY.nodes.find(n => n.id === nodeId);
     if (!node) return;
          
-    if (!fromHistory) history.push(nodeId);
+    if (!fromHistory) {
+        history.push(nodeId);
+        
+        const rpg = (node.rewards && node.rewards.rpg) ? node.rewards.rpg : { healthMod: 0, maxHealthMod: 0, goldMod: 0, addItems: [], removeItems: [] };
+        gameState.maxHealth += (rpg.maxHealthMod || 0);
+        gameState.health += (rpg.healthMod || 0);
+        gameState.gold += (rpg.goldMod || 0);
+        
+        if (rpg.addItems) {
+            rpg.addItems.forEach(item => {
+                gameState.inventory.push(item);
+            });
+        }
+        if (rpg.removeItems) {
+            rpg.removeItems.forEach(itemToRemove => {
+                const idx = gameState.inventory.indexOf(itemToRemove);
+                if (idx !== -1) {
+                    gameState.inventory.splice(idx, 1);
+                }
+            });
+        }
+        
+        if (gameState.health > gameState.maxHealth) gameState.health = gameState.maxHealth;
+        if (gameState.health < 0) gameState.health = 0;
+    }
+    
+    updateHUD();
          
     const bgEl = document.getElementById('visual-bg');
     if (node.image) {
@@ -292,55 +370,108 @@ function render(nodeId, fromHistory) {
     } else {
         bgEl.style.backgroundImage = "none";
     }
+    
     document.getElementById('history-back-btn').style.display = history.length > 1 ? 'block' : 'none';
     const outgoing = STORY.connections.filter(c => c.from === nodeId);
     const app = document.getElementById('app');
+    
     let html = '<div class="node-box">';
          
-    // Columna de Texto (Izquierda)
+    // Columna de Texto
     html += '<div class="text-column">';
     html += '<div class="node-header">';
     html += '<span class="node-indicator"></span>';
     html += '<h2>' + escapeHtml(node.title) + '</h2>';
     if (node.isEnding) html += '<span class="ending-badge">Final</span>';
+    if (gameState.health <= 0) html += '<span class="dead-badge">Muerto</span>';
     html += '</div>';
     html += '<div class="content">' + escapeHtml(node.content).replace(/\\n/g, '<br>') + '</div>';
     html += '<div class="path-info"><span>Paso ' + history.length + '</span><span>' + STORY.name + '</span></div>';
     html += '</div>';
          
-    // Columna de Decisiones (Derecha)
+    // Columna de Decisiones
     html += '<div class="options-column">';
-    if (outgoing.length > 0) {
+    
+    if (gameState.health <= 0) {
+        html += '<div class="end-block">';
+        html += '<div class="end-text">Has perecido en la aventura</div>';
+        html += '<button class="btn-mini" onclick="restart()">Reiniciar Partida</button>';
+        html += '</div>';
+    } else if (outgoing.length > 0) {
+        let optionsRendered = 0;
         outgoing.forEach(c => {
-            const label = c.label || 'Continuar';
-            html += '<button class="opt-btn" onclick="render(\\'' + c.to + '\\')"><span>' + escapeHtml(label) + '</span><span class="opt-arrow">&rarr;</span></button>';
+            const conds = c.conditions || { requiredGold: 0, requiredItems: [], forbiddenItems: [] };
+            let goldCheck = gameState.gold >= (conds.requiredGold || 0);
+            
+            // Frecuencia de acumulación exacta
+            const reqCounts = {};
+            (conds.requiredItems || []).forEach(item => reqCounts[item] = (reqCounts[item] || 0) + 1);
+            
+            let reqItemsCheck = Object.entries(reqCounts).every(([item, reqQty]) => {
+                const curQty = gameState.inventory.filter(i => i === item).length;
+                return curQty >= reqQty;
+            });
+            
+            let forbiddenList = conds.forbiddenItems || [];
+            let forbItemsCheck = !forbiddenList.some(item => gameState.inventory.includes(item));
+            
+            if (goldCheck && reqItemsCheck && forbItemsCheck) {
+                optionsRendered++;
+                const label = c.label || 'Continuar';
+                html += '<button class="opt-btn" onclick="render(\\'' + c.to + '\\')"><span>' + escapeHtml(label) + '</span><span class="opt-arrow">&rarr;</span></button>';
+            }
         });
+        
+        if (optionsRendered === 0) {
+            html += '<div class="end-block">';
+            html += '<div class="end-text" style="font-size:8px;">Caminos bloqueados (Requisitos no cumplidos)</div>';
+            html += '<button class="btn-mini" onclick="restart()">Reiniciar</button>';
+            html += '</div>';
+        }
     } else {
         html += '<div class="end-block">';
         html += '<div class="end-text">Recorrido Terminado</div>';
-        html += '<button class="btn-mini" onclick="restart()">Reiniciar Cr nica</button>';
+        html += '<button class="btn-mini" onclick="restart()">Reiniciar Crónica</button>';
         html += '</div>';
     }
+    
     html += '</div>';
     html += '</div>';
     app.innerHTML = html;
 }
+
 function goBack() {
     if (history.length < 2) return;
-    history.pop();
-    const prev = history.pop();
-    render(prev);
+    const targets = [...history];
+    targets.pop();
+    
+    history = [];
+    gameState.health = STORY.initialMetrics.health;
+    gameState.maxHealth = STORY.initialMetrics.maxHealth;
+    gameState.gold = STORY.initialMetrics.gold;
+    gameState.inventory = [];
+    
+    targets.forEach((id, idx) => {
+        render(id, idx !== targets.length - 1);
+    });
 }
+
 function restart() {
     history = [];
+    gameState.health = STORY.initialMetrics.health;
+    gameState.maxHealth = STORY.initialMetrics.maxHealth;
+    gameState.gold = STORY.initialMetrics.gold;
+    gameState.inventory = [];
     render(STORY.startId);
 }
+
 (function init() {
-    render(STORY.startId);
+    restart();
 })();
 </script>
 </body>
 </html>`;
+
     const blob = new Blob([html], { type: 'text/html' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -349,6 +480,7 @@ function restart() {
     a.click();
     document.body.removeChild(a);
 }
+
 function escapeHtml(s) {
     return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }

@@ -1,20 +1,15 @@
 // ui.js
-// --- INTERFAZ DE USUARIO Y DOM ---
+// --- INTERFAZ DE USUARIO Y DOM INTERACTIVO RPG (CON ACUMULACIÓN DE OBJETOS) ---
 const nodeEditor = document.getElementById('node-editor');
 const optionsPanel = document.getElementById('options-panel');
 
-// ui.js
-// --- CONTROL DE PESTAÑAS Y RESPONSIVIDAD DEL SIDEBAR EN MERKADOS ---
-
 function switchSidebarTab(tabName) {
-    // 1. Ocultar todos los contenedores de contenido
     const containers = ['library', 'io', 'voice'];
     containers.forEach(c => {
         const el = document.getElementById(`sidebar-content-${c}`);
         if (el) el.classList.add('hidden');
     });
 
-    // 2. Limpiar estilos activos de todos los botones de la barra superior
     const tabs = ['library', 'io', 'voice'];
     tabs.forEach(t => {
         const btn = document.getElementById(`sidebar-tab-${t}`);
@@ -24,35 +19,20 @@ function switchSidebarTab(tabName) {
         }
     });
 
-    // 3. Mostrar el contenedor de la pestaña seleccionada
     const activeContainer = document.getElementById(`sidebar-content-${tabName}`);
-    if (activeContainer) {
-        activeContainer.classList.remove('hidden');
-    }
+    if (activeContainer) activeContainer.classList.remove('hidden');
 
-    // 4. Aplicar estilos activos al botón seleccionado
     const activeBtn = document.getElementById(`sidebar-tab-${tabName}`);
     if (activeBtn) {
         activeBtn.classList.remove('hover:bg-black', 'hover:text-white');
         activeBtn.classList.add('bg-black', 'text-white');
     }
-
-    console.log(`[UI] Pestaña de la columna izquierda cambiada a: ${tabName.toUpperCase()}`);
 }
 
 function handleRenameProject(newName) {
     if (typeof data !== 'undefined') {
         data.name = newName;
-        if (typeof saveLogic === 'function') {
-            saveLogic();
-        }
-    }
-}
-
-function updateProjectStatsView(nodeCount, connCount) {
-    const statsEl = document.getElementById('project-stats');
-    if (statsEl) {
-        statsEl.innerText = `${nodeCount} nodos   ${connCount} conexiones`;
+        if (typeof saveLogic === 'function') saveLogic();
     }
 }
 
@@ -109,31 +89,102 @@ function handleDeleteProject(id, e) {
 function openEditor(type, item) {
     if (!nodeEditor) return;
     nodeEditor.style.display = 'flex';
+    
+    ensureRpgEditorFields();
+
     if (type === 'node') {
         document.getElementById('editor-type-label').innerText = "Nodo   " + item.id.substring(0, 14);
         document.getElementById('node-title').value = item.title;
         document.getElementById('node-content').value = item.content;
         document.getElementById('editor-node-fields').classList.remove('hidden');
         document.getElementById('editor-connection-fields').classList.add('hidden');
+        
+        // Mecanismo de blindaje contra objetos rewards/rpg mal formados o ausentes
+        if (!item.rewards) item.rewards = {};
+        const rpg = item.rewards.rpg || { healthMod: 0, maxHealthMod: 0, goldMod: 0, addItems: [], removeItems: [] };
+        
+        document.getElementById('node-rpg-hp').value = rpg.healthMod || 0;
+        document.getElementById('node-rpg-maxhp').value = rpg.maxHealthMod || 0;
+        document.getElementById('node-rpg-gold').value = rpg.goldMod || 0;
+        document.getElementById('node-rpg-add-item').value = (rpg.addItems || []).join(', ');
+        document.getElementById('node-rpg-rem-item').value = (rpg.removeItems || []).join(', ');
+
         const endBtn = document.getElementById('node-ending-toggle');
         if (endBtn) {
             endBtn.classList.toggle('bg-black', item.isEnding);
             endBtn.classList.toggle('text-white', item.isEnding);
             endBtn.textContent = item.isEnding ? '  Es Final' : '  Marcar como Final';
         }
-        if (typeof renderNodeMediaContainer === 'function') {
-            renderNodeMediaContainer(item);
-        }
+        if (typeof renderNodeMediaContainer === 'function') renderNodeMediaContainer(item);
         updateWordCount();
-        if (typeof renderOptionsPanel === 'function') {
-            renderOptionsPanel(item);
-        }
+        if (typeof renderOptionsPanel === 'function') renderOptionsPanel(item);
     } else {
         document.getElementById('connection-label').value = item.label || "";
         document.getElementById('editor-node-fields').classList.add('hidden');
         document.getElementById('editor-connection-fields').classList.remove('hidden');
+        
+        const conds = item.conditions || { requiredGold: 0, requiredItems: [], forbiddenItems: [] };
+        document.getElementById('conn-rpg-reqgold').value = conds.requiredGold || 0;
+        document.getElementById('conn-rpg-reqitems').value = (conds.requiredItems || []).join(', ');
+        document.getElementById('conn-rpg-forbitems').value = (conds.forbiddenItems || []).join(', ');
+
         if (optionsPanel) optionsPanel.classList.add('hidden');
     }
+}
+
+function ensureRpgEditorFields() {
+    if (!document.getElementById('node-rpg-container')) {
+        const nodeFields = document.getElementById('editor-node-fields');
+        const htmlNodeRpg = `
+        <div id="node-rpg-container" class="border-t border-dashed border-black mt-2 pt-2 space-y-1 font-mono text-[9px]">
+            <p class="font-bold uppercase tracking-wider opacity-60">Impacto Mutación RPG</p>
+            <div class="grid grid-cols-3 gap-1">
+                <div>Δ HP: <input type="number" id="node-rpg-hp" oninput="saveNodeRPG()" class="w-full border border-black text-center p-0.5"></div>
+                <div>Δ MaxHP: <input type="number" id="node-rpg-maxhp" oninput="saveNodeRPG()" class="w-full border border-black text-center p-0.5"></div>
+                <div>Δ Oro: <input type="number" id="node-rpg-gold" oninput="saveNodeRPG()" class="w-full border border-black text-center p-0.5"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-1 mt-1">
+                <div>+ Item(s): <input type="text" id="node-rpg-add-item" oninput="saveNodeRPG()" placeholder="POCION, POCION" class="w-full border border-black px-1 py-0.5"></div>
+                <div>- Item(s): <input type="text" id="node-rpg-rem-item" oninput="saveNodeRPG()" placeholder="POCION" class="w-full border border-black px-1 py-0.5"></div>
+            </div>
+        </div>`;
+        nodeFields.appendChild(document.createRange().createContextualFragment(htmlNodeRpg));
+    }
+
+    if (!document.getElementById('conn-rpg-container')) {
+        const connFields = document.getElementById('editor-connection-fields');
+        const htmlConnRpg = `
+        <div id="conn-rpg-container" class="border-t border-dashed border-black mt-2 pt-2 space-y-2 font-mono text-[9px]">
+            <p class="font-bold uppercase tracking-wider opacity-60">Condición de Apertura RPG</p>
+            <div>Oro Mínimo: <input type="number" id="conn-rpg-reqgold" oninput="saveConnRPG()" class="w-full border border-black p-1"></div>
+            <div>Objetos Necesarios (acumulativos): <input type="text" id="conn-rpg-reqitems" oninput="saveConnRPG()" placeholder="Ej: POCION, POCION" class="w-full border border-black p-1"></div>
+            <div>Objetos Prohibidos: <input type="text" id="conn-rpg-forbitems" oninput="saveConnRPG()" placeholder="Ej: MALDICION" class="w-full border border-black p-1"></div>
+        </div>`;
+        connFields.appendChild(document.createRange().createContextualFragment(htmlConnRpg));
+    }
+}
+
+function saveNodeRPG() {
+    if (!window.selectedNode) return;
+    if (!window.selectedNode.rewards) window.selectedNode.rewards = {};
+    window.selectedNode.rewards.rpg = {
+        healthMod: parseInt(document.getElementById('node-rpg-hp').value, 10) || 0,
+        maxHealthMod: parseInt(document.getElementById('node-rpg-maxhp').value, 10) || 0,
+        goldMod: parseInt(document.getElementById('node-rpg-gold').value, 10) || 0,
+        addItems: document.getElementById('node-rpg-add-item').value.split(',').map(s=>s.trim().toUpperCase()).filter(Boolean),
+        removeItems: document.getElementById('node-rpg-rem-item').value.split(',').map(s=>s.trim().toUpperCase()).filter(Boolean)
+    };
+    saveLogic();
+}
+
+function saveConnRPG() {
+    if (!window.selectedConnection) return;
+    window.selectedConnection.conditions = {
+        requiredGold: parseInt(document.getElementById('conn-rpg-reqgold').value, 10) || 0,
+        requiredItems: document.getElementById('conn-rpg-reqitems').value.split(',').map(s=>s.trim().toUpperCase()).filter(Boolean),
+        forbiddenItems: document.getElementById('conn-rpg-forbitems').value.split(',').map(s=>s.trim().toUpperCase()).filter(Boolean)
+    };
+    saveLogic();
 }
 
 function toggleNodeEnding() {
@@ -154,10 +205,7 @@ async function exportProject() {
         const exportedNodes = [];
         for (const n of data.nodes) {
             const fullImg = typeof getMediaFromFileSystem === 'function' ? await getMediaFromFileSystem(n.id) : null;
-            exportedNodes.push({
-                ...n,
-                image: fullImg || null
-            });
+            exportedNodes.push({ ...n, image: fullImg || null });
         }
         const payload = {
              ...data,
@@ -167,7 +215,6 @@ async function exportProject() {
              exportedAt: new Date().toISOString(),
              version: SCHEMA_VERSION
         };
-             
         const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -175,16 +222,13 @@ async function exportProject() {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(a.href);
-    } catch (err) {
-        alert('Error al exportar el JSON: ' + err.message);
-    }
+    } catch (err) { alert('Error: ' + err.message); }
 }
 
 function importProject() {
     const inp = document.createElement('input');
     inp.type = 'file';
-    inp.accept = '.json,application/json';
+    inp.accept = '.json';
     inp.onchange = e => {
         const file = e.target.files[0];
         if (!file) return;
@@ -192,43 +236,17 @@ function importProject() {
         reader.onload = async ev => {
             try {
                 const obj = JSON.parse(ev.target.result);
-                if (!obj.nodes || !Array.isArray(obj.nodes)) throw new Error('Formato inválido');
-                                 
                 const id = genId('proj');
-                                 
-                // Iterar sobre los nodos importados para extraer y guardar las imágenes pesadas en /media/
                 if (typeof saveMediaToFileSystem === 'function') {
                     for (const n of obj.nodes) {
-                        if (n.image && n.image.startsWith('data:image')) {
-                            await saveMediaToFileSystem(n.id, n.image);
-                        }
+                        if (n.image && n.image.startsWith('data:image')) await saveMediaToFileSystem(n.id, n.image);
                     }
                 }
-                
-                // Mapear y normalizar el proyecto en la colección volátil de memoria
-                projects[id] = normalizeProject({
-                    name: obj.name || file.name.replace(/\.json$/, ''),
-                    nodes: obj.nodes,
-                    connections: obj.connections || []
-                });
-                                 
-                projects[id].visualStyle = obj.visualStyle || "";
-                projects[id].visualBible = obj.visualBible || "";
-                
-                // Cargar el proyecto como el entorno activo
+                projects[id] = normalizeProject(obj);
                 await loadProjectLogic(id);
-                
-                // CORRECCIÓN CRÍTICA: Forzar el guardado físico inmediato del archivo .json en la carpeta seleccionada
-                if (typeof saveLogic === 'function') {
-                    await saveLogic();
-                }
-                
+                if (typeof saveLogic === 'function') await saveLogic();
                 await handleLoadProject(id);
-                if (typeof flashSaveIndicator === 'function') flashSaveIndicator('IMPORTADO Y GUARDADO');
-                
-            } catch (err) {
-                alert('No se pudo importar el archivo: ' + err.message);
-            }
+            } catch (err) { alert('Error: ' + err.message); }
         };
         reader.readAsText(file);
     };
@@ -237,44 +255,16 @@ function importProject() {
 
 function exportWord() {
     if (data.nodes.length === 0) { alert("El proyecto está vacío."); return; }
-    if (typeof htmlDocx === 'undefined') { alert("Error: No se pudo cargar el convertidor de DOCX."); return; }
-    let html = `
-    <!DOCTYPE html><html lang="es"><head><meta charset='utf-8'><title>${data.name}</title>
-    <style>
-        body { font-family: 'Arial', sans-serif; }
-        h1 { text-align: center; text-transform: uppercase; border-bottom: 2px solid black; padding-bottom: 10px; }
-        h2 { margin-top: 40px; text-transform: uppercase; }
-        p { line-height: 1.6; }
-        ul { list-style-type: none; padding-left: 0; }
-        li { margin-bottom: 10px; }
-        a { text-decoration: none; color: blue; font-weight: bold; }
-        .ending { color: #7f1d1d; font-style: italic; }
-    </style></head><body><h1>${data.name}</h1>`;
-    data.nodes.forEach((n, index) => {
-        if (index > 0) html += `<br style='page-break-before: always; clear: both;'>`;
-        html += `<div id="nodo_${n.id}">`;
-        html += `<h2>${n.title}${n.isEnding ? ' <span class="ending">[FINAL]</span>' : ''}</h2>`;
-        html += `<p>${(n.content || '').replace(/\n/g, '<br>')}</p>`;
-        const outgoing = data.connections.filter(c => c.from === n.id);
-        if (outgoing.length > 0) {
-            html += `<ul>`;
-            outgoing.forEach(c => {
-                html += `<li><a href="#nodo_${c.to}"> → ${c.label || 'Continuar'}</a></li>`;
-            });
-            html += `</ul>`;
-        } else {
-            html += `<p><em>[Fin del camino]</em></p>`;
-        }
-        html += `</div>`;
+    let html = `<!DOCTYPE html><html lang="es"><head><title>${data.name}</title></head><body><h1>${data.name}</h1>`;
+    data.nodes.forEach((n) => {
+        html += `<h2>${n.title}</h2><p>${n.content}</p>`;
     });
     html += `</body></html>`;
     const blob = htmlDocx.asBlob(html);
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `${data.name.replace(/\s+/g, '_')}_Librojuego.docx`;
-    document.body.appendChild(a);
+    a.download = `${data.name}.docx`;
     a.click();
-    document.body.removeChild(a);
 }
 
 function handleAutoLayout() {

@@ -9,7 +9,9 @@ const agentState = {
     models: [],
     abort: false,
     apiMode: localStorage.getItem('koreh_api_mode') || 'local',
-    geminiApiKey: localStorage.getItem('koreh_gemini_key') || ''
+    geminiApiKey: localStorage.getItem('koreh_gemini_key') || '',
+    pollinationsApiKey: localStorage.getItem('koreh_pollinations_key') || '',
+    mediaMode: localStorage.getItem('koreh_media_mode') || 'local'
 };
 
 async function fetchOllamaModels() {
@@ -42,7 +44,7 @@ async function fetchOllamaModels() {
                 localModels = json.models.map(m => m.name);
             }
         } catch (eLocal) {
-            console.warn("Ollama local no respondió a tiempo para tags locales.");
+            console.warn("Ollama local no responded a tiempo para tags locales.");
         }
         
         // Intentamos también recuperar dinámicamente los modelos del Ollama Cloud remoto si es un endpoint distinto

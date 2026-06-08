@@ -1,5 +1,5 @@
 // assist_panel.js
-// --- PANEL LATERAL DERECHO PARA ASISTENCIA IA Y TAREAS EN PARALELO ---
+// --- PANEL LATERAL DERECHO PARA ASISTENCIA IA, TAREAS EN PARALELO Y CONFIGURACIÓN RPG ---
 
 const ASSIST_PANEL_W = 380;
 const COMFY_URL = "http://127.0.0.1:8188";
@@ -16,11 +16,12 @@ function initAssistPanel() {
         </header>
 
         <div class="flex border-b border-black shrink-0">
-            <button id="tab-config" onclick="switchAssistTab('config')" class="flex-1 text-[9px] uppercase font-bold py-2 bg-black text-white border-r border-black">Configuración</button>
-            <button id="tab-agent" onclick="switchAssistTab('agent')" class="flex-1 text-[9px] uppercase font-bold py-2 hover:bg-gray-100 border-r border-black">Agente</button>
-            <button id="tab-media" onclick="switchAssistTab('media')" class="flex-1 text-[9px] uppercase font-bold py-2 hover:bg-gray-100 border-r border-black">ComfyUI</button>
-            <button id="tab-canon" onclick="switchAssistTab('canon')" class="flex-1 text-[9px] uppercase font-bold py-2 hover:bg-gray-100 border-r border-black">Canon</button>
-            <button id="tab-tasks" onclick="switchAssistTab('tasks')" class="flex-1 text-[9px] uppercase font-bold py-2 hover:bg-gray-100">Tareas Activas (<span id="task-count">0</span>)</button>
+            <button id="tab-config" onclick="switchAssistTab('config')" class="flex-1 text-[8px] uppercase font-bold py-2 bg-black text-white border-r border-black">Config</button>
+            <button id="tab-agent" onclick="switchAssistTab('agent')" class="flex-1 text-[8px] uppercase font-bold py-2 hover:bg-gray-100 border-r border-black">Agente</button>
+            <button id="tab-rpg" onclick="switchAssistTab('rpg')" class="flex-1 text-[8px] uppercase font-bold py-2 hover:bg-gray-100 border-r border-black">RPG</button>
+            <button id="tab-media" onclick="switchAssistTab('media')" class="flex-1 text-[8px] uppercase font-bold py-2 hover:bg-gray-100 border-r border-black">ComfyUI</button>
+            <button id="tab-canon" onclick="switchAssistTab('canon')" class="flex-1 text-[8px] uppercase font-bold py-2 hover:bg-gray-100 border-r border-black">Canon</button>
+            <button id="tab-tasks" onclick="switchAssistTab('tasks')" class="flex-1 text-[8px] uppercase font-bold py-2 hover:bg-gray-100">Tareas (<span id="task-count">0</span>)</button>
         </div>
 
         <div id="assist-tab-config" class="hidden flex-grow flex flex-col min-h-0 overflow-hidden">
@@ -36,6 +37,10 @@ function initAssistPanel() {
                 <div>
                     <label class="text-[8px] uppercase font-bold block mb-0.5">Google Gemini API Key</label>
                     <input type="password" id="koreh-gemini-key" value="${agentState.geminiApiKey}" oninput="handleGeminiKeyChange(this.value)" placeholder="AIzaSy..." class="w-full text-[11px] border border-black p-1.5 outline-none font-mono">
+                </div>
+                <div>
+                    <label class="text-[8px] uppercase font-bold block mb-0.5">Pollinations API Key (Opcional)</label>
+                    <input type="password" id="koreh-pollinations-key" value="${agentState.pollinationsApiKey || ''}" oninput="handlePollinationsKeyChange(this.value)" placeholder="Key de autenticación..." class="w-full text-[11px] border border-black p-1.5 outline-none font-mono">
                 </div>
             </section>
 
@@ -132,16 +137,65 @@ function initAssistPanel() {
             </button>
         </div>
 
+        <div id="assist-tab-rpg" class="hidden flex-grow flex flex-col min-h-0 overflow-y-auto p-3 space-y-4 bg-white">
+            <p class="text-[8px] uppercase opacity-50 tracking-wider">Parámetros Globales RPG Iniciales</p>
+            <div class="grid grid-cols-3 gap-2">
+                <div>
+                    <label class="text-[9px] uppercase font-bold block mb-1">Vida Inicial</label>
+                    <input type="number" id="rpg-init-health" class="w-full text-xs border border-black p-1.5 font-mono outline-none text-center" oninput="saveRPGGlobal()">
+                </div>
+                <div>
+                    <label class="text-[9px] uppercase font-bold block mb-1">Vida Máxima</label>
+                    <input type="number" id="rpg-init-maxhealth" class="w-full text-xs border border-black p-1.5 font-mono outline-none text-center" oninput="saveRPGGlobal()">
+                </div>
+                <div>
+                    <label class="text-[9px] uppercase font-bold block mb-1">Oro Inicial</label>
+                    <input type="number" id="rpg-init-gold" class="w-full text-xs border border-black p-1.5 font-mono outline-none text-center" oninput="saveRPGGlobal()">
+                </div>
+            </div>
+
+            <div class="border-t border-black pt-3 flex flex-col flex-grow min-h-0">
+                <p class="text-[8px] uppercase opacity-50 tracking-wider mb-2">Base de Datos de Objetos del Sistema</p>
+                <div class="flex gap-1 mb-2">
+                    <input type="text" id="rpg-new-item" placeholder="ID u Objeto (Ej: LLAVE_PLATA)" class="flex-1 text-xs border border-black px-2 py-1 outline-none font-mono">
+                    <button onclick="addGlobalItemSystem()" class="text-[10px] uppercase bg-black text-white px-3 font-bold border border-black hover:bg-gray-800">Añadir</button>
+                </div>
+                <ul id="rpg-global-items-list" class="flex-grow overflow-y-auto border border-black bg-gray-50 p-2 space-y-1 font-mono text-xs"></ul>
+            </div>
+        </div>
+
         <div id="assist-tab-media" class="hidden flex-grow flex flex-col min-h-0 overflow-y-auto p-3 space-y-3 bg-white">
-            <p class="text-[8px] uppercase opacity-50 tracking-wider">Configuración Central de Ilustraciones (ComfyUI)</p>
+            <p class="text-[8px] uppercase opacity-50 tracking-wider">Configuración Central de Ilustraciones</p>
             <div>
-                <label class="text-[9px] uppercase font-bold opacity-70 block mb-1">Modelo Prompter IA</label>
-                <select id="comfy-prompt-model" class="w-full text-[11px] border border-black p-1.5 outline-none bg-white font-mono block"></select>
+                <label class="text-[9px] uppercase font-bold opacity-70 block mb-1">Motor de Generación Visual</label>
+                <select id="media-engine-mode" onchange="handleMediaModeChange(this.value)" class="w-full text-[11px] border border-black p-1.5 outline-none bg-white font-mono">
+                    <option value="local">ComfyUI Local (Puerto 8188)</option>
+                    <option value="pollinations">Pollinations AI Cloud</option>
+                </select>
             </div>
-            <div>
-                <label class="text-[9px] uppercase font-bold opacity-70 block mb-1">Modelo (Checkpoint)</label>
-                <input type="text" id="comfy-model" value="dreamshaperXL_lightningDPMSDE.safetensors" class="w-full text-[11px] border border-black p-1.5 outline-none">
+            
+            <div id="comfy-local-settings" class="space-y-3">
+                <div>
+                    <label class="text-[9px] uppercase font-bold opacity-70 block mb-1">Modelo Prompter IA</label>
+                    <select id="comfy-prompt-model" class="w-full text-[11px] border border-black p-1.5 outline-none bg-white font-mono block"></select>
+                </div>
+                <div>
+                    <label class="text-[9px] uppercase font-bold opacity-70 block mb-1">Modelo (Checkpoint)</label>
+                    <input type="text" id="comfy-model" value="dreamshaperXL_lightningDPMSDE.safetensors" class="w-full text-[11px] border border-black p-1.5 outline-none">
+                </div>
             </div>
+
+            <div id="pollinations-cloud-settings" class="space-y-3 hidden">
+                <div>
+                    <label class="text-[9px] uppercase font-bold opacity-70 block mb-1">Modelo Cloud (Pollinations)</label>
+                    <select id="pollinations-model" class="w-full text-[11px] border border-black p-1.5 outline-none bg-white font-mono">
+                        <option value="flux">Flux Schnell (Estándar)</option>
+                        <option value="zimage">Z-Image Turbo</option>
+                        <option value="klein">FLUX.2 Klein 4B</option>
+                    </select>
+                </div>
+            </div>
+
             <div>
                 <label class="text-[9px] uppercase font-bold opacity-70 block mb-1">Prompt Negativo Global</label>
                 <textarea id="comfy-neg-prompt" class="w-full text-[11px] border border-black p-1.5 outline-none h-12">bad anatomy, blurry, watermark, worst quality, messy</textarea>
@@ -154,7 +208,7 @@ function initAssistPanel() {
                         <option value="768">768</option>        
                         <option value="1024">1024</option>
                         <option value="1280" selected>1280</option>
-                        <option value="1600" selected>1600</option>
+                        <option value="1600">1600</option>
                     </select>
                 </div>
                 <div>
@@ -168,7 +222,7 @@ function initAssistPanel() {
                     </select>
                 </div>
             </div>
-            <button onclick="diagnoseComfyBackend()" class="w-full text-[9px] uppercase border border-red-800 text-red-800 p-2 hover:bg-red-800 hover:text-white transition">Diagnosticar ComfyUI</button>
+            <button id="media-diagnose-btn" onclick="diagnoseComfyBackend()" class="w-full text-[9px] uppercase border border-red-800 text-red-800 p-2 hover:bg-red-800 hover:text-white transition">Diagnosticar ComfyUI</button>
         </div>
 
         <div id="assist-tab-canon" class="hidden flex-grow flex flex-col min-h-0 overflow-y-auto p-3 space-y-3 bg-white">
@@ -193,8 +247,66 @@ function initAssistPanel() {
     setTimeout(() => {
         const selMode = document.getElementById('koreh-api-mode');
         if (selMode) selMode.value = agentState.apiMode;
+        
+        const mediaEngine = document.getElementById('media-engine-mode');
+        if (mediaEngine) {
+            mediaEngine.value = agentState.mediaMode || 'local';
+            handleMediaModeChange(mediaEngine.value);
+        }
+        
         fetchOllamaModels();
     }, 50);
+}
+
+function saveRPGGlobal() {
+    if (typeof data === 'undefined') return;
+    data.initialMetrics.health = parseInt(document.getElementById('rpg-init-health').value, 10) || 10;
+    data.initialMetrics.maxHealth = parseInt(document.getElementById('rpg-init-maxhealth').value, 10) || 10;
+    data.initialMetrics.gold = parseInt(document.getElementById('rpg-init-gold').value, 10) || 0;
+    saveLogic();
+}
+
+function addGlobalItemSystem() {
+    const input = document.getElementById('rpg-new-item');
+    const val = input.value.trim().toUpperCase();
+    if (!val || typeof data === 'undefined') return;
+    if (!data.globalItems.includes(val)) {
+        data.globalItems.push(val);
+        saveLogic();
+        renderRPGGlobalList();
+    }
+    input.value = '';
+}
+
+function removeGlobalItemSystem(item) {
+    if (typeof data === 'undefined') return;
+    data.globalItems = data.globalItems.filter(i => i !== item);
+    saveLogic();
+    renderRPGGlobalList();
+}
+
+function renderRPGGlobalList() {
+    const list = document.getElementById('rpg-global-items-list');
+    if (!list || typeof data === 'undefined') return;
+    list.innerHTML = '';
+    data.globalItems.forEach(item => {
+        list.innerHTML += `
+            <li class="flex justify-between items-center bg-white p-1 border border-black mb-1">
+                <span>${item}</span>
+                <button onclick="removeGlobalItemSystem('${item}')" class="text-red-500 hover:underline font-bold px-1 text-[10px]">✕</button>
+            </li>`;
+    });
+}
+
+function syncRPGGlobalToPanel() {
+    if (typeof data === 'undefined') return;
+    const h = document.getElementById('rpg-init-health');
+    const mh = document.getElementById('rpg-init-maxhealth');
+    const g = document.getElementById('rpg-init-gold');
+    if(h) h.value = data.initialMetrics.health;
+    if(mh) mh.value = data.initialMetrics.maxHealth;
+    if(g) g.value = data.initialMetrics.gold;
+    renderRPGGlobalList();
 }
 
 function handleApiModeChange(val) {
@@ -208,6 +320,30 @@ function handleGeminiKeyChange(val) {
     localStorage.setItem('koreh_gemini_key', agentState.geminiApiKey);
 }
 
+function handlePollinationsKeyChange(val) {
+    agentState.pollinationsApiKey = val.trim();
+    localStorage.setItem('koreh_pollinations_key', agentState.pollinationsApiKey);
+}
+
+function handleMediaModeChange(val) {
+    agentState.mediaMode = val;
+    localStorage.setItem('koreh_media_mode', val);
+    
+    const localSection = document.getElementById('comfy-local-settings');
+    const cloudSection = document.getElementById('pollinations-cloud-settings');
+    const diagnoseBtn = document.getElementById('media-diagnose-btn');
+    
+    if (val === 'pollinations') {
+        if (localSection) localSection.classList.add('hidden');
+        if (cloudSection) cloudSection.classList.remove('hidden');
+        if (diagnoseBtn) diagnoseBtn.classList.add('hidden');
+    } else {
+        if (localSection) localSection.className = localSection.className.replace('hidden', '').trim();
+        if (cloudSection) cloudSection.classList.add('hidden');
+        if (diagnoseBtn) diagnoseBtn.className = diagnoseBtn.className.replace('hidden', '').trim();
+    }
+}
+
 function openAssistPanel(title) {
     document.getElementById('assist-panel').classList.remove('hidden');
     document.getElementById('assist-title').textContent = title;
@@ -218,6 +354,7 @@ function openAssistPanel(title) {
     if (typeof resize === 'function') resize();
     populateAssistModels();
     syncCanonToPanel();
+    syncRPGGlobalToPanel();
 }
 
 function closeAssistPanel() {
@@ -249,24 +386,28 @@ function toggleAssistPanel() {
 function switchAssistTab(tab) {
     const tConfig = document.getElementById('assist-tab-config');
     const tAgent = document.getElementById('assist-tab-agent');
+    const tRPG = document.getElementById('assist-tab-rpg');
     const tMedia = document.getElementById('assist-tab-media');
     const tCanon = document.getElementById('assist-tab-canon');
     const tTasks = document.getElementById('tab-tasks-panel');
     
     const bConfig = document.getElementById('tab-config');
     const bAgent = document.getElementById('tab-agent');
+    const bRPG = document.getElementById('tab-rpg');
     const bMedia = document.getElementById('tab-media');
     const bCanon = document.getElementById('tab-canon');
     const bTasks = document.getElementById('tab-tasks');
 
     if (tConfig) tConfig.classList.add('hidden');
     if (tAgent) tAgent.classList.add('hidden');
+    if (tRPG) tRPG.classList.add('hidden');
     if (tMedia) tMedia.classList.add('hidden');
     if (tCanon) tCanon.classList.add('hidden');
     if (tTasks) tTasks.classList.add('hidden');
     
     if (bConfig) bConfig.classList.remove('bg-black', 'text-white');
     if (bAgent) bAgent.classList.remove('bg-black', 'text-white');
+    if (bRPG) bRPG.classList.remove('bg-black', 'text-white');
     if (bMedia) bMedia.classList.remove('bg-black', 'text-white');
     if (bCanon) bCanon.classList.remove('bg-black', 'text-white');
     if (bTasks) bTasks.classList.remove('bg-black', 'text-white');
@@ -277,6 +418,10 @@ function switchAssistTab(tab) {
     } else if (tab === 'agent' && tAgent) {
         tAgent.classList.remove('hidden');
         bAgent.classList.add('bg-black', 'text-white');
+    } else if (tab === 'rpg' && tRPG) {
+        tRPG.classList.remove('hidden');
+        bRPG.classList.add('bg-black', 'text-white');
+        syncRPGGlobalToPanel();
     } else if (tab === 'media' && tMedia) {
         tMedia.classList.remove('hidden');
         bMedia.classList.add('bg-black', 'text-white');
@@ -284,9 +429,10 @@ function switchAssistTab(tab) {
         tCanon.classList.remove('hidden');
         bCanon.classList.add('bg-black', 'text-white');
         syncCanonToPanel();
-    } else if (tTasks) {
+    } else if (tab === 'tasks' && tTasks) {
         tTasks.classList.remove('hidden');
         bTasks.classList.add('bg-black', 'text-white');
+        renderTasksPanel();
     }
 }
 

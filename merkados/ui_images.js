@@ -1,5 +1,5 @@
 // ui_images.js
-// --- GESTIÓN DE ELEMENTOS MULTIMEDIA E INTEGRACIÓN CON COMFYUI ---
+// --- GESTIÓN DE ELEMENTOS MULTIMEDIA E INTEGRACIÓN CON COMFYUI Y POLLINATIONS ---
 
 function renderNodeMediaContainer(item) {
     const mediaContainer = document.getElementById('node-media-container');
@@ -28,10 +28,12 @@ function uploadNodeImage(event) {
     const reader = new FileReader();
     reader.onload = function(e) {
         window.selectedNode.image = e.target.result;
-        saveMediaToDB(window.selectedNode.id, e.target.result).then(() => {
-            saveLogic();
-            openEditor('node', window.selectedNode);
-        });
+        if (typeof saveMediaToFileSystem === 'function') {
+            saveMediaToFileSystem(window.selectedNode.id, e.target.result).then(() => {
+                saveLogic();
+                openEditor('node', window.selectedNode);
+            });
+        }
     };
     reader.readAsDataURL(file);
 }
@@ -40,10 +42,12 @@ function removeNodeImage() {
     if (!window.selectedNode) return;
     const targetId = window.selectedNode.id;
     window.selectedNode.image = null;
-    deleteMediaFromDB(targetId).then(() => {
-        saveLogic();
-        openEditor('node', window.selectedNode);
-    });
+    if (typeof deleteMediaFromFileSystem === 'function') {
+        deleteMediaFromFileSystem(targetId).then(() => {
+            saveLogic();
+            openEditor('node', window.selectedNode);
+        });
+    }
 }
 
 async function generateComfyImageForNode() {
@@ -56,22 +60,16 @@ async function generateComfyImageForNode() {
         return;
     }
 
-    const checkpoint = document.getElementById('comfy-model')?.value || "dreamshaperXL_lightningDPMSDE.safetensors";
-    const promptNeg = document.getElementById('comfy-neg-prompt')?.value || "";
     const width = parseInt(document.getElementById('comfy-width')?.value || "512");
     const height = parseInt(document.getElementById('comfy-height')?.value || "512");
-    const steps = parseInt(document.getElementById('comfy-steps')?.value || "14");
-    const cfg = parseFloat(document.getElementById('comfy-cfg')?.value || "2.0");
-    const sampler = document.getElementById('comfy-sampler')?.value || "dpmpp_sde";
+    const prompterModel = document.getElementById('comfy-prompt-model')?.value || document.getElementById('assist-thinker')?.value || (agentState?.models?.[0]) || null;
 
-    const clientId = crypto.randomUUID();
-    const task = typeof createTask === 'function' ? createTask(node.id, 'Ilustración', 'Generando Arte Local') : null;
+    const task = typeof createTask === 'function' ? createTask(node.id, 'Ilustración', 'Generando Arte...') : null;
     if (task) updateTask(node.id, 10, 'Analizando Canon y Estilo...');
 
     let finalPromptPos = "";
     const entityRegex = /@\w+/g;
     const detectedEntities = basePromptText.match(entityRegex);
-    const prompterModel = document.getElementById('comfy-prompt-model')?.value || document.getElementById('assist-thinker')?.value || (agentState?.models?.[0]) || null;
 
     if (prompterModel) {
         if (task) updateTask(node.id, 20, 'Traduciendo y aplicando estilo global a inglés...');
@@ -140,7 +138,55 @@ CRITICAL MANDATE 2: The entire response MUST be in ENGLISH. Do not include any e
         finalPromptPos = basePromptText + (data.visualStyle ? `, ${data.visualStyle}` : "");
     }
 
+    // --- ENRUTAMIENTO DE MOTOR VISUAL ---
+    if (agentState.mediaMode === 'pollinations') {
+        if (task) updateTask(node.id, 50, 'Conectando con Pollinations Cloud...');
+        const pModel = document.getElementById('pollinations-model')?.value || 'flux';
+        const seed = Math.floor(Math.random() * 9999999);
+        
+        let url = `https://gen.pollinations.ai/image/${encodeURIComponent(finalPromptPos)}?model=${pModel}&width=${width}&height=${height}&seed=${seed}&nologo=true`;
+        if (agentState.pollinationsApiKey) {
+            url += `&key=${agentState.pollinationsApiKey}`;
+        }
+
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error("Fallo en la API de Pollinations.");
+            const blob = await response.blob();
+            
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const encodedData = reader.result;
+                node.image = encodedData;
+                if (typeof saveMediaToFileSystem === 'function') {
+                    saveMediaToFileSystem(node.id, encodedData).then(() => {
+                        saveLogic();
+                        if (window.selectedNode && window.selectedNode.id === node.id) {
+                            openEditor('node', window.selectedNode);
+                        }
+                        if (task) {
+                            updateTask(node.id, 100, 'Completado Cloud');
+                            setTimeout(() => finishTask(node.id), 500);
+                        }
+                    });
+                }
+            };
+            reader.readAsDataURL(blob);
+        } catch (err) {
+            alert("Fallo generativo en nube: " + err.message);
+            if (task) finishTask(node.id);
+        }
+        return;
+    }
+
+    // --- FLUJO LOCAL TRADICIONAL (COMFYUI) ---
     if (task) updateTask(node.id, 40, 'Renderizando en Pipeline...');
+    const checkpoint = document.getElementById('comfy-model')?.value || "dreamshaperXL_lightningDPMSDE.safetensors";
+    const promptNeg = document.getElementById('comfy-neg-prompt')?.value || "";
+    const steps = 14;
+    const cfg = 2.0;
+    const sampler = "dpmpp_sde";
+    const clientId = crypto.randomUUID();
 
     let promptWorkflow = {
         "4": { "class_type": "CheckpointLoaderSimple", "inputs": { "ckpt_name": checkpoint } },
@@ -194,17 +240,19 @@ CRITICAL MANDATE 2: The entire response MUST be in ENGLISH. Do not include any e
                             const encodedData = tempCanvas.toDataURL('image/png');
                             
                             node.image = encodedData;
-                            saveMediaToDB(node.id, encodedData).then(() => {
-                                saveLogic();
-                                if (window.selectedNode && window.selectedNode.id === node.id) {
-                                    openEditor('node', window.selectedNode);
-                                }
-                                if (task) {
-                                    updateTask(node.id, 100, 'Completado');
-                                    setTimeout(() => finishTask(node.id), 500);
-                                }
-                                ws.close();
-                            });
+                            if (typeof saveMediaToFileSystem === 'function') {
+                                saveMediaToFileSystem(node.id, encodedData).then(() => {
+                                    saveLogic();
+                                    if (window.selectedNode && window.selectedNode.id === node.id) {
+                                        openEditor('node', window.selectedNode);
+                                    }
+                                    if (task) {
+                                        updateTask(node.id, 100, 'Completado');
+                                        setTimeout(() => finishTask(node.id), 500);
+                                    }
+                                    ws.close();
+                                });
+                            }
                         };
                         img.src = imgUrl;
                     }

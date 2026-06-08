@@ -14,7 +14,8 @@ let data = {
      visualStyle: "",
      visualBible: "",
      macroPoints: [],
-     initialMetrics: { survival: 100, ethics: 0, efficiency: 100 }
+     initialMetrics: { survival: 100, ethics: 0, efficiency: 100, health: 100, maxHealth: 100, gold: 0 },
+     globalItems: [] // Catálogo de objetos existentes en el universo del juego
 };
 
 // --- SUBSISTEMA DE INICIALIZACIÓN POR DIRECTORIO (FSAA) ---
@@ -93,6 +94,7 @@ async function getMediaFromFileSystem(nodeId) {
 
 async function saveMediaToFileSystem(nodeId, base64Data) {
     if (!dirHandle) return;
+    let writable = null;
     try {
         const mediaDir = await dirHandle.getDirectoryHandle('media');
         if (!base64Data) {
@@ -101,8 +103,9 @@ async function saveMediaToFileSystem(nodeId, base64Data) {
             return;
         }
         
+        // Se fuerza { create: true } y se opera de manera aislada e inmediata
         const fileHandle = await mediaDir.getFileHandle(`${nodeId}.png`, { create: true });
-        const writable = await fileHandle.createWritable();
+        writable = await fileHandle.createWritable({ keepExistingData: false });
         
         // Conversión limpia de Base64 DataURL a Blob binario para el PNG
         const response = await fetch(base64Data);
@@ -110,8 +113,12 @@ async function saveMediaToFileSystem(nodeId, base64Data) {
         
         await writable.write(blob);
         await writable.close();
+        writable = null;
     } catch (e) {
         console.error(`[FSAA] Error guardando imagen png para el nodo ${nodeId}:`, e);
+        if (writable) {
+            try { await writable.abort(); } catch(err) {}
+        }
     }
 }
 
@@ -126,9 +133,21 @@ function genId(prefix = 'n') {
 
 // --- NORMALIZACIÓN ---
 function normalizeProject(p) {
-    if (!p) return { name: "Sin Título", nodes: [], connections: [], version: SCHEMA_VERSION, visualStyle: "", visualBible: "", macroPoints: [], initialMetrics: { survival: 100, ethics: 0, efficiency: 100 } };
+    if (!p) return { name: "Sin Título", nodes: [], connections: [], version: SCHEMA_VERSION, visualStyle: "", visualBible: "", macroPoints: [], initialMetrics: { survival: 100, ethics: 0, efficiency: 100, health: 100, maxHealth: 100, gold: 0 }, globalItems: [] };
          
     p.nodes = (p.nodes || []).map(n => {
+        // Asegurar que existan rewards base
+        const rewards = n.rewards || {
+            inventory: [],
+            flags: [],
+            metrics: { survival: 0, ethics: 0, efficiency: 0 }
+        };
+        
+        // Asegurar que exista rpg dentro de rewards de forma estricta
+        if (!rewards.rpg) {
+            rewards.rpg = { healthMod: 0, maxHealthMod: 0, goldMod: 0, addItems: [], removeItems: [] };
+        }
+
         return {
             id: String(n.id),
             x: n.x || 0,
@@ -141,58 +160,66 @@ function normalizeProject(p) {
             endingType: n.endingType || null,
             notes: n.notes || "",
             image: (n.image === "db_stored" || n.image === "file_stored") ? null : (n.image || null),
-            rewards: n.rewards || {
-                inventory: [],
-                flags: [],
-                metrics: { survival: 0, ethics: 0, efficiency: 0 }
-            }
+            rewards: rewards
         };
     });
          
     p.connections = (p.connections || []).map(c => ({
         from: String(c.from),
         to: String(c.to),
-        label: c.label || ""
+        label: c.label || "",
+        conditions: c.conditions || { requiredGold: 0, requiredItems: [], forbiddenItems: [] }
     }));
          
     p.name = p.name || "Sin Título";
     p.visualStyle = p.visualStyle || "";
     p.visualBible = p.visualBible || "";
     p.macroPoints = p.macroPoints || [];
-    p.initialMetrics = p.initialMetrics || { survival: 100, ethics: 0, efficiency: 100 };
+    
+    if (!p.initialMetrics) p.initialMetrics = { survival: 100, ethics: 0, efficiency: 100, health: 100, maxHealth: 100, gold: 0 };
+    if (p.initialMetrics.health === undefined) p.initialMetrics.health = 100;
+    if (p.initialMetrics.maxHealth === undefined) p.initialMetrics.maxHealth = 100;
+    if (p.initialMetrics.gold === undefined) p.initialMetrics.gold = 0;
+    
+    p.globalItems = p.globalItems || [];
     p.version = SCHEMA_VERSION;
     return p;
 }
 
+// Variable semáforo para evitar colisiones de reentrada física en el guardado secuencial del archivo JSON
+let isCurrentlySaving = false;
 async function saveLogic() {
-    if (!dirHandle || !currentId) return;
-
-    // 1. Guardar de forma asíncrona las imágenes modificadas o nuevas en la carpeta /media/
-    for (const n of data.nodes) {
-        if (n.image && n.image.startsWith('data:image')) {
-            await saveMediaToFileSystem(n.id, n.image);
-        }
-    }
-         
-    // 2. Conservar memoria ram del estado en la app
-    projects[currentId] = JSON.parse(JSON.stringify(data));
-    const cleanProject = JSON.parse(JSON.stringify(data));
-         
-    // 3. Marcar las imágenes en la estructura del JSON como persistidas en disco externo
-    cleanProject.nodes.forEach(n => {
-        if (n.image) {
-            n.image = "file_stored";
-        }
-    });
+    if (!dirHandle || !currentId || isCurrentlySaving) return;
+    isCurrentlySaving = true;
 
     try {
+        // 1. Guardar de forma asoncrónica secuencial estricta las imágenes modificadas en la carpeta /media/
+        for (const n of data.nodes) {
+            if (n.image && n.image.startsWith('data:image')) {
+                await saveMediaToFileSystem(n.id, n.image);
+            }
+        }
+             
+        // 2. Conservar memoria ram del estado en la app
+        projects[currentId] = JSON.parse(JSON.stringify(data));
+        const cleanProject = JSON.parse(JSON.stringify(data));
+             
+        // 3. Marcar las imágenes en la estructura del JSON como persistidas en disco externo
+        cleanProject.nodes.forEach(n => {
+            if (n.image) {
+                n.image = "file_stored";
+            }
+        });
+
         // Guardar físicamente el archivo JSON en el directorio raíz seleccionado
         const fileHandle = await dirHandle.getFileHandle(`${currentId}.json`, { create: true });
-        const writable = await fileHandle.createWritable();
+        const writable = await fileHandle.createWritable({ keepExistingData: false });
         await writable.write(JSON.stringify(cleanProject, null, 2));
         await writable.close();
     } catch (error) {
         console.error("[FSAA] Fallo crítico guardando el archivo JSON del proyecto:", error);
+    } finally {
+        isCurrentlySaving = false;
     }
 
     if (typeof pushHistory === 'function') pushHistory();
@@ -223,7 +250,7 @@ async function loadProjectLogic(id) {
 
 function newProjectLogic(name = "Sin Título") {
     const id = genId('proj');
-    projects[id] = normalizeProject({ name, nodes: [], connections: [], macroPoints: [], initialMetrics: { survival: 100, ethics: 0, efficiency: 100 } });
+    projects[id] = normalizeProject({ name, nodes: [], connections: [], macroPoints: [], initialMetrics: { survival: 100, ethics: 0, efficiency: 100, health: 100, maxHealth: 100, gold: 0 }, globalItems: [] });
     loadProjectLogic(id).then(() => {
         saveLogic();
         if (typeof renderSidebar === 'function') renderSidebar();

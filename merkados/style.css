@@ -20,7 +20,16 @@ canvas { cursor: crosshair; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.5); }
 
 /* Editor flex */
-#node-editor[style*="flex"] { display: flex !important; }
+
+#options-panel { display: flex !important;
+
+width: 60%!important;
+}
+
+#node-editor { display: flex !important;
+
+width: 450px !important;
+}
 
 /* Inputs y textareas mantienen selección de texto */
 input, textarea { user-select: text; }
