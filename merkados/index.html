@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KOREH | STUDIO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/html-docx-js@0.3.1/dist/html-docx.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="flex h-screen w-screen">
+    <aside id="sidebar" class="w-72 border-r border-black flex flex-col p-6 z-20 bg-white">
+        <h1 class="text-xs tracking-widest uppercase font-bold mb-4">Koreh Studio</h1>
+        
+        <div class="grid grid-cols-4 border border-black mb-4 shrink-0 shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+            <button id="sidebar-tab-library" onclick="switchSidebarTab('library')" class="text-[8px] uppercase font-bold py-1.5 bg-black text-white border-r border-black transition" title="Gestor de Conversaciones y Crónicas">Proyectos</button>
+            <button id="sidebar-tab-io" onclick="switchSidebarTab('io')" class="text-[8px] uppercase font-bold py-1.5 hover:bg-black hover:text-white border-r border-black transition" title="Opciones de Importación y Exportación">E / S</button>
+            <button id="sidebar-tab-voice" onclick="switchSidebarTab('voice')" class="text-[8px] uppercase font-bold py-1.5 hover:bg-black hover:text-white border-r border-black transition" title="Asistente de Voz y Chat Gemini Live">Asistente</button>
+            <button onclick="startPreview()" class="text-[8px] uppercase font-bold py-1.5 bg-emerald-700 text-white hover:bg-emerald-800 transition" title="Probar Librojuego (Play)"> Play</button>
+        </div>
+        
+        <div class="mb-4 shrink-0">
+            <p class="text-[10px] uppercase opacity-40 mb-2">Proyecto Actual</p>
+            <input type="text" id="project-name-input"                   class="w-full text-sm border-b border-black focus:outline-none pb-1"                   placeholder="Nombre del juego..."                   oninput="handleRenameProject(this.value)">
+            <p id="project-stats" class="text-[9px] uppercase opacity-30 tracking-widest mt-2">0 nodos   0 conexiones</p>
+        </div>
+
+        <div id="sidebar-content-library" class="flex-grow flex flex-col min-h-0">
+            <p class="text-[10px] uppercase opacity-40 mb-2">Biblioteca de Crónicas</p>
+            <ul id="project-list" class="flex-grow overflow-y-auto space-y-1 mb-4"></ul>
+            <div class="flex flex-col gap-1.5 shrink-0 pt-2 border-t border-dashed border-black/20">
+                <button onclick="handleNewProject()" class="text-[10px] uppercase border border-black p-2 hover:bg-black hover:text-white transition">+ Nuevo Proyecto</button>
+                <button onclick="showValidationReport()" class="text-[10px] uppercase border border-black p-2 hover:bg-black hover:text-white transition mt-1"> Diagnóstico</button>
+            </div>
+        </div>
+
+        <div id="sidebar-content-io" class="hidden flex-grow flex flex-col min-h-0 overflow-y-auto space-y-3">
+            <p class="text-[10px] uppercase opacity-40 mb-1">Transferencia Externa</p>
+            <div class="bg-gray-50 border border-black p-3 space-y-2 shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+                <p class="text-[8px] uppercase font-bold opacity-60">Copias de Seguridad Estructurales</p>
+                <button onclick="importProject()" class="w-full text-[10px] uppercase border border-black p-2 bg-white hover:bg-black hover:text-white transition text-left"> Importar Archivo JSON</button>
+                <button onclick="exportProject()" class="w-full text-[10px] uppercase border border-black p-2 bg-white hover:bg-black hover:text-white transition text-left"> Exportar Compilación JSON</button>
+            </div>
+                        
+            <div class="bg-gray-50 border border-black p-3 space-y-2 shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+                <p class="text-[8px] uppercase font-bold opacity-60">Distribución Literaria y Web</p>
+                <button onclick="exportWord()" class="w-full text-[10px] uppercase border border-black p-2 bg-white hover:bg-black hover:text-white transition text-left"> Exportar Documento Word (.docx)</button>
+                <button onclick="exportPlayableHTML()" class="w-full text-[10px] uppercase border border-black p-2 bg-white hover:bg-black hover:text-white transition text-left"> Exportar Novela HTML Jugable</button>
+            </div>
+        </div>
+
+        <div id="sidebar-content-voice" class="hidden flex-grow flex flex-col min-h-0">
+            <p class="text-[10px] uppercase opacity-40 mb-2">Canal Gemini Live</p>
+            <div class="flex-grow flex flex-col min-h-0 border border-black p-3 bg-gray-50 shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+                <div class="flex justify-between items-center mb-2 pb-1 border-b border-black">
+                    <span class="text-[9px] uppercase font-bold tracking-wider">Asistente de Voz</span>
+                    <span id="voiceStatusText" class="text-[8px] uppercase font-mono font-bold text-red-600">DESCONECTADO</span>
+                </div>
+                
+                <div id="voiceChatPanel" class="flex-grow overflow-y-auto bg-white border border-black p-2 mb-2 text-[10px] space-y-2 font-mono flex flex-col">
+                    <div class="text-gray-400 italic text-[9px]">[Sistema: Elige Conectar para inicializar la sesión]</div>
+                </div>
+
+                <div class="flex gap-1 mb-1.5 shrink-0">
+                    <button id="voiceConnectBtn" onclick="toggleVoiceLiveConnection()" class="flex-1 text-[8px] uppercase font-bold bg-black text-white p-1.5 hover:bg-gray-800 transition">Conectar</button>
+                    <button id="voiceMicBtn" onclick="toggleVoiceLiveMic()" class="flex-1 text-[8px] uppercase font-bold border border-black p-1.5 hover:bg-gray-200 transition" disabled>Micrófono</button>
+                </div>
+                <div class="flex gap-1 shrink-0">
+                    <input type="text" id="voiceTextInput" placeholder="Escribe al asistente..." onkeypress="handleVoiceLiveKey(event)" class="flex-grow text-[11px] border border-black px-2 py-1 outline-none font-mono" disabled>
+                    <button id="voiceSendBtn" onclick="sendVoiceLiveText()" class="text-[9px] font-bold bg-black text-white px-2 py-1 uppercase" disabled>Enviar</button>
+                </div>
+            </div>
+        </div>
+    </aside>
+    <main id="canvas-container" class="flex-grow relative bg-[radial-gradient(#e5e5e5_1px,transparent_1px)] [background-size:20px_20px]">
+        <div class="absolute top-4 left-4 flex gap-2 z-10">
+            <button onclick="handleAutoLayout()" class="text-[10px] uppercase font-bold border border-black px-4 py-2 bg-white hover:bg-black hover:text-white transition shadow-[2px_2px_0px_rgba(0,0,0,1)]">Ordenar Red</button>
+            <button onclick="fitToScreen()" class="text-[10px] uppercase font-bold border border-black px-4 py-2 bg-white hover:bg-black hover:text-white transition shadow-[2px_2px_0px_rgba(0,0,0,1)]">Ver Todo (F)</button>
+            <button onclick="resetZoom()" class="text-[10px] uppercase font-bold border border-black px-4 py-2 bg-white hover:bg-black hover:text-white transition shadow-[2px_2px_0px_rgba(0,0,0,1)]">Reset (0)</button>
+            <button onclick="undo()" class="text-[10px] uppercase font-bold border border-black px-3 py-2 bg-white hover:bg-black hover:text-white transition shadow-[2px_2px_0px_rgba(0,0,0,1)]" title="Ctrl+Z">⟲</button>
+            <button onclick="redo()" class="text-[10px] uppercase font-bold border border-black px-3 py-2 bg-white hover:bg-black hover:text-white transition shadow-[2px_2px_0px_rgba(0,0,0,1)]" title="Ctrl+Shift+Z">⟳</button>
+        </div>
+        <canvas id="flowCanvas"></canvas>
+        <div id="options-panel" class="fixed bottom-10 left-[304px] right-[380px] h-[240px] bg-white border border-black p-4 shadow-xl hidden flex flex-col z-20">
+            <p class="text-[9px] uppercase opacity-40 mb-3 tracking-wider font-bold">Opciones / Caminos desde este nodo</p>
+            <div id="options-list" class="flex-grow overflow-y-auto space-y-3 pr-1"></div>
+        </div>
+        <div id="node-editor" class="fixed bottom-10 right-10 w-80 h-[340px] bg-white border border-black p-4 shadow-xl hidden z-20 flex-col justify-between">
+            <div id="editor-node-fields" class="flex-grow flex flex-col min-h-0">
+                <div class="flex justify-between items-center mb-2">
+                    <p class="text-[9px] uppercase opacity-40" id="editor-type-label">Nodo</p>
+                    <button id="node-ending-toggle" onclick="toggleNodeEnding()" class="text-[8px] uppercase border border-black px-2 py-0.5 hover:bg-black hover:text-white transition"> Marcar como Final</button>
+                </div>
+                <input type="text" id="node-title" placeholder="Título del paso..." class="w-full text-sm mb-2 border-b border-gray-200 focus:border-black outline-none pb-1">
+                                
+                <div id="node-media-container" class="shrink-0"></div>
+                <textarea id="node-content" placeholder="Escribe el fragmento de historia..." class="w-full flex-grow text-xs leading-relaxed resize-none outline-none mb-1 min-h-0"></textarea>
+                <p id="node-word-count" class="text-[8px] uppercase opacity-30 tracking-widest mb-1">0 palabras</p>
+            </div>
+            <div id="editor-connection-fields" class="hidden flex-grow flex flex-col justify-center">
+                <p class="text-[9px] uppercase opacity-40 mb-3">Opciones de Conexión</p>
+                <input type="text" id="connection-label" placeholder="Texto de la opción (ej: Abrir puerta)" class="w-full text-sm mb-3 border-b border-black focus:outline-none pb-1">
+            </div>
+            <button onclick="closeEditor()" class="w-full text-[10px] bg-black text-white p-2 uppercase shrink-0">Aceptar</button>
+        </div>
+        <div class="absolute top-4 right-4 text-[9px] uppercase opacity-30 text-right pointer-events-none z-10 leading-snug">
+            <b>Click Izq:</b> Seleccionar / mover<br>
+            <b>Shift+Click:</b> Selección Múltiple<br>
+            <b>Click Der drag:</b> Conectar<br>
+            <b>Click Der corto:</b> Crear / borrar nodo<br>
+            <b>Alt+Click línea:</b> Borrar conexión<br>
+            <b>Espacio+arrastrar:</b> Pan<br>
+            <b>Ctrl+Z/Y:</b> Deshacer/rehacer<br>
+            <b>Ctrl+F:</b> Buscar &nbsp; <b>F:</b> Fit &nbsp; <b>0:</b> Reset<br>
+            <b>Ctrl+D:</b> Duplicar &nbsp; <b>Supr:</b> Borrar &nbsp; <b>E:</b> Final
+        </div>
+        <div id="save-indicator" class="absolute bottom-4 left-4 text-[9px] uppercase font-bold tracking-widest bg-black text-white px-3 py-1 z-30 transition-opacity duration-300" style="opacity:0">GUARDADO</div>
+    </main>
+    <div id="preview-modal" class="hidden fixed inset-0 bg-white z-50 overflow-y-auto"></div>
+    <div id="image-fullscreen-modal" class="hidden fixed inset-0 bg-white/95 z-50 flex items-center justify-center backdrop-blur-sm cursor-zoom-out" onclick="closeFullscreenImage()">
+        <img id="image-fullscreen-target" src="" class="max-w-[90vw] max-h-[90vh] object-contain border border-black shadow-[8px_8px_0px_rgba(0,0,0,1)]">
+    </div>
+    
+    <div id="hidden-canvas-container" class="hidden absolute">
+        <canvas id="hidden-canvas" width="10" height="10"></canvas>
+    </div>
+
+    <script src="logic.js"></script>
+    <script src="history.js"></script>
+    <script src="ui.js"></script>
+    <script src="ui_images.js"></script>
+    <script src="ui_options.js"></script>
+    <script src="ui_preview.js"></script>
+    <script src="task.js"></script>
+    <script src="main.js"></script>
+    <script src="search.js"></script>
+    <script src="validation.js"></script>
+    <script src="minimap.js"></script>
+    <script src="agent_pipeline.js"></script>
+    <script src="agent_ui.js"></script>
+    <script src="agent_network.js"></script>
+    <script src="graph_context.js"></script>
+    <script src="assist_panel.js"></script>
+    <script src="agent_advanced_core.js"></script>
+    <script src="agent_advanced_expand.js"></script>
+    <script src="agent_advanced_suggest.js"></script>
+    <script src="agent_advanced_prose.js"></script>
+    <script src="export_html.js"></script>
+  <script src="voice_spatial.js"></script>
+    <script src="voice_hardware.js"></script>
+    <script src="voice_core.js"></script>
+</body>
+</html>
