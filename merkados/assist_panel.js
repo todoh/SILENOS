@@ -6,7 +6,7 @@ const COMFY_URL = "http://127.0.0.1:8188";
 
 function initAssistPanel() {
     const html = `
-    <aside id="assist-panel" class="hidden fixed top-0 right-0 h-screen bg-white border-l border-black z-30 flex flex-col" style="width:${ASSIST_PANEL_W}px">
+    <aside id="assist-panel" class="hidden fixed top-0 right-0 h-screen bg-white  z-30 flex flex-col" style="width:${ASSIST_PANEL_W}px">
         <header class="border-b border-black p-3 flex justify-between items-center shrink-0">
             <h2 class="text-[10px] uppercase tracking-widest font-bold" id="assist-title">Asistencia IA</h2>
             <div class="flex gap-1">
@@ -499,7 +499,7 @@ function renderTasksPanel() {
         const n = data.nodes.find(nd => nd.id === nodeId);
         const focusTitle = n ? n.title : nodeId;
         html += `
-        <div class="border border-black p-2 mb-2 bg-white shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+        <div class="  p-2 mb-2 bg-white shadow-[2px_2px_0px_rgba(0,0,0,1)]">
             <div class="flex justify-between items-center mb-1">
                 <span class="text-[9px] font-bold uppercase truncate pr-2" title="${focusTitle}">
                     [${task.type}] ${task.title}
@@ -530,8 +530,8 @@ function setAssistStatus(msg, isError = false) {
 }
 
 function assistSection(title, content) {
-    return `<section class="border border-black bg-gray-50">
-        <header class="text-[8px] uppercase tracking-wider font-bold border-b border-black px-2 py-1 bg-white">${title}</header>
+    return `<section class="  bg-gray-50">
+        <header class="text-[8px] uppercase tracking-wider font-bold   px-2 py-1 bg-white">${title}</header>
         <div class="p-2 text-[11px] space-y-1">${content}</div>
     </section>`;
 }
@@ -541,12 +541,12 @@ function assistField(label, id, value = '', placeholder = '', textarea = false) 
     if (textarea) {
         return `<div>
             <label class="text-[8px] uppercase opacity-60 block mb-0.5">${label}</label>
-            <textarea id="${id}" class="w-full text-[11px] border border-black p-1.5 outline-none resize-none" rows="3" placeholder="${placeholder}">${value}</textarea>
+            <textarea id="${id}" class="w-full text-[11px]   p-1.5 outline-none resize-none" rows="3" placeholder="${placeholder}">${value}</textarea>
         </div>`;
     }
     return `<div>
         <label class="text-[8px] uppercase opacity-60 block mb-0.5">${label}</label>
-        <input id="${id}" type="text" value="${safeVal}" placeholder="${placeholder}" class="w-full text-[11px] border border-black p-1.5 outline-none">
+        <input id="${id}" type="text" value="${safeVal}" placeholder="${placeholder}" class="w-full text-[11px]   p-1.5 outline-none">
     </div>`;
 }
 

@@ -432,10 +432,13 @@ function loop() {
         const isOrphan = inDeg[n.id] === 0 && outDeg[n.id] === 0;
         const isEnd = n.isEnding || (inDeg[n.id] > 0 && outDeg[n.id] === 0);
 
+        // Dibujado del contorno de selección de búsqueda redondeado
         if (isSearchHit) {
             ctx.strokeStyle = '#3b82f6';
             ctx.lineWidth = 3;
-            ctx.strokeRect(n.x - 3, n.y - 3, 146, 66);
+            ctx.beginPath();
+            ctx.roundRect(n.x - 3, n.y - 3, 146, 66, 11);
+            ctx.stroke();
         }
 
         if (n.color) ctx.fillStyle = n.color;
@@ -443,10 +446,17 @@ function loop() {
         else if (n.isEnding) ctx.fillStyle = '#7f1d1d';
         else ctx.fillStyle = '#fff';
         
-        ctx.strokeStyle = inMulti && !isSel ? '#3b82f6' : '#000';
-        ctx.lineWidth = inMulti && !isSel ? 2 : 1;
-        ctx.fillRect(n.x, n.y, 140, 60);
-        ctx.strokeRect(n.x, n.y, 140, 60);
+        // Dibujado del cuerpo principal del nodo con esquinas redondeadas de 8px (Estilo Google Material)
+        ctx.beginPath();
+        ctx.roundRect(n.x, n.y, 140, 60, 8);
+        ctx.fill();
+
+        // Si el nodo está seleccionado en la multi-selección, se dibuja un trazo sutil redondeado de indicación
+        if (inMulti && !isSel) {
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
 
         if (n.image && n.image !== "db_stored") {
             let cachedImg = nodeImageCache.get(n.id);
@@ -457,8 +467,12 @@ function loop() {
             }
             if (cachedImg.complete) {
                 ctx.save();
-                // Eliminado el filtro blanco/globalAlpha atenuado para renderizar la ilustración al 100% de opacidad nativa
                 ctx.globalAlpha = 1.0;
+                
+                // Crear máscara de recorte redondeada interna para que la imagen se adapte a las esquinas redondeadas del nodo
+                ctx.beginPath();
+                ctx.roundRect(n.x + 1, n.y + 1, 138, 58, 7);
+                ctx.clip();
                 
                 const targetW = 138;
                 const targetH = 58;
@@ -487,8 +501,8 @@ function loop() {
         const useDark = (isSel || n.isEnding) ? true : false;
         ctx.font = 'bold 7px Inter';
         ctx.fillStyle = useDark ? '#fff' : '#000';
-        let tagX = n.x + 138;
-        const tagY = n.y + 9;
+        let tagX = n.x + 128; // Desplazado ligeramente hacia la izquierda debido al radio de las esquinas
+        const tagY = n.y + 11;
         ctx.textAlign = 'right';
         if (isRoot) { ctx.fillText('▶ INICIO', tagX, tagY); tagX -= ctx.measureText('▶ INICIO').width + 6; }
         if (isEnd) { ctx.fillText('■ FIN', tagX, tagY); tagX -= ctx.measureText('■ FIN').width + 6; }
