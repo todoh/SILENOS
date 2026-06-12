@@ -9,7 +9,6 @@ function switchSidebarTab(tabName) {
         const el = document.getElementById(`sidebar-content-${c}`);
         if (el) el.classList.add('hidden');
     });
-
     const tabs = ['library', 'io', 'voice'];
     tabs.forEach(t => {
         const btn = document.getElementById(`sidebar-tab-${t}`);
@@ -18,10 +17,8 @@ function switchSidebarTab(tabName) {
             btn.classList.add('hover:bg-black', 'hover:text-white');
         }
     });
-
     const activeContainer = document.getElementById(`sidebar-content-${tabName}`);
     if (activeContainer) activeContainer.classList.remove('hidden');
-
     const activeBtn = document.getElementById(`sidebar-tab-${tabName}`);
     if (activeBtn) {
         activeBtn.classList.remove('hover:bg-black', 'hover:text-white');
@@ -89,26 +86,24 @@ function handleDeleteProject(id, e) {
 function openEditor(type, item) {
     if (!nodeEditor) return;
     nodeEditor.style.display = 'flex';
-    
+         
     ensureRpgEditorFields();
-
     if (type === 'node') {
         document.getElementById('editor-type-label').innerText = "Nodo   " + item.id.substring(0, 14);
         document.getElementById('node-title').value = item.title;
         document.getElementById('node-content').value = item.content;
         document.getElementById('editor-node-fields').classList.remove('hidden');
+        document.getElementById('editor-node-fields').classList.remove('hidden');
         document.getElementById('editor-connection-fields').classList.add('hidden');
-        
-        // Mecanismo de blindaje contra objetos rewards/rpg mal formados o ausentes
+                 
         if (!item.rewards) item.rewards = {};
         const rpg = item.rewards.rpg || { healthMod: 0, maxHealthMod: 0, goldMod: 0, addItems: [], removeItems: [] };
-        
+                 
         document.getElementById('node-rpg-hp').value = rpg.healthMod || 0;
         document.getElementById('node-rpg-maxhp').value = rpg.maxHealthMod || 0;
         document.getElementById('node-rpg-gold').value = rpg.goldMod || 0;
         document.getElementById('node-rpg-add-item').value = (rpg.addItems || []).join(', ');
         document.getElementById('node-rpg-rem-item').value = (rpg.removeItems || []).join(', ');
-
         const endBtn = document.getElementById('node-ending-toggle');
         if (endBtn) {
             endBtn.classList.toggle('bg-black', item.isEnding);
@@ -122,12 +117,11 @@ function openEditor(type, item) {
         document.getElementById('connection-label').value = item.label || "";
         document.getElementById('editor-node-fields').classList.add('hidden');
         document.getElementById('editor-connection-fields').classList.remove('hidden');
-        
+                 
         const conds = item.conditions || { requiredGold: 0, requiredItems: [], forbiddenItems: [] };
         document.getElementById('conn-rpg-reqgold').value = conds.requiredGold || 0;
         document.getElementById('conn-rpg-reqitems').value = (conds.requiredItems || []).join(', ');
         document.getElementById('conn-rpg-forbitems').value = (conds.forbiddenItems || []).join(', ');
-
         if (optionsPanel) optionsPanel.classList.add('hidden');
     }
 }
@@ -139,9 +133,9 @@ function ensureRpgEditorFields() {
         <div id="node-rpg-container" class="border-t border-dashed border-black mt-2 pt-2 space-y-1 font-mono text-[9px]">
             <p class="font-bold uppercase tracking-wider opacity-60">Impacto Mutación RPG</p>
             <div class="grid grid-cols-3 gap-1">
-                <div>Δ HP: <input type="number" id="node-rpg-hp" oninput="saveNodeRPG()" class="w-full border border-black text-center p-0.5"></div>
-                <div>Δ MaxHP: <input type="number" id="node-rpg-maxhp" oninput="saveNodeRPG()" class="w-full border border-black text-center p-0.5"></div>
-                <div>Δ Oro: <input type="number" id="node-rpg-gold" oninput="saveNodeRPG()" class="w-full border border-black text-center p-0.5"></div>
+                <div>  HP: <input type="number" id="node-rpg-hp" oninput="saveNodeRPG()" class="w-full border border-black text-center p-0.5"></div>
+                <div>  MaxHP: <input type="number" id="node-rpg-maxhp" oninput="saveNodeRPG()" class="w-full border border-black text-center p-0.5"></div>
+                <div>  Oro: <input type="number" id="node-rpg-gold" oninput="saveNodeRPG()" class="w-full border border-black text-center p-0.5"></div>
             </div>
             <div class="grid grid-cols-2 gap-1 mt-1">
                 <div>+ Item(s): <input type="text" id="node-rpg-add-item" oninput="saveNodeRPG()" placeholder="POCION, POCION" class="w-full border border-black px-1 py-0.5"></div>
@@ -150,7 +144,6 @@ function ensureRpgEditorFields() {
         </div>`;
         nodeFields.appendChild(document.createRange().createContextualFragment(htmlNodeRpg));
     }
-
     if (!document.getElementById('conn-rpg-container')) {
         const connFields = document.getElementById('editor-connection-fields');
         const htmlConnRpg = `
@@ -251,20 +244,6 @@ function importProject() {
         reader.readAsText(file);
     };
     inp.click();
-}
-
-function exportWord() {
-    if (data.nodes.length === 0) { alert("El proyecto está vacío."); return; }
-    let html = `<!DOCTYPE html><html lang="es"><head><title>${data.name}</title></head><body><h1>${data.name}</h1>`;
-    data.nodes.forEach((n) => {
-        html += `<h2>${n.title}</h2><p>${n.content}</p>`;
-    });
-    html += `</body></html>`;
-    const blob = htmlDocx.asBlob(html);
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `${data.name}.docx`;
-    a.click();
 }
 
 function handleAutoLayout() {

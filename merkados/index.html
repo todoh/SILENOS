@@ -44,7 +44,7 @@
             </div>                                     
             <div class="bg-gray-50 border border-black p-3 space-y-2 shadow-[2px_2px_0px_rgba(0,0,0,1)]">
                 <p class="text-[8px] uppercase font-bold opacity-60">Distribuci n Literaria y Web</p>
-                <button onclick="exportWord()" style="display:none;" class="w-full text-[10px] uppercase border border-black p-2 bg-white hover:bg-black hover:text-white transition text-left"> Exportar Documento Word (.docx)</button>
+                <button onclick="exportWord()"  class="w-full text-[10px] uppercase border border-black p-2 bg-white hover:bg-black hover:text-white transition text-left"> Exportar Documento Word (.docx)</button>
                 <button onclick="exportPlayableHTML()" class="w-full text-[10px] uppercase border border-black p-2 bg-white hover:bg-black hover:text-white transition text-left"> Exportar Novela HTML Jugable</button>
             </div>
         </div>
@@ -56,10 +56,19 @@
                     <span id="voiceStatusText" class="text-[8px] uppercase font-mono font-bold text-red-600">DESCONECTADO</span>
                 </div>
                 
-                <!-- Interruptor suizo para permitir o denegar el acceso a la mutación del canvas -->
                 <div class="flex items-center justify-between pb-2 mb-2 border-b border-dashed border-black/20 shrink-0">
                     <label for="voiceCanvasEditToggle" class="text-[9px] uppercase font-bold tracking-wide opacity-70 cursor-pointer">Permitir Edición Canvas</label>
                     <input type="checkbox" id="voiceCanvasEditToggle" checked class="accent-black w-3.5 h-3.5 cursor-pointer">
+                </div>
+
+                <div class="flex flex-col gap-1 pb-2 mb-2 border-b border-dashed border-black/20 shrink-0 bg-white p-1.5 border border-black shadow-[1px_1px_0px_rgba(0,0,0,1)]">
+                    <p class="text-[8px] uppercase font-bold opacity-60 tracking-wider">Automatización Multimedia</p>
+                    <button onclick="illustrateAllUnillustratedNodes()" class="w-full text-[8px] uppercase font-bold bg-zinc-900 text-white p-1 hover:bg-zinc-700 transition">⚡ Ilustrar Todo (Rondas x20)</button>
+                    <div class="flex gap-1 items-center mt-1">
+                        <label for="voiceInterestCount" class="text-[8px] uppercase font-bold opacity-70 whitespace-nowrap">Nodos de Interés:</label>
+                        <input type="number" id="voiceInterestCount" value="3" min="1" max="50" class="w-12 text-center text-[10px] font-mono border border-black outline-none bg-white py-0.5">
+                        <button onclick="illustrateInterestingNodesByIA()" class="flex-grow text-[8px] uppercase font-bold bg-blue-900 text-white p-1 hover:bg-blue-700 transition">💡 Filtrar & Ilustrar</button>
+                    </div>
                 </div>
                                  
                 <div id="voiceChatPanel" class="flex-grow overflow-y-auto bg-white border border-black p-2 mb-2 text-[10px] space-y-2 font-mono flex flex-col">
@@ -67,7 +76,7 @@
                 </div>
                 <div class="flex gap-1 mb-1.5 shrink-0">
                     <button id="voiceConnectBtn" onclick="toggleVoiceLiveConnection()" class="flex-1 text-[8px] uppercase font-bold bg-black text-white p-1.5 hover:bg-gray-800 transition">Conectar</button>
-                    <button id="voiceMicBtn" onclick="toggleVoiceLiveMic()" class="flex-1 text-[8px] uppercase font-bold border border-black p-1.5 hover:bg-gray-200 transition" disabled>Micr fono</button>
+                    <button id="voiceMicBtn" onclick="toggleVoiceLiveMic()" class="flex-1 text-[8px] uppercase font-bold border border-black p-1.5 hover:bg-200 transition" disabled>Micr fono</button>
                 </div>
                 <div class="flex gap-1 shrink-0">
                     <input type="text" id="voiceTextInput" placeholder="Escribe al asistente..." onkeypress="handleVoiceLiveKey(event)" class="flex-grow text-[11px] border border-black px-2 py-1 outline-none font-mono" disabled>
@@ -94,8 +103,6 @@
             </div>
         </div>
 
-
-
         <div id="node-editor" class="fixed bottom-0 right-0  h-[35dvh] bg-white  p-4 shadow-xl hidden z-20 flex-col justify-between">
             <div id="editor-node-fields" class="flex-grow flex flex-col min-h-0">
                 <div class="flex justify-between items-center mb-2">
@@ -113,8 +120,6 @@
             </div>
             <button onclick="closeEditor()" class="w-full text-[10px] bg-black text-white p-2 uppercase shrink-0">Aceptar</button>
         </div>
-
-
 
         <div class="absolute top-4 right-4 text-[9px] uppercase opacity-30 text-right pointer-events-none z-10 leading-snug">
             <b>Click Izq:</b> Seleccionar / mover<br>
@@ -146,6 +151,7 @@
     <script src="main.js"></script>
     <script src="search.js"></script>
     <script src="validation.js"></script>
+    <script src="export_docx.js"></script>
     <script src="minimap.js"></script>
     <script src="agent_pipeline.js"></script>
     <script src="agent_ui.js"></script>

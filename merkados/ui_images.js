@@ -52,28 +52,30 @@ function removeNodeImage() {
 
 async function generateComfyImageForNode() {
     if (!window.selectedNode) return;
-    const node = window.selectedNode;
+    await executeSingleNodeIllustrationAsync(window.selectedNode);
+}
+
+/**
+ * FUNCIÓN CENTRALIZADA ASÍNCRONA PARA ILUSTRAR UN NODO INDIVIDUAL
+ * Extraída para permitir ejecuciones concurrentes masivas controladas por lotes.
+ */
+async function executeSingleNodeIllustrationAsync(node) {
     let basePromptText = node.content || node.title;
-    
-    if (!basePromptText.trim()) {
-        alert("Escribe contenido en el fragmento para usarlo como prompt.");
-        return;
-    }
+    if (!basePromptText.trim()) return;
 
     const width = parseInt(document.getElementById('comfy-width')?.value || "512");
     const height = parseInt(document.getElementById('comfy-height')?.value || "512");
     const prompterModel = document.getElementById('comfy-prompt-model')?.value || document.getElementById('assist-thinker')?.value || (agentState?.models?.[0]) || null;
 
-    const task = typeof createTask === 'function' ? createTask(node.id, 'Ilustración', 'Generando Arte...') : null;
-    if (task) updateTask(node.id, 10, 'Analizando Canon y Estilo...');
+    const task = typeof createTask === 'function' ? createTask(node.id, 'Ilustración', `Arte: ${node.title.substring(0,10)}`) : null;
+    if (task) updateTask(node.id, 10, 'Canon & Estilo...');
 
     let finalPromptPos = "";
     const entityRegex = /@\w+/g;
     const detectedEntities = basePromptText.match(entityRegex);
 
     if (prompterModel) {
-        if (task) updateTask(node.id, 20, 'Traduciendo y aplicando estilo global a inglés...');
-        
+        if (task) updateTask(node.id, 20, 'Prompt a Inglés...');
         const canonSource = data.visualBible || "";
         const globalStyle = data.visualStyle || "";
         let contextCanonData = "";
@@ -82,51 +84,27 @@ async function generateComfyImageForNode() {
             detectedEntities.forEach(ent => {
                 const lines = canonSource.split('\n');
                 const matchLine = lines.find(l => l.toUpperCase().startsWith(ent.toUpperCase()));
-                if (matchLine) {
-                    contextCanonData += `${matchLine}\n`;
-                }
+                if (matchLine) contextCanonData += `${matchLine}\n`;
             });
         }
 
         const systemInstructions = "You are an expert prompt engineer for Stable Diffusion and visual models. You output exclusively in ENGLISH.";
-        
-        let expansionPrompt = `The author is writing a text in Spanish and wants to generate an illustration for this section.
-SPANISH TEXT CONTENT TO ILLUSTRATE:
-"${basePromptText}"
-`;
+        let expansionPrompt = `The author is writing a text in Spanish and wants to generate an illustration for this section.\nSPANISH TEXT CONTENT TO ILLUSTRATE:\n"${basePromptText}"\n`;
 
-        if (globalStyle.trim()) {
-            expansionPrompt += `
-MANDATORY GLOBAL VISUAL STYLE / ARTISTIC DIRECTION:
-"${globalStyle}"
-`;
-        }
+        if (globalStyle.trim()) expansionPrompt += `\nMANDATORY GLOBAL VISUAL STYLE / ARTISTIC DIRECTION:\n"${globalStyle}"\n`;
+        if (contextCanonData.trim()) expansionPrompt += `\nVISUAL BIBLE DICTIONARY CODES:\n${contextCanonData}\nCRITICAL INSTRUCTION: Extract atmosphere, fuse with matching codes.\n`;
 
-        if (contextCanonData.trim()) {
-            expansionPrompt += `
-VISUAL BIBLE DICTIONARY CODES (Use these exact English visual descriptions for matching symbols):
-${contextCanonData}
-
-CRITICAL INSTRUCTION: Extract the scene's atmosphere, detect the entities invoked with '@', and fuse them perfectly with their corresponding visual descriptions from the dictionary.
-`;
-        }
-
-        expansionPrompt += `
-TASK:
-Translate the core concepts of the Spanish text into a single, cohesive, visually dense prompt optimized for Stable Diffusion.
-CRITICAL MANDATE 1: You MUST forcefully integrate and append the MANDATORY GLOBAL VISUAL STYLE descriptors into the final rendering instruction so the image matches this artistic aesthetic.
-CRITICAL MANDATE 2: The entire response MUST be in ENGLISH. Do not include any explanations, introductory text, metadata, or markdown wrap. Return ONLY the final tags and descriptive keywords separated by commas.`;
+        expansionPrompt += `\nTASK: Translate into single cohesive English prompt. Append artistic style. Output ONLY raw keywords, no markdown.`;
 
         try {
             if (typeof ollamaGenerate === 'function') {
                 const expandedPromptResponse = await ollamaGenerate(prompterModel, expansionPrompt, false, systemInstructions, task?.controller?.signal);
                 if (expandedPromptResponse && expandedPromptResponse.trim()) {
                     finalPromptPos = expandedPromptResponse.trim();
-                    console.log("[KOREH CANON & ESTILO] Prompt procesado a inglés por IA con éxito:", finalPromptPos);
                 }
             }
         } catch (thinkError) {
-            console.warn("[KOREH CANON] Falló la traducción asistida por IA, usando fallback.", thinkError);
+            console.warn("[KOREH CANON] Falló traducción por IA, usando fallback.", thinkError);
             if (thinkError.name === 'AbortError') {
                 if (task) finishTask(node.id);
                 return;
@@ -140,52 +118,50 @@ CRITICAL MANDATE 2: The entire response MUST be in ENGLISH. Do not include any e
 
     // --- ENRUTAMIENTO DE MOTOR VISUAL ---
     if (agentState.mediaMode === 'pollinations') {
-        if (task) updateTask(node.id, 50, 'Conectando con Pollinations Cloud...');
+        if (task) updateTask(node.id, 50, 'Pollinations Cloud...');
         const pModel = document.getElementById('pollinations-model')?.value || 'flux';
         const seed = Math.floor(Math.random() * 9999999);
-        
         let url = `https://gen.pollinations.ai/image/${encodeURIComponent(finalPromptPos)}?model=${pModel}&width=${width}&height=${height}&seed=${seed}&nologo=true`;
-        if (agentState.pollinationsApiKey) {
-            url += `&key=${agentState.pollinationsApiKey}`;
-        }
+        if (agentState.pollinationsApiKey) url += `&key=${agentState.pollinationsApiKey}`;
 
         try {
             const response = await fetch(url);
-            if (!response.ok) throw new Error("Fallo en la API de Pollinations.");
+            if (!response.ok) throw new Error("Fallo en API de Pollinations.");
             const blob = await response.blob();
             
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const encodedData = reader.result;
-                node.image = encodedData;
-                if (typeof saveMediaToFileSystem === 'function') {
-                    saveMediaToFileSystem(node.id, encodedData).then(() => {
-                        saveLogic();
-                        if (window.selectedNode && window.selectedNode.id === node.id) {
-                            openEditor('node', window.selectedNode);
-                        }
-                        if (task) {
-                            updateTask(node.id, 100, 'Completado Cloud');
-                            setTimeout(() => finishTask(node.id), 500);
-                        }
-                    });
-                }
-            };
-            reader.readAsDataURL(blob);
+            await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const encodedData = reader.result;
+                    node.image = encodedData;
+                    if (typeof saveMediaToFileSystem === 'function') {
+                        saveMediaToFileSystem(node.id, encodedData).then(() => {
+                            saveLogic();
+                            if (window.selectedNode && window.selectedNode.id === node.id) openEditor('node', window.selectedNode);
+                            if (task) {
+                                updateTask(node.id, 100, 'Listo');
+                                setTimeout(() => finishTask(node.id), 500);
+                            }
+                            resolve();
+                        }).catch(reject);
+                    } else {
+                        resolve();
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
         } catch (err) {
-            alert("Fallo generativo en nube: " + err.message);
+            console.error("Fallo generativo en nube: ", err.message);
             if (task) finishTask(node.id);
         }
         return;
     }
 
     // --- FLUJO LOCAL TRADICIONAL (COMFYUI) ---
-    if (task) updateTask(node.id, 40, 'Renderizando en Pipeline...');
+    if (task) updateTask(node.id, 40, 'Pipeline ComfyUI...');
     const checkpoint = document.getElementById('comfy-model')?.value || "dreamshaperXL_lightningDPMSDE.safetensors";
     const promptNeg = document.getElementById('comfy-neg-prompt')?.value || "";
-    const steps = 14;
-    const cfg = 2.0;
-    const sampler = "dpmpp_sde";
     const clientId = crypto.randomUUID();
 
     let promptWorkflow = {
@@ -196,8 +172,8 @@ CRITICAL MANDATE 2: The entire response MUST be in ENGLISH. Do not include any e
         "3": {
             "class_type": "KSampler",
             "inputs": {
-                "seed": Math.floor(Math.random() * 1000000000), "steps": steps, "cfg": cfg,
-                "sampler_name": sampler, "scheduler": "normal", "denoise": 1,
+                "seed": Math.floor(Math.random() * 1000000000), "steps": 14, "cfg": 2.0,
+                "sampler_name": "dpmpp_sde", "scheduler": "normal", "denoise": 1,
                 "model": ["4", 0], "positive": ["6", 0], "negative": ["7", 0], "latent_image": ["5", 0]
             }
         },
@@ -206,63 +182,161 @@ CRITICAL MANDATE 2: The entire response MUST be in ENGLISH. Do not include any e
     };
 
     try {
-        const ws = new WebSocket(`ws://127.0.0.1:8188/ws?clientId=${clientId}`);
-        ws.onopen = async () => {
-            if (task) updateTask(node.id, 50, 'En cola de ComfyUI...');
-            const response = await fetch(`http://127.0.0.1:8188/prompt`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt: promptWorkflow, client_id: clientId })
-            });
+        await new Promise((resolve, reject) => {
+            const ws = new WebSocket(`ws://127.0.0.1:8188/ws?clientId=${clientId}`);
+            ws.onopen = async () => {
+                if (task) updateTask(node.id, 50, 'En Cola...');
+                const response = await fetch(`http://127.0.0.1:8188/prompt`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ prompt: promptWorkflow, client_id: clientId })
+                });
 
-            if (!response.ok) throw new Error("Fallo en la estructura del pipeline.");
-            const responseData = await response.json();
-            const promptId = responseData.prompt_id;
+                if (!response.ok) { ws.close(); return reject(new Error("Fallo en pipeline.")); }
+                const responseData = await response.json();
+                const promptId = responseData.prompt_id;
 
-            ws.onmessage = async (event) => {
-                const message = JSON.parse(event.data);
-                if (message.type === 'progress' && task) {
-                    updateTask(node.id, Math.floor((message.data.value / message.data.max) * 40) + 50, `Progreso: ${message.data.value}/${message.data.max}`);
-                }
-                if (message.type === 'executed' && message.data.prompt_id === promptId) {
-                    const output = message.data.output;
-                    if (output.images) {
-                        const imgObj = output.images[0];
-                        const imgUrl = `http://127.0.0.1:8188/view?filename=${imgObj.filename}&subfolder=${imgObj.subfolder}&type=${imgObj.type}`;
-                        
-                        const img = new Image();
-                        img.crossOrigin = "Anonymous";
-                        img.onload = () => {
-                            const tempCanvas = document.createElement('canvas');
-                            tempCanvas.width = img.width;
-                            tempCanvas.height = img.height;
-                            tempCanvas.getContext('2d').drawImage(img, 0, 0);
-                            const encodedData = tempCanvas.toDataURL('image/png');
-                            
-                            node.image = encodedData;
-                            if (typeof saveMediaToFileSystem === 'function') {
-                                saveMediaToFileSystem(node.id, encodedData).then(() => {
-                                    saveLogic();
-                                    if (window.selectedNode && window.selectedNode.id === node.id) {
-                                        openEditor('node', window.selectedNode);
-                                    }
-                                    if (task) {
-                                        updateTask(node.id, 100, 'Completado');
-                                        setTimeout(() => finishTask(node.id), 500);
-                                    }
-                                    ws.close();
-                                });
-                            }
-                        };
-                        img.src = imgUrl;
+                ws.onmessage = async (event) => {
+                    const message = JSON.parse(event.data);
+                    if (message.type === 'progress' && task) {
+                        updateTask(node.id, Math.floor((message.data.value / message.data.max) * 40) + 50, `Progreso: ${message.data.value}/${message.data.max}`);
                     }
-                }
+                    if (message.type === 'executed' && message.data.prompt_id === promptId) {
+                        const output = message.data.output;
+                        if (output.images) {
+                            const imgObj = output.images[0];
+                            const imgUrl = `http://127.0.0.1:8188/view?filename=${imgObj.filename}&subfolder=${imgObj.subfolder}&type=${imgObj.type}`;
+                            
+                            const img = new Image();
+                            img.crossOrigin = "Anonymous";
+                            img.onload = () => {
+                                const tempCanvas = document.createElement('canvas');
+                                tempCanvas.width = img.width;
+                                tempCanvas.height = img.height;
+                                tempCanvas.getContext('2d').drawImage(img, 0, 0);
+                                const encodedData = tempCanvas.toDataURL('image/png');
+                                
+                                node.image = encodedData;
+                                if (typeof saveMediaToFileSystem === 'function') {
+                                    saveMediaToFileSystem(node.id, encodedData).then(() => {
+                                        saveLogic();
+                                        if (window.selectedNode && window.selectedNode.id === node.id) openEditor('node', window.selectedNode);
+                                        if (task) {
+                                            updateTask(node.id, 100, 'Listo');
+                                            setTimeout(() => finishTask(node.id), 500);
+                                        }
+                                        ws.close();
+                                        resolve();
+                                    });
+                                } else {
+                                    ws.close();
+                                    resolve();
+                                }
+                            };
+                            img.src = imgUrl;
+                        }
+                    }
+                };
             };
-        };
-        ws.onerror = () => { throw new Error("ComfyUI desconectado o error en el WebSocket."); };
+            ws.onerror = () => { ws.close(); reject(new Error("Error WebSocket.")); };
+        });
     } catch(err) {
-        alert("Fallo generativo: " + err.message);
+        console.error("Fallo generativo local: ", err.message);
         if (task) finishTask(node.id);
+    }
+}
+
+/**
+ * NUEVA FUNCIÓN: ILUSTRAR TODOS LOS NODOS VACÍOS EN RONDAS CONCURRENTES DE 20
+ */
+async function illustrateAllUnillustratedNodes() {
+    const unillustrated = data.nodes.filter(n => !n.image && n.content && n.content.trim() !== "");
+    if (!unillustrated.length) {
+        alert("Todos los nodos válidos ya se encuentran ilustrados en el espacio activo.");
+        return;
+    }
+
+    const voiceStatus = document.getElementById('panel-agent-status') || document.getElementById('voiceStatusText');
+    const oldText = voiceStatus ? voiceStatus.innerText : "ONLINE";
+    
+    if (voiceStatus) voiceStatus.innerText = `ILUSTRANDO: 0/${unillustrated.length}`;
+
+    // Procesamiento en bloques/rondas estrictas de 20 paralelos max
+    const ROUND_SIZE = 20;
+    for (let i = 0; i < unillustrated.length; i += ROUND_SIZE) {
+        const currentBatch = unillustrated.slice(i, i + ROUND_SIZE);
+        if (voiceStatus) voiceStatus.innerText = `RONDA IA: ${i + 1}-${Math.min(i + ROUND_SIZE, unillustrated.length)} de ${unillustrated.length}`;
+        
+        // Ejecución concurrente controlada por Promesas en paralelo
+        await Promise.all(currentBatch.map(node => executeSingleNodeIllustrationAsync(node)));
+    }
+
+    if (voiceStatus) voiceStatus.innerText = oldText;
+    alert(`Proceso masivo finalizado con éxito. Se procesaron ${unillustrated.length} ilustraciones.`);
+}
+
+/**
+ * NUEVA FUNCIÓN: FILTRADO INTELIGENTE E ILUSTRACIÓN SELECTIVA POR ANÁLISIS DE LA IA
+ */
+async function illustrateInterestingNodesByIA() {
+    const countInput = document.getElementById('voiceInterestCount');
+    const limit = parseInt(countInput?.value || "3", 10) || 3;
+
+    if (!data.nodes.length) {
+        alert("El librojuego no posee nodos.");
+        return;
+    }
+
+    const prompterModel = document.getElementById('assist-thinker')?.value || document.getElementById('comfy-prompt-model')?.value || (agentState?.models?.[0]) || null;
+    if (!prompterModel) {
+        alert("Configura un modelo en el Asistente/Config antes de continuar.");
+        return;
+    }
+
+    const voiceStatus = document.getElementById('panel-agent-status') || document.getElementById('voiceStatusText');
+    const oldText = voiceStatus ? voiceStatus.innerText : "ONLINE";
+    if (voiceStatus) voiceStatus.innerText = "IA EVALUANDO GRAFO...";
+
+    try {
+        // 1. Serializar el librojuego entero en 1 sola llamada estructurada utilizando el algoritmo BFS del sistema
+        let serializedStory = `PROYECTO: ${data.name}\n\n`;
+        data.nodes.forEach(n => {
+            serializedStory += `ID: "${n.id}"\nTÍTULO: "${n.title}"\nPROSA: ${n.content || '(Vacío)'}\n---\n`;
+        });
+
+        // 2. Construir prompt analítico para la IA
+        const evaluationPrompt = `Eres un ingeniero narrativo y director de arte de novelas visuales. Tu misión es leer el librojuego completo provisto a continuación y seleccionar exactamente un máximo de ${limit} nodos que sean los más críticos, dramáticos, con giros argumentales potentes o de alto impacto de interés para ser ilustrados.\n\n${serializedStory}\n\nDevuelve EXCLUSIVAMENTE un objeto JSON válido, sin decoradores ni markdown, que contenga un array de strings con los IDs exactos elegidos:\n{ "selectedIds": ["id1", "id2"] }`;
+
+        const rawJson = await ollamaGenerate(prompterModel, evaluationPrompt, true);
+        const match = rawJson.match(/\{[\s\S]*\}/);
+        if (!match) throw new Error("La IA no devolvió un JSON con nodos de interés válidos.");
+        
+        const parsedResult = JSON.parse(match[0]);
+        if (!parsedResult || !Array.isArray(parsedResult.selectedIds)) {
+            throw new Error("Formato inválido de IDs de interés.");
+        }
+
+        const targetIds = parsedResult.selectedIds;
+        const nodesToIllustrate = data.nodes.filter(n => targetIds.includes(n.id) && !n.image);
+
+        if (!nodesToIllustrate.length) {
+            if (voiceStatus) voiceStatus.innerText = oldText;
+            alert("La IA seleccionó nodos que ya poseían ilustraciones o IDs redundantes. Inténtalo de nuevo.");
+            return;
+        }
+
+        if (voiceStatus) voiceStatus.innerText = `ILUSTRANDO ${nodesToIllustrate.length} SELECCIONES IA...`;
+        
+        // 3. Ilustrar de golpe en paralelo todos los nodos marcados por el interés ontológico del modelo
+        await Promise.all(nodesToIllustrate.map(node => executeSingleNodeIllustrationAsync(node)));
+
+        if (voiceStatus) voiceStatus.innerText = oldText;
+        alert(`La IA analizó la obra entera y acopló ${nodesToIllustrate.length} ilustraciones artísticas concurrentes.`);
+
+    } catch (e) {
+        console.error(e);
+        if (voiceStatus) voiceStatus.innerText = oldText;
+        alert("Fallo en el filtrado inteligente: " + e.message);
     }
 }
 
