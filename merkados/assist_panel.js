@@ -16,8 +16,8 @@ function initAssistPanel() {
         </header>
 
         <div class="flex border-b border-black shrink-0">
-            <button id="tab-config" onclick="switchAssistTab('config')" class="flex-1 text-[8px] uppercase font-bold py-2 bg-black text-white border-r border-black">Config</button>
-            <button id="tab-agent" onclick="switchAssistTab('agent')" class="flex-1 text-[8px] uppercase font-bold py-2 hover:bg-gray-100 border-r border-black">Agente</button>
+            <button id="tab-config" onclick="switchAssistTab('config')" class="flex-1 text-[8px] uppercase font-bold py-2 hover:bg-gray-100 border-r border-black">Config</button>
+            <button id="tab-agent" onclick="switchAssistTab('agent')" class="flex-1 text-[8px] uppercase font-bold py-2 bg-black text-white border-r border-black">Agente</button>
             <button id="tab-rpg" onclick="switchAssistTab('rpg')" class="flex-1 text-[8px] uppercase font-bold py-2 hover:bg-gray-100 border-r border-black">RPG</button>
             <button id="tab-media" onclick="switchAssistTab('media')" class="flex-1 text-[8px] uppercase font-bold py-2 hover:bg-gray-100 border-r border-black">ComfyUI</button>
             <button id="tab-canon" onclick="switchAssistTab('canon')" class="flex-1 text-[8px] uppercase font-bold py-2 hover:bg-gray-100 border-r border-black">Canon</button>
@@ -135,6 +135,25 @@ function initAssistPanel() {
             <button onclick="abortAgent()" id="panel-agent-abort-btn" class="hidden w-full text-[10px] uppercase font-bold border border-red-600 text-red-600 p-2 hover:bg-red-600 hover:text-white transition">
                 Abortar Simulación
             </button>
+
+            <div class="border-t border-black mt-4 pt-3 space-y-2 bg-gray-50 p-2 border shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+                <p class="text-[8px] uppercase font-bold tracking-wider opacity-60">Optimización de Estilo en Serie</p>
+                <div>
+                    <label class="text-[8px] uppercase font-bold block mb-0.5">Extensión Requerida</label>
+                    <select id="panel-serial-rw-length" class="w-full text-xs border border-black p-1.5 outline-none bg-white font-mono">
+                        <option value="corto">Corto (2-3 frases quirúrgicas)</option>
+                        <option value="medio" selected>Medio (1 párrafo denso)</option>
+                        <option value="largo">Largo (2-3 párrafos descriptivos)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[8px] uppercase font-bold block mb-0.5">Directrices narrativas unificadas</label>
+                    <input type="text" id="panel-serial-rw-tone" value="Hazlo crudo, gótico y en tiempo presente." class="w-full text-xs border border-black p-1.5 outline-none font-mono">
+                </div>
+                <button onclick="executeSerialRewriteFromPanel()" class="w-full text-[9px] uppercase font-bold bg-zinc-900 text-white p-2 hover:bg-zinc-700 transition">
+                    ↻ Reescribir Obra Completa (Secuencial)
+                </button>
+            </div>
         </div>
 
         <div id="assist-tab-rpg" class="hidden flex-grow flex flex-col min-h-0 overflow-y-auto p-3 space-y-4 bg-white">
@@ -258,6 +277,116 @@ function initAssistPanel() {
     }, 50);
 }
 
+/**
+ * NUEVA PIPELINE: REESCRITURA SECUENCIAL EN SERIE PRESERVANDO EL ARROBA (@) DEL CANON
+ */
+async function executeSerialRewriteFromPanel() {
+    if (!data || !data.nodes || data.nodes.length === 0) {
+        alert("El grafo está vacío. No hay nodos para optimizar.");
+        return;
+    }
+
+    const writerModel = document.getElementById('panel-agent-writer')?.value || document.getElementById('assist-writer')?.value;
+    if (!writerModel) {
+        alert("Por favor, selecciona un modelo de Escritura en el panel antes de reescribir.");
+        return;
+    }
+
+    const rwLength = document.getElementById('panel-serial-rw-length').value;
+    const rwTone = document.getElementById('panel-serial-rw-tone').value.trim();
+    const statusEl = document.getElementById('panel-agent-status');
+
+    if (typeof switchAssistTab === 'function') switchAssistTab('tasks');
+
+    // 1. Calcular orden cronológico topológico puro usando la función bfsOrder nativa de agent_network.js
+    let sortedIds = [];
+    if (typeof bfsOrder === 'function') {
+        sortedIds = bfsOrder(data);
+    } else {
+        sortedIds = data.nodes.map(n => n.id);
+    }
+
+    const lenMap = { 
+        corto: '2-3 frases quirúrgicas e impactantes', 
+        medio: 'un único párrafo denso, literario y maduro de 5-8 líneas', 
+        largo: 'dos párrafos descriptivos completos y altamente inmersivos' 
+    };
+
+    if (statusEl) statusEl.innerText = `Iniciando reescritura de ${sortedIds.length} nodos...`;
+
+    // 2. Iteración secuencial controlada nodo por nodo para evitar colapsar hilos de inferencia local
+    for (let i = 0; i < sortedIds.length; i++) {
+        const currentId = sortedIds[i];
+        const node = data.nodes.find(n => n.id === currentId);
+        if (!node || !node.content || !node.content.trim()) continue;
+
+        if (statusEl) statusEl.innerText = `Reescribiendo: ${node.title} (${i + 1}/${sortedIds.length})`;
+
+        const task = typeof createTask === 'function' ? createTask(node.id, 'Reescribir Serie', `Estilizando: ${node.title}`) : null;
+        if (task) updateTask(node.id, 20, 'Analizando Canon estructural...');
+
+        // 3. Extraer y rastrear tokens con @ (Ej: @LOLA, @MONTAÑA) para exigir al prompt que los conserve intactos
+        const entityRegex = /@\w+/g;
+        const entitiesFound = node.content.match(entityRegex) || [];
+        const uniqueEntities = Array.from(new Set(entitiesFound));
+
+        let canonMandate = "";
+        if (uniqueEntities.length > 0) {
+            canonMandate = `\nMANDATO CRÍTICO DE CANON ONTOLÓGICO:\nEl texto actual contiene las siguientes palabras clave o entidades del sistema: ${uniqueEntities.join(', ')}.\n¡DEBES MANTENER E INYECTAR ESTOS COMPONENTES EXACTAMENTE IGUAL, PRESERVANDO EL CARÁCTER ARROBA (@) PEGADO A LA ENTIDAD EN LA MISMA UBICACIÓN CONCEPTUAL! No alteres su sintaxis ni elimines el símbolo @.`;
+        }
+
+        const localCtx = typeof buildLocalContext === 'function' ? buildLocalContext(node.id) : null;
+        const pathText = localCtx ? localCtx.mainPath.slice(0, -1).map(p => `[${p.title}] ${(p.content || '').substring(0, 80)}`).join(' → ') : '';
+
+        const prompt = `Reescribe estilísticamente el fragmento del librojuego interactivo basándote en su prosa actual, incrementando la madurez léxica sin alterar los hechos reales acontecidos.
+
+TÍTULO DEL PASO: ${node.title}
+PROSA ACTUAL A OPTIMIZAR:\n${node.content}
+
+ÓRDENES DE ESTILO DIRECTAS DEL AUTOR:\n${rwTone || 'Mejorar fluidez, madurez y ritmo oracional.'}
+LONGITUD EXIGIDA: ${lenMap[rwLength]}
+${canonMandate}
+
+CONTEXTO CRONOLÓGICO PREVIO DE NAVEGACIÓN:
+${pathText || '(Nodo Inicial u Origen de la Obra)'}
+
+Devuelve EXCLUSIVAMENTE la prosa corregida. Está terminantemente prohibido incluir títulos, metadatos, introducciones o sugerencias de opciones de decisión al final.`;
+
+        const signal = task ? task.controller.signal : null;
+
+        try {
+            // Llamada maestra síncrona/bloqueante en el bucle para preservar el hilo ordenado
+            const responseOut = await ollamaGenerate(writerModel, prompt, false, null, signal);
+            
+            if (responseOut && responseOut.trim()) {
+                node.content = responseOut.trim();
+                
+                // Si el nodo modificado coincide con el editor activo en pantalla, actualizamos el text-area en vivo
+                if (window.selectedNode && window.selectedNode.id === node.id) {
+                    const cEl = document.getElementById('node-content');
+                    if (cEl) cEl.value = node.content;
+                }
+                
+                if (typeof saveLogic === 'function') await saveLogic();
+            }
+
+            if (task) {
+                updateTask(node.id, 100, 'Completado');
+                setTimeout(() => finishTask(node.id), 500);
+            }
+        } catch (e) {
+            console.error(`[REESCRITURA SERIE] Fallo en nodo ${node.id}:`, e);
+            if (task) {
+                updateTask(node.id, 0, 'Fallo de inferencia');
+                setTimeout(() => finishTask(node.id), 1000);
+            }
+        }
+    }
+
+    if (statusEl) statusEl.innerText = "Agente Listo.";
+    alert(`Reescritura en serie finalizada con éxito. Se procesó la obra completa (${sortedIds.length} nodos).`);
+}
+
 function saveRPGGlobal() {
     if (typeof data === 'undefined') return;
     data.initialMetrics.health = parseInt(document.getElementById('rpg-init-health').value, 10) || 10;
@@ -276,6 +405,13 @@ function addGlobalItemSystem() {
         renderRPGGlobalList();
     }
     input.value = '';
+}
+
+function removeGlobalItemSystem(item) {
+    if (typeof data === 'undefined') return;
+    data.globalItems = data.globalItems.filter(i => i !== item);
+    saveLogic();
+    renderRPGGlobalList();
 }
 
 function removeGlobalItemSystem(item) {
