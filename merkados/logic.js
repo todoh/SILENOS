@@ -1,13 +1,11 @@
 // logic.js
-// --- ESTADO GLOBAL Y LÓGICA DE DATOS BASADA EN SISTEMA DE ARCHIVOS LOCAL (FSAA) ---
-const SCHEMA_VERSION = 3;  
-
+// --- ESTADO GLOBAL Y L GICA DE DATOS BASADA EN SISTEMA DE ARCHIVOS LOCAL (FSAA) ---
+const SCHEMA_VERSION = 3;   
 let projects = {};
 let currentId = null;
-let dirHandle = null; // Descriptor de la carpeta raíz seleccionada por el usuario
-
+let dirHandle = null; // Descriptor de la carpeta ra z seleccionada por el usuario
 let data = {
-     name: "Sin Título",
+     name: "Sin T tulo",
      nodes: [],
      connections: [],
      version: SCHEMA_VERSION,
@@ -15,25 +13,20 @@ let data = {
      visualBible: "",
      macroPoints: [],
      initialMetrics: { survival: 100, ethics: 0, efficiency: 100, health: 100, maxHealth: 100, gold: 0 },
-     globalItems: [] // Catálogo de objetos existentes en el universo del juego
+     globalItems: []
 };
 
-// --- SUBSISTEMA DE INICIALIZACIÓN POR DIRECTORIO (FSAA) ---
+// --- SUBSISTEMA DE INICIALIZACI N POR DIRECTORIO (FSAA) ---
 async function selectWorkspaceFolder() {
     try {
-        // Solicitar al usuario la selección de la carpeta de trabajo
         dirHandle = await window.showDirectoryPicker({
             mode: 'readwrite'
         });
         
-        // Crear la subcarpeta de medios/imágenes si no existe
         await dirHandle.getDirectoryHandle('media', { create: true });
-        
-        // Escanear la carpeta en busca de proyectos JSON
         await scanWorkspaceProjects();
         
-        // Ocultar pantalla de bloqueo si existiese e inicializar la UI
-        console.log("[FSAA] Carpeta de trabajo vinculada con éxito.");
+        console.log("[FSAA] Carpeta de trabajo vinculada con xito.");
         
         const projectIds = Object.keys(projects);
         if (projectIds.length > 0) {
@@ -43,13 +36,11 @@ async function selectWorkspaceFolder() {
             newProjectLogic("Mi Primer Librojuego");
         }
         
-        // Forzar el repintado de la barra lateral tras la lectura física
         if (typeof renderSidebar === 'function') renderSidebar();
-        
+             
     } catch (err) {
         console.error("[FSAA] Error al seleccionar o inicializar el directorio:", err);
         alert("Es obligatorio seleccionar una carpeta de trabajo para inicializar Koreh Studio.");
-        // Re-invocar para bloquear la aplicación de forma controlada hasta la selección
         setTimeout(selectWorkspaceFolder, 1000);
     }
 }
@@ -62,8 +53,6 @@ async function scanWorkspaceProjects() {
                 const file = await entry.getFile();
                 const content = await file.text();
                 const obj = JSON.parse(content);
-                
-                // El ID del proyecto será el nombre del archivo sin extensión
                 const projId = entry.name.replace('.json', '');
                 projects[projId] = normalizeProject(obj);
             } catch (e) {
@@ -73,7 +62,7 @@ async function scanWorkspaceProjects() {
     }
 }
 
-// --- CARGA Y GUARDADO ASÍNCRONO DE IMÁGENES PNG ---
+// --- CARGA Y GUARDADO AS NCRONO DE IM GENES PNG ---
 async function getMediaFromFileSystem(nodeId) {
     if (!dirHandle) return null;
     try {
@@ -87,7 +76,6 @@ async function getMediaFromFileSystem(nodeId) {
             reader.readAsDataURL(file);
         });
     } catch (e) {
-        // Devuelve null de forma silenciosa si el archivo no existe en disco
         return null;
     }
 }
@@ -98,16 +86,13 @@ async function saveMediaToFileSystem(nodeId, base64Data) {
     try {
         const mediaDir = await dirHandle.getDirectoryHandle('media');
         if (!base64Data) {
-            // Si no hay datos, eliminamos el archivo físico .png
             await mediaDir.removeEntry(`${nodeId}.png`);
             return;
         }
         
-        // Se fuerza { create: true } y se opera de manera aislada e inmediata
         const fileHandle = await mediaDir.getFileHandle(`${nodeId}.png`, { create: true });
         writable = await fileHandle.createWritable({ keepExistingData: false });
         
-        // Conversión limpia de Base64 DataURL a Blob binario para el PNG
         const response = await fetch(base64Data);
         const blob = await response.blob();
         
@@ -131,23 +116,19 @@ function genId(prefix = 'n') {
     return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
 }
 
-// --- NORMALIZACIÓN ---
+// --- NORMALIZACI N ---
 function normalizeProject(p) {
-    if (!p) return { name: "Sin Título", nodes: [], connections: [], version: SCHEMA_VERSION, visualStyle: "", visualBible: "", macroPoints: [], initialMetrics: { survival: 100, ethics: 0, efficiency: 100, health: 100, maxHealth: 100, gold: 0 }, globalItems: [] };
+    if (!p) return { name: "Sin T tulo", nodes: [], connections: [], version: SCHEMA_VERSION, visualStyle: "", visualBible: "", macroPoints: [], initialMetrics: { survival: 100, ethics: 0, efficiency: 100, health: 100, maxHealth: 100, gold: 0 }, globalItems: [] };
          
     p.nodes = (p.nodes || []).map(n => {
-        // Asegurar que existan rewards base
         const rewards = n.rewards || {
             inventory: [],
             flags: [],
             metrics: { survival: 0, ethics: 0, efficiency: 0 }
         };
-        
-        // Asegurar que exista rpg dentro de rewards de forma estricta
         if (!rewards.rpg) {
             rewards.rpg = { healthMod: 0, maxHealthMod: 0, goldMod: 0, addItems: [], removeItems: [] };
         }
-
         return {
             id: String(n.id),
             x: n.x || 0,
@@ -171,7 +152,7 @@ function normalizeProject(p) {
         conditions: c.conditions || { requiredGold: 0, requiredItems: [], forbiddenItems: [] }
     }));
          
-    p.name = p.name || "Sin Título";
+    p.name = p.name || "Sin T tulo";
     p.visualStyle = p.visualStyle || "";
     p.visualBible = p.visualBible || "";
     p.macroPoints = p.macroPoints || [];
@@ -180,48 +161,40 @@ function normalizeProject(p) {
     if (p.initialMetrics.health === undefined) p.initialMetrics.health = 100;
     if (p.initialMetrics.maxHealth === undefined) p.initialMetrics.maxHealth = 100;
     if (p.initialMetrics.gold === undefined) p.initialMetrics.gold = 0;
-    
+         
     p.globalItems = p.globalItems || [];
     p.version = SCHEMA_VERSION;
     return p;
 }
 
-// Variable semáforo para evitar colisiones de reentrada física en el guardado secuencial del archivo JSON
 let isCurrentlySaving = false;
 async function saveLogic() {
     if (!dirHandle || !currentId || isCurrentlySaving) return;
     isCurrentlySaving = true;
-
     try {
-        // 1. Guardar de forma asoncrónica secuencial estricta las imágenes modificadas en la carpeta /media/
         for (const n of data.nodes) {
             if (n.image && n.image.startsWith('data:image')) {
                 await saveMediaToFileSystem(n.id, n.image);
             }
         }
-             
-        // 2. Conservar memoria ram del estado en la app
+                 
         projects[currentId] = JSON.parse(JSON.stringify(data));
         const cleanProject = JSON.parse(JSON.stringify(data));
-             
-        // 3. Marcar las imágenes en la estructura del JSON como persistidas en disco externo
+                 
         cleanProject.nodes.forEach(n => {
             if (n.image) {
                 n.image = "file_stored";
             }
         });
-
-        // Guardar físicamente el archivo JSON en el directorio raíz seleccionado
         const fileHandle = await dirHandle.getFileHandle(`${currentId}.json`, { create: true });
         const writable = await fileHandle.createWritable({ keepExistingData: false });
         await writable.write(JSON.stringify(cleanProject, null, 2));
         await writable.close();
     } catch (error) {
-        console.error("[FSAA] Fallo crítico guardando el archivo JSON del proyecto:", error);
+        console.error("[FSAA] Fallo cr tico guardando el archivo JSON del proyecto:", error);
     } finally {
         isCurrentlySaving = false;
     }
-
     if (typeof pushHistory === 'function') pushHistory();
     if (typeof flashSaveIndicator === 'function') flashSaveIndicator();
 }
@@ -229,15 +202,10 @@ async function saveLogic() {
 async function loadProjectLogic(id) {
     if (!dirHandle) return;
     currentId = id;
-    
-    // Si no está mapeado en memoria, forzar re-escaneo rápido
     if (!projects[id]) {
         await scanWorkspaceProjects();
     }
-
-    data = normalizeProject(projects[id]);
-         
-    // Recuperar y re-inyectar los archivos binarios PNG de las imágenes correspondientes
+    data = normalizeProject(projects[id]);         
     for (const n of data.nodes) {
         const fileImage = await getMediaFromFileSystem(n.id);
         if (fileImage) {
@@ -248,7 +216,7 @@ async function loadProjectLogic(id) {
     if (typeof resetHistory === 'function') resetHistory();
 }
 
-function newProjectLogic(name = "Sin Título") {
+function newProjectLogic(name = "Sin T tulo") {
     const id = genId('proj');
     projects[id] = normalizeProject({ name, nodes: [], connections: [], macroPoints: [], initialMetrics: { survival: 100, ethics: 0, efficiency: 100, health: 100, maxHealth: 100, gold: 0 }, globalItems: [] });
     loadProjectLogic(id).then(() => {
@@ -260,18 +228,15 @@ function newProjectLogic(name = "Sin Título") {
 async function deleteProjectLogic(id) {
     if (!dirHandle) return;
     try {
-        // Eliminar las imágenes asociadas de los nodos que contiene
         const targetProject = projects[id];
         if (targetProject && targetProject.nodes) {
             for (const n of targetProject.nodes) {
                 await deleteMediaFromFileSystem(n.id);
             }
         }
-        
-        // Eliminar archivo .json físico
         await dirHandle.removeEntry(`${id}.json`);
         delete projects[id];
-        
+                 
         if (currentId === id) {
             const remaining = Object.keys(projects);
             if (remaining.length > 0) await loadProjectLogic(remaining[0]);
@@ -279,12 +244,12 @@ async function deleteProjectLogic(id) {
         }
         if (typeof renderSidebar === 'function') renderSidebar();
     } catch (e) {
-        console.error("[FSAA] Error al eliminar el proyecto físico:", e);
+        console.error("[FSAA] Error al eliminar el proyecto f sico:", e);
     }
 }
 
 function renameProjectLogic(val) {
-    data.name = val || "Sin Título";
+    data.name = val || "Sin T tulo";
     saveLogic();
 }
 
@@ -292,14 +257,15 @@ function getTargetNodeLogic(x, y) {
     return data.nodes.find(n => x > n.x && x < n.x + 140 && y > n.y && y < n.y + 60);
 }
 
+// --- OPTIMIZACIÓN DE TRAZADO DE LÍNEAS MATEMÁTICAS ---
 function isPointOnLineLogic(px, py, conn) {
     const n1 = data.nodes.find(n => n.id === conn.from);
     const n2 = data.nodes.find(n => n.id === conn.to);
     if (!n1 || !n2) return false;
     const x1 = n1.x + 140, y1 = n1.y + 30;
     const x2 = n2.x, y2 = n2.y + 30;
-    const dist = Math.abs((y2 - y1) * px - (x2 - x1) * py + x2 * y1 - y2 * x1) /                  
-                 Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2));
+    const dist = Math.abs((y2 - y1) * px - (x2 - x1) * py + x2 * y1 - y2 * x1) /                                    
+                   Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2));
     const minX = Math.min(x1, x2) - 5;
     const maxX = Math.max(x1, x2) + 5;
     const minY = Math.min(y1, y2) - 5;
@@ -341,71 +307,105 @@ function duplicateNodeLogic(nodeId) {
     return copy;
 }
 
+// --- REDISEÑO COMPLETO DE AUTO-LAYOUT: LINEAL O(N + C) ANTI-CUELGUES ---
 function autoLayoutLogic() {
     if (!data || !data.nodes || data.nodes.length === 0) return;
 
-    let roots = data.nodes.filter(n => !data.connections.some(c => c.to === n.id));
+    const nodesMap = {};
+    const nodeDepths = {};
+    const incomingConnections = {};
+    const outgoingConnections = {};
+
+    // 1. Inicialización en un único paso O(N)
+    data.nodes.forEach(n => {
+        nodesMap[n.id] = n;
+        nodeDepths[n.id] = -1;
+        incomingConnections[n.id] = [];
+        outgoingConnections[n.id] = [];
+    });
+
+    // 2. Mapeo de adyacencia en un único paso O(C)
+    data.connections.forEach(c => {
+        if (incomingConnections[c.to]) incomingConnections[c.to].push(c);
+        if (outgoingConnections[c.from]) outgoingConnections[c.from].push(c);
+    });
+
+    // 3. Identificación de raíces
+    let roots = data.nodes.filter(n => incomingConnections[n.id].length === 0);
     if (roots.length === 0) roots = [data.nodes[0]];
 
-    let nodeDepths = {};
-    data.nodes.forEach(n => nodeDepths[n.id] = -1);
-
+    // 4. BFS iterativo puro optimizado con control estricto de estados (Evita ciclos infinitos y clonaciones innecesarias)
     let queue = [];
     roots.forEach(r => {
         nodeDepths[r.id] = 0;
-        queue.push({ id: r.id, depth: 0, visited: new Set([r.id]) });
+        queue.push(r.id);
     });
 
-    while (queue.length > 0) {
-        const current = queue.shift();
-        const children = data.connections.filter(c => c.from === current.id).map(c => c.to);
-        
-        children.forEach(childId => {
-            if (current.visited.has(childId)) return;
-            const nextDepth = current.depth + 1;
-            if (nextDepth > nodeDepths[childId]) {
-                nodeDepths[childId] = nextDepth;
+    let index = 0;
+    while (index < queue.length) {
+        const currentId = queue[index++];
+        const currentDepth = nodeDepths[currentId];
+        const children = outgoingConnections[currentId];
+
+        if (children) {
+            for (let i = 0; i < children.length; i++) {
+                const childId = children[i].to;
+                // Si encontramos un camino más largo al nodo, actualizamos su profundidad
+                if (currentDepth + 1 > nodeDepths[childId]) {
+                    nodeDepths[childId] = currentDepth + 1;
+                    // Evitamos duplicados descontrolados en cola
+                    if (!queue.includes(childId)) {
+                        queue.push(childId);
+                    }
+                }
             }
-            let nextVisited = new Set(current.visited);
-            nextVisited.add(childId);
-            queue.push({ id: childId, depth: nextDepth, visited: nextVisited });
-        });
+        }
     }
 
-    let maxLegitDepth = 0;
-    Object.values(nodeDepths).forEach(d => { if (d > maxLegitDepth) maxLegitDepth = d; });
-    
-    const absoluteLimit = Math.min(maxLegitDepth + 1, data.nodes.length);
-    data.nodes.forEach(n => {
-        if (nodeDepths[n.id] < 0 || nodeDepths[n.id] > absoluteLimit) {
-            nodeDepths[n.id] = absoluteLimit;
-        }
-    });
-
+    // 5. Agrupación limpia por niveles
     let depthGroups = {};
+    const absoluteLimit = data.nodes.length;
+
     data.nodes.forEach(n => {
         let d = nodeDepths[n.id];
+        if (d < 0 || d > absoluteLimit) {
+            d = absoluteLimit;
+            nodeDepths[n.id] = absoluteLimit;
+        }
         if (!depthGroups[d]) depthGroups[d] = [];
         depthGroups[d].push(n);
     });
 
+    // Cachear coordenadas Y para evitar calcularlas cientos de veces en el sort de abajo
+    const yCache = {};
+    data.nodes.forEach(n => { yCache[n.id] = n.y; });
+
+    // 6. Ordenamiento secundario optimizado O(N log N) libre de recursión costosa
     Object.keys(depthGroups).forEach(d => {
         if (d === '0') return;
         depthGroups[d].sort((a, b) => {
-            const aParents = data.connections.filter(c => c.to === a.id).map(c => c.from);
-            const bParents = data.connections.filter(c => c.to === b.id).map(c => c.from);
-            const aAvg = aParents.length ? aParents.reduce((s, p) => {
-                const pn = data.nodes.find(nd => nd.id === p);
-                return s + (pn ? pn.y : 0);
-            }, 0) / aParents.length : 0;
-            const bAvg = bParents.length ? bParents.reduce((s, p) => {
-                const pn = data.nodes.find(nd => nd.id === p);
-                return s + (pn ? pn.y : 0);
-            }, 0) / bParents.length : 0;
+            const aParents = incomingConnections[a.id] || [];
+            const bParents = incomingConnections[b.id] || [];
+            
+            let aSum = 0, aCount = 0;
+            for (let i = 0; i < aParents.length; i++) {
+                aSum += yCache[aParents[i].from] || 0;
+                aCount++;
+            }
+            const aAvg = aCount ? aSum / aCount : 0;
+
+            let bSum = 0, bCount = 0;
+            for (let i = 0; i < bParents.length; i++) {
+                bSum += yCache[bParents[i].from] || 0;
+                bCount++;
+            }
+            const bAvg = bCount ? bSum / bCount : 0;
+            
             return aAvg - bAvg;
         });
     });
 
+    // 7. Reposicionamiento espacial en cuadrícula elástica equilibrada
     const X_SPACING = 260;
     const Y_SPACING = 110;
     const START_X = 100;
@@ -419,7 +419,32 @@ function autoLayoutLogic() {
             node.y = GLOBAL_CENTER_Y - ((count - 1) * Y_SPACING) / 2 + index * Y_SPACING;
         });
     }
-    saveLogic();
+
+    if (typeof pushHistory === 'function') pushHistory();
+    if (typeof flashSaveIndicator === 'function') flashSaveIndicator();
+    
+    // 8. Guardado asíncrono diferido sin clonación pesada en la UI principal
+    setTimeout(async () => {
+        if (!dirHandle || !currentId || isCurrentlySaving) return;
+        isCurrentlySaving = true;
+        try {
+            // Clonación superficial rápida solo de propiedades estructurales críticas para el JSON externo
+            const cleanNodes = data.nodes.map(n => ({
+                ...n,
+                image: n.image ? "file_stored" : null
+            }));
+            const cleanProject = { ...data, nodes: cleanNodes };
+
+            const fileHandle = await dirHandle.getFileHandle(`${currentId}.json`, { create: true });
+            const writable = await fileHandle.createWritable({ keepExistingData: false });
+            await writable.write(JSON.stringify(cleanProject, null, 2));
+            await writable.close();
+        } catch (e) {
+            console.error("[FSAA] Guardado diferido fallido:", e);
+        } finally {
+            isCurrentlySaving = false;
+        }
+    }, 150);
 }
 
 function toggleEndingLogic(nodeId) {
@@ -451,15 +476,14 @@ function dfsPath(currentId, targetId, visited) {
     return null;
 }
 
-// --- GESTIÓN DE BLOQUEO DE INICIO ---
+// --- GESTI N DE BLOQUEO DE INICIO ---
 document.addEventListener('DOMContentLoaded', () => {
-    // Inyectamos un modal bloqueante minimalista e ineludible en el body
     const lockHTML = `
     <div id="fsaa-folder-lock" class="fixed inset-0 bg-white z-[9999] flex flex-col items-center justify-center font-mono p-6">
         <div class="border border-black p-8 max-w-md text-center shadow-[4px_4px_0px_rgba(0,0,0,1)]">
-            <h2 class="text-xs font-bold uppercase tracking-widest mb-4">Koreh Studio · Workspace Selector</h2>
+            <h2 class="text-xs font-bold uppercase tracking-widest mb-4">Koreh Studio | Workspace Selector</h2>
             <p class="text-[10px] uppercase opacity-60 mb-6 leading-relaxed">
-                Para iniciar el entorno de desarrollo interactivo, debes designar la carpeta local donde se almacenarán las crónicas (.json) y sus respectivas ilustraciones (.png).
+                Para iniciar el entorno de desarrollo interactivo, debes designar la carpeta local donde se almacenar n las cr nicas (.json) y sus respectivas ilustraciones (.png).
             </p>
             <button onclick="selectWorkspaceFolder(); document.getElementById('fsaa-folder-lock').remove();" class="text-[11px] uppercase font-bold bg-black text-white border border-black px-6 py-3 hover:bg-gray-800 transition shadow-[2px_2px_0px_rgba(0,0,0,0.3)]">
                 Seleccionar Carpeta de Trabajo

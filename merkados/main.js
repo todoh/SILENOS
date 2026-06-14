@@ -355,31 +355,52 @@ function handleMouseUp(e) {
     connectStartNode = null;
 }
 
-// --- RENDER LOOP ---
+// --- RENDER LOOP OPTIMIZADO (CON FRUSTUM CULLING ANTI-CUELGUES) ---
 function loop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
     ctx.translate(camera.x, camera.y);
     ctx.scale(camera.zoom, camera.zoom);
 
+    // Límites de la pantalla mapeados al espacio del mundo virtual para descartar lo invisible
+    const viewLeft = -camera.x / camera.zoom;
+    const viewTop = -camera.y / camera.zoom;
+    const viewRight = (canvas.width - camera.x) / camera.zoom;
+    const viewBottom = (canvas.height - camera.y) / camera.zoom;
+
+    // Indexar nodos en un mapa asociativo rápido O(1) para evitar llamadas pesadas a .find() dentro de las conexiones
+    const nodesMap = {};
     const inDeg = {}, outDeg = {};
-    data.nodes.forEach(n => { inDeg[n.id] = 0; outDeg[n.id] = 0; });
+    
+    data.nodes.forEach(n => { 
+        nodesMap[n.id] = n;
+        inDeg[n.id] = 0; 
+        outDeg[n.id] = 0; 
+    });
+
     data.connections.forEach(c => {
         if (inDeg[c.to] !== undefined) inDeg[c.to]++;
         if (outDeg[c.from] !== undefined) outDeg[c.from]++;
     });
 
+    // 1. Renderizar conexiones
     data.connections.forEach(c => {
-        const n1 = data.nodes.find(n => n.id === c.from);
-        const n2 = data.nodes.find(n => n.id === c.to);
+        const n1 = nodesMap[c.from];
+        const n2 = nodesMap[c.to];
         if (!n1 || !n2) return;
+
+        const x1 = n1.x + 140, y1 = n1.y + 30;
+        const x2 = n2.x, y2 = n2.y + 30;
+
+        // Descarte rápido de líneas completamente fuera del viewport
+        const minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
+        const minY = Math.min(y1, y2), maxY = Math.max(y1, y2);
+        if (maxX < viewLeft || minX > viewRight || maxY < viewTop || minY > viewBottom) return;
 
         const isSel = window.selectedConnection === c;
         ctx.strokeStyle = isSel ? '#3b82f6' : '#000';
         ctx.lineWidth = isSel ? 2 : 1;
 
-        const x1 = n1.x + 140, y1 = n1.y + 30;
-        const x2 = n2.x, y2 = n2.y + 30;
         const cx1 = x1 + Math.max(40, Math.abs(x2 - x1) * 0.4);
         const cx2 = x2 - Math.max(40, Math.abs(x2 - x1) * 0.4);
 
@@ -424,7 +445,14 @@ function loop() {
         ctx.setLineDash([]);
     }
 
+    // 2. Renderizar Nodos
     data.nodes.forEach(n => {
+        // FRUSTUM CULLING CRÍTICO: Si el nodo está fuera de la pantalla visible, saltárselo completamente
+        // El tamaño del nodo es 140x60, añadimos un pequeño margen por las selecciones de búsqueda (3px)
+        if (n.x + 145 < viewLeft || n.x - 5 > viewRight || n.y + 65 < viewTop || n.y - 5 > viewBottom) {
+            return; 
+        }
+
         const isSel = window.selectedNode === n;
         const inMulti = window.selectedNodes.has(n.id);
         const isSearchHit = window.searchHighlightId === n.id;

@@ -86,7 +86,7 @@ function openFillEmpty() {
     const empty = data.nodes.filter(n => !n.content || !n.content.trim() || n.content === '[generando...]' || n.content === '[esperando IA...]' || n.content === '[escribiendo…]');
     
     document.getElementById('assist-body').innerHTML = `
-        ${assistSection('Inspección de Nodos', `<div>Se han detectado <b>${empty.length}</b> nodos sin contenido en la red actual.</div>`)}
+        ${assistSection('Inspección de Nodos', `<div>Se han detectado <b>${empty.length}</b> nodos sin contenido inyectado en la red actual.</div>`)}
         ${assistField('Tono unificado exigido', 'fill-tone', '', 'ej: prosa seca, cortante, misteriosa', true)}
     `;
     const btn = document.getElementById('assist-primary');
@@ -109,7 +109,7 @@ function runFillEmpty(emptyNodes) {
         const ctx = buildLocalContext(n.id);
         const pathText = ctx.mainPath.slice(0, -1).map(p => `[${p.title}] ${(p.content || '').substring(0, 100)}`).join(' → ');
         
-        const prompt = `Redacta la prosa de este nodo basándote estrictamente en su título y la trayectoria del juego.
+        const prompt = `Redacta la prosa de este nodo basándote strictly en su título y la trayectoria del juego.
 TÍTULO DEL PASO: ${n.title}
 TONO LITERARIO EXIGIDO: ${tone || 'Estilo inmersivo maduro.'}
 

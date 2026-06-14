@@ -42,7 +42,6 @@ function undo() {
     historyIndex--;
     data = JSON.parse(historyStack[historyIndex]);
     projects[currentId] = data;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
     historyLock = false;
     if (typeof closeEditor === 'function') closeEditor();
     if (typeof renderSidebar === 'function') renderSidebar();
@@ -59,7 +58,6 @@ function redo() {
     historyIndex++;
     data = JSON.parse(historyStack[historyIndex]);
     projects[currentId] = data;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
     historyLock = false;
     if (typeof closeEditor === 'function') closeEditor();
     if (typeof renderSidebar === 'function') renderSidebar();
@@ -121,7 +119,6 @@ function restoreBackup(index) {
     if (!backups[index]) return false;
     projects = backups[index].projects;
     Object.keys(projects).forEach(id => projects[id] = normalizeProject(projects[id]));
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
     const firstId = Object.keys(projects)[0];
     if (firstId) {
         loadProjectLogic(firstId);

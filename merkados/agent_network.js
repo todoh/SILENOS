@@ -1,7 +1,7 @@
 // agent_network.js
-// --- CONTROL DE RED DE AGENTES: ENRUTAMIENTO DUAL OLLAMA / GEMINI / OLLAMA CLOUD ---
+// --- CONTROL DE RED DE AGENTES: ENRUTAMIENTO DUAL OLLAMA / GEMINI / OLLAMA CLOUD / POLLINATIONS ---
 
-const OLLAMA_URL = 'http://127.0.0.1:11434/api';
+const OLLAMA_URL = 'http://127.0.0.1:11434/api'; 
 // Puedes cambiar esta URL por la IP de tu servidor en la nube o configurar un input en las opciones
 const OLLAMA_CLOUD_URL = localStorage.getItem('koreh_ollama_cloud_url') || 'http://127.0.0.1:11434/api';
 
@@ -13,6 +13,22 @@ const agentState = {
     pollinationsApiKey: localStorage.getItem('koreh_pollinations_key') || '',
     mediaMode: localStorage.getItem('koreh_media_mode') || 'local'
 };
+
+// Mapeo exhaustivo y exacto de los 56 modelos de Pollinations AI solicitados
+const POLLINATIONS_TEXT_MODELS = [
+    "openai", "openai-fast", "openai-large", "gpt-5.4-mini", "gpt-5.5", 
+    "qwen-coder", "mistral", "mistral-4", "openai-audio", "openai-audio-large", 
+    "gemini", "gemini-3.5-flash", "gemini-flash-lite-3.1", "gemini-fast", 
+    "deepseek", "gemma", "deepseek-pro", "grok", "grok-large", "grok-4.3", 
+    "gemini-search", "gemini-search-fast", "gemini-search-large", "midijourney", 
+    "midijourney-large", "claude-fast", "claude", "claude-large", "claude-opus-4.7", 
+    "claude-opus-4.8", "claude-fable-5", "perplexity-fast", "perplexity-deep", 
+    "perplexity", "perplexity-reasoning", "kimi", "kimi-k2.6", "kimi-k2.7-code", 
+    "gemini-large", "nova-fast", "nova", "glm", "llama", "llama-maverick", 
+    "llama-scout", "minimax", "minimax-m3", "mistral-large", "polly", 
+    "qwen-coder-large", "qwen-large", "qwen-vision", "qwen-vision-pro", 
+    "step-flash", "step-3.5-flash", "qwen-safety"
+];
 
 async function fetchOllamaModels() {
     // Modelos estándar online (Nube directa de Google)
@@ -28,7 +44,7 @@ async function fetchOllamaModels() {
     ];
 
     if (agentState.apiMode === 'online') {
-        const totalOnline = [...onlineModels, ...ollamaCloudModels];
+        const totalOnline = [...onlineModels, ...ollamaCloudModels, ...POLLINATIONS_TEXT_MODELS];
         populateSelectorsWithModels(totalOnline);
         agentState.models = totalOnline;
         restoreModelFavorites();
@@ -44,7 +60,7 @@ async function fetchOllamaModels() {
                 localModels = json.models.map(m => m.name);
             }
         } catch (eLocal) {
-            console.warn("Ollama local no responded a tiempo para tags locales.");
+            console.warn("Ollama local no respondió a tiempo para tags locales.");
         }
         
         // Intentamos también recuperar dinámicamente los modelos del Ollama Cloud remoto si es un endpoint distinto
@@ -62,15 +78,15 @@ async function fetchOllamaModels() {
             console.warn("Servidor Ollama Cloud dinámico no disponible. Usando mapeo de tags por defecto.");
         }
         
-        // Unificamos las listas asegurando que tus modelos Cloud específicos estén siempre presentes
-        const totalList = [...new Set([...localModels, ...onlineModels, ...remoteModels, ...ollamaCloudModels])];
+        // Unificamos las listas asegurando que tus modelos Cloud y Pollinations específicos estén siempre presentes
+        const totalList = [...new Set([...localModels, ...onlineModels, ...remoteModels, ...ollamaCloudModels, ...POLLINATIONS_TEXT_MODELS])];
         populateSelectorsWithModels(totalList);
         agentState.models = totalList;
         restoreModelFavorites();
 
     } catch (e) {
         console.warn("Fallo general en la recolección de modelos. Usando lista de respaldo.");
-        const totalFallback = [...onlineModels, ...ollamaCloudModels];
+        const totalFallback = [...onlineModels, ...ollamaCloudModels, ...POLLINATIONS_TEXT_MODELS];
         populateSelectorsWithModels(totalFallback);
         agentState.models = totalFallback;
         restoreModelFavorites();
@@ -120,7 +136,7 @@ function saveModelFavorites() {
 
 /**
  * Función Maestra de Generación de Contenido.
- * Enruta la petición de forma inteligente hacia Ollama Local, Gemini Cloud o Ollama Cloud remoto.
+ * Enruta la petición de forma inteligente hacia Ollama Local, Gemini Cloud, Ollama Cloud remoto o Pollinations AI Text.
  */
 async function ollamaGenerate(modelName, prompt, isJsonMode = false, systemPrompt = "", signal = null) {
     if (agentState.abort) throw new Error("Operación abortada por directiva de usuario.");
@@ -129,14 +145,71 @@ async function ollamaGenerate(modelName, prompt, isJsonMode = false, systemPromp
 
     const lowerModel = modelName.toLowerCase();
 
-    // Enrutamiento granular e independiente por modelo
-    if (lowerModel.includes('gemini')) {
+    // Enrutamiento granular por suite de procedencia
+    if (POLLINATIONS_TEXT_MODELS.includes(lowerModel)) {
+        return await callPollinationsTextAPI(lowerModel, prompt, isJsonMode, systemPrompt, signal);
+    } else if (lowerModel.includes('gemini')) {
         return await callGeminiAPI(modelName, prompt, isJsonMode, systemPrompt, signal);
     } else if (lowerModel.includes(':cloud') || lowerModel.includes('-cloud') || lowerModel.includes('cloud')) {
         return await callOllamaCloudAPI(modelName, prompt, isJsonMode, systemPrompt, signal);
     } else {
         return await callOllamaAPI(modelName, prompt, isJsonMode, systemPrompt, signal);
     }
+}
+
+/**
+ * Conector oficial corregido y validado para la API de texto unificada de Pollinations AI
+ */
+async function callPollinationsTextAPI(modelName, prompt, isJsonMode, systemPrompt, signal) {
+    // Usamos el endpoint unificado de compatibilidad OpenAI oficial de Pollinations
+    const url = "https://gen.pollinations.ai/v1/chat/completions";
+    const apiKey = agentState.pollinationsApiKey || localStorage.getItem('koreh_pollinations_key') || "";
+
+    const messages = [];
+    if (systemPrompt) {
+        messages.push({ role: "system", content: systemPrompt });
+    }
+    messages.push({ role: "user", content: prompt });
+
+    const body = {
+        model: modelName,
+        messages: messages,
+        stream: false
+    };
+
+    // Si se activa modo JSON, inyectamos la configuración de respuesta estructurada
+    if (isJsonMode) {
+        body.response_format = { type: "json_object" };
+    }
+
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+
+    // Si disponemos de la ApiKey (configurada previamente para imágenes), la reaprovechamos aquí para quitar límites
+    if (apiKey.trim()) {
+        headers['Authorization'] = `Bearer ${apiKey.trim()}`;
+    }
+
+    const fetchOpts = {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(body)
+    };
+    if (signal) fetchOpts.signal = signal;
+
+    const res = await fetch(url, fetchOpts);
+    if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        throw new Error(`Error en API de Pollinations Text (Status: ${res.status}): ${errText}`);
+    }
+
+    const data = await res.json();
+    if (data.choices && data.choices.length > 0 && data.choices[0].message) {
+        return data.choices[0].message.content;
+    }
+    
+    throw new Error("Estructura de respuesta no reconocida en el canal de Pollinations AI.");
 }
 
 /**
