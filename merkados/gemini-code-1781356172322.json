@@ -1,0 +1,2604 @@
+{
+  "name": "ARANDELA COLOCADA: VERTEDERO ALGAIDA-4",
+  "initialMetrics": {
+    "health": 10,
+    "maxHealth": 10
+  },
+  "nodes": [
+    {
+      "id": "n_001",
+      "x": 100,
+      "y": 400,
+      "title": "Rompeolas de Residuos - Inserción",
+      "content": "La heroína @Arandela desciende sobre la costra exterior inestable de @rompeolas. Una lluvia de condensación ácida golpea su traje hermético. Al frente se alza una cordillera de placas de titanio colapsadas.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_002",
+      "x": 250,
+      "y": 250,
+      "title": "Grieta del Flanco Sur",
+      "content": "Un conducto de ventilación deformado de @rompeolas expulsa gas caliente a alta presión. El suelo vibra bajo las botas de la heroína @Arandela por el impacto lejano de deshechos orbitales.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_003",
+      "x": 250,
+      "y": 550,
+      "title": "Talud de Aleaciones Pasivas",
+      "content": "La heroína @Arandela localiza un depósito hermético semienterrado en @rompeolas. Al forzar la compuerta manual, localiza un cilindro de @kits intacto con gel polimérico.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_004",
+      "x": 400,
+      "y": 150,
+      "title": "Acceso a Estructuras Altas",
+      "content": "Una escala de sujeción magnética en @rompeolas se prolonga hacia las pasarelas superiores. El viento solar arrastra partículas abrasivas de hierro oxidado contra @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_005",
+      "x": 400,
+      "y": 350,
+      "title": "Foso de Fragmentación 01",
+      "content": "El camino de @rompeolas desciende bruscamente hacia una fosa de cizallamiento automatizada. Las cuchillas giran de forma intermitente amenazando el traje de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_006",
+      "x": 400,
+      "y": 650,
+      "title": "Refugio del Contenedor Seco",
+      "content": "El interior de un contenedor modular en @rompeolas ofrece protección térmica temporal. Las lecturas del visor de @Arandela disminuyen momentáneamente.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 1 }
+    },
+    {
+      "id": "n_007",
+      "x": 550,
+      "y": 250,
+      "title": "Intersección Cardinal Alfa",
+      "content": "El terreno de detritos de @rompeolas se bifurca. La heroína @Arandela divisa los perfiles macizos de @laberinto frente a las emanaciones químicas lejanas.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_008",
+      "x": 550,
+      "y": 450,
+      "title": "Paso del Cableado Expuesto",
+      "content": "Gruesos cables cuelgan de un soporte colapsado en @rompeolas. Chispas de arco voltaico iluminan el suelo aceitoso ante el avance de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_009",
+      "x": 550,
+      "y": 800,
+      "title": "Umbral de las Bahías Bajas",
+      "content": "El suelo de @rompeolas se vuelve fangoso debido a la cercanía de @bahias. La interfaz de @Arandela detecta que el aire adquiere una coloración verdosa.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_010",
+      "x": 700,
+      "y": 400,
+      "title": "Punto de Control Perimetral Abandonado",
+      "content": "Una cabina técnica de @consolas permanece abierta entre @rompeolas y @laberinto. La heroína @Arandela encuentra bloques compactos de @celulas.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_011",
+      "x": 850,
+      "y": 200,
+      "title": "Entrada al Laberinto de Chasis",
+      "content": "Densas estructuras navales superpuestas de @laberinto bloquean la luz. La heroína @Arandela se adentra en un entramado cerrado de pasadizos metálicos.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_012",
+      "x": 850,
+      "y": 600,
+      "title": "Desvío a las Balsas de Químicos",
+      "content": "Las tuberías de @bahias gotean fluidos viscosos sobre las pasarelas inferiores de @laberinto. El avance de la heroína @Arandela se ralentiza.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_013",
+      "x": 1000,
+      "y": 100,
+      "title": "Conducto de Ventilación Obstruido",
+      "content": "Filtros de aire masivos de @laberinto bloquean el paso. Las aspas deformadas exigen a @Arandela un esfuerzo físico considerable para avanzar.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_014",
+      "x": 1000,
+      "y": 300,
+      "title": "Galería de Mamparos Colapsados",
+      "content": "Varios mamparos de @laberinto han cedido por la presión. El espacio libre para que pase la heroína @Arandela es estrecho y lleno de filos afilados.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_015",
+      "x": 1000,
+      "y": 500,
+      "title": "Cámara del Generador Auxiliar",
+      "content": "Un alternador estático emite un zumbido sordo en @laberinto. La heroína @Arandela utiliza una interfaz de @consolas para purgar los radiadores del traje.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 1 }
+    },
+    {
+      "id": "n_016",
+      "x": 1000,
+      "y": 700,
+      "title": "Intersección del Tanque Separador",
+      "content": "Un cilindro de almacenamiento de fluidos de @laberinto divide el pasillo en dos ramales oscuros. El goteo de lubricante afecta a @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_017",
+      "x": 1150,
+      "y": 200,
+      "title": "Puente de Vigas Deformadas",
+      "content": "Dos vigas de @laberinto cruzan un abismo interior de chatarra triturada. Las corrientes térmicas desestabilizan los apoyos magnéticos de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_018",
+      "x": 1150,
+      "y": 400,
+      "title": "Pasadizo Técnico Secundario",
+      "content": "Un túnel estrecho de @laberinto cubierto de planchas de plomo aislante. La temperatura desciende bruscamente ante la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_019",
+      "x": 1150,
+      "y": 600,
+      "title": "Colector de Residuos Líquidos",
+      "content": "Agua contaminada de @bahias llega hasta las rodillas de @Arandela en @laberinto. Un cortocircuito lejano electrifica el fluido.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -3 }
+    },
+    {
+      "id": "n_020",
+      "x": 1300,
+      "y": 300,
+      "title": "Bifurcación de los Chasis Medios",
+      "content": "Las cuadernas oxidadas de @laberinto forman una red de arcos góticos metálicos ante @Arandela. Tres aberturas distintas se abren al fondo.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_021",
+      "x": 1450,
+      "y": 150,
+      "title": "Rampa de Descarga Inclinada",
+      "content": "La superficie de @laberinto está cubierta de grasa congelada. La heroína @Arandela debe fijar con fuerza sus cierres magnéticos en las uniones.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_022",
+      "x": 1450,
+      "y": 350,
+      "title": "Cámara de Almacenamiento Estanco",
+      "content": "Un armario industrial permanece sellado en @laberinto. Al romper el pestillo gastado, la heroína @Arandela recupera cilindros de @kits rápidos.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_023",
+      "x": 1450,
+      "y": 550,
+      "title": "Túnel del Servo colapsado",
+      "content": "El brazo articulado de una grúa desprendida bloquea @laberinto. El paso obliga a @Arandela a reptar bajo toneladas de acero inestable.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_024",
+      "x": 1600,
+      "y": 250,
+      "title": "Nexo del Sector de Carga",
+      "content": "Terminales de @consolas parpadean con advertencias de fallo de integridad del núcleo en @laberinto. La heroína @Arandela evalúa tres direcciones.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_025",
+      "x": 1600,
+      "y": 450,
+      "title": "Falla de Presión Dinámica",
+      "content": "Una tubería de @laberinto revienta justo cuando @Arandela cruza el umbral. El chorro de vapor químico impacta contra el visor óptico.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_026",
+      "x": 1750,
+      "y": 200,
+      "title": "Pasarela de Inspección Norte",
+      "content": "Una delgada pasarela de @laberinto suspendida sobre un foso de fundición inactivo. La heroína @Arandela nota la falta de varias secciones del suelo.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_027",
+      "x": 1750,
+      "y": 400,
+      "title": "Subestación de Control Eléctrico",
+      "content": "Armarios eléctricos calcinados en @laberinto. La heroína @Arandela localiza una toma de corriente que proporciona energía a los servoasistentes.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_028",
+      "x": 1750,
+      "y": 600,
+      "title": "Depósito de Chatarra Compactada",
+      "content": "Bloques cúbicos de metal prensado forman un desfiladero inestable en @laberinto. Desprendimientos continuos dificultan el paso de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_029",
+      "x": 1900,
+      "y": 300,
+      "title": "Encrucijada Ferroviaria Interna",
+      "content": "Antiguos raíles de vagonetas convergen en @laberinto. Un pozo de ventilación permite a @Arandela ver la niebla estática exterior del planetoide.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_030",
+      "x": 1900,
+      "y": 500,
+      "title": "Conducto de Evacuación Rápida",
+      "content": "Una tubería lisa inclinada en @laberinto. El interior está resbaladizo, obligando a la heroína @Arandela a controlar los pistones neumáticos.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_031",
+      "x": 2050,
+      "y": 200,
+      "title": "Nudo Ferroviario Norte",
+      "content": "La vía férrea de @laberinto se corta sobre un vacío estructural. Estructuras adicionales cuelgan del techo sobre la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_032",
+      "x": 2050,
+      "y": 400,
+      "title": "Estación de Carga Desierta",
+      "content": "Plataformas cubiertas de polvo de silicio en @laberinto. Una unidad médica de @consolas parpadea en verde ante la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 3 }
+    },
+    {
+      "id": "n_033",
+      "x": 2050,
+      "y": 600,
+      "title": "Pasillo de la Prensa Hidráulica",
+      "content": "Una plancha automática desciende rítmicamente en @laberinto. Fragmentos de metal saltan proyectados contra el chasis blanco de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -3 }
+    },
+    {
+      "id": "n_034",
+      "x": 2200,
+      "y": 300,
+      "title": "Acceso al Núcleo de los Chasis",
+      "content": "El entramado de naves de @laberinto se vuelve más denso. La heroína @Arandela observa severas torsiones mecánicas en las vigas maestras.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_035",
+      "x": 2200,
+      "y": 500,
+      "title": "Túnel de Servicio Inundado",
+      "content": "Agua de @bahias estancada cubre los sistemas inferiores de @laberinto. El aire es denso y el traje de @Arandela reporta fallos de aislamiento.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_036",
+      "x": 2350,
+      "y": 200,
+      "title": "Cámara del Domo de Hierro",
+      "content": "Una cúpula formada por cascos de naves espaciales en @laberinto. La presión acústica es muy elevada en los sensores ópticos de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_037",
+      "x": 2350,
+      "y": 400,
+      "title": "Paso Estrecho entre Forjados",
+      "content": "Dos bloques de @laberinto se han desplazado, dejando una ranura vertical por la que apenas cabe el traje blanco de la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_038",
+      "x": 2350,
+      "y": 600,
+      "title": "Depósito de Suministros Mecánicos",
+      "content": "Un contenedor de herramientas ha resistido la presión en @laberinto. La heroína @Arandela recupera fluidos purificados de su interior.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_039",
+      "x": 2500,
+      "y": 300,
+      "title": "Nexo de la Zona Alta del Laberinto",
+      "content": "Tres pasarelas de @laberinto parten desde esta plataforma suspendida hacia las llanuras desérticas occidentales de @dunas ante @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_040",
+      "x": 2500,
+      "y": 500,
+      "title": "Salida de Emergencia Destruida",
+      "content": "Una escotilla de salida bloqueada por escombros calientes en @laberinto. La radiación residual drena energía del traje de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_041",
+      "x": 2650,
+      "y": 150,
+      "title": "Pasarela de la Grúa Pórtico",
+      "content": "La pasarela metálica de @laberinto oscila bajo el viento solar. La heroína @Arandela requiere precisión milimétrica en sus servos.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_042",
+      "x": 2650,
+      "y": 350,
+      "title": "Estancia de las Matrices de Estampación",
+      "content": "Grandes moldes de fundición se distribuyen en @laberinto. El suelo está alfombrado de virutas metálicas cortantes ante @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_043",
+      "x": 2650,
+      "y": 550,
+      "title": "Cabina de Operador Blindada",
+      "content": "Cristales reforzados agrietados en @laberinto. En el suelo, la heroína @Arandela localiza un cilindro de @kits médico sellado.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_044",
+      "x": 2800,
+      "y": 250,
+      "title": "Bifurcación Final del Laberinto",
+      "content": "Las paredes de @laberinto se abren. A la izquierda, @Arandela detecta el amoníaco de @bahias; a la derecha se divisa el polvo de @dunas.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_045",
+      "x": 2800,
+      "y": 450,
+      "title": "Foso de Cenizas Industriales",
+      "content": "Un sumidero cubierto de polvo fino de carbón al final de @laberinto. La estabilidad de las botas de la heroína @Arandela es precaria.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_046",
+      "x": 2950,
+      "y": 200,
+      "title": "Túnel de Interconexión Este",
+      "content": "Un conducto cilíndrico de @laberinto que desciende suavemente hacia las zonas húmedas y canales viaductores de @bahias ante @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_047",
+      "x": 2950,
+      "y": 400,
+      "title": "Sala de Bombas de Vacío",
+      "content": "Grandes pistones parados de @laberinto. Una interfaz de @consolas secundaria permite a @Arandela recargar los reguladores térmicos.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 1 }
+    },
+    {
+      "id": "n_048",
+      "x": 2950,
+      "y": 600,
+      "title": "Despacho de Logística Colapsado",
+      "content": "Mobiliario metálico retorcido en @laberinto. Los filos cortantes exigen precaución extrema a la heroína @Arandela al avanzar.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_049",
+      "x": 3100,
+      "y": 300,
+      "title": "Umbral de Transición Crítica",
+      "content": "La estructura de @laberinto termina de forma abrupta. Una rampa de detritos conecta con @bahias ante la mirada de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_050",
+      "x": 3100,
+      "y": 500,
+      "title": "Zona de Derrumbes Continuos",
+      "content": "Placas de recubrimiento caen con regularidad sobre la salida de @laberinto. El visor óptico de @Arandela calcula el riesgo de impacto.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -3 }
+    },
+    {
+      "id": "n_051",
+      "x": 3250,
+      "y": 100,
+      "title": "Entrada a las Bahías de Decantación",
+      "content": "Grandes depósitos de sedimentos de @bahias se extienden ante @Arandela. La atmósfera está saturada de vapores corrosivos verdosos.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_052",
+      "x": 3250,
+      "y": 400,
+      "title": "Pasarela del Tanque Principal",
+      "content": "Una pasarela de rejilla de @bahias cruza sobre una balsa de refrigerante pesado en constante ebullición química ante la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_053",
+      "x": 3250,
+      "y": 700,
+      "title": "Colector de Derrames Secundario",
+      "content": "El lodo sintético de @bahias cubre el suelo. Una estación de purga manual permite a @Arandela inyectar compuesto en los circuitos.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_054",
+      "x": 3400,
+      "y": 250,
+      "title": "Intersección de Tuberías de Alta Presión",
+      "content": "Un entramado de grandes tuberías de @bahias bloquea la trayectoria de @Arandela. Se distinguen escapes de gas licuado amoniacal.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_055",
+      "x": 3400,
+      "y": 550,
+      "title": "Cámara de Filtrado de Lodos",
+      "content": "Filtros rotativos de @bahias obstruyen la estancia. El espacio libre para @Arandela está impregnado de grasas de alta adherencia.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_056",
+      "x": 3550,
+      "y": 150,
+      "title": "Dique de Retención Norte",
+      "content": "Un muro de hormigón agrietado en @bahias contiene una marea de aceites. La heroína @Arandela evalúa la estabilidad de la pasarela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_057",
+      "x": 3550,
+      "y": 350,
+      "title": "Estación de Bombeo Operativa",
+      "content": "Controles automáticos de @bahias parpadean. La heroína @Arandela utiliza una interfaz de @consolas para limpiar los filtros de aire externos.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_058",
+      "x": 3550,
+      "y": 550,
+      "title": "Foso de los Decantadores Ciegos",
+      "content": "Tanques circulares abiertos de @bahias donde el refrigerante gotea. Una caída supone daños severos para los servoasistentes de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -3 }
+    },
+    {
+      "id": "n_059",
+      "x": 3550,
+      "y": 750,
+      "title": "Túnel del Rebose General",
+      "content": "Un conducto ancho de @bahias diseñado para desviar excedentes hacia el espacio. Fuertes corrientes de succión afectan a @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_060",
+      "x": 3700,
+      "y": 300,
+      "title": "Nexo del Sector Este Central",
+      "content": "Una plataforma de hormigón en @bahias rodeada de canales viaductores. La heroína @Arandela analiza tres opciones cardinales.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_061",
+      "x": 3700,
+      "y": 500,
+      "title": "Canal de Ácidos Concentrados",
+      "content": "El fluido de este canal de @bahias disuelve la pintura protectora de las botas de @Arandela. Se requiere precisión para saltar.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_062",
+      "x": 3850,
+      "y": 200,
+      "title": "Cámara de la Esclusa de Purga",
+      "content": "Una esclusa neumática de @bahias. Al activar el ciclo manual, la heroína @Arandela localiza parches de fijación molecular de @kits.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_063",
+      "x": 3850,
+      "y": 400,
+      "title": "Pasillo de las Tuberías de Purina",
+      "content": "Conducciones rotas de @bahias expulsan vapor amoniacal. El visor óptico de la heroína @Arandela se empaña por la condensación.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_064",
+      "x": 3850,
+      "y": 600,
+      "title": "Depósito de Lodos Activos",
+      "content": "Un estanque de @bahias cubierto por una costra seca inestable. Al pisar, la superficie cede bajo el peso de la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_065",
+      "x": 4000,
+      "y": 300,
+      "title": "Bifurcación del Aliviadero Este",
+      "content": "La red de canales de @bahias se divide en dos conducciones abiertas que se adentran hacia el norte profundo ante @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_066",
+      "x": 4000,
+      "y": 500,
+      "title": "Subestación Hidráulica Destruida",
+      "content": "Maquinaria destrozada por explosiones en @bahias. Restos afilados de metal cubren los accesos frente a la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_067",
+      "x": 4150,
+      "y": 150,
+      "title": "Pasarela de los Colectores Altos",
+      "content": "Grandes tuberías suspendidas de @bahias sirven de camino. Las corrientes de aire amenazan la estabilidad del traje de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_068",
+      "x": 4150,
+      "y": 350,
+      "title": "Puesto de Control de Calidad de Fluidos",
+      "content": "Un laboratorio modular abandonado en @bahias. En un compartimento, @Arandela localiza un cilindro de @kits neutralizador.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_069",
+      "x": 4150,
+      "y": 550,
+      "title": "Cámara de Sedimentación Baja",
+      "content": "El aire de @bahias es denso y apenas contiene oxígeno. Los filtros del traje de la heroína @Arandela trabajan al límite operativo.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_070",
+      "x": 4300,
+      "y": 250,
+      "title": "Encrucijada de los Aliviaderos Medios",
+      "content": "Los canales de @bahias vierten fluidos en una gran fosa de distribución central. La heroína @Arandela evalúa las tres salidas.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_071",
+      "x": 4450,
+      "y": 150,
+      "title": "Conducto de Retorno de Gases",
+      "content": "Una corriente de aire abrasivo circula en sentido contrario por @bahias. El avance consume los recursos lógicos de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_072",
+      "x": 4450,
+      "y": 350,
+      "title": "Rampa de Acceso a las Cubiertas",
+      "content": "Cuesta de rejilla corroída por vapores salinos de @bahias. Varios peldaños se colapsan al apoyar el peso de la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_073",
+      "x": 4450,
+      "y": 550,
+      "title": "Almacén de Reactivos Químicos",
+      "content": "Contenedores sellados con riesgo biológico en @bahias. La heroína @Arandela extrae un dispensador de @kits con ungüento.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_074",
+      "x": 4600,
+      "y": 250,
+      "title": "Foso de la Turbina de Homogeneización",
+      "content": "Las palas de una turbina gigante de @bahias giran lentamente, bloqueando el pasillo central de forma peligrosa para @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -3 }
+    },
+    {
+      "id": "n_075",
+      "x": 4600,
+      "y": 450,
+      "title": "Bifurcación de los Decantadores Altos",
+      "content": "Las tuberías de @bahias ascienden hacia zonas con menor humedad, abriendo caminos hacia @cementerios frente a la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_076",
+      "x": 4750,
+      "y": 150,
+      "title": "Túnel de Vapor de Condensación",
+      "content": "Agua hirviendo gotea desde las juntas del techo en @bahias. La heroína @Arandela sufre quemaduras ligeras en las uniones del traje.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_077",
+      "x": 4750,
+      "y": 350,
+      "title": "Pasarela del Mezclador Estático",
+      "content": "Una estructura tubular estrecha suspendida sobre un reactor químico de @bahias. El equilibrio es fundamental para @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_078",
+      "x": 4750,
+      "y": 550,
+      "title": "Estación de Emergencia de la Megaestructura",
+      "content": "Un puesto automatizado de @consolas lee el código de @Arandela en @bahias y le dispensa cilindros de @kits de integridad.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 3 }
+    },
+    {
+      "id": "n_079",
+      "x": 4900,
+      "y": 300,
+      "title": "Sifón de Drenaje Colapsado",
+      "content": "Un tapón de residuos provoca la acumulación de fluidos ácidos de @bahias en la entrada del pasadizo. @Arandela avanza con cautela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_080",
+      "x": 4900,
+      "y": 500,
+      "title": "Nexo Final de las Bahías",
+      "content": "Las grandes tuberías de @bahias terminan en válvulas de compuerta masivas. El terreno se vuelve pedregoso ante la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_081",
+      "x": 5050,
+      "y": 200,
+      "title": "Cámara de la Válvula de Retención",
+      "content": "Un gran disco metálico de @bahias oscila por la presión interna, desprendiendo cascotes de hormigón cerca del traje de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_082",
+      "x": 5050,
+      "y": 400,
+      "title": "Paso de las Compuertas de Aislamiento",
+      "content": "Mamparos de @bahias se cierran automáticamente por errores lógicos de @consolas. La heroína @Arandela debe pasar rápido.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_083",
+      "x": 5050,
+      "y": 600,
+      "title": "Cabina de Análisis de Residuos",
+      "content": "Un entorno sellado de @bahias libre de contaminación ácida. Los sistemas del traje blanco de la heroína @Arandela se estabilizan.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 1 }
+    },
+    {
+      "id": "n_084",
+      "x": 5200,
+      "y": 300,
+      "title": "Túnel de Lodos Deshidratados",
+      "content": "El lodo seco de @bahias forma bloques de sílice afilados. Cada pisada de la heroína @Arandela arriesga las uniones flexibles.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_085",
+      "x": 5200,
+      "y": 500,
+      "title": "Intersección de Salida Este",
+      "content": "Los últimos canales viaductores de @bahias quedan atrás. Dos rutas se abren ante @Arandela hacia el norte del planetoide.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_086",
+      "x": 5350,
+      "y": 200,
+      "title": "Foso de Extracción de Muestras",
+      "content": "Una perforación vertical en la pasarela de @bahias. La oscuridad es absoluta ante el visor óptico de la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_087",
+      "x": 5350,
+      "y": 400,
+      "title": "Rampa del Colector General",
+      "content": "Superficie de metal corrugado en @bahias cubierta por aceite hidráulico deslizante. La heroína @Arandela activa cierres de tracción.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_088",
+      "x": 5350,
+      "y": 600,
+      "title": "Nicho de Mantenimiento de Filtros",
+      "content": "Estanterías con filtros de recambio en @bahias. La heroína @Arandela aprovecha compuestos de @kits para sanar heridas mecánicas.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_089",
+      "x": 5500,
+      "y": 400,
+      "title": "Conducto de Ventilación del Reactor",
+      "content": "Gases calientes escapan por las rejillas de @bahias, dañando los servoasistentes y los pistones neumáticos de la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -3 }
+    },
+    {
+      "id": "n_090",
+      "x": 5650,
+      "y": 150,
+      "title": "Nexo de Unión de las Bahías Altas",
+      "content": "Las estructuras de @bahias dan paso a la planicie abierta de @dunas barrida por un viento solar cargado de polvo ante @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_091",
+      "x": 5650,
+      "y": 450,
+      "title": "Entrada a las Dunas de Silicio",
+      "content": "Un desierto minimalista de @dunas de silicio pulverizado se extiende ante la heroína @Arandela bajo un cielo oscuro y plano.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_092",
+      "x": 5650,
+      "y": 750,
+      "title": "Cresta de la Duna Alfa",
+      "content": "La arena fina de @dunas penetra en las articulaciones del traje de @Arandela, aumentando el desgaste de los pistones.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_093",
+      "x": 5800,
+      "y": 300,
+      "title": "Hoya de Detritos Finos",
+      "content": "Depresión en @dunas resguardada del viento electromagnético. La heroína @Arandela localiza un dron caído con cubos de @celulas.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_094",
+      "x": 5800,
+      "y": 600,
+      "title": "Bucle de Arena Fina 01",
+      "content": "La falta de referencias visuales en @dunas provoca desorientación. Las lecturas del visor de @Arandela oscilan sin un sentido estable.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_095",
+      "x": 5950,
+      "y": 150,
+      "title": "Tormenta de Descargas Estáticas",
+      "content": "Relámpagos electromagnéticos azotan @dunas. Arcos voltaicos de gran intensidad impactan cerca del traje blanco de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -3 }
+    },
+    {
+      "id": "n_096",
+      "x": 5950,
+      "y": 450,
+      "title": "Llanura del Viento Solar",
+      "content": "Exposición directa al viento solar en @dunas. Los blindajes térmicos de @Arandela registran un incremento crítico de temperatura.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_097",
+      "x": 5950,
+      "y": 750,
+      "title": "Asentamiento de Chatarreros Abandonado",
+      "content": "Estructuras efímeras de lonas poliméricas de @chatarreros en @dunas. La heroína @Arandela encuentra un cilindro de @kits con gel.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_098",
+      "x": 6100,
+      "y": 300,
+      "title": "Duna de los Chasis Enterrados",
+      "content": "Estructuras metálicas sobresalen de la arena de @dunas como costillas fosilizadas. Las aristas cortantes amenazan a @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_099",
+      "x": 6100,
+      "y": 600,
+      "title": "Bucle de Arena Fina 02",
+      "content": "El paisaje de @dunas se repite de forma monótona. La heroína @Arandela debe orientarse basándose en la inercia de sus pasos.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_100",
+      "x": 6250,
+      "y": 150,
+      "title": "Barranco de Escoria Metálica",
+      "content": "Un corte profundo en @dunas desvela estratos de escoria industrial solidificada. Desprendimientos continuos ante la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_101",
+      "x": 6250,
+      "y": 450,
+      "title": "Paso de la Tormenta Electrónica",
+      "content": "El aire de @dunas brilla con tonalidades azuladas debido a la ionización. Los sistemas de navegación de @Arandela quedan inactivos.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_102",
+      "x": 6250,
+      "y": 750,
+      "title": "Refugio bajo el Ala Colapsada",
+      "content": "El fuselaje de un transporte en @dunas proporciona un espacio seguro contra las partículas de silicio cortantes a @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 1 }
+    },
+    {
+      "id": "n_103",
+      "x": 6400,
+      "y": 300,
+      "title": "Mar de Cristalización Industrial",
+      "content": "Zonas de @dunas donde el silicio se ha fundido, creando placas de vidrio astillado inestables bajo las botas de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_104",
+      "x": 6400,
+      "y": 600,
+      "title": "Intersección de las Dunas Medias",
+      "content": "Dos senderos abiertos entre colinas de polvo gris de @dunas ante la heroína @Arandela. El viento sopla desde el norte con fuerza.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_105",
+      "x": 6550,
+      "y": 150,
+      "title": "Desfiladero de los Tanques Rotas",
+      "content": "Restos de grandes contenedores forman un paso estrecho en @dunas. Corrientes concentradas dificultan el avance de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_106",
+      "x": 6550,
+      "y": 450,
+      "title": "Loma del Viento Estático",
+      "content": "La acumulación de carga estática en @dunas genera descargas continuas en las extremidades de la armadura de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_107",
+      "x": 6550,
+      "y": 750,
+      "title": "Puesto de Escucha en Ruinas",
+      "content": "Una pequeña antena parabólica caída en @dunas. En la base del generador, la heroína @Arandela localiza una celda de @celulas vivas.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_108",
+      "x": 6700,
+      "y": 300,
+      "title": "Zanja de Residuos Vítreos",
+      "content": "Una fosa rellena de fibra de vidrio en @dunas. El polvo de silicio en suspensión obstruye los purificadores de la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_109",
+      "x": 6700,
+      "y": 600,
+      "title": "Bucle de Arena Fina 03",
+      "content": "Las crestas de @dunas impiden ver más allá de unos metros. Las opciones cardinales parecen idénticas ante el visor de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_110",
+      "x": 6850,
+      "y": 150,
+      "title": "Pendiente de Deslizamiento Crítico",
+      "content": "Una gran bajada de arena suelta en @dunas. El control consume energía de los amortiguadores de las piernas de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_111",
+      "x": 6850,
+      "y": 450,
+      "title": "Ruta de la Escoria Cristalizada",
+      "content": "El suelo de @dunas es firme pero extremadamente rugoso, desgastando los componentes de tracción de la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_112",
+      "x": 6850,
+      "y": 750,
+      "title": "Estación Meteorológica Sorda",
+      "content": "Una sonda automática de @consolas que emite errores en @dunas. El nicho contiene refrigerante que repara el traje de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_113",
+      "x": 7000,
+      "y": 300,
+      "title": "Vaguada de la Arena Magnética",
+      "content": "Polvo de magnetita negra de @dunas que se adhiere a los sensores magnéticos de @Arandela, bloqueando los servoasistentes.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -3 }
+    },
+    {
+      "id": "n_114",
+      "x": 7000,
+      "y": 600,
+      "title": "Encrucijada del Desierto Central",
+      "content": "La llanura de silicio de @dunas se ensancha. Al fondo, la heroína @Arandela aprecia las sombras colosales de la estación de @núcleo.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_115",
+      "x": 7150,
+      "y": 150,
+      "title": "Paso de la Duna Viva",
+      "content": "Masa de arena inestable que se desplaza de forma activa en @dunas por corrientes térmicas. Terreno peligroso para @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_116",
+      "x": 7150,
+      "y": 450,
+      "title": "Cresta del Viento Solar Alto",
+      "content": "Zona desprotegida de @dunas expuesta a ráfagas de viento térmico que elevan la temperatura de las placas de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_117",
+      "x": 7150,
+      "y": 750,
+      "title": "Contenedor de Carga Perdido",
+      "content": "Un módulo de transporte caído en @dunas. La heroína @Arandela accede al interior e identifica cilindros médicos de @kits.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 3 }
+    },
+    {
+      "id": "n_118",
+      "x": 7300,
+      "y": 300,
+      "title": "Foso de Cenizas Volátiles",
+      "content": "Depresión del terreno en @dunas rellena de residuos de combustión ligeros. Peligro de hundimiento por peso para @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_119",
+      "x": 7300,
+      "y": 600,
+      "title": "Bucle de Arena Fina 04",
+      "content": "Las marcas de pasos previos en @dunas han desaparecido por el viento. Dos direcciones se abren ante la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_120",
+      "x": 7450,
+      "y": 150,
+      "title": "Desfiladero de los Chasis Altos",
+      "content": "Grandes superestructuras navales semienterradas en @dunas forman paredes inestables frente al paso de la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_121",
+      "x": 7450,
+      "y": 450,
+      "title": "Loma de la Estática Azul",
+      "content": "El aire de @dunas presenta alta ionización. Pequeños arcos voltaicos saltan entre los sensores ópticos de la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_122",
+      "x": 7450,
+      "y": 750,
+      "title": "Búnker Técnico Enterrado",
+      "content": "Una estructura de hormigón oculta en @dunas. La heroína @Arandela utiliza un dispensador que proporciona resina de @kits.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_123",
+      "x": 7600,
+      "y": 300,
+      "title": "Mar de Cristal Astillado",
+      "content": "Superficies lisas de sílice fundida agrietadas en @dunas. Las astillas pueden perforar las uniones flexibles de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_124",
+      "x": 7600,
+      "y": 600,
+      "title": "Intersección Final de las Dunas",
+      "content": "El desierto de @dunas termina en una rampa de escombros. Al fondo se abren los accesos a los niveles de @cementerios para @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_125",
+      "x": 7750,
+      "y": 150,
+      "title": "Foso de la Tormenta Final",
+      "content": "Hondonada en @dunas donde el viento estático gira en torbellino permanente lanzando partículas contra el visor de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -3 }
+    },
+    {
+      "id": "n_126",
+      "x": 7750,
+      "y": 450,
+      "title": "Paso de Transición Occidental",
+      "content": "Una calzada improvisada hecha de planchas de blindaje en @dunas. El camino introduce a la heroína @Arandela en @cementerios.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_127",
+      "x": 7750,
+      "y": 600,
+      "title": "Estación de Carga de la Órbita",
+      "content": "Un muelle de descarga abandonado en el límite de @dunas. La heroína @Arandela utiliza una interfaz de @consolas de mantenimiento.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_128",
+      "x": 7900,
+      "y": 300,
+      "title": "Túnel de Acceso Inferior",
+      "content": "Un pozo cubierto de lodos secos que desciende desde @dunas directamente hacia los corredores oscuros de @cementerios ante @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_129",
+      "x": 7900,
+      "y": 500,
+      "title": "Umbral de la Subsuperficie",
+      "content": "La luz exterior desaparece. Las linternas del traje de @Arandela iluminan montones compactos de drones mudos de @cementerios.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_130",
+      "x": 8050,
+      "y": 100,
+      "title": "Zona de Derrumbes Occidentales",
+      "content": "El techo de esta galería en @cementerios muestra grietas severas por la presión de @dunas superiores. Caída inminente ante @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_131",
+      "x": 8050,
+      "y": 400,
+      "title": "Entrada al Cementerio Autónomo",
+      "content": "Grandes cavidades de @cementerios repletas de miles de drones desmantelados y servomecanismos obsoletos ante la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_132",
+      "x": 8050,
+      "y": 700,
+      "title": "Galería de los Centinelas Caídos",
+      "content": "Chasis de @unidades de defensa flanquean el pasillo oscuro de @cementerios. Los sensores de proximidad de @Arandela registran lecturas erráticas.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_133",
+      "x": 8200,
+      "y": 250,
+      "title": "Nicho de Componentes Intactos",
+      "content": "Un sector de @cementerios resguardado. La heroína @Arandela extrae cubos de @celulas nucleares estables de un chasis inmóvil.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 3 }
+    },
+    {
+      "id": "n_134",
+      "x": 8200,
+      "y": 550,
+      "title": "Pasillo de las Unidades de Construcción",
+      "content": "Restos de excavadoras bloquean el centro de @cementerios. Sus chasis oxidados presentan filos cortantes ante la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_135",
+      "x": 8350,
+      "y": 150,
+      "title": "Foso de los Servos Desarticulados",
+      "content": "Una fosa profunda de @cementerios repleta de extremidades mecánicas sueltas. El avance obliga a @Arandela a pisar elementos inestables.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_136",
+      "x": 8350,
+      "y": 350,
+      "title": "Galería de Drones Logísticos",
+      "content": "Cientos de carcasas de drones cubren el suelo de @cementerios. Los componentes de polímero crujen bajo las botas de la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_137",
+      "x": 8350,
+      "y": 550,
+      "title": "Estación de Recarga de Servos",
+      "content": "Una terminal de alimentación permanece encendida en @cementerios. La heroína @Arandela repone energía en los servoasistentes principales.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_138",
+      "x": 8350,
+      "y": 750,
+      "title": "Cámara del Núcleo Lógico Reactivado",
+      "content": "Un ordenador central obsoleto intenta ejecutar protocolos de defensa en @cementerios, emitiendo arcos eléctricos letales ante @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -3 }
+    },
+    {
+      "id": "n_139",
+      "x": 8500,
+      "y": 300,
+      "title": "Conducto de Descarga Térmica",
+      "content": "Un canal de evacuación de calor de las computadoras de @cementerios. El aire asfixiante consume los recursos lógicos de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_140",
+      "x": 8500,
+      "y": 500,
+      "title": "Nexo del Sector Subterráneo",
+      "content": "Bóveda excavada entre el amontonamiento de chatarra de @cementerios. Tres pasajes se abren ante el visor óptico de la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_141",
+      "x": 8650,
+      "y": 200,
+      "title": "Paso de la Maquinaria Pesada",
+      "content": "Un dumper colosal colapsado obstruye la galería de @cementerios. La heroína @Arandela debe trepar por sus neumáticos agrietados.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_142",
+      "x": 8650,
+      "y": 400,
+      "title": "Túnel de los Servomotores Quemados",
+      "content": "El olor a aislamiento calcinado satura la estancia de @cementerios. Las paredes desprenden un calor residual intenso ante @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_143",
+      "x": 8650,
+      "y": 600,
+      "title": "Almacén de Herramientas de Mantenimiento",
+      "content": "Un contenedor técnico estanco en @cementerios. La heroína @Arandela recupera inyectores de resina de @kits para soldaduras rápidas.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_144",
+      "x": 8800,
+      "y": 300,
+      "title": "Foso de Clasificación Automática",
+      "content": "Cintas transportadoras de @cementerios forman marañas de hilos de acero cortantes. Cada movimiento exige precaución a la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_145",
+      "x": 8800,
+      "y": 500,
+      "title": "Bifurcación de las Unidades Médicas",
+      "content": "Un pasillo flanqueado por cápsulas de soporte rotas en @cementerios. La galería se divide en dos ramales oscuros ante @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_146",
+      "x": 8950,
+      "y": 150,
+      "title": "Cámara de la Unidad de Defensa Pesada",
+      "content": "Un blindado estático de @unidades activa sus ópticas cilíndricas en @cementerios, barriendo la estancia con haces láser térmicos rojos ante @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -3 }
+    },
+    {
+      "id": "n_147",
+      "x": 8950,
+      "y": 350,
+      "title": "Pasillo de los Brazos Hidráulicos",
+      "content": "Elementos de montaje cuelgan del techo de @cementerios. La corrosión provoca caídas de piezas de gran tonelaje cerca del traje de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_148",
+      "x": 8950,
+      "y": 550,
+      "title": "Nicho de Regeneración Molecular",
+      "content": "Una cabina de descontaminación de @cementerios conserva fluidos activos. La heroína @Arandela repone parámetros utilizando el dispensador.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_149",
+      "x": 9100,
+      "y": 250,
+      "title": "Galería de los Microdrones",
+      "content": "Nubes de microdrones fijos cubren las paredes en @cementerios. Algunas unidades cortocircuitan al paso de la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_150",
+      "x": 9100,
+      "y": 450,
+      "title": "Encrucijada de los Chasis Bajos",
+      "content": "Los montones de maquinaria de @cementerios forman pasadizos laberínticos. La heroína @Arandela evalúa tres direcciones cardinales.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_151",
+      "x": 9250,
+      "y": 150,
+      "title": "Túnel de Almacenamiento de Baterías",
+      "content": "Células sulfatadas gotean fluidos corrosivos pesados en mitad de @cementerios. El aire contiene emanaciones que dañan el chasis de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_152",
+      "x": 9250,
+      "y": 350,
+      "title": "Rampa de Evacuación Subterránea",
+      "content": "Pendiente de hormigón en @cementerios cubierta de polvo metálico deslizante. Faltan protecciones laterales ante el avance de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_153",
+      "x": 9250,
+      "y": 550,
+      "title": "Puesto de Mantenimiento de Autómatas",
+      "content": "Un taller robotizado en @cementerios. Una interfaz de @consolas médica operativa permite a @Arandela reponer los parámetros de salud.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 3 }
+    },
+    {
+      "id": "n_154",
+      "x": 9250,
+      "y": 750,
+      "title": "Foso de los Drones Demolidores",
+      "content": "Unidades con martillos hidráulicos colapsan en @cementerios. Vibraciones mecánicas peligrosas se transmiten a los servos de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -3 }
+    },
+    {
+      "id": "n_155",
+      "x": 1400,
+      "y": 250,
+      "title": "Bifurcación de los Chasis Altos",
+      "content": "Los pasajes de @cementerios ganan altura, aproximándose a los gruesos muros de cimentación de @núcleo frente a la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_156",
+      "x": 1400,
+      "y": 450,
+      "title": "Conducto de Refrigeración Seco",
+      "content": "Una tubería de sección cuadrada con cal y óxido en @cementerios. El espacio estrecho obliga a la heroína @Arandela a avanzar de rodillas.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_157",
+      "x": 1550,
+      "y": 150,
+      "title": "Pasarela de la Bóveda de Hierro",
+      "content": "Estructuras de sujeción de chapa remachada en @cementerios. La torsión genera ruidos sordos que alertan a los sensores de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_158",
+      "x": 1550,
+      "y": 350,
+      "title": "Cámara de Suministros de la Flota",
+      "content": "Un arcón de intendencia militar semiderrumbado en @cementerios. La heroína @Arandela localiza packs de gel aislante de @kits para armaduras.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_159",
+      "x": 1550,
+      "y": 550,
+      "title": "Foso de los Servos Trituradores",
+      "content": "Antiguas tolvas de reciclaje repletas de dientes de acero en @cementerios. El equilibrio de los pistones de @Arandela es puesto a prueba.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_160",
+      "x": 1700,
+      "y": 300,
+      "title": "Nexo Final del Cementerio",
+      "content": "Las acumulaciones de drones de @cementerios dan paso a los gruesos muros de hormigón blindado de @núcleo. Tres compuertas se abren ante @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_161",
+      "x": 1700,
+      "y": 500,
+      "title": "Paso del Mamparo Deformado",
+      "content": "Una puerta blindada atascada a medio cerrar en el umbral de @núcleo. El espacio obliga a @Arandela a forzar las uniones del traje.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_162",
+      "x": 1850,
+      "y": 200,
+      "title": "Túnel de Acceso al Núcleo Central",
+      "content": "Un pasillo técnico revestido de baldosas aislantes en @núcleo. Secciones rotas exponen cables vivos ante el avance de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_163",
+      "x": 1850,
+      "y": 400,
+      "title": "Cabina de Seguridad del Núcleo",
+      "content": "Un espacio blindado con sistemas estables en @núcleo. La heroína @Arandela utiliza una interfaz de @consolas para una autoreparación rápida.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_164",
+      "x": 1850,
+      "y": 600,
+      "title": "Conducto de Ventilación Hidráulica",
+      "content": "Grandes ventiladores parados en @núcleo. Las aspas oxidadas forman una barrera física de bordes afilados ante el paso de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_165",
+      "x": 2000,
+      "y": 300,
+      "title": "Intersección de la Corona Inferior",
+      "content": "Los pasillos convergen en la base de la superestructura de @núcleo. Las dos opciones de avance conducen a la heroína @Arandela hacia arriba.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_166",
+      "x": 2000,
+      "y": 500,
+      "title": "Foso de la Turbina de Retorno",
+      "content": "Un pozo vertical de @núcleo donde se evacuan gases calientes a intervalos regulares. La temperatura asciende de golpe ante @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_167",
+      "x": 2150,
+      "y": 200,
+      "title": "Escala de Acceso al Compactador",
+      "content": "Peldaños de hierro soldados directamente sobre la gran guillotina de @núcleo. Las vibraciones dificultan la sujeción de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_168",
+      "x": 2150,
+      "y": 400,
+      "title": "Nicho de Emergencia Central",
+      "content": "Un armario técnico de seguridad en @núcleo. La heroína @Arandela localiza viales de fluidos de soporte vital de @kits en un estante.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_169",
+      "x": 2150,
+      "y": 600,
+      "title": "Paso de las Tuberías de Alta Presión",
+      "content": "Conducciones de fluido hidráulico de @núcleo muestran poros que expulsan chorros finos a presiones extremas cerca del visor de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -3 }
+    },
+    {
+      "id": "n_170",
+      "x": 2300,
+      "y": 400,
+      "title": "Umbral del Núcleo del Compactador",
+      "content": "La superestructura central de @núcleo se alza ante la heroína. Las paredes de hormigón vibran rítmicamente por los ciclos mecánicos erráticos de la guillotina ante @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_171",
+      "x": 2450,
+      "y": 200,
+      "title": "Pasillo de Percusión Mecánica",
+      "content": "Enormes bloques de contrapeso descienden por las guías laterales de @núcleo. El aire se desplaza con fuerza contra el traje de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_172",
+      "x": 2450,
+      "y": 450,
+      "title": "Galería del Eje Central",
+      "content": "El gran cigüeñal de @núcleo gira con variaciones de velocidad bruscas. Se requiere precisión de servos para que @Arandela esquive los apoyos.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_173",
+      "x": 2450,
+      "y": 700,
+      "title": "Subestación de Engrase Central",
+      "content": "Depósitos de lubricante en @núcleo. Una toma manual operativa permite a la heroína @Arandela limpiar y refrigerar los servos del chasis.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_174",
+      "x": 2600,
+      "y": 300,
+      "title": "Bifurcación de los Pasillos Técnicos",
+      "content": "Corredores blindados con planchas de plomo contra la radiación de @núcleo. Dos direcciones se abren ante el visor óptico de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_175",
+      "x": 2600,
+      "y": 550,
+      "title": "Conducto de Evacuación de Aire Caliente",
+      "content": "Emanaciones continuas de gases abrasivos en las zonas de fricción de @núcleo. El calor residual afecta los pistones neumáticos de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_176",
+      "x": 2750,
+      "y": 150,
+      "title": "Pasarela de los Balancines Altos",
+      "content": "Estructuras móviles oscilan sobre la cabeza de la heroína @Arandela de forma impredecible por los errores lógicos del sistema de @núcleo.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_177",
+      "x": 2750,
+      "y": 350,
+      "title": "Cabina de Control de Mantenimiento",
+      "content": "Una terminal de @consolas conserva funciones básicas de diagnóstico en @núcleo. La heroína @Arandela ejecuta parches lógicos de salud.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_178",
+      "x": 2750,
+      "y": 550,
+      "title": "Foso de los Engranajes de Reducción",
+      "content": "Grandes ruedas dentadas giran de forma intermitente en @núcleo, triturando fragmentos de chatarra con ruidos ensordecedores ante @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -3 }
+    },
+    {
+      "id": "n_179",
+      "x": 2900,
+      "y": 300,
+      "title": "Encrucijada de la Corona Central",
+      "content": "Los pasillos rodean el núcleo esférico del motor de percusión de @núcleo. Tres compuertas se abren ante la mirada de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_180",
+      "x": 2900,
+      "y": 500,
+      "title": "Paso de la Viga de Torsión",
+      "content": "Un gran tirante de acero sufre deformaciones dinámicas por los desequilibrios de @núcleo. Desprendimiento de virutas ante @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_181",
+      "x": 3050,
+      "y": 150,
+      "title": "Rampa de Acceso a las Consolas",
+      "content": "Una calzada ascendente cubierta de rejilla metálica inestable en @núcleo. Varias uniones estructurales han cedido ante la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_182",
+      "x": 3050,
+      "y": 350,
+      "title": "Almacén de Herramientas del Núcleo",
+      "content": "Un compartimento estanco de seguridad en @núcleo contiene cilindros de @kits de reparación rápida y fluidos sintéticos para @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 3 }
+    },
+    {
+      "id": "n_183",
+      "x": 3050,
+      "y": 550,
+      "title": "Conducto de Retorno de Lubricante",
+      "content": "Galería inclinada de @núcleo por la que circula aceite a alta temperatura. Dificultad extrema de agarre para las botas de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_184",
+      "x": 3200,
+      "y": 300,
+      "title": "Bifurcación Premuerta del Núcleo",
+      "content": "Las lecturas informáticas de @consolas indican proximidad absoluta a la sala de mandos de @núcleo. Dos direcciones finales ante @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_185",
+      "x": 3200,
+      "y": 500,
+      "title": "Foso del Servomecanismo Central",
+      "content": "Un brazo de posicionamiento dañado oscila descontrolado en @núcleo, bloqueando la trayectoria limpia ante el visor de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -3 }
+    },
+    {
+      "id": "n_186",
+      "x": 3350,
+      "y": 150,
+      "title": "Pasarela de Inspección Final",
+      "content": "Una delgada estructura suspendida sobre la cámara de la guillotina de @núcleo. Las corrientes térmicas generan oscilaciones que desafían a @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_187",
+      "x": 3350,
+      "y": 350,
+      "title": "Estación de Diagnóstico del Núcleo",
+      "content": "Una terminal de emergencia de @consolas permite a @Arandela un ciclo rápido de purga y optimización de las uniones mecánicas de la armadura.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 2 }
+    },
+    {
+      "id": "n_188",
+      "x": 3350,
+      "y": 550,
+      "title": "Túnel de Gases de Combustión",
+      "content": "Atmósfera saturada de residuos de hidrocarburos calientes en @núcleo. Las alarmas emiten avisos críticos ante el visor de la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -2 }
+    },
+    {
+      "id": "n_189",
+      "x": 3500,
+      "y": 300,
+      "title": "Distribuidor de Frecuencias Final",
+      "content": "Interfaces de @consolas parpadean en rojo en @núcleo. Tres pasillos convergen hacia los paneles de mando definitivos ante @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_190",
+      "x": 3500,
+      "y": 500,
+      "title": "Paso de la Guillotina Industrial",
+      "content": "Un mamparo de cierre rápido de seguridad de @núcleo cae de forma intermitente por errores lógicos de la red, arriesgando el chasis de @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -3 }
+    },
+    {
+      "id": "n_191",
+      "x": 3650,
+      "y": 200,
+      "title": "Pasillo de Acceso Directo Alfa",
+      "content": "Un corredor rectilíneo blindado en @núcleo. Los indicadores ópticos del traje de @Arandela reportan fluctuaciones lógicas inminentes.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_192",
+      "x": 3650,
+      "y": 450,
+      "title": "Pasillo de Acceso Directo Beta",
+      "content": "Un conducto cilíndrico de servicio en @núcleo. Las vibraciones de la gran guillotina alcanzan su nivel máximo ante la heroína @Arandela.",
+      "isEnding": false,
+      "endingType": null,
+      "metricsMod": { "health": -1 }
+    },
+    {
+      "id": "n_193",
+      "x": 3850,
+      "y": 100,
+      "title": "Final 1: Estabilización Absoluta",
+      "content": "La heroína @Arandela acopla las frecuencias en la consola central de @consolas. La guillotina de @núcleo cesa su ciclo errático, salvando los asentamientos.",
+      "isEnding": true,
+      "endingType": "Perfecto",
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_194",
+      "x": 3850,
+      "y": 200,
+      "title": "Final 2: Purga por Sobrecarga",
+      "content": "La heroína @Arandela desvía el refrigerante pesado manualmente. El sistema de @núcleo se detiene, pero el sector queda sellado bajo una marea química.",
+      "isEnding": true,
+      "endingType": "Sacrificio",
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_195",
+      "x": 3850,
+      "y": 300,
+      "title": "Final 3: Fractura de la Costra Terrestre",
+      "content": "Un error en la secuencia duplica la velocidad de impacto de la guillotina de @núcleo. El visor de @Arandela registra cómo el planetoide comienza a desmoronarse.",
+      "isEnding": true,
+      "endingType": "Catastrófico",
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_196",
+      "x": 3850,
+      "y": 400,
+      "title": "Final 4: Automatización Hostil Total",
+      "content": "El hackeo de la consola de @consolas reactiva los protocolos de @unidades de defensa originales de la megaestructura. @núcleo aísla permanentemente a @Arandela.",
+      "isEnding": true,
+      "endingType": "IA Dominación",
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_197",
+      "x": 3850,
+      "y": 500,
+      "title": "Final 5: Desmantelamiento Controlado",
+      "content": "La heroína @Arandela utiliza las cargas remanentes para eyectar el núcleo de @núcleo al espacio. El peligro cesa, quedando el sector como un erial muerto.",
+      "isEnding": true,
+      "endingType": "Retirada",
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_198",
+      "x": 3850,
+      "y": 600,
+      "title": "Final 6: Absorción de la Red Operativa",
+      "content": "Sistemas de @núcleo asimilan la interfaz de @Arandela como unidad de mantenimiento prioritaria. Los servoasistentes se detienen, integrándola en la red.",
+      "isEnding": true,
+      "endingType": "Ciber-Asimilación",
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_199",
+      "x": 3850,
+      "y": 700,
+      "title": "Final 7: Éxodo de los Chatarreros",
+      "content": "La heroína @Arandela entrega el control manual a las facciones de @chatarreros. Estos detienen la máquina de @núcleo para desguazarla de forma masiva.",
+      "isEnding": true,
+      "endingType": "Social-Político",
+      "metricsMod": { "health": 0 }
+    },
+    {
+      "id": "n_200",
+      "x": 3850,
+      "y": 800,
+      "title": "Final 8: Colapso Silencioso",
+      "content": "La guillotina de @núcleo se detiene por el desgaste extremo de sus engranajes antes del impacto crítico. La heroína @Arandela contempla la entropía lenta.",
+      "isEnding": true,
+      "endingType": "Entropía",
+      "metricsMod": { "health": 0 }
+    }
+  ],
+  "connections": [
+    { "from": "n_001", "to": "n_002", "label": "Avanzar por la grieta del flanco izquierdo" },
+    { "from": "n_001", "to": "n_003", "label": "Explorar el talud de escombros de la derecha" },
+    
+    { "from": "n_002", "to": "n_004", "label": "Trepar por la escala magnética de servicio" },
+    { "from": "n_002", "to": "n_005", "label": "Descender hacia la zona del foso mecánico" },
+    
+    { "from": "n_003", "to": "n_005", "label": "Cruzar de forma directa hacia el foso abierto" },
+    { "from": "n_003", "to": "n_006", "label": "Buscar refugio en el contenedor modular" },
+    
+    { "from": "n_004", "to": "n_007", "label": "Seguir la pasarela alta hacia el norte" },
+    { "from": "n_004", "to": "n_008", "label": "Desviarse por la línea de alta tensión" },
+    
+    { "from": "n_005", "to": "n_007", "label": "Rodear los mechanisms por el flanco izquierdo" },
+    { "from": "n_005", "to": "n_008", "label": "Saltar entre las cuchillas de percusión" },
+    
+    { "from": "n_006", "to": "n_008", "label": "Salir del contenedor hacia los cableados" },
+    { "from": "n_006", "to": "n_009", "label": "Avanzar hacia la zona baja de sedimentos" },
+    
+    { "from": "n_007", "to": "n_010", "label": "Acceder a la cabina técnica abandonada" },
+    { "from": "n_007", "to": "n_011", "label": "Adentrarse en las estructuras navales rotas" },
+    
+    { "from": "n_008", "to": "n_010", "label": "Forzar la esclusa del punto perimetral" },
+    { "from": "n_008", "to": "n_012", "label": "Descender por las tuberías de evacuación" },
+    
+    { "from": "n_009", "to": "n_010", "label": "Subir por la rampa de hormigón lateral" },
+    { "from": "n_009", "to": "n_012", "label": "Seguir el flujo de los líquidos espesos" },
+    
+    { "from": "n_010", "to": "n_011", "label": "Tomar la pasarela superior de los chasis" },
+    { "from": "n_010", "to": "n_012", "label": "Seguir el corredor inferior de servicio" },
+    
+    { "from": "n_011", "to": "n_013", "label": "Introducirse en el conducto de filtros" },
+    { "from": "n_011", "to": "n_014", "label": "Cruzar la galería de mamparos cedidos" },
+    
+    { "from": "n_012", "to": "n_014", "label": "Trepar por los refuerzos estructurales" },
+    { "from": "n_012", "to": "n_016", "label": "Rodear el gran tanque de separación" },
+    
+    { "from": "n_013", "to": "n_015", "label": "Acceder a la cámara del alternador sordo" },
+    { "from": "n_013", "to": "n_017", "label": "Avanzar por el puente de vigas dobles" },
+    
+    { "from": "n_014", "to": "n_015", "label": "Entrar en el space del generador" },
+    { "from": "n_014", "to": "n_018", "label": "Seguir el túnel revestido de plomo" },
+    
+    { "from": "n_015", "to": "n_017", "label": "Salir hacia las vigas altas suspendidas" },
+    { "from": "n_015", "to": "n_018", "label": "Tomar la salida de servicio del fondo" },
+    
+    { "from": "n_016", "to": "n_018", "label": "Seguir el pasadizo técnico de plomo" },
+    { "from": "n_016", "to": "n_019", "label": "Descender al foso de agua contaminada" },
+    
+    { "from": "n_017", "to": "n_020", "label": "Alcanzar el arco de cuadernas metálicas" },
+    { "from": "n_017", "to": "n_021", "label": "Desviarse por la rampa de engrase" },
+    
+    { "from": "n_018", "to": "n_020", "label": "Avanzar recto hacia la zona de cuadernas" },
+    { "from": "n_018", "to": "n_022", "label": "Forzar el armario de repuestos industriales" },
+    
+    { "from": "n_019", "to": "n_020", "label": "Escalar por los cables fuera del agua" },
+    { "from": "n_019", "to": "n_023", "label": "Reptar bajo el brazo de grúa caído" },
+    
+    { "from": "n_020", "to": "n_021", "label": "Tomar el ramal inclinado superior" },
+    { "from": "n_020", "to": "n_022", "label": "Entrar en la cámara estanca lateral" },
+    { "from": "n_020", "to": "n_023", "label": "Pasar bajo la estructura colapsada" },
+    
+    { "from": "n_021", "to": "n_024", "label": "Fijar botas y alcanzar el nexo logístico" },
+    { "from": "n_021", "to": "n_025", "label": "Cruzar por la conducción de presión" },
+    
+    { "from": "n_022", "to": "n_024", "label": "Salir al nexo de terminales activos" },
+    { "from": "n_022", "to": "n_025", "label": "Avanzar por el ramal de tuberías duras" },
+    
+    { "from": "n_023", "to": "n_025", "label": "Superar el brazo mecánico y avanzar" },
+    { "from": "n_023", "to": "n_028", "label": "Desviarse hacia los bloques de metal prensado" },
+    
+    { "from": "n_024", "to": "n_026", "label": "Tomar la pasarela de rejilla norte" },
+    { "from": "n_024", "to": "n_027", "label": "Entrar en la subestación eléctrica" },
+    
+    { "from": "n_025", "to": "n_027", "label": "Superar el escape de vapor hacia la subestación" },
+    { "from": "n_025", "to": "n_028", "label": "Bajar al desfiladero de bloques cúbicos" },
+    
+    { "from": "n_026", "to": "n_029", "label": "Seguir el camino de rejilla hacia las vías" },
+    { "from": "n_026", "to": "n_031", "label": "Saltar al tramo final ferroviario" },
+    
+    { "from": "n_027", "to": "n_029", "label": "Salir de la subestación hacia las vías" },
+    { "from": "n_027", "to": "n_032", "label": "Acceder al muelle de la estación médica" },
+    
+    { "from": "n_028", "to": "n_030", "label": "Deslizarse por el conducto aceitoso" },
+    { "from": "n_028", "to": "n_033", "label": "Entrar en el pasillo de la prensa activa" },
+    
+    { "from": "n_029", "to": "n_031", "label": "Avanzar sobre los raíles industriales" },
+    { "from": "n_029", "to": "n_034", "label": "Tomar el corredor de chasis densos" },
+    
+    { "from": "n_030", "to": "n_032", "label": "Salir del conducto en la estación médica" },
+    { "from": "n_030", "to": "n_035", "label": "Caer en el túnel de servicio inundado" },
+    
+    { "from": "n_031", "to": "n_034", "label": "Cruzar los soportes colgados del techo" },
+    { "from": "n_031", "to": "n_036", "label": "Alcanzar la cámara del domo de hierro" },
+    
+    { "from": "n_032", "to": "n_034", "label": "Dejar el muelle médico hacia los chasis" },
+    { "from": "n_032", "to": "n_037", "label": "Avanzar hacia la ranura entre forjados" },
+    
+    { "from": "n_033", "to": "n_035", "label": "Superar los impactos de la prensa" },
+    { "from": "n_033", "to": "n_038", "label": "Forzar el depósito de herramientas" },
+    
+    { "from": "n_034", "to": "n_036", "label": "Entrar en el espacio abovedado del domo" },
+    { "from": "n_034", "to": "n_037", "label": "Introducirse entre las masas de forjado" },
+    
+    { "from": "n_035", "to": "n_037", "label": "Salir del agua hacia la ranura vertical" },
+    { "from": "n_035", "to": "n_038", "label": "Alcanzar el contenedor de fluidos puros" },
+    
+    { "from": "n_036", "to": "n_039", "label": "Salir del domo por la pasarela tubular" },
+    { "from": "n_036", "to": "n_041", "label": "Subir a la estructura de la grúa pórtico" },
+    
+    { "from": "n_037", "to": "n_039", "label": "Superar la ranura hacia la plataforma" },
+    { "from": "n_037", "to": "n_042", "label": "Acceder a la estancia de matrices" },
+    
+    { "from": "n_038", "to": "n_040", "label": "Avanzar hacia la escotilla con radiación" },
+    { "from": "n_038", "to": "n_043", "label": "Entrar en la cabina del operador" },
+    
+    { "from": "n_039", "to": "n_041", "label": "Tomar la línea de la grúa pórtico" },
+    { "from": "n_039", "to": "n_042", "label": "Cruzar la estancia de las virutas" },
+    { "from": "n_039", "to": "n_044", "label": "Alcanzar el punto final de bifurcación" },
+    
+    { "from": "n_040", "to": "n_042", "label": "Evitar los escombros hacia las matrices" },
+    { "from": "n_040", "to": "n_043", "label": "Correr hacia la zona acristalada segura" },
+    
+    { "from": "n_041", "to": "n_044", "label": "Descender de la grúa hacia la salida" },
+    { "from": "n_041", "to": "n_045", "label": "Caer en el foso de cenizas abrasivas" },
+    
+    { "from": "n_042", "to": "n_044", "label": "Cruzar las virutas hacia la bifurcación" },
+    { "from": "n_042", "to": "n_045", "label": "Bajar al sumidero de polvo de carbón" },
+    
+    { "from": "n_043", "to": "n_044", "label": "Salir de la cabina hacia el umbral limpio" },
+    { "from": "n_043", "to": "n_045", "label": "Cruzar por el sumidero de ceniza fina" },
+    
+    { "from": "n_044", "to": "n_046", "label": "Girar a la izquierda por el conducto este" },
+    { "from": "n_044", "to": "n_047", "label": "Entrar en la sala de bombas de vacío" },
+    
+    { "from": "n_045", "to": "n_047", "label": "Superar el foso hacia las bombas" },
+    { "from": "n_045", "to": "n_048", "label": "Acceder al despacho técnico quemado" },
+    
+    { "from": "n_046", "to": "n_049", "label": "Seguir el cilindro hacia la rampa" },
+    { "from": "n_046", "to": "n_051", "label": "Entrar directo a las bahías químicas" },
+    
+    { "from": "n_047", "to": "n_049", "label": "Salir de las bombas hacia la rampa" },
+    { "from": "n_047", "to": "n_052", "label": "Tomar la pasarela sobre la balsa viva" },
+    
+    { "from": "n_048", "to": "n_050", "label": "Cruzar los filos hacia la zona de derrumbes" },
+    { "from": "n_048", "to": "n_053", "label": "Alcanzar el colector de lodo sintético" },
+    
+    { "from": "n_049", "to": "n_051", "label": "Bajar la rampa hacia los vapores corrosivos" },
+    { "from": "n_049", "to": "n_052", "label": "Avanzar por el entramado plástico alto" },
+    
+    { "from": "n_050", "to": "n_052", "label": "Esquivar las placas hacia la pasarela plástica" },
+    { "from": "n_050", "to": "n_053", "label": "Bajar a la estación de inyección limpia" },
+    
+    { "from": "n_051", "to": "n_054", "label": "Introducirse en el entramado de tuberías" },
+    { "from": "n_051", "to": "n_055", "label": "Bajar a la cámara de los filtros gruesos" },
+    
+    { "from": "n_052", "to": "n_054", "label": "Seguir la pasarela hacia las tuberías duras" },
+    { "from": "n_052", "to": "n_055", "label": "Descender a los filtros de grasa adherente" },
+    
+    { "from": "n_053", "to": "n_055", "label": "Avanzar por el suelo cubierto de grasa" },
+    { "from": "n_053", "to": "n_059", "label": "Tomar el túnel del rebose abierto" },
+    
+    { "from": "n_054", "to": "n_056", "label": "Alcanzar el dique de hormigón agrietado" },
+    { "from": "n_054", "to": "n_057", "label": "Entrar a la zona de autolavado operativa" },
+    
+    { "from": "n_055", "to": "n_057", "label": "Superar los filtros hacia el autolavado" },
+    { "from": "n_055", "to": "n_058", "label": "Avanzar junto al foso de decantadores" },
+    
+    { "from": "n_056", "to": "n_060", "label": "Cruzar el dique hacia la plataforma central" },
+    { "from": "n_056", "to": "n_061", "label": "Bajar al canal de ácidos rápidos" },
+    
+    { "from": "n_057", "to": "n_060", "label": "Salir del autolavado a la zona central" },
+    { "from": "n_057", "to": "n_062", "label": "Entrar a la cámara de la esclusa neumática" },
+    
+    { "from": "n_058", "to": "n_061", "label": "Esquivar el goteo hacia el canal de ácido" },
+    { "from": "n_058", "to": "n_063", "label": "Pasar por el corredor de vapor amoniacal" },
+    
+    { "from": "n_059", "to": "n_063", "label": "Evitar la succión hacia las tuberías rotas" },
+    { "from": "n_059", "to": "n_064", "label": "Pisar sobre la costra seca de lodos" },
+    
+    { "from": "n_060", "to": "n_061", "label": "Saltar sobre los bloques del canal ácido" },
+    { "from": "n_060", "to": "n_062", "label": "Girar hacia la esclusa neumática lateral" },
+    { "from": "n_060", "to": "n_065", "label": "Tomar las grandes conducciones abiertas" },
+    
+    { "from": "n_061", "to": "n_065", "label": "Superar el canal hacia las conducciones" },
+    { "from": "n_061", "to": "n_066", "label": "Desviarse a la subestación destruida" },
+    
+    { "from": "n_062", "to": "n_065", "label": "Salir de la esclusa hacia los aliviaderos" },
+    { "from": "n_062", "to": "n_067", "label": "Subir a la línea de colectores altos" },
+    
+    { "from": "n_063", "to": "n_066", "label": "Cruzar la niebla hacia los restos de metralla" },
+    { "from": "n_063", "to": "n_068", "label": "Entrar al módulo del laboratorio limpio" },
+    
+    { "from": "n_064", "to": "n_066", "label": "Salir del estanque hacia la subestación" },
+    { "from": "n_064", "to": "n_069", "label": "Bajar a la cámara sin oxígeno bajo" },
+    
+    { "from": "n_065", "to": "n_067", "label": "Tomar el camino suspendido superior" },
+    { "from": "n_065", "to": "n_068", "label": "Entrar al espacio cerrado de laboratorios" },
+    
+    { "from": "n_066", "to": "n_068", "label": "Cruzar la metralla hacia el laboratorio" },
+    { "from": "n_066", "to": "n_069", "label": "Descender a la estancia de sedimentación baja" },
+    
+    { "from": "n_067", "to": "n_070", "label": "Seguir las tuberías altas hacia la fosa" },
+    { "from": "n_067", "to": "n_072", "label": "Tomar la rampa de rejilla corroída" },
+    
+    { "from": "n_068", "to": "n_070", "label": "Salir al punto medio de la fosa central" },
+    { "from": "n_068", "to": "n_073", "label": "Forzar los contenedores biológicos" },
+    
+    { "from": "n_069", "to": "n_071", "label": "Avanzar contra el flujo de gas abrasivo" },
+    { "from": "n_069", "to": "n_074", "label": "Entrar en el foso de la turbina lenta" },
+    
+    { "from": "n_070", "to": "n_071", "label": "Introducirse en el canal de retorno gaseoso" },
+    { "from": "n_070", "to": "n_072", "label": "Subir por la cuesta de rejilla metálica" },
+    { "from": "n_070", "to": "n_075", "label": "Seguir la línea de decantadores altos" },
+    
+    { "from": "n_071", "to": "n_075", "label": "Superar los gases hacia el ramal alto" },
+    { "from": "n_071", "to": "n_076", "label": "Cruzar la galería de condensación hirviente" },
+    
+    { "from": "n_072", "to": "n_075", "label": "Alcanzar la zona alta sobre los canales" },
+    { "from": "n_072", "to": "n_077", "label": "Tomar la estructura tubular estrecha" },
+    
+    { "from": "n_073", "to": "n_075", "label": "Salir del almacén hacia los decantadores" },
+    { "from": "n_073", "to": "n_078", "label": "Acceder al puesto de la megaestructura" },
+    
+    { "from": "n_074", "to": "n_076", "label": "Esquivar las palas gigantes de la turbina" },
+    { "from": "n_074", "to": "n_079", "label": "Avanzar por el tapón de residuos del sifón" },
+    
+    { "from": "n_075", "to": "n_077", "label": "Pasar sobre la línea del mezclador estático" },
+    { "from": "n_075", "to": "n_078", "label": "Activar la consola del puesto automático" },
+    
+    { "from": "n_076", "to": "n_078", "label": "Superar el vapor hacia el puesto médico" },
+    { "from": "n_076", "to": "n_079", "label": "Cruzar la acumulación ácida del sifón" },
+    
+    { "from": "n_077", "to": "n_080", "label": "Alcanzar las válvulas de compuerta finales" },
+    { "from": "n_077", "to": "n_082", "label": "Pasar bajo los mamparos automáticos" },
+    
+    { "from": "n_078", "to": "n_080", "label": "Dejar el refugio médico hacia el erial" },
+    { "from": "n_078", "to": "n_083", "label": "Entrar al entorno de análisis cerrado" },
+    
+    { "from": "n_079", "to": "n_081", "label": "Cruzar junto al disco que oscila y golpea" },
+    { "from": "n_079", "to": "n_084", "label": "Avanzar por los bloques de lodo seco sílice" },
+    
+    { "from": "n_080", "to": "n_082", "label": "Tomar el corredor de compuertas lógicas" },
+    { "from": "n_080", "to": "n_083", "label": "Acceder a la cabina limpia de análisis" },
+    { "from": "n_080", "to": "n_085", "label": "Cruzar las compuertas hacia la salida este" },
+    
+    { "from": "n_081", "to": "n_085", "label": "Esquivar el disco metálico hacia la salida" },
+    { "from": "n_081", "to": "n_086", "label": "Avanzar junto a la perforación vertical" },
+    
+    { "from": "n_082", "to": "n_085", "label": "Superar el cierre de mamparos rápido" },
+    { "from": "n_082", "to": "n_087", "label": "Subir la rampa de metal corrugado" },
+    
+    { "from": "n_083", "to": "n_085", "label": "Salir de la cabina hacia las rutas norte" },
+    { "from": "n_083", "to": "n_088", "label": "Forzar el nicho de recambio de filtros" },
+    
+    { "from": "n_084", "to": "n_086", "label": "Superar los filos de sílice hacia el pozo" },
+    { "from": "n_084", "to": "n_089", "label": "Cruzar la rejilla de escape térmico" },
+    
+    { "from": "n_085", "to": "n_087", "label": "Tomar el plano inclinado deslizante" },
+    { "from": "n_085", "to": "n_088", "label": "Buscar suministros en el nicho abierto" },
+    
+    { "from": "n_086", "to": "n_088", "label": "Bordear el vacío de la perforación central" },
+    { "from": "n_086", "to": "n_089", "label": "Pasar sobre los gases del reactor bajo" },
+    
+    { "from": "n_087", "to": "n_090", "label": "Alcanzar el límite de la planicie abierta" },
+    { "from": "n_087", "to": "n_091", "label": "Entrar directo al desierto de silicio" },
+    
+    { "from": "n_088", "to": "n_090", "label": "Dejar los talleres hacia el frente de aire" },
+    { "from": "n_088", "to": "n_092", "label": "Subir a la cresta de la duna principal" },
+    
+    { "from": "n_089", "to": "n_090", "label": "Superar los chorros térmicos hacia el nexo" },
+    { "from": "n_089", "to": "n_093", "label": "Descender a la hoya del dron caído" },
+    
+    { "from": "n_090", "to": "n_091", "label": "Adentrarse en las dunas de polvo gris" },
+    { "from": "n_090", "to": "n_092", "label": "Seguir la línea de la cresta arenosa" },
+    
+    { "from": "n_091", "to": "n_094", "label": "Avanzar sin referencias estables" },
+    { "from": "n_091", "to": "n_095", "label": "Cruzar por la zona de arcos voltaicos" },
+    
+    { "from": "n_092", "to": "n_094", "label": "Seguir el lomo de la duna movediza" },
+    { "from": "n_092", "to": "n_096", "label": "Bajar a la llanura expuesta al viento" },
+    
+    { "from": "n_093", "to": "n_095", "label": "Dejar la hondonada hacia las descargas" },
+    { "from": "n_093", "to": "n_097", "label": "Explorar el asentamiento de lonas" },
+    
+    { "from": "n_094", "to": "n_096", "label": "Mantener rumbo norte por la llanura solar" },
+    { "from": "n_094", "to": "n_098", "label": "Desviarse hacia los chasis enterrados" },
+    
+    { "from": "n_095", "to": "n_097", "label": "Superar los impactos hacia las lonas" },
+    { "from": "n_095", "to": "n_100", "label": "Bajar al barranco de escoria dura" },
+    
+    { "from": "n_096", "to": "n_099", "label": "Avanzar entre las colinas de polvo fino" },
+    { "from": "n_096", "to": "n_101", "label": "Entrar en el área de aire ionizado azul" },
+    
+    { "from": "n_097", "to": "n_099", "label": "Dejar el campamento hacia los bucles" },
+    { "from": "n_097", "to": "n_102", "label": "Buscar cobijo bajo el ala del transporte" },
+    
+    { "from": "n_098", "to": "n_100", "label": "Bordear las aristas cortantes del acero" },
+    { "from": "n_098", "to": "n_103", "label": "Entrar en las placas de vidrio astillado" },
+    
+    { "from": "n_099", "to": "n_101", "label": "Seguir adelante bajo el brillo azul" },
+    { "from": "n_099", "to": "n_104", "label": "Alcanzar la encrucijada de senderos abiertos" },
+    
+    { "from": "n_100", "to": "n_102", "label": "Escalar el barranco hacia el fuselaje" },
+    { "from": "n_100", "to": "n_105", "label": "Tomar el paso estrecho de los tanques" },
+    
+    { "from": "n_101", "to": "n_104", "label": "Superar la ionización hacia la intersección" },
+    { "from": "n_101", "to": "n_106", "label": "Subir a la loma de descargas continuas" },
+    
+    { "from": "n_102", "to": "n_104", "label": "Salir del ala protectora hacia el norte" },
+    { "from": "n_102", "to": "n_107", "label": "Avanzar hacia la antena parabólica caída" },
+    
+    { "from": "n_103", "to": "n_105", "label": "Cruzar el vidrio hacia el desfiladero" },
+    { "from": "n_103", "to": "n_108", "label": "Entrar a la zanja de filamentos rotos" },
+    
+    { "from": "n_104", "to": "n_106", "label": "Tomar la elevación expuesta al viento" },
+    { "from": "n_104", "to": "n_107", "label": "Girar hacia el generador de la antena" },
+    { "from": "n_104", "to": "n_109", "label": "Continuar por el entramado de dunas idénticas" },
+    
+    { "from": "n_105", "to": "n_107", "label": "Superar las corrientes del paso de tanques" },
+    { "from": "n_105", "to": "n_110", "label": "Descender por la rampa de arena suelta" },
+    
+    { "from": "n_106", "to": "n_109", "label": "Bajar de la loma hacia las dunas ciegas" },
+    { "from": "n_106", "to": "n_111", "label": "Seguir la ruta de escoria rugosa" },
+    
+    { "from": "n_107", "to": "n_109", "label": "Dejar los sistemas de antena hacia el frente" },
+    { "from": "n_107", "to": "n_112", "label": "Alcanzar el módulo meteorológico sordo" },
+    
+    { "from": "n_108", "to": "n_110", "label": "Superar el polvo de vidrio hacia la bajada" },
+    { "from": "n_108", "to": "n_113", "label": "Entrar en la hondonada de magnetita negra" },
+    
+    { "from": "n_109", "to": "n_111", "label": "Avanzar firme sobre la costra rugosa" },
+    { "from": "n_109", "to": "n_114", "label": "Alcanzar la gran llanura del desierto central" },
+    
+    { "from": "n_110", "to": "n_112", "label": "Controlar el descenso hacia la sonda sorda" },
+    { "from": "n_110", "to": "n_115", "label": "Cruzar la masa de arena en movimiento" },
+    
+    { "from": "n_111", "to": "n_114", "label": "Seguir los bloques firmes hacia el centro" },
+    { "from": "n_111", "to": "n_116", "label": "Subir a la cresta de viento térmico alto" },
+    
+    { "from": "n_112", "to": "n_114", "label": "Dejar el sensor meteorológico hacia el norte" },
+    { "from": "n_112", "to": "n_117", "label": "Entrar al módulo de transporte caído" },
+    
+    { "from": "n_113", "to": "n_115", "label": "Limpiar articulaciones y cruzar la masa viva" },
+    { "from": "n_113", "to": "n_118", "label": "Pasar sobre las cenizas volátiles ligeras" },
+    
+    { "from": "n_114", "to": "n_116", "label": "Tomar la línea de la cresta de alta temperatura" },
+    { "from": "n_114", "to": "n_117", "label": "Entrar directo al contenedor de carga orbital" },
+    { "from": "n_114", "to": "n_119", "label": "Seguir los bucles de arena sin marcas" },
+    
+    { "from": "n_115", "to": "n_117", "label": "Superar la inestabilidad hacia el contenedor" },
+    { "from": "n_115", "to": "n_120", "label": "Introducirse entre las paredes navales" },
+    
+    { "from": "n_116", "to": "n_119", "label": "Bajar de la cresta hacia los bucles" },
+    { "from": "n_116", "to": "n_121", "label": "Cruzar la loma de la estática azul" },
+    
+    { "from": "n_117", "to": "n_119", "label": "Salir del módulo hacia la arena abierta" },
+    { "from": "n_117", "to": "n_122", "label": "Acceder al búnker técnico enterrado" },
+    
+    { "from": "n_118", "to": "n_120", "label": "Evitar hundimientos hacia el desfiladero" },
+    { "from": "n_118", "to": "n_123", "label": "Pasar sobre las astillas de sílice puras" },
+    
+    { "from": "n_119", "to": "n_121", "label": "Avanzar bajo la luz de arcos azules" },
+    { "from": "n_119", "to": "n_124", "label": "Alcanzar la rampa de escombros masivos final" },
+    
+    { "from": "n_120", "to": "n_122", "label": "Esquivar las caídas mecánicas hacia el búnker" },
+    { "from": "n_120", "to": "n_125", "label": "Bajar al torbellino de la hoya de viento" },
+    
+    { "from": "n_121", "to": "n_124", "label": "Cruzar los campos estáticos hacia la rampa" },
+    { "from": "n_121", "to": "n_126", "label": "Tomar la calzada de planchas unidas" },
+    
+    { "from": "n_122", "to": "n_124", "label": "Salir del búnker hacia la subsuperficie" },
+    { "from": "n_122", "to": "n_127", "label": "Acceder al muelle de carga activo" },
+    
+    { "from": "n_123", "to": "n_125", "label": "Superar las astillas hacia el torbellino" },
+    { "from": "n_123", "to": "n_128", "label": "Bajar por el pozo inclinado de lodos secos" },
+    
+    { "from": "n_124", "to": "n_126", "label": "Seguir la calzada blindada hacia la oscuridad" },
+    { "from": "n_124", "to": "n_127", "label": "Entrar al muelle informático operativo" },
+    { "from": "n_124", "to": "n_129", "label": "Cruzar el umbral hacia los drones mudos" },
+    
+    { "from": "n_125", "to": "n_127", "label": "Salir del torbellino hacia el muelle informático" },
+    { "from": "n_125", "to": "n_128", "label": "Deslizarse al pozo inclinado oscuro" },
+    
+    { "from": "n_126", "to": "n_129", "label": "Adentrarse en las cavidades oscuras interiores" },
+    { "from": "n_126", "to": "n_131", "label": "Entrar al sector de apilamiento masivo" },
+    
+    { "from": "n_127", "to": "n_129", "label": "Salir de los muelles hacia el interior de chatarra" },
+    { "from": "n_127", "to": "n_132", "label": "Pasar por la galería de los centinelas" },
+    
+    { "from": "n_128", "to": "n_130", "label": "Evitar las grietas del techo de la galería" },
+    { "from": "n_128", "to": "n_133", "label": "Forzar la cámara de núcleos estables" },
+    
+    { "from": "n_129", "to": "n_131", "label": "Tomar el ramal principal de drones sueltos" },
+    { "from": "n_129", "to": "n_132", "label": "Avanzar flanqueando las unidades de defensa" },
+    
+    { "from": "n_130", "to": "n_132", "label": "Esquivar los cascotes hacia los centinelas" },
+    { "from": "n_130", "to": "n_133", "label": "Entrar al espacio cerrado de repuestos" },
+    
+    { "from": "n_131", "to": "n_134", "label": "Bordear los chasis de excavadoras mineras" },
+    { "from": "n_131", "to": "n_135", "label": "Cruzar la fosa de extremidades mecánicas" },
+    
+    { "from": "n_132", "to": "n_134", "label": "Pasar de largo los sensores erráticos" },
+    { "from": "n_132", "to": "n_135", "label": "Saltar sobre los elementos sueltos del foso" },
+    
+    { "from": "n_133", "to": "n_136", "label": "Salir del nicho hacia las unidades voladoras" },
+    { "from": "n_133", "to": "n_137", "label": "Conectar a la terminal de alimentación" },
+    
+    { "from": "n_134", "to": "n_136", "label": "Pasar sobre los polímeros crujientes" },
+    { "from": "n_134", "to": "n_138", "label": "Acceder a la sala del ordenador arruinado" },
+    
+    { "from": "n_135", "to": "n_137", "label": "Escalar el foso hacia el puesto eléctrico" },
+    { "from": "n_135", "to": "n_139", "label": "Introducirse en el canal de calor sordo" },
+    
+    { "from": "n_136", "to": "n_140", "label": "Alcanzar la gran bóveda central excavada" },
+    { "from": "n_136", "to": "n_141", "label": "Subir por los neumáticos del dumper" },
+    
+    { "from": "n_137", "to": "n_140", "label": "Salir del cargador hacia la gran bóveda" },
+    { "from": "n_137", "to": "n_142", "label": "Entrar en la estancia del calor intenso" },
+    
+    { "from": "n_138", "to": "n_141", "label": "Superar los arcos eléctricos hacia el camión" },
+    { "from": "n_138", "to": "n_143", "label": "Forzar el contenedor técnico estanco" },
+    
+    { "from": "n_139", "to": "n_142", "label": "Superar la asfixia hacia el túnel caliente" },
+    { "from": "n_139", "to": "n_144", "label": "Cruzar la maraña de hilos cortantes" },
+    
+    { "from": "n_140", "to": "n_141", "label": "Trepar por el dumper minero colosal" },
+    { "from": "n_140", "to": "n_142", "label": "Seguir la línea de motores quemados" },
+    { "from": "n_140", "to": "n_145", "label": "Tomar la galería de cápsulas médicas" },
+    
+    { "from": "n_141", "to": "n_145", "label": "Superar la tracción hacia las cápsulas" },
+    { "from": "n_141", "to": "n_146", "label": "Cruzar la estancia de barrido láser" },
+    
+    { "from": "n_142", "to": "n_145", "label": "Dejar el calor hacia los ramales oscuros" },
+    { "from": "n_142", "to": "n_147", "label": "Pasar bajo los brazos articulados colgantes" },
+    
+    { "from": "n_143", "to": "n_146", "label": "Salir con los epoxis hacia los láseres" },
+    { "from": "n_143", "to": "n_148", "label": "Entrar a la cabina de descontaminación" },
+    
+    { "from": "n_144", "to": "n_147", "label": "Superar los hilos hacia los techos rotos" },
+    { "from": "n_144", "to": "n_149", "label": "Cruzar entre los microdrones fijos" },
+    
+    { "from": "n_145", "to": "n_147", "label": "Tomar la ruta de los elementos colgantes" },
+    { "from": "n_145", "to": "n_148", "label": "Pasar por el interior de la cabina limpia" },
+    
+    { "from": "n_146", "to": "n_148", "label": "Esquivar los trazos térmicos hacia la cabina" },
+    { "from": "n_146", "to": "n_149", "label": "Avanzar por el muro de microdrones" },
+    
+    { "from": "n_147", "to": "n_150", "label": "Alcanzar los pasadizos laberínticos bajos" },
+    { "from": "n_147", "to": "n_152", "label": "Descender por la pendiente de hormigón" },
+    
+    { "from": "n_148", "to": "n_150", "label": "Dejar el entorno médico hacia el laberinto" },
+    { "from": "n_148", "to": "n_153", "label": "Acceder al taller robotizado del fondo" },
+    
+    { "from": "n_149", "to": "n_151", "label": "Cruzar los cortocircuitos hacia los fluidos" },
+    { "from": "n_149", "to": "n_154", "label": "Entrar al foso de martillos hidráulicos" },
+    
+    { "from": "n_150", "to": "n_151", "label": "Introducirse por la zona de emanaciones" },
+    { "from": "n_150", "to": "n_152", "label": "Tomar la rampa inclinada sin defensas" },
+    { "from": "n_150", "to": "n_155", "label": "Avanzar hacia los chasis elevados altos" },
+    
+    { "from": "n_151", "to": "n_155", "label": "Superar los ácidos hacia los chasis altos" },
+    { "from": "n_151", "to": "n_156", "label": "Reptar por el conducto de sección cuadrada" },
+    
+    { "from": "n_152", "to": "n_155", "label": "Controlar el equilibrio hacia las alturas" },
+    { "from": "n_152", "to": "n_157", "label": "Cruzar las chapas remachadas del techo" },
+    
+    { "from": "n_153", "to": "n_155", "label": "Dejar el taller mecánico hacia los cimientos" },
+    { "from": "n_153", "to": "n_158", "label": "Forzar el arcón de intendencia militar" },
+    
+    { "from": "n_154", "to": "n_156", "label": "Esquivar las vibraciones hacia la tubería" },
+    { "from": "n_154", "to": "n_159", "label": "Entrar en las tolvas de reciclaje de acero" },
+    
+    { "from": "n_155", "to": "n_157", "label": "Seguir la línea de torsión mecánica" },
+    { "from": "n_155", "to": "n_158", "label": "Avanzar hacia el depósito de la flota" },
+    
+    { "from": "n_156", "to": "n_158", "label": "Salir de rodillas hacia los geles aislantes" },
+    { "from": "n_156", "to": "n_159", "label": "Bajar al foso de los dientes gastados" },
+    
+    { "from": "n_157", "to": "n_160", "label": "Alcanzar los muros de hormigón blindado" },
+    { "from": "n_157", "to": "n_162", "label": "Tomar el pasillo de baldosas cerámicas" },
+    
+    { "from": "n_158", "to": "n_160", "label": "Dejar las provisiones hacia las compuertas" },
+    { "from": "n_158", "to": "n_163", "label": "Entrar a la cabina lúdica informática" },
+    
+    { "from": "n_159", "to": "n_161", "label": "Superar las tolvas hacia el mamparo atascado" },
+    { "from": "n_159", "to": "n_164", "label": "Introducirse entre las aspas de ventilación" },
+    
+    { "from": "n_160", "to": "n_161", "label": "Forzar el paso por el espacio estrecho" },
+    { "from": "n_160", "to": "n_162", "label": "Avanzar por el túnel cerámico limpio" },
+    { "from": "n_160", "to": "n_165", "label": "Cruzar hacia la base del compactador" },
+    
+    { "from": "n_161", "to": "n_165", "label": "Superar el mamparo hacia la corona inferior" },
+    { "from": "n_161", "to": "n_166", "label": "Bajar al pozo de gases verticales" },
+    
+    { "from": "n_162", "to": "n_165", "label": "Evitar los cables vivos hacia la corona" },
+    { "from": "n_162", "to": "n_167", "label": "Subir por la escala de peldaños soldados" },
+    
+    { "from": "n_163", "to": "n_165", "label": "Terminar la autoreparación hacia los motores" },
+    { "from": "n_163", "to": "n_168", "label": "Abrir el nicho de herramientas central" },
+    
+    { "from": "n_164", "to": "n_166", "label": "Cruzar los filos hacia el pozo térmico" },
+    { "from": "n_164", "to": "n_169", "label": "Pasar junto a los poros de alta presión" },
+    
+    { "from": "n_165", "to": "n_167", "label": "Trepar por la escala metálica inestable" },
+    { "from": "n_165", "to": "n_168", "label": "Revisar los armarios de seguridad centrales" },
+    
+    { "from": "n_166", "to": "n_168", "label": "Superar el calor hacia las herramientas" },
+    { "from": "n_166", "to": "n_169", "label": "Avanzar por la línea de chorros finos" },
+    
+    { "from": "n_167", "to": "n_170", "label": "Alcanzar el umbral de la superestructura" },
+    { "from": "n_167", "to": "n_171", "label": "Entrar al pasillo de percusión sorda" },
+    
+    { "from": "n_168", "to": "n_170", "label": "Salir con los fluidos hacia el compactador" },
+    { "from": "n_168", "to": "n_172", "label": "Pasar junto al eje del cigüeñal rotativo" },
+    
+    { "from": "n_169", "to": "n_170", "label": "Esquivar las presiones hacia la entrada nítida" },
+    { "from": "n_169", "to": "n_173", "label": "Acceder a la subestación de engrase" },
+    
+    { "from": "n_170", "to": "n_171", "label": "Introducirse por la galería de contrapesos" },
+    { "from": "n_170", "to": "n_172", "label": "Seguir la trayectoria del eje dinámico" },
+    
+    { "from": "n_171", "to": "n_174", "label": "Superar los contrapesos hacia las planchas" },
+    { "from": "n_171", "to": "n_175", "label": "Entrar al conducto de gases de fricción" },
+    
+    { "from": "n_172", "to": "n_174", "label": "Esquivar los giros mecánicos hacia el plomo" },
+    { "from": "n_172", "to": "n_176", "label": "Subir a la línea de balancines altos" },
+    
+    { "from": "n_173", "to": "n_175", "label": "Salir de los lubricantes hacia el aire caliente" },
+    { "from": "n_173", "to": "n_177", "label": "Entrar a la cabina lúdica de diagnóstico" },
+    
+    { "from": "n_174", "to": "n_176", "label": "Cruzar bajo las piezas móviles inestables" },
+    { "from": "n_174", "to": "n_177", "label": "Acceder al terminal informático operativo" },
+    { "from": "n_174", "to": "n_179", "label": "Alcanzar el nexo de la corona central esférica" },
+    
+    { "from": "n_175", "to": "n_177", "label": "Superar los gases hacia la consola estable" },
+    { "from": "n_175", "to": "n_178", "label": "Bajar al foso de las ruedas dentadas" },
+    
+    { "from": "n_176", "to": "n_179", "label": "Descender hacia las tres compuertas del fondo" },
+    { "from": "n_176", "to": "n_180", "label": "Cruzar por el tirante con deformaciones" },
+    
+    { "from": "n_177", "to": "n_179", "label": "Dejar la informática hacia los corredores" },
+    { "from": "n_177", "to": "n_181", "label": "Subir por la cuesta de rejilla fatigada" },
+    
+    { "from": "n_178", "to": "n_180", "label": "Esquivar los dientes hacia la viga de torsión" },
+    { "from": "n_178", "to": "n_182", "label": "Forzar el compartimento de repuestos duros" },
+    
+    { "from": "n_179", "to": "n_181", "label": "Tomar el plano inclinado de rejillas rotas" },
+    { "from": "n_179", "to": "n_182", "label": "Entrar al almacén de material del núcleo" },
+    { "from": "n_179", "to": "n_184", "label": "Alcanzar el espacio previo a los mandos" },
+    
+    { "from": "n_180", "to": "n_184", "label": "Superar las virutas hacia el tramo final" },
+    { "from": "n_180", "to": "n_183", "label": "Entrar al conducto de aceite hirviente" },
+    
+    { "from": "n_181", "to": "n_184", "label": "Cruzar las rejillas hacia las dos direcciones" },
+    { "from": "n_181", "to": "n_185", "label": "Bajar al foso del brazo de posicionamiento" },
+    
+    { "from": "n_182", "to": "n_184", "label": "Dejar las herramientas hacia las consolas" },
+    { "from": "n_182", "to": "n_186", "label": "Tomar la delgada pasarela suspendida" },
+    
+    { "from": "n_183", "to": "n_185", "label": "Superar el flujo viscoso hacia el brazo libre" },
+    { "from": "n_183", "to": "n_187", "label": "Acceder a la estación de purga rápida" },
+    
+    { "from": "n_184", "to": "n_186", "label": "Avanzar por la estructura con corrientes" },
+    { "from": "n_184", "to": "n_187", "label": "Activar la consola de optimización final" },
+    { "from": "n_184", "to": "n_189", "label": "Alcanzar el nexo del distribuidor rojo" },
+    
+    { "from": "n_185", "to": "n_189", "label": "Esquivar los barridos del brazo hacia el nexo" },
+    { "from": "n_185", "to": "n_188", "label": "Entrar al pasadizo de aire con hidrocarburos" },
+    
+    { "from": "n_186", "to": "n_189", "label": "Superar las oscilaciones hacia el distribuidor" },
+    { "from": "n_186", "to": "n_190", "label": "Pasar bajo el mamparo de cierre rápido" },
+    
+    { "from": "n_187", "to": "n_189", "label": "Dejar la purga hacia los accesos definitivos" },
+    { "from": "n_187", "to": "n_191", "label": "Entrar directo al corredor blindado Alfa" },
+    
+    { "from": "n_188", "to": "n_190", "label": "Superar la atmósfera densa hacia la guillotina" },
+    { "from": "n_188", "to": "n_192", "label": "Tomar el conducto de servicio Beta" },
+    
+    { "from": "n_189", "to": "n_191", "label": "Tomar la línea recta del corredor Alfa" },
+    { "from": "n_189", "to": "n_192", "label": "Introducirse por la sección tubular Beta" },
+    
+    { "from": "n_190", "to": "n_191", "label": "Esquivar los golpes de compuerta hacia Alfa" },
+    { "from": "n_190", "to": "n_192", "label": "Pasar rápido por el conducto hacia Beta" },
+    
+    { "from": "n_191", "to": "n_193", "label": "Ejecutar secuencia lúdica perfecta" },
+    { "from": "n_191", "to": "n_194", "label": "Activar desvío manual de fluidos" },
+    { "from": "n_191", "to": "n_195", "label": "Introducir código de mitigación rápido" },
+    { "from": "n_191", "to": "n_196", "label": "Forzar los terminales de encriptación" },
+    
+    { "from": "n_192", "to": "n_197", "label": "Garantizar eyección pirotécnica" },
+    { "from": "n_192", "to": "n_198", "label": "Acoplar los servoasistentes a la red" },
+    { "from": "n_192", "to": "n_199", "label": "Liberar los mandos a la frecuencia abierta" },
+    { "from": "n_192", "to": "n_200", "label": "Contemplar la inercia del sistema estático" }
+  ]
+}
