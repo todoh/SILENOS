@@ -18,22 +18,37 @@ export function setTempTags(tags) {
 
 // MANEJAR CONTROL DE ENTRADAS DE ETIQUETAS EN EL FORMULARIO
 export function handleTagInput(event, category) {
+  // Evaluamos si se pulsa Enter o la propia Coma
   if (event.key === 'Enter' || event.key === ',') {
     event.preventDefault();
     const input = event.target;
-    let val = input.value.trim();
+    const rawValue = input.value;
 
-    if (val) {
-      if (category === 'characters' || category === 'regions') {
-        if (val.startsWith('@')) val = val.substring(1).trim();
-      } else if (category === 'keywords') {
-        if (val.startsWith('#')) val = val.substring(1).trim();
-      }
+    if (rawValue) {
+      // Separamos la cadena por comas para procesar múltiples etiquetas a la vez (por ejemplo al pegar)
+      const tagsArray = rawValue.split(',');
 
-      if (val && !tempTags[category].includes(val)) {
-        tempTags[category].push(val);
-        renderFormTags(category);
-      }
+      tagsArray.forEach(rawTag => {
+        let val = rawTag.trim();
+
+        if (val) {
+          // Limpieza de prefijos duplicados según categoría
+          if (category === 'characters' || category === 'regions') {
+            if (val.startsWith('@')) val = val.substring(1).trim();
+          } else if (category === 'keywords') {
+            if (val.startsWith('#')) val = val.substring(1).trim();
+          }
+
+          // Insertar solo si tiene contenido y no está repetida en el estado temporal
+          if (val && !tempTags[category].includes(val)) {
+            tempTags[category].push(val);
+          }
+        }
+      });
+
+      // Renderizar los cambios en la interfaz de usuario
+      renderFormTags(category);
+      // Limpiar el campo por completo
       input.value = '';
     }
   }
