@@ -301,6 +301,7 @@ function openAddBookModal() {
   document.getElementById('modal-book-title').innerHTML = `<i data-lucide="plus-circle" class="text-emerald-400 w-5 h-5"></i> Registrar Libro`;
   document.getElementById('book-form').reset();
   document.getElementById('book-id').value = '';
+  document.getElementById('book-description').value = '';
 
   document.getElementById('book-image-preview').classList.add('hidden');
   document.getElementById('image-upload-placeholder').classList.remove('hidden');
@@ -352,6 +353,7 @@ async function saveBook(e) {
 
   const title = document.getElementById('book-title').value.trim();
   const collection = document.getElementById('book-collection').value;
+  const description = document.getElementById('book-description').value.trim();
   
   const imageInput = document.getElementById('book-image-input');
   let savedImageName = null;
@@ -375,6 +377,7 @@ async function saveBook(e) {
     id: bookId,
     title,
     collection,
+    description,
     image: savedImageName,
     authors: [...tempTags.authors],
     countries: [...tempTags.countries],
@@ -405,6 +408,7 @@ async function editBook(id) {
   document.getElementById('modal-book-title').innerHTML = `<i data-lucide="edit-3" class="text-emerald-400 w-5 h-5"></i> Editar Detalles del Libro`;
   document.getElementById('book-id').value = book.id;
   document.getElementById('book-title').value = book.title;
+  document.getElementById('book-description').value = book.description || '';
 
   const colSelect = document.getElementById('book-collection');
   colSelect.innerHTML = '';

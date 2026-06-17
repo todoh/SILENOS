@@ -93,6 +93,7 @@ export async function renderBooks(state) {
       const cList = Array.isArray(b.countries) ? b.countries : (b.country ? [b.country] : []);
       return b.title.toLowerCase().includes(q) ||
         b.collection.toLowerCase().includes(q) ||
+        (b.description && b.description.toLowerCase().includes(q)) ||
         aList.some(a => a.toLowerCase().includes(q)) ||
         cList.some(c => c.toLowerCase().includes(q)) ||
         (b.characters && b.characters.some(c => c.toLowerCase().includes(q))) ||
@@ -151,6 +152,12 @@ export async function renderBooks(state) {
               por ${authorsArr.map(auth => `<span onclick="window.applyTagFilter('author', '${auth}')" class="hover:text-emerald-400 cursor-pointer underline decoration-dotted">${auth}</span>`).join(', ')}
             </div>
           </div>
+
+          ${book.description ? `
+            <p class="text-xs text-zinc-400/90 leading-relaxed font-normal line-clamp-2" title="${book.description}">
+              ${book.description}
+            </p>
+          ` : ''}
 
           <div class="flex flex-wrap gap-1">
             ${countriesArr.map(cName => {
