@@ -53,19 +53,22 @@ export function exportJSON(state) {
 export async function resolveBookCoverUrl(fileName) {
   if (!fileName) return null;
   
-  if (imageCacheUrls[fileName]) {
-    return imageCacheUrls[fileName];
+  // Limpiar posibles prefijos de rutas como "imagenes/" para extraer solo el nombre de archivo básico
+  const cleanFileName = fileName.split('/').pop();
+
+  if (imageCacheUrls[cleanFileName]) {
+    return imageCacheUrls[cleanFileName];
   }
 
   if (imagesDirectoryHandle) {
     try {
-      const fileHandle = await imagesDirectoryHandle.getFileHandle(fileName);
+      const fileHandle = await imagesDirectoryHandle.getFileHandle(cleanFileName);
       const file = await fileHandle.getFile();
       const url = URL.createObjectURL(file);
-      imageCacheUrls[fileName] = url;
+      imageCacheUrls[cleanFileName] = url;
       return url;
     } catch (err) {
-      console.warn(`No se pudo cargar la portada: ${fileName}`);
+      console.warn(`No se pudo cargar la portada localmente: ${cleanFileName}`);
     }
   }
 
@@ -107,11 +110,16 @@ export async function saveImageToLocalFolder(file, bookId) {
 
 // BORRAR ARCHIVO FÍSICO DE PORTADA
 export async function deleteImageFile(fileName) {
-  if (imagesDirectoryHandle && fileName && fileName.startsWith('libro_')) {
+  if (!fileName) return;
+
+  // Limpiar posibles prefijos de rutas como "imagenes/" antes de evaluar e intentar eliminar
+  const cleanFileName = fileName.split('/').pop();
+
+  if (imagesDirectoryHandle && cleanFileName && cleanFileName.startsWith('libro_')) {
     try {
-      await imagesDirectoryHandle.removeEntry(fileName);
-      delete imageCacheUrls[fileName];
-      console.log(`Archivo de imagen ${fileName} eliminado físicamente.`);
+      await imagesDirectoryHandle.removeEntry(cleanFileName);
+      delete imageCacheUrls[cleanFileName];
+      console.log(`Archivo de imagen ${cleanFileName} eliminado físicamente.`);
     } catch (e) {
       console.warn("No se pudo eliminar el archivo físico de portada.", e);
     }
