@@ -282,6 +282,30 @@ function selectSuggestion(match) {
   }
 }
 
+// GESTIÓN DINÁMICA DE ELEMENTOS DE ENLACES EN EL FORMULARIO
+function addLinkRow(name = "", url = "") {
+  const container = document.getElementById('links-container');
+  const rowId = `link-row-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`;
+  
+  const div = document.createElement('div');
+  div.id = rowId;
+  div.className = "flex items-center gap-3 bg-zinc-950 p-2 rounded-xl border border-zinc-805/60 group/row";
+  
+  div.innerHTML = `
+    <div class="flex-none text-zinc-500 pl-1">
+      <i data-lucide="link" class="w-4 h-4"></i>
+    </div>
+    <input type="text" placeholder="Nombre (ej: Wikipedia, PDF...)" value="${name}" class="book-link-name w-1/3 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+    <input type="url" placeholder="https://ejemplo.com/recurso" value="${url}" class="book-link-url flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+    <button type="button" onclick="document.getElementById('${rowId}').remove()" class="p-1.5 bg-zinc-900 hover:bg-rose-500/10 text-zinc-500 hover:text-rose-400 rounded-lg transition-all border border-zinc-800" title="Eliminar enlace">
+      <i data-lucide="trash" class="w-3.5 h-3.5"></i>
+    </button>
+  `;
+  
+  container.appendChild(div);
+  if (window.lucide) window.lucide.createIcons();
+}
+
 function clearSearch() {
   document.getElementById('search-input').value = '';
   document.getElementById('btn-clear-search').classList.add('hidden');
@@ -306,6 +330,9 @@ function openAddBookModal() {
   document.getElementById('book-image-preview').classList.add('hidden');
   document.getElementById('image-upload-placeholder').classList.remove('hidden');
   document.getElementById('btn-change-image').classList.add('hidden');
+  
+  // Limpiar el contenedor de enlaces dinámicos
+  document.getElementById('links-container').innerHTML = '';
 
   setTempTags({ authors: [], countries: [], characters: [], regions: [], keywords: [] });
   renderFormTags('authors');
@@ -367,6 +394,17 @@ async function saveBook(e) {
     savedImageName = await saveImageToLocalFolder(imageInput.files[0], bookId);
   }
 
+  // Recopilar de forma limpia todos los enlaces ingresados
+  const linksArr = [];
+  const linkRows = document.getElementById('links-container').children;
+  for (let row of linkRows) {
+    const nameVal = row.querySelector('.book-link-name').value.trim();
+    const urlVal = row.querySelector('.book-link-url').value.trim();
+    if (nameVal && urlVal) {
+      linksArr.push({ name: nameVal, url: urlVal });
+    }
+  }
+
   // Si el usuario escribió un autor en el campo pero no presionó Enter, lo incluimos automáticamente
   const currentAuthorInput = document.getElementById('book-author').value.trim();
   if (currentAuthorInput && !tempTags.authors.includes(currentAuthorInput)) {
@@ -383,7 +421,8 @@ async function saveBook(e) {
     countries: [...tempTags.countries],
     characters: [...tempTags.characters],
     regions: [...tempTags.regions],
-    keywords: [...tempTags.keywords]
+    keywords: [...tempTags.keywords],
+    links: linksArr // Guardado del nodo estructurado de enlaces
   };
 
   if (isEdit) {
@@ -436,6 +475,13 @@ async function editBook(id) {
     preview.classList.add('hidden');
     placeholder.classList.remove('hidden');
     changeBtn.classList.add('hidden');
+  }
+
+  // Limpiar y renderizar las filas de enlaces guardados previamente
+  const linksContainer = document.getElementById('links-container');
+  linksContainer.innerHTML = '';
+  if (Array.isArray(book.links)) {
+    book.links.forEach(link => addLinkRow(link.name, link.url));
   }
 
   // Normalizar datos antiguos para heredar compatibilidad
@@ -507,3 +553,4 @@ window.clearTagFilter = clearTagFilter;
 window.handleTagInput = handleTagInput;
 window.removeTempTag = removeTempTag;
 window.handleCountrySelect = handleCountrySelect;
+window.addLinkRow = addLinkRow;

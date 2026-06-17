@@ -172,6 +172,23 @@ export async function renderBooks(state) {
             }).join('')}
           </div>
 
+          <!-- RENDERIZADO DE ENLACES ASOCIADOS AL LIBRO -->
+          ${(book.links && book.links.length > 0) ? `
+            <div class="space-y-1.5 pt-1.5">
+              <div class="text-[10px] font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-1">
+                <i data-lucide="link" class="w-3 h-3"></i> Enlaces de interés
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                ${book.links.map(link => `
+                  <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1 bg-emerald-500/5 hover:bg-emerald-500/15 text-emerald-400 border border-emerald-500/10 hover:border-emerald-500/30 text-[10px] font-medium px-2 py-1 rounded-md transition-all">
+                    <span>${link.name}</span>
+                    <i data-lucide="external-link" class="w-2.5 h-2.5"></i>
+                  </a>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+
           <div class="space-y-2 pt-2 border-t border-zinc-850/50">
             ${(book.characters?.length > 0 || book.regions?.length > 0) ? `
               <div class="flex flex-wrap gap-1">

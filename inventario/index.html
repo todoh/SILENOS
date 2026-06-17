@@ -274,6 +274,21 @@
           </div>
         </div>
 
+        <!-- SECCIÓN DE ENLACES EXTERNOS ASOCIADOS -->
+        <div class="space-y-4 pt-4 border-t border-zinc-800">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold text-zinc-300 uppercase tracking-wide">Enlaces de Referencia / Recursos</h4>
+            <button type="button" onclick="window.addLinkRow()" class="flex items-center space-x-1 text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-lg transition-all">
+              <i data-lucide="link-2" class="w-3.5 h-3.5"></i>
+              <span>Añadir Enlace</span>
+            </button>
+          </div>
+          
+          <div id="links-container" class="space-y-2.5">
+            <!-- Las filas de enlaces se renderizan de forma dinámica desde Javascript -->
+          </div>
+        </div>
+
         <div class="flex justify-end space-x-3 pt-4 border-t border-zinc-800 flex-none">
           <button type="button" onclick="closeModal('modal-book')" class="bg-zinc-800 hover:bg-zinc-750 text-zinc-300 px-4 py-2.5 rounded-xl text-xs font-medium">Cancelar</button>
           <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-xs font-semibold shadow-lg shadow-emerald-950/20">Guardar Libro</button>
