@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-[#fafafa] text-neutral-800">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Silenos • Catálogo Literario</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .serif-title {
+      font-family: 'Cormorant Garamond', serif;
+    }
+    /* Smooth custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #fdfdfd;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #e5e5e5;
+      border-radius: 99px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #d4d4d4;
+    }
+    .backdrop-blur-minimal {
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    /* Book cover and card animations */
+    .book-card-transition {
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .book-card-transition:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.06);
+    }
+  </style>
+</head>
+
+<body class="h-full flex flex-col overflow-hidden bg-[#fafafa]">
+
+  <header class="flex-none bg-white/80 backdrop-blur-minimal border-b border-neutral-100 px-6 sm:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 z-10">
+    <div class="flex items-center space-x-4">
+      <div class="p-3 bg-neutral-50 rounded-2xl border border-neutral-100 text-neutral-800">
+        <i data-lucide="library" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold tracking-widest text-neutral-900 uppercase flex items-center gap-2">
+          Silenos <span class="text-[9px] font-semibold px-2 py-0.5 bg-neutral-100 text-neutral-500 rounded-full uppercase tracking-wider">Catálogo</span>
+        </h1>
+        <p class="text-[11px] text-neutral-400 font-light mt-0.5">Editoriales, librojuegos y fantasías de nicho</p>
+      </div>
+    </div>
+
+    <div class="hidden sm:flex items-center space-x-2 text-right">
+      <span class="text-[10px] uppercase tracking-widest font-bold text-neutral-400">Edición Especial</span>
+      <span class="w-1.5 h-1.5 rounded-full bg-neutral-300"></span>
+      <span class="text-[10px] font-medium text-neutral-500">Lectura Limpia</span>
+    </div>
+  </header>
+
+  <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+    
+    <aside class="w-full md:w-80 bg-white md:border-r border-b md:border-b-0 border-neutral-100 flex flex-col flex-none">
+      
+      <div class="p-6 border-b border-neutral-50 relative">
+        <label class="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2.5">Buscador Temático</label>
+        <div class="relative">
+          <input type="text" id="search-input" oninput="handleSearchInput()" placeholder="Buscar título, autor, tags..." class="w-full bg-neutral-50 border border-neutral-200/60 rounded-xl pl-9 pr-8 py-2.5 text-xs text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-neutral-300 focus:bg-white transition-all font-medium">
+          <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-3 text-neutral-400"></i>
+          <button id="btn-clear-search" onclick="clearSearch()" class="hidden absolute right-3 top-3 text-neutral-400 hover:text-neutral-900">
+            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+        
+        <div id="search-suggestions" class="absolute left-6 right-6 mt-1.5 bg-white border border-neutral-100 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto hidden"></div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-6 flex flex-col justify-between gap-8">
+        <div>
+          <div class="flex items-center justify-between mb-4 px-1">
+            <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Colecciones</span>
+          </div>
+          <nav id="collections-list" class="flex md:flex-col overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 gap-2 md:gap-1.5"></nav>
+        </div>
+
+        <div class="bg-neutral-50 p-5 rounded-2xl border border-neutral-100">
+          <h4 class="text-[10px] font-bold text-neutral-700 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
+            <i data-lucide="book-open" class="w-3.5 h-3.5 text-neutral-500"></i> Silenos.es
+          </h4>
+          <p class="text-[11px] text-neutral-400 leading-relaxed font-light">
+            Explora las diferentes sagas y universos interactivos. Haz clic en cualquier portada para abrir su ficha completa y sinopsis.
+          </p>
+        </div>
+      </div>
+    </aside>
+
+    <main class="flex-1 bg-[#fdfdfd] flex flex-col overflow-hidden">
+      
+      <section class="flex-none bg-white border-b border-neutral-100 px-6 sm:px-12 py-5 flex items-center justify-between gap-4">
+        <div>
+          <h2 id="current-view-title" class="serif-title text-2xl font-light italic text-neutral-900">Todos los Libros</h2>
+          <p id="current-view-count" class="text-xs text-neutral-400 font-light mt-0.5">Cargando catálogo...</p>
+        </div>
+        
+        <div id="active-tag-filter" class="hidden items-center space-x-2 bg-neutral-100 text-neutral-800 text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg border border-neutral-200/50 animate-fade-in">
+          <span id="active-tag-text"></span>
+          <button onclick="clearTagFilter()" class="hover:text-neutral-500">
+            <i data-lucide="x" class="w-3 h-3"></i>
+          </button>
+        </div>
+      </section>
+
+      <div class="flex-1 overflow-y-auto p-6 sm:p-12">
+        <div id="books-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"></div>
+        
+        <div id="empty-state" class="hidden flex flex-col items-center justify-center py-24 text-center animate-fade-in">
+          <div class="p-4 bg-white border border-neutral-100 rounded-3xl text-neutral-300 mb-4 shadow-sm">
+            <i data-lucide="book" class="w-8 h-8"></i>
+          </div>
+          <h3 class="text-sm font-semibold text-neutral-800">No se encontraron títulos</h3>
+          <p class="text-xs text-neutral-400 mt-1 max-w-xs leading-relaxed font-light">Limpia los filtros o realiza otra búsqueda temática para encontrar lo que buscas.</p>
+          <button onclick="clearAllFilters()" class="mt-4 text-xs font-bold text-neutral-800 underline uppercase tracking-wider hover:text-neutral-600">Restablecer filtros</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="modal-view-book" class="fixed inset-0 bg-neutral-950/20 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto hidden" onclick="closeBookModalOnOutsideClick(event)">
+    <div class="bg-white border border-neutral-100 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh] overflow-hidden" onclick="event.stopPropagation()">
+      
+      <div class="flex justify-end pb-2 flex-none">
+        <button onclick="closeBookModal()" class="text-neutral-400 hover:text-neutral-800 p-1 rounded-lg hover:bg-neutral-50 transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto pr-1 space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <div class="md:col-span-1">
+            <div class="aspect-[2/3] bg-neutral-100 rounded-2xl overflow-hidden border border-neutral-150 shadow-sm relative">
+              <img id="detail-book-cover" class="w-full h-full object-cover" src="" alt="Portada del libro">
+              <div id="detail-cover-fallback" class="absolute inset-0 flex flex-col justify-between p-4 text-center hidden">
+                <span class="text-[10px] uppercase font-bold tracking-widest text-neutral-400" id="detail-fallback-col"></span>
+                <span class="serif-title text-base font-medium leading-snug" id="detail-fallback-title"></span>
+                <span class="text-[9px] uppercase font-bold text-neutral-400">Silenos</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="md:col-span-2 space-y-4">
+            <div>
+              <span id="detail-book-collection" class="text-[9px] font-bold uppercase tracking-wider text-neutral-400 px-2 py-0.5 bg-neutral-100 rounded-md"></span>
+              <h3 id="detail-book-title" class="serif-title text-2xl font-light text-neutral-900 mt-2 leading-tight"></h3>
+              <p class="text-xs text-neutral-400 mt-1">
+                de <span id="detail-book-authors" class="font-semibold text-neutral-600"></span>
+              </p>
+            </div>
+
+            <div id="detail-countries-box" class="flex flex-wrap gap-1.5"></div>
+
+            <div id="detail-links-box" class="flex flex-wrap gap-2 pt-1"></div>
+
+            <div class="border-t border-b border-neutral-100 py-4">
+              <p id="detail-book-description" class="text-xs text-neutral-500 font-light leading-relaxed whitespace-pre-line"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-4 pt-2 hidden">
+          <h4 class="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">Metadatos & Taxonomía</h4>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div class="space-y-2">
+              <span class="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Personajes y Regiones</span>
+              <div id="detail-characters-regions" class="flex flex-wrap gap-1.5"></div>
+            </div>
+
+            <div class="space-y-2">
+              <span class="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Palabras Clave</span>
+              <div id="detail-keywords" class="flex flex-wrap gap-1.5"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // CANVAS AND ENGINE INITIALIZATION HOOK (OPEN CANVAS FUNCTION)
+    function initCanvasContext() {
+      // Función del canvas abierta para futuras extensiones procedimentales/gráficas del ecosistema Silenos
+      console.log("Canvas context workspace ready.");
+    }
+    initCanvasContext();
+
+    // DATA CONSTANTS (COUNTRIES FOR EMOJI CODES)
+    const PAISES = [
+      { name: "España", code: "ES", flag: "🇪🇸" },
+      { name: "Argentina", code: "AR", flag: "🇦🇷" },
+      { name: "México", code: "MX", flag: "🇲🇽" },
+      { name: "Colombia", code: "CO", flag: "🇨🇴" },
+      { name: "Francia", code: "FR", flag: "🇫🇷" },
+      { name: "Reino Unido", code: "GB", flag: "🇬🇧" },
+      { name: "Alemania", code: "DE", flag: "🇩🇪" },
+      { name: "Italia", code: "IT", flag: "🇮🇹" },
+      { name: "Estados Unidos", code: "US", flag: "🇺🇸" },
+      { name: "Japón", code: "JP", flag: "🇯🇵" },
+      { name: "Chile", code: "CL", flag: "🇨🇱" },
+      { name: "Uruguay", code: "UY", flag: "🇺🇾" },
+      { name: "Perú", code: "PE", flag: "🇵🇪" }
+    ];
+
+    // STATE DECLARATION
+    const state = {
+      collections: [],
+      books: [],
+      currentCollection: "all",
+      activeTagFilter: null,
+      searchQuery: ""
+    };
+
+    // Soft luxurious pastel gradients for procedural covers
+    const GORGEOUS_GRADIENTS = [
+      "from-[#ece9e6] to-[#eef2f3]", // Soft silk
+      "from-[#e6e9f0] to-[#eef1f5]", // Pale stone
+      "from-[#f3e7e9] to-[#e3eeff]", // Muted sunset pink/blue
+      "from-[#faf0e6] to-[#f4ebe1]", // Linen/parchment
+      "from-[#e1eec3] to-[#f0f4c3]", // Soft tea green
+      "from-[#e8f5e9] to-[#c8e6c9]"  // Pale sage mint
+    ];
+
+    window.onload = function() {
+      // Cargar dinámicamente el archivo inventario.json
+      fetch('inventario.json')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('No se pudo encontrar o cargar el archivo inventario.json');
+          }
+          return response.json();
+        })
+        .then(data => {
+          state.collections = data.collections || [];
+          state.books = data.books || [];
+          
+          // Inicializar interfaz gráfica una vez obtenidos los datos
+          if (window.lucide) lucide.createIcons();
+          renderCollections();
+          renderBooks();
+        })
+        .catch(error => {
+          console.error('Error al inicializar el catálogo:', error);
+          document.getElementById('current-view-count').innerText = "Error al cargar el inventario de libros.";
+        });
+    };
+
+    // COVER RESOLUTION (Utiliza la carpeta local 'imagenes/' especificada por el usuario)
+    function getBookCoverSrc(book) {
+      if (book.image) {
+        // Si ya incluye protocolo o base64 se respeta tal cual
+        if (book.image.startsWith('http://') || book.image.startsWith('https://') || book.image.startsWith('data:image')) {
+          return { type: 'url', src: book.image };
+        }
+        // Si es solo el nombre del archivo, se fuerza la búsqueda dentro de la carpeta 'imagenes/'
+        if (book.image.startsWith('imagenes/')) {
+          return { type: 'url', src: book.image };
+        }
+        return { type: 'url', src: `imagenes/${book.image}` };
+      }
+      
+      // Fallback procedimental en caso de que el libro no tenga definida ninguna imagen
+      const hash = book.title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const gradientClass = GORGEOUS_GRADIENTS[hash % GORGEOUS_GRADIENTS.length];
+      return { type: 'fallback', gradient: gradientClass, initials: book.title.substring(0, 2).toUpperCase() };
+    }
+
+    // SIDEBAR CATEGORIES RENDERER
+    function renderCollections() {
+      const container = document.getElementById('collections-list');
+      container.innerHTML = '';
+      
+      const allActive = state.currentCollection === 'all';
+      const allBtn = document.createElement('button');
+      allBtn.onclick = () => selectCollection('all');
+      allBtn.className = `flex-none md:w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all duration-300 ${allActive ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'}`;
+      allBtn.innerHTML = `
+        <div class="flex items-center space-x-2.5">
+          <i data-lucide="library" class="w-3.5 h-3.5 flex-none"></i>
+          <span>Todas</span>
+        </div>
+        <span class="text-[10px] px-2 py-0.5 ml-2 ${allActive ? 'bg-white/20 text-white' : 'bg-neutral-100 text-neutral-500'} rounded-full">${state.books.length}</span>
+      `;
+      container.appendChild(allBtn);
+
+      state.collections.forEach(col => {
+        const isActive = state.currentCollection === col;
+        const count = state.books.filter(b => b.collection === col).length;
+        
+        const colBtn = document.createElement('button');
+        colBtn.onclick = () => selectCollection(col);
+        colBtn.className = `flex-none md:w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all duration-300 ${isActive ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'}`;
+        colBtn.innerHTML = `
+          <div class="flex items-center space-x-2.5 truncate">
+            <i data-lucide="folder" class="w-3.5 h-3.5 flex-none"></i>
+            <span class="truncate">${col}</span>
+          </div>
+          <span class="text-[10px] px-2 py-0.5 ml-2 ${isActive ? 'bg-white/20 text-white' : 'bg-neutral-100 text-neutral-500'} rounded-full">${count}</span>
+        `;
+        container.appendChild(colBtn);
+      });
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    function selectCollection(col) {
+      state.currentCollection = col;
+      state.activeTagFilter = null;
+      document.getElementById('active-tag-filter').classList.add('hidden');
+      renderCollections();
+      renderBooks();
+    }
+
+    // MAIN GRID RENDERER
+    function renderBooks() {
+      const grid = document.getElementById('books-grid');
+      const emptyState = document.getElementById('empty-state');
+      grid.innerHTML = '';
+
+      let titleText = state.currentCollection === 'all' ? "Catálogo de Colecciones" : `Colección: ${state.currentCollection}`;
+      document.getElementById('current-view-title').innerText = titleText;
+
+      let filtered = state.books;
+
+      // Filter: Collection selection
+      if (state.currentCollection !== 'all') {
+        filtered = filtered.filter(b => b.collection === state.currentCollection);
+      }
+
+      // Filter: Active Tag
+      if (state.activeTagFilter) {
+        const { type, value } = state.activeTagFilter;
+        if (type === 'character') {
+          filtered = filtered.filter(b => b.characters && b.characters.includes(value));
+        } else if (type === 'region') {
+          filtered = filtered.filter(b => b.regions && b.regions.includes(value));
+        } else if (type === 'keyword') {
+          filtered = filtered.filter(b => b.keywords && b.keywords.includes(value));
+        } else if (type === 'country') {
+          filtered = filtered.filter(b => b.countries && b.countries.includes(value));
+        } else if (type === 'author') {
+          filtered = filtered.filter(b => b.authors && b.authors.includes(value));
+        }
+      }
+
+      // Filter: Search String
+      if (state.searchQuery) {
+        const q = state.searchQuery.replace(/[@#]/g, '').trim().toLowerCase();
+        filtered = filtered.filter(b => 
+          b.title.toLowerCase().includes(q) ||
+          b.collection.toLowerCase().includes(q) ||
+          (b.description && b.description.toLowerCase().includes(q)) ||
+          (b.authors && b.authors.some(a => a.toLowerCase().includes(q))) ||
+          (b.characters && b.characters.some(c => c.toLowerCase().includes(q))) ||
+          (b.regions && b.regions.some(r => r.toLowerCase().includes(q))) ||
+          (b.keywords && b.keywords.some(k => k.toLowerCase().includes(q)))
+        );
+      }
+
+      document.getElementById('current-view-count').innerText = `${filtered.length} volúmenes en vista`;
+
+      if (filtered.length === 0) {
+        grid.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      grid.classList.remove('hidden');
+      emptyState.classList.add('hidden');
+
+      filtered.forEach(book => {
+        const card = document.createElement('div');
+        card.className = "group bg-white border border-neutral-100 rounded-3xl overflow-hidden flex flex-col justify-between book-card-transition shadow-sm cursor-pointer";
+        card.onclick = () => viewBookDetails(book);
+        
+        const authorsArr = book.authors || ["Autor Desconocido"];
+        const countriesArr = book.countries || [];
+        const linksArr = book.links || [];
+        const coverData = getBookCoverSrc(book);
+
+        // Render Cover Image block or procedurally decorated cover
+        let coverHtml = '';
+        if (coverData.type === 'url') {
+          coverHtml = `
+            <div id="cover-spinner-${book.id}" class="absolute inset-0 flex items-center justify-center text-neutral-300">
+              <i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>
+            </div>
+            <img id="cover-img-${book.id}" class="w-full h-full object-cover opacity-0 transition-opacity duration-500" src="${coverData.src}" alt="Portada de ${book.title}" onload="onImgLoaded(${book.id})">
+          `;
+        } else {
+          coverHtml = `
+            <div class="absolute inset-0 bg-gradient-to-tr ${coverData.gradient} flex flex-col justify-between p-5 text-center border-b border-neutral-150">
+              <span class="text-[8px] uppercase tracking-widest font-bold text-neutral-400">${book.collection}</span>
+              <span class="serif-title text-base font-medium leading-snug text-neutral-800 line-clamp-3">${book.title}</span>
+              <span class="text-[8px] uppercase tracking-widest font-bold text-neutral-400">Silenos</span>
+            </div>
+          `;
+        }
+
+        card.innerHTML = `
+          <div>
+            <div class="relative aspect-[2/3] bg-neutral-50 overflow-hidden">
+              ${coverHtml}
+              
+              <span class="absolute top-4 left-4 bg-white/95 backdrop-blur border border-neutral-100 text-[9px] font-bold uppercase tracking-wider text-neutral-600 px-3 py-1.5 rounded-xl shadow-sm">
+                ${book.collection}
+              </span>
+            </div>
+
+            <div class="p-6 space-y-4">
+              <div>
+                <h4 class="serif-title text-lg font-medium text-neutral-900 leading-snug line-clamp-1 group-hover:text-neutral-600 transition-colors" title="${book.title}">${book.title}</h4>
+                <p class="text-[11px] text-neutral-400 mt-1">
+                  por ${authorsArr.map(a => `<span onclick="event.stopPropagation(); applyTagFilter('author', '${a}')" class="hover:underline font-semibold cursor-pointer text-neutral-500">${a}</span>`).join(', ')}
+                </p>
+              </div>
+
+              ${book.description ? `
+                <p class="text-xs text-neutral-400 font-light leading-relaxed line-clamp-2" title="${book.description}">
+                  ${book.description}
+                </p>
+              ` : ''}
+
+              <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <div class="flex flex-wrap gap-1.5">
+                  ${countriesArr.map(c => {
+                    const data = PAISES.find(p => p.name === c);
+                    return `
+                      <button onclick="event.stopPropagation(); applyTagFilter('country', '${c}')" class="inline-flex items-center space-x-1 px-2.5 py-1 bg-neutral-50 hover:bg-neutral-100 text-[10px] font-medium rounded-lg text-neutral-500 border border-neutral-150 transition-all">
+                        <span>${data ? data.flag : '🌐'}</span>
+                        <span>${c}</span>
+                      </button>
+                    `;
+                  }).join('')}
+                </div>
+
+                ${linksArr.length > 0 ? `
+                  <div class="flex items-center gap-1">
+                    ${linksArr.map(link => `
+                      <a href="${link.url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" class="inline-flex items-center space-x-1 px-2.5 py-1 bg-neutral-900 hover:bg-neutral-800 text-[10px] font-bold uppercase tracking-wider text-white rounded-lg transition-all shadow-sm">
+                        <i data-lucide="shopping-bag" class="w-3 h-3"></i>
+                        <span>${link.name}</span>
+                      </a>
+                    `).join('')}
+                  </div>
+                ` : ''}
+              </div>
+
+              <div class="space-y-1.5 pt-3 border-t border-neutral-100 hidden">
+                ${((book.characters && book.characters.length > 0) || (book.regions && book.regions.length > 0)) ? `
+                  <div class="flex flex-wrap gap-1">
+                    ${(book.characters || []).map(char => `
+                      <button onclick="event.stopPropagation(); applyTagFilter('character', '${char}')" class="text-[9px] font-semibold bg-stone-100 hover:bg-stone-200 text-stone-600 px-2 py-0.5 rounded-lg transition-all">
+                        ${char}
+                      </button>
+                    `).join('')}
+                    ${(book.regions || []).map(reg => `
+                      <button onclick="event.stopPropagation(); applyTagFilter('region', '${reg}')" class="text-[9px] font-semibold bg-stone-100 hover:bg-stone-200 text-stone-600 px-2 py-0.5 rounded-lg transition-all">
+                        ${reg}
+                      </button>
+                    `).join('')}
+                  </div>
+                ` : ''}
+
+                ${(book.keywords && book.keywords.length > 0) ? `
+                  <div class="flex flex-wrap gap-1">
+                    ${book.keywords.map(k => `
+                      <button onclick="event.stopPropagation(); applyTagFilter('keyword', '${k}')" class="text-[9px] font-semibold bg-stone-50 hover:bg-stone-100 text-stone-400 px-2 py-0.5 rounded-lg border border-neutral-150 transition-all">
+                        ${k}
+                      </button>
+                    `).join('')}
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    // IMAGE LOADING HELPER
+    window.onImgLoaded = function(id) {
+      const spinner = document.getElementById(`cover-spinner-${id}`);
+      const img = document.getElementById(`cover-img-${id}`);
+      if (spinner && img) {
+        spinner.classList.add('hidden');
+        img.classList.remove('opacity-0');
+      }
+    };
+
+    // SEARCH MECHANISM WITH DYNAMIC DROP MENU SUGGESTIONS
+    function handleSearchInput() {
+      const query = document.getElementById('search-input').value.trim().toLowerCase();
+      state.searchQuery = query;
+      const suggestionsDiv = document.getElementById('search-suggestions');
+      const clearBtn = document.getElementById('btn-clear-search');
+      
+      if (!query) {
+        suggestionsDiv.classList.add('hidden');
+        clearBtn.classList.add('hidden');
+        renderBooks();
+        return;
+      }
+      clearBtn.classList.remove('hidden');
+
+      let matches = [];
+      
+      // Match book title
+      const matchedTitles = state.books.filter(b => b.title.toLowerCase().includes(query));
+      matchedTitles.slice(0, 3).forEach(b => matches.push({ type: 'book', label: b.title, extra: 'Título', value: b.title }));
+
+      // Match authors
+      const allAuthors = [...new Set(state.books.flatMap(b => b.authors || []))];
+      const matchedAuthors = allAuthors.filter(a => a.toLowerCase().includes(query));
+      matchedAuthors.slice(0, 3).forEach(a => matches.push({ type: 'author', label: a, extra: 'Autor', value: a }));
+
+      // Match collections
+      const matchedCollections = state.collections.filter(c => c.toLowerCase().includes(query));
+      matchedCollections.slice(0, 2).forEach(c => matches.push({ type: 'collection', label: c, extra: 'Colección', value: c }));
+
+      // Match character names
+      const allCharacters = [...new Set(state.books.flatMap(b => b.characters || []))];
+      const matchedChars = allCharacters.filter(c => c.toLowerCase().includes(query.replace('@', '')));
+      matchedChars.slice(0, 2).forEach(c => matches.push({ type: 'character', label: c, extra: 'Personaje', value: c }));
+
+      if (matches.length > 0) {
+        suggestionsDiv.innerHTML = '';
+        matches.forEach(m => {
+          const item = document.createElement('div');
+          item.className = "flex items-center justify-between px-4 py-2 hover:bg-neutral-50 cursor-pointer text-xs font-semibold border-b border-neutral-50 last:border-0";
+          
+          let icon = "hash";
+          if (m.type === 'book') icon = "book";
+          if (m.type === 'author') icon = "user";
+          if (m.type === 'collection') icon = "folder";
+          if (m.type === 'character') icon = "user-check";
+
+          item.innerHTML = `
+            <div class="flex items-center space-x-2.5 truncate">
+              <i data-lucide="${icon}" class="w-3.5 h-3.5 text-neutral-400 flex-none"></i>
+              <span class="text-neutral-700 truncate">${m.label}</span>
+            </div>
+            <span class="text-[9px] bg-neutral-100 px-2 py-0.5 rounded text-neutral-500">${m.extra}</span>
+          `;
+          item.onclick = () => {
+            suggestionsDiv.classList.add('hidden');
+            if (['character', 'author', 'collection'].includes(m.type)) {
+              if (m.type === 'collection') selectCollection(m.value);
+              else applyTagFilter(m.type, m.value);
+              document.getElementById('search-input').value = '';
+              clearBtn.classList.add('hidden');
+              state.searchQuery = '';
+            } else {
+              document.getElementById('search-input').value = m.label;
+              state.searchQuery = m.label.toLowerCase();
+              renderBooks();
+            }
+          };
+          suggestionsDiv.appendChild(item);
+        });
+        suggestionsDiv.classList.remove('hidden');
+        lucide.createIcons();
+      } else {
+        suggestionsDiv.classList.add('hidden');
+      }
+      renderBooks();
+    }
+
+    function clearSearch() {
+      document.getElementById('search-input').value = '';
+      document.getElementById('btn-clear-search').classList.add('hidden');
+      document.getElementById('search-suggestions').classList.add('hidden');
+      state.searchQuery = '';
+      renderBooks();
+    }
+
+    // ACTIVE FILTER CHIPS
+    function applyTagFilter(type, value) {
+      state.activeTagFilter = { type, value };
+      const badgeText = document.getElementById('active-tag-text');
+      const badgeContainer = document.getElementById('active-tag-filter');
+      
+      let prefix = type === 'keyword' ? '' : (type === 'author' ? 'por ' : '');
+      if (type === 'country') {
+        const countryObj = PAISES.find(p => p.name === value);
+        prefix = countryObj ? `${countryObj.flag} ` : '';
+      }
+      badgeText.innerText = `${prefix}${value}`;
+      badgeContainer.className = "flex items-center space-x-2 bg-neutral-100 text-neutral-800 text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg border border-neutral-200/50 animate-fade-in";
+      renderBooks();
+    }
+
+    function clearTagFilter() {
+      state.activeTagFilter = null;
+      document.getElementById('active-tag-filter').classList.add('hidden');
+      renderBooks();
+    }
+
+    function clearAllFilters() {
+      state.currentCollection = "all";
+      state.activeTagFilter = null;
+      state.searchQuery = "";
+      document.getElementById('search-input').value = '';
+      document.getElementById('btn-clear-search').classList.add('hidden');
+      document.getElementById('active-tag-filter').classList.add('hidden');
+      renderCollections();
+      renderBooks();
+    }
+
+    // DETAILED LITERARY MODAL
+    function viewBookDetails(book) {
+      const modal = document.getElementById('modal-view-book');
+      const cover = document.getElementById('detail-book-cover');
+      const fallback = document.getElementById('detail-cover-fallback');
+      
+      // Title, description, collection
+      document.getElementById('detail-book-title').innerText = book.title;
+      document.getElementById('detail-book-collection').innerText = book.collection;
+      document.getElementById('detail-book-authors').innerText = (book.authors || []).join(', ');
+      document.getElementById('detail-book-description').innerText = book.description || "Esta obra literaria de nicho aún no cuenta con una sinopsis oficial redactada.";
+
+      // Cover Resolution
+      const coverData = getBookCoverSrc(book);
+      if (coverData.type === 'url') {
+        cover.src = coverData.src;
+        cover.classList.remove('hidden');
+        fallback.classList.add('hidden');
+      } else {
+        cover.classList.add('hidden');
+        fallback.className = `absolute inset-0 bg-gradient-to-tr ${coverData.gradient} flex flex-col justify-between p-6 text-center`;
+        document.getElementById('detail-fallback-col').innerText = book.collection;
+        document.getElementById('detail-fallback-title').innerText = book.title;
+        fallback.classList.remove('hidden');
+      }
+
+      // Countries list
+      const countriesBox = document.getElementById('detail-countries-box');
+      countriesBox.innerHTML = '';
+      (book.countries || []).forEach(c => {
+        const flagObj = PAISES.find(p => p.name === c);
+        const btn = document.createElement('button');
+        btn.onclick = () => { closeBookModal(); applyTagFilter('country', c); };
+        btn.className = "inline-flex items-center space-x-1.5 px-3 py-1.5 bg-neutral-50 hover:bg-neutral-100 text-[11px] font-semibold rounded-xl text-neutral-500 border border-neutral-150 transition-all";
+        btn.innerHTML = `<span>${flagObj ? flagObj.flag : '🌐'}</span> <span>${c}</span>`;
+        countriesBox.appendChild(btn);
+      });
+
+      // Render Dinamic Links Array inside the Modal Details View
+      const linksBox = document.getElementById('detail-links-box');
+      linksBox.innerHTML = '';
+      const bookLinks = book.links || [];
+      if (bookLinks.length > 0) {
+        bookLinks.forEach(link => {
+          const a = document.createElement('a');
+          a.href = link.url;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          a.className = "inline-flex items-center space-x-2 px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-xs font-bold uppercase tracking-wider text-white rounded-xl transition-all shadow-sm";
+          a.innerHTML = `<i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> <span>Adquirir en ${link.name}</span>`;
+          linksBox.appendChild(a);
+        });
+        linksBox.classList.remove('hidden');
+      } else {
+        linksBox.classList.add('hidden');
+      }
+
+      // Characters and Regions clickable taxonomies
+      const charRegBox = document.getElementById('detail-characters-regions');
+      charRegBox.innerHTML = '';
+      
+      const charArray = book.characters || [];
+      const regArray = book.regions || [];
+
+      if (charArray.length === 0 && regArray.length === 0) {
+        charRegBox.innerHTML = `<span class="text-[11px] text-neutral-400 font-light italic">Sin personajes ni regiones asociadas</span>`;
+      } else {
+        charArray.forEach(char => {
+          const btn = document.createElement('button');
+          btn.onclick = () => { closeBookModal(); applyTagFilter('character', char); };
+          btn.className = "text-[10px] font-bold uppercase tracking-wide bg-stone-100 hover:bg-stone-250 text-stone-600 px-2.5 py-1 rounded-lg transition-all";
+          btn.innerText = char;
+          charRegBox.appendChild(btn);
+        });
+
+        regArray.forEach(reg => {
+          const btn = document.createElement('button');
+          btn.onclick = () => { closeBookModal(); applyTagFilter('region', reg); };
+          btn.className = "text-[10px] font-bold uppercase tracking-wide bg-stone-100 hover:bg-stone-250 text-stone-600 px-2.5 py-1 rounded-lg transition-all";
+          btn.innerText = reg;
+          charRegBox.appendChild(btn);
+        });
+      }
+
+      // Keywords taxonomy
+      const keywordsBox = document.getElementById('detail-keywords');
+      keywordsBox.innerHTML = '';
+      const keyArray = book.keywords || [];
+      if (keyArray.length === 0) {
+        keywordsBox.innerHTML = `<span class="text-[11px] text-neutral-400 font-light italic">Sin palabras clave asociadas</span>`;
+      } else {
+        keyArray.forEach(k => {
+          const btn = document.createElement('button');
+          btn.onclick = () => { closeBookModal(); applyTagFilter('keyword', k); };
+          btn.className = "text-[10px] font-bold uppercase tracking-wide bg-stone-50 hover:bg-stone-100 text-stone-400 px-2.5 py-1 rounded-lg border border-neutral-150 transition-all";
+          btn.innerText = k;
+          keywordsBox.appendChild(btn);
+        });
+      }
+
+      // Open Modal Animations
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.firstElementChild.classList.remove('scale-95');
+        modal.firstElementChild.classList.add('scale-100');
+      }, 50);
+
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    function closeBookModal() {
+      const modal = document.getElementById('modal-view-book');
+      modal.firstElementChild.classList.remove('scale-100');
+      modal.firstElementChild.classList.add('scale-95');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 150);
+    }
+
+    function closeBookModalOnOutsideClick(event) {
+      closeBookModal();
+    }
+
+    // EXPOSE TO GLOBAL WINDOW SCOPE FOR ACTIONS
+    window.selectCollection = selectCollection;
+    window.handleSearchInput = handleSearchInput;
+    window.clearSearch = clearSearch;
+    window.applyTagFilter = applyTagFilter;
+    window.clearTagFilter = clearTagFilter;
+    window.clearAllFilters = clearAllFilters;
+    window.closeBookModal = closeBookModal;
+    window.closeBookModalOnOutsideClick = closeBookModalOnOutsideClick;
+  </script>
+</body>
+</html>
