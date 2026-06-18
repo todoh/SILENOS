@@ -1,66 +1,396 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="scroll-smooth">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>SILENOS — Entorno narrativo interactivo</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-<style>
-  :root{
-    --bg:#FFFFFF;
-    --ink:#0A0A0A;
-    --ink-soft:#1A1A1A;
-    --mute:#7A7A7A;
-    --mute-2:#A8A8A8;
-    --line:#E8E8E8;
-    --line-strong:#D6D6D6;
-    --wine:#5C1A2B;          /* rojo vino reservado para SILENOS OS */
-    --wine-soft:#7A2336;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html,body{
-    background:var(--bg);color:var(--ink);
-    font-family:'Montserrat',sans-serif;
-    font-weight:300;
-    -webkit-font-smoothing:antialiased;
-    overflow-x:hidden;
-    letter-spacing:.005em;
-  }
-  a{color:inherit;text-decoration:none}
-  ::selection{background:var(--ink);color:var(--bg)}
-  .serif{font-family:'Cormorant Garamond',serif;font-weight:300}
-  .container{max-width:1280px;margin:0 auto;padding:0 40px}
-  @media (max-width:640px){.container{padding:0 24px}}
-  #root{min-height:100vh}
-  .hairline{height:1px;background:var(--line);width:100%}
-  button{font-family:inherit}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SILENOS — Pureza, Literatura y Algoritmo</title>
+    <!-- Tailwind CSS para diseño ágil -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: tipografías sofisticadas de alta legibilidad -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@200;300;400;500&display=swap" rel="stylesheet">
+    
+    <!-- Configuración personalizada de Tailwind -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Instrument Serif"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        silenos: {
+                            white: '#FFFFFF',
+                            black: '#000000',
+                            gray: '#707070',
+                            lightGray: '#F5F5F5',
+                            darkGray: '#111111',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Desvanecimiento y transiciones puras */
+        * {
+            transition: background-color 0.4s ease, color 0.3s ease;
+        }
+        /* Ocultar barra de scroll manteniendo navegación táctil/rueda */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
 </head>
-<body>
-  <div id="root"></div>
+<body class="bg-silenos-white text-silenos-black dark:bg-silenos-black dark:text-silenos-white font-sans selection:bg-silenos-black selection:text-silenos-white dark:selection:bg-silenos-white dark:selection:text-silenos-black antialiased min-h-screen flex flex-col justify-between overflow-x-hidden">
 
-  <script>
-    window.__TWEAK_DEFAULTS__ = /*EDITMODE-BEGIN*/{
-      "tagline": "La versión definitiva y más avanzada de nuestro entorno interactivo.",
-      "showWineAccents": false,
-      "heroLayout": "split",
-      "useSerifTitles": true
-    }/*EDITMODE-END*/;
-  </script>
+    <!-- Cabecera Ultra-Limpia y Desnuda (Sin bordes ni fondos opacos molestos) -->
+    <header class="fixed top-0 left-0 w-full z-50 bg-silenos-white/90 dark:bg-silenos-black/95 backdrop-blur-sm">
+        <div class="max-w-6xl mx-auto px-8 md:px-16 h-24 flex items-center justify-between">
+            <!-- Logo Tipográfico -->
+            <a href="#inicio" class="group flex items-baseline space-x-1">
+                <span class="font-serif text-2xl tracking-[0.4em] font-light">SILEN<span style="color: rgb(131, 20, 20);" class="font-serif text-2xl tracking-[0.4em] font-light">OS</span></span>
+                <span class="text-[10px] tracking-widest text-silenos-gray font-sans font-light">.ES</span>
+            </a>
 
-  <script type="text/babel" src="components/Header.jsx"></script>
-  <script type="text/babel" src="components/Hero.jsx"></script>
-  <script type="text/babel" src="components/Cards.jsx"></script>
-  <script type="text/babel" src="components/Books.jsx"></script>
-  <script type="text/babel" src="components/Docs.jsx"></script>
-  <script type="text/babel" src="components/Team.jsx"></script>
-  <script type="text/babel" src="components/Footer.jsx"></script>
-  <script type="text/babel" src="components/Tweaks.jsx"></script>
-  <script type="text/babel" src="app.jsx"></script>
+            <!-- Navegación sin ruido -->
+            <nav class="hidden md:flex items-center space-x-12 text-[11px] uppercase tracking-[0.25em] font-light">
+                <a href="#proyecto" class="hover:text-silenos-gray transition-colors">Proyecto</a>
+                <a href="#catalogo" class="hover:text-silenos-gray transition-colors">Catálogo</a>
+                <a href="#autores" class="hover:text-silenos-gray transition-colors">Autores</a>
+                <a href="#herramientas" class="hover:text-silenos-gray transition-colors">Herramientas</a>
+            </nav>
+
+            <!-- Acciones Minimalistas -->
+            <div class="flex items-center space-x-6">
+                <!-- Toggle de Tema Sutil (Texto puro en lugar de iconos complejos) -->
+                <button id="theme-toggle" class="text-[10px] uppercase tracking-widest text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white transition-colors" aria-label="Cambiar Tema">
+                    <span id="theme-text-light" class="hidden">Light</span>
+                    <span id="theme-text-dark" class="hidden">Dark</span>
+                </button>
+                
+                <!-- Botón de Menú Móvil Sencillo -->
+                <button id="mobile-menu-btn" class="md:hidden text-[11px] uppercase tracking-widest text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white" aria-label="Menú">
+                    Menú
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Menú Móvil Desnudo -->
+    <div id="mobile-menu" class="fixed inset-0 z-45 bg-silenos-white dark:bg-silenos-black flex flex-col justify-center px-12 space-y-10 text-2xl font-serif tracking-[0.1em] transform translate-x-full transition-transform duration-500 ease-in-out md:hidden">
+        <a href="#proyecto" class="mobile-link hover:text-silenos-gray transition-colors">El Proyecto</a>
+        <a href="#catalogo" class="mobile-link hover:text-silenos-gray transition-colors">Catálogo</a>
+        <a href="#autores" class="mobile-link hover:text-silenos-gray transition-colors">Los Autores</a>
+        <a href="#herramientas" class="mobile-link hover:text-silenos-gray transition-colors">Nuestras Herramientas</a>
+    </div>
+
+    <main class="flex-grow pt-24">
+        
+        <!-- Hero: Tipografía y Espacio en Blanco -->
+        <section id="inicio" class="min-h-[85vh] flex flex-col justify-center px-8 md:px-16 max-w-6xl mx-auto relative">
+            <div class="max-w-4xl py-20 space-y-12">
+                <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">SÍNTESIS EDITORIAL & ALGORITMIA</span>
+                
+                <h1 class="font-serif text-5xl sm:text-7xl lg:text-8xl leading-[1.05] font-light tracking-tight">
+                    La belleza de la síntesis en su estado <span class="italic font-light text-silenos-gray">puro</span>.
+                </h1>
+                
+                <p class="text-silenos-gray dark:text-neutral-400 text-sm md:text-base max-w-2xl font-light leading-relaxed tracking-wide">
+                    Un espacio donde los libros dialogan con el desarrollo digital. Sin artificios ni simulaciones superfluas. El valor desnudo del contenido, las mentes creadoras y la precisión técnica de nuestras arquitecturas lógicas.
+                </p>
+                
+                <div class="flex flex-wrap gap-10 pt-4 text-[11px] uppercase tracking-[0.25em] font-light">
+                    <a href="#catalogo" class="hover:text-silenos-gray transition-colors">
+                        Explorar Catálogo →
+                    </a>
+                    <a href="#herramientas" class="hover:text-silenos-gray transition-colors">
+                        Sistemas & Enlaces ↓
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Indicador de Scroll Minimalista -->
+            <div class="absolute bottom-12 left-8 md:left-16">
+                <span class="text-[9px] uppercase tracking-[0.3em] text-silenos-gray/60 font-light">Desplazar</span>
+            </div>
+        </section>
+
+        <!-- El Proyecto (Separado únicamente por generoso espacio en blanco) -->
+        <section id="proyecto" class="py-32 md:py-48 px-8 md:px-16 max-w-6xl mx-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24">
+                <div class="lg:col-span-4">
+                    <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block mb-4">01 / ENFOQUE</span>
+                    <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">El Proyecto Silenos</h2>
+                </div>
+                <div class="lg:col-span-8 space-y-8 text-silenos-gray dark:text-neutral-400 font-light leading-relaxed text-sm md:text-base tracking-wide">
+                    <p>
+                        Silenos es un manifiesto de resistencia contra la saturación digital y el adorno innecesario. Creemos en la pureza del diseño, en la relevancia de las palabras impresas y en la eficiencia silenciosa del código estructurado. No creamos interfaces cargadas de adornos; proyectamos herramientas y libros pensados para perdurar.
+                    </p>
+                    <p>
+                        Este nodo central unifica dos dimensiones aparentemente distantes pero íntimamente ligadas: el rigor estético del catálogo de libros impresos y la precisión aséptica de nuestros motores lógicos de análisis de datos y procesamiento de voz. Sin adornos interactivos absurdos, proporcionamos el acceso directo a los espacios de ejecución óptimos de cada una de nuestras divisiones.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Catálogo de Libros (Tipografía desnuda, nada de cajas ni contenedores) -->
+        <section id="catalogo" class="py-32 md:py-48 px-8 md:px-16 max-w-6xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-20 space-y-6 md:space-y-0">
+                <div class="space-y-4">
+                    <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">02 / PUBLICACIONES</span>
+                    <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Catálogo Impreso</h2>
+                </div>
+                <!-- Enlace limpio -->
+                <a href="https://www.silenos.es/catalogo" target="_blank" class="group text-[11px] uppercase tracking-[0.25em] font-light hover:text-silenos-gray transition-colors">
+                    Ir a silenos.es/catalogo <span class="inline-block transform group-hover:translate-x-1 transition-transform">→</span>
+                </a>
+            </div>
+
+            <!-- Listado Tipográfico de Libros sin cajas ni fondos -->
+            <div class="grid grid-cols-1 md:grid-cols-1 gap-16 md:gap-12">
+                
+     
+                <div >
+           
+                        
+                   
+                        <p class="  text-silenos-gray dark:text-neutral-400 font-light tracking-wide leading-relaxed mt-2">
+El catálogo impreso de Silenos constituye la materialización física de un universo literario coordinado por Cristina Lobo y Manuel Rodsua bajo el sello de La Tejedora de Mundos. Editados con una rigurosa pureza formal y concebidos para convivir de forma orgánica con nuestro ecosistema computacional, estos volúmenes abarcan desde la ciencia ficción experimental y la investigación histórica hasta narrativas interactivas y arquitecturas de diseño procedural. Cada obra funciona como un registro tangible e independiente en papel, un punto de convergencia donde la palabra desnudada y la documentación estructural se consolidan en distribución global.                        </p>
+              
+   
+            </div>
+        </section>
+
+        <!-- Autores (Solo tipografía y espacio) -->
+        <section id="autores" class="py-32 md:py-48 px-8 md:px-16 max-w-6xl mx-auto">
+            <div class="space-y-4 mb-20">
+                <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">03 / LOS CREADORES</span>
+                <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Autores de la Casa</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-20">
+                
+                <!-- Autor 1 -->
+                <div class="space-y-4">
+                    <div class="flex justify-between items-baseline">
+                        <h3 class="font-serif text-2xl font-light tracking-wide">Manuel Rodsua</h3>
+                        <span class="text-[10px] font-mono text-silenos-gray"></span>
+                    </div>
+                    <span class="text-[10px] uppercase tracking-widest text-silenos-gray block font-light">Fundador · Desarrollador · Escritor · Diseño</span>
+                    <p class="text-xs md:text-sm text-silenos-gray dark:text-neutral-400 font-light leading-relaxed tracking-wide">
+                        Arquitecto del sistema SILENOS. Programa los puentes entre la palabra escrita y el código, defendiendo la soberanía local y la privacidad absoluta.
+                    </p>
+                </div>
+
+                <!-- Autor 2 -->
+                <div class="space-y-4">
+                    <div class="flex justify-between items-baseline">
+                        <h3 class="font-serif text-2xl font-light tracking-wide">Cristina Lobo</h3>
+                        <span class="text-[10px] font-mono text-silenos-gray"></span>
+                    </div>
+                    <span class="text-[10px] uppercase tracking-widest text-silenos-gray block font-light">Co-Creadora · Diseño · Escritora · Creatividad</span>
+                    <p class="text-xs md:text-sm text-silenos-gray dark:text-neutral-400 font-light leading-relaxed tracking-wide">
+                        Tejedora visual y narrativa del proyecto. Diseña el lenguaje, los símbolos y la cosmología que dan forma a cada mundo dentro y fuera del editor.
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Nuestras Herramientas (Enfoque textual, sin tarjetas, sin rectángulos, sin contornos) -->
+        <section id="herramientas" class="py-32 md:py-48 px-8 md:px-16 max-w-6xl mx-auto">
+            <div class="max-w-3xl space-y-4 mb-20">
+                <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">04 / ECOSISTEMA TÉCNICO</span>
+                <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Nuestras Herramientas</h2>
+                <p class="text-xs md:text-sm text-silenos-gray dark:text-neutral-400 font-light tracking-wide leading-relaxed">
+                    Módulos lógicos y entornos de optimización libres de simulaciones o adornos pesados. Rutas físicas directas de cómputo ejecutable.
+                </p>
+            </div>
+
+            <!-- Lista Tipográfica Desnuda de Enlaces de Herramientas -->
+            <div class="space-y-16">
+
+                <!-- Herramienta 1 -->
+                <div class="group flex flex-col md:flex-row md:items-baseline justify-between py-2 transition-all">
+                    <div class="space-y-2 md:space-y-0 md:flex md:items-baseline md:space-x-12">
+                        <span class="text-[10px] font-mono text-silenos-gray block w-10">/03</span>
+                        <h3 class="font-serif text-3xl font-light tracking-wide group-hover:text-silenos-gray">Silenos v3</h3>
+                        <p class="text-xs text-silenos-gray dark:text-neutral-400 font-light tracking-wide">Análisis estructurado y depuración ontológica.</p>
+                    </div>
+                    <div class="mt-4 md:mt-0 flex items-center space-x-6 text-[10px] font-mono text-silenos-gray">
+                        <a href="https://www.silenos.es/3" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white uppercase tracking-widest">Ejecutar →</a>
+                     </div>
+                </div>
+
+                <!-- Herramienta 2 -->
+                <div class="group flex flex-col md:flex-row md:items-baseline justify-between py-2 transition-all">
+                    <div class="space-y-2 md:space-y-0 md:flex md:items-baseline md:space-x-12">
+                        <span class="text-[10px] font-mono text-silenos-gray block w-10">/04</span>
+                        <h3 class="font-serif text-3xl font-light tracking-wide group-hover:text-silenos-gray">Silenos v4</h3>
+                        <p class="text-xs text-silenos-gray dark:text-neutral-400 font-light tracking-wide">Motor semántico distribuido.</p>
+                    </div>
+                    <div class="mt-4 md:mt-0 flex items-center space-x-6 text-[10px] font-mono text-silenos-gray">
+                        <a href="https://www.silenos.es/4" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white uppercase tracking-widest">Ejecutar →</a>
+                     </div>
+                </div>
+
+                <!-- Herramienta 3 -->
+                <div class="group flex flex-col md:flex-row md:items-baseline justify-between py-2 transition-all">
+                    <div class="space-y-2 md:space-y-0 md:flex md:items-baseline md:space-x-12">
+                        <span class="text-[10px] font-mono text-silenos-gray block w-10">/MK2</span>
+                        <h3 class="font-serif text-3xl font-light tracking-wide group-hover:text-silenos-gray">Merkados</h3>
+                        <p class="text-xs text-silenos-gray dark:text-neutral-400 font-light tracking-wide">Visualización  de flujos narrativos paralelos y librojuegos.</p>
+                    </div>
+                    <div class="mt-4 md:mt-0 flex items-center space-x-6 text-[10px] font-mono text-silenos-gray">
+                        <a href="https://www.silenos.es/merkados" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white uppercase tracking-widest">Ejecutar →</a>
+                     </div>
+                </div>
+
+                <!-- Herramienta 4 -->
+                <div class="group flex flex-col md:flex-row md:items-baseline justify-between py-2 transition-all">
+                    <div class="space-y-2 md:space-y-0 md:flex md:items-baseline md:space-x-12">
+                        <span class="text-[10px] font-mono text-silenos-gray block w-10">/VZ</span>
+                        <h3 class="font-serif text-3xl font-light tracking-wide group-hover:text-silenos-gray">Voz</h3>
+                        <p class="text-xs text-silenos-gray dark:text-neutral-400 font-light tracking-wide">Asiste avanzado de voz impulsado por inteligencia artificial.</p>
+                    </div>
+                    <div class="mt-4 md:mt-0 flex items-center space-x-6 text-[10px] font-mono text-silenos-gray">
+                        <a href="https://www.silenos.es/voz" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white uppercase tracking-widest">Ejecutar →</a>
+                     </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer Ultra-Minimalista (Sin líneas divisoras, puro espacio blanco) -->
+    <footer class="py-24 px-8 md:px-16 bg-silenos-white dark:bg-silenos-black">
+        <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-12 items-start">
+            
+            <!-- Marca -->
+            <div class="md:col-span-4 space-y-3">
+                <span class="font-serif text-xl tracking-[0.2em] font-light block">SILEN<span style="color: rgb(131, 20, 20);" >OS</span></span>
+                <p class="text-[11px] text-silenos-gray font-light leading-relaxed max-w-xs tracking-wide">
+                    Plataforma interactiva con inteligencia artificial y herramientas narrativas basadas en Ollama, Gemini, Pollination y DeepSeek. Diseñada para la creación de libros, análisis de datos y procesamiento de voz.
+                </p>
+            </div>
+
+            <!-- Direcciones Rápidas -->
+            <div class="md:col-span-4 space-y-4 text-[10px] font-mono text-silenos-gray">
+                <span class="text-[9px] uppercase tracking-widest text-silenos-black dark:text-silenos-white font-sans block">Sistemas</span>
+                <div class="grid grid-cols-2 gap-y-2 gap-x-4">
+                    <a href="https://www.silenos.es/catalogo" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/catalogo</a>
+                    <a href="https://www.silenos.es/3" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/3</a>
+                    <a href="https://www.silenos.es/4" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/4</a>
+                    <a href="https://www.silenos.es/merkados" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/merkados</a>
+                    <a href="https://www.silenos.es/voz" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/voz</a>
+                </div>
+            </div>
+
+            <!-- Contacto & Leyendas -->
+            <div class="md:col-span-4 space-y-3 md:text-right">
+                <span class="text-[9px] uppercase tracking-widest text-silenos-black dark:text-silenos-white font-sans block">Contacto</span>
+                <a href="mailto:info@silenos.es" class="text-xs text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white block tracking-widest">silensystem@gmail.com</a>
+                <p class="text-[9px] text-silenos-gray font-mono mt-4">© 2026 SILENOS. BIENESTAR Y PERFECCIÓN PARA TODAS LAS PARTES DEL TODO. TODOS LOS DERECHOS RESERVADOS.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Notificación Flotante Tipográfica (Toast) -->
+    <div id="toast" class="fixed bottom-8 right-8 z-50 transform translate-y-12 opacity-0 pointer-events-none transition-all duration-300 text-[10px] font-mono tracking-widest uppercase text-silenos-black bg-silenos-lightGray dark:text-silenos-white dark:bg-silenos-darkGray px-4 py-2">
+        <span id="toast-message">Copiado</span>
+    </div>
+
+    <!-- Scripts Funcionales -->
+    <script>
+        // --- Gestión de Temas (Claro/Blanco vs Oscuro/Negro) ---
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeTextLight = document.getElementById('theme-text-light');
+        const themeTextDark = document.getElementById('theme-text-dark');
+
+        function updateThemeUI() {
+            if (document.documentElement.classList.contains('dark')) {
+                themeTextLight.classList.remove('hidden');
+                themeTextDark.classList.add('hidden');
+            } else {
+                themeTextLight.classList.add('hidden');
+                themeTextDark.classList.remove('hidden');
+            }
+        }
+
+        // Inicialización basada en preferencias previas
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        updateThemeUI();
+
+        themeToggleBtn.addEventListener('click', function() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+            }
+            updateThemeUI();
+        });
+
+        // --- Gestión de Menú Móvil Desnudo ---
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const mobileLinks = document.querySelectorAll('.mobile-link');
+
+        function toggleMenu() {
+            mobileMenu.classList.toggle('translate-x-full');
+            if (mobileMenu.classList.contains('translate-x-full')) {
+                mobileMenuBtn.innerText = "Menú";
+            } else {
+                mobileMenuBtn.innerText = "Cerrar";
+            }
+        }
+
+        mobileMenuBtn.addEventListener('click', toggleMenu);
+        mobileLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('translate-x-full');
+                mobileMenuBtn.innerText = "Menú";
+            });
+        });
+
+        // --- Copiado de Enlaces Directo al Portapapeles (Respetando CSP y entornos iframe) ---
+        function copyToClipboard(text, name) {
+            const tempEl = document.createElement('textarea');
+            tempEl.value = text;
+            document.body.appendChild(tempEl);
+            tempEl.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempEl);
+
+            showToast(`Link a ${name} copiado`);
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            toastMsg.innerText = message;
+            
+            toast.classList.remove('translate-y-12', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 2500);
+        }
+    </script>
 </body>
 </html>
