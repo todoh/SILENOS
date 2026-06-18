@@ -1,0 +1,131 @@
+{
+  "collections": [
+    "Fantasía",
+    "Librojuegos"
+  ],
+  "books": [
+    {
+      "id": 1781710351311,
+      "title": "Forees Jardines de Tiza",
+      "collection": "Fantasía",
+      "description": "Un ecosistema de porcelana pura. Un secreto enterrado bajo toneladas de cal. Dos anomalías biológicas que podrían salvar el mundo... o calcinarlo.\n\nEn las profundidades de Erbus, la vida no late, se congela. El bosque de Forees es un santuario inmaculado de micelio rígido, sustratos calcáreos y guardianes de porcelana creados para mantener una estasis perfecta, gélida e impasible. Un mundo diseñado para el silencio y el olvido.\n\nPero Sael e Iria son transgresores biológicos. Son anomalías térmicas. Poseen un calor corporal prohibido que erosiona la arquitectura blanca del bosque a cada paso, dejando huellas de humedad y ceniza en un desierto de estuco.\n\nCuando una extraña arista de cristal falso —una frecuencia gris y hostil— emerge de las profundidades amenazando con petrificar los últimos vestigios de vida orgánica, Sael e Iria se ven obligados a emprender una huida desesperada hacia la mítica Catedral de Micelio. Unidos por un filamento vivo y una atracción magnética inevitable, descubrirán que la perfección de su mundo es en realidad la fachada de un genocidio termodinámico del pasado.\n\n¿Podrá su calor compartido digerir el trauma de una era olvidada, o se convertirán en las próximas efigies inertes de un sepulcro de tiza?\n\nDescubre una obra maestra de la ciencia ficción de nicho, donde la biología, la geometría y el romance se funden en una prosa visualmente deslumbrante y magnética.",
+      "image": "libro_1781710351311.jpg",
+      "authors": [
+        "Manuel Rodsua",
+        "Cristina Lobo"
+      ],
+      "countries": [
+        "España"
+      ],
+      "characters": [],
+      "regions": [
+        "forees"
+      ],
+      "keywords": [
+        "fantasia"
+      ],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://amzn.eu/d/0ao3DGxl"
+        }
+      ]
+    },
+    {
+      "id": 1781713196086,
+      "title": "Arandela Colocada: Misión 1 La Caída del Tirano: Librojuego",
+      "collection": "Librojuegos",
+      "description": "Arandela Colocada: Misión 1 - La Caída del Tirano ## ¡Tú eres el protagonista! ¿Sobrevivirás al imperio de Zoliaros?\nUna aventura donde TÚ escribes tu propio destino\nOlvida todo lo que sabes sobre lectura tradicional. En este librojuego de ciencia ficción, las páginas no se pasan una detrás de otra: se conquistan.\n\nAcompaña a la intrépida Arandela Colocada en su misión más peligrosa. El tirano Zoliaros tiene a la galaxia bajo su puño de hierro, y solo tú puedes detenerlo. Te adentrarás en los pasillos de la nave nodriza de la resistencia, buscarás rutas de escape por túneles oscuros y te jugarás la vida en saltos hiperespaciales al borde del desastre.\n\nToma decisiones críticas: ¿Te arriesgarás a una fuga de radiación o abortarás el salto para reparar tu nave?\n\nAcumula puntos: Cada acierto te acerca a la gloria; cada error puede ser fatal.\n\nMúltiples finales: Tu ingenio determinará si te conviertes en la salvadora del cosmos o si tu historia termina en las frías garras del tirano.\n\n¿Tienes lo que hay que tener para derrocar al tirano? ¡Abre el libro y comienza tu misión!",
+      "image": "libro_1781713196086.jpg",
+      "authors": [
+        "Manuel Rodsua",
+        "Cristina Lobo"
+      ],
+      "countries": [
+        "España"
+      ],
+      "characters": [
+        "Arandela Colocada"
+      ],
+      "regions": [],
+      "keywords": []
+    },
+    {
+      "id": 1781713420486,
+      "title": "Arandela Colocada: Misión 2 La Alcaldesa Callejera: Librojuego",
+      "collection": "Librojuegos",
+      "image": "libro_1781713420486.jpg",
+      "authors": [
+        "Manuel Rodsua",
+        "Cristina Lobo"
+      ],
+      "countries": [
+        "España"
+      ],
+      "characters": [
+        "Arandela Colocada"
+      ],
+      "regions": [
+        "Maddna City"
+      ],
+      "keywords": []
+    },
+    {
+      "id": 1781713466999,
+      "title": "Arandela Colocada: Misión 3 Los Caprichos del Cosmos: Librojuego",
+      "collection": "Librojuegos",
+      "description": "Arandela Colocada: Misión 3 - Los Caprichos del Cosmos\nUn acertijo letal. Un planeta inestable. Una entidad todopoderosa.\nEl desafío definitivo en la Longeva Andalucía\nLas leyes de la física se tambalean cuando entra en juego la enigmática Entidad Bermeja. En esta tercera entrega de la saga interactiva más trepidante de la galaxia, Arandela deberá complacer los caprichos de seres cósmicos insondables.\n\nTu misión te llevará al mortalmente hermoso Planeta de Cristal Inestable. Tendrás que decidir si liderar la extracción de materiales raros enfrentando el peligro cara a cara, o si trazar estrategias desde la sala de control de tu Bananonave.\n\nPrepárate para:\n\nRompecabezas estelares: Descodifica acertijos que pondrán a prueba tu intelecto.\n\nCaminos tortuosos: Decide si arriesgar a tu tripulación o tomar la ruta segura.\n\nUn clímax inolvidable: Haz brillar la esperanza en la Longeva Andalucía.\n\nEl cosmos es caprichoso... ¿Podrás domarlo?",
+      "image": "libro_1781713466999.jpg",
+      "authors": [
+        "Manuel Rodsua",
+        "Cristina Lobo"
+      ],
+      "countries": [
+        "España"
+      ],
+      "characters": [
+        "Arandela Colocada"
+      ],
+      "regions": [],
+      "keywords": []
+    },
+    {
+      "id": 1781713529884,
+      "title": "Arandela Colocada: Misión 4 Tráfico Pesado: Librojuego",
+      "collection": "Librojuegos",
+      "description": "Arandela Colocada: Misión 4 - Tráfico Pesado\nPiratas, sabotajes y un convoy que no puede detenerse.\nSiente la adrenalina en cada página\nEl espacio es un lugar salvaje, y como Supervisora de Rutas, tu deber es proteger el invaluable convoy de aceite cuántico. Pero el sindicato pirata no te lo pondrá fácil.\n\nEn Tráfico Pesado, la acción no da respiro. La supervivencia de tu tripulación depende exclusivamente de ti. Cuando las naves enemigas ataquen, ¿lanzarás un misil táctico como señuelo o bloquearás sus comunicaciones para arrinconarlos?\n\nCombate táctico: Maniobra tu nave en medio del caos estelar.\n\nGuerra electrónica: Encripta comunicaciones, soborna tripulantes y usa la información a tu favor.\n\nCarrera contra el tiempo: Cada segundo cuenta para rescatar a los rehenes.\n\n¡Toma los mandos, activa los escudos y prepárate para el impacto!",
+      "image": "libro_1781713529884.jpg",
+      "authors": [
+        "Cristina Lobo",
+        "Manuel Rodsua"
+      ],
+      "countries": [
+        "España"
+      ],
+      "characters": [
+        "Arandela Colocada"
+      ],
+      "regions": [],
+      "keywords": []
+    },
+    {
+      "id": 1781713710522,
+      "title": "Arandela Colocada: Misión 5 El compás del Juicio Final: Librojuego",
+      "collection": "Librojuegos",
+      "description": "Arandela Colocada: Misión 5 - El Compás del Juicio Final\nEl fin de los tiempos ha llegado. ¿Serás tú la salvación?\nEl épico desenlace de la saga interactiva\nEl sistema Kriptos agoniza. Un meteorito continental y la furia incontrolable de una supernova amenazan con aniquilarlo todo. Las profecías sagradas predicen el fin, pero Arandela Colocada nunca se ha rendido ante el destino.\n\nEsta es tu última oportunidad. A bordo del fénix de metal y energía, la BlacJ, deberás forjar la alianza definitiva entre la tecnología punta y la fe inquebrantable. Tendrás que arriesgarte a usar el inestable túnel de gravedad cuántica si quieres salvar a tu pueblo.\n\nApocalipsis inminente: La tensión máxima en una carrera contra la destrucción total.\n\nDecisiones monumentales: Un pequeño desvío puede significar el fin de la galaxia entera.\n\nTu legado final: Calcula tu puntuación definitiva y descubre si lograste el milagro o si te convertiste en polvo de estrellas.\n\nEl reloj avanza hacia el fin. ¡Da el salto cuántico y haz historia!",
+      "image": "libro_1781713710522.jpg",
+      "authors": [
+        "Cristina Lobo",
+        "Manuel Rodsua"
+      ],
+      "countries": [
+        "España"
+      ],
+      "characters": [
+        "Arandela Colocada"
+      ],
+      "regions": [],
+      "keywords": []
+    }
+  ]
+}
