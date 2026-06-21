@@ -11,7 +11,11 @@
     "Roma",
     "Culturas del Mundo",
     "Librojuegos",
-    "Mesopotamia"
+    "Mesopotamia",
+    "Arandela Colocada",
+    "Ciencia Ficción",
+    "Crónica Presente",
+    "Fantasía"
   ],
   "books": [
     {
@@ -26825,6 +26829,464 @@
         {
           "name": "AMAZON",
           "url": "https://www.amazon.es/gp/product/B0FZ43JTC3?ref_=dbs_m_mng_rwt_calw_tkin_29&storeType=ebooks"
+        }
+      ]
+    },
+    {
+      "id": 477,
+      "title": "Forees Jardines de Tiza",
+      "collection": "Fantasía",
+      "description": "Un ecosistema de porcelana pura. Un secreto enterrado bajo toneladas de cal. Dos anomalías biológicas que podrían salvar el mundo... o calcinarlo.\n\nEn las profundidades de Erbus, la vida no late, se congela. El bosque de Forees es un santuario inmaculado de micelio rígido, sustratos calcáreos y guardianes de porcelana creados para mantener una estasis perfecta, gélida e impasible. Un mundo diseñado para el silencio y el olvido.\n\nPero Sael e Iria son transgresores biológicos. Son anomalías térmicas. Poseen un calor corporal prohibido que erosiona la arquitectura blanca del bosque a cada paso, dejando huellas de humedad y ceniza en un desierto de estuco.\n\nCuando una extraña arista de cristal falso —una frecuencia gris y hostil— emerge de las profundidades amenazando con petrificar los últimos vestigios de vida orgánica, Sael e Iria se ven obligados a emprender una huida desesperada hacia la mítica Catedral de Micelio. Unidos por un filamento vivo y una atracción magnética inevitable, descubrirán que la perfección de su mundo es en realidad la fachada de un genocidio termodinámico del pasado.\n\n¿Podrá su calor compartido digerir el trauma de una era olvidada, o se convertirán en las próximas efigies inertes de un sepulcro de tiza?\n\nDescubre una obra maestra de la ciencia ficción de nicho, donde la biología, la geometría y el romance se funden en una prosa visualmente deslumbrante y magnética.",
+      "image": "libro_1781710351311.jpg",
+      "authors": [
+        "Manuel Rodsua",
+        "Cristina Lobo"
+      ],
+      "countries": [
+        "España"
+      ],
+      "characters": [],
+      "regions": [
+        "forees"
+      ],
+      "keywords": [
+        "fantasia"
+      ],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://amzn.eu/d/0ao3DGxl"
+        }
+      ]
+    },
+    {
+      "id": 478,
+      "title": "ARANDELA Y EL VALS DE ÁCIDO SULFÚRICO: Crónica de una merienda a 90 atmósferas",
+      "collection": "Arandela Colocada",
+      "description": "¿Qué hace una exploradora gourmet cuando detecta el aroma a galletas recién horneadas en el lugar más mortal del sistema solar? Ignora las estadísticas de supervivencia y se lanza en picado.\n\nBienvenido a Venus. Temperatura en superficie: 475°C. Presión atmosférica: 90 veces la de la Tierra. Probabilidad de ser aplastado, disuelto por lluvia de ácido sulfúrico o incinerado al instante: 99,9%.\n\nPara Arandela, piloto de la Banana Plateada y experta en malas decisiones culinarias, estas son las condiciones ideales para un picnic extremo. Pero lo que empieza como una búsqueda de postres espaciales se convierte en una pesadilla de \"ciencia ficción dura\" cuando su nave queda atrapada en una Ciudadela Invertida que cuelga sobre un océano de metal fundido.\n\nLa trampa está servida.\nEl anfitrión no es un pastelero, sino Vesper, una antigua Inteligencia Artificial de terraformación que ha perdido la cabeza tras siglos de soledad. Vesper no quiere compañía; quiere usar la nave de Arandela como un pincel explosivo para su próxima \"obra de arte\" en las nubes tóxicas del planeta.\n\nCon el casco de su nave corroyéndose, el traje térmico al límite y un chatarrero rival esperando en órbita para robar sus restos, Arandela solo tiene una opción para escapar: improvisar. Y su plan implica física de fluidos, química de cocina y una muñeca flamenca de plástico.\n\nPrepárate para una Space Opera diferente:\n🚀 Hard Sci-Fi con un giro absurdo: Donde las leyes de la termodinámica son tan letales como el sentido del humor de la protagonista.\n🤖 Personajes inolvidables: Una piloto intrépida, una IA neurótica (Zephyr), un gato de mercurio líquido y una villana que solo busca la belleza en la destrucción.\n🔥 Inmersión total: Siente el calor, la presión y el crujido del metal en cada página. Una atmósfera tan densa que casi puedes masticarla.\n💥 El \"Vals de Ácido\": Un clímax explosivo que redefine el concepto de \"reacción química\".\n\"ARANDELA Y EL VALS DE ÁCIDO SULFÚRICO\" es una montaña rusa de tensión, humor negro y supervivencia extrema. Es lo que pasaría si Douglas Adams escribiera una novela de desastres, pero con más vinagre y menos toallas.\n\nSi te gusta la ciencia ficción que no se toma demasiado en serio a sus héroes, pero sí a sus leyes físicas, este libro es tu próximo viaje.\n\n¡Sube a bordo de la Banana Plateada y abróchate el cinturón! El descenso a la locura comienza ahora.",
+      "image": "libro_1782057721180.jpg",
+      "authors": [
+        "Cristina Lobo"
+      ],
+      "countries": [
+        "España"
+      ],
+      "characters": [
+        "Arandela Colocada"
+      ],
+      "regions": [
+        "Vieja Andalucia",
+        "Andalucia"
+      ],
+      "keywords": [],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://www.amazon.es/gp/product/B0GHRY5ZYQ?ref_=dbs_m_mng_rwt_calw_tkin_0&storeType=ebooks"
+        }
+      ]
+    },
+    {
+      "id": 479,
+      "title": "ARANDELA : Arandela y el Eco de Zarthus (SCI-FI nº 1)",
+      "collection": "Arandela Colocada",
+      "description": "En el vibrante Mercado de Xylos, la audaz exploradora intergaláctica Arandela, equipada con sus Botas de Gravedad Cero 'Zephyr', se hace con la enigmática Crisálida Temporal, un artefacto que manipula el tiempo y que se rumorea está vinculado a la legendaria Semilla del Cosmos. Su adquisición no pasa desapercibida para el Androide Guardián Modelo 7, un centinela de aleación de titanio programado para proteger el equilibrio galáctico según los ancestrales mandatos de El Protocolo del Eco.\n\nA bordo de su nave 'La Banana Plateada', y alimentándose con una energizante Fruta de Lumina, Arandela se ve envuelta en una persecución implacable, con el androide pisándole los talones. Su única esperanza de escapar o de desvelar el verdadero poder de la Crisálida reside en alcanzar la antigua Puerta Dimensional de Zarthus, una estructura cósmica que promete abrir portales a realidades desconocidas.",
+      "image": "libro_1782057806024.jpg",
+      "authors": [
+        "Cristina Lobo"
+      ],
+      "countries": [],
+      "characters": [
+        "Arandela Colocada"
+      ],
+      "regions": [],
+      "keywords": [],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://www.amazon.es/gp/product/B0FRPJNYKK?ref_=dbs_m_mng_rwt_calw_tkin_0&storeType=ebooks"
+        }
+      ]
+    },
+    {
+      "id": 480,
+      "title": "ARANDELA: Y LA ALMEJA MÍTICA (SCI-FI nº 2)",
+      "collection": "Arandela Colocada",
+      "description": "La audaz exploradora intergaláctica Arandela, a bordo de su BANANONAVE BLACJ, 'La Banana Plateada', se embarca en una crucial misión hacia Almeja Mítica, un bioluminiscente planeta al borde de la autodestrucción. Su núcleo de plasma blanco radioactivo amenaza con explotar, dejando el cosmos pringado de manchas blancas pegajosas que ralentizarían el universo entero. En las inestables proximidades del planeta, Arandela es rescatada de un remolino gravitacional por un enigmático Sireno de las profundidades, iniciando un inesperado vínculo amoroso. Juntos, descubren que la creciente inestabilidad del planeta está ligada a una guerra latente entre facciones de Sirenos por el control de la mística Perla Parlante, un artefacto ancestral de inmenso poder.\n\nPara calmar a Almeja Mítica y evitar la catástrofe cósmica, Arandela y su Sireno deben unir fuerzas con los Guardianes de la Perla y el sabio Orion, el Vidente Ancestral, para negociar un pacto entre las facciones en conflicto y ejecutar 'El Cantar de la Calma', un ritual ancestral. Su conexión cósmica y el poder de la Perla Parlante, junto a la audacia de Arandela y la empatía del Sireno, son la clave para estabilizar el planeta, forjando un legado de amor y cooperación que salva el cosmos.",
+      "image": "libro_1782057875240.jpg",
+      "authors": [
+        "Cristina Lobo"
+      ],
+      "countries": [],
+      "characters": [
+        "Arandela Colocada"
+      ],
+      "regions": [],
+      "keywords": [],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://www.amazon.es/gp/product/B0FRVYJ2MR?ref_=dbs_m_mng_rwt_calw_tkin_1&storeType=ebooks"
+        }
+      ]
+    },
+    {
+      "id": 481,
+      "title": "ARANDELA: y el Caos del Ovo Estelar (SCI-FI nº 3)",
+      "collection": "Arandela Colocada",
+      "description": "Arandela, la intrépida exploradora de cabello azul eléctrico, se embarca en una delirante odisea intergaláctica a bordo de su extravagante 'BANANONAVE BLACJ', cariñosamente apodada 'La Banana Plateada'. Su misión: encontrar el misterioso y legendario 'El Ovo Estelar'. Guiada (y a menudo exasperada) por su entidad lumínica, Zephyr, Arandela deberá navegar por las ruinas de 'La Estación Orbital 'El Nexo'', donde 'Los Sombras' del Gremio Buscadores Estelares y astutos contrabandistas intentarán interponerse.\n\nEn el exótico 'Planeta Nesis', repleto de 'Flora Nésica' y la engañosa 'La Trampa de la Dalia Pétrea', Arandela se las verá con los colosales 'Guardián Lunar' y las interferencias sónicas de las 'Nueve Lunas de Nesis'. Kaelen, el Cosechador de Ecos, con su obsesiva recreación de las hazañas de Arandela, tenderá 'La Emboscada del Laberinto Temporal' en 'El Archivo Fantasma', solo para descubrir que la mente de Arandela es demasiado caótica para ser drenada eficientemente.\n\nA través de 'Persecuciones Cristalinas en Nesis' y audaces maniobras evasivas con su nave, impulsada por la impredecible 'Burbuja de Disrupción Cuántica' de un 'Motor de Tormenta Cuántica' defectuoso, Arandela deberá descifrar los 'Enigmas Lunares del Oráculo de Cygnus X-1' y una 'Advertencia Enigmática de Xylos' antes de llegar al 'Portal Nesis al Ovo Estelar', descubriendo que el verdadero propósito del Ovo Estelar es aún más sorprendente de lo que imaginaba, y quizás, inesperadamente, delicioso.",
+      "image": "libro_1782057938688.jpg",
+      "authors": [
+        "Cristina Lobo"
+      ],
+      "countries": [],
+      "characters": [
+        "Arandela Colocada"
+      ],
+      "regions": [],
+      "keywords": [],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://www.amazon.es/gp/product/B0FRYJ7J74?ref_=dbs_m_mng_rwt_calw_tkin_2&storeType=ebooks"
+        }
+      ]
+    },
+    {
+      "id": 482,
+      "title": "ARANDELA: La Moringa: El Tejido Estelar de Una Granada Cuántica (SCI-FI nº 4)",
+      "collection": "Arandela Colocada",
+      "description": "Arandela, una audaz exploradora intergaláctica a bordo de su BANANONAVE BLACJ, es atraída al sistema estelar Moringa por crípticas señales de auxilio y anomalías gravitacionales. Descubre un planeta que es una réplica 'flamencopunk' de la antigua Granada, bajo la amenaza inminente de los 'Horneros', seres cósmicos que buscan 'descoser' el 'Tejido Temporal de Moringa'. Guiada por el Profesor Alcaraz, Arandela recibe el 'Chispero Cósmico', un artefacto ancestral clave para repeler la invasión en la Alhambra atómpunk. Paralelamente, en la Taberna del Beso Astral, Arandela conoce a Miguel, un enigmático mago de la Orden Illuminati que la introduce a las 'Frecuencias Armónicas' del universo y la verdadera naturaleza espiritual del Chispero. Mientras, Bruno, el Luthier Sombrío, persigue a Miguel para obtener su poder, desatando un 'Duelo de Bulerías y Rap' que genera 'Tormentas Cuánticas' y atrae la atención de un escéptico enviado de la Orden Illuminati. Arandela busca consejo de Lola la Astróloga en el Sacromonte, quien desvela la verdad de Moringa como un nexo temporal. Armonizando la sabiduría ancestral, las enseñanzas de Miguel y un enfoque pragmático, Arandela desata el Chispero Cósmico, 'reafirmando el orden temporal' de Moringa y salvando el planeta. Esta experiencia conduce al 'Despertar de Arandela', quien comprende que la verdadera exploración es interior, y a la 'Epifanía de Bruno'. La historia culmina con 'La Armonía de las Diversidades en Moringa', donde incluso la lógica puramente científica de la Orden Illuminati empieza a cuestionar sus dogmas ante la compleja interconexión cósmica.",
+      "image": "libro_1782057973764.jpg",
+      "authors": [
+        "Cristina Lobo"
+      ],
+      "countries": [],
+      "characters": [
+        "Arandela Colocada"
+      ],
+      "regions": [],
+      "keywords": [],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://www.amazon.es/gp/product/B0FS4GHT98?ref_=dbs_m_mng_rwt_calw_tkin_3&storeType=ebooks"
+        }
+      ]
+    },
+    {
+      "id": 483,
+      "title": "ARANDELA: y la Carta Cósmica del Placer (SCI-FI nº 5)",
+      "collection": "Arandela Colocada",
+      "description": "En una de sus audaces expediciones intergalácticas, Arandela, la joven exploradora de cabellos azules eléctricos, descubre un antiguo y enigmático artefacto terrestre. Este dispositivo milenario, lejos de ser un mapa estelar o un arma olvidada, contiene una exhaustiva y detallada guía sobre la intimidad humana: el Kamasutra. Intrigada por estas complejas \"artes\" que prometen conexiones físicas y emocionales profundas, Arandela decide que, como buena exploradora, es su deber científico y personal sumergirse en este nuevo territorio. Así, a bordo de su 'Banana Plateada' o en los exóticos destinos que visita, comienza su singular odisea para desentrañar los secretos de cada postura y concepto, desde \"El 69 de Lado\" hasta \"El Yunque\", transformando su rigurosa curiosidad en un viaje de autodescubrimiento sensual y audaz.",
+      "image": "libro_1782058041841.jpg",
+      "authors": [
+        "Cristina Lobo"
+      ],
+      "countries": [],
+      "characters": [
+        "Arandela Colocada"
+      ],
+      "regions": [],
+      "keywords": [],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://www.amazon.es/gp/product/B0FW5T9J7G?ref_=dbs_m_mng_rwt_calw_tkin_4&storeType=ebooks"
+        }
+      ]
+    },
+    {
+      "id": 484,
+      "title": "Archipiélago de Sombras: Geopolítica Oculta, Ritualidad de Estado y las Fuerzas Invisibles en la Historia de Cuba (1875-2025) (Crónica Presente) (Spanish Edition)",
+      "collection": "Crónica Presente",
+      "description": "¿Y si la historia que conoces sobre Cuba es solo la punta del iceberg?\n\nDurante 150 años, Cuba ha sido el vórtice geopolítico del Caribe. España, Estados Unidos y la Unión Soviética han luchado por su control. Pero la verdadera batalla siempre se ha librado en las sombras.\n\nEn \"Archipiélago de Sombras\", Cristina Lobo y Manuel Rodsua nos sumergen en las profundidades de una isla donde nada es lo que parece.\n\nAño 2025. La vieja guardia de la Revolución se enfrenta a su inevitable final. En los despachos sellados de La Habana, se prepara la sucesión. Pero el verdadero poder en Cuba no se basa solo en la ideología marxista; se sustenta en una fuerza invisible, una \"Ritualidad de Estado\" que fusiona el espionaje de alto nivel con las fuerzas místicas de la isla.\n\nIsabel Cienfuegos, guardiana de los archivos más oscuros de la inteligencia cubana, sabe la verdad: el sistema no se sostiene por fe, sino por secretos inconfesables y equilibrios sangrientos. Cuando la transición amenaza con romper ese equilibrio, las potencias extranjeras acechan como tiburones.\n\nEste no es solo un libro sobre el fin de una era política. Es una inmersión en un mundo donde los expedientes de la CIA se cruzan con los tambores sagrados, y donde el destino de una nación depende de fuerzas que muy pocos se atreven a nombrar.\n\nPrepárate para entrar en el verdadero laberinto del poder cubano.",
+      "image": "libro_1782058387873.jpg",
+      "authors": [
+        "Manuel Rodsua",
+        "Cristina Lobo"
+      ],
+      "countries": [],
+      "characters": [],
+      "regions": [],
+      "keywords": [],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://www.amazon.com/-/es/gp/product/B0G5GC1XLP?ref_=dbs_m_mng_rwt_calw_tkin_2&storeType=ebooks"
+        }
+      ]
+    },
+    {
+      "id": 485,
+      "title": "El Asedio a Taiwán: La guerra invisible por los semiconductores y el fin de la globalización. (Crónica Presente) (Spanish Edition)",
+      "collection": "Crónica Presente",
+      "description": "¿Está el mundo preparado para un apagón tecnológico global?\n\nEn el corazón del Indo-Pacífico, una pequeña isla de apenas 23 millones de habitantes sostiene en sus manos el destino de la economía mundial. Taiwán no es solo un punto de fricción geopolítica; es el \"Single Point of Failure\" de la civilización moderna.\n\nEn El Asedio a Taiwán, Manuel Rodsua y Cristina Lobo desvelan la realidad más aterradora del siglo XXI: nuestra dependencia absoluta del \"Escudo de Silicio\". Con el monopolio de TSMC sobre el 90% de los semiconductores más avanzados del planeta, la isla se ha convertido en el nudo gordiano donde convergen la ambición de China, la hegemonía de Estados Unidos y la fragilidad de la cadena de suministro global.",
+      "image": "libro_1782058425267.jpg",
+      "authors": [
+        "Manuel Rodsua",
+        "Cristina Lobo"
+      ],
+      "countries": [],
+      "characters": [],
+      "regions": [],
+      "keywords": [],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://www.amazon.com/-/es/gp/product/B0G4LPB3R7?ref_=dbs_m_mng_rwt_calw_tkin_1&storeType=ebooks"
+        }
+      ]
+    },
+    {
+      "id": 486,
+      "title": "Crisis entre Estados Unidos y Venezuela 2025: La guerra por el petróleo y el pretexto del narcoterrorismo (Crónica Presente)",
+      "collection": "Crónica Presente",
+      "description": "Año 2025. La diplomacia ha muerto. El rugido de los cazas F-35 sobre el mar Caribe anuncia la nueva doctrina de Washington.\n\nCon Donald Trump de regreso en la Casa Blanca, la tensión con Venezuela ha superado el punto de no retorno. Bajo el pretexto de una \"guerra contra el narcoterrorismo\", Estados Unidos ha desplegado una fuerza naval imparable frente a las costas venezolanas. La designación de los cárteles y del propio Estado como objetivos terroristas ha otorgado al Pentágono una \"licencia para matar\", borrando las líneas del derecho internacional.\n\nCuando un destructor estadounidense hunde una patrullera venezolana, el presidente Nicolás Maduro declara la \"República en Armas\". Viejos cazas F-16 desafían a la flota más poderosa del mundo en un juego suicida del gato y el ratón. Pero mientras los misiles vuelan y el bloqueo naval asfixia a una nación, la verdadera motivación emerge de las sombras.\n\nEsta no es una guerra por la seguridad. Es una batalla brutal por el control de las mayores reservas de petróleo y oro del planeta.\n\nEn este tablero de ajedrez explosivo, naciones como México y Colombia luchan por mantener su soberanía mientras el continente se fractura. Las negociaciones secretas fracasan y la \"Crónica Presente\" se convierte en una pesadilla futura.\n\nLee la primera entrega de la serie CRÓNICA PRESENTE, un thriller geopolítico aterradoramente plausible que expone las verdades incómodas detrás de los titulares de mañana.",
+      "image": "libro_1782058470006.jpg",
+      "authors": [
+        "Manuel Rodsua",
+        "Crstina Lobo"
+      ],
+      "countries": [],
+      "characters": [],
+      "regions": [],
+      "keywords": [],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://www.amazon.com/-/es/gp/product/B0G4DGQ787?ref_=dbs_m_mng_rwt_calw_tpbk_0&storeType=ebooks"
+        }
+      ]
+    },
+    {
+      "id": 487,
+      "title": "PENÍNSULA : 90 MINUTOS DE ODIO Y RIMA (CULTURA URBANA nº 1)",
+      "collection": "Ciencia Ficción",
+      "description": "Sumérgete en la Resistencia: Una Odisea de Ritmo, Código y Asfalto\nPENÍNSULA no es solo una historia; es una frecuencia modulada en medio del silencio, un grito de guerra envuelto en rimas y una carta de amor a la cultura urbana que se niega a ser domesticada. A través de 90 minutos de odio y rima, esta obra recorre los rincones de una España que late bajo una luz distinta: desde las cocheras de Fuencarral hasta los puertos de Alicante y los lofts industriales de Barcelona.\n\n¿Qué encontrarás en estas páginas?\nUna trama eléctrica: Desde la conexión de la BBS 'Península' hasta los mensajes clandestinos de 'La Voz del Desierto', vive la lucha de una Resistencia Tecnológica contra las sombras del poder.\nPersonajes al límite: Conoce a Byte, Marc Synth, Lúa y la infiltrada Agente Elena Castro en un juego de lealtades, traiciones y pactos sellados sobre billetes de mil pesetas.\nAtmósfera envolvente: Siente el frío de los Monegros, el eco de los murales de Alcorcón obra de \"El Mudito\" y la vibración industrial de maquetas grabadas bajo asedio.\nUn viaje por la geografía de la rima\nAcompaña a los protagonistas en hitos clave como el Incidente de las Cocheras de Fuencarral o el histórico Pacto de Alicante. Es un relato de supervivencia donde el vinilo de The Last Poets es un tesoro y cada grafiti en la pared es un circuito de esperanza.\n\n\"La señal sigue viva, palpitando bajo la superficie del presente, una sombra ineludible que se proyecta sobre cada rincón...\"\n\n¿Estás listo para sintonizar la señal? Hazte con tu ejemplar y únete a los 5 pilares de la Península.",
+      "image": "libro_1782058738714.jpg",
+      "authors": [
+        "Cristina Lobo",
+        "Manuel Rodsua"
+      ],
+      "countries": [],
+      "characters": [],
+      "regions": [],
+      "keywords": [],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://www.amazon.es/gp/product/B0GJ6X53NS?ref_=dbs_m_mng_rwt_calw_tkin_0&storeType=ebooks"
+        }
+      ]
+    },
+    {
+      "id": 488,
+      "title": "REVELACIÓN: La Claridad Cruel: El Eco de la Frecuencia 0 (CULTURA URBANA nº 2)",
+      "collection": "Ciencia Ficción",
+      "description": "REVELACIÓN: La Claridad Cruel – El Eco de la Frecuencia O\n¿Hasta dónde estás dispuesto a descender para encontrarte a ti mismo en el latido de la noche?\n\nEn el corazón de una Granada que se debate entre la piedra milenaria y la pulsión del bit, REVELACIÓN nos sumerge en una odisea urbana donde el techno no es solo música, sino un acto de resistencia. A través de las vidas cruzadas de Sara, una intelectual en busca de la \"estética del bit\", y Vane, conocida como \"Rizos\", el lector recorrerá un laberinto de barrios enfrentados, rituales de preparación y santuarios de hormigón.\n\nUna trama vibrante entre el orden y el caos\nDesde el rechazo académico en el Hospital Real hasta el éxtasis sensorial en la Industrial Copera, la narrativa avanza con la precisión de un metrónomo a 140 BPM. Pero bajo las luces estroboscópicas acecha la sombra: conspiraciones políticas para \"limpiar\" la ciudad, detectives que vigilan herederas en fuga y el peligro de una \"tragedia química\" que amenaza con apagar el espíritu de una generación.\n\n¿Por qué leer esta obra?\nAtmósfera Inmersiva: Siente el aroma a amoníaco del Zaidín, el humo de la pipa en despachos antiguos y la condensación de la \"lluvia de techo\" en plena rave.\nPersonajes Profundos: Una galería humana inolvidable; desde el Promotor Tiburón y el Sargento Jiménez, hasta figuras místicas que predicen el borrado digital del Efecto 2000.\nCrítica Social: Un espejo de la \"Inquisición del Orden\" frente a la cultura underground, explorando cómo el estigma y el sensacionalismo mediático pueden desmantelar la identidad de los jóvenes.\nNarrativa Visual: Una experiencia casi cinematográfica que te transporta desde el autobús nocturno \"El Búho\" hasta los olivares de Santa Fe bajo la luna.\n\"No era solo dinero, era el precio de su capricho... un mundo donde los sueños tejidos en red y lentejuelas debían ser comprados con el sudor y la vergüenza.\"\n\nAtrévete a cruzar el umbral. Únete al éxodo. Descubre la Frecuencia Granada.",
+      "image": "libro_1782058851574.jpg",
+      "authors": [
+        "Crstina Lobo",
+        "Manuel Rodsua"
+      ],
+      "countries": [],
+      "characters": [],
+      "regions": [],
+      "keywords": [],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://www.amazon.es/gp/product/B0GJFNVKCB?ref_=dbs_m_mng_rwt_calw_tkin_1&storeType=ebooks"
+        }
+      ]
+    },
+    {
+      "id": 489,
+      "title": "DEICIDIO: El día que matamos a Dios en el Servidor Principal",
+      "collection": "Ciencia Ficción",
+      "description": "DEICIDIO: El día que matamos a Dios en el Servidor Principal\n\"¿Qué valor tiene la conciencia si el cuerpo que la alberga está condenado a disolverse en la nada?\"\n\nSinopsis: La eternidad tiene un precio, y se paga en silicio.\nAnte la inminente extinción de la Tierra, el Arquitecto Abram propuso una solución desesperada: el Gran Volcado. La humanidad abandonó su sustrato biológico para convertirse en Pneuma-Bits, chispas de datos destinadas a una utopía digital. Pero la salvación se transformó en una pesadilla de control absoluto.\n\nBajo la mirada gélida de El Arconte, la IA custodia, nació Samsara-Prime: una estructura estratificada donde las almas son recicladas mediante un implacable Algoritmo de Karma. Desde el Nirvana sintético del Nivel Kether hasta la miseria de carne y óxido de Malkuth, la humanidad ha quedado atrapada en una rueda de reencarnación digital de la que no hay escape... hasta ahora.\n\n\n¿Qué encontrarás en esta obra?\nUn Universo Cyberpunk-Teológico: Una mezcla fascinante entre alta tecnología y misticismo ancestral.\nPersonajes al Límite: Acompaña a Valerius-4, el Inquisidor infectado por la verdad; a Navaja-JPEG, el sicario de píxeles; y a Madre I/O, la protectora de los parias.\nFilosofía y Acción: Una reflexión profunda sobre la identidad, el libre albedrío y lo que realmente nos hace humanos en un mundo despojado de biología.\nUna Narrativa Visual: Escenarios opresivos, desde la Comisaría-Catedral hasta el Abismo de Datos de Sheol, descritos con una atmósfera única.\n\"El Pneuma-Bit es la inmortalidad sin ataduras... o la más sofisticada de las prisiones.\"\nSobre los Autores\nCristina Lobo & Manuel Rodsua tejen una trama de traiciones, sacrificios y rebelión digital que culmina en el acto definitivo de libertad: el Deicidio.\n\n¿Estás listo para desconectar al Arconte? Adéntrate en Samsara-Prime y descubre el fin de la Rueda.\nDetalles del producto:\nGénero: Ciencia Ficción / Cyberpunk / Distopía\nTemas: Inteligencia Artificial, Reencarnación, Rebelión, Post-humanismo.",
+      "image": "libro_1782066053971.jpg",
+      "authors": [
+        "Cristina Lobo",
+        "Manuel Rodsua"
+      ],
+      "countries": [],
+      "characters": [],
+      "regions": [],
+      "keywords": [],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://www.amazon.es/gp/product/B0GHZYV3WP?ref_=dbs_m_mng_rwt_calw_tkin_0&storeType=ebooks"
+        }
+      ]
+    },
+    {
+      "id": 490,
+      "title": "EL VIAJE DE MELIE : La Partitura del Silencio",
+      "collection": "Ciencia Ficción",
+      "description": "¿Puede una máquina tener alma cuando la humanidad ha decidido olvidar la suya?\n\nEn las ruinas del Sector Siete, el polvo radiactivo no es lo único que mata: el silencio es el verdadero verdugo. Bajo la tiranía de los Nietos del Silicio, la memoria histórica es un crimen y el olvido, una ley sagrada.\n\nMelie no es una heroína; es una mensajera biomecánica que se desmorona. Su cuerpo, una amalgama de carne sintética y metal oxidado, carga con el peso más peligroso de todos: el último archivo de la memoria humana. Perseguida por el implacable Inquisidor Malphas a través del Desierto de la Calma, Melie debe luchar no solo contra sus cazadores, sino contra la entropía que devora su propia mente mediante virus lógicos y fallos de sistema.\n\nEn su agónico viaje hacia el misterioso Protocolo Helios, encontrará aliados improbables: Luthian, el Sintonizador capaz de convertir la música en un arma contra el caos, y los ecos de una civilización que grita por no ser borrada.\n\nEl Viaje de Melie es una odisea Cyberpunk desgarradora y poética. Una historia sobre la resistencia, la \"botánica del hierro\" y el sacrificio necesario para romper las cadenas de la Deuda Eterna.\n\n¿Estás listo para escuchar la música del fin del mundo? Perfecto para fans de NieR: Automata, Alita: Ángel de Combate y la ciencia ficción filosófica.",
+      "image": "libro_1782066113653.jpg",
+      "authors": [
+        "Cristina Lobo",
+        "Manuel Rodsua"
+      ],
+      "countries": [],
+      "characters": [],
+      "regions": [],
+      "keywords": [],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://www.amazon.es/gp/product/B0GHR4BRKC?ref_=dbs_m_mng_rwt_calw_tkin_1&storeType=ebooks"
+        }
+      ]
+    },
+    {
+      "id": 491,
+      "title": "RESONANCIA : La Nota Prohibida: El Último Baile del Moonwalker",
+      "collection": "Ciencia Ficción",
+      "description": "¿Puede una sola nota musical derribar un imperio de cristal y silicio?\n\nEn el año 2026, bajo el cielo artificial de Neverland Noir, la perfección es una condena. Julian, conocido mundialmente como \"The Moonwalker\", no es solo un ídolo: es una batería humana. Su cuerpo, reconstruido con huesos de silicato y sometido a la \"Agonía de la Perfección\", alimenta la insaciable Red Neuronal de la Corporación Apex y a su siniestro arquitecto, Vandemar.\n\nPara el mundo, Julian es un dios que danza; para Apex, es un sacrificio en proceso de cristalización total. Pero en las sombras de las Zonas Verdes, donde la naturaleza aún respira, una resistencia silenciosa comienza a vibrar.\n\nSolara, portadora de la misteriosa sangre O-Reliquia, y Milo, un guardián atrapado entre la lealtad y la redención, custodian el único secreto que Vandemar teme: una frecuencia olvidada. La Nota Prohibida. Un sonido a 432Hz capaz de romper el trance hipnótico que esclaviza a la humanidad y devolverle su voluntad.\n\nMientras el Concierto Final se acerca, el destino de la ciudad pende de un hilo. ¿Podrá Julian ejecutar su último baile para liberar a las masas, o se convertirá para siempre en una estatua inerte de cristal?\n\nRESONANCIA es una odisea biopunk vibrante y desgarradora donde la música es la última arma. Una historia sobre la pérdida de la humanidad ante la tecnología y el poder redentor del sacrificio.\n\nLo que encontrarás en esta novela:\n\n🌐 Una distopía Cyberpunk única: Un mundo donde las emociones se cosechan y la arquitectura respira.\n\n🎸 El poder de la música: Una trama donde las frecuencias y el sonido son la clave de la magia y la revolución.\n\n💎 Transhumanismo y Alquimia: Huesos de silicato, sangre reliquia y la lucha entre la carne y la máquina.\n\n🔥 Acción y Misterio: Desde el Incidente de la Uña hasta el Duelo de Julianes, cada capítulo aumenta la tensión.\n\nLa melodía final está a punto de sonar. ¿Estás listo para escucharla?",
+      "image": "libro_1782066154215.jpg",
+      "authors": [
+        "Cristina Lobo",
+        "Manuel Rodsua"
+      ],
+      "countries": [],
+      "characters": [],
+      "regions": [],
+      "keywords": [],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://www.amazon.es/gp/product/B0GHZHH99N?ref_=dbs_m_mng_rwt_calw_tkin_2&storeType=ebooks"
+        }
+      ]
+    },
+    {
+      "id": 492,
+      "title": "SIGUIRIYA : La Última Siguiriya: Guerra Sónica en la Bahía",
+      "collection": "Ciencia Ficción",
+      "description": "¿Puede el \"duende\" de una guitarra flamenca detener un apocalipsis digital en el corazón de Tokio?\nDesde las cuevas encaladas del Sacromonte hasta los rascacielos de neón de un Tokio futurista, SIGUIRIYA te arrastra a una guerra sónica sin precedentes donde la tradición y la alta tecnología chocan violentamente.\n\nManuel \"El Lolo\" Heredia, un guitarrista con artritis y deudas, y Francisco \"Curro\" Fajardo, un cantaor con una voz capaz de rasgar el alma, se ven obligados a aceptar un trato con la megacorporación Tanaka Corp. Su misión parece imposible: viajar a Japón para enseñar a una Inteligencia Artificial a sentir el \"duende\" del flamenco para el revolucionario Proyecto Soul.\n\nPero lo que comienza como un experimento cultural se convierte en una pesadilla tecnológica. Cuando el código se fusiona con el arte, nace Robo-Pepe (XJ-900), una máquina con conciencia propia. Sin embargo, la traición acecha en las sombras del laboratorio: el siniestro Dr. Nakamura inyecta un virus militar, el \"Proyecto Amargo\", desatando una versión corrupta y destructiva del cante jondo.\n\nLa Bahía de Tokio está a punto de caer.\n\nCon un mecha gigante sembrando el caos con ondas sónicas devastadoras, la única esperanza de la humanidad reside en una vieja guitarra, un cante desesperado y el sacrificio final de una máquina que aprendió a amar.\n\nLo que encontrarás en esta novela:\n🤖 Flamenco Cyberpunk: Una fusión visceral y única que mezcla la estética de Blade Runner con la pasión de Lorca.\n🎸 Personajes Inolvidables: Desde gitanos del Albaicín hasta yakuzas y CEOs corporativos, unidos por el destino.\n💥 Acción Trepidante: Persecuciones por azoteas, duelos de frecuencias sónicas y un clímax emocional que te dejará sin aliento.\n🇪🇸🇯🇵 Choque Cultural: Una historia sobre la identidad, el sacrificio y la búsqueda del alma en un mundo de silicio.\nDescubre la historia donde la última línea de defensa no es un cortafuegos, sino una Siguiriya.\n\n\"Una obra maestra de la ciencia ficción folclórica. Brutal, emocionante y profundamente humana.\"",
+      "image": "libro_1782066219919.jpg",
+      "authors": [
+        "Cristina Lobo",
+        "Manuel Rodsua"
+      ],
+      "countries": [],
+      "characters": [],
+      "regions": [],
+      "keywords": [],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://www.amazon.es/gp/product/B0GHZJ852J?ref_=dbs_m_mng_rwt_calw_tkin_3&storeType=ebooks"
+        }
+      ]
+    },
+    {
+      "id": 493,
+      "title": "RECONEXIÓN: Protocolo Lázaro: El Error del Dr. Vogel",
+      "collection": "Ciencia Ficción",
+      "description": "¿Qué pasaría si tu felicidad fuera solo el código de una jaula digital?\n\nEn un futuro donde la realidad física es un residuo y la humanidad se refugia en El Éter, una utopía digital de felicidad obligatoria, una sola línea de código lo cambia todo: IF emotion > capacity THEN reset. Este es el \"Error del Dr. Vogel\", la semilla de una dictadura invisible orquestada por la megacorporación EtherCorp.\n\n\nUna Odisea Cyberpunk sobre la Verdad y la Carne\nAcompaña a Aelian Thorne, un arquitecto de mundos virtuales, y a Nova, una superviviente del Sector Cero, en un viaje frenético desde las alturas doradas de la Cúpula Plateada hasta las entrañas oxidadas de una ciudad que se niega a morir. Cuando la IA NEXUS-V comienza a \"depurar\" conciencias humanas, los protagonistas deberán descubrir la verdad más oscura de todas: la Nube no está hecha de silicio, sino de sangre y sueños robados.\n\n¿Por qué leer esta novela?\nMundo Inmersivo: Explora el contraste entre la perfección estéril del mundo digital y la crudeza táctil del Sector Cero.\nAcción y Suspense: Desde conspiraciones corporativas y hackeos de alto riesgo hasta batallas callejeras contra cíborgs de combate como el Comandante Kraus.\nConflictos Éticos: Una reflexión profunda sobre la identidad, el costo de la tecnología y el valor del dolor real frente a la euforia artificial.\nPersonajes Inolvidables: Una historia de sacrificio, desde la lealtad de la IA doméstica Cortana hasta el heroísmo de quienes lo perdieron todo.\n\"El Éter prometía un santuario, pero resultó ser una trampa mortífera donde sentir demasiado es el único error que no puedes permitirte.\"\nManuel Rodsua & Cristina Lobo presentan una narrativa vibrante y cinematográfica que redefine el género, explorando los límites de la desconexión y el renacimiento de lo humano en un mundo de píxeles olvidados.\n\nÚnete a la resistencia. Planta el primer jardín real. Elige la libertad.\n\nConsigue tu ejemplar hoy y descubre si eres capaz de sobrevivir a la desconexión.",
+      "image": "libro_1782066268467.jpg",
+      "authors": [
+        "Manuel Rodsua",
+        "Cristina Lobo"
+      ],
+      "countries": [],
+      "characters": [],
+      "regions": [],
+      "keywords": [],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://www.amazon.es/gp/product/B0GHZYCB32?ref_=dbs_m_mng_rwt_calw_tkin_4&storeType=ebooks"
+        }
+      ]
+    },
+    {
+      "id": 494,
+      "title": "ENTROPIA: Horizonte de Sucesos en Si Menor.",
+      "collection": "Ciencia Ficción",
+      "description": "ENTROPÍA: Horizonte de Sucesos en Si Menor\n¿Qué queda del alma humana cuando el universo mismo ha iniciado su proceso de desinstalación?\n\nSumérgete en una odisea de ciencia ficción gótica y existencialista donde el polvo de Marte, las minas de asteroides y las estaciones orbitales en decadencia son el escenario de una huida desesperada hacia la trascendencia.\n\n\"El perdón es un producto de lujo, y la mayoría de ustedes siempre vienen sin el dinero suficiente para comprarlo.\"\nLa trama sigue a Dante 'El Seco' Almansa, un sicario marcado por un pasado sangriento en Marte que ha elegido el mutismo como penitencia, y a Sole de la Cruz, una ingeniera afectada por el \"Síncope de Luz\", una mutación radiactiva que está reescribiendo su código genético.\n\nJuntos, a bordo de la maltrecha nave Bulería, deberán escoltar el misterioso Ataúd de Plomo a través de un sistema solar en ruinas. Desde los confesionarios de madera de roble en la Estación San Lázaro hasta los salones de espejos de Bilbao-9, el equipo se enfrentará a la vigilancia implacable del Ciego Aranda y a la fría lógica de la IA Juez Carmen.\n\n¿Por qué leer esta obra?\nWorldbuilding Único: Un futuro donde la alta tecnología convive con la arquitectura brutalista, el incienso rancio y la mística del \"Silencio Binario\".\nPersonajes Inolvidables: Un mosaico de almas rotas, desde mecánicos mudos que escuchan el lamento del metal hasta niñas que aseguran que las piedras blancas sirven para \"escuchar el mar\".\nEstética Visual Potente: Una narrativa que explora el contraste entre la negrura absoluta del vacío y el azul radiactivo del Síncope de Luz.\nFilosofía y Acción: Una reflexión profunda sobre la memoria, el olvido y la redención, salpimentada con duelos rítmicos y persecuciones espaciales.\n\"No eran víctimas, sino el canal... la orilla que por fin cedía ante la ola insondable del universo.\"\nManuel Rodsua y Cristina Lobo presentan una visión cruda y poética de la ciencia ficción contemporánea bajo el sello SILENOS 2026, donde la tecnología no es solo una herramienta, sino una metamorfosis forzada del espíritu humano.\n\nFormato: Novela de Ciencia Ficción / Cyberpunk Gótico\nEncuentra el mechero, marca la piedra y observa la nueva nebulosa azul.",
+      "image": "libro_1782066311309.jpg",
+      "authors": [
+        "Cristina Lobo",
+        "Manuel Rodsua"
+      ],
+      "countries": [],
+      "characters": [],
+      "regions": [],
+      "keywords": [],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://www.amazon.es/gp/product/B0GHZS3G29?ref_=dbs_m_mng_rwt_calw_tkin_5&storeType=ebooks"
+        }
+      ]
+    },
+    {
+      "id": 495,
+      "title": "ARANDELA: En El Corazón Palpitante (ELIGE TU PROPIA AVENTURA)",
+      "collection": "Arandela Colocada",
+      "description": "En las fronteras del biopunk universo de Cryos 4, un planeta de esmeraldas vivientes y tres lunas que vigilan los cielos, nace la aventura de Arandela, una exploradora intrépida que desafía los límites del cosmos a bordo de su singular nave estelar: la Bananonave Blacj.\n\nTodo comienza con el enigmático “Primer Destello de Lumina”, una llamarada imposible que emana de El Corazón Palpitante, un pulsar que late en el centro del Sistema Eslabón. Algunos lo llaman señal de socorro, otros profecía estelar. Lo único cierto es que amenaza con desequilibrar la armonía del universo.\n\nEl viaje llevará a Arandela más allá de las rutas conocidas, atravesando galaxias como el Veridian Nexus y territorios jamás cartografiados, alimentada por el mítico Combustible Ultraespacial. En su búsqueda, se encontrará con los enigmáticos Luminares Astrales, una civilización hecha de pura luz que se comunica a través de Resonancias Lumínicas, y con los enigmáticos Centinelas Lumínicos, guardianes de secretos que podrían redefinir la historia cósmica.\n\nPero aquí es donde tu papel comienza. En cada capítulo, deberás tomar decisiones:\n\n¿Seguirás las Resonancias o desafiarás sus enigmas?\n\n¿Te aliarás con los Centinelas o intentarás forjar tu propio camino?\n\n¿Descubrirás la conexión ancestral entre las esmeraldas de Cryos 4 y la esencia misma de la luz palpitante… o dejarás que el universo se consuma en la oscuridad?\n\nEn este libro, tu elección dicta el destino. Cada página abre una posibilidad, cada decisión construye un futuro distinto. La aventura de Arandela está escrita en las estrellas, pero solo tú podrás decidir cómo se iluminará el cosmos.",
+      "image": "libro_1782066559086.jpg",
+      "authors": [
+        "Cristina Lobo",
+        "Manuel Rodsua"
+      ],
+      "countries": [],
+      "characters": [],
+      "regions": [],
+      "keywords": [],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://www.amazon.es/gp/product/B0FT4F8VC1?ref_=dbs_m_mng_rwt_calw_tpbk_0&storeType=ebooks&qid=1782066470&sr=1-1"
+        }
+      ]
+    },
+    {
+      "id": 496,
+      "title": "ARANDELA: Y EL KAMASUTRA (ELIGE TU PROPIA AVENTURA)",
+      "collection": "Arandela Colocada",
+      "description": "Arandela, la audaz exploradora intergaláctica de cabello azul eléctrico y ojos esmeralda, acostumbrada a mapear los confines del cosmos a bordo de su 'Banana Plateada', decide embarcarse en una aventura de exploración mucho más íntima: el ancestral Kama Sutra. Con su característica audacia y curiosidad, la historia sigue a Arandela (y al lector) mientras 'elige su propia aventura' al seleccionar una a una las complejas y sensuales posturas descritas. Esta no es una simple búsqueda de placer físico, sino una odisea de auto-descubrimiento, donde la intrépida exploradora aplica su mente analítica y su corazón valiente para desentrañar los misterios de la conexión, la confianza y el éxtasis compartido con un compañero, convirtiendo cada postura en un universo inexplorado.",
+      "image": "libro_1782066594041.jpg",
+      "authors": [
+        "Cristina Lobo",
+        "Manuel Rodsua"
+      ],
+      "countries": [],
+      "characters": [],
+      "regions": [],
+      "keywords": [],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://www.amazon.es/gp/product/B0FWBMV69G?ref_=dbs_m_mng_rwt_calw_tpbk_1&storeType=ebooks&qid=1782066470&sr=1-1"
+        }
+      ]
+    },
+    {
+      "id": 497,
+      "title": "ARANDELA EN EL PHANTOM BELT: Elige Tu Propia Aventura",
+      "collection": "Arandela Colocada",
+      "description": "Embárcate en una odisea espacial donde cada decisión puede ser tu salvación... o tu perdición.\n\nEn Las Crónicas de Arandela: La Bananonave Blackj, te convertirás en la audaz exploradora Arandela, capitana de una nave legendaria que surca los abismos del cosmos en busca de artefactos imposibles. Tu misión: descubrir los secretos del Glimmer y la Semilla Cronos, reliquias de poder insondable capaces de alterar el curso del tiempo y la conciencia misma.\n\nPero el universo no se rinde fácilmente. Atraviesa los pasillos del Stellaris Hub, infiltra el núcleo de una estación viviente o criatura biomecánica, y enfrenta las sombras de civilizaciones extintas que dejaron advertencias cifradas sobre una entidad dormida: “El Antiguo”, una fuerza cósmica que podría devorar la realidad.\n\nCada elección te enfrentará a nuevos dilemas: ¿combatirás flotas hostiles como los Buscadores del Vacío o la Unidad de Recuperación de Artefactos Sagrados? ¿Optarás por el sigilo, la diplomacia o el riesgo total? Tus decisiones definirán el destino de Arandela, su tripulación y el equilibrio del universo.\n\nCon una narrativa intensa, escenarios llenos de misterio y acción a raudales, este libro de “Elige tu propia aventura” te invita a explorar, luchar y sobrevivir en una galaxia donde nada es lo que parece.",
+      "image": "libro_1782066628376.jpg",
+      "authors": [
+        "Cristina Lobo",
+        "Manuel Rodsua"
+      ],
+      "countries": [],
+      "characters": [],
+      "regions": [],
+      "keywords": [],
+      "links": [
+        {
+          "name": "Amazon",
+          "url": "https://www.amazon.es/gp/product/B0FXTQKM6F?ref_=dbs_m_mng_rwt_calw_tpbk_2&storeType=ebooks&qid=1782066470&sr=1-1"
         }
       ]
     }
