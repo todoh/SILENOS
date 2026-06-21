@@ -45,24 +45,31 @@
     .book-card-transition {
       transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    @media (min-width: 768px) {
-      .book-card-transition:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.06);
-      }
+    .book-card-transition:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.06);
+    }
+    /* Dark Theme Inversion (Blanco a Negro y viceversa) */
+    html.tema-oscuro {
+      filter: invert(1) hue-rotate(180deg);
+      background-color: #050505;
+    }
+    /* Previene la inversión doble en imágenes para que mantengan su color original */
+    html.tema-oscuro img,
+    html.tema-oscuro video,
+    html.tema-oscuro canvas {
+      filter: invert(1) hue-rotate(180deg);
     }
   </style>
 </head>
 
-<body class="min-h-full flex flex-col bg-[#fafafa]">
+<body class="h-full flex flex-col overflow-hidden bg-[#fafafa]">
 
-  <div class="flex-1 flex flex-col md:flex-row">
+  <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
     
-    <!-- BARRA LATERAL / CABECERA EN MÓVIL -->
-    <aside class="w-full md:w-80 bg-white md:border-r border-b md:border-b-0 border-neutral-100 flex flex-col flex-none sticky top-0 z-40 md:relative shadow-sm md:shadow-none">
+    <aside class="w-full md:w-80 bg-white md:border-r border-b md:border-b-0 border-neutral-100 flex flex-col flex-none">
       
-      <!-- Buscador -->
-      <div class="p-4 md:p-6 border-b border-neutral-50 relative">
+      <div class="p-6 border-b border-neutral-50 relative">
         <label class="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2.5">Buscador Temático</label>
         <div class="relative">
           <input type="text" id="search-input" oninput="handleSearchInput()" placeholder="Buscar título, autor, tags..." class="w-full bg-neutral-50 border border-neutral-200/60 rounded-xl pl-9 pr-8 py-2.5 text-xs text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-neutral-300 focus:bg-white transition-all font-medium">
@@ -72,21 +79,18 @@
           </button>
         </div>
         
-        <div id="search-suggestions" class="absolute left-4 right-4 md:left-6 md:right-6 mt-1.5 bg-white border border-neutral-100 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto hidden"></div>
+        <div id="search-suggestions" class="absolute left-6 right-6 mt-1.5 bg-white border border-neutral-100 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto hidden"></div>
       </div>
 
-      <!-- Colecciones en carrusel horizontal en móvil, vertical en escritorio -->
-      <div class="p-4 md:p-6 flex flex-col justify-between gap-4 md:gap-8 overflow-x-auto md:overflow-x-visible">
+      <div class="flex-1 overflow-y-auto p-6 flex flex-col justify-between gap-8">
         <div>
-          <div class="flex items-center justify-between mb-2 md:mb-4 px-1">
+          <div class="flex items-center justify-between mb-4 px-1">
             <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Colecciones</span>
           </div>
-          <!-- Añadido scrollbar-none y flex-nowrap en móvil para evitar saltos de línea horribles -->
-          <nav id="collections-list" class="flex flex-row md:flex-col overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 gap-2 md:gap-1.5 flex-nowrap md:flex-wrap"></nav>
+          <nav id="collections-list" class="flex md:flex-col overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 gap-2 md:gap-1.5"></nav>
         </div>
 
-        <!-- Oculto o compactado informativamente en pantallas pequeñas para ahorrar espacio -->
-        <div class="hidden md:block bg-neutral-50 p-5 rounded-2xl border border-neutral-100">
+        <div class="bg-neutral-50 p-5 rounded-2xl border border-neutral-100">
           <h4 class="text-[10px] font-bold text-neutral-700 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
             <i data-lucide="book-open" class="w-3.5 h-3.5 text-neutral-500"></i> Silenos.es
           </h4>
@@ -97,28 +101,32 @@
       </div>
     </aside>
 
-    <!-- ÁREA PRINCIPAL DEL CONTENIDO -->
-    <main class="flex-1 bg-[#fdfdfd] flex flex-col">
+    <main class="flex-1 bg-[#fdfdfd] flex flex-col overflow-hidden">
       
-      <section class="flex-none bg-white border-b border-neutral-100 px-4 py-4 sm:px-12 sm:py-5 flex items-center justify-between gap-4">
+      <section class="flex-none bg-white border-b border-neutral-100 px-6 sm:px-12 py-5 flex items-center justify-between gap-4">
         <div>
-          <h2 id="current-view-title" class="serif-title text-xl sm:text-2xl font-light italic text-neutral-900">Todos los Libros</h2>
-          <p id="current-view-count" class="text-[11px] sm:text-xs text-neutral-400 font-light mt-0.5">Cargando catálogo...</p>
+          <h2 id="current-view-title" class="serif-title text-2xl font-light italic text-neutral-900">Todos los Libros</h2>
+          <p id="current-view-count" class="text-xs text-neutral-400 font-light mt-0.5">Cargando catálogo...</p>
         </div>
         
-        <div id="active-tag-filter" class="hidden items-center space-x-2 bg-neutral-100 text-neutral-800 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-lg border border-neutral-200/50 animate-fade-in max-w-[150px] sm:max-w-none truncate">
-          <span id="active-tag-text" class="truncate"></span>
-          <button onclick="clearTagFilter()" class="hover:text-neutral-500 flex-none">
-            <i data-lucide="x" class="w-3 h-3"></i>
+        <div class="flex items-center gap-4">
+          <div id="active-tag-filter" class="hidden items-center space-x-2 bg-neutral-100 text-neutral-800 text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg border border-neutral-200/50 animate-fade-in">
+            <span id="active-tag-text"></span>
+            <button onclick="clearTagFilter()" class="hover:text-neutral-500">
+              <i data-lucide="x" class="w-3 h-3"></i>
+            </button>
+          </div>
+          
+          <button id="theme-toggle-btn" onclick="toggleTheme()" class="bg-transparent border-none shadow-none text-[10px] font-bold uppercase tracking-widest text-neutral-400 hover:text-neutral-900 transition-colors cursor-pointer outline-none">
+            Modo Oscuro
           </button>
         </div>
       </section>
 
-      <div class="flex-1 p-4 sm:p-12">
-        <!-- Reajustadas columnas del grid: 2 en móviles y subiendo proporcionalmente -->
-        <div id="books-grid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-6"></div>
+      <div class="flex-1 overflow-y-auto p-6 sm:p-12">
+<div id="books-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6 gap-6"></div>
         
-        <div id="empty-state" class="hidden flex flex-col items-center justify-center py-16 sm:py-24 text-center animate-fade-in">
+        <div id="empty-state" class="hidden flex flex-col items-center justify-center py-24 text-center animate-fade-in">
           <div class="p-4 bg-white border border-neutral-100 rounded-3xl text-neutral-300 mb-4 shadow-sm">
             <i data-lucide="book" class="w-8 h-8"></i>
           </div>
@@ -130,24 +138,20 @@
     </main>
   </div>
 
-  <!-- MODAL COMPLETAMENTE RESPONSIVO -->
-  <div id="modal-view-book" class="fixed inset-0 bg-neutral-950/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden hidden" onclick="closeBookModalOnOutsideClick(event)">
-    <!-- Rediseñado como Bottom-Sheet en móvil (sale de abajo) y centrado en Desktop -->
-    <div class="bg-white border border-neutral-100 rounded-t-3xl sm:rounded-3xl max-w-2xl w-full p-5 sm:p-8 shadow-2xl transform translate-y-full sm:translate-y-0 sm:scale-95 transition-all duration-300 flex flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden" onclick="event.stopPropagation()">
+  <div id="modal-view-book" class="fixed inset-0 bg-neutral-950/20 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto hidden" onclick="closeBookModalOnOutsideClick(event)">
+    <div class="bg-white border border-neutral-100 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh] overflow-hidden" onclick="event.stopPropagation()">
       
-      <div class="flex justify-between items-center pb-3 flex-none border-b border-neutral-50 sm:border-0 sm:pb-2">
-        <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest sm:hidden">Detalle de la obra</span>
-        <button onclick="closeBookModal()" class="text-neutral-400 hover:text-neutral-800 p-1.5 rounded-lg hover:bg-neutral-50 transition-colors">
+      <div class="flex justify-end pb-2 flex-none">
+        <button onclick="closeBookModal()" class="text-neutral-400 hover:text-neutral-800 p-1 rounded-lg hover:bg-neutral-50 transition-colors">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <div class="flex-1 overflow-y-auto pr-1 py-4 sm:py-0 space-y-6">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+      <div class="flex-1 overflow-y-auto pr-1 space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           
-          <div class="sm:col-span-1 flex justify-center sm:block">
-            <!-- Forzado tamaño controlado en móviles para que no rompa el viewport -->
-            <div class="w-36 sm:w-full aspect-[2/3] bg-neutral-100 rounded-2xl overflow-hidden border border-neutral-150 shadow-sm relative flex-none">
+          <div class="md:col-span-1">
+            <div class="aspect-[2/3] bg-neutral-100 rounded-2xl overflow-hidden border border-neutral-150 shadow-sm relative">
               <img id="detail-book-cover" class="w-full h-full object-cover" src="" alt="Portada del libro">
               <div id="detail-cover-fallback" class="absolute inset-0 flex flex-col justify-between p-4 text-center hidden">
                 <span class="text-[10px] uppercase font-bold tracking-widest text-neutral-400" id="detail-fallback-col"></span>
@@ -157,21 +161,21 @@
             </div>
           </div>
 
-          <div class="sm:col-span-2 space-y-4">
-            <div class="text-center sm:text-left">
-              <span id="detail-book-collection" class="inline-block text-[9px] font-bold uppercase tracking-wider text-neutral-400 px-2 py-0.5 bg-neutral-100 rounded-md"></span>
-              <h3 id="detail-book-title" class="serif-title text-xl sm:text-2xl font-light text-neutral-900 mt-2 leading-tight"></h3>
+          <div class="md:col-span-2 space-y-4">
+            <div>
+              <span id="detail-book-collection" class="text-[9px] font-bold uppercase tracking-wider text-neutral-400 px-2 py-0.5 bg-neutral-100 rounded-md"></span>
+              <h3 id="detail-book-title" class="serif-title text-2xl font-light text-neutral-900 mt-2 leading-tight"></h3>
               <p class="text-xs text-neutral-400 mt-1">
                 de <span id="detail-book-authors" class="font-semibold text-neutral-600"></span>
               </p>
             </div>
 
-            <div id="detail-countries-box" class="flex flex-wrap justify-center sm:justify-start gap-1.5"></div>
+            <div id="detail-countries-box" class="flex flex-wrap gap-1.5"></div>
 
-            <div id="detail-links-box" class="flex flex-wrap justify-center sm:justify-start gap-2 pt-1"></div>
+            <div id="detail-links-box" class="flex flex-wrap gap-2 pt-1"></div>
 
             <div class="border-t border-b border-neutral-100 py-4">
-              <p id="detail-book-description" class="text-xs text-neutral-500 font-light leading-relaxed whitespace-pre-line text-justify sm:text-left"></p>
+              <p id="detail-book-description" class="text-xs text-neutral-500 font-light leading-relaxed whitespace-pre-line"></p>
             </div>
           </div>
         </div>
@@ -179,7 +183,7 @@
         <div class="space-y-4 pt-2 hidden">
           <h4 class="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">Metadatos & Taxonomía</h4>
           
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             <div class="space-y-2">
               <span class="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Personajes y Regiones</span>
               <div id="detail-characters-regions" class="flex flex-wrap gap-1.5"></div>
@@ -291,13 +295,13 @@
       const allActive = state.currentCollection === 'all';
       const allBtn = document.createElement('button');
       allBtn.onclick = () => selectCollection('all');
-      allBtn.className = `flex-none md:w-full flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 rounded-xl text-[11px] sm:text-xs font-semibold uppercase tracking-wider transition-all duration-300 ${allActive ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'}`;
+      allBtn.className = `flex-none md:w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all duration-300 ${allActive ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'}`;
       allBtn.innerHTML = `
         <div class="flex items-center space-x-2.5">
           <i data-lucide="library" class="w-3.5 h-3.5 flex-none"></i>
           <span>Todas</span>
         </div>
-        <span class="text-[9px] sm:text-[10px] px-2 py-0.5 ml-2 ${allActive ? 'bg-white/20 text-white' : 'bg-neutral-100 text-neutral-500'} rounded-full">${state.books.length}</span>
+        <span class="text-[10px] px-2 py-0.5 ml-2 ${allActive ? 'bg-white/20 text-white' : 'bg-neutral-100 text-neutral-500'} rounded-full">${state.books.length}</span>
       `;
       container.appendChild(allBtn);
 
@@ -307,13 +311,13 @@
         
         const colBtn = document.createElement('button');
         colBtn.onclick = () => selectCollection(col);
-        colBtn.className = `flex-none md:w-full flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 rounded-xl text-[11px] sm:text-xs font-semibold uppercase tracking-wider transition-all duration-300 ${isActive ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'}`;
+        colBtn.className = `flex-none md:w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all duration-300 ${isActive ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'}`;
         colBtn.innerHTML = `
           <div class="flex items-center space-x-2.5 truncate">
             <i data-lucide="folder" class="w-3.5 h-3.5 flex-none"></i>
-            <span class="truncate max-w-[100px] sm:max-w-none">${col}</span>
+            <span class="truncate">${col}</span>
           </div>
-          <span class="text-[9px] sm:text-[10px] px-2 py-0.5 ml-2 ${isActive ? 'bg-white/20 text-white' : 'bg-neutral-100 text-neutral-500'} rounded-full">${count}</span>
+          <span class="text-[10px] px-2 py-0.5 ml-2 ${isActive ? 'bg-white/20 text-white' : 'bg-neutral-100 text-neutral-500'} rounded-full">${count}</span>
         `;
         container.appendChild(colBtn);
       });
@@ -387,7 +391,7 @@
 
       filtered.forEach(book => {
         const card = document.createElement('div');
-        card.className = "group bg-white border border-neutral-100 rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col justify-between book-card-transition shadow-sm cursor-pointer";
+        card.className = "group bg-white border border-neutral-100 rounded-3xl overflow-hidden flex flex-col justify-between book-card-transition shadow-sm cursor-pointer";
         card.onclick = () => viewBookDetails(book);
         
         const authorsArr = book.authors || ["Autor Desconocido"];
@@ -400,16 +404,16 @@
         if (coverData.type === 'url') {
           coverHtml = `
             <div id="cover-spinner-${book.id}" class="absolute inset-0 flex items-center justify-center text-neutral-300">
-              <i data-lucide="loader-2" class="w-4 h-4 sm:w-5 sm:h-5 animate-spin"></i>
+              <i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>
             </div>
             <img id="cover-img-${book.id}" class="w-full h-full object-cover opacity-0 transition-opacity duration-500" src="${coverData.src}" alt="Portada de ${book.title}" onload="onImgLoaded(${book.id})">
           `;
         } else {
           coverHtml = `
-            <div class="absolute inset-0 bg-gradient-to-tr ${coverData.gradient} flex flex-col justify-between p-3 sm:p-5 text-center border-b border-neutral-150">
-              <span class="text-[7px] sm:text-[8px] uppercase tracking-widest font-bold text-neutral-400">${book.collection}</span>
-              <span class="serif-title text-xs sm:text-base font-medium leading-snug text-neutral-800 line-clamp-3">${book.title}</span>
-              <span class="text-[7px] sm:text-[8px] uppercase tracking-widest font-bold text-neutral-400">Silenos</span>
+            <div class="absolute inset-0 bg-gradient-to-tr ${coverData.gradient} flex flex-col justify-between p-4 sm:p-5 text-center border-b border-neutral-150">
+              <span class="text-[8px] uppercase tracking-widest font-bold text-neutral-400 truncate">${book.collection}</span>
+              <span class="serif-title text-sm sm:text-base font-medium leading-snug text-neutral-800 line-clamp-3">${book.title}</span>
+              <span class="text-[8px] uppercase tracking-widest font-bold text-neutral-400">Silenos</span>
             </div>
           `;
         }
@@ -419,31 +423,31 @@
             <div class="relative aspect-[2/3] bg-neutral-50 overflow-hidden">
               ${coverHtml}
               
-              <span class="absolute top-2 left-2 sm:top-4 sm:left-4 bg-white/95 backdrop-blur border border-neutral-100 text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-neutral-600 px-2 py-1 rounded-lg sm:rounded-xl shadow-sm max-w-[80%] truncate">
+              <span class="absolute top-2 left-2 sm:top-4 sm:left-4 bg-white/95 backdrop-blur border border-neutral-100 text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-neutral-600 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl shadow-sm truncate max-w-[85%]">
                 ${book.collection}
               </span>
             </div>
 
-            <div class="p-3 sm:p-6 space-y-2 sm:space-y-4">
+            <div class="p-4 sm:p-6 space-y-3 sm:space-y-4">
               <div>
-                <h4 class="serif-title text-sm sm:text-lg font-medium text-neutral-900 leading-tight line-clamp-1 group-hover:text-neutral-600 transition-colors" title="${book.title}">${book.title}</h4>
-                <p class="text-[10px] sm:text-[11px] text-neutral-400 mt-0.5 truncate">
+                <h4 class="serif-title text-base sm:text-lg font-medium text-neutral-900 leading-snug line-clamp-1 group-hover:text-neutral-600 transition-colors" title="${book.title}">${book.title}</h4>
+                <p class="text-[10px] sm:text-[11px] text-neutral-400 mt-1 truncate">
                   por ${authorsArr.map(a => `<span onclick="event.stopPropagation(); applyTagFilter('author', '${a}')" class="hover:underline font-semibold cursor-pointer text-neutral-500">${a}</span>`).join(', ')}
                 </p>
               </div>
 
               ${book.description ? `
-                <p class="text-[11px] sm:text-xs text-neutral-400 font-light leading-normal sm:leading-relaxed line-clamp-2" title="${book.description}">
+                <p class="text-[11px] sm:text-xs text-neutral-400 font-light leading-relaxed line-clamp-2" title="${book.description}">
                   ${book.description}
                 </p>
               ` : ''}
 
-              <div class="flex flex-col gap-1.5 pt-1">
-                <div class="flex flex-wrap gap-1">
+              <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <div class="flex flex-wrap gap-1.5">
                   ${countriesArr.map(c => {
                     const data = PAISES.find(p => p.name === c);
                     return `
-                      <button onclick="event.stopPropagation(); applyTagFilter('country', '${c}')" class="inline-flex items-center space-x-1 px-1.5 py-0.5 sm:px-2.5 sm:py-1 bg-neutral-50 hover:bg-neutral-100 text-[9px] sm:text-[10px] font-medium rounded-md text-neutral-500 border border-neutral-150 transition-all">
+                      <button onclick="event.stopPropagation(); applyTagFilter('country', '${c}')" class="inline-flex items-center space-x-1 px-2 py-1 bg-neutral-50 hover:bg-neutral-100 text-[9px] sm:text-[10px] font-medium rounded-lg text-neutral-500 border border-neutral-150 transition-all">
                         <span>${data ? data.flag : '🌐'}</span>
                         <span class="hidden sm:inline">${c}</span>
                       </button>
@@ -452,11 +456,11 @@
                 </div>
 
                 ${linksArr.length > 0 ? `
-                  <div class="flex items-center gap-1 w-full">
+                  <div class="flex items-center gap-1">
                     ${linksArr.map(link => `
-                      <a href="${link.url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" class="inline-flex items-center justify-center space-x-1 w-full px-2 py-1 bg-neutral-900 hover:bg-neutral-800 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-white rounded-md transition-all shadow-sm">
-                        <i data-lucide="shopping-bag" class="w-2.5 h-2.5 sm:w-3 sm:h-3"></i>
-                        <span class="truncate">${link.name}</span>
+                      <a href="${link.url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" class="inline-flex items-center space-x-1 px-2 sm:px-2.5 py-1 bg-neutral-900 hover:bg-neutral-800 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-white rounded-lg transition-all shadow-sm">
+                        <i data-lucide="shopping-bag" class="w-3 h-3"></i>
+                        <span class="hidden lg:inline">${link.name}</span>
                       </a>
                     `).join('')}
                   </div>
@@ -677,7 +681,7 @@
           a.target = "_blank";
           a.rel = "noopener noreferrer";
           a.className = "inline-flex items-center space-x-2 px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-xs font-bold uppercase tracking-wider text-white rounded-xl transition-all shadow-sm";
-          a.innerHTML = `<i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> <span>${link.name}</span>`;
+          a.innerHTML = `<i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> <span>Adquirir en ${link.name}</span>`;
           linksBox.appendChild(a);
         });
         linksBox.classList.remove('hidden');
@@ -728,11 +732,11 @@
         });
       }
 
-      // Open Modal Animations (Mobile-ready: handles translate-y on mobile, scale on desktop)
+      // Open Modal Animations
       modal.classList.remove('hidden');
       setTimeout(() => {
-        modal.firstElementChild.classList.remove('translate-y-full', 'scale-95');
-        modal.firstElementChild.classList.add('translate-y-0', 'scale-100');
+        modal.firstElementChild.classList.remove('scale-95');
+        modal.firstElementChild.classList.add('scale-100');
       }, 50);
 
       if (window.lucide) window.lucide.createIcons();
@@ -740,15 +744,8 @@
 
     function closeBookModal() {
       const modal = document.getElementById('modal-view-book');
-      const isMobile = window.innerWidth < 640;
-      
-      if (isMobile) {
-        modal.firstElementChild.classList.add('translate-y-full');
-      } else {
-        modal.firstElementChild.classList.remove('scale-100');
-        modal.firstElementChild.classList.add('scale-95');
-      }
-      
+      modal.firstElementChild.classList.remove('scale-100');
+      modal.firstElementChild.classList.add('scale-95');
       setTimeout(() => {
         modal.classList.add('hidden');
       }, 150);
@@ -756,6 +753,13 @@
 
     function closeBookModalOnOutsideClick(event) {
       closeBookModal();
+    }
+
+    // THEME TOGGLE LOGIC
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('tema-oscuro');
+      const btn = document.getElementById('theme-toggle-btn');
+      btn.innerText = isDark ? 'Modo Claro' : 'Modo Oscuro';
     }
 
     // EXPOSE TO GLOBAL WINDOW SCOPE FOR ACTIONS
@@ -767,6 +771,7 @@
     window.clearAllFilters = clearAllFilters;
     window.closeBookModal = closeBookModal;
     window.closeBookModalOnOutsideClick = closeBookModalOnOutsideClick;
+    window.toggleTheme = toggleTheme;
   </script>
 </body>
 </html>
