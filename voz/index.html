@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Live - Standalone Modular</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="main-container">
+        
+        <div class="file-section">
+            <div class="file-header">
+                <button id="folderBtn" onclick="abrirCarpeta()">📂 ABRIR CARPETA TXT</button>
+                <div id="folderStatus" class="status-minimal">Ninguna carpeta abierta</div>
+                <button onclick="abrirModalConfig()" class="config-btn">⚙️ API</button>
+            </div>
+
+            <div class="file-workspace">
+                <div class="file-sidebar">
+                    <button id="newFileBtn" onclick="nuevoArchivoManual()" style="display: none;">➕ NUEVO TXT</button>
+                    <div id="fileList"></div>
+                </div>
+
+                <div id="editorPanel" style="display: none;">
+                    <input type="text" id="editorFilename" placeholder="nombre_archivo.txt">
+                    <textarea id="editorContent" placeholder="Contenido del archivo..."></textarea>
+                    <div class="editor-controls">
+                        <button onclick="guardarManual()">GUARDAR</button>
+                        <button onclick="borrarManual()" class="danger">BORRAR</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-section">
+            <div class="header">
+                <button id="connectBtn" onclick="toggleConnection()">CONECTAR</button>
+                <button id="modeToggleBtn" onclick="toggleMode()" style="background: var(--primary);">💬 MODO: CHARLA ASISTENTE</button>
+                <span class="status" id="statusText">🔴 DESCONECTADO</span>
+            </div>
+
+            <div style="margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px;">
+                <label for="languageSelect" style="font-size: 11px; font-weight: 600; color: var(--text-dim); font-family: monospace;">TRADUCCIÓN EN VIVO / IDIOMA:</label>
+                <select id="languageSelect" style="padding: 8px; border: 1px solid var(--border); background: var(--bg); border-radius: var(--radius-sm); font-size: 13px; font-family: inherit; outline: none; width: 100%;">
+                    <option value="es" selected>Español (es)</option>
+                    <option value="en">Inglés (en)</option>
+                    <option value="fr">Francés (fr)</option>
+                    <option value="de">Alemán (de)</option>
+                    <option value="it">Italiano (it)</option>
+                    <option value="pt">Portugués (pt)</option>
+                    <option value="ja">Japonés (ja)</option>
+                    <option value="zh">Chino (zh)</option>
+                    <option value="ko">Coreano (ko)</option>
+                    <option value="ru">Ruso (ru)</option>
+                    <option value="ar">Árabe (ar)</option>
+                    <option value="hi">Hindi (hi)</option>
+                    <option value="bn">Bengalí (bn)</option>
+                    <option value="ca">Catalán (ca)</option>
+                    <option value="gl">Gallego (gl)</option>
+                    <option value="eu">Vasco (eu)</option>
+                    <option value="nl">Neerlandés (nl)</option>
+                    <option value="pl">Polaco (pl)</option>
+                    <option value="tr">Turco (tr)</option>
+                    <option value="sv">Sueco (sv)</option>
+                    <option value="no">Noruego (no)</option>
+                    <option value="fi">Finés (fi)</option>
+                    <option value="da">Danés (da)</option>
+                    <option value="cs">Checo (cs)</option>
+                    <option value="el">Griego (el)</option>
+                    <option value="he">Hebreo (he)</option>
+                    <option value="id">Indonesio (id)</option>
+                    <option value="ms">Malayo (ms)</option>
+                    <option value="th">Tailandés (th)</option>
+                    <option value="vi">Vietnamita (vi)</option>
+                    <option value="uk">Ucraniano (uk)</option>
+                    <option value="ro">Rumano (ro)</option>
+                    <option value="hu">Húngaro (hu)</option>
+                    <option value="sk">Eslovaco (sk)</option>
+                    <option value="bg">Búlgaro (bg)</option>
+                    <option value="hr">Croata (hr)</option>
+                    <option value="sr">Serbio (sr)</option>
+                    <option value="lt">Lituano (lt)</option>
+                    <option value="lv">Letón (lv)</option>
+                    <option value="et">Estonio (et)</option>
+                    <option value="sl">Esloveno (sl)</option>
+                    <option value="is">Islandés (is)</option>
+                    <option value="fa">Persa (fa)</option>
+                    <option value="ur">Urdu (ur)</option>
+                    <option value="sw">Suajili (sw)</option>
+                    <option value="tl">Tagalo (tl)</option>
+                    <option value="af">Afrikáans (af)</option>
+                    <option value="sq">Albanés (sq)</option>
+                    <option value="hy">Armenio (hy)</option>
+                    <option value="az">Azerbaiyano (az)</option>
+                    <option value="ka">Georgiano (ka)</option>
+                </select>
+            </div>
+
+            <div id="chat"></div>
+
+            <div class="controls">
+                <button id="micBtn" onclick="toggleMic()" disabled>🎤 MIC</button>
+                <input type="text" id="textInput" placeholder="Escribe un mensaje..." onkeypress="handleKey(event)" disabled>
+                <button id="sendBtn" onclick="sendText()" disabled>ENVIAR</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="apiModal" class="modal">
+        <div class="modal-content">
+            <h3>Configuración</h3>
+            <p class="modal-desc">Introduce tu API Key de Google Gemini para habilitar la conexión bidireccional.</p>
+            <input type="password" id="apiKey" placeholder="Pega tu Google API Key aquí...">
+            <div class="modal-buttons">
+                <button onclick="guardarApiKey()">GUARDAR</button>
+                <button onclick="cerrarModalConfig()">CERRAR</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="customContextMenu" class="custom-menu" style="display: none; position: absolute; z-index: 10000;">
+        <div onclick="ejecutarPrevisualizarDesdeMenu()">🌐 PREVISUALIZAR</div>
+    </div>
+
+    <div id="previewModal" class="modal" style="display: none;">
+        <div class="modal-content preview-content" style="width: 90%; max-width: 1200px; height: 85vh; padding: 10px; position: relative; display: flex; flex-direction: column;">
+            <span class="close-preview" onclick="cerrarPrevisualizacion()" style="position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; z-index: 1001;">&times;</span>
+            <h3 id="previewTitle" style="margin: 5px 0 10px 0;">Previsualización Local Virtual</h3>
+            <iframe id="previewFrame" style="width: 100%; flex-grow: 1; border: 1px solid #ccc; background: white;"></iframe>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+    <script src="ui.js"></script>
+    <script src="reproductorAudio.js"></script>
+    <script src="fsCore.js"></script>
+    <script src="uiArchivos.js"></script>
+    <script src="toolsArchivos.js"></script>
+    <script src="conexionWebSocket.js"></script>
+    <script src="gestorMicrofono.js"></script>
+
+</body>
+</html>
