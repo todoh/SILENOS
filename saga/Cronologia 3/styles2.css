@@ -1,0 +1,204 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;700&display=swap');
+
+/* --- BLINDAJE ABSOLUTO DEL CONTENEDOR DE LA CRONOLOGÍA --- */
+.timeline-container-fixed {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden !important;
+    background: #fdfdfd;
+    cursor: grab;
+    background-image: 
+        linear-gradient(90deg, #f0f0f0 1px, transparent 1px),
+        linear-gradient(#f0f0f0 1px, transparent 1px);
+    background-size: 100px 100px;
+    display: flex;
+    flex-direction: column;
+}
+.timeline-container-fixed:active { cursor: grabbing; }
+
+/* Capa del Viewport en eje Horizontal Estricto */
+.viewport-layer-fixed { 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    height: 100%;
+    width: 100%;
+    pointer-events: none; 
+    will-change: transform; 
+}
+
+.track-axis-fixed {
+    position: absolute; 
+    top: 80px; 
+    left: 0; 
+    height: 2px; 
+    background: #e5e5e5;
+    transform: translateY(-50%); 
+    pointer-events: none;
+}
+
+/* --- REGLA NUMÉRICA HORIZONTAL (SOLUCIÓN AL DESBORDAMIENTO VERTICAL) --- */
+.ruler-container-fixed {
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    height: 40px;
+    background: rgba(255,255,255,0.95); 
+    border-bottom: 1px solid #e5e5e5;
+    overflow: hidden !important; 
+    pointer-events: none; 
+    z-index: 40;
+}
+
+.ruler-ticks-fixed { 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    height: 100%; 
+    display: flex !important;
+    flex-direction: row !important; /* Fuerza flujo horizontal */
+    align-items: flex-end;
+    will-change: transform; 
+}
+
+.tick-fixed { 
+    position: absolute; 
+    bottom: 0; 
+    width: 1px; 
+    background: #d4d4d4; 
+    height: 8px; 
+}
+
+.tick-fixed.major { 
+    height: 100%; 
+    background: #e5e5e5; 
+}
+
+.tick-label-fixed { 
+    position: absolute; 
+    top: 10px; 
+    transform: translateX(-50%);
+    font-family: 'JetBrains Mono', monospace; 
+    font-size: 10px; 
+    color: #888888;
+    font-weight: 500;
+}
+
+/* --- GRUPOS DE EVENTOS Y TARJETAS --- */
+.evt-group-fixed {
+    position: absolute; 
+    top: 80px; 
+    transform: translateX(-50%);
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    z-index: 10; 
+    cursor: pointer; 
+    pointer-events: auto;
+}
+.evt-group-fixed:hover { z-index: 50; }
+
+.evt-dot-fixed {
+    width: 14px; 
+    height: 14px; 
+    background: white; 
+    border: 2px solid #1a1a1a;
+    border-radius: 50%; 
+    z-index: 20; 
+    transition: transform 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.evt-group-fixed:hover .evt-dot-fixed { transform: scale(1.25); }
+.evt-group-fixed.selected .evt-dot-fixed { background: #1a1a1a; border-color: #1a1a1a; }
+
+.evt-stem-fixed { 
+    width: 1px; 
+    background: #cbd5e1; 
+    position: absolute; 
+    left: 50%; 
+    top: 0;
+}
+
+.evt-card-fixed {
+    position: absolute; 
+    width: 240px; 
+    background: white; 
+    border: 1px solid #e2e8f0;
+    padding: 14px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 6px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-radius: 2px;
+}
+.evt-card-fixed:hover { border-color: #94a3b8; box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
+.evt-group-fixed.selected .evt-card-fixed { border-color: #1a1a1a; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+
+.evt-time-fixed { 
+    font-family: 'JetBrains Mono', monospace; 
+    font-size: 10px; 
+    color: #1a1a1a; 
+    font-weight: 700; 
+    background: #f1f5f9; 
+    padding: 2px 6px; 
+    align-self: flex-start; 
+}
+
+.evt-title-fixed { 
+    font-size: 12px; 
+    font-weight: 500; 
+    color: #1a1a1a; 
+    line-height: 1.4; 
+}
+
+/* --- NAV MINIMAPA CRONOLOGÍA --- */
+.timeline-minimap-fixed {
+    position: absolute; 
+    bottom: 24px; 
+    left: 24px; 
+    right: 120px; 
+    height: 40px;
+    background: rgba(255,255,255,0.98); 
+    border: 1px solid #e2e8f0; 
+    padding: 4px;
+    z-index: 50; 
+    cursor: pointer; 
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.minimap-nodes-fixed {
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+    pointer-events: none;
+}
+
+.minimap-node-fixed {
+    position: absolute; 
+    top: 50%; 
+    transform: translate(-50%, -50%);
+    width: 6px; 
+    height: 6px; 
+    background: #cbd5e1; 
+    border-radius: 50%;
+}
+.minimap-node-fixed.selected { 
+    background: #1a1a1a; 
+    transform: translate(-50%, -50%) scale(1.6);
+    z-index: 10;
+}
+
+.minimap-viewport-fixed {
+    position: absolute; 
+    top: 0; 
+    height: 100%;
+    background: rgba(99, 102, 241, 0.08); 
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    pointer-events: none;
+}
