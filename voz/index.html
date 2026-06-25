@@ -37,7 +37,65 @@
         <div class="chat-section">
             <div class="header">
                 <button id="connectBtn" onclick="toggleConnection()">CONECTAR</button>
+                <button id="modeToggleBtn" onclick="toggleMode()" style="background: var(--primary);">💬 MODO: CHARLA ASISTENTE</button>
                 <span class="status" id="statusText">🔴 DESCONECTADO</span>
+            </div>
+
+            <div style="margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px;">
+                <label for="languageSelect" style="font-size: 11px; font-weight: 600; color: var(--text-dim); font-family: monospace;">TRADUCCIÓN EN VIVO / IDIOMA:</label>
+                <select id="languageSelect" style="padding: 8px; border: 1px solid var(--border); background: var(--bg); border-radius: var(--radius-sm); font-size: 13px; font-family: inherit; outline: none; width: 100%;">
+                    <option value="es" selected>Español (es)</option>
+                    <option value="en">Inglés (en)</option>
+                    <option value="fr">Francés (fr)</option>
+                    <option value="de">Alemán (de)</option>
+                    <option value="it">Italiano (it)</option>
+                    <option value="pt">Portugués (pt)</option>
+                    <option value="ja">Japonés (ja)</option>
+                    <option value="zh">Chino (zh)</option>
+                    <option value="ko">Coreano (ko)</option>
+                    <option value="ru">Ruso (ru)</option>
+                    <option value="ar">Árabe (ar)</option>
+                    <option value="hi">Hindi (hi)</option>
+                    <option value="bn">Bengalí (bn)</option>
+                    <option value="ca">Catalán (ca)</option>
+                    <option value="gl">Gallego (gl)</option>
+                    <option value="eu">Vasco (eu)</option>
+                    <option value="nl">Neerlandés (nl)</option>
+                    <option value="pl">Polaco (pl)</option>
+                    <option value="tr">Turco (tr)</option>
+                    <option value="sv">Sueco (sv)</option>
+                    <option value="no">Noruego (no)</option>
+                    <option value="fi">Finés (fi)</option>
+                    <option value="da">Danés (da)</option>
+                    <option value="cs">Checo (cs)</option>
+                    <option value="el">Griego (el)</option>
+                    <option value="he">Hebreo (he)</option>
+                    <option value="id">Indonesio (id)</option>
+                    <option value="ms">Malayo (ms)</option>
+                    <option value="th">Tailandés (th)</option>
+                    <option value="vi">Vietnamita (vi)</option>
+                    <option value="uk">Ucraniano (uk)</option>
+                    <option value="ro">Rumano (ro)</option>
+                    <option value="hu">Húngaro (hu)</option>
+                    <option value="sk">Eslovaco (sk)</option>
+                    <option value="bg">Búlgaro (bg)</option>
+                    <option value="hr">Croata (hr)</option>
+                    <option value="sr">Serbio (sr)</option>
+                    <option value="lt">Lituano (lt)</option>
+                    <option value="lv">Letón (lv)</option>
+                    <option value="et">Estonio (et)</option>
+                    <option value="sl">Esloveno (sl)</option>
+                    <option value="is">Islandés (is)</option>
+                    <option value="fa">Persa (fa)</option>
+                    <option value="ur">Urdu (ur)</option>
+                    <option value="sw">Suajili (sw)</option>
+                    <option value="tl">Tagalo (tl)</option>
+                    <option value="af">Afrikáans (af)</option>
+                    <option value="sq">Albanés (sq)</option>
+                    <option value="hy">Armenio (hy)</option>
+                    <option value="az">Azerbaiyano (az)</option>
+                    <option value="ka">Georgiano (ka)</option>
+                </select>
             </div>
 
             <div id="chat"></div>
@@ -78,12 +136,9 @@
     <script src="main.js"></script>
     <script src="ui.js"></script>
     <script src="reproductorAudio.js"></script>
-    
     <script src="fsCore.js"></script>
-    <script src="historialArchivos.js"></script>
     <script src="uiArchivos.js"></script>
     <script src="toolsArchivos.js"></script>
-    
     <script src="conexionWebSocket.js"></script>
     <script src="gestorMicrofono.js"></script>
 

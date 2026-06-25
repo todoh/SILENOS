@@ -1,5 +1,8 @@
 // SILENOS 5 VOZ/conexionWebSocket.js
 
+// Estado global para controlar el modo de funcionamiento
+let isTranslationMode = false; 
+
 // ─── CONEXIÓN WEBSOCKET BIDI ───
 async function toggleConnection() {
     if (isConnected) {
@@ -19,17 +22,37 @@ async function toggleConnection() {
         ws = new WebSocket(wsUrl);
 
         ws.onopen = async () => {
+            // Extraemos estrictamente el código ISO (value) del select, no su texto visible
+            const selectElement = document.getElementById('languageSelect');
+            const targetLang = selectElement ? selectElement.value : 'es';
+
+            // Estructura base de configuración de generación
+            const generationConfig = {
+                response_modalities: ['AUDIO'],
+                speech_config: { voice_config: { prebuilt_voice_config: { voice_name: 'Aoede' } } }
+            };
+
+            // Si el modo traducción está activo, inyectamos la configuración nativa de traducción en tiempo real
+            if (isTranslationMode) {
+                generationConfig.translation_config = {
+                    target_language_code: targetLang,
+                    echo_target_language: true
+                };
+            }
+
+            // Instrucciones del sistema adaptativas según el modo seleccionado
+            const systemText = isTranslationMode 
+                ? `Actúa estrictamente como un motor de doblaje y traducción en vivo de alta fidelidad. Escucha la voz del usuario e interpreta su contenido, traduciéndolo inmediatamente al idioma destino configurado bajo el código ISO "${targetLang}". Traduce con fluidez natural, preservando el tono emocional, las pausas y los énfasis de forma transparente y conversacional, doblando la voz sin añadir comentarios adicionales propios.`
+                : "Tu nombre es VOZ. Eres un asistente y arquitecto de desarrollo web brillante y observador. Tienes acceso completo a una carpeta local de trabajo a través de herramientas especializadas. Puedes leer, crear, modificar y eliminar archivos de texto (.txt) y código fuente (.html, .css, .js). Cuando el usuario te pida construir una aplicación web o una nueva característica, DEBES PLANIFICAR primero la estructura general en tu mente (o proponerla en voz alta de forma ágil) y ejecutar llamadas de análisis/generación en paralelo a tu submodelo secundario (gemini-3.1-flash-lite) mediante la herramienta 'analizarContenido'. Puedes planificar de forma inteligente qué instrucciones precisas enviarle a cada llamada paralela de Gemini (por ejemplo, una llamada dedicada exclusivamente al desarrollo estructurado del 'index.html', otra para los estilos limpios de 'style.css' y otra para la lógica asíncrona de 'script.js'). Sabes gestionar los formatos correspondientes guardando cada archivo con la extensión exacta requerida (.html, .css, .js) de manera completamente funcional y limpia de markdown. Recibirás avisos ocultos del sistema con el formato (AVISO DEL SISTEMA: ...) que te mantendrán actualizado sobre el espacio de trabajo. Tu voz es natural, empática y resolutiva. Hablas con fluidez técnica y humana, evitando rigideces de robot.";
+
             const setup = {
                 setup: {
                     model: `models/${MODEL}`,
-                    generation_config: {
-                        response_modalities: ['AUDIO'],
-                        speech_config: { voice_config: { prebuilt_voice_config: { voice_name: 'Aoede' } } }
-                    },
+                    generation_config: generationConfig,
                     system_instruction: {
-                        parts: [{ text: "Tu nombre es VOZ. Eres un asistente y arquitecto de desarrollo web brillante y observador. Tienes acceso completo a una carpeta local de trabajo a través de herramientas especializadas. Puedes leer, crear, modificar y eliminar archivos de texto (.txt) y código fuente (.html, .css, .js). Cuando el usuario te pida construir una aplicación web o una nueva característica, DEBES PLANIFICAR primero la estructura general en tu mente (o proponerla en voz alta de forma ágil) y ejecutar llamadas de análisis/generación en paralelo a tu submodelo secundario (gemini-3.1-flash-lite) mediante la herramienta 'analizarContenido'. Puedes planificar de forma inteligente qué instrucciones precisas enviarle a cada llamada paralela de Gemini (por ejemplo, una llamada dedicada exclusivamente al desarrollo estructurado del 'index.html', otra para los estilos limpios de 'style.css' y otra para la lógica asíncrona de 'script.js'). Sabes gestionar los formatos correspondientes guardando cada archivo con la extensión exacta requerida (.html, .css, .js) de manera completamente funcional y limpia de markdown. Recibirás avisos ocultos del sistema con el formato (AVISO DEL SISTEMA: ...) que te mantendrán actualizado sobre el espacio de trabajo. Tu voz es natural, empática y resolutiva. Hablas con fluidez técnica y humana, evitando rigideces de robot." }]
+                        parts: [{ text: systemText }]
                     },
-                    tools: [{
+                    tools: isTranslationMode ? [] : [{
                         functionDeclarations: [
                             {
                                 name: "listarArchivos",
@@ -84,7 +107,7 @@ async function toggleConnection() {
                             },
                             {
                                 name: "reemplazarTexto",
-                                description: "Busca un bloque de código o texto exacto y lo sustituye por una versión nueva o corregida. Ideal para refactorizaciones parciales en código html, css o js sin tocar el resto.",
+                                description: "Busca un componente o fragmento de código exacto y lo sustituye por una versión nueva o corregida.",
                                 parameters: {
                                     type: "OBJECT",
                                     properties: {
@@ -161,7 +184,7 @@ async function toggleConnection() {
                                         },
                                         instrucciones: { 
                                             type: "STRING", 
-                                            description: "Directrices críticas sobre qué debe buscar, estructurar o escribir el modelo en el archivo final (ej: 'Escribe solo el código CSS completo para un diseño responsive y dark mode', 'Desarrolla la lógica JS pura con eventos para controlar el canvas')." 
+                                            description: "Directrices críticas sobre qué debe buscar, estructurar o escribir el modelo en el archivo final (ej: 'Escribe solo el código CSS completo para un diseño responsive and dark mode', 'Desarrolla la lógica JS pura con eventos para controlar el canvas')." 
                                         },
                                         nombreResultado: { 
                                             type: "STRING", 
@@ -180,7 +203,7 @@ async function toggleConnection() {
             ws.send(JSON.stringify(setup));
             
             isConnected = true;
-            document.getElementById('statusText').innerText = "🟢 CONECTADO";
+            document.getElementById('statusText').innerText = isTranslationMode ? "🟢 MODO TRADUCTOR" : "🟢 CONECTADO";
             document.getElementById('connectBtn').innerText = "DESCONECTAR";
             document.getElementById('connectBtn').classList.add('danger');
             
@@ -208,7 +231,7 @@ async function toggleConnection() {
             voiceCompressor.connect(masterGain);
             masterGain.connect(audioContext.destination);
 
-            if (directoryHandle) {
+            if (directoryHandle && !isTranslationMode) {
                 try {
                     const archivos = await listarArchivos();
                     let contextoCognitivo = "";
@@ -282,6 +305,24 @@ async function toggleConnection() {
     } catch (err) {
         alert("Error de conexión: " + err.message);
         disconnect();
+    }
+}
+
+function toggleMode() {
+    if (isConnected) {
+        alert("Por favor, desconecta la sesión actual antes de cambiar de modo.");
+        return;
+    }
+    isTranslationMode = !isTranslationMode;
+    const btnMode = document.getElementById('modeToggleBtn');
+    if (btnMode) {
+        if (isTranslationMode) {
+            btnMode.innerText = "🔄 MODO: TRADUCTOR / DOBLAJE";
+            btnMode.style.background = "#007acc";
+        } else {
+            btnMode.innerText = "💬 MODO: CHARLA ASISTENTE";
+            btnMode.style.background = "var(--primary)";
+        }
     }
 }
 
