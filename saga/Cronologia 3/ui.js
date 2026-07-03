@@ -1,5 +1,5 @@
 // --- cronologia/ui.js ---
-// INTERFAZ DE USUARIO (ACTUALIZADO: NAMESPACE INDEPENDIENTE PARA EVITAR COLISIONES)
+// INTERFAZ DE USUARIO (ACTUALIZADO: NAMESPACE INDEPENDIENTE CON DRAG AND DROP NATIVO PARA ORDENAR SUBPARTES)
 
 const uiCrono = {
     selectedFolderHandle: null,
@@ -178,7 +178,67 @@ const uiCrono = {
             if (!m.aspectRatio) m.aspectRatio = 'landscape';
             const safeId = String(m.id).replace('.', '-');
             const row = document.createElement('div');
-            row.className = "p-3 border bg-white space-y-3 mb-4 shadow-sm rounded-sm flex flex-col";
+            row.className = "p-3 border bg-white space-y-3 mb-4 shadow-sm rounded-sm flex flex-col cursor-grab active:cursor-grabbing transition-all border-gray-200 duration-150 relative group/row";
+            row.setAttribute('draggable', 'true');
+            row.dataset.index = idx;
+            
+            // Eventos de arrastre nativos (Drag and Drop)
+            row.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', idx);
+                row.classList.add('opacity-40', 'border-indigo-400', 'bg-indigo-50/20');
+            });
+
+            row.addEventListener('dragend', () => {
+                row.classList.remove('opacity-40', 'border-indigo-400', 'bg-indigo-50/20');
+                document.querySelectorAll('#crono-moments-list > div').forEach(el => el.classList.remove('border-t-2', 'border-b-2', 'border-indigo-500'));
+            });
+
+            row.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const bounding = row.getBoundingClientRect();
+                const offset = e.clientY - bounding.top;
+                document.querySelectorAll('#crono-moments-list > div').forEach(el => el.classList.remove('border-t-2', 'border-b-2', 'border-indigo-500'));
+                if (offset < bounding.height / 2) {
+                    row.classList.add('border-t-2', 'border-indigo-500');
+                } else {
+                    row.classList.add('border-b-2', 'border-indigo-500');
+                }
+            });
+
+            row.addEventListener('dragleave', () => {
+                row.classList.remove('border-t-2', 'border-b-2', 'border-indigo-500');
+            });
+
+            row.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                const toIndex = parseInt(row.dataset.index);
+                
+                if (fromIndex !== toIndex) {
+                    const bounding = row.getBoundingClientRect();
+                    const offset = e.clientY - bounding.top;
+                    let targetActualIndex = toIndex;
+                    
+                    // Si se suelta en la mitad inferior, se desplaza hacia abajo
+                    if (offset >= bounding.height / 2 && fromIndex > toIndex) {
+                        targetActualIndex++;
+                    } else if (offset < bounding.height / 2 && fromIndex < toIndex) {
+                        targetActualIndex--;
+                    }
+
+                    const movedElement = ev.moments.splice(fromIndex, 1)[0];
+                    ev.moments.splice(targetActualIndex, 0, movedElement);
+                    
+                    // Persistencia y refresco de interfaz
+                    window.mainCrono.saveData();
+                    this.renderMoments(ev);
+                    
+                    // Apertura explícita de la función del canvas para actualizar la renderización
+                    if (window.timeline && typeof window.timeline.renderEvents === 'function') {
+                        window.timeline.renderEvents();
+                    }
+                }
+            });
             
             const srcTarget = m.displayUrl || m.image64 || '';
             let imgPreviewHtml = '';
@@ -204,8 +264,8 @@ const uiCrono = {
             }
 
             row.innerHTML = `
-                <div class="flex justify-between text-[10px] text-gray-400 font-bold">
-                    <span>SUBPARTE ${idx+1}</span>
+                <div class="flex justify-between text-[10px] text-gray-400 font-bold select-none items-center">
+                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-grip-lines text-gray-300 group-hover/row:text-gray-400 cursor-grab"></i> SUBPARTE ${idx+1}</span>
                     <button class="text-red-400 font-mono hover:text-red-600 transition-colors" id="btn-del-moment-${safeId}">ELIMINAR</button>
                 </div>
                 ${imgPreviewHtml}
@@ -235,7 +295,9 @@ const uiCrono = {
                     .then(file => {
                         m.displayUrl = URL.createObjectURL(file);
                         this.renderMoments(ev);
-                        window.timeline.renderEvents();
+                        if (window.timeline && typeof window.timeline.renderEvents === 'function') {
+                            window.timeline.renderEvents();
+                        }
                     }).catch(err => console.warn("Binario no encontrado para:", m.imageFile));
             }
 
@@ -243,7 +305,6 @@ const uiCrono = {
             row.querySelector(`#txt-prompt-${safeId}`).onchange = (e) => { m.visualPrompt = e.target.value; window.mainCrono.saveData(); };
             row.querySelector(`#btn-del-moment-${safeId}`).onclick = () => window.mainCrono.deleteMoment(idx);
             
-            // ASIGNACIÓN ABSOLUTA EN VENTANA GLOBAL PARA EVITAR ERRORES DE SCOPE
             row.querySelector(`#btn-gen-${safeId}`).onclick = () => {
                 if (window.ImgGen && typeof window.ImgGen.generateSingle === 'function') {
                     window.ImgGen.generateSingle(ev.id, m.id);
@@ -263,7 +324,9 @@ const uiCrono = {
             row.querySelector(`#sel-aspect-${safeId}`).onchange = (e) => {
                 m.aspectRatio = e.target.value;
                 window.mainCrono.saveData();
-                window.timeline.renderEvents();
+                if (window.timeline && typeof window.timeline.renderEvents === 'function') {
+                    window.timeline.renderEvents();
+                }
                 this.renderMoments(ev);
             };
 
@@ -288,7 +351,9 @@ const uiCrono = {
                     m.displayUrl = URL.createObjectURL(file);
                     
                     window.mainCrono.saveData();
-                    window.timeline.renderEvents();
+                    if (window.timeline && typeof window.timeline.renderEvents === 'function') {
+                        window.timeline.renderEvents();
+                    }
                     this.renderMoments(ev);
                 };
             }
