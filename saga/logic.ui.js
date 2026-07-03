@@ -1,6 +1,22 @@
 // --- GESTIÓN DE UI (Edición Local/Híbrida con Soporte de Múltiples Motores e IO) ---
 const ui = {
-  switchTab: (tabId) => {
+    // Alternancia dinámica entre Tema Oscuro y Claro con almacenamiento persistente
+    toggleTheme: () => {
+        const isDark = document.documentElement.classList.toggle('dark');
+        localStorage.setItem('koreh_theme', isDark ? 'dark' : 'light');
+        
+        const btn = document.getElementById('theme-toggle-btn');
+        if (btn) {
+            btn.innerHTML = isDark ? '<i class="fa-solid fa-sun text-[11px]"></i>' : '<i class="fa-solid fa-moon text-[11px]"></i>';
+        }
+        
+        // Si el canvas de tramas está instanciado, forzamos su repintado inmediato con el nuevo color base de fondo
+        if (window.TramasCanvas && typeof window.TramasCanvas.render === 'function') {
+            window.TramasCanvas.render();
+        }
+    },
+
+    switchTab: (tabId) => {
         const tabDatos = document.getElementById('tab-datos');
         const tabTramas = document.getElementById('tab-tramas');
         const tabCrono = document.getElementById('tab-cronologia');
@@ -22,23 +38,23 @@ const ui = {
         const btnLibros = document.getElementById('btn-tab-libros');
         
         if (btnDatos) {
-            btnDatos.classList.remove('border-black', 'text-black');
+            btnDatos.classList.remove('border-black', 'text-black', 'border-white', 'text-white');
             btnDatos.classList.add('border-transparent', 'text-gray-400');
         }
         if (btnTramas) {
-            btnTramas.classList.remove('border-black', 'text-black');
+            btnTramas.classList.remove('border-black', 'text-black', 'border-white', 'text-white');
             btnTramas.classList.add('border-transparent', 'text-gray-400');
         }
         if (btnCrono) {
-            btnCrono.classList.remove('border-black', 'text-black');
+            btnCrono.classList.remove('border-black', 'text-black', 'border-white', 'text-white');
             btnCrono.classList.add('border-transparent', 'text-gray-400');
         }
         if (btnIO) {
-            btnIO.classList.remove('border-black', 'text-black');
+            btnIO.classList.remove('border-black', 'text-black', 'border-white', 'text-white');
             btnIO.classList.add('border-transparent', 'text-gray-400');
         }
         if (btnLibros) {
-            btnLibros.classList.remove('border-black', 'text-black');
+            btnLibros.classList.remove('border-black', 'text-black', 'border-white', 'text-white');
             btnLibros.classList.add('border-transparent', 'text-gray-400');
         }
 
@@ -47,7 +63,8 @@ const ui = {
         
         const btn = document.getElementById(`btn-tab-${tabId}`);
         if (btn) {
-            btn.classList.add('border-black');
+            const isDark = document.documentElement.classList.contains('dark');
+            btn.classList.add(isDark ? 'border-white' : 'border-black');
             btn.classList.remove('border-transparent', 'text-gray-400');
         }
         
@@ -63,11 +80,9 @@ const ui = {
                 window.timeline.renderAll();
             }
         }
-        // GANCHO CRÍTICO IO: Refrescar el listado de cronografías al entrar a la sección de inyección
         if (tabId === 'io' && window.KorehIO) {
             window.KorehIO.refreshTargetTimelineSelect();
         }
-        // GANCHO EDITORIAL: Sincroniza el listado en la interfaz de inyección de libros si entra a la pestaña
         if (tabId === 'libros' && window.KorehIO && typeof window.KorehIO.refreshTargetTimelineSelect === 'function') {
             window.KorehIO.refreshTargetTimelineSelect();
         }
@@ -244,12 +259,20 @@ const ui = {
         ui.handleModeChangeChangeVisibility();
         ui.handleImageEngineChange();
 
+        // Inicialización y sincronización en frío de la preferencia de color guardada
+        const savedTheme = localStorage.getItem('koreh_theme') || 'light';
+        if (savedTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+            const btn = document.getElementById('theme-toggle-btn');
+            if (btn) btn.innerHTML = '<i class="fa-solid fa-sun text-[11px]"></i>';
+        }
+
         if (!indicator || !text) return;
 
         const currentMode = localStorage.getItem('koreh_api_mode') || 'local';
-        indicator.className = "w-1.5 h-1.5 rounded-full bg-black"; 
+        indicator.className = "w-1.5 h-1.5 rounded-full bg-black dark:bg-white"; 
         text.innerText = currentMode === 'local' ? "LOCAL ENGINE" : "POLLINATION ENGINE";
-        text.className = "text-[10px] font-medium text-black uppercase tracking-wider";
+        text.className = "text-[10px] font-medium text-black dark:text-white uppercase tracking-wider";
     },
 
     handleModeChangeChangeVisibility: () => {
@@ -291,7 +314,7 @@ const ui = {
         actions.innerHTML = '';
 
         const btnCancel = document.createElement('button');
-        btnCancel.className = "btn-nordic text-gray-400 border-none hover:bg-gray-50";
+        btnCancel.className = "btn-nordic text-gray-400 border-none hover:bg-gray-50 dark:hover:bg-gray-800";
         btnCancel.innerText = "CANCELAR";
         btnCancel.onclick = () => modal.classList.add('hidden');
 
@@ -321,8 +344,8 @@ const ui = {
         if (!overlay) {
             overlay = document.createElement('div');
             overlay.id = 'ui-zoom-overlay';
-            overlay.className = "fixed inset-0 bg-white/95 z-[9999] flex items-center justify-center cursor-zoom-out opacity-0 transition-opacity duration-200 backdrop-blur-sm";
-            overlay.innerHTML = `<img id="ui-zoom-img" src="" class="max-w-[90vw] max-h-[90vh] object-contain shadow-2xl border border-gray-100">`;
+            overlay.className = "fixed inset-0 bg-white/95 dark:bg-gray-950/95 z-[9999] flex items-center justify-center cursor-zoom-out opacity-0 transition-opacity duration-200 backdrop-blur-sm";
+            overlay.innerHTML = `<img id="ui-zoom-img" src="" class="max-w-[90vw] max-h-[90vh] object-contain shadow-2xl border border-gray-100 dark:border-gray-800">`;
             overlay.onclick = () => {
                 overlay.classList.remove('opacity-100');
                 overlay.classList.add('opacity-0');
@@ -353,20 +376,20 @@ const ui = {
         
         const menu = document.createElement('div');
         menu.id = 'datos-context-menu';
-        menu.className = 'fixed bg-white border border-gray-200 shadow-xl py-1 z-[200] min-w-[160px] font-sans text-xs text-gray-700';
+        menu.className = 'fixed bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl py-1 z-[200] min-w-[160px] font-sans text-xs text-gray-700 dark:text-gray-300';
         menu.style.left = `${x}px`;
         menu.style.top = `${y}px`;
 
         if (itemIndex !== null) {
             menu.innerHTML = `
-                <div onclick="ui.closeContextMenu(); app.duplicateItemAtIndex(${itemIndex});" class="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"><i class="fa-regular fa-copy text-gray-400"></i> DUPLICAR DATO</div>
-                <div onclick="ui.closeContextMenu(); app.deleteItemAtIndex(${itemIndex});" class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-red-500 flex items-center gap-2"><i class="fa-regular fa-trash-can text-red-400"></i> ELIMINAR DATO</div>
-                <div class="border-t border-gray-100 my-1"></div>
-                <div onclick="ui.closeContextMenu(); app.createNewItem();" class="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"><i class="fa-solid fa-plus text-gray-400"></i> CREAR NUEVO</div>
+                <div onclick="ui.closeContextMenu(); app.duplicateItemAtIndex(${itemIndex});" class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center gap-2"><i class="fa-regular fa-copy text-gray-400"></i> DUPLICAR DATO</div>
+                <div onclick="ui.closeContextMenu(); app.deleteItemAtIndex(${itemIndex});" class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-red-500 flex items-center gap-2"><i class="fa-regular fa-trash-can text-red-400"></i> ELIMINAR DATO</div>
+                <div class="border-t border-gray-100 dark:border-gray-800 my-1"></div>
+                <div onclick="ui.closeContextMenu(); app.createNewItem();" class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center gap-2"><i class="fa-solid fa-plus text-gray-400"></i> CREAR NUEVO</div>
             `;
         } else {
             menu.innerHTML = `
-                <div onclick="ui.closeContextMenu(); app.createNewItem();" class="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"><i class="fa-solid fa-plus text-gray-400"></i> CREAR NUEVO DATO</div>
+                <div onclick="ui.closeContextMenu(); app.createNewItem();" class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center gap-2"><i class="fa-solid fa-plus text-gray-400"></i> CREAR NUEVO DATO</div>
             `;
         }
 

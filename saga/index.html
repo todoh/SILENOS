@@ -5,30 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SAGA</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // CONFIGURACI N DE APERTURA: Strategy class para Dark Mode ONSD.
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        // Adaptaciones de colores de acento para fondo negro puro
+                        nordic: {
+                            black: '#000000',
+                            panel: '#09090b',
+                            border: '#27272a',
+                            white: '#ffffff',
+                            muted: '#a1a1aa'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="Cronologia 3/styles2.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>  
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/BufferGeometryUtils.js"></script>
 </head>
 <body>
 
     <div id="loading-bar" class="loading-bar" style="width: 0%"></div>
 
     <div id="msg-modal" class="fixed inset-0 z-[120] flex items-center justify-center bg-black/20 hidden backdrop-blur-sm transition-opacity">
-        <div class="bg-white border border-gray-200 shadow-2xl p-6 max-w-sm w-full flex flex-col gap-4">
-            <h3 id="msg-title" class="label-text text-black text-center tracking-widest mb-1">NOTIFICACIÓN</h3>
-            <div id="msg-content" class="text-sm font-light text-center leading-relaxed text-gray-700"></div>
-            <div class="flex gap-2 justify-center mt-2 pt-4 border-t border-gray-50" id="msg-actions"></div>
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl p-6 max-w-sm w-full flex flex-col gap-4">
+            <h3 id="msg-title" class="label-text text-black dark:text-white text-center tracking-widest mb-1">NOTIFICACIÓN</h3>
+            <div id="msg-content" class="text-sm font-light text-center leading-relaxed text-gray-700 dark:text-gray-300"></div>
+            <div class="flex gap-2 justify-center mt-2 pt-4 border-t border-gray-50 dark:border-gray-800" id="msg-actions"></div>
         </div>
     </div>
 
     <div id="tramas-expand-modal" class="fixed inset-0 z-[130] flex items-center justify-center bg-black/40 hidden backdrop-blur-sm transition-opacity">
-        <div oncontextmenu="return false;" class="bg-white border border-gray-200 shadow-2xl p-8 max-w-md w-full flex flex-col gap-4">
+        <div oncontextmenu="return false;" class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl p-8 max-w-md w-full flex flex-col gap-4">
             <div class="flex justify-between items-center mb-2">
-                <h3 class="label-text text-black tracking-widest"><i class="fa-solid fa-code-branch text-indigo-500 mr-2"></i>EXPANDIR EVENTO CON IA</h3>
+                <h3 class="label-text text-black dark:text-white tracking-widest"><i class="fa-solid fa-code-branch text-indigo-500 mr-2"></i>EXPANDIR EVENTO CON IA</h3>
                 <button onclick="if(window.TramasUI) TramasUI.closeExpandModal()" class="text-gray-300 hover:text-red-500"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
-            <div class="bg-indigo-50/50 p-3 rounded text-xs text-indigo-900 border border-indigo-100 mb-2">
+            <div class="bg-indigo-50/50 dark:bg-indigo-950/30 p-3 rounded text-xs text-indigo-900 dark:text-indigo-200 border border-indigo-100 dark:border-indigo-900 mb-2">
                 <span class="font-bold">Nodo Origen:</span> <span id="expand-node-title" class="italic">...</span>
             </div>
 
@@ -42,17 +65,17 @@
                 <input type="number" id="expand-count" class="config-input" value="2" min="1" max="5">
             </div>
 
-            <div class="flex gap-2 justify-end mt-4 pt-4 border-t border-gray-50">
-                <button onclick="if(window.TramasUI) TramasUI.closeExpandModal()" class="btn-nordic text-gray-400 border-none hover:bg-gray-50">Cancelar</button>
+            <div class="flex gap-2 justify-end mt-4 pt-4 border-t border-gray-50 dark:border-gray-800">
+                <button onclick="if(window.TramasUI) TramasUI.closeExpandModal()" class="btn-nordic text-gray-400 border-none hover:bg-gray-50 dark:hover:bg-gray-800">Cancelar</button>
                 <button onclick="if(window.TramasUI) TramasUI.confirmExpandNode()" class="btn-primary w-auto px-6 bg-indigo-600 hover:bg-indigo-700"><i class="fa-solid fa-wand-magic-sparkles"></i> EXPANDIR</button>
             </div>
         </div>
     </div>
 
     <div id="image-config-modal" class="fixed inset-0 z-[140] flex items-center justify-center bg-black/40 hidden backdrop-blur-sm transition-opacity">
-        <div class="bg-white border border-gray-200 shadow-2xl p-8 max-w-lg w-full flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-2 border-b border-gray-100 pb-2">
-                <h3 class="label-text text-black tracking-widest"><i class="fa-solid fa-sliders text-black mr-2"></i>PANEL DE CONFIGURACIÓN GLOBAL MULTI-MOTOR</h3>
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl p-8 max-w-lg w-full flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-2 border-b border-gray-100 dark:border-gray-800 pb-2">
+                <h3 class="label-text text-black dark:text-white tracking-widest"><i class="fa-solid fa-sliders text-black dark:text-white mr-2"></i>PANEL DE CONFIGURACIÓN GLOBAL MULTI-MOTOR</h3>
                 <button onclick="ui.toggleImageConfigModal()" class="text-gray-300 hover:text-red-500"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
@@ -61,7 +84,7 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <span class="label-text">Proveedor Activo</span>
-                        <select id="koreh-api-mode" onchange="localStorage.setItem('koreh_api_mode', this.value); ui.updateAuthUI();" class="config-input text-xs font-bold uppercase cursor-pointer bg-transparent text-black border-b border-gray-300">
+                        <select id="koreh-api-mode" onchange="localStorage.setItem('koreh_api_mode', this.value); ui.updateAuthUI();" class="config-input text-xs font-bold uppercase cursor-pointer bg-transparent text-black dark:text-white border-b border-gray-300 dark:border-gray-700">
                             <option value="local">OLLAMA ENGINE (LOCAL/HÍBRIDO)</option>
                             <option value="pollinations">POLLINATIONS ONLINE ENGINE</option>
                         </select>
@@ -76,7 +99,6 @@
                        <div id="box-config-pollinations" class="hidden">
     <span class="label-text">Modelo Pollinations</span>
     <select id="pollinations-text-model" onchange="localStorage.setItem('koreh_selected_pollinations_model', this.value);" class="config-input text-xs font-sans uppercase cursor-pointer bg-transparent font-bold text-purple-600">
-        <!-- MAS BARATOS -->
         <option value="qwen-safety">Qwen3Guard 8B (qwen-safety)</option>
         <option value="nova-fast">Nova Micro (nova-fast)</option>
         <option value="gemini-fast">Gemini 2.5 Flash Lite (gemini-fast)</option>
@@ -129,18 +151,17 @@
         <option value="claude">Claude Sonnet 4.6 (claude)</option>
         <option value="claude-opus-4.8">Claude Opus 4.8 (claude-opus-4.8)</option>
         <option value="claude-opus-4.6">Claude Opus 4.6 (claude-opus-4.6)</option>
-        <!-- MAS CAROS -->
     </select>
 </div>
                     </div>
                 </div>
                 <div class="mt-2">
                     <span class="label-text">API Key / Token de Autenticación (Pollinations / Silenos)</span>
-                    <input id="pollinations-api-key-inp" type="password" placeholder="Bearer Token..." class="config-input font-mono text-xs text-black" oninput="localStorage.setItem('pollinations_api_key', this.value); if(window.Koreh.Core) ui.updateAuthUI();">
+                    <input id="pollinations-api-key-inp" type="password" placeholder="Bearer Token..." class="config-input font-mono text-xs text-black dark:text-white" oninput="localStorage.setItem('pollinations_api_key', this.value); if(window.Koreh.Core) ui.updateAuthUI();">
                 </div>
             </div>
 
-            <div class="border-t border-gray-100 my-1"></div>
+            <div class="border-t border-gray-100 dark:border-gray-800 my-1"></div>
 
             <div class="space-y-3">
                 <div class="flex justify-between items-center">
@@ -151,14 +172,14 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <span class="label-text">Proveedor de Imagen</span>
-                        <select id="global-image-engine" onchange="localStorage.setItem('koreh_image_engine', this.value); ui.handleImageEngineChange();" class="config-input text-xs font-bold uppercase cursor-pointer text-black border-b border-gray-300">
+                        <select id="global-image-engine" onchange="localStorage.setItem('koreh_image_engine', this.value); ui.handleImageEngineChange();" class="config-input text-xs font-bold uppercase cursor-pointer text-black dark:text-white border-b border-gray-300 dark:border-gray-700">
                             <option value="comfyui">COMFYUI (LOCAL)</option>
                             <option value="pollinations">POLLINATIONS (NUBE)</option>
                         </select>
                     </div>
                     <div>
                         <span class="label-text">Modelo Asignado</span>
-                        <select id="global-image-model" onchange="localStorage.setItem('koreh_selected_image_model', this.value);" class="config-input text-xs font-bold uppercase cursor-pointer text-purple-600 border-b border-gray-300">
+                        <select id="global-image-model" onchange="localStorage.setItem('koreh_selected_image_model', this.value);" class="config-input text-xs font-bold uppercase cursor-pointer text-purple-600 border-b border-gray-300 dark:border-gray-700">
                             <option value="juggernautXL_ragnarokBy.safetensors">JUGGERNAUT XL (COMFY)</option>
                         </select>
                     </div>
@@ -196,16 +217,16 @@
                 </div>
             </div>
 
-            <div class="flex gap-2 justify-end mt-4 pt-4 border-t border-gray-50">
-                <button onclick="ui.toggleImageConfigModal()" class="btn-primary w-auto px-8 bg-black hover:opacity-90">GUARDAR CONFIGURACIÓN</button>
+            <div class="flex gap-2 justify-end mt-4 pt-4 border-t border-gray-50 dark:border-gray-800">
+                <button onclick="ui.toggleImageConfigModal()" class="btn-primary w-auto px-8 bg-black dark:bg-white dark:text-black hover:opacity-90">GUARDAR CONFIGURACIÓN</button>
             </div>
         </div>
     </div>
 
     <div id="ollama-config-modal" class="fixed inset-0 z-[145] flex items-center justify-center bg-black/40 hidden backdrop-blur-sm transition-opacity">
-        <div class="bg-white border border-gray-200 shadow-2xl p-8 max-w-md w-full flex flex-col gap-4">
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl p-8 max-w-md w-full flex flex-col gap-4">
             <div class="flex justify-between items-center mb-2">
-                <h3 class="label-text text-black tracking-widest"><i class="fa-solid fa-server text-blue-500 mr-2"></i>CONFIGURACIÓN DE SERVIDORES OLLAMA</h3>
+                <h3 class="label-text text-black dark:text-white tracking-widest"><i class="fa-solid fa-server text-blue-500 mr-2"></i>CONFIGURACIÓN DE SERVIDORES OLLAMA</h3>
                 <button onclick="ui.toggleOllamaConfigModal()" class="text-gray-300 hover:text-red-500"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div>
@@ -216,63 +237,63 @@
                 <span class="label-text">Dirección Ollama Cloud (Remoto)</span>
                 <input type="text" id="ollama-cloud-url" class="config-input font-mono" placeholder="http://..." oninput="localStorage.setItem('koreh_ollama_cloud_url', this.value); if(window.Koreh.Core) window.Koreh.Core.syncConfig();">
             </div>
-            <div class="bg-gray-50 p-3 rounded text-[10px] text-gray-500 border border-gray-100 leading-relaxed">
+            <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded text-[10px] text-gray-500 dark:text-gray-400 border border-gray-100 dark:border-gray-700 leading-relaxed">
                 <i class="fa-solid fa-circle-info mr-1"></i> Las URLs se sincronizan inmediatamente en caliente y quedan almacenadas de forma persistente en la memoria de tu navegador local.
             </div>
-            <div class="flex gap-2 justify-end mt-4 pt-4 border-t border-gray-50">
+            <div class="flex gap-2 justify-end mt-4 pt-4 border-t border-gray-50 dark:border-gray-800">
                 <button onclick="ui.toggleOllamaConfigModal()" class="btn-primary w-auto px-6 bg-blue-600 hover:bg-blue-700">Guardar</button>
             </div>
         </div>
     </div>
 
-    <div id="folder-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-white/95 p-8 hidden transition-opacity">
-        <div class="bg-white w-full max-w-lg flex flex-col border border-gray-200 shadow-xl">
-            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+    <div id="folder-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-white/95 dark:bg-gray-950/95 p-8 hidden transition-opacity">
+        <div class="bg-white dark:bg-gray-900 w-full max-w-lg flex flex-col border border-gray-200 dark:border-gray-800 shadow-xl">
+            <div class="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
                 <h2 class="text-xs font-medium tracking-[0.2em] text-gray-400 uppercase">Seleccionar Origen</h2>
-                <button onclick="ui.toggleFolderModal()" class="text-gray-300 hover:text-black transition-colors text-xl font-light">&times;</button>
+                <button onclick="ui.toggleFolderModal()" class="text-gray-300 hover:text-black dark:hover:text-white transition-colors text-xl font-light">&times;</button>
             </div>
             
-            <div class="p-8 bg-gray-50/50 flex flex-col items-center justify-center gap-4 border-b border-gray-100">
+            <div class="p-8 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col items-center justify-center gap-4 border-b border-gray-100 dark:border-gray-800">
                 <i class="fa-solid fa-folder-open text-3xl text-gray-300"></i>
                 <p class="text-xs text-gray-500 text-center font-light max-w-xs leading-relaxed">Abre una carpeta local del disco para sincronizar los archivos JSON y assets del Worldbuilding.</p>
-                <button onclick="ui.triggerDirectoryPicker();" class="btn-primary w-auto px-8 py-3 bg-black text-white hover:opacity-90 flex items-center gap-3 shadow-sm">
+                <button onclick="ui.triggerDirectoryPicker();" class="btn-primary w-auto px-8 py-3 bg-black text-white dark:bg-white dark:text-black hover:opacity-90 flex items-center gap-3 shadow-sm">
                     <i class="fa-solid fa-hdd text-[10px]"></i> PANEL DE REPOSITORIOS
                 </button>
             </div>
 
-            <div class="p-4 bg-white max-h-[30vh] overflow-y-auto" id="folder-list-container"></div>
+            <div class="p-4 bg-white dark:bg-gray-900 max-h-[30vh] overflow-y-auto" id="folder-list-container"></div>
         </div>
     </div>
 
-    <div id="name-modal" class="fixed inset-0 z-[110] flex items-center justify-center bg-white/95 p-8 hidden transition-opacity">
-        <div class="bg-white w-full max-w-sm border border-gray-200 shadow-xl p-6 flex flex-col gap-4">
+    <div id="name-modal" class="fixed inset-0 z-[110] flex items-center justify-center bg-white/95 dark:bg-gray-950/95 p-8 hidden transition-opacity">
+        <div class="bg-white dark:bg-gray-900 w-full max-w-sm border border-gray-200 dark:border-gray-800 shadow-xl p-6 flex flex-col gap-4">
             <div class="flex justify-between items-center">
-                <h2 class="label-text text-black tracking-widest">CREAR NUEVO DATO</h2>
-                <button onclick="ui.toggleNameModal()" class="text-gray-300 hover:text-black">&times;</button>
+                <h2 class="label-text text-black dark:text-white tracking-widest">CREAR NUEVO DATO</h2>
+                <button onclick="ui.toggleNameModal()" class="text-gray-300 hover:text-black dark:hover:text-white">&times;</button>
             </div>
             <input type="text" id="new-item-name" class="config-input text-lg font-medium text-center" placeholder="Nombre del archivo..." onkeydown="if(event.key==='Enter') app.confirmCreate()">
-            <div class="flex gap-2 justify-end mt-2 pt-4 border-t border-gray-50">
-                <button onclick="ui.toggleNameModal()" class="btn-nordic text-gray-400 border-none hover:bg-gray-50">Cancelar</button>
+            <div class="flex gap-2 justify-end mt-2 pt-4 border-t border-gray-50 dark:border-gray-800">
+                <button onclick="ui.toggleNameModal()" class="btn-nordic text-gray-400 border-none hover:bg-gray-50 dark:hover:bg-gray-800">Cancelar</button>
                 <button onclick="app.confirmCreate()" class="btn-primary w-auto px-6">CREAR</button>
             </div>
         </div>
     </div>
 
-    <div id="premise-modal" class="fixed inset-0 z-[110] flex items-center justify-center bg-white/98 p-4 hidden">
-        <div class="bg-white w-full max-w-2xl border border-gray-200 shadow-2xl flex flex-col">
-            <div class="h-14 border-b border-gray-100 flex items-center justify-between px-6 bg-gray-50">
+    <div id="premise-modal" class="fixed inset-0 z-[110] flex items-center justify-center bg-white/98 dark:bg-gray-950/98 p-4 hidden">
+        <div class="bg-white dark:bg-gray-900 w-full max-w-2xl border border-gray-200 dark:border-gray-800 shadow-2xl flex flex-col">
+            <div class="h-14 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-6 bg-gray-50 dark:bg-gray-800">
                 <h2 class="font-medium text-xs tracking-widest text-indigo-600 uppercase"><i class="fa-solid fa-seedling mr-2"></i>Génesis de Premisa</h2>
-                <button onclick="ui.togglePremiseModal()" class="text-gray-400 hover:text-black">&times;</button>
+                <button onclick="ui.togglePremiseModal()" class="text-gray-400 hover:text-black dark:hover:text-white">&times;</button>
             </div>
             <div class="p-6 space-y-6">
                 <div>
                     <label class="label-text">Dirección Creativa (Opcional)</label>
-                    <textarea id="genesis-direction" class="config-input border border-gray-200 p-3 h-24 rounded bg-gray-50 focus:bg-white" placeholder="Ej: Quiero una historia de misterio donde la facción de los Magos traiciona al Rey..."></textarea>
+                    <textarea id="genesis-direction" class="config-input border border-gray-200 dark:border-gray-800 p-3 h-24 rounded bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-900" placeholder="Ej: Quiero una historia de misterio donde la facción de los Magos traiciona al Rey..."></textarea>
                 </div>
                 
                 <div id="genesis-result-area" class="hidden">
                     <label class="label-text text-green-600">Premisa Sugerida</label>
-                    <textarea id="genesis-output" class="config-input border border-green-100 p-3 h-32 rounded bg-green-50/30 focus:bg-white text-gray-700 leading-relaxed"></textarea>
+                    <textarea id="genesis-output" class="config-input border border-green-100 dark:border-green-950 p-3 h-32 rounded bg-green-50/30 dark:bg-green-950/10 focus:bg-white dark:focus:bg-gray-900 text-gray-700 dark:text-gray-300 leading-relaxed"></textarea>
                 </div>
 
                 <button onclick="cronoAI.generateSmartPremise()" id="btn-genesis" class="btn-primary bg-indigo-600 hover:bg-indigo-700">
@@ -282,23 +303,23 @@
         </div>
     </div>
 
-    <div id="storyboard-modal" class="fixed inset-0 z-[110] flex items-center justify-center bg-white/98 p-4 hidden">
-        <div class="bg-white w-full max-w-3xl border border-gray-200 shadow-2xl flex flex-col h-[80vh]">
-            <div class="h-14 border-b border-gray-100 flex items-center justify-between px-6 bg-gray-50 shrink-0">
+    <div id="storyboard-modal" class="fixed inset-0 z-[110] flex items-center justify-center bg-white/98 dark:bg-gray-950/98 p-4 hidden">
+        <div class="bg-white dark:bg-gray-900 w-full max-w-3xl border border-gray-200 dark:border-gray-800 shadow-2xl flex flex-col h-[80vh]">
+            <div class="h-14 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-6 bg-gray-50 dark:bg-gray-800 shrink-0">
                 <h2 class="font-medium text-xs tracking-widest text-indigo-600 uppercase"><i class="fa-solid fa-clapperboard mr-2"></i>Generador Storyboard</h2>
-                <button onclick="ui.toggleStoryboardModal()" class="text-gray-400 hover:text-black">&times;</button>
+                <button onclick="ui.toggleStoryboardModal()" class="text-gray-400 hover:text-black dark:hover:text-white">&times;</button>
             </div>
             
             <div class="flex-1 overflow-hidden flex">
-                <div class="w-2/3 p-6 flex flex-col border-r border-gray-100">
+                <div class="w-2/3 p-6 flex flex-col border-r border-gray-100 dark:border-gray-800">
                     <label class="label-text">Texto Narrativo / Guion</label>
-                    <textarea id="sb-story-text" class="flex-1 config-input border border-gray-200 p-4 rounded bg-gray-50 focus:bg-white text-sm leading-relaxed resize-none" placeholder="Pega aquí tu historia completa. La IA extraerá escenas, personajes y generará las imágenes..."></textarea>
+                    <textarea id="sb-story-text" class="flex-1 config-input border border-gray-200 dark:border-gray-800 p-4 rounded bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-900 text-sm leading-relaxed resize-none" placeholder="Pega aquí tu historia completa. La IA extraerá escenas, personajes y generará las imágenes..."></textarea>
                 </div>
                 
-                <div class="w-1/3 bg-gray-50 p-6 flex flex-col">
+                <div class="w-1/3 bg-gray-50 dark:bg-gray-800 p-6 flex flex-col">
                     <div class="mb-4">
                         <h4 class="label-text text-indigo-500 mb-2">Biblia Visual Detectada</h4>
-                        <div id="visual-bible-container" class="bg-white border border-gray-200 h-64 overflow-y-auto p-3 rounded shadow-sm">
+                        <div id="visual-bible-container" class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 h-64 overflow-y-auto p-3 rounded shadow-sm">
                             <div class="text-[10px] text-gray-400 italic text-center mt-10">
                                 La IA listará aquí los rasgos visuales extraídos.
                             </div>
@@ -317,19 +338,19 @@
         </div>
     </div>
 
-    <div id="ai-modal" class="fixed inset-0 z-[90] flex items-center justify-center bg-white/98 p-4 hidden">
-        <div class="bg-white w-full max-w-6xl h-[95vh] flex flex-col border border-gray-200 shadow-2xl">
-            <div class="h-16 border-b border-gray-100 flex items-center justify-between px-8 bg-gray-50 shrink-0">
+    <div id="ai-modal" class="fixed inset-0 z-[90] flex items-center justify-center bg-white/98 dark:bg-gray-950/98 p-4 hidden">
+        <div class="bg-white dark:bg-gray-900 w-full max-w-6xl h-[95vh] flex flex-col border border-gray-200 dark:border-gray-800 shadow-2xl">
+            <div class="h-16 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-8 bg-gray-50 dark:bg-gray-800 shrink-0">
                 <div class="flex items-center gap-3">
                     <i class="fa-solid fa-layer-group text-indigo-500"></i>
-                    <h2 class="font-medium text-xs tracking-widest text-black uppercase">Arquitecto de Novela</h2>
+                    <h2 class="font-medium text-xs tracking-widest text-black dark:text-white uppercase">Arquitecto de Novela</h2>
                 </div>
-                <button onclick="ui.toggleAIModal()" class="w-8 h-8 flex items-center justify-center border border-gray-200 hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">&times;</button>
+                <button onclick="ui.toggleAIModal()" class="w-8 h-8 flex items-center justify-center border border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-950 text-gray-400 hover:text-red-500 transition-colors">&times;</button>
             </div>
 
             <div class="flex flex-1 overflow-hidden">
-                <div class="w-1/3 min-w-[380px] border-r border-gray-100 p-6 flex flex-col overflow-y-auto bg-white">
-                    <div id="ai-inventory" class="mb-6 p-4 bg-indigo-50/50 rounded border border-indigo-100">
+                <div class="w-1/3 min-w-[380px] border-r border-gray-100 dark:border-gray-800 p-6 flex flex-col overflow-y-auto bg-white dark:bg-gray-900">
+                    <div id="ai-inventory" class="mb-6 p-4 bg-indigo-50/50 dark:bg-indigo-950/10 rounded border border-indigo-100 dark:border-indigo-900">
                         <div class="flex justify-between items-center mb-2">
                             <h4 class="label-text text-indigo-400">Contexto Cargado</h4>
                             <span id="ai-context-count" class="text-[9px] font-bold text-indigo-600">0 ITEMS</span>
@@ -342,12 +363,12 @@
                             <label class="label-text">Documento Maestro / Índice</label>
                             <button onclick="ui.togglePremiseModal()" class="text-[9px] uppercase font-bold text-indigo-600 hover:underline"><i class="fa-solid fa-sparkles mr-1"></i>Sugerir Premisa</button>
                         </div>
-                        <textarea id="ai-prompt" class="config-input border border-gray-200 p-3 h-48 rounded bg-gray-50 focus:bg-white text-xs font-mono" placeholder="Pega aquí tu índice de capítulos o una premisa general. La IA extraerá la estructura automáticamente..."></textarea>
+                        <textarea id="ai-prompt" class="config-input border border-gray-200 dark:border-gray-800 p-3 h-48 rounded bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-900 text-xs font-mono" placeholder="Pega aquí tu índice de capítulos o una premisa general. La IA extraerá la estructura automáticamente..."></textarea>
                     </div>
 
-                    <div class="mb-6 p-4 border border-indigo-100 rounded bg-indigo-50/30">
+                    <div class="mb-6 p-4 border border-indigo-100 dark:border-indigo-900 rounded bg-indigo-50/30 dark:bg-indigo-950/5">
                         <h4 class="label-text text-indigo-600 mb-2"><i class="fa-solid fa-microchip mr-1"></i> Pipeline Camaleónico</h4>
-                        <div class="space-y-2 text-[10px] font-mono text-gray-500" id="pipeline-tracker">
+                        <div class="space-y-2 text-[10px] font-mono text-gray-500 dark:text-gray-400" id="pipeline-tracker">
                             <div id="trk-phase-1" class="flex items-center gap-2"><i class="fa-regular fa-circle w-3 text-center"></i> 1. Ingestión y Mapeo</div>
                             <div id="trk-phase-2" class="flex items-center gap-2"><i class="fa-regular fa-circle w-3 text-center"></i> 2. Aislamiento de Inventario</div>
                             <div id="trk-phase-3" class="flex items-center gap-2 opacity-40"><i class="fa-regular fa-circle w-3 text-center"></i> 3. Director de Estilo</div>
@@ -365,8 +386,8 @@
                     <button onclick="cronoAI.runPipeline()" id="btn-run-ai" class="btn-primary mt-auto">INICIAR ARQUITECTURA</button>
                 </div>
 
-                <div class="w-2/3 bg-gray-50 p-8 flex flex-col relative overflow-hidden">
-                    <div id="ai-console" class="font-mono text-[11px] space-y-3 text-gray-600 h-full overflow-y-auto pb-10 pr-4">
+                <div class="w-2/3 bg-gray-50 dark:bg-gray-800 p-8 flex flex-col relative overflow-hidden">
+                    <div id="ai-console" class="font-mono text-[11px] space-y-3 text-gray-600 dark:text-gray-300 h-full overflow-y-auto pb-10 pr-4">
                         <div class="text-indigo-600 font-bold">> Sistema Estructural Listo.</div>
                     </div>
                 </div>
@@ -374,46 +395,46 @@
         </div>
     </div>
 
-    <header class="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-6 z-[1000] shrink-0 relative">
+    <header class="h-8 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-6 z-[1000] shrink-0 relative">
         <div class="flex items-center gap-4">
-            <button onclick="ui.toggleGenerator()" id="btn-toggle-gen" class="w-8 h-8 flex items-center justify-center text-black border border-gray-200 hover:bg-black hover:text-white transition-colors">
+            <button onclick="ui.toggleGenerator()" id="btn-toggle-gen" class="w-8 h-8 flex items-center justify-center text-black dark:text-white border border-gray-200 dark:border-gray-700 hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black transition-colors">
                 <i class="fa-solid fa-bars-staggered text-sm"></i>
             </button>
             <div class="flex flex-col">
-                <h1 class="font-medium text-black text-xs tracking-[0.15em] leading-tight">NS</h1>
+                <h1 class="font-medium text-black dark:text-white text-xs tracking-[0.15em] leading-tight">NS</h1>
             </div>
             
            <div class="flex items-center gap-6 ml-8 h-full pt-1">
-                <button id="btn-tab-datos" onclick="ui.switchTab('datos')" class="text-xs font-bold tracking-widest uppercase pb-1 border-b-2 border-black transition-colors">Data</button>
-                <button id="btn-tab-tramas" onclick="ui.switchTab('tramas')" class="text-xs font-bold tracking-widest uppercase pb-1 border-b-2 border-transparent text-gray-400 hover:text-black transition-colors">Trama</button>
-                <button id="btn-tab-cronologia" onclick="ui.switchTab('cronologia')" class="text-xs font-bold tracking-widest uppercase pb-1 border-b-2 border-transparent text-gray-400 hover:text-black transition-colors">Crono</button>
-                <button id="btn-tab-io" onclick="ui.switchTab('io')" class="text-xs font-bold tracking-widest uppercase pb-1 border-b-2 border-transparent text-gray-400 hover:text-black transition-colors">IO</button>
-                <button id="btn-tab-libros" onclick="ui.switchTab('libros')" class="text-xs font-bold tracking-widest uppercase pb-1 border-b-2 border-transparent text-gray-400 hover:text-black transition-colors">Libros</button>
+                <button id="btn-tab-datos" onclick="ui.switchTab('datos')" class="text-xs font-bold tracking-widest uppercase pb-1 border-b-2 border-black dark:border-white text-black dark:text-white transition-colors">Data</button>
+                <button id="btn-tab-tramas" onclick="ui.switchTab('tramas')" class="text-xs font-bold tracking-widest uppercase pb-1 border-b-2 border-transparent text-gray-400 hover:text-black dark:hover:text-white transition-colors">Trama</button>
+                <button id="btn-tab-cronologia" onclick="ui.switchTab('cronologia')" class="text-xs font-bold tracking-widest uppercase pb-1 border-b-2 border-transparent text-gray-400 hover:text-black dark:hover:text-white transition-colors">Crono</button>
+                <button id="btn-tab-io" onclick="ui.switchTab('io')" class="text-xs font-bold tracking-widest uppercase pb-1 border-b-2 border-transparent text-gray-400 hover:text-black dark:hover:text-white transition-colors">IO</button>
+                <button id="btn-tab-libros" onclick="ui.switchTab('libros')" class="text-xs font-bold tracking-widest uppercase pb-1 border-b-2 border-transparent text-gray-400 hover:text-black dark:hover:text-white transition-colors">Libros</button>
             </div>
         </div>
         
         <div class="flex items-center gap-4">
             <div id="crono-toolbar" class="hidden flex items-center gap-2 relative">
                 <div class="relative inline-block text-left group">
-                    <button class="btn-nordic bg-black text-white border-black hover:bg-gray-800 flex items-center gap-2 relative z-[1010]">
+                    <button class="btn-nordic bg-black text-white border-black hover:bg-gray-800 dark:bg-white dark:text-black dark:border-white flex items-center gap-2 relative z-[1010]">
                         <i class="fa-solid fa-folder-tree"></i> ACCIONES CRONO <i class="fa-solid fa-chevron-down text-[8px]"></i>
                     </button>
                     <div class="absolute left-0 top-full pt-2 w-56 z-[9999] hidden group-hover:block">
-                        <div class="bg-white border border-gray-200 shadow-2xl rounded-sm py-1 overflow-hidden">
-                            <button onclick="ui.toggleAIModal()" class="w-full text-left px-4 py-2.5 text-xs font-medium text-blue-600 hover:bg-blue-50/50 flex items-center gap-2 border-b border-gray-50">
+                        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl rounded-sm py-1 overflow-hidden">
+                            <button onclick="ui.toggleAIModal()" class="w-full text-left px-4 py-2.5 text-xs font-medium text-blue-600 hover:bg-blue-50/50 flex items-center gap-2 border-b border-gray-50 dark:border-gray-800">
                                 <i class="fa-solid fa-layer-group w-4 text-center"></i> Novela
                             </button>
-                            <button onclick="ui.toggleStoryboardModal()" class="w-full text-left px-4 py-2.5 text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 border-b border-gray-50">
+                            <button onclick="ui.toggleStoryboardModal()" class="w-full text-left px-4 py-2.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2 border-b border-gray-50 dark:border-gray-800">
                                 <i class="fa-solid fa-clapperboard w-4 text-center"></i> Storyboard
                             </button>
-                            <button onclick="ImgGen.generateBatch()" id="btn-gen-batch" class="w-full text-left px-4 py-2.5 text-xs font-medium text-black hover:bg-gray-50 flex items-center gap-2 border-b border-gray-50">
+                            <button onclick="ImgGen.generateBatch()" id="btn-gen-batch" class="w-full text-left px-4 py-2.5 text-xs font-medium text-black dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2 border-b border-gray-50 dark:border-gray-800">
                                 <i class="fa-solid fa-images w-4 text-center"></i> Ilustrar Todo
                             </button>
                             <button onclick="app.createBlankVisualPrompts()" id="btn-create-blank-prompts" class="btn-nordic">Crear Prompts en Blanco</button>
-                            <button onclick="BookAssembler.startProduction()" class="w-full text-left px-4 py-2.5 text-xs font-medium text-rose-600 hover:bg-rose-50/30 flex items-center gap-2 border-b border-gray-50">
+                            <button onclick="BookAssembler.startProduction()" class="w-full text-left px-4 py-2.5 text-xs font-medium text-rose-600 hover:bg-rose-50/30 flex items-center gap-2 border-b border-gray-50 dark:border-gray-800">
                                 <i class="fa-solid fa-book w-4 text-center"></i> Libro (Paralelo)
                             </button>
-                            <button onclick="BookAssembler.startProductionSerial()" class="w-full text-left px-4 py-2.5 text-xs font-medium text-amber-600 hover:bg-amber-50/30 flex items-center gap-2 border-b border-gray-50">
+                            <button onclick="BookAssembler.startProductionSerial()" class="w-full text-left px-4 py-2.5 text-xs font-medium text-amber-600 hover:bg-amber-50/30 flex items-center gap-2 border-b border-gray-50 dark:border-gray-800">
                                 <i class="fa-solid fa-book-journal-whills w-4 text-center"></i> Libro (Serie)
                             </button>
                             <button onclick="mainCrono.loadPlanteamiento()" class="w-full text-left px-4 py-2.5 text-xs font-medium text-teal-600 hover:bg-teal-50/50 flex items-center gap-2">
@@ -424,16 +445,16 @@
                 </div>
             </div>
 
-            <button onclick="ui.toggleImageConfigModal()" class="btn-nordic tracking-wider font-bold text-gray-700 border-gray-300">
-                <i class="fa-solid fa-gear text-[11px] text-black animate-hover-spin"></i> CONFIGURACIÓN
+            <button onclick="ui.toggleImageConfigModal()" class="btn-nordic tracking-wider font-bold text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700">
+                <i class="fa-solid fa-gear text-[11px] text-black dark:text-white animate-hover-spin"></i> CONFIGURACIÓN
             </button>
 
-            <div class="flex items-center gap-3 border-l border-r border-gray-100 px-4 h-8">
+            <div class="flex items-center gap-3 border-l border-r border-gray-100 dark:border-gray-800 px-4 h-8">
                 <span class="label-text mb-0 cursor-pointer text-[9px]" onclick="document.getElementById('chroma-toggle').click()">CHROMA</span>
                 <div class="relative">
                     <input type="checkbox" id="chroma-toggle" class="toggle-checkbox hidden">
-                    <label for="chroma-toggle" class="toggle-label block w-7 h-4 bg-gray-200 rounded-full cursor-pointer relative transition-colors">
-                        <div class="toggle-circle absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform"></div>
+                    <label for="chroma-toggle" class="toggle-label block w-7 h-4 bg-gray-200 dark:bg-gray-700 rounded-full cursor-pointer relative transition-colors">
+                        <div class="toggle-circle absolute top-0.5 left-0.5 w-3 h-3 bg-white dark:bg-gray-900 rounded-full transition-transform"></div>
                     </label>
                 </div>
             </div>
@@ -450,25 +471,29 @@
                 <button onclick="ui.toggleGenerator()" id="btn-toggle-generator" class="btn-nordic">
                     <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> 
                 </button>
-                <button onclick="Exporter.exportAllData()" title="Descargar todo el contenido en TXT" class="p-2 text-gray-400 hover:text-black transition-colors">
+                <button onclick="Exporter.exportAllData()" title="Descargar todo el contenido en TXT" class="p-2 text-gray-400 hover:text-black dark:hover:text-white transition-colors">
                     <i class="fa-solid fa-file-export"></i>
                 </button>
-                <div class="h-4 w-[1px] bg-gray-100 mx-2"></div>
+                <div class="h-4 w-[1px] bg-gray-100 dark:bg-gray-800 mx-2"></div>
             </div>
 
             <button onclick="ui.toggleFolderModal()" id="folder-label-btn" class="btn-nordic min-w-[140px] justify-between">
                 <span>Seleccionar Carpeta</span>
                 <i class="fa-solid fa-folder-open text-gray-400"></i>
             </button>
+
+            <button onclick="ui.toggleTheme()" id="theme-toggle-btn" class="btn-nordic" title="Alternar Modo Oscuro/Claro">
+                <i class="fa-solid fa-moon text-[11px]"></i>
+            </button>
         </div>
     </header>
 
-    <main class="app-container flex-1 flex overflow-hidden relative bg-gray-50/30">
+    <main class="app-container flex-1 flex overflow-hidden relative bg-gray-50/30 dark:bg-gray-950/30">
         
         <div id="tab-datos" class="w-full h-full flex relative overflow-hidden transition-opacity duration-300">
-            <aside id="generator-sidebar" class="sidebar sidebar-left">
-                <div class="h-16 border-b border-gray-100 flex items-center justify-between px-6 bg-white shrink-0">
-                    <span class="label-text text-black tracking-widest">MOTOR DE GÉNESIS</span>
+            <aside id="generator-sidebar" class="sidebar sidebar-left bg-white dark:bg-gray-900">
+                <div class="h-16 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-6 bg-white dark:bg-gray-900 shrink-0">
+                    <span class="label-text text-black dark:text-white tracking-widest">MOTOR DE GÉNESIS</span>
                     <i class="fa-solid fa-bolt text-xs text-gray-300"></i>
                 </div>
 
@@ -476,7 +501,7 @@
                     <div class="space-y-4">
                         <div>
                             <span class="label-text text-blue-500">Enfoque de Realidad</span>
-                            <select id="gen-mode" class="config-input text-blue-900 font-medium bg-blue-50/50">
+                            <select id="gen-mode" class="config-input text-blue-900 dark:text-blue-200 font-medium bg-blue-50/50 dark:bg-blue-950/20">
                                 <option value="fiction">Fantasía / Sci-Fi (Creativo)</option>
                                 <option value="real">Realidad / Histórico (Estricto)</option>
                                 <option value="database">Base de Datos (Multi-Prompt)</option>
@@ -530,12 +555,12 @@
                         </button>
                     </div>
 
-                    <div class="pt-6 border-t border-gray-100">
+                    <div class="pt-6 border-t border-gray-100 dark:border-gray-800">
                         <div class="flex justify-between items-center mb-2">
                             <span class="label-text">Registro de Sistema</span>
                             <button onclick="document.getElementById('gen-logs').innerHTML=''" class="text-[9px] text-gray-300 hover:text-red-400">BORRAR</button>
                         </div>
-                        <div id="gen-logs" class="log-console h-40 bg-gray-50 p-2 border border-gray-100">
+                        <div id="gen-logs" class="log-console h-40 bg-gray-50 dark:bg-gray-800 p-2 border border-gray-100 dark:border-gray-700">
                             <div class="log-entry info">Sistema operativo listo.</div>
                         </div>
                     </div>
@@ -551,50 +576,50 @@
                 </div>
             </div>
 
-            <aside id="editor-sidebar" class="sidebar sidebar-bottom bg-white flex flex-col">
+            <aside id="editor-sidebar" class="sidebar sidebar-bottom bg-white dark:bg-gray-900 flex flex-col">
                 <div class="flex-1 flex overflow-hidden">
-                    <div class="w-1/4 p-6 overflow-y-auto border-r border-gray-100 flex flex-col">
+                    <div class="w-1/4 p-6 overflow-y-auto border-r border-gray-100 dark:border-gray-800 flex flex-col">
                         <div class="flex justify-between items-end mb-2 shrink-0">
-                            <button onclick="app.generateImage()" class="text-[9px] font-bold text-black border-b border-gray-200 hover:border-black uppercase tracking-wider transition-all">Generar Imagen</button>
+                            <button onclick="app.generateImage()" class="text-[9px] font-bold text-black dark:text-white border-b border-gray-200 dark:border-gray-700 hover:border-black dark:hover:border-white uppercase tracking-wider transition-all">Generar Imagen</button>
                             <input type="file" id="inp-upload-img" accept="image/png, image/jpeg, image/webp" class="hidden" onchange="app.uploadImage(event)">
-                            <button onclick="document.getElementById('inp-upload-img').click()" class="text-[9px] font-bold text-gray-500 hover:text-black uppercase tracking-wider transition-all"><i class="fa-solid fa-upload"></i> SUBIR</button>
+                            <button onclick="document.getElementById('inp-upload-img').click()" class="text-[9px] font-bold text-gray-500 hover:text-black dark:hover:text-white uppercase tracking-wider transition-all"><i class="fa-solid fa-upload"></i> SUBIR</button>
                         </div>
-                        <div class="flex-1 bg-gray-50 border border-gray-100 relative overflow-hidden flex items-center justify-center min-h-[150px]" id="editor-img-container">
+                        <div class="flex-1 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 relative overflow-hidden flex items-center justify-center min-h-[150px]" id="editor-img-container">
                             <i class="fa-regular fa-image text-gray-300 text-2xl"></i>
                         </div>
                     </div>
 
-                    <div class="w-1/3 p-6 overflow-y-auto border-r border-gray-100 space-y-4">
+                    <div class="w-1/3 p-6 overflow-y-auto border-r border-gray-100 dark:border-gray-800 space-y-4">
                         <input type="text" id="inp-title" class="config-input font-medium text-lg" placeholder="Nombre...">
                         <div class="grid grid-cols-2 gap-4">
                             <input type="text" id="inp-tag" class="config-input" placeholder="Ej. Personaje">
                             <input type="text" id="inp-id" class="config-input text-gray-400" disabled>
                         </div>
-                        <textarea id="inp-visual" rows="3" class="config-input resize-none font-mono text-xs text-purple-800 bg-purple-50/50 p-2 border-purple-100" placeholder="Prompt..."></textarea>
+                        <textarea id="inp-visual" rows="3" class="config-input resize-none font-mono text-xs text-purple-800 dark:text-purple-300 bg-purple-50/50 dark:bg-purple-950/20 p-2 border-purple-100 dark:border-purple-900" placeholder="Prompt..."></textarea>
                     </div>
 
                     <div class="flex-1 p-6 overflow-y-auto flex flex-col">
                         <div class="flex-1 flex flex-col">
-                            <button onclick="app.refineText('desc')" class="text-[9px] text-gray-400 hover:text-black uppercase tracking-wider transition-colors self-end"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>Refinar</button>
-                            <textarea id="inp-desc" class="config-input flex-1 resize-none leading-relaxed text-gray-600 border-b border-gray-200" placeholder="Descripción..."></textarea>
+                            <button onclick="app.refineText('desc')" class="text-[9px] text-gray-400 hover:text-black dark:hover:text-white uppercase tracking-wider transition-colors self-end"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>Refinar</button>
+                            <textarea id="inp-desc" class="config-input flex-1 resize-none leading-relaxed text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-800" placeholder="Descripción..."></textarea>
                         </div>
-                        <div class="pt-4 mt-4 border-t border-gray-100 flex gap-4 shrink-0">
-                            <button onclick="app.deleteCurrentItem()" class="btn-nordic text-red-400 border-red-100 hover:bg-red-50"><i class="fa-regular fa-trash-can"></i></button>
+                        <div class="pt-4 mt-4 border-t border-gray-100 dark:border-gray-800 flex gap-4 shrink-0">
+                            <button onclick="app.deleteCurrentItem()" class="btn-nordic text-red-400 border-red-100 dark:border-red-950 hover:bg-red-50 dark:hover:bg-red-950/50"><i class="fa-regular fa-trash-can"></i></button>
                             <button onclick="app.saveCurrentItem()" id="btn-save" class="btn-primary">GUARDAR CAMBIOS</button>
                         </div>
                     </div>
                 </div>
-                <div id="sidebar-loader" class="loader-overlay">
-                    <i class="fa-solid fa-circle-notch fa-spin text-2xl text-black mb-2"></i>
-                    <span class="text-[10px] uppercase tracking-widest text-gray-500 font-medium">Procesando Inteligencia Artificial...</span>
+                <div id="sidebar-loader" class="loader-overlay bg-white/80 dark:bg-gray-900/80">
+                    <i class="fa-solid fa-circle-notch fa-spin text-2xl text-black dark:text-white mb-2"></i>
+                    <span class="text-[10px] uppercase tracking-widest text-gray-500 dark:text-gray-400 font-medium">Procesando Inteligencia Artificial...</span>
                 </div>
             </aside>
         </div>
 
        <div id="tab-tramas" class="w-full h-full flex relative overflow-hidden transition-opacity duration-300 hidden">
-            <aside id="tramas-generator-sidebar" class="sidebar sidebar-left">
-                <div class="h-16 border-b border-gray-100 flex items-center justify-between px-6 bg-indigo-50 shrink-0">
-                    <span class="label-text text-indigo-900 tracking-widest font-bold">IA TRAMAS (ORÁCULO)</span>
+            <aside id="tramas-generator-sidebar" class="sidebar sidebar-left bg-white dark:bg-gray-900">
+                <div class="h-16 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-6 bg-indigo-50 dark:bg-indigo-950/20 shrink-0">
+                    <span class="label-text text-indigo-900 dark:text-indigo-200 tracking-widest font-bold">IA TRAMAS (ORÁCULO)</span>
                     <button onclick="if(window.TramasUI) window.TramasUI.toggleTramasGenerator()" class="text-indigo-300 hover:text-red-400"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="flex-1 overflow-y-auto p-6 space-y-8">
@@ -610,16 +635,16 @@
                 </div>
             </aside>
 
-            <div class="flex-1 relative bg-gray-50/50 overflow-hidden" id="tramas-canvas-container">
+            <div class="flex-1 relative bg-gray-50/50 dark:bg-gray-950/50 overflow-hidden" id="tramas-canvas-container">
                 <canvas id="tramas-canvas" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
                 <div class="absolute top-6 left-6 flex gap-2 z-30">
                     <button class="btn-primary bg-indigo-600 w-auto px-4 py-3 shadow-lg" onclick="if(window.TramasUI) window.TramasUI.toggleTramasGenerator()"><i class="fa-solid fa-brain"></i></button>
                     <button class="btn-primary w-auto px-6 py-3 shadow-lg" onclick="if(window.TramasUI) window.TramasUI.createNewOmega()">NUEVO EVENTO</button>
-                    <button class="btn-nordic bg-white w-auto px-6 py-3 shadow-lg" onclick="if(window.TramasUI) window.TramasUI.createNewRegion()">NUEVA REGIÓN</button>
-                    <button class="btn-nordic bg-white w-auto px-6 py-3 shadow-lg" onclick="if(window.TramasUI) window.TramasUI.autoLayout()">ORDENAR TRAMA</button>
+                    <button class="btn-nordic bg-white dark:bg-gray-800 w-auto px-6 py-3 shadow-lg" onclick="if(window.TramasUI) window.TramasUI.createNewRegion()">NUEVA REGIÓN</button>
+                    <button class="btn-nordic bg-white dark:bg-gray-800 w-auto px-6 py-3 shadow-lg" onclick="if(window.TramasUI) window.TramasUI.autoLayout()">ORDENAR TRAMA</button>
                 </div>
 
-                <div class="absolute top-6 left-[620px] flex gap-2 z-30 bg-white p-2 rounded shadow-sm border border-gray-200 items-center">
+                <div class="absolute top-6 left-[620px] flex gap-2 z-30 bg-white dark:bg-gray-900 p-2 rounded shadow-sm border border-gray-200 dark:border-gray-800 items-center">
                     <select id="filter-type" class="config-input text-[10px] uppercase font-bold tracking-wider border-none w-36 outline-none" onchange="if(window.TramasUI) window.TramasUI.updateFilterUI()">
                         <option value="">SIN FILTRO VISUAL</option>
                         <option value="pov">FILTRAR PERSONAJE</option>
@@ -629,25 +654,25 @@
                 </div>
             </div>
 
-            <aside id="omega-sidebar" class="sidebar sidebar-right">
-                <div class="h-16 border-b border-gray-100 flex items-center justify-between px-6 bg-white shrink-0">
-                    <span class="label-text text-black">Inspector Omega</span>
+            <aside id="omega-sidebar" class="sidebar sidebar-right bg-white dark:bg-gray-900">
+                <div class="h-16 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-6 bg-white dark:bg-gray-900 shrink-0">
+                    <span class="label-text text-black dark:text-white">Inspector Omega</span>
                     <button onclick="document.getElementById('omega-sidebar').classList.remove('open')" class="text-gray-300 hover:text-red-400"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="flex-1 overflow-y-auto p-6 space-y-6" id="omega-sidebar-content"></div>
-                <div class="p-6 border-t border-gray-100 bg-white shrink-0 flex gap-4 hidden" id="omega-sidebar-actions">
-                    <button onclick="if(window.TramasUI) window.TramasUI.deleteCurrentOmega()" class="btn-nordic text-red-400 border-red-100"><i class="fa-regular fa-trash-can"></i></button>
+                <div class="p-6 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0 flex gap-4 hidden" id="omega-sidebar-actions">
+                    <button onclick="if(window.TramasUI) window.TramasUI.deleteCurrentOmega()" class="btn-nordic text-red-400 border-red-100 dark:border-red-950"><i class="fa-regular fa-trash-can"></i></button>
                     <button onclick="if(window.TramasUI) window.TramasUI.saveCurrentOmega()" class="btn-primary">GUARDAR CAMBIOS</button>
                 </div>
             </aside>
         </div>
 
         <div id="tab-cronologia" class="w-full h-full flex relative overflow-hidden transition-opacity duration-300 hidden">
-            <aside class="w-96 bg-white border-r border-gray-100 flex flex-col z-20 shadow-lg">
-                <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white">
+            <aside class="w-96 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col z-20 shadow-lg">
+                <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900">
                     <h3 class="label-text">Propiedades del Frame</h3>
                     <div class="flex gap-2">
-                        <button onclick="mainCrono.createNewEvent()" class="text-gray-400 hover:text-black"><i class="fa-solid fa-plus"></i></button>
+                        <button onclick="mainCrono.createNewEvent()" class="text-gray-400 hover:text-black dark:hover:text-white"><i class="fa-solid fa-plus"></i></button>
                         <button onclick="mainCrono.deleteEvent()" class="text-gray-400 hover:text-red-500"><i class="fa-regular fa-trash-can"></i></button>
                     </div>
                 </div>
@@ -668,7 +693,7 @@
                             <label class="label-text">Narrativa / Guion</label>
                             <button onclick="mainCrono.addMoment()" class="text-[9px] uppercase tracking-wider text-indigo-600 hover:underline">+ Añadir Texto</button>
                         </div>
-                        <div id="crono-moments-list" class="space-y-3 pl-2 border-l-2 border-gray-100"></div>
+                        <div id="crono-moments-list" class="space-y-3 pl-2 border-l-2 border-gray-100 dark:border-gray-800"></div>
                     </div>
                 </div>
 
@@ -678,7 +703,7 @@
                 </div>
             </aside>
 
-            <div class="flex-1 relative flex flex-col bg-[#f8f9fa] overflow-hidden">
+            <div class="flex-1 relative flex flex-col bg-[#f8f9fa] dark:bg-gray-950 overflow-hidden">
                 <div class="timeline-container-fixed flex-1" id="timeline-container">
                     <div class="ruler-container-fixed"><div class="ruler-ticks-fixed" id="ruler-ticks"></div></div>
                     <div class="viewport-layer-fixed" id="viewport-layer">
@@ -691,26 +716,26 @@
                 </div>
                 
                 <div class="absolute bottom-6 right-6 flex flex-col gap-2 z-30">
-                    <div class="bg-white border border-gray-200 shadow-sm flex flex-col">
+                    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col">
                         <button class="btn-icon w-8 h-8 flex justify-center items-center border" onclick="window.timeline.adjustZoom(10)"><i class="fa-solid fa-plus text-[10px]"></i></button>
                         <button class="btn-icon w-8 h-8 flex justify-center items-center border" onclick="window.timeline.adjustZoom(-10)"><i class="fa-solid fa-minus text-[10px]"></i></button>
                     </div>
-                    <button class="btn-nordic bg-white shadow-sm" onclick="window.timeline.resetView()">CENTRAR</button>
+                    <button class="btn-nordic bg-white dark:bg-gray-800 shadow-sm" onclick="window.timeline.resetView()">CENTRAR</button>
                 </div>
 
-                <div id="ai-loading-overlay" class="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center hidden z-50">
+                <div id="ai-loading-overlay" class="absolute inset-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm flex flex-col items-center justify-center hidden z-50">
                     <i class="fa-solid fa-circle-notch fa-spin text-2xl text-indigo-600 mb-2"></i>
-                    <h3 class="text-xs font-bold tracking-[0.2em] uppercase text-black mb-2" id="ai-loading-text">PROCESANDO</h3>
+                    <h3 class="text-xs font-bold tracking-[0.2em] uppercase text-black dark:text-white mb-2" id="ai-loading-text">PROCESANDO</h3>
                     <p class="text-[10px] text-gray-400 font-mono" id="ai-loading-subtext">Analizando...</p>
                 </div>
 
-                <div id="book-loading-overlay" class="absolute inset-0 bg-white/95 backdrop-blur-md flex flex-col items-center justify-center hidden z-50">
-                    <div class="w-full max-w-lg p-8 bg-white border border-gray-200 shadow-2xl rounded-sm">
+                <div id="book-loading-overlay" class="absolute inset-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md flex flex-col items-center justify-center hidden z-50">
+                    <div class="w-full max-w-lg p-8 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl rounded-sm">
                         <div class="flex items-center justify-between mb-4">
                             <h3 id="book-mode-text" class="text-xs font-bold uppercase tracking-wider text-rose-600">OmniGen Engine</h3>
                         </div>
                         <p id="book-status-subtext" class="text-xs text-gray-400 font-mono mb-2">Procesando capítulos...</p>
-                        <div class="w-full bg-gray-100 h-2 mb-2 rounded-full overflow-hidden">
+                        <div class="w-full bg-gray-100 dark:bg-gray-800 h-2 mb-2 rounded-full overflow-hidden">
                             <div id="book-progress-bar" class="bg-rose-600 h-full w-0 transition-all duration-300"></div>
                         </div>
                         <div class="flex justify-between text-[10px] font-mono text-gray-400">
@@ -722,21 +747,21 @@
             </div>
         </div>
 
-        <div id="tab-io" class="w-full h-full flex flex-col relative overflow-hidden transition-opacity duration-300 p-8 bg-white hidden">
-            <div class="flex flex-col gap-2 border-b border-gray-100 pb-4 mb-6">
-                <h2 class="text-xs font-medium tracking-[0.2em] text-black uppercase flex items-center gap-2">
+        <div id="tab-io" class="w-full h-full flex flex-col relative overflow-hidden transition-opacity duration-300 p-8 bg-white dark:bg-gray-900 hidden">
+            <div class="flex flex-col gap-2 border-b border-gray-100 dark:border-gray-800 pb-4 mb-6">
+                <h2 class="text-xs font-medium tracking-[0.2em] text-black dark:text-white uppercase flex items-center gap-2">
                     <i class="fa-solid fa-right-left text-gray-400"></i> Núcleo de Entrada / Salina (IO)
                 </h2>
                 <p class="text-[10px] text-gray-400 font-light max-w-xl leading-relaxed">Pega fragmentos o estructuras completas en formato JSON nativo para inyectarlos en caliente en tu espacio de trabajo local, o empaqueta tus sistemas para salvaguarda distribuida.</p>
             </div>
 
             <div class="flex flex-1 gap-6 overflow-hidden">
-                <div class="flex-1 flex flex-col border border-gray-200 p-4 bg-gray-50/50">
-                    <span class="label-text mb-2 text-black font-semibold tracking-wider uppercase"><i class="fa-solid fa-code mr-1"></i> Consola de Estructuras JSON</span>
-                    <textarea id="io-json-area" class="flex-1 font-mono text-xs p-4 bg-white border border-gray-100 resize-none outline-none leading-relaxed text-gray-700" placeholder='{\n  "info": "Pega tu JSON aquí..."\n}'></textarea>
+                <div class="flex-1 flex flex-col border border-gray-200 dark:border-gray-800 p-4 bg-gray-50/50 dark:bg-gray-800/20">
+                    <span class="label-text mb-2 text-black dark:text-white font-semibold tracking-wider uppercase"><i class="fa-solid fa-code mr-1"></i> Consola de Estructuras JSON</span>
+                    <textarea id="io-json-area" class="flex-1 font-mono text-xs p-4 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 resize-none outline-none leading-relaxed text-gray-700 dark:text-gray-300" placeholder='{\n  "info": "Pega tu JSON aquí..."\n}'></textarea>
                 </div>
 
-                <div class="w-80 flex flex-col gap-6 bg-white">
+                <div class="w-80 flex flex-col gap-6 bg-white dark:bg-gray-900">
                     <div class="space-y-2">
                         <span class="label-text tracking-widest text-indigo-500 font-bold uppercase"><i class="fa-solid fa-paste"></i> Inyección de Plantillas</span>
                         <button onclick="window.KorehIO.copyTemplate('datos')" class="btn-nordic w-full justify-between hover:bg-indigo-50/30 transition-colors">
@@ -750,19 +775,19 @@
                         </button>
                     </div>
 
-                    <div class="border-t border-gray-100 my-1"></div>
+                    <div class="border-t border-gray-100 dark:border-gray-800 my-1"></div>
 
                     <div class="space-y-3">
-                        <span class="label-text tracking-widest text-black font-bold uppercase"><i class="fa-solid fa-arrow-down-long"></i> Cargar al Sistema</span>
-                        <button onclick="window.KorehIO.loadIntoSystem()" class="btn-primary bg-black text-white py-4 shadow-md flex items-center justify-center gap-2">
+                        <span class="label-text tracking-widest text-black dark:text-white font-bold uppercase"><i class="fa-solid fa-arrow-down-long"></i> Cargar al Sistema</span>
+                        <button onclick="window.KorehIO.loadIntoSystem()" class="btn-primary bg-black text-white dark:bg-white dark:text-black py-4 shadow-md flex items-center justify-center gap-2">
                             <i class="fa-solid fa-cloud-arrow-up text-[10px]"></i> EJECUTAR E INYECTAR
                         </button>
                     </div>
 
-                    <div class="border-t border-gray-100 my-1"></div>
-                    <div class="space-y-2 bg-gray-50 p-3 border border-gray-200 rounded-sm">
+                    <div class="border-t border-gray-100 dark:border-gray-800 my-1"></div>
+                    <div class="space-y-2 bg-gray-50 dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-sm">
                         <span class="label-text tracking-widest text-purple-600 font-bold uppercase"><i class="fa-solid fa-clock-rotate-left"></i> Cronología de Destino</span>
-                        <select id="io-import-crono-target" class="config-input text-xs font-bold bg-white border border-gray-300 p-1.5 rounded-sm cursor-pointer outline-none transition-colors">
+                        <select id="io-import-crono-target" class="config-input text-xs font-bold bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 p-1.5 rounded-sm cursor-pointer outline-none transition-colors">
                             <option value="TIMELINE_DATA.json">TIMELINE_DATA.json</option>
                         </select>
                         <p class="text-[9px] text-gray-400 mt-1 leading-normal">Los datos del JSON se inyectarán en la línea de tiempo seleccionada en este menú en caliente.</p>
@@ -772,7 +797,7 @@
                         <span class="label-text tracking-widest text-rose-600 font-bold uppercase"><i class="fa-solid fa-file-export"></i> Selector de Exportación Nofraile</span>
                         <div>
                             <span class="label-text">Filtro de Emisión</span>
-                            <select id="io-export-filter" class="config-input font-medium cursor-pointer text-xs uppercase text-gray-800">
+                            <select id="io-export-filter" class="config-input font-medium cursor-pointer text-xs uppercase text-gray-800 dark:text-gray-200">
                                 <option value="all">Exportar Proyecto Completo</option>
                                 <option value="datos">Solo Datos (.json de Repositorio)</option>
                                 <option value="tramas">Solo Tramas (TRAMAS_GLOBAL.json)</option>
@@ -787,11 +812,11 @@
             </div>
         </div>
 
-        <div id="tab-libros" class="w-full h-full flex relative overflow-hidden transition-opacity duration-300 p-8 bg-white hidden">
+        <div id="tab-libros" class="w-full h-full flex relative overflow-hidden transition-opacity duration-300 p-8 bg-white dark:bg-gray-900 hidden">
             <div class="flex flex-col w-full h-full gap-4">
                 
-                <div class="flex flex-col gap-1 border-b border-gray-100 pb-4">
-                    <h2 class="text-xs font-medium tracking-[0.2em] text-black uppercase flex items-center gap-2">
+                <div class="flex flex-col gap-1 border-b border-gray-100 dark:border-gray-800 pb-4">
+                    <h2 class="text-xs font-medium tracking-[0.2em] text-black dark:text-white uppercase flex items-center gap-2">
                         <i class="fa-solid fa-book-open text-rose-500"></i> Núcleo Editorial en Serie (Gemini Engine)
                     </h2>
                     <p class="text-[10px] text-gray-400 font-light max-w-xl leading-relaxed">
@@ -800,22 +825,22 @@
                 </div>
 
                 <div class="flex flex-1 gap-6 overflow-hidden">
-                    <div class="w-80 flex flex-col gap-4 bg-white border-r border-gray-100 pr-2 overflow-y-auto">
+                    <div class="w-80 flex flex-col gap-4 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 pr-2 overflow-y-auto">
                         <span class="label-text tracking-widest text-rose-500 font-bold uppercase"><i class="fa-solid fa-sliders"></i> Parámetros de la Obra</span>
                         
                         <div>
                             <span class="label-text">Título del Volumen</span>
-                            <input type="text" id="gemini-book-title" class="config-input font-medium text-sm text-black" value="Novela Nexus">
+                            <input type="text" id="gemini-book-title" class="config-input font-medium text-sm text-black dark:text-white" value="Novela Nexus">
                         </div>
 
                         <div>
                             <span class="label-text">Autor / Firma</span>
-                            <input type="text" id="gemini-book-author" class="config-input text-xs text-gray-700" value="Manuel Rodsua">
+                            <input type="text" id="gemini-book-author" class="config-input text-xs text-gray-700 dark:text-gray-300" value="Manuel Rodsua">
                         </div>
 
                         <div>
                             <span class="label-text">Google Gemini API Key</span>
-                            <input type="password" id="gemini-book-api-key" placeholder="AIzaSy..." class="config-input font-mono text-xs text-black" oninput="localStorage.setItem('koreh_gemini_book_api_key', this.value);">
+                            <input type="password" id="gemini-book-api-key" placeholder="AIzaSy..." class="config-input font-mono text-xs text-black dark:text-white" oninput="localStorage.setItem('koreh_gemini_book_api_key', this.value);">
                         </div>
 
                         <div>
@@ -823,9 +848,9 @@
                             <textarea id="gemini-book-style" rows="4" class="config-input text-xs leading-relaxed resize-none" placeholder="Prosa madura, fluida, inmersiva, ritmo cinematográfico con descripciones táctiles."></textarea>
                         </div>
 
-                        <div class="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-sm">
+                        <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-sm">
                             <div class="flex justify-between items-center mb-1">
-                                <span class="label-text text-black font-bold mb-0">Estado del Motor:</span>
+                                <span class="label-text text-black dark:text-white font-bold mb-0">Estado del Motor:</span>
                                 <span id="gemini-book-engine-status" class="font-bold text-gray-400 text-[10px] uppercase">Listo</span>
                             </div>
                             <div class="w-full bg-gray-200 h-1.5 mt-2 rounded-full overflow-hidden">
@@ -913,6 +938,7 @@
     <script src="Cronologia 3/ui.js"></script>
     <script src="Cronologia 3/crono.ai.prompt.js"></script>
     <script src="book_gemini.js"></script>
+    <script src="book_gemini_tools.js"></script>
     <script src="main.js"></script>
     
 </body>

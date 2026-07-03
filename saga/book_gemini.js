@@ -1,468 +1,360 @@
-/**
- * BOOK GEMINI STANDALONE CORE
- * Motor de Ensamblado de Libros en Serie con Relevo XML, Soporte de Retomas y Streaming Directo con Gemini
- * VERSIÓN REFACTORIZADA 5.1 - ESPERAS ESTRUCTURALES DE 3 SEGUNDOS Y BLINDAJE DE CONTINUIDAD
- */
-window.GeminiBookAssembler = {
-    session: null,
-    abortController: null, // Evita peticiones huérfanas en segundo plano
+/**  
+ * BOOK GEMINI CORE
+ * Motor de Ensamblado de Libros en Serie basado puramente en la Cronología Activa y Ventana Deslizante
+ * AJUSTE DE RITMO SECO: ANTI-SOBREESCRITURA, CONTROL DE ADJETIVACIÓN Y TRANSICIÓN DE FOCO PROTEGIDA
+ */   
+window.GeminiBookAssembler = {     
+    session: null,     
+    abortController: null,      
+    isPausedByError: false,     
+    sleep(ms) {         
+        return new Promise(resolve => setTimeout(resolve, ms));     
+    },     
+    // Conector Avanzado con Gemini usando Server-Sent Events (SSE) + Mitigación Activa de Cuota 429     
+    async callGeminiAPI(systemPrompt, userPrompt, jsonMode = false, onChunk = null) {         
+        const apiKey = document.getElementById("gemini-book-api-key")?.value.trim() || localStorage.getItem('koreh_gemini_book_api_key');         
+        if (!apiKey) {             
+            throw new Error("API Key de Gemini no configurada en los parámetros de la obra.");         
+        }         
+        const model = "gemini-3.1-flash-lite";         
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`;         
+        let finalUserPrompt = userPrompt;         
+        if (jsonMode) {             
+            finalUserPrompt += "\nOutput strictly valid pure JSON raw format without codeblocks.";         
+        }         
+        const contents = [];         
+        if (systemPrompt) {             
+            contents.push({ role: "user", parts: [{ text: `System Instructions: ${systemPrompt}` }] });             
+            contents.push({ role: "model", parts: [{ text: "Understood. I will follow those instructions precisely y evitaré clichés o repeticiones de inicio de párrafo." }] });         
+        }         
+        contents.push({ role: "user", parts: [{ text: finalUserPrompt }] });         
+        const localController = new AbortController();         
+        const signal = localController.signal;                  
+        if (!this.abortController) {             
+            this.abortController = localController;         
+        }         
+        const MAX_RETRIES = 5;         
+        let attempt = 0;         
+        let delay = 3000;         
+        let bufferSSE = "";          
+        while (attempt < MAX_RETRIES) {             
+            try {                 
+                const res = await fetch(url, {                      
+                    method: 'POST',                      
+                    headers: { 'Content-Type': 'application/json' },                      
+                    body: JSON.stringify({ contents: contents }),                      
+                    signal: signal                 
+                });                 
+                if (!res.ok) {                     
+                    const errorData = await res.text();                                          
+                    if (res.status === 429) {                         
+                        let waitSeconds = 35;                         
+                        try {                             
+                            const parsedErr = JSON.parse(errorData);                             
+                            const msg = parsedErr.error?.message || "";                             
+                            const matchSeconds = msg.match(/retry in ([0-9.]+)/i);                             
+                            if (matchSeconds && matchSeconds[1]) {                                 
+                                waitSeconds = Math.ceil(parseFloat(matchSeconds[1])) + 2;                              
+                            }                         
+                        } catch(e){}                                                  
+                        this.log(`  [CUOTA EXCEDIDA 429] Saturación de ráfaga agéntica. Pausa forzada de protección: esperando ${waitSeconds}s antes de reintentar hito...`, "warn");                         
+                        await this.sleep(waitSeconds * 1000);                         
+                        attempt++;                         
+                        continue;                     
+                    }                     
+                    if (res.status === 401 || res.status === 402 || res.status === 403) {                         
+                        throw new Error(`FALLO_CRITICO_AUTENTICACION (Status ${res.status}): ${errorData}`);                     
+                    }                     
+                    throw new Error(`Error HTTP ${res.status}: ${errorData}`);                 
+                }                 
+                const reader = res.body.getReader();                 
+                const decoder = new TextDecoder("utf-8");                 
+                while (true) {                     
+                    const { done, value } = await reader.read();                     
+                    if (done) break;                                          
+                    bufferSSE += decoder.decode(value, { stream: true });                     
+                    const lines = bufferSSE.split('\n');                                          
+                    if (bufferSSE.endsWith('\n')) {                         
+                        bufferSSE = "";                     
+                    } else {                         
+                        bufferSSE = lines.pop() || "";                     
+                    }                                          
+                    for (const line of lines) {                         
+                        if (line.startsWith('data: ')) {                             
+                            let cleanLine = line.replace(/^data:\s*/, '').trim();                             
+                            if (cleanLine === '[DONE]') break;                             
+                            try {                                 
+                                const parsedLine = JSON.parse(cleanLine);                                 
+                                const chunkText = parsedLine.candidates?.[0]?.content?.parts?.[0]?.text || "";                                 
+                                if (chunkText && onChunk) {                                     
+                                    onChunk(chunkText);                                 
+                                }                             
+                            } catch(e){}                         
+                        } else {                             
+                            try {                                 
+                                const cleanLine = line.trim();                                 
+                                if (cleanLine) {                                     
+                                    const parsedLine = JSON.parse(cleanLine);                                     
+                                    const chunkText = parsedLine.candidates?.[0]?.content?.parts?.[0]?.text || "";                                     
+                                    if (chunkText && onChunk) onChunk(chunkText);                                 
+                                }                             
+                            } catch(e){}                         
+                        }                     
+                    }                 
+                }                 
+                return document.getElementById('gemini-book-terminal')?.innerText.split('\n').slice(-10).join('\n') || "Streaming completado.";             
+            } catch (error) {                 
+                if (error.message.includes("FALLO_CRITICO_AUTENTICACION")) {                     
+                    throw error;                 
+                }                 
+                attempt++;                 
+                if (attempt >= MAX_RETRIES) throw error;                 
+                this.log(`  Fallo de conexión de red temporal. Reintentando en ${delay/1000}s...`, "warn");                 
+                await this.sleep(delay);                 
+                delay *= 2;             
+            }         
+        }     
+    },     
+    // SUB-AGENTE: Visión Maestra y Estrategia Estructural de Capítulo (Evita la fragmentación y repeticiones infinitas)
+    async planChapterVision(chapterTitle, moments, ledgerLog, futureContext) {
+        const sysPrompt = "Eres un director de orquestación académica narrativa y arquitecto de estructuras literarias avanzadas en formato JSON estricto.";
+        const momentsText = moments.map((m, idx) => `Latido ${idx + 1}: ${m.text}`).join("\n");
+        const userPrompt = `Analiza detalladamente todos los latidos del capítulo "${chapterTitle}" para generar una estrategia de flujo orgánico, control de ritmo estricto y continuidad fáctica.
 
-    // Utilidad interna para forzar retrasos asíncronos controlados (Rate Limiting)
-    sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    },
+HISTORIAL CRONOLÓGICO DE HECHOS PREVIOS (LEDGER):
+${ledgerLog}
 
-    // Conector Avanzado con Gemini de Google usando Server-Sent Events (SSE) y Reintentos Exponenciales
-    async callGeminiAPI(systemPrompt, userPrompt, jsonMode = false, onChunk = null) {
-        const apiKey = document.getElementById("gemini-book-api-key")?.value.trim() || localStorage.getItem('koreh_gemini_book_api_key');
-        if (!apiKey) {
-            throw new Error("API Key de Gemini no configurada en los parámetros de la obra.");
-        }
+LATIDOS DE ACCIÓN SINOPSIS DEL CAPÍTULO ACTUAL:
+${momentsText}
 
-        const model = "gemini-3.1-flash-lite";
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`;
+HORIZONTE ARGUMENTAL FUTURO:
+${futureContext}
 
-        let finalUserPrompt = userPrompt;
-        if (jsonMode) {
-            finalUserPrompt += "\nOutput strictly valid pure JSON raw format without codeblocks.";
-        }
+Genera un mapa de visión que distribuya el ritmo del capítulo. El objetivo es fusionar mentalmente los latidos para que no queden fragmentados y estructurar cómo se entrelazan de forma fluida.
+Asegura de forma explícita mitigar el "eco léxico" estructural (ej. variar aperturas de párrafos correlativos drásticamente si tratan sobre la misma entidad u objeto).
 
-        const contents = [];
-        if (systemPrompt) {
-            contents.push({ role: "user", parts: [{ text: `System Instructions: ${systemPrompt}` }] });
-            contents.push({ role: "model", parts: [{ text: "Understood. I will follow those instructions precisely." }] });
-        }
-        contents.push({ role: "user", parts: [{ text: finalUserPrompt }] });
-
-        // Cancelar cualquier proceso previo idéntico para evitar colisiones
-        if (this.abortController) {
-            this.abortController.abort();
-        }
-        this.abortController = new AbortController();
-
-        const MAX_RETRIES = 5;
-        let attempt = 0;
-        let delay = 2000;
-        let bufferSSE = ""; // Búfer intermedio para mitigar fragmentación de tokens JSON/XML
-
-        while (attempt < MAX_RETRIES) {
-            try {
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: contents }),
-                    signal: this.abortController.signal
-                });
-
-                if (!res.ok) {
-                    const errorData = await res.text();
-                    // Errores no recuperables de autenticación o saldo: Abortar inmediatamente sin quemar ciclos
-                    if (res.status === 401 || res.status === 402 || res.status === 403) {
-                        throw new Error(`FALLO_CRITICO_AUTENTICACION (Status ${res.status}): ${errorData}`);
-                    }
-                    throw new Error(`Error HTTP ${res.status}: ${errorData}`);
-                }
-
-                const reader = res.body.getReader();
-                const decoder = new TextDecoder("utf-8");
-                let fullText = "";
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    
-                    bufferSSE += decoder.decode(value, { stream: true });
-                    const lines = bufferSSE.split('\n');
-                    
-                    // Preservar la última línea si no está completa (fragmentación de red)
-                    bufferSSE = lines.pop() || "";
-                    
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            const dataStr = line.substring(6).trim();
-                            if (dataStr === '[DONE]' || !dataStr) continue;
-                            try {
-                                const data = JSON.parse(dataStr);
-                                if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
-                                    const textChunk = data.candidates[0].content.parts[0].text;
-                                    fullText += textChunk;
-                                    if (onChunk) onChunk(textChunk, fullText);
-                                }
-                            } catch (e) {
-                                // Fragmento JSON corrupto temporalmente por corte de línea, se ignora en el búfer deslizante
-                            }
-                        }
-                    }
-                }
-                
-                this.abortController = null;
-                return fullText;
-
-            } catch (err) {
-                if (err.name === 'AbortError') {
-                    throw new Error("Compilación abortada explícitamente por el usuario o por cambio de contexto.");
-                }
-                if (err.message.includes("FALLO_CRITICO_AUTENTICACION")) {
-                    throw err;
-                }
-                attempt++;
-                if (attempt >= MAX_RETRIES) {
-                    throw new Error(`Fallo definitivo en Gateway de Gemini tras ${MAX_RETRIES} intentos: ${err.message}`);
-                }
-                this.logTerminal(`Error de conexión (${err.message}). Reintentando (${attempt}/${MAX_RETRIES}) en ${delay/1000}s...`, "warn");
-                await new Promise(r => setTimeout(r, delay));
-                delay *= 2; 
-            }
-        }
-    },
-
-    cleanJSON(str) {
-        if (!str) return "{}";
-        let clean = str.replace(/```json/g, "").replace(/```/g, "").trim();
-        const firstOpen = clean.indexOf("{");
-        const lastClose = clean.lastIndexOf("}");
-        if (firstOpen !== -1 && lastClose !== -1) {
-            return clean.substring(firstOpen, lastClose + 1);
-        }
-        return clean;
-    },
-
-    extractText(response) {
-        // Extracción XML robusta con tolerancia a la omisión eventual de tags por la IA
-        const match = response.match(/<texto>([\s\S]*?)<\/texto>/i);
-        if (match) return match[1].trim();
-        
-        // Limpieza de marcadores markdown residuales si fallaron los tags XML
-        return response.replace(/^```[\s\S]*?\n/gi, '').replace(/```$/g, '').trim();
-    },
-
-    mergeText(oldT, newT) {
-        if (!oldT) return newT.trim();
-        return oldT.trimEnd() + "\n\n" + newT.trimStart();
-    },
-
-    // ALGORITMO DE CONEXIÓN ORGÁNICA (Evita el efecto Frankenstein entre capítulos)
-    async generateOrganicConnector(textA, textB, styleStyle) {
-        this.logTerminal("Temporizando canal... Esperando 3 segundos de cortesía antes del conector...");
-        await this.sleep(3000); // Espera obligatoria antes de invocar la costura intermedia
-
-        this.logTerminal("Tejiendo costura de transición fluida...");
-        const sysConnector = "Eres un novelista experto en puentes narrativos. Tu misión es armonizar el salto de espacio, tiempo o temperatura emocional entre dos fragmentos sin ser redundante.";
-        let userConnector = `ESTILO LITERARIO DE LA OBRA: ${styleStyle}\n\n`;
-        userConnector += `ÚLTIMO PÁRRAFO DEL CAPÍTULO ANTERIOR:\n"...${textA.slice(-800)}"\n\n`;
-        userConnector += `PRIMER PÁRRAFO DEL NUEVO CAPÍTULO:\n"${textB.slice(0, 800)}..."\n\n`;
-        userConnector += `TAREA: Escribe 1 o 2 párrafos de transición fluida que unan orgánicamente ambos bloques. Envuelve el resultado en <texto></texto>.`;
-
+Devuelve estrictamente un objeto JSON puro con la siguiente estructura:
+{
+    "hilo_conductor": "Foco dramático o climático que da coherencia interna a todo el bloque",
+    "arquitectura_ritmo": "Directriz de cómo coordinar la longitud y unión de las frases para que se lean orgánicas y no como una lista robotizada de acciones",
+    "puente_entrada": "Punto exacto de empalme con el final del historial previo",
+    "puente_salida": "Disposición exacta del entorno al cierre del último latido para encajar con el horizonte futuro"
+}`;
         try {
-            const res = await this.callGeminiAPI(sysConnector, userConnector, false, null);
-            return this.extractText(res);
-        } catch (e) {
-            this.logTerminal("Aviso: No se pudo generar el conector sofisticado. Usando costura estándar.", "warn");
-            return "";
-        }
-    },
-
-    logTerminal(msg, type = "info") {
-        const term = document.getElementById("gemini-book-terminal");
-        if (!term) return;
-
-        const div = document.createElement("div");
-        if (type === "error") {
-            div.className = "text-red-500 font-bold";
-        } else if (type === "success") {
-            div.className = "text-emerald-400 font-bold";
-        } else if (type === "warn") {
-            div.className = "text-amber-400";
-        } else {
-            div.className = "text-green-300";
-        }
-
-        const timeStr = new Date().toLocaleTimeString();
-        div.innerText = `> [${timeStr}] ${msg}`;
-        
-        term.appendChild(div);
-        term.scrollTop = term.scrollHeight;
-    },
-
-    async startProduction() {
-        const savedKey = localStorage.getItem('koreh_gemini_book_api_key');
-        if (savedKey && document.getElementById("gemini-book-api-key")) {
-            document.getElementById("gemini-book-api-key").value = savedKey;
-        }
-
-        if (!window.mainCrono || !window.mainCrono.data || !window.mainCrono.data.events || window.mainCrono.data.events.length === 0) {
-            return alert("No hay eventos cargados en la cronología activa. Primero crea o importa un timeline.");
-        }
-
-        const btn = document.getElementById("btn-gemini-book-generate");
-        const isResume = btn.classList.contains("btn-resume");
-
-        // Lock de UI para evitar mutaciones accidentales en caliente durante el bucle secuencial
-        if (window.app) {
-            this.toggleUINodesLock(true);
-        }
-
-        if (!isResume || !this.session) {
-            const events = JSON.parse(JSON.stringify(window.mainCrono.data.events)).sort((a, b) => (a.time || 0) - (b.time || 0));
-            this.session = {
-                title: document.getElementById("gemini-book-title").value || "Novela Nexus",
-                author: document.getElementById("gemini-book-author").value || "Manuel Rodsua",
-                style: document.getElementById("gemini-book-style").value || "Prosa madura, fluida",
-                events: events,
-                currentIndex: 0,
-                finalText: "",
-                ledger: [], // Libro Mayor de intenciones consumadas
-                plan: null
+            await this.sleep(1200);
+            const res = await this.callGeminiAPI(sysPrompt, userPrompt, true, null);
+            return JSON.parse(this.cleanJSON(res));
+        } catch(e) {
+            return {
+                hilo_conductor: "Evolución orgánica de la escena.",
+                arquitectura_ritmo: "Prosa fluida, alternando frases cortas de impacto con cláusulas compuestas inmersivas.",
+                puente_entrada: "Conectar con el último hito registrado de inmediato.",
+                puente_salida: "Dejar la tensión en alto hacia el siguiente nodo."
             };
-            this.logTerminal("Iniciando nueva compilación en serie...");
-        } else {
-            this.logTerminal("Retomando compilación interrumpida desde el último punto seguro...");
-        }
-
-        btn.disabled = true;
-        btn.innerText = "PROCESANDO MANUSCRITO...";
-        
-        const statusUi = document.getElementById("gemini-book-engine-status");
-        statusUi.innerText = "GENERANDO";
-        statusUi.className = "font-bold text-rose-500 animate-pulse";
-
-        try {
-            await this.runPipelineLoop();
-        } catch (err) {
-            console.error(err);
-            this.logTerminal("Error crítico en la ejecución del pipeline: " + err.message, "error");
-            
-            btn.disabled = false;
-            btn.innerText = "RETOMAR CONSTRUCCIÓN";
-            btn.classList.add("btn-resume");
-            
-            statusUi.innerText = "PAUSADO";
-            statusUi.className = "font-bold text-amber-500";
-            this.toggleUINodesLock(false);
         }
     },
+    // SUB-AGENTE INTEGRADO: Auditor implacable contra la sobreescritura, adjetivos triples y desorientación del lector
+    async analyzeAndValidateBeat(beatText, activePhysicalState, ledgerLog, currentState) {         
+        const sysPrompt = "Eres un supervisor de continuidad implacable, notario de hechos históricos y analizador ambiental JSON estricto.";         
+        const userPrompt = `Analiza el siguiente borrador de texto frente a las restricciones físicas de la escena, el historial de hechos previos y las directrices de estilo seco.
 
-    toggleUINodesLock(lock) {
-        const inputs = ['gemini-book-title', 'gemini-book-author', 'gemini-book-style', 'gemini-book-api-key'];
-        inputs.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.disabled = lock;
-        });
-    },
+ESTADO PERMITIDO ANTERIOR: ${activePhysicalState} 
+HISTORIAL DE HITOS CRONOLÓGICOS (LEDGER): ${ledgerLog} 
+BORRADOR A EVALUAR: "${beatText.substring(0, 2500)}" 
 
-    async autoSaveIntermediateBackup() {
-        // Salvaguarda persistente en caliente dentro del repositorio local para mitigar pérdidas por cierres fortuitos
-        if (!window.app || !window.app.targetHandle) return;
-        try {
-            const cleanTitle = this.session.title.trim().replace(/[^a-z0-9]/gi, '_').toLowerCase();
-            const filename = `backup_manuscript_${cleanTitle}.json`;
-            const fileHandle = await window.app.targetHandle.getFileHandle(filename, { create: true });
-            const writable = await fileHandle.createWritable();
-            await writable.write(JSON.stringify({
-                currentIndex: this.session.currentIndex,
-                ledger: this.session.ledger,
-                plan: this.session.plan,
-                finalText: this.session.finalText,
-                timestamp: new Date().toISOString()
-            }, null, 2));
-            await writable.close();
-            this.logTerminal("Punto de control e historial guardados a disco de forma segura.", "info");
-        } catch (e) {
-            console.warn("No se pudo realizar el autoguardado intermedio en disco:", e.message);
-        }
-    },
+REGLAS DE RECHAZO EDITORIAL ABSOLUTO (PULIDO FINO):
+1. SOBREESCRITURA Y POESÍA ARTIFICIAL: ¿El borrador satura la fórmula abusando de símiles o metáforas para rematar acciones (ej: "como mercurio", "como un animal", etc.)? Si la acción no respira sola, es RECHAZADO.
+2. ADJETIVOS TRIPLES O SINÓNIMOS EN CADENA: ¿El texto incluye acumulaciones barrocas de adjetivos pesados (ej: "total, absoluta y aplastante" o "densa, hermética, asfixiante")? Si no elige un único adjetivo demoledor, es RECHAZADO.
+3. CONEXIÓN DE FOCO Y COHERENCIA DE TRAJE: Si un personaje lleva un casco o traje hermético aislado, vigila que no sufra efectos del aire exterior filtrado antes de abrir el visor, o viceversa. Las interacciones con el visor, el aire y la atmósfera respirable deben ser lógicas paso a paso. Si se contradice el nivel de aislamiento del traje en menos de tres párrafos, es RECHAZADO.
 
-    async runPipelineLoop() {
-        const s = this.session;
-        const total = s.events.length;
-
-        if (!s.plan) {
-            this.logTerminal("Temporizando canal... Esperando 3 segundos antes de trazar el Plan de Enfoque...");
-            await this.sleep(3000); // Espera inicial obligatoria
-
-            this.logTerminal("Analizando cronología completa para trazar el Plan de Enfoque...");
-            const systemPlan = "Eres un director editorial y analista literario. Tu objetivo es estudiar la cronología suministrada y trazar un plan estructural unificado de partes y capítulos.";
-            const userPlan = `Título: ${s.title}\nAutor: ${s.author}\nEstilo: ${s.style}\nCronología Estructural:\n${JSON.stringify(s.events, null, 2)}`;
+Devuelve obligatoriamente un JSON puro con la siguiente estructura exacta:
+{
+    "aprobado": boolean,
+    "fallo": "Explicación detallada de la inconsistencia de continuidad, el aislamiento erróneo de cascos, el abuso de adjetivos múltiples o la saturación de metáforas redundantes si aprobado es false. Si cumple con la prosa seca y directa, dejar vacío.",
+    "hitos": "Extrae en viñetas cortas los hitos definitivos que acaban de ocurrir si aprobado es true.",
+    "nuevo_estado": {
+        "ubicacion_exacta": "Actualización del entorno inmediato",
+        "personajes_presentes": ["Lista actualizada de personajes en escena"],
+        "objetos_visibles": ["Lista actualizada de objetos en juego"]
+    }
+}`;         
+        try {             
+            await this.sleep(1000);             
+            const res = await this.callGeminiAPI(sysPrompt, userPrompt, true, null);             
+            return JSON.parse(this.cleanJSON(res));         
+        } catch(e) {             
+            return { aprobado: true, fallo: "", hitos: "- Avance de trama general consumado.", nuevo_estado: currentState };         
+        }     
+    },     
+    async startProduction() {         
+        const downloadBtn = document.getElementById("btn-gemini-book-download");         
+        if (downloadBtn) downloadBtn.disabled = false;                  
+        const defaultStyle = "Prosa clínica, visceral y de alto impacto visual. Frases directas, sobrias, sin barroquismos ni acumulación excesiva de adjetivos. Transiciones de punto de vista justificadas y limpias.";         
+        if (window.timeline && window.timeline.events && window.timeline.events.length > 0) {             
+            if (!this.session || this.isPausedByError === false) {                 
+                this.session = {                     
+                    title: document.getElementById("gemini-book-title").value || "Novela Nexus",                     
+                    author: document.getElementById("gemini-book-author").value || "Manuel Rodsua",                     
+                    style: document.getElementById("gemini-book-style").value || defaultStyle,                     
+                    eventsQueue: JSON.parse(JSON.stringify(window.timeline.events)).sort((a, b) => (a.time || 0) - (b.time || 0)),                     
+                    currentEventIndex: 0,                     
+                    currentMomentIndex: 0,                     
+                    finalText: "",                     
+                    completedChaptersLog: [],                     
+                    bookLedger: []                   
+                };             
+            }         
+        } else {             
+            if (!this.session || this.isPausedByError === false) {                 
+                const availableEvents = (window.app && window.app.tramas) ? window.app.tramas.filter(n => n.type !== 'Region') : [];                 
+                this.session = {                     
+                    title: document.getElementById("gemini-book-title").value || "Novela Nexus",                     
+                    author: document.getElementById("gemini-book-author").value || "Manuel Rodsua",                     
+                    style: document.getElementById("gemini-book-style").value || defaultStyle,                     
+                    eventsQueue: JSON.parse(JSON.stringify(availableEvents)),                     
+                    currentEventIndex: 0,                     
+                    currentMomentIndex: 0,                     
+                    finalText: "",                     
+                    completedChaptersLog: [],                     
+                    bookLedger: []                 
+                };             
+            }         
+        }         
+        if (this.session.eventsQueue.length === 0) {             
+            this.log("  No hay eventos cargados en la cronología para compilar.", "warn");             
+            return;         
+        }         
+        this.isPausedByError = false;         
+        const btn = document.getElementById('btn-gemini-book-generate');         
+        if (btn) btn.innerText = "COMPILANDO...";         
+        this.log(`  Iniciando Orquestación en Cadena Basada en Cronología Fuerte: "${this.session.title}"`, "emerald");         
+        this.runEditorialLoop();     
+    },     
+    async runEditorialLoop() {         
+        const queue = this.session.eventsQueue;         
+        const totalEvents = queue.length;         
+        this.setInputsState(true);         
+        while (this.session.currentEventIndex < totalEvents) {             
+            const ev = queue[this.session.currentEventIndex];             
+            const chapterTitle = ev.description || ev.title || `Capítulo ${this.session.currentEventIndex + 1}`;                          
+            this.log(`  Procesando Nodo Cronológico: ${chapterTitle} (${this.session.currentEventIndex + 1}/${totalEvents})`, "info");                          
+            if (!ev.moments || ev.moments.length === 0) {                 
+                ev.moments = [{ text: ev.desc || ev.description || "Desarrollo de la escena." }];             
+            }             
             
-            const planDiv = document.createElement("div");
-            planDiv.className = "text-gray-400 italic mb-2 border-l border-gray-700 pl-2";
-            document.getElementById("gemini-book-terminal").appendChild(planDiv);
+            const ledgerLog = this.session.completedChaptersLog.join("\n") || "Inicio de la obra.";
+            const futureContext = this.session.currentEventIndex < totalEvents - 1
+                ? `Hacia el siguiente evento: ${queue[this.session.currentEventIndex + 1].description || queue[this.session.currentEventIndex + 1].title}`
+                : "Cierre de la obra, clímax definitivo.";
 
-            const rawPlan = await this.callGeminiAPI(systemPlan, userPlan, false, (chunk, acc) => {
-                planDiv.innerText = acc;
-                document.getElementById("gemini-book-terminal").scrollTop = document.getElementById("gemini-book-terminal").scrollHeight;
-            });
-            s.plan = rawPlan;
-            this.logTerminal("Plan de Enfoque de la obra consolidado con éxito.", "success");
-            await this.autoSaveIntermediateBackup();
-        }
+            this.log(`  [VISIÓN DE CAPÍTULO] Ingestando matriz de latidos y calculando vectores estables...`, "info");
+            const chapterVision = await this.planChapterVision(chapterTitle, ev.moments, ledgerLog, futureContext);
+            this.log(`  -> Foco estratégico definido: "${chapterVision.hilo_conductor}"`, "emerald");
 
-        for (let i = s.currentIndex; i < total; i++) {
-            const ev = s.events[i];
-            const escenaTitulo = ev.description || "Escena sin título";
-            this.logTerminal(`Procesando Evento ${i + 1}/${total}: ${escenaTitulo}...`);
-
-            // --- EXTRACCIÓN ROBUSTA DE PERSONAJES POR COHERENCIA DE RED ---
-            let charactersContext = "No hay descripciones específicas de personajes registradas para este nodo.";
-            if (window.app && window.app.tramas) {
-                // Comparación flexible insensible a mayúsculas y acentos para evitar el descarte de elenco
-                const normalizedEvDesc = escenaTitulo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                const omegaNode = window.app.tramas.find(n => {
-                    const normName = n.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                    return normalizedEvDesc.includes(normName) || normName.includes(normalizedEvDesc);
-                });
-
-                if (omegaNode && omegaNode.dataRefs && omegaNode.dataRefs.length > 0) {
-                    const descriptions = [];
-                    omegaNode.dataRefs.forEach(refId => {
-                        const dbItem = window.app.items.find(item => item.name === refId);
-                        if (dbItem && dbItem.data && dbItem.data.type === "Personaje") {
-                            const name = dbItem.data.name || "Desconocido";
-                            const visualDesc = dbItem.data.visualDesc || "Sin descripción";
-                            const lore = dbItem.data.desc || "Sin lore";
-                            descriptions.push(`- PERSONAJE: ${name}. Rasgos Físicos/Rol: ${visualDesc}. Lore: ${lore}`);
-                        }
-                    });
-                    if (descriptions.length > 0) {
-                        charactersContext = descriptions.join("\n");
-                    }
-                }
-            }
-
-            // --- PROCESAMIENTO GRANULAR POR LATIDOS (BEATS / MOMENTS) ---
-            const momentsToProcess = (ev.moments && ev.moments.length > 0) ? ev.moments : [{ text: ev.description }];
-            let accumulatedChapterText = "";
-
-            for (let mIdx = 0; mIdx < momentsToProcess.length; mIdx++) {
-                const moment = momentsToProcess[mIdx];
+            let accumulatedChapterText = "";             
+            let activeSceneState = {                 
+                ubicacion_exacta: ev.title || "Entorno Cronológico",                 
+                personajes_presentes: [],                 
+                objetos_visibles: []             
+            };             
+            
+            let charactersContext = "Contexto extraído directamente de la línea temporal activa de la obra.";             
+            let errorOcurrido = false;             
+            
+            // BUCLE DE BEATS SECUENCIALES DESLIZANTES
+            while (this.session.currentMomentIndex < ev.moments.length) {                 
+                const moment = ev.moments[this.session.currentMomentIndex];                 
+                this.log(`  Redactando latido secuencial ${this.session.currentMomentIndex + 1}/${ev.moments.length}...`);                 
+                const activePhysicalState = `[ESTADO CRONOLÓGICO DE LA ESCENA]:\n- Ubicación: ${activeSceneState.ubicacion_exacta}\n- Resumen de secuencia activa: ${ev.description || 'N/A'}`;                                                   
                 
-                this.logTerminal(`Temporizando canal... Esperando 3 segundos reglamentarios antes de redactar latido ${mIdx + 1}...`);
-                await this.sleep(3000); // Espera obligatoria de 3 segundos entre llamadas secuenciales del bucle literario
+                const prevBeat = this.session.currentMomentIndex > 0 ? ev.moments[this.session.currentMomentIndex - 1].text : "Inicio del nodo actual";
+                const nextBeat = this.session.currentMomentIndex < ev.moments.length - 1 ? ev.moments[this.session.currentMomentIndex + 1].text : "Fin del nodo cronológico";
+                const pacingInfo = `Capítulo ${this.session.currentEventIndex + 1} de ${totalEvents} | Beat ${this.session.currentMomentIndex + 1} de ${ev.moments.length}`;
 
-                this.logTerminal(`-> Redactando plano secuencial ${mIdx + 1}/${momentsToProcess.length}...`);
+                const transicionInterna = chapterVision.ganchos_internos?.[this.session.currentMomentIndex] 
+                    ? `GUÍA DE CONTINUIDAD DEL CAPÍTULO PARA ESTE BEAT: ${chapterVision.ganchos_internos[this.session.currentMomentIndex]}`
+                    : "";
 
-                // VENTANA DESLIZANTE SENSATA PARA EL LEDGER: Evita el desborde de tokens manteniendo solo los últimos 6 hitos
-                const slidingLedger = s.ledger.slice(-6).join("\n") || "Inicio de la obra.";
-
-                const sysWriter = "Eres un novelista de élite. Escribes prosa inmersiva, literaria y madura. Evitas redundancias y avanzas la trama basándote en los antecedentes permitidos.";
+                const sysWriter = "Eres un novelista clínico, visceral y cinematográfico de alto impacto inmediato. Tu sello de identidad es la urgencia provocada por el uso del presente de indicativo y oraciones afiladas. Dominas el realismo somático y las sensaciones corporales crudas.";                                  
+                let userWriter = `[MATRIZ DE INTENCIONES HISTÓRICAS REALES (LEDGER)]:\n${ledgerLog}\n\n`;                 
+                if (accumulatedChapterText) {                     
+                    userWriter += `[TEXTO INMEDIATO PREVIO DEL MISMO CAPÍTULO]:\n"...${accumulatedChapterText.slice(-1800)}"\n\n`;                 
+                }                 
+                userWriter += `[MAPA DE VISIÓN DE CAPÍTULO OBLIGATORIO]:\n- Foco unificado: ${chapterVision.hilo_conductor}\n- Instrucción de Ritmo: ${chapterVision.arquitectura_ritmo}\n- Entrada: ${chapterVision.puente_entrada}\n- Destino de salida: ${chapterVision.puente_salida}\n${transicionInterna}\n\n`;
+                userWriter += `[ESTADO CRONOLÓGICO ACTUAL]:\n${activePhysicalState}\n`;                 
+                userWriter += `[PROGRESO ESTRUCTURAL DE RITMO]: ${pacingInfo}\n`;                 
+                userWriter += `- BEAT ANTERIOR: "${prevBeat}"\n`;                 
+                userWriter += `- BEAT SIGUIENTE (NO LO ANTICIPES): "${nextBeat}"\n\n`;                 
+                userWriter += `ESTスタイル EDITORIAL EXIGIDO: ${this.session.style}\n\n`;                 
+                userWriter += `ACCIÓN NARRATIVA A REDACTAR AHORA: "${moment.text}"\n`;                 
+                if (moment.visualPrompt) userWriter += `CUE CINEMATOGRÁFICO ADICIONAL: "${moment.visualPrompt}"\n`;                 
+                userWriter += `\nCONSTRICCIONES SINTÁCTICAS DE RITMO SECO Y FLUIDEZ ORGÁNICA (CUMPLIMIENTO ESTRICTO):\n`;                 
+                userWriter += `1. PRESENTE DE INDICATIVO: Modula toda la acción en tiempo presente. Sensación de inmediatez total.\n`;                 
+                userWriter += `2. DEJA RESPIRAR LA ACCIÓN SIN CAER EN RITMO ROBÓTICO: Prohibido rematar mecánicamente cada frase con una metáfora burda ('como un...'). Evita también el ritmo telegráfico artificial de sujeto + verbo + objeto en frases de tres palabras. Intercala oraciones subordinadas y compuestas; la prosa debe fluir de forma literaria, madura y compacta, no parecer un informe de inventario técnico.\n`;                 
+                userWriter += `3. EVITA EL ECO COGNITIVO Y LA REPETICIÓN LÉXICA CERCANA: Si los párrafos o frases anteriores ya utilizaron una construcción específica para una entidad (ej. 'filamentos de las alas translúcidas'), varía obligatoriamente la sintaxis y los sustantivos en las oraciones contiguas. Queda estrictamente prohibido repetir palabras clave táctiles o visuales idénticas a menos que haya una mutación física sustancial.\n`;                 
+                userWriter += `4. REGULACIÓN DE SUSTANTIVOS TÉCNICOS: No acumules demasiados elementos mecánicos, piezas o acoples secuenciales en una misma frase durante momentos de peligro o acción pura. Dosifica la terminología brutalista para mantener un ritmo cinematográfico ágil y fluido.\n`;                 
+                userWriter += `5. CONSISTENCIA DE CASCOS Y ENTORNO: Si un personaje interactúa con su traje de vuelo, fisuras o el aire exterior, mantén la consistencia lógica de su nivel de aislamiento (si el visor está cerrado, el polvo o el aire exterior no entran en contacto directo con sus vías respiratorias hasta que se levante explícitamente dicho visor).\n`;
+                userWriter += `6. TRANSICIONES POV DE ALTA FIDELIDAD: Si este fragmento cambia de foco espacial o perspectiva de personaje respecto al texto anterior, introduce obligatoriamente un separador visual de corte limpio '***' en una línea aislada antes de reanudar el texto de la nueva perspectiva.\n`;                 
+                userWriter += `7. FORMATO: Devuelve tu prosa pura estrictamente confinada en las etiquetas <texto> y </texto>.`;                                  
                 
-                let userWriter = `PLAN EDITORIAL GLOBAL: ${s.plan}\n\n`;
-                userWriter += `ANTECEDENTES INMEDIATOS (LEDGER DESLIZANTE):\n${slidingLedger}\n\n`;
-                if (accumulatedChapterText) {
-                    userWriter += `TEXTO PREVIO DEL MISMO CAPÍTULO:\n"...${accumulatedChapterText.slice(-1200)}"\n\n`;
-                }
-                userWriter += `ELENCO DE PERSONAJES PRESENTES EN EL PLANO:\n${charactersContext}\n\n`;
-                userWriter += `ESTILO LITERARIO EXIGIDO: ${s.style}\n\n`;
-                userWriter += `ACCIÓN EXACTA A REDACTAR AHORA (MOMENTO): "${moment.text}"\n`;
-                if (moment.visualPrompt) userWriter += `RASGOS VISUALES CINE EN ENTORNO: "${moment.visualPrompt}"\n`;
-                userWriter += `\nINSTRUCCIONES DE RELEVO:\n`;
-                userWriter += `1. Avanza cronológicamente. Prohibido repetir la misma acción o diálogo ya narrado en el texto previo.\n`;
-                userWriter += `2. Si hay personajes en escena, describe sutilmente sus movimientos o lenguaje corporal basándote en su elenco.\n`;
-                userWriter += `3. Envuelve tu respuesta literaria pura estrictamente dentro de las etiquetas <texto> y </texto>.`;
-
-                let draftBeat = "";
-                let attempt = 0;
-                const maxRetries = 3;
-                let successBeat = false;
-
-                const blockDiv = document.createElement("div");
-                blockDiv.className = "bg-gray-800 p-4 border-l-2 border-rose-500 my-2 text-gray-100 rounded-sm";
-                document.getElementById("gemini-book-terminal").appendChild(blockDiv);
-
-                while (attempt < maxRetries && !successBeat) {
-                    attempt++;
-                    try {
-                        const response = await this.callGeminiAPI(sysWriter, userWriter, false, (chunk, acc) => {
-                            blockDiv.innerHTML = `<strong>[STREAM BEAT ${mIdx + 1}] ${escenaTitulo}</strong><br><br>${acc.replace(/\n/g, "<br>")}`;
-                            document.getElementById("gemini-book-terminal").scrollTop = document.getElementById("gemini-book-terminal").scrollHeight;
-                        });
-
-                        draftBeat = this.extractText(response);
-                        if (draftBeat.length > 30) {
-                            successBeat = true;
-                        } else {
-                            this.logTerminal("Latido devuelto demasiado corto, reintentando...", "warn");
-                        }
-                    } catch (fetchErr) {
-                        this.logTerminal(`Error en intento de latido ${attempt}: ${fetchErr.message}`, "warn");
-                        await new Promise(r => setTimeout(r, 2000 * attempt));
-                    }
-                }
-
-                if (!successBeat) {
-                    throw new Error(`Fallo definitivo en la construcción del latido ${mIdx + 1} de la escena [${escenaTitulo}].`);
-                }
-
-                accumulatedChapterText = this.mergeText(accumulatedChapterText, draftBeat);
-                blockDiv.innerHTML = `<strong>[LATIDO COMPILADO ${mIdx + 1}] ${escenaTitulo}</strong><br><br>${draftBeat.replace(/\n/g, "<br>")}`;
-
-                // Registrar hito específico consumado en el Libro Mayor
-                s.ledger.push(`- Consumado en [${escenaTitulo}]: ${moment.text.substring(0, 120)}...`);
-            }
-
-            // APLICAR TRANSICIÓN ORGÁNICA: Unir el capítulo nuevo con el corpus general suavizando costuras (incluye su propio sleep interno)
-            if (s.finalText && accumulatedChapterText) {
-                const conector = await this.generateOrganicConnector(s.finalText, accumulatedChapterText, s.style);
-                if (conector) {
-                    s.finalText = s.finalText.trimEnd() + "\n\n" + conector.trim() + "\n\n### CAPÍTULO: " + escenaTitulo + "\n\n" + accumulatedChapterText;
-                } else {
-                    s.finalText = this.mergeText(s.finalText, "### CAPÍTULO: " + escenaTitulo + "\n\n" + accumulatedChapterText);
-                }
-            } else {
-                s.finalText = this.mergeText(s.finalText, "### CAPÍTULO: " + escenaTitulo + "\n\n" + accumulatedChapterText);
-            }
-            
-            s.currentIndex = i + 1;
-            this.updateProgressUI();
-            await this.autoSaveIntermediateBackup(); // Persistencia ante apagones o caídas
-        }
-
-        this.logTerminal("¡PROCESO FINALIZADO CON ÉXITO! Libro completamente ensamblado.", "success");
-        
-        const btnGen = document.getElementById("btn-gemini-book-generate");
-        btnGen.disabled = false;
-        btnGen.innerText = "COMPILAR CON GEMINI";
-        btnGen.classList.remove("btn-resume");
-        
-        document.getElementById("btn-gemini-book-download").disabled = false;
-        
-        const finalStatus = document.getElementById("gemini-book-engine-status");
-        finalStatus.innerText = "FINALIZADO";
-        finalStatus.className = "font-bold text-green-500";
-        this.toggleUINodesLock(false);
-    },
-
-    updateProgressUI() {
-        if (!this.session) return;
-        const current = this.session.currentIndex;
-        const total = this.session.events.length;
-        const pct = Math.floor((current / total) * 100) || 0;
-        document.getElementById("gemini-book-progress-text").innerText = `${current} / ${total}`;
-        document.getElementById("gemini-book-progress-bar").style.width = `${pct}%`;
-    },
-
-    downloadBook() {
-        if (!this.session || !this.session.finalText) return;
-        const content = `TITULO: ${this.session.title}\nAUTOR: ${this.session.author}\n\n${this.session.finalText}`;
-        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        
-        const safeTitle = this.session.title.replace(/[^a-z0-9]/gi, "_").toLowerCase();
-        a.download = `Libro_Gemini_${safeTitle}.txt`;
-        
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+                const term = document.getElementById("gemini-book-terminal");                 
+                const blockDiv = document.createElement("div");                 
+                blockDiv.className = "bg-gray-800 p-4 border-l-2 border-rose-500 my-2 text-gray-100 rounded-sm font-mono text-xs";                 
+                if (term) term.appendChild(blockDiv);                 
+                try {                     
+                    let textStreamed = "";                     
+                    let aprobado = false;                     
+                    let intentos = 0;                     
+                    let reprimenda = "";                     
+                    while (intentos < 2 && !aprobado) {                         
+                        intentos++;                         
+                        textStreamed = "";                         
+                        await this.callGeminiAPI(sysWriter, userWriter + reprimenda, false, (chunk) => {                             
+                            textStreamed += chunk;                             
+                            blockDiv.innerHTML = `<strong>[BEAT ${this.session.currentMomentIndex + 1} - INTENTO ${intentos}] ${chapterTitle}</strong><br><br>${textStreamed.replace(/\n/g, "<br>")}`;                             
+                            if (term) term.scrollTop = term.scrollHeight;                         
+                        });                         
+                        let draftBeat = this.extractText(textStreamed);                         
+                        if (draftBeat.length < 5) draftBeat = textStreamed.replace(/<[^>]*>/g, '').trim();                                                  
+                        
+                        const analysis = await this.analyzeAndValidateBeat(draftBeat, activePhysicalState, ledgerLog, activeSceneState);                         
+                        if (analysis.aprobado) {                             
+                            aprobado = true;                             
+                            accumulatedChapterText = this.mergeText(accumulatedChapterText, draftBeat);                             
+                            this.session.completedChaptersLog.push(`- En [${chapterTitle}]: ${analysis.hitos || '- Avance de trama consumado.'}`);                             
+                            activeSceneState = analysis.nuevo_estado || activeSceneState;                         
+                        } else {                             
+                            reprimenda = `\n\n[ALERTA DE CONTINUIDAD EDITORIAL: El intento anterior falló debido a: "${analysis.fallo}". REESCRIBE CON MEJOR COHESIÓN Y VARIACIÓN LITERARIA EN TU NUEVA RESPUESTA].`;                         
+                        }                     
+                    }                     
+                    this.session.currentMomentIndex++;                     
+                    this.updateProgressUI();                     
+                    await this.autoSaveIntermediateBackup();                                                                           
+                    await this.sleep(4000);                 
+                } catch (err) {                     
+                    console.error("Quiebre en el pipeline secuencial:", err);                     
+                    this.log(`  Sistema en pausa por Gateway: ${err.message}.`, "warn");                     
+                    errorOcurrido = true;                     
+                    break;                  
+                }             
+            }             
+            if (errorOcurrido) {                 
+                this.forcePauseExecution();                 
+                return;             
+            }             
+            if (accumulatedChapterText) {                 
+                if (this.session.finalText) {                     
+                    this.session.finalText = this.session.finalText.trimEnd() + "\n\n### CAPÍTULO: " + chapterTitle + "\n\n" + accumulatedChapterText;                 
+                } else {                     
+                    this.session.finalText = "### CAPÍTULO: " + chapterTitle + "\n\n" + accumulatedChapterText;                 
+                }             
+            }             
+            this.session.currentMomentIndex = 0;             
+            this.session.currentEventIndex++;             
+            this.updateProgressUI();             
+            await this.autoSaveIntermediateBackup();         
+        }         
+        this.log(" PROCESO FINALIZADO CON ÉXITO! Estructura integrada sin plantillas desde la cronología activa.", "success");         
+        this.forceResetButtons();     
     }
 };
-
-// Carga e inicialización automática de tokens guardados en el ecosistema
-window.addEventListener('load', () => {
-    const savedKey = localStorage.getItem('koreh_gemini_book_api_key');
-    if (savedKey && document.getElementById("gemini-book-api-key")) {
-        document.getElementById("gemini-book-api-key").value = savedKey;
-    }
-});

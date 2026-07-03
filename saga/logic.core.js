@@ -85,8 +85,12 @@ class DataStudio {
                  imgHTML = `<div class="card-loading-overlay"><i class="fa-solid fa-palette fa-spin text-xl mb-2"></i><span class="text-[10px] font-bold">PINTANDO</span></div>`;
             } else if (item.displayImage || item.data.imagen64) {
                 const src = item.displayImage || item.data.imagen64;
-                if(src.startsWith('<svg')) imgHTML = src; 
-                else imgHTML = `<img src="${src}" class="card-img" loading="lazy">`;
+                if(src.startsWith('<svg')) {
+                    imgHTML = src; 
+                } else {
+                    // Detenemos la propagación del click al hacer click en la imagen para abrir el visor en lugar del editor completo
+                    imgHTML = `<img src="${src}" class="card-img cursor-zoom-in" loading="lazy" onclick="event.stopPropagation(); if(typeof ui !== 'undefined' && ui.zoomImage) ui.zoomImage(this.src);">`;
+                }
             }
 
             card.innerHTML = `
