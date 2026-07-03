@@ -37,7 +37,7 @@ body {
 .font-mono { font-family: 'JetBrains Mono', monospace; letter-spacing: -0.02em; }
 
 /* Inputs Limpios */
-.config-input {
+.config-input {height: 120px;
     background: transparent; border-bottom: 1px solid #e5e5e5; color: #1a1a1a;
     padding: 8px 0; border-radius: 0; font-size: 0.8rem; outline: none;
     transition: border-color 0.3s; width: 100%;
