@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SILENOS Gamebook Maker & Writer (Agéntico)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>Silenos Engine</h1>
+            <p class="subtitle">AUTÓMATA AGÉNTICO DE ESTRUCTURACIÓN ONTOLÓGICA & LITERATURA TÉCNICA</p>
+        </div>
+        <div id="agent-status-badge" class="agent-badge hidden">Agente Activo</div>
+    </header>
+
+    <div class="layout-grid">
+        <div>
+            <div class="section-title">Núcleo Electrónico</div>
+            <div class="field">
+                <label for="api-key">Gemini API Key</label>
+                <input type="text" id="api-key" placeholder="AIzaSy..." value="">
+            </div>
+
+            <div class="section-title">Configuración Estructural y Semilla</div>
+            <div class="file-upload-wrapper">
+                <div class="input-file-custom">
+                    <span>Selecciona un JSON existente para continuar/cargar</span>
+                    <input type="file" id="import-file" accept=".json">
+                </div>
+            </div>
+            
+            <div class="field" style="margin-top: -10px; margin-bottom: 24px;">
+                <button id="btn-pegar-json" class="secondary" style="width: 100%; font-size: 11px; padding: 8px 16px;">Pegar JSON desde el Portapapeles</button>
+            </div>
+
+            <div class="row-fields">
+                <div class="field">
+                    <label for="doc-num-caps">Cantidad de capítulos objetivo</label>
+                    <input type="number" id="doc-num-caps" value="15" min="1" max="100">
+                </div>
+                <div class="field">
+                    <label for="doc-tono">Tono Narrativo / Atmósfera</label>
+                    <input type="text" id="doc-tono" value="Ciberpunk industrial, existencialista, técnico, crudo">
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="doc-titulo">Título de la Obra</label>
+                <input type="text" id="doc-titulo" value="La Resistencia del Círculo">
+            </div>
+            
+            <div class="row-fields">
+                <div class="field">
+                    <label for="doc-autores">Autores</label>
+                    <input type="text" id="doc-autores" value="Manuel Rodsua y Cristina Lobo">
+                </div>
+                <div class="field">
+                    <label for="doc-estilo">Estilo de Prosa</label>
+                    <input type="text" id="doc-estilo" value="Tercera persona omnisciente, descripciones mecánicas precisas">
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="doc-disclaimer">Disclaimer</label>
+                <input type="text" id="doc-disclaimer" value="Esta obra es una manifestación de la pura causalidad física y sociológica planetaria.">
+            </div>
+
+            <div class="field">
+                <label for="doc-idea">Premisa / Concepto Ontológico Central</label>
+                <textarea id="doc-idea">Una arandela de cromo-vanadio modificada llamada Arandela, instalada en el bloque motor del sector norte de una estación de escucha en el año 3113, resiste presiones físicas y tensiones de datos telúricos reflejando la agonía tectónica de un desierto de óxido.</textarea>
+            </div>
+
+            <div class="actions-bar">
+                <button id="btn-run-agent" class="agentic">Iniciar Proceso Agéntico Total</button>
+                <button id="btn-exportar" class="secondary">Exportar JSON</button>
+                <button id="btn-prompt-ia" class="secondary" style="background-color: #4b5563; color: white; border-color: #4b5563;">Copiar Prompt e instrucciones IA</button>
+                <button id="btn-abortar" class="secondary hidden" style="border-color:#ef4444; color:#ef4444;">Detener Agente</button>
+            </div>
+        </div>
+
+        <div>
+            <div class="section-title">Matriz Física del Libro</div>
+            <div class="matrix-container" id="wrapper-capitulos">
+            </div>
+
+            <div class="section-title" style="margin-top: 32px;">Telemetría del Sistema</div>
+            <div id="log-console">Sistema listo. Configura el total de capítulos para generar sus huecos de planificación, o inicia directamente la automatización agéntica.</div>
+        </div>
+    </div>
+</div>
+
+<script src="gemini-api.js"></script>
+<script src="gemini-prompts.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
