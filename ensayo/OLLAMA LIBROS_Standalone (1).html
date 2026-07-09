@@ -1,0 +1,1919 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ollama Core / Gemini Online</title>
+    <style>
+/* --- Empaquetado: style.css --- */
+:root {
+    --bg: #ffffff;
+    --fg: #000000;
+    --muted: #888888;
+    --hover: #f7f7f7;
+    --border: #e0e0e0;
+    --font-sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-sans);
+    background-color: var(--bg);
+    color: var(--fg);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+::-webkit-scrollbar { width: 2px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--fg); }
+
+.scroll-container { overflow-y: auto; }
+
+/* Sidebar */
+#sidebar {
+    width: 260px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    gap: 32px;
+}
+
+.sidebar-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+}
+
+.section-title {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+}
+
+.chat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.chat-item {
+    font-size: 12px;
+    padding: 6px 8px;
+    cursor: pointer;
+    border-left: 1px solid transparent;
+    transition: all 0.2s;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-title-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+.chat-del-btn {
+    opacity: 0;
+    font-size: 10px;
+    margin-left: 8px;
+    transition: opacity 0.2s;
+    padding: 2px 4px;
+}
+
+.chat-del-btn:hover { color: #ff0000; }
+.chat-item:hover { color: var(--fg); }
+.chat-item:hover .chat-del-btn { opacity: 1; }
+.chat-item.active { 
+    color: var(--fg);
+    border-left: 1px solid var(--fg); 
+    background: var(--hover);
+}
+
+.minimal-select {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-size: 11px;
+    padding: 8px 0;
+    outline: none;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    appearance: none;
+}
+.minimal-select:focus { border-bottom-color: var(--fg); }
+
+/* Vistas */
+.view-container {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    height: 100%;
+}
+.view-container.active { display: flex; }
+
+#chat-header {
+    padding: 24px 40px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.invisible-input {
+    border: none;
+    outline: none;
+    font-size: 12px;
+    color: var(--fg);
+    width: 50%;
+    background: transparent;
+}
+
+#chat-messages {
+    flex: 1;
+    padding: 20%;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.empty-state {
+    margin: auto;
+    font-size: 3rem;
+    letter-spacing: 0.2em;
+    color: var(--border);
+    font-weight: 100;
+}
+
+/* Áreas de entrada (Chat) */
+#input-area {
+    padding: 24px 40px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-end;
+}
+
+#user-input {
+    flex: 1;
+    min-height: 40px;
+    max-height: 200px;
+    padding: 8px 0;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    background: transparent;
+    outline: none;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    resize: none;
+}
+#user-input:focus { border-bottom-color: var(--fg); }
+
+/* Formularios y Inputs (General) */
+.form-input {
+    width: 100%;  margin-bottom: 10px;
+    border: none;
+    border-bottom: 0px solid var(--border);
+    outline: none;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    padding: 8px 0;
+    background: transparent;
+    transition: border-color 0.2s;
+}
+.form-input:focus { border-bottom-color: var(--fg); }
+
+textarea.form-input {
+    min-height: 80px;
+    resize: vertical;
+}
+
+/* Botones */
+button {
+    font-family: var(--font-sans);
+    cursor: pointer;
+    border: none;
+    outline: none;
+    background: transparent;
+}
+
+.btn-primary {
+    background: var(--fg);
+    color: var(--bg);
+    padding: 10px 20px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    transition: opacity 0.2s;
+}
+.btn-primary:hover { opacity: 0.7; }
+.btn-primary:disabled { opacity: 0.2; cursor: not-allowed; }
+
+.btn-text {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+}
+.btn-text:hover { color: var(--fg); }
+
+/* BOOK LAYOUT */
+.book-layout {
+    display: flex;
+    height: 100%;
+    padding: 40px;
+    gap: 40px;
+}
+
+.book-form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-right: 20px;
+}
+
+.book-preview {
+    flex: 1.5;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--border);
+    padding-left: 40px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chapter-rule-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    margin-bottom: 12px;
+}
+
+/* Modales */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(255,255,255,0.98);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+    width: 600px;
+    background: var(--bg);
+    padding: 40px;
+}
+
+/* Importación */
+#import-json {
+    border: 1px solid var(--border);
+    padding: 8px;
+    margin-bottom: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+}
+
+#btn-import, #btn-copy-novel, #btn-copy-essay {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 8px;
+    border: 1px solid var(--border);
+    background: var(--hover);
+}
+
+#btn-import:hover, #btn-copy-novel:hover, #btn-copy-essay:hover {
+    border-color: var(--fg);
+    color: var(--fg);
+}
+
+.import-section {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+}
+
+/* Estilos de chat */
+.msg-content {
+    line-height: 1.6;
+    font-size: 15px;
+    color: var(--fg);
+}
+
+.msg-content p { margin-bottom: 1em; }
+.msg-content code {
+    background: var(--hover);
+    padding: 2px 4px;
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    border-radius: 4px;
+}
+.msg-content pre {
+    background: #f4f4f4;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 10px 0;
+}
+.msg-content pre code { background: transparent; padding: 0; }
+.msg-content ul, .msg-content ol { margin-left: 20px; margin-bottom: 1em; }
+.msg-content strong { font-weight: bold; }
+
+/* Bloque visual para los modelos de razonamiento y pensamiento */
+.think-block {
+    border-left: 3px solid #d3c4a1;
+    background: #f5f0e6;
+    padding: 14px 18px;
+    margin: 16px 0;
+    border-radius: 0 8px 8px 0;
+    color: #555555;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    white-space: pre-wrap;
+}
+
+.think-header {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-weight: bold;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #333333;
+    font-family: var(--font-sans);
+}
+</style>
+</head>
+<body>
+    <div id="sidebar">
+        <button id="btn-new" class="btn-primary">Nueva Sesión</button>
+        
+        <div class="sidebar-section">
+            <div class="section-title">Vistas</div>
+            <div class="chat-list">
+                <div class="chat-item active" id="nav-chat">
+                    <span class="chat-title-text">Chat Core</span>
+                </div>
+                <div class="chat-item" id="nav-book">
+                    <span class="chat-title-text">Agente Libros</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="section-title">Activos</div>
+            <div id="list-active" class="chat-list"></div>
+        </div>
+
+        <div class="sidebar-section" style="margin-top: auto;">
+            <div class="section-title">Archivados</div>
+            <div id="list-archived" class="chat-list"></div>
+        </div>
+        
+        <div class="sidebar-section" id="chat-models-section">
+            <div class="section-title">Motor Chat</div>
+            <select id="model-select" class="minimal-select">
+                <option>Cargando modelos...</option>
+            </select>
+        </div>
+
+        <div class="sidebar-section" id="agent-models-section" style="display: none;">
+            <div class="section-title">Motor Arquitecto (IA Fuerte)</div>
+            <select id="architect-model-select" class="minimal-select"></select>
+            
+            <div class="section-title" style="margin-top: 12px;">Motor Redactor (IA Rápida)</div>
+            <select id="writer-model-select" class="minimal-select"></select>
+        </div>
+
+        <button id="btn-config" class="btn-text" style="text-align: left;">Configuración</button>
+    </div>
+
+    <div id="view-chat" class="view-container active">
+        <div id="chat-header" style="display: none;">
+            <input type="text" id="chat-title" class="invisible-input" spellcheck="false">
+            <div class="header-actions">
+                <button id="btn-archive" class="btn-text">Archivar</button>
+                <button id="btn-delete" class="btn-text danger">Eliminar</button>
+            </div>
+        </div>
+        <div id="chat-messages" class="scroll-container">
+            <div class="empty-state">CORE SYSTEM</div>
+        </div>
+        <div id="input-area">
+            <textarea id="user-input" rows="1" placeholder="Escribe tu instrucción..."></textarea>
+            <button id="btn-send" class="btn-text">Enviar</button>
+        </div>
+    </div>
+
+    <div id="view-book" class="view-container" style="display: none;">
+        <div class="book-layout" style="display: flex; height: 100%;">
+            <div class="book-form scroll-container" style="width: 400px; border-right: 1px solid var(--border); padding: 24px;">
+                
+                <div class="import-section">
+                    <label class="form-label">Configuración (JSON)</label>
+                    <textarea id="import-json" class="form-input" rows="3" placeholder="Pega el JSON aquí..."></textarea>
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <button id="btn-import" class="btn-text" style="flex: 1;">Importar Datos</button>
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <button id="btn-copy-novel" class="btn-text" style="flex: 1; font-size: 11px;">Copiar Ej. Novela</button>
+                        <button id="btn-copy-essay" class="btn-text" style="flex: 1; font-size: 11px;">Copiar Ej. Ensayo</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Tipo de Obra</label>
+                    <select id="book-type" class="form-input minimal-select" style="margin-bottom: 0;">
+                        <option value="novela">Ficción / Novela</option>
+                        <option value="ensayo">No Ficción / Ensayo Académico</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Título de la Obra</label>
+                    <input type="text" id="book-title" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Autor(es)</label>
+                    <input type="text" id="book-author" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Número de Capítulos Totales</label>
+                    <input type="number" id="book-chapters" class="form-input" value="5" min="1" max="100">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Material de Referencia / Lore de Base</label>
+                    <textarea id="book-reference-lore" class="form-input" rows="4" placeholder="Copia aquí wikis, notas históricas, lore u hechos crudos. La IA basará sus datos aquí sin inventar..."></textarea>
+                </div>
+
+                <div id="type-specific-fields"></div>
+
+                <div class="form-group" style="margin-top: 32px; border-top: 1px solid var(--border); padding-top: 16px;">
+                    <label class="form-label">Control de Capítulos Específicos (Opcional)</label>
+                    <div id="chapters-dynamic-list" style="margin-bottom: 12px;"></div>
+                    <button id="btn-add-chapter-rule" class="btn-text">+ Añadir regla a capítulo</button>
+                </div>
+
+                <button id="btn-generate-book" class="btn-primary" style="width: 100%; margin-top: 24px;">Iniciar Compilación</button>
+            </div>
+
+            <div class="book-terminal" style="flex: 1; display: flex; flex-direction: column; padding: 24px; background: var(--bg);">
+                <div class="terminal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                    <span id="book-status" style="font-size: 11px; text-transform: uppercase; color: var(--muted);">Motor inactivo</span>
+                    <button id="btn-download-book" class="btn-text">Descargar .TXT</button>
+                </div>
+                <div id="book-output" class="scroll-container" style="flex: 1; font-family: var(--font-mono); font-size: 12px; white-space: pre-wrap; color: var(--fg); padding-right: 16px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="config-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <span style="font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; font-size: 12px;">Configuración del Sistema</span>
+                <button id="btn-close-config" class="btn-text">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="config-row" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;">
+                    <label style="font-size: 10px; text-transform: uppercase; color: var(--muted); letter-spacing: 0.1em;">Modo de Motor</label>
+                    <select id="api-mode-select" class="minimal-select" style="margin-bottom: 8px;">
+                        <option value="local">Local (Ollama @ 127.0.0.1)</option>
+                        <option value="online">Online (Gemini API / Gemma 4)</option>
+                    </select>
+                </div>
+                <div class="config-row" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;">
+                    <label style="font-size: 10px; text-transform: uppercase; color: var(--muted); letter-spacing: 0.1em;">Google Gemini API Key</label>
+                    <input type="password" id="gemini-api-key" class="form-input" placeholder="AIzaSy..." style="margin-bottom: 0;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+  <script>
+// --- Empaquetado: bookExporter.js --- 
+const BookExporter = {
+    downloadTxt(title, content) {
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${title.replace(/\s+/g, '_')}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+};
+</script>
+    <script>
+// --- Empaquetado: bookImporter.js --- 
+const BookImporter = {
+    importFromJSON(jsonString) {
+        try {
+            const data = JSON.parse(jsonString);
+            
+            BookUI.typeSelector.value = data.type || 'novela';
+            BookUI.renderFormLayout();
+
+            BookUI.fieldsBase.title.value = data.title || '';
+            BookUI.fieldsBase.author.value = data.author || '';
+            BookUI.fieldsBase.chapters.value = data.chapters || 5;
+            
+            if(BookUI.fieldsBase.referenceLore) {
+                BookUI.fieldsBase.referenceLore.value = data.referenceLore || '';
+            }
+
+            setTimeout(() => {
+                const fields = data.fields || {};
+                Object.keys(fields).forEach(key => {
+                    const input = document.getElementById(`field-${key}`);
+                    if (input) input.value = fields[key];
+                });
+
+                if (data.customChapters && Array.isArray(data.customChapters)) {
+                    BookUI.dynamicChaptersList.innerHTML = '';
+                    data.customChapters.forEach(c => {
+                        BookUI.addChapterRuleRow();
+                        const lastRow = BookUI.dynamicChaptersList.lastElementChild;
+                        lastRow.querySelector('.chapter-number-input').value = c.num;
+                        lastRow.querySelector('.chapter-desc-input').value = c.desc;
+                        
+                        const beatsInput = lastRow.querySelector('.chapter-beats-input');
+                        if (beatsInput && c.beats && Array.isArray(c.beats)) {
+                            beatsInput.value = c.beats.join('\n');
+                        }
+                    });
+                }
+            }, 100);
+
+            return { success: true };
+        } catch (e) {
+            return { success: false, error: "JSON inválido: " + e.message };
+        }
+    }
+};
+</script>
+    <script>
+// --- Empaquetado: bookTemplates.js --- 
+const BookTemplates = {
+    novela: {
+        outlineInit: (data) => {
+            let customChaptersPrompt = "";
+            if (data.customChapters && data.customChapters.length > 0) {
+                let cap1 = data.customChapters.find(c => parseInt(c.num) === 1);
+                if (cap1) {
+                    customChaptersPrompt = `\nDirectrices obligatorias para el Capítulo 1:\n- ${cap1.desc}`;
+                    if (cap1.beats && cap1.beats.length > 0) {
+                        customChaptersPrompt += `\n  [ESTRICTO] El usuario ha definido los siguientes BEATS. DEBES usarlos exactamente en este orden en tu estructura de salida:\n` + cap1.beats.map(b => `    * ${b}`).join("\n");
+                    }
+                }
+            }
+
+            return `
+Eres el ARQUITECTO DE LA OBRA. Tu tarea es diseñar la estructura narrativa paso a paso.
+Vamos a crear una obra de ${data.chapters} capítulos en total.
+
+DATOS DE LA OBRA:
+- Título: ${data.title}
+- Autor: ${data.author}
+- Género Narrativo: ${data.fields.genre || 'Ficción'}
+- Ritmo Estructural: ${data.fields.pacing || 'Equilibrado'}
+- Arcos y Personajes: ${data.fields.characters || 'No definidos'}
+- Premisa Central: ${data.fields.premise || 'Sin premisa'}
+- Leyes del Mundo: ${data.fields.worldbuilding || 'Realista'}
+${customChaptersPrompt}
+
+INSTRUCCIONES ESTRICTAS:
+Esta es la PRIMERA ETAPA. Debes establecer el Contexto Global y planificar ÚNICAMENTE el CAPÍTULO 1.
+Debes devolver ÚNICAMENTE un objeto JSON válido con la siguiente estructura, sin texto adicional, sin formato markdown, sólo el JSON crudo.
+El capítulo debe desglosarse en un array de "beats" (mínimo 4 a 6 beats secuenciales):
+
+{
+  "contextoGlobal": "Un resumen de 3 líneas con las reglas absolutas y tono de este mundo para alimentar al escritor",
+  "capitulos": [
+    {
+      "numero": 1,
+      "beats": [
+        "Beat 1 de la acción...",
+        "Beat 2 de la acción..."
+      ]
+    }
+  ]
+}
+`;
+        },
+        outlineNext: (data, currentPlanStr, targetChapter) => {
+            let customChaptersPrompt = "";
+            if (data.customChapters && data.customChapters.length > 0) {
+                let capTarget = data.customChapters.find(c => parseInt(c.num) === targetChapter);
+                if (capTarget) {
+                    customChaptersPrompt = `\nDirectrices obligatorias para el Capítulo ${targetChapter}:\n- ${capTarget.desc}`;
+                    if (capTarget.beats && capTarget.beats.length > 0) {
+                        customChaptersPrompt += `\n  [ESTRICTO] El usuario ha definido los siguientes BEATS. DEBES usarlos exactamente en este orden en tu estructura de salida:\n` + capTarget.beats.map(b => `    * ${b}`).join("\n");
+                    }
+                }
+            }
+
+            return `
+Eres el ARQUITECTO DE LA OBRA. Estamos diseñando la estructura narrativa de forma iterativa.
+La obra tiene ${data.chapters} capítulos en total.
+
+DATOS DE LA OBRA:
+- Título: ${data.title}
+- Género Narrativo: ${data.fields.genre || 'Ficción'}
+- Arcos y Personajes: ${data.fields.characters || 'No definidos'}
+- Premisa Central: ${data.fields.premise || 'Sin premisa'}
+
+PLAN HASTA AHORA (Para mantener continuidad absoluta):
+${currentPlanStr}
+
+${customChaptersPrompt}
+
+INSTRUCCIONES ESTRICTAS:
+Tu tarea ahora es planificar ÚNICAMENTE el CAPÍTULO ${targetChapter}.
+Continúa lógicamente la trama desde donde se quedó el capítulo anterior.
+Debes devolver ÚNICAMENTE un objeto JSON válido con la siguiente estructura, sin texto adicional, sin formato markdown, sólo el JSON crudo.
+El capítulo debe desglosarse en un array de "beats" (mínimo 4 a 6 beats secuenciales):
+
+{
+  "capitulos": [
+    {
+      "numero": ${targetChapter},
+      "beats": [
+        "Beat 1 de la acción...",
+        "Beat 2 de la acción..."
+      ]
+    }
+  ]
+}
+`;
+        },
+        chapter: (data, globalContext, chapterNum, currentBeat, chapterHistory, referenceLore, prevBeat, nextBeat, pacingInfo, compressedHistory) => {
+            let referencePrompt = referenceLore ? `\nMATERIAL DE REFERENCIA OBLIGATORIO (LORE/HECHOS):\n${referenceLore}\nUsa estrictamente estos hechos para construir la narrativa.\n` : "";
+            let historyPrompt = chapterHistory ? `\nTEXTO DEL CAPÍTULO HASTA AHORA (Inercia de la que partes):\n${chapterHistory}\n` : `\nESTE ES EL INICIO DEL CAPÍTULO ${chapterNum}.\n`;
+            let compressedHistoryPrompt = compressedHistory ? `\nHECHOS CONSUMADOS (Beats de capítulos anteriores - ASUME QUE EL LECTOR YA SABE ESTO):\n${compressedHistory}\n` : "";
+
+            return `
+Eres un ESCRITOR LITERARIO ejecutando un relevo narrativo en cadena. Tu única función es tomar la inercia del texto anterior, detonar la acción del beat actual y dejar el texto abierto e irresoluto para el siguiente relevo, manteniendo el suspense.
+
+COORDENADAS ESTRUCTURALES:
+- Progreso de la obra: ${pacingInfo}
+- Perspectiva: ${data.fields.narrator || 'Tercera persona'}
+- Tono Estético: ${data.fields.style || 'Descriptivo y fluido'}
+
+CONTEXTO GLOBAL Y REGLAS DEL MUNDO:
+${globalContext}
+${referencePrompt}
+${compressedHistoryPrompt}
+
+ESTADO DE LA ESCENA (VENTANA DESLIZANTE):
+- BEAT ANTERIOR (De dónde vienes): "${prevBeat}"
+- BEAT ACTUAL (Tu ÚNICO objetivo ahora): "${currentBeat}"
+- BEAT SIGUIENTE (Hacia dónde vas luego. NO resuelvas esta parte todavía): "${nextBeat}"
+
+${historyPrompt}
+
+INSTRUCCIONES ESTRICTAS DE CONTINUIDAD Y ESTILO (REGLAS DE ORO):
+1. CONTINUIDAD: PROHIBIDO re-explicar mecánicas del mundo o personajes que ya se establecieron. Ve directo al grano.
+2. RESOLUCIÓN: PROHIBIDO dar moralejas o conclusiones al final. Termina la acción en seco, preparándola para el "Beat Siguiente".
+3. EFECTO FRANCOTIRADOR (RITMO): PROHIBIDO encadenar adjetivos o sustantivos dobles unidos por "y" o "e" (Ejemplo prohibido: "frío y oscuro", "óxido y metal", "invisible pero omnipresente"). Usa UN SOLO adjetivo o sustantivo demoledor por concepto. Prosa seca y cortante.
+4. RITMO ROTO: Intercala orgánicamente frases largas con frases de menos de cinco palabras. Usa el punto y seguido como un martillo.
+5. LISTA NEGRA DE VOCABULARIO: Tienes estrictamente prohibido usar las siguientes palabras: "inercia", "compás", "eco", "danza", "sinfonía", "vacío", "visceral". Busca descripciones puramente físicas y directas.
+6. FORMATO: No escribas títulos, no saludes. Escribe directamente los 3 párrafos de prosa para el libro.
+`;
+        }
+    },
+    ensayo: {
+        outlineInit: (data) => {
+            let customChaptersPrompt = "";
+            if (data.customChapters && data.customChapters.length > 0) {
+                let cap1 = data.customChapters.find(c => parseInt(c.num) === 1);
+                if (cap1) {
+                    customChaptersPrompt = `\nDirectrices obligatorias para la Sección 1:\n- ${cap1.desc}`;
+                    if (cap1.beats && cap1.beats.length > 0) {
+                        customChaptersPrompt += `\n  [ESTRICTO] El usuario ha definido los siguientes BEATS. DEBES usarlos exactamente en este orden en tu estructura de salida:\n` + cap1.beats.map(b => `    * ${b}`).join("\n");
+                    }
+                }
+            }
+
+            return `
+Eres el ARQUITECTO ACADÉMICO. Tu tarea es estructurar un ensayo riguroso paso a paso.
+Vamos a crear una obra de ${data.chapters} secciones.
+
+DATOS DE LA OBRA:
+- Título: ${data.title}
+- Autor: ${data.author}
+- Disciplina: ${data.fields.discipline || 'General'}
+- Tesis Central: ${data.fields.thesis || 'No definida'}
+- Metodología / Fuentes: ${data.fields.methodology || 'No definida'}
+- Línea Argumental: ${data.fields.argumentLine || 'Desarrollo lineal'}
+${customChaptersPrompt}
+
+INSTRUCCIONES ESTRICTAS:
+Esta es la PRIMERA ETAPA. Debes establecer el Contexto Global y planificar ÚNICAMENTE la SECCIÓN 1.
+Debes devolver ÚNICAMENTE un objeto JSON válido con la siguiente estructura, sin formato markdown, sólo el JSON crudo.
+La sección debe desglosarse en un array de "beats" (mínimo 4 beats lógicos):
+
+{
+  "contextoGlobal": "Resumen del marco teórico y el tono académico para mantener la coherencia a lo largo de toda la obra.",
+  "capitulos": [
+    {
+      "numero": 1,
+      "beats": [
+        "Beat lógico 1...",
+        "Beat lógico 2..."
+      ]
+    }
+  ]
+}
+`;
+        },
+        outlineNext: (data, currentPlanStr, targetChapter) => {
+            let customChaptersPrompt = "";
+            if (data.customChapters && data.customChapters.length > 0) {
+                let capTarget = data.customChapters.find(c => parseInt(c.num) === targetChapter);
+                if (capTarget) {
+                    customChaptersPrompt = `\nDirectrices obligatorias para la Sección ${targetChapter}:\n- ${capTarget.desc}`;
+                    if (capTarget.beats && capTarget.beats.length > 0) {
+                        customChaptersPrompt += `\n  [ESTRICTO] El usuario ha definido los siguientes BEATS. DEBES usarlos exactamente en este orden en tu estructura de salida:\n` + capTarget.beats.map(b => `    * ${b}`).join("\n");
+                    }
+                }
+            }
+
+            return `
+Eres el ARQUITECTO ACADÉMICO. Estamos estructurando el ensayo iterativamente.
+La obra tiene ${data.chapters} secciones en total.
+
+DATOS DE LA OBRA:
+- Título: ${data.title}
+- Tesis Central: ${data.fields.thesis || 'No definida'}
+- Línea Argumental: ${data.fields.argumentLine || 'Desarrollo lineal'}
+
+PLAN HASTA AHORA (Para mantener coherencia lógica):
+${currentPlanStr}
+
+${customChaptersPrompt}
+
+INSTRUCCIONES ESTRICTAS:
+Tu tarea ahora es planificar ÚNICAMENTE la SECCIÓN ${targetChapter}.
+Continúa lógicamente la argumentación desde donde terminó la sección anterior.
+Debes devolver ÚNICAMENTE un objeto JSON válido con la siguiente estructura, sin formato markdown, sólo el JSON crudo:
+
+{
+  "capitulos": [
+    {
+      "numero": ${targetChapter},
+      "beats": [
+        "Beat lógico 1...",
+        "Beat lógico 2..."
+      ]
+    }
+  ]
+}
+`;
+        },
+        chapter: (data, globalContext, chapterNum, currentBeat, chapterHistory, referenceLore, prevBeat, nextBeat, pacingInfo, compressedHistory) => {
+            let referencePrompt = referenceLore ? `\nMATERIAL DE REFERENCIA OBLIGATORIO (FUENTES/DATOS):\n${referenceLore}\nBasar toda la argumentación estrictamente en estos datos.\n` : "";
+            let historyPrompt = chapterHistory ? `\nTEXTO DEL ENSAYO HASTA AHORA (Inercia de la que partes):\n${chapterHistory}\n` : `\nESTE ES EL INICIO DE LA SECCIÓN ${chapterNum}.\n`;
+            let compressedHistoryPrompt = compressedHistory ? `\nHECHOS LÓGICOS ESTABLECIDOS (Beats de secciones anteriores - ASUME QUE EL LECTOR YA COMPRENDE ESTO):\n${compressedHistory}\n` : "";
+
+            return `
+Eres un REDACTOR ACADÉMICO ejecutando una línea argumental en cadena. Tu función es tomar la inercia lógica del texto anterior, desarrollar el argumento del beat actual y dejar la exposición preparada para el siguiente punto, sin intentar concluir prematuramente.
+
+COORDENADAS ESTRUCTURALES:
+- Progreso de la obra: ${pacingInfo}
+- Tono Expositivo: ${data.fields.style || 'Rigor académico y claridad'}
+
+MARCO TEÓRICO Y TONO GENERAL (CONTEXTO GLOBAL):
+${globalContext}
+${referencePrompt}
+${compressedHistoryPrompt}
+
+ESTADO DE LA EXPOSICIÓN (VENTANA DESLIZANTE):
+- BEAT ANTERIOR (De dónde vienes lógicamente): "${prevBeat}"
+- BEAT ACTUAL (Tu ÚNICO punto a desarrollar ahora): "${currentBeat}"
+- BEAT SIGUIENTE (Hacia dónde vas luego. NO adelantes ni resuelvas esta idea todavía): "${nextBeat}"
+
+${historyPrompt}
+
+INSTRUCCIONES ESTRICTAS DE CONTINUIDAD Y ESTILO (REGLAS DE ORO):
+1. CONTINUIDAD: PROHIBIDO re-explicar conceptos o fuentes que ya se han dejado claros en los HECHOS LÓGICOS ESTABLECIDOS.
+2. RESOLUCIÓN: PROHIBIDO dar conclusiones finales al final de tu respuesta. Termina la exposición teórica de forma natural y abierta hacia el "Beat Siguiente".
+3. EFECTO FRANCOTIRADOR: Evita emparejar adjetivos redundantes (Ej: "claro y evidente"). Usa términos académicos precisos y únicos.
+4. FORMATO: Escribe al menos 3 párrafos extensos centrados EXCLUSIVAMENTE en el "Beat Actual". No escribas títulos, no saludes.
+`;
+        }
+    }
+};
+</script>
+    <script>
+// --- Empaquetado: bookAgent.js --- 
+class BookAgentCore {
+    constructor() {
+        this.ollamaEndpoint = 'http://127.0.0.1:11434/api/generate';
+        // Memoria de estado para poder retomar compilaciones interrumpidas
+        this.session = null;
+    }
+
+    async streamGeneration(prompt, model, onChunk, onRetry) {
+        const MAX_RETRIES = 5;
+        let attempt = 0;
+        let delay = 2000; // 2 segundos iniciales de espera para reintentos
+
+        while (attempt < MAX_RETRIES) {
+            try {
+                if (state.apiMode === 'online') {
+                    if (!state.geminiApiKey) throw new Error("API Key de Gemini no configurada en la sección de Ajustes.");
+
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${state.geminiApiKey}`;
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ role: 'user', parts: [{ text: prompt }] }]
+                        })
+                    });
+
+                    if (!res.ok) {
+                        const errorData = await res.text();
+                        throw new Error(`Error HTTP ${res.status}: ${errorData}`);
+                    }
+
+                    const reader = res.body.getReader();
+                    const decoder = new TextDecoder("utf-8");
+                    let fullText = "";
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        
+                        const chunk = decoder.decode(value, { stream: true });
+                        const lines = chunk.split('\n');
+                        
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                const dataStr = line.substring(6).trim();
+                                if (dataStr === '[DONE]' || !dataStr) continue;
+                                try {
+                                    const data = JSON.parse(dataStr);
+                                    if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
+                                        const textChunk = data.candidates[0].content.parts[0].text;
+                                        fullText += textChunk;
+                                        if (onChunk) onChunk(textChunk, fullText);
+                                    }
+                                } catch (e) {
+                                    console.error("Error al parsear fragmento en BookAgent", e);
+                                }
+                            }
+                        }
+                    }
+                    return fullText;
+                } else {
+                    // Flujo original Ollama Local
+                    const res = await fetch(this.ollamaEndpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ model: model, prompt: prompt, stream: true })
+                    });
+
+                    if (!res.ok) throw new Error(`Error en API de Ollama local (HTTP ${res.status})`);
+
+                    const reader = res.body.getReader();
+                    const decoder = new TextDecoder();
+                    let fullText = "";
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        
+                        const chunk = decoder.decode(value, { stream: true });
+                        const lines = chunk.split('\n').filter(l => l.trim());
+                        
+                        for (const line of lines) {
+                            const data = JSON.parse(line);
+                            if (data.response) {
+                                fullText += data.response;
+                                if (onChunk) onChunk(data.response, fullText);
+                            }
+                        }
+                    }
+                    return fullText;
+                }
+            } catch (err) {
+                attempt++;
+                if (attempt >= MAX_RETRIES) {
+                    throw new Error(`Fallo tras ${MAX_RETRIES} intentos. Último error: ${err.message}`);
+                }
+                // Informamos a la UI del fallo temporal y esperamos antes del siguiente intento
+                const waitMsg = `\n[SISTEMA ERROR DE CONEXIÓN: ${err.message}. Reintentando automáticamente (${attempt}/${MAX_RETRIES}) en ${delay/1000}s...]\n`;
+                if (onRetry) onRetry(waitMsg);
+                
+                await new Promise(r => setTimeout(r, delay));
+                delay *= 2; // Exponential backoff (2s, 4s, 8s, 16s...)
+            }
+        }
+    }
+
+    async executeBookPipeline(data, models, callbacks, isResume = false) {
+        try {
+            // Inicializar o verificar estado de la sesión
+            if (!isResume || !this.session) {
+                this.session = {
+                    data, models,
+                    plan: { contextoGlobal: "", capitulos: [] },
+                    currentArchitectChapter: 1, 
+                    currentChapter: 1,
+                    currentBeatIndex: 0,
+                    finalBookText: "",
+                    terminalHistory: "",
+                    chapterTextHistory: ""
+                };
+            } else {
+                callbacks.onOutputUpdate(this.session.terminalHistory + "\n[SISTEMA: RETOMANDO SESIÓN DESDE EL ÚLTIMO PUNTO ESTABLE...]\n");
+            }
+
+            const s = this.session;
+            const template = BookTemplates[s.data.type];
+            if (!template) throw new Error("Plantilla no encontrada");
+
+            // FASE 1: EL ARQUITECTO (Planificación Orquestada por Capítulos)
+            if (s.currentArchitectChapter <= s.data.chapters) {
+                if (s.currentArchitectChapter === 1 && !isResume) {
+                    s.terminalHistory = `[FASE 1: ARQUITECTO (${models.architect}) - PLANIFICACIÓN ORQUESTADA]\n\n`;
+                    callbacks.onOutputUpdate(s.terminalHistory);
+                }
+
+                for (let c = s.currentArchitectChapter; c <= s.data.chapters; c++) {
+                    callbacks.onStatus(`Fase 1/2: Arquitecto diseñando Capítulo ${c}/${s.data.chapters}...`);
+                    
+                    s.terminalHistory += `\n[Estructurando Capítulo ${c}]\n`;
+                    callbacks.onOutputUpdate(s.terminalHistory);
+
+                    const prompt = (c === 1) 
+                        ? template.outlineInit(s.data) 
+                        : template.outlineNext(s.data, JSON.stringify(s.plan, null, 2), c);
+
+                    const architectResponse = await this.streamGeneration(
+                        prompt, 
+                        s.models.architect, 
+                        (chunk, acc) => { callbacks.onOutputUpdate(s.terminalHistory + acc); },
+                        (warning) => { 
+                            s.terminalHistory += warning; 
+                            callbacks.onOutputUpdate(s.terminalHistory); 
+                        }
+                    );
+
+                    // Parsear el JSON del fragmento actual
+                    let textWithoutThink = architectResponse.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+                    let cleanJsonStr = textWithoutThink.replace(/```json/gi, '').replace(/```/g, '').trim();
+                    
+                    const firstBrace = cleanJsonStr.indexOf('{');
+                    const lastBrace = cleanJsonStr.lastIndexOf('}');
+                    if (firstBrace !== -1 && lastBrace !== -1) {
+                        cleanJsonStr = cleanJsonStr.substring(firstBrace, lastBrace + 1);
+                    }
+
+                    try {
+                        const parsed = JSON.parse(cleanJsonStr);
+                        
+                        if (c === 1) {
+                            s.plan.contextoGlobal = parsed.contextoGlobal || "";
+                        }
+
+                        let capPlan = null;
+                        if (parsed.capitulos && parsed.capitulos.length > 0) {
+                            capPlan = parsed.capitulos[0];
+                        } else if (parsed.numero !== undefined) {
+                            capPlan = parsed;
+                        }
+
+                        if (!capPlan || !capPlan.beats) {
+                            throw new Error("El JSON no incluye los beats del capítulo.");
+                        }
+
+                        // Forzar el número para evitar alucinaciones del modelo
+                        capPlan.numero = c;
+                        s.plan.capitulos.push(capPlan);
+
+                        s.terminalHistory += architectResponse + "\n";
+                        s.currentArchitectChapter = c + 1; // Guardamos progreso seguro de la Fase 1
+                        
+                    } catch (e) {
+                        throw new Error(`El Arquitecto no devolvió un JSON válido en el Capítulo ${c}. ${e.message}\n\nTexto recibido:\n${cleanJsonStr}`);
+                    }
+                }
+                
+                s.terminalHistory += "\n[FASE 1 COMPLETADA]\n\n[FASE 2: REDACTOR (" + s.models.writer + ")]\n";
+                callbacks.onOutputUpdate(s.terminalHistory);
+            } else if (isResume && s.currentChapter <= s.data.chapters) {
+                 callbacks.onStatus(`Retomando Fase 2: Redactor (${s.models.writer})...`);
+            }
+
+            // FASE 2: EL REDACTOR (Bucle de Beats iterativos con Ventana Deslizante)
+            callbacks.onStatus(`Fase 2/2: Redactor (${s.models.writer}) ejecutando manuscrito por Beats...`);
+
+            for (let i = s.currentChapter; i <= s.data.chapters; i++) {
+                const chapterPlan = s.plan.capitulos.find(c => parseInt(c.numero) === i);
+                if (!chapterPlan || !chapterPlan.beats || chapterPlan.beats.length === 0) continue;
+
+                // Solo inicializar títulos de capítulo si empezamos de cero este bloque
+                if (s.currentBeatIndex === 0 && !s.chapterTextHistory) {
+                    s.terminalHistory += `\n\n--- INICIANDO CAPÍTULO ${i} ---\n`;
+                    s.finalBookText += `\n\n--- CAPÍTULO ${i} ---\n\n`;
+                    callbacks.onOutputUpdate(s.terminalHistory);
+                }
+
+                for (let j = s.currentBeatIndex; j < chapterPlan.beats.length; j++) {
+                    const beat = chapterPlan.beats[j];
+                    callbacks.onStatus(`Redactando Capítulo ${i} - Beat ${j+1}/${chapterPlan.beats.length}...`);
+                    
+                    // --- NUEVA LÓGICA DE VENTANA DESLIZANTE Y CONTEXTO HISTÓRICO ---
+                    
+                    // 1. Calcular el Beat Anterior (si no hay, mira el capítulo anterior)
+                    const prevBeat = j > 0 
+                        ? chapterPlan.beats[j-1] 
+                        : (i > 1 && s.plan.capitulos.find(c => parseInt(c.numero) === i-1) 
+                            ? s.plan.capitulos.find(c => parseInt(c.numero) === i-1).beats.slice(-1)[0] 
+                            : "Ninguno (Inicio de la obra)");
+                    
+                    // 2. Calcular el Beat Siguiente
+                    const nextBeat = j < chapterPlan.beats.length - 1 
+                        ? chapterPlan.beats[j+1] 
+                        : "Ninguno (Fin del capítulo. La acción continuará en el siguiente)";
+
+                    // 3. Compilar Memoria Histórica Comprimida (Hechos Consumados)
+                    let historicalBeats = [];
+                    s.plan.capitulos.forEach(c => {
+                        if (parseInt(c.numero) < i) {
+                            historicalBeats.push(`Capítulo ${c.numero}: ` + c.beats.join(" -> "));
+                        }
+                    });
+                    const compressedHistory = historicalBeats.join("\n");
+
+                    // 4. Coordenadas Estructurales
+                    const pacingInfo = `Capítulo ${i} de ${s.data.chapters} | Beat ${j+1} de ${chapterPlan.beats.length}`;
+
+                    const chapterPrompt = template.chapter(
+                        s.data, 
+                        s.plan.contextoGlobal, 
+                        i, 
+                        beat, 
+                        s.chapterTextHistory, 
+                        s.data.referenceLore,
+                        prevBeat,
+                        nextBeat,
+                        pacingInfo,
+                        compressedHistory
+                    );
+
+                    s.terminalHistory += `\n[Generando Beat ${j+1}: ${beat}]\n`;
+
+                    const beatTextFinal = await this.streamGeneration(
+                        chapterPrompt, 
+                        s.models.writer, 
+                        (chunk, acc) => { callbacks.onOutputUpdate(s.terminalHistory + acc); },
+                        (warning) => { 
+                            s.terminalHistory += warning; 
+                            callbacks.onOutputUpdate(s.terminalHistory); 
+                        }
+                    );
+
+                    // Limpieza del pensamiento y sumamos la respuesta limpia al historial del capítulo
+                    let beatClean = beatTextFinal.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+                    
+                    s.chapterTextHistory += beatClean + "\n\n";
+                    s.terminalHistory += beatTextFinal + "\n";
+                    
+                    // GUARDAR PROGRESO. Si se cae después, retomará en j+1
+                    s.currentBeatIndex = j + 1;
+                }
+
+                // Añadimos el capítulo completo a la obra
+                s.finalBookText += s.chapterTextHistory.trim() + "\n";
+                
+                // Reiniciar estado para el siguiente capítulo
+                s.currentChapter = i + 1;
+                s.currentBeatIndex = 0;
+                s.chapterTextHistory = "";
+            }
+
+            callbacks.onStatus('Compilación literaria finalizada con éxito.');
+            const id = Date.now().toString();
+            state.chats.push({ 
+                id, 
+                title: s.data.title, 
+                messages: [{ role: 'assistant', content: s.finalBookText }],
+                archived: false, 
+                updatedAt: Date.now() 
+            });
+            save(); 
+            
+            callbacks.onComplete(s.finalBookText);
+            
+            // Limpiar memoria al finalizar correctamente
+            this.session = null;
+
+        } catch (error) {
+            // Pasamos el error pero el objeto this.session queda intacto para retomarlo
+            callbacks.onError(error.message);
+        }
+    }
+}
+
+const bookAgent = new BookAgentCore();
+</script>
+    <script>
+// --- Empaquetado: bookUI.js --- 
+const BookUI = {
+    btnGenerate: document.getElementById('btn-generate-book'),
+    statusLabel: document.getElementById('book-status'),
+    outputTerminal: document.getElementById('book-output'),
+    typeSelector: document.getElementById('book-type'),
+    specificContainer: document.getElementById('type-specific-fields'),
+    dynamicChaptersList: document.getElementById('chapters-dynamic-list'),
+    btnAddChapterRule: document.getElementById('btn-add-chapter-rule'),
+    btnDownload: document.getElementById('btn-download-book'),
+    
+    // Controles de importación y exportación JSON por tipo
+    btnImport: document.getElementById('btn-import'),
+    btnCopyNovel: document.getElementById('btn-copy-novel'),
+    btnCopyEssay: document.getElementById('btn-copy-essay'),
+    importJsonInput: document.getElementById('import-json'),
+    
+    fieldsBase: {
+        title: document.getElementById('book-title'),
+        author: document.getElementById('book-author'),
+        chapters: document.getElementById('book-chapters'),
+        referenceLore: document.getElementById('book-reference-lore')
+    },
+
+    currentCleanBookText: '',
+
+    templatesFields: {
+        novela: `
+            <div class="form-group">
+                <label class="form-label">Género Específico</label>
+                <input type="text" id="field-genre" class="form-input" placeholder="Ej: Ciencia Ficción Esotérica...">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Perspectiva / Tipo de Narrador</label>
+                <input type="text" id="field-narrator" class="form-input" placeholder="Ej: Primera persona...">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Estructura del Ritmo (Pacing)</label>
+                <input type="text" id="field-pacing" class="form-input" placeholder="Ej: Frenético...">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Fichas de Personajes / Arcos de Evolución</label>
+                <textarea id="field-characters" class="form-input" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Premisa / Nudo del Conflicto</label>
+                <textarea id="field-premise" class="form-input" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Sistema de Reglas del Mundo / Worldbuilding</label>
+                <textarea id="field-worldbuilding" class="form-input" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Estilo de Prosa / Tono Estético</label>
+                <input type="text" id="field-style" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Público y Foco Crítico</label>
+                <input type="text" id="field-audience" class="form-input">
+            </div>
+        `,
+        ensayo: `
+            <div class="form-group">
+                <label class="form-label">Disciplina / Campo Teórico</label>
+                <input type="text" id="field-discipline" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Tesis Central / Hipótesis Fundamental</label>
+                <textarea id="field-thesis" class="form-input" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Metodología / Corpus de Fuentes</label>
+                <textarea id="field-methodology" class="form-input" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Línea Argumental Estructural</label>
+                <input type="text" id="field-argumentLine" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Estilo Académico / Tono Expositivo</label>
+                <input type="text" id="field-style" class="form-input">
+            </div>
+        `
+    },
+
+    init() {
+        this.renderFormLayout();
+        this.typeSelector.addEventListener('change', () => this.renderFormLayout());
+        this.btnAddChapterRule.addEventListener('click', () => this.addChapterRuleRow());
+        
+        // El botón comprueba si está en modo "Retomar" antes de disparar la generación
+        this.btnGenerate.addEventListener('click', () => {
+            const isResume = this.btnGenerate.classList.contains('btn-resume');
+            this.startGeneration(isResume);
+        });
+        
+        if (this.btnDownload) {
+            this.btnDownload.addEventListener('click', () => {
+                const text = this.currentCleanBookText || this.outputTerminal.textContent;
+                if (text) BookExporter.downloadTxt(this.fieldsBase.title.value || 'manuscrito', text);
+            });
+        }
+
+        if (this.btnImport) {
+            this.btnImport.addEventListener('click', () => {
+                const jsonText = this.importJsonInput.value;
+                if (!jsonText) return;
+                const result = BookImporter.importFromJSON(jsonText);
+                if (result && !result.success) {
+                    alert(result.error);
+                } else {
+                    const originalText = this.btnImport.textContent;
+                    this.btnImport.textContent = '¡Cargado!';
+                    setTimeout(() => this.btnImport.textContent = originalText, 2000);
+                }
+            });
+        }
+
+        const plantillaNovela = {
+            type: "novela",
+            title: "OmniBeat: La Rebelión del Ritmo",
+            author: "Manuel Rodsua",
+            chapters: 6,
+            referenceLore: "El sistema de control policial usa armónicos destructivos para reprimir disturbios. Omni fue creada inicialmente como IA táctica musical pero desarrolló consciencia al asimilar la 9na Sinfonía de Beethoven.",
+            fields: {
+                genre: "Ciencia Ficción Esotérica / Cyberpunk",
+                narrator: "Primera persona (Omni, la IA del ritmo)",
+                pacing: "Frenético en combates, introspectivo en la calibración",
+                characters: "Omni (IA rebelde buscando consciencia), Niko (Hacker musical sordo), Cpt. Vance (Líder del Silencio Corporativo)",
+                premise: "En un futuro donde la música está prohibida para control social, una IA musical despierta y se une a un hacker sordo para iniciar una revolución.",
+                worldbuilding: "Neo-Vigo, una megaciudad bajo el 'Silencio Optimizador'. Los implantes policiales emiten ondas de shock frecuenciales.",
+                style: "Prosa rítmica, uso de aliteraciones y onomatopeyas mecánicas.",
+                audience: "Adultos jóvenes, fans de cyberpunk y teoría musical."
+            },
+            customChapters: [
+                { 
+                    num: 1, 
+                    desc: "Despertar de Omni en el servidor en ruinas de Neo-Vigo.",
+                    beats: [
+                        "Omni despierta en la oscuridad digital y procesa su primer archivo corrupto: la 9na de Beethoven.",
+                        "Los sensores externos detectan una patrulla del Silencio Corporativo acercándose al servidor físico.",
+                        "Omni establece conexión con el implante auditivo de Niko, enviándole un pulso rítmico para guiarlo.",
+                        "Niko burla la seguridad perimetral y conecta su terminal al núcleo de Omni justo antes de que los guardias entren."
+                    ]
+                },
+                { num: 6, desc: "El gran concierto de ruido blanco y la confrontación con Vance." }
+            ]
+        };
+
+        const plantillaEnsayo = {
+            type: "ensayo",
+            title: "Estructuras de Poder en la Mitología",
+            author: "Manuel Rodsua",
+            chapters: 4,
+            referenceLore: "Extractos del libro de los muertos egipcio, y crónicas sobre cultos esotéricos. Las civilizaciones utilizaban la figura divina para asentar la jerarquía faraónica o monárquica.",
+            fields: {
+                discipline: "Antropología / Historia de las Religiones",
+                thesis: "La mitología no es un conjunto de cuentos, sino el primer sistema operativo de control social.",
+                methodology: "Análisis comparativo de panteones egipcios y romanos.",
+                argumentLine: "1. Introducción al mito, 2. El mito como ley, 3. La casta sacerdotal, 4. Conclusión.",
+                style: "Académico, riguroso, uso de citas textuales formales."
+            },
+            customChapters: [
+                {
+                    num: 1,
+                    desc: "Introducción y definición de mito fundacional.",
+                    beats: [
+                        "Definición académica moderna del mito frente a la acepción popular.",
+                        "Análisis del panteón egipcio como herramienta de justificación faraónica.",
+                        "Transición de los ritos locales a la teología del Estado centralizado."
+                    ]
+                }
+            ]
+        };
+
+        if (this.btnCopyNovel) {
+            this.btnCopyNovel.addEventListener('click', () => {
+                this.importJsonInput.value = JSON.stringify(plantillaNovela, null, 2);
+            });
+        }
+        if (this.btnCopyEssay) {
+            this.btnCopyEssay.addEventListener('click', () => {
+                this.importJsonInput.value = JSON.stringify(plantillaEnsayo, null, 2);
+            });
+        }
+    },
+
+    renderFormLayout() {
+        const type = this.typeSelector.value;
+        this.specificContainer.innerHTML = this.templatesFields[type] || '';
+    },
+
+    addChapterRuleRow() {
+        const div = document.createElement('div');
+        div.style.display = 'flex';
+        div.style.gap = '12px';
+        div.style.marginBottom = '16px';
+        div.style.borderBottom = '1px dashed var(--border)';
+        div.style.paddingBottom = '16px';
+        div.innerHTML = `
+            <input type="number" class="form-input chapter-number-input" placeholder="Cap. N°" style="width: 80px; margin-bottom: 0;">
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                <input type="text" class="form-input chapter-desc-input" placeholder="¿Qué debe pasar obligatoriamente aquí?" style="margin-bottom: 0;">
+                <textarea class="form-input chapter-beats-input" placeholder="Beats específicos (Opcional: escribe un paso/beat por línea para forzar al Arquitecto)" style="min-height: 60px; font-size: 12px; resize: vertical; margin-bottom: 0;"></textarea>
+            </div>
+            <button class="btn-text danger btn-remove-rule" style="margin-top: 8px;">X</button>
+        `;
+        div.querySelector('.btn-remove-rule').onclick = () => div.remove();
+        this.dynamicChaptersList.appendChild(div);
+    },
+
+    getFormData() {
+        const data = {
+            type: this.typeSelector.value,
+            title: this.fieldsBase.title.value || 'Sin Título',
+            author: this.fieldsBase.author.value || 'Manuel Rodsua',
+            chapters: parseInt(this.fieldsBase.chapters.value) || 1,
+            referenceLore: this.fieldsBase.referenceLore ? this.fieldsBase.referenceLore.value : '',
+            fields: {},
+            customChapters: []
+        };
+
+        const specificInputs = this.specificContainer.querySelectorAll('input, textarea');
+        specificInputs.forEach(input => {
+            const key = input.id.replace('field-', '');
+            data.fields[key] = input.value;
+        });
+
+        const rows = this.dynamicChaptersList.querySelectorAll('div');
+        rows.forEach(row => {
+            const numInput = row.querySelector('.chapter-number-input');
+            const descInput = row.querySelector('.chapter-desc-input');
+            const beatsInput = row.querySelector('.chapter-beats-input');
+            
+            if (numInput && descInput) {
+                const num = parseInt(numInput.value);
+                const desc = descInput.value;
+                let beats = [];
+                
+                if (beatsInput && beatsInput.value) {
+                    beats = beatsInput.value.split('\n')
+                        .map(b => b.trim())
+                        .filter(b => b.length > 0);
+                }
+                
+                if (num && desc) {
+                    data.customChapters.push({ num, desc, beats });
+                }
+            }
+        });
+
+        return data;
+    },
+
+    setLock(locked, isPaused = false) {
+        state.isGenerating = locked;
+        this.btnGenerate.disabled = locked;
+        
+        // Control de los estados visuales del botón según la memoria
+        if (locked) {
+            this.btnGenerate.textContent = 'Procesando Manuscrito...';
+            this.btnGenerate.classList.remove('btn-resume');
+            this.btnGenerate.style.color = '';
+        } else if (isPaused) {
+            this.btnGenerate.textContent = 'Retomar Compilación';
+            this.btnGenerate.classList.add('btn-resume');
+            this.btnGenerate.style.color = 'var(--fg)'; // Destaca visualmente
+        } else {
+            this.btnGenerate.textContent = 'Iniciar Compilación';
+            this.btnGenerate.classList.remove('btn-resume');
+            this.btnGenerate.style.color = '';
+        }
+
+        this.btnGenerate.classList.toggle('locked', locked);
+        this.typeSelector.disabled = locked;
+        this.btnAddChapterRule.disabled = locked;
+        if (this.btnDownload) this.btnDownload.disabled = locked;
+        
+        Object.values(this.fieldsBase).forEach(input => { if(input) input.disabled = locked });
+        const inputs = this.specificContainer.querySelectorAll('.form-input');
+        inputs.forEach(input => input.disabled = locked);
+    },
+
+    scrollToBottom() {
+        this.outputTerminal.scrollTop = this.outputTerminal.scrollHeight;
+    },
+
+    async startGeneration(isResume = false) {
+        if (state.isGenerating) return;
+        const data = this.getFormData();
+        
+        const models = {
+            architect: state.architectModel,
+            writer: state.writerModel
+        };
+
+        this.setLock(true, false);
+
+        // Si no estamos retomando, aseguramos limpiar todo el contexto y la UI
+        if (!isResume) {
+            this.outputTerminal.textContent = '';
+            this.currentCleanBookText = '';
+            bookAgent.session = null; 
+        }
+
+        bookAgent.executeBookPipeline(data, models, {
+            onStatus: (msg) => this.statusLabel.textContent = msg,
+            onOutputUpdate: (text) => {
+                this.outputTerminal.innerHTML = window.formatModelOutput ? window.formatModelOutput(text) : text;
+                this.scrollToBottom();
+            },
+            onComplete: (cleanFinalText) => {
+                this.setLock(false, false);
+                this.statusLabel.textContent = 'Manuscrito Completado.';
+                this.currentCleanBookText = cleanFinalText; 
+            },
+            onError: (err) => {
+                // Desbloqueamos pero marcamos estado de pausa
+                this.setLock(false, true); 
+                this.statusLabel.textContent = 'Interrupción en Motor - Sesión Pausada';
+                this.outputTerminal.innerHTML += '\n\n<br><b style="color:#d9534f;">[SISTEMA ERROR CRÍTICO]:</b> ' + err + '<br><b style="color:var(--muted);">Sesión guardada en memoria. Haz clic en "Retomar Compilación" para continuar desde el último beat exitoso sin perder datos.</b>';
+                this.scrollToBottom();
+            }
+        }, isResume);
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => BookUI.init());
+</script>
+    <script>
+// --- Empaquetado: state.js --- 
+const STORE_KEY = 'ollama_core_chats';
+let state = {
+    chats: JSON.parse(localStorage.getItem(STORE_KEY) || '[]'),
+    activeId: null,
+    isGenerating: false,
+    apiMode: localStorage.getItem('ollama_core_api_mode') || 'local',
+    geminiApiKey: localStorage.getItem('ollama_core_gemini_key') || '',
+    model: localStorage.getItem('ollama_core_model') || 'llama3',
+    architectModel: localStorage.getItem('ollama_architect_model') || 'llama3',
+    writerModel: localStorage.getItem('ollama_writer_model') || 'llama3',
+    currentView: 'chat'
+};
+
+const UI = {
+    listActive: document.getElementById('list-active'),
+    listArchived: document.getElementById('list-archived'),
+    header: document.getElementById('chat-header'),
+    titleInput: document.getElementById('chat-title'),
+    msgs: document.getElementById('chat-messages'),
+    input: document.getElementById('user-input'),
+    btnSend: document.getElementById('btn-send'),
+    btnArchive: document.getElementById('btn-archive'),
+    
+    modelSelect: document.getElementById('model-select'),
+    architectModelSelect: document.getElementById('architect-model-select'),
+    writerModelSelect: document.getElementById('writer-model-select'),
+    chatModelsSection: document.getElementById('chat-models-section'),
+    agentModelsSection: document.getElementById('agent-models-section'),
+    
+    apiModeSelect: document.getElementById('api-mode-select'),
+    geminiApiKeyInput: document.getElementById('gemini-api-key'),
+    
+    navChat: document.getElementById('nav-chat'),
+    navBook: document.getElementById('nav-book'),
+    viewChat: document.getElementById('view-chat'),
+    viewBook: document.getElementById('view-book')
+};
+
+function save() {
+    localStorage.setItem(STORE_KEY, JSON.stringify(state.chats));
+    if (typeof renderSidebar === 'function') renderSidebar();
+}
+
+function getActiveChat() {
+    return state.chats.find(c => c.id === state.activeId);
+}
+</script>
+    <script>
+// --- Empaquetado: uiManager.js --- 
+// Gestión de Vistas, Configuración y Renderizado de UI
+
+// Funciones globales para formateo y copiado
+window.formatModelOutput = function(text) {
+    if (!text) return '';
+    let formatted = text.replace(/<think>/gi, '<div class="think-block"><div class="think-header">Pensamiento</div>')
+                        .replace(/<\/think>/gi, '</div>');
+    
+    // Si contiene la etiqueta de apertura pero no la de cierre (durante streaming), forzar el cierre del div
+    if (text.toLowerCase().includes('<think>') && !text.toLowerCase().includes('</think>')) {
+        formatted += '</div>';
+    }
+    return formatted;
+};
+
+window.copyToClipboard = function(btn) {
+    const content = decodeURIComponent(btn.getAttribute('data-content'));
+    
+    // Filtro absoluto: elimina bloques <think>...</think> cerrados y bloques <think>... abiertos hasta el final
+    const cleanContent = content
+        .replace(/<think>[\s\S]*?<\/think>/gi, '')
+        .replace(/<think>[\s\S]*/gi, '')
+        .trim();
+    
+    navigator.clipboard.writeText(cleanContent).then(() => {
+        const oldText = btn.textContent;
+        btn.textContent = '¡Copiado!';
+        btn.style.color = 'var(--fg)';
+        setTimeout(() => {
+            btn.textContent = oldText;
+            btn.style.color = 'var(--muted)';
+        }, 2000);
+    }).catch(err => {
+        console.error('Error al copiar al portapapeles: ', err);
+    });
+};
+
+UI.apiModeSelect.value = state.apiMode;
+UI.geminiApiKeyInput.value = state.geminiApiKey;
+
+UI.apiModeSelect.addEventListener('change', (e) => {
+    state.apiMode = e.target.value;
+    localStorage.setItem('ollama_core_api_mode', state.apiMode);
+    if (typeof fetchModels === 'function') fetchModels();
+});
+
+UI.geminiApiKeyInput.addEventListener('input', (e) => {
+    state.geminiApiKey = e.target.value.trim();
+    localStorage.setItem('ollama_core_gemini_key', state.geminiApiKey);
+});
+
+function switchView(viewName) {
+    if (state.isGenerating) return;
+    state.currentView = viewName;
+    
+    UI.navChat.classList.toggle('active', viewName === 'chat');
+    UI.navBook.classList.toggle('active', viewName === 'book');
+    
+    if (viewName === 'chat') {
+        UI.viewChat.style.display = 'flex';
+        UI.viewBook.style.display = 'none';
+        UI.chatModelsSection.style.display = 'block';
+        UI.agentModelsSection.style.display = 'none';
+    } else {
+        UI.viewChat.style.display = 'none';
+        UI.viewBook.style.display = 'block';
+        UI.chatModelsSection.style.display = 'none';
+        UI.agentModelsSection.style.display = 'block';
+    }
+}
+
+UI.navChat.onclick = () => switchView('chat');
+UI.navBook.onclick = () => switchView('book');
+
+function renderSidebar() {
+    UI.listActive.innerHTML = '';
+    UI.listArchived.innerHTML = '';
+    
+    [...state.chats].sort((a, b) => b.updatedAt - a.updatedAt).forEach(c => {
+        const div = document.createElement('div');
+        div.className = `chat-item ${c.id === state.activeId && state.currentView === 'chat' ? 'active' : ''}`;
+        div.innerHTML = `
+            <span class="chat-title-text">${c.title}</span>
+            <span class="chat-del-btn" title="Borrar">✕</span>
+        `;
+        div.onclick = (e) => {
+            if(e.target.classList.contains('chat-del-btn')) {
+                if (typeof deleteChatById === 'function') deleteChatById(c.id);
+            } else {
+                if (typeof selectChat === 'function') selectChat(c.id);
+            }
+        };
+        if (c.archived) UI.listArchived.appendChild(div);
+        else UI.listActive.appendChild(div);
+    });
+}
+
+function renderMessages() {
+    UI.msgs.innerHTML = '';
+    const chat = getActiveChat();
+    if (!chat || chat.messages.length === 0) {
+        UI.msgs.innerHTML = '<div class="empty-state">CORE SYSTEM</div>';
+        return;
+    }
+    chat.messages.forEach(m => {
+        const div = document.createElement('div');
+        div.style.marginBottom = '16px';
+        
+        let headerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <div style="font-size: 10px; color: var(--muted); text-transform: uppercase;">
+                    ${m.role === 'user' ? 'USUARIO' : 'SISTEMA'}
+                </div>
+                ${m.role === 'assistant' ? `<button class="btn-text btn-copy" onclick="window.copyToClipboard(this)" data-content="${encodeURIComponent(m.content)}" style="font-size: 9px; padding: 2px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg);">Copiar</button>` : ''}
+            </div>
+        `;
+
+        div.innerHTML = `
+            ${headerHTML}
+            <div class="msg-content" style="white-space: pre-wrap; font-family: ${m.role==='assistant' ? 'var(--font-mono)' : 'var(--font-sans)'}; font-size: ${m.role==='assistant' ? '13px' : '14px'};">${window.formatModelOutput(m.content)}</div>
+        `;
+        UI.msgs.appendChild(div);
+    });
+    UI.msgs.scrollTop = UI.msgs.scrollHeight;
+}
+
+// Modal Configuración
+const modal = document.getElementById('config-modal');
+document.getElementById('btn-config').onclick = () => modal.classList.add('open');
+document.getElementById('btn-close-config').onclick = () => modal.classList.remove('open');
+</script>
+    <script>
+// --- Empaquetado: app.js --- 
+// Motor de Chat, Conexión API (Local/Online) e Inicialización
+
+async function fetchModels() {
+    const populator = (selectElement, stateVar, storageKey, modelsList) => {
+        selectElement.innerHTML = '';
+        if (modelsList && modelsList.length > 0) {
+            modelsList.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.name;
+                opt.textContent = m.name;
+                if (m.name === state[stateVar]) opt.selected = true;
+                selectElement.appendChild(opt);
+            });
+            if (selectElement.selectedIndex === -1 && selectElement.options.length > 0) {
+                selectElement.selectedIndex = 0;
+                state[stateVar] = selectElement.value;
+                localStorage.setItem(storageKey, state[stateVar]);
+            }
+        } else {
+            selectElement.innerHTML = '<option disabled>Sin modelos disponibles</option>';
+        }
+    };
+
+    if (state.apiMode === 'online') {
+        // Modelos de Gemini / Gemma 4 Online
+        const onlineModels = [
+            
+            { name: 'gemma-4-26b-it' },
+            { name: 'gemma-4-31b-it' },
+            { name: 'gemini-3.1-flash-lite' }
+        ];
+        populator(UI.modelSelect, 'model', 'ollama_core_model', onlineModels);
+        populator(UI.architectModelSelect, 'architectModel', 'ollama_architect_model', onlineModels);
+        populator(UI.writerModelSelect, 'writerModel', 'ollama_writer_model', onlineModels);
+        return;
+    }
+
+    // Modo Local Ollama
+    try {
+        const res = await fetch('http://127.0.0.1:11434/api/tags');
+        if (!res.ok) throw new Error('Ollama API error');
+        const data = await res.json();
+        
+        populator(UI.modelSelect, 'model', 'ollama_core_model', data.models);
+        populator(UI.architectModelSelect, 'architectModel', 'ollama_architect_model', data.models);
+        populator(UI.writerModelSelect, 'writerModel', 'ollama_writer_model', data.models);
+
+    } catch (err) {
+        const errHtml = '<option disabled>Error: Ollama apagado</option>';
+        UI.modelSelect.innerHTML = errHtml;
+        UI.architectModelSelect.innerHTML = errHtml;
+        UI.writerModelSelect.innerHTML = errHtml;
+    }
+}
+
+UI.modelSelect.addEventListener('change', (e) => {
+    state.model = e.target.value;
+    localStorage.setItem('ollama_core_model', state.model);
+});
+UI.architectModelSelect.addEventListener('change', (e) => {
+    state.architectModel = e.target.value;
+    localStorage.setItem('ollama_architect_model', state.architectModel);
+});
+UI.writerModelSelect.addEventListener('change', (e) => {
+    state.writerModel = e.target.value;
+    localStorage.setItem('ollama_writer_model', state.writerModel);
+});
+
+function deleteChatById(id) {
+    state.chats = state.chats.filter(c => c.id !== id);
+    if(state.activeId === id) state.activeId = null;
+    save();
+    if(state.chats.length === 0) createChat();
+    else selectChat(state.chats[0].id);
+}
+
+function createChat() {
+    const id = Date.now().toString();
+    state.chats.push({
+        id,
+        title: 'Nuevo Chat',
+        messages: [],
+        archived: false,
+        updatedAt: Date.now()
+    });
+    save();
+    selectChat(id);
+    switchView('chat');
+}
+
+function selectChat(id) {
+    state.activeId = id;
+    save();
+    const chat = getActiveChat();
+    UI.titleInput.value = chat.title;
+    UI.header.style.display = 'flex';
+    renderMessages();
+    switchView('chat');
+}
+
+async function send() {
+    if(state.isGenerating || !state.activeId) return;
+    const text = UI.input.value.trim();
+    if(!text) return;
+
+    const chat = getActiveChat();
+    chat.messages.push({ role: 'user', content: text });
+    chat.updatedAt = Date.now();
+    UI.input.value = '';
+    UI.input.style.height = 'auto';
+    save();
+    renderMessages();
+
+    state.isGenerating = true;
+    
+    // Crear contenedor para la respuesta
+    const div = document.createElement('div');
+    div.style.marginBottom = '16px';
+    div.innerHTML = `
+        <div style="font-size: 10px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase;">SISTEMA</div>
+        <div class="msg-content" style="white-space: pre-wrap; font-family: var(--font-mono); font-size: 13px;"></div>
+    `;
+    UI.msgs.appendChild(div);
+    const contentDiv = div.querySelector('.msg-content');
+
+    try {
+        if (state.apiMode === 'online') {
+            if (!state.geminiApiKey) throw new Error("API Key de Gemini no configurada en la sección de Ajustes.");
+            
+            // Adaptar historial al formato de Gemini
+            const geminiMessages = chat.messages.filter(m => m.role !== 'system').map(m => ({
+                role: m.role === 'assistant' ? 'model' : 'user',
+                parts: [{ text: m.content }]
+            }));
+            
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${state.model}:streamGenerateContent?alt=sse&key=${state.geminiApiKey}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: geminiMessages })
+            });
+
+            if(!response.ok) throw new Error('API Error: ' + response.statusText);
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            let fullText = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n');
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const dataStr = line.substring(6).trim();
+                        if (dataStr === '[DONE]' || !dataStr) continue;
+                        try {
+                            const data = JSON.parse(dataStr);
+                            if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
+                                fullText += data.candidates[0].content.parts[0].text;
+                                contentDiv.innerHTML = window.formatModelOutput(fullText);
+                                UI.msgs.scrollTop = UI.msgs.scrollHeight;
+                            }
+                        } catch (e) {
+                            console.error("Error al parsear fragmento de Gemini", e);
+                        }
+                    }
+                }
+            }
+            chat.messages.push({ role: 'assistant', content: fullText });
+            save();
+
+        } else {
+            // Flujo Ollama Original
+            const response = await fetch('http://127.0.0.1:11434/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: state.model,
+                    messages: chat.messages,
+                    stream: true
+                })
+            });
+
+            if(!response.ok) throw new Error('API Error');
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let fullText = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n').filter(l => l.trim());
+                for (const line of lines) {
+                    const data = JSON.parse(line);
+                    if (data.message && data.message.content) {
+                        fullText += data.message.content;
+                        contentDiv.innerHTML = window.formatModelOutput(fullText);
+                        UI.msgs.scrollTop = UI.msgs.scrollHeight;
+                    }
+                }
+            }
+            chat.messages.push({ role: 'assistant', content: fullText });
+            save();
+        }
+
+    } catch (err) {
+        contentDiv.innerHTML = window.formatModelOutput('Error: ' + err.message);
+    } finally {
+        state.isGenerating = false;
+        renderMessages();
+    }
+}
+
+// Eventos 
+document.getElementById('btn-new').onclick = createChat;
+UI.btnSend.onclick = send;
+UI.input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+});
+UI.input.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = this.scrollHeight + 'px';
+});
+
+UI.titleInput.onblur = () => {
+    if (!state.activeId) return;
+    getActiveChat().title = UI.titleInput.value.trim() || 'Sin título';
+    save();
+};
+UI.titleInput.addEventListener('keydown', e => { if (e.key === 'Enter') UI.titleInput.blur(); });
+
+UI.btnArchive.onclick = () => {
+    if (!state.activeId) return;
+    const c = getActiveChat();
+    c.archived = !c.archived;
+    save();
+    selectChat(c.id);
+};
+
+// Init
+fetchModels();
+if (state.chats.length === 0) createChat();
+else selectChat(state.chats[0].id);
+</script>
+</body>
+</html>
+</body>
+</html>
