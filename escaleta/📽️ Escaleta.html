@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escaleta Studio - Video & Narrativa</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/webm-muxer@5.0.2/build/webm-muxer.min.js"></script>
+
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="escaleta/styles.css">
+</head>
+<body class="bg-slate-50 text-slate-900 h-screen flex flex-col overflow-hidden font-sans">
+
+    <div id="loading-overlay" class="fixed inset-0 z-[300] bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center hidden">
+        <div class="relative w-16 h-16 mb-6">
+            <div class="absolute inset-0 border-4 border-gray-100 rounded-full"></div>
+            <div class="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
+        </div>
+        <h3 class="text-xs font-bold tracking-[0.2em] uppercase text-black mb-2" id="loading-title">PROCESANDO</h3>
+        <p class="text-[10px] text-gray-400 font-mono" id="loading-subtitle">Iniciando motores...</p>
+        <div class="w-64 h-1 bg-gray-100 mt-4 rounded-full overflow-hidden hidden" id="progress-container">
+            <div id="progress-bar" class="h-full bg-indigo-600 w-0 transition-all duration-300"></div>
+        </div>
+    </div>
+
+    <div id="export-modal" class="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-4 hidden">
+        <div class="bg-white w-full max-w-md border border-gray-200 shadow-2xl rounded-sm overflow-hidden animate-fade-in">
+            <div class="p-6 bg-slate-50 border-b border-gray-100 text-center">
+                <h2 class="text-xs font-bold tracking-[0.2em] text-indigo-600 uppercase mb-1">Renderizar Película</h2>
+                <p class="text-[10px] text-gray-400">Selecciona formato y opciones</p>
+            </div>
+            
+            <div class="px-6 py-4 bg-white border-b border-gray-100 flex flex-col gap-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold text-gray-500 uppercase">Formato de Salida</span>
+                    <select id="export-format-select" class="text-xs bg-gray-50 border border-gray-200 rounded px-2 py-1 outline-none focus:border-indigo-500">
+                        <option value="landscape">Horizontal (1920x1080)</option>
+                        <option value="portrait">Vertical (1080x1920)</option>
+                        <option value="square">Cuadrado (1080x1080)</option>
+                    </select>
+                </div>
+                <label class="flex items-center gap-2 cursor-pointer select-none group">
+                    <input type="checkbox" id="chk-render-subs" class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300" checked>
+                    <span class="text-xs font-medium text-gray-600 group-hover:text-indigo-600 transition-colors">Incrustar Subtítulos</span>
+                </label>
+            </div>
+
+            <div class="p-6 flex flex-col gap-3 max-h-[50vh] overflow-y-auto">
+                <button onclick="Exporter.renderFullMovie('video_only', document.getElementById('chk-render-subs').checked, document.getElementById('export-format-select').value); EscaletaUI.toggleExportModal()" class="group flex items-center gap-4 p-4 border border-gray-100 hover:border-indigo-500 hover:bg-indigo-50 transition-all rounded text-left">
+                    <div class="w-10 h-10 rounded bg-gray-100 group-hover:bg-indigo-100 flex items-center justify-center text-gray-400 group-hover:text-indigo-600 shrink-0 transition-colors"><i class="fa-solid fa-video-slash"></i></div>
+                    <div><h3 class="text-xs font-bold text-gray-700 group-hover:text-indigo-900 uppercase">Solo Video (Mudo)</h3><p class="text-[10px] text-gray-400 leading-tight">Video puro sin ninguna pista de audio. Ideal para edición.</p></div>
+                </button>
+                <button onclick="Exporter.renderFullMovie('ambience_only', document.getElementById('chk-render-subs').checked, document.getElementById('export-format-select').value); EscaletaUI.toggleExportModal()" class="group flex items-center gap-4 p-4 border border-gray-100 hover:border-blue-500 hover:bg-blue-50 transition-all rounded text-left">
+                    <div class="w-10 h-10 rounded bg-gray-100 group-hover:bg-blue-100 flex items-center justify-center text-gray-400 group-hover:text-blue-600 shrink-0 transition-colors"><i class="fa-solid fa-volume-high"></i></div>
+                    <div><h3 class="text-xs font-bold text-gray-700 group-hover:text-blue-900 uppercase">Video + Sonido Original</h3><p class="text-[10px] text-gray-400 leading-tight">Mantiene el diseño sonoro/ambiente generado por Grok. SIN VOZ.</p></div>
+                </button>
+                <button onclick="Exporter.renderFullMovie('voice_only', document.getElementById('chk-render-subs').checked, document.getElementById('export-format-select').value); EscaletaUI.toggleExportModal()" class="group flex items-center gap-4 p-4 border border-gray-100 hover:border-purple-500 hover:bg-purple-50 transition-all rounded text-left">
+                    <div class="w-10 h-10 rounded bg-gray-100 group-hover:bg-purple-100 flex items-center justify-center text-gray-400 group-hover:text-purple-600 shrink-0 transition-colors"><i class="fa-solid fa-microphone-lines"></i></div>
+                    <div><h3 class="text-xs font-bold text-gray-700 group-hover:text-purple-900 uppercase">Video + Narración</h3><p class="text-[10px] text-gray-400 leading-tight">Solo la voz de la IA. Ignora el sonido ambiente del video.</p></div>
+                </button>
+                <button onclick="Exporter.renderFullMovie('full_mix', document.getElementById('chk-render-subs').checked, document.getElementById('export-format-select').value); EscaletaUI.toggleExportModal()" class="group flex items-center gap-4 p-4 border border-gray-100 hover:border-emerald-500 hover:bg-emerald-50 transition-all rounded text-left">
+                    <div class="w-10 h-10 rounded bg-gray-100 group-hover:bg-emerald-100 flex items-center justify-center text-gray-400 group-hover:text-emerald-600 shrink-0 transition-colors"><i class="fa-solid fa-photo-film"></i></div>
+                    <div><h3 class="text-xs font-bold text-gray-700 group-hover:text-emerald-900 uppercase">Mezcla Completa</h3><p class="text-[10px] text-gray-400 leading-tight">Video + Ambiente Original + Narración IA combinados.</p></div>
+                </button>
+                <button onclick="Exporter.renderFullMovie('audio_only', document.getElementById('chk-render-subs').checked, document.getElementById('export-format-select').value); EscaletaUI.toggleExportModal()" class="group flex items-center gap-4 p-4 border border-gray-100 hover:border-yellow-500 hover:bg-yellow-50 transition-all rounded text-left">
+                    <div class="w-10 h-10 rounded bg-gray-100 group-hover:bg-yellow-100 flex items-center justify-center text-gray-400 group-hover:text-yellow-600 shrink-0 transition-colors"><i class="fa-solid fa-music"></i></div>
+                    <div><h3 class="text-xs font-bold text-gray-700 group-hover:text-yellow-900 uppercase">Solo Sonido</h3><p class="text-[10px] text-gray-400 leading-tight">Exporta únicamente el audio con los tiempos exactos de la película, respetando silencios.</p></div>
+                </button>
+            </div>
+            <div class="p-4 bg-gray-50 border-t border-gray-100 text-center"><button onclick="EscaletaUI.toggleExportModal()" class="text-[10px] font-bold text-gray-400 hover:text-gray-600 uppercase tracking-wide">Cancelar</button></div>
+        </div>
+    </div>
+
+    <div id="script-input-modal" class="fixed inset-0 z-[110] flex items-center justify-center bg-white/98 p-4 hidden">
+        <div class="bg-white w-full max-w-3xl border border-gray-200 shadow-2xl flex flex-col h-[80vh]">
+            <div class="h-14 border-b border-gray-100 flex items-center justify-center relative px-6 bg-gray-50 shrink-0">
+                <h2 class="font-medium text-xs tracking-widest text-indigo-600 uppercase"><i class="fa-solid fa-pen-nib mr-2"></i>Guion Manual Corto</h2>
+                <button onclick="EscaletaUI.toggleScriptModal()" class="absolute right-4 text-gray-400 hover:text-black">&times;</button>
+            </div>
+            
+            <div class="flex-1 p-6 flex flex-col">
+                <div class="mb-2 flex justify-between items-end">
+                    <label class="label-text">Pega tu historia o guion aquí</label>
+                    <span class="text-[9px] text-gray-400 italic">La IA detectará automáticamente las escenas y generará las tomas.</span>
+                </div>
+                <textarea id="manual-script-text" class="flex-1 config-input border border-gray-200 p-4 rounded bg-gray-50 focus:bg-white text-sm leading-relaxed resize-none font-mono" placeholder="EXT. BOSQUE - DÍA&#10;&#10;El protagonista camina entre los árboles..."></textarea>
+            </div>
+
+            <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-4">
+                <button onclick="EscaletaUI.toggleScriptModal()" class="text-xs font-bold text-gray-400 hover:text-gray-600 px-4">CANCELAR</button>
+                <button onclick="AiWriter.generateStructure(document.getElementById('manual-script-text').value)" class="btn-primary bg-indigo-600 hover:bg-indigo-700 py-3 px-8 shadow-lg">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> GENERAR ESCALETA
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="comic-input-modal" class="fixed inset-0 z-[110] flex items-center justify-center bg-white/98 p-4 hidden">
+        <div class="bg-white w-full max-w-3xl border border-gray-200 shadow-2xl flex flex-col h-[80vh]">
+            <div class="h-14 border-b border-gray-100 flex items-center justify-center relative px-6 bg-gray-50 shrink-0">
+                <h2 class="font-medium text-xs tracking-widest text-orange-600 uppercase"><i class="fa-solid fa-book-open mr-2"></i>Guion Cómic Animado</h2>
+                <button onclick="EscaletaUI.toggleComicModal()" class="absolute right-4 text-gray-400 hover:text-black">&times;</button>
+            </div>
+            
+            <div class="flex-1 p-6 flex flex-col">
+                <div class="mb-2 flex justify-between items-end">
+                    <label class="label-text">Pega tu historia o guion aquí</label>
+                    <span class="text-[9px] text-gray-400 italic">La IA generará viñetas estáticas rápidas con locuciones muy cortas (ideal para imágenes estáticas).</span>
+                </div>
+                <textarea id="manual-comic-text" class="flex-1 config-input border border-gray-200 p-4 rounded bg-gray-50 focus:bg-white text-sm leading-relaxed resize-none font-mono" placeholder="EXT. CALLEJÓN OSCURO - NOCHE&#10;&#10;Un disparo resuena en la oscuridad..."></textarea>
+            </div>
+
+            <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-4">
+                <button onclick="EscaletaUI.toggleComicModal()" class="text-xs font-bold text-gray-400 hover:text-gray-600 px-4">CANCELAR</button>
+                <button onclick="AiWriter.generateComicStructure(document.getElementById('manual-comic-text').value)" class="btn-primary bg-orange-600 hover:bg-orange-700 py-3 px-8 shadow-lg">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> GENERAR CÓMIC
+                </button>
+            </div>
+        </div>
+    </div>
+
+   <div id="director-modal" class="fixed inset-0 z-[115] flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4 hidden">
+        <div class="bg-white w-full max-w-6xl h-[95vh] border border-gray-200 shadow-2xl rounded flex flex-col overflow-hidden animate-fade-in">
+            <div class="h-14 border-b border-gray-100 flex items-center justify-between px-6 bg-slate-900 text-white shrink-0">
+                <h2 class="font-bold text-sm tracking-[0.2em] uppercase"><i class="fa-solid fa-clapperboard mr-2 text-indigo-400"></i>Modo Director: Película Modular</h2>
+                <button onclick="DirectorUI.toggleModal()" class="text-gray-400 hover:text-white text-xl">&times;</button>
+            </div>
+            
+            <div class="flex-1 flex overflow-hidden">
+                <div class="w-2/3 flex flex-col border-r border-gray-200 bg-slate-50 overflow-y-auto relative">
+                    
+                    <div class="p-6 border-b border-gray-200 bg-white">
+                        <div class="flex justify-between items-center mb-4 border-b border-indigo-100 pb-2">
+                            <h3 class="text-xs font-bold text-indigo-600 uppercase tracking-widest"><i class="fa-solid fa-globe mr-2"></i>1. Visión Global</h3>
+                            <div class="flex gap-2">
+                                <button onclick="DirectorUI.copyExampleTemplate()" class="text-[9px] font-bold text-amber-600 hover:bg-amber-50 border border-amber-200 px-3 py-1 rounded transition-colors shadow-sm"><i class="fa-solid fa-copy mr-1"></i> Copiar Plantilla Completa</button>
+                                <button onclick="DirectorUI.loadPlanteamiento()" class="text-[9px] font-bold text-indigo-600 hover:bg-indigo-50 border border-indigo-200 px-3 py-1 rounded transition-colors shadow-sm"><i class="fa-solid fa-file-import mr-1"></i> Cargar desde JSON Caja</button>
+                                <button onclick="DirectorUI.savePlanteamiento()" class="text-[9px] font-bold text-emerald-600 hover:bg-emerald-50 border border-emerald-200 px-3 py-1 rounded transition-colors shadow-sm"><i class="fa-solid fa-code mr-1"></i> Serializar a JSON Caja</button>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-3 gap-4 bg-slate-50 p-3 border border-gray-200 mb-2">
+                                <div class="col-span-1">
+                                    <label class="label-text text-indigo-600 font-bold"><i class="fa-solid fa-bezier-curve mr-1"></i>Formato de Plasma Visual</label>
+                                    <select id="dir-output-mode" class="config-input bg-white px-2 rounded font-bold border border-gray-300 py-1" onchange="localStorage.setItem('director_output_mode', this.value)">
+                                        <option value="video" selected>CINEMATIC VIDEO (Vectores de Movimiento)</option>
+                                        <option value="image">STATIC IMAGE (Fotograma Clave e Ilustración)</option>
+                                    </select>
+                                </div>
+                                <div class="col-span-1">
+                                    <label class="label-text">Título del Proyecto</label>
+                                    <input type="text" id="dir-title" class="config-input bg-white px-2 border border-gray-300 rounded" placeholder="Ej: Cyber Hunter">
+                                </div>
+                                <div class="col-span-1">
+                                    <label class="label-text">Tomas Totales (Estimado)</label>
+                                    <div class="flex items-center gap-3">
+                                        <input type="number" id="dir-takes" class="config-input bg-white px-2 border border-gray-300 rounded w-24 text-center font-bold text-indigo-700" value="150" oninput="DirectorUI.calcDuration()">
+                                        <span id="dir-duration-calc" class="text-[10px] text-gray-500 font-mono italic">~ 15 Minutos</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="label-text">Premisa Central (Brújula Narrativa)</label>
+                                <textarea id="dir-premise" class="config-input bg-gray-50 px-3 py-2 rounded h-16 w-full resize-none" placeholder="Resumen de 2 líneas de toda la película para que la IA no pierda el norte..."></textarea>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4 border-t border-gray-100 pt-4 mt-2">
+                                <div>
+                                    <label class="label-text text-indigo-500"><i class="fa-solid fa-palette mr-1"></i> Estilo Visual Global</label>
+                                    <input type="text" id="dir-style" class="config-input bg-gray-50 px-2 rounded" placeholder="Ej: Cine negro, niebla, lente anamórfica...">
+                                </div>
+                                <div>
+                                    <label class="label-text text-blue-500"><i class="fa-solid fa-headphones mr-1"></i> Directrices de Sonido (Global)</label>
+                                    <input type="text" id="dir-audio-style" class="config-input bg-gray-50 px-2 rounded" placeholder="Ej: Mucho diálogo, atmósfera tensa, foley realista...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 border-b border-gray-200 bg-white">
+                        <div class="flex justify-between items-end mb-4 border-b border-indigo-100 pb-2">
+                            <h3 class="text-xs font-bold text-indigo-600 uppercase tracking-widest"><i class="fa-solid fa-palette mr-2"></i>2. Departamento de Arte</h3>
+                            <span class="text-[9px] text-gray-400 italic">Describe aquí cómo se ven los personajes y lugares principales.</span>
+                        </div>
+                        <textarea id="dir-bible-manual" class="config-input bg-gray-50 px-3 py-2 rounded h-24 w-full resize-none font-mono text-xs" placeholder="- JOHN (Personaje): Hombre de 40 años, pelo canoso, gabardina marrón desgastada, cicatriz en el ojo.&#10;- BAR LA PERLA (Lugar): Taberna oscura, luces de neón rosa, humo de tabaco, mesas de madera rota..."></textarea>
+                    </div>
+
+                    <div class="p-6 bg-slate-50 flex-1">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xs font-bold text-indigo-600 uppercase tracking-widest"><i class="fa-solid fa-layer-group mr-2"></i>3. Estructura Narrativa (Actos)</h3>
+                            <button onclick="DirectorUI.addAct()" class="text-[10px] font-bold text-emerald-600 hover:bg-emerald-50 px-3 py-1 border border-emerald-200 rounded transition-colors"><i class="fa-solid fa-plus mr-1"></i>Añadir Acto</button>
+                        </div>
+                        
+                        <div id="dir-acts-container" class="space-y-4">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-1/3 flex flex-col bg-white">
+                    <div class="p-6 border-b border-gray-100 bg-gray-50 shrink-0">
+                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-widest mb-1"><i class="fa-solid fa-bolt mr-2 text-yellow-500"></i>Panel de Producción</h3>
+                        <p class="text-[9px] text-gray-500 leading-tight">Ejecuta el proceso en orden para garantizar la coherencia de la película.</p>
+                    </div>
+
+                    <div class="p-6 flex-1 overflow-y-auto space-y-6">
+                        
+                        <div class="border border-indigo-100 rounded-sm overflow-hidden shadow-sm">
+                            <div class="bg-indigo-50 px-4 py-2 border-b border-indigo-100 flex justify-between items-center">
+                                <span class="text-[10px] font-bold text-indigo-800 uppercase">Fase 1: Pre-Producción</span>
+                                <i id="status-prepro" class="fa-solid fa-circle-xmark text-gray-300"></i>
+                            </div>
+                            <div class="p-4 bg-white">
+                                <p class="text-[9px] text-gray-500 mb-3 leading-tight">Analiza toda la historia y la bible manual para unificar el estilo visual de los personajes in la base de datos (Coherencia).</p>
+                                <button onclick="DirectorCore.runPreProduction()" id="btn-run-prepro" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold uppercase rounded transition-colors shadow-md">
+                                    <i class="fa-solid fa-microchip mr-2"></i> Procesar Diseño de Arte
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="border border-emerald-100 rounded-sm overflow-hidden shadow-sm transition-opacity" id="panel-rodaje">
+                            <div class="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
+                                <span class="text-[10px] font-bold text-emerald-800 uppercase">Fase 2: Rodaje Modular</span>
+                            </div>
+                            <div class="p-4 bg-white">
+                                <p class="text-[9px] text-gray-500 mb-4 leading-tight">Genera las tomas visuales y el guion del narrador. Puedes hacerlo de golpe o acto por acto para revisar.</p>
+                                
+                                <div id="dir-execution-acts" class="space-y-2 mb-4">
+                                </div>
+
+                                <div class="border-t border-gray-100 pt-4">
+                                    <button onclick="DirectorCore.runAllActs()" class="w-full py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold uppercase rounded transition-colors shadow-md">
+                                        <i class="fa-solid fa-film mr-2"></i> Renderizar Todo de Golpe
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border border-slate-200 rounded-sm overflow-hidden shadow-sm">
+                            <div class="bg-slate-900 px-4 py-2 text-white text-[10px] font-bold uppercase flex justify-between items-center">
+                                <span><i class="fa-solid fa-code text-indigo-400 mr-1"></i> Caja de Transferencia JSON</span>
+                            </div>
+                            <div class="p-4 bg-slate-50">
+                                <p class="text-[9px] text-gray-500 mb-2 leading-tight">Pega un código JSON completo aquí abajo y pulsa "Cargar desde JSON" arriba, o genera tus cambios actuales pulsando "Serializar a JSON".</p>
+                                <textarea id="dir-json-transfer-box" class="w-full h-40 bg-white border border-gray-200 p-2 font-mono text-[10px] text-gray-700 rounded resize-none outline-none focus:border-indigo-500" placeholder='{\n  "_isDirectorPlanteamiento": true,\n  "global": { ... },\n  "acts": [ ... ]\n}'></textarea>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="bible-editor-modal" class="fixed inset-0 z-[250] flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4 hidden">
+        <div class="bg-white w-full max-w-5xl border border-gray-200 shadow-2xl rounded flex flex-col h-[85vh] animate-fade-in">
+            <div class="h-14 border-b border-gray-100 flex items-center justify-between px-6 bg-slate-900 text-white shrink-0">
+                <h2 class="font-bold text-sm tracking-[0.2em] uppercase"><i class="fa-solid fa-book-open mr-2 text-indigo-400"></i>Editor de Biblia Visual</h2>
+                <button onclick="CoherenceUI.closeEditor()" class="text-gray-400 hover:text-white text-xl">&times;</button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 bg-slate-50" id="bible-editor-container"></div>
+            <div class="h-16 border-t border-gray-200 bg-white flex items-center justify-between px-6 shrink-0">
+                <button onclick="CoherenceUI.addNewAsset()" class="btn-nordic text-emerald-600 border-emerald-200 hover:bg-emerald-50"><i class="fa-solid fa-plus mr-2"></i> Nuevo Elemento</button>
+                <button onclick="CoherenceUI.saveBible()" class="btn-primary bg-indigo-600 hover:bg-indigo-700 w-auto px-8 py-3 rounded shadow-md"><i class="fa-solid fa-floppy-disk mr-2"></i> GUARDAR BIBLIA</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="nle-editor-modal" class="fixed inset-0 z-[200] bg-gray-950 flex flex-col hidden overflow-hidden">
+        
+        <div class="h-12 border-b border-gray-800 flex items-center justify-between px-6 bg-gray-900 shrink-0">
+            <div class="flex items-center gap-4">
+                <i class="fa-solid fa-scissors text-indigo-500 text-lg"></i>
+                <h2 class="text-xs font-bold text-white tracking-widest uppercase">Editor Multicapa</h2>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="NLE_Exporter.renderFullMovie()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold px-4 py-1.5 rounded uppercase transition-colors"><i class="fa-solid fa-download mr-1"></i> Exportar Master</button>
+                <button onclick="NLE_UI.closeEditor()" class="text-gray-400 hover:text-white transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+        </div>
+
+        <div class="h-[40vh] flex shrink-0 border-b border-gray-800 z-10 relative">
+            <div id="nle-canvas-container" class="flex-1 bg-black flex flex-col relative items-center justify-center overflow-hidden p-4 group">
+                <button onclick="NLE_UI.toggleFullscreen()" class="absolute top-4 right-4 text-white bg-gray-900/80 hover:bg-gray-700 p-2 rounded text-lg transition-colors z-50 shadow-lg opacity-0 group-hover:opacity-100" title="Pantalla Completa"><i class="fa-solid fa-expand"></i></button>
+                <canvas id="nle-canvas" class="max-w-full max-h-full object-contain shadow-2xl bg-gray-900 border border-gray-800"></canvas>
+                
+                <div class="absolute bottom-6 bg-gray-900/90 backdrop-blur border border-gray-700 rounded-full px-6 py-2 flex items-center gap-6 shadow-xl">
+                    <button onclick="NLE_Player.togglePlay()" class="text-white hover:text-indigo-400 transition-colors text-xl"><i class="fa-solid fa-play"></i></button>
+                    <span id="nle-time-display" class="text-xs font-mono text-gray-300 w-16 text-center">0.00s</span>
+                </div>
+            </div>
+
+            <div class="w-80 bg-gray-900 border-l border-gray-800 flex flex-col shrink-0">
+                <div class="p-4 border-b border-gray-800 bg-gray-950 flex justify-between items-center">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Ajustes de Capa</span>
+                    <button onclick="NLE_UI.importFromEscaleta()" class="text-[9px] text-indigo-400 hover:text-indigo-300 uppercase font-bold border border-indigo-900 px-2 py-1 rounded">Importar Escaleta</button>
+                </div>
+                <div id="nle-inspector" class="flex-1 overflow-y-auto p-4">
+                    <div class="text-center text-gray-500 text-xs mt-10">Selecciona un clip en la línea de tiempo</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-1 bg-gray-950 flex flex-col min-h-0 relative z-0">
+            <div class="h-10 bg-gray-900 border-b border-gray-800 flex items-center px-4 justify-between shrink-0">
+                <div class="flex items-center gap-4">
+                    <button onclick="NLE_UI.createNewTrack('video')" class="text-gray-400 hover:text-indigo-400 text-xs transition-colors"><i class="fa-solid fa-plus"></i> Pista Video</button>
+                    <button onclick="NLE_UI.createNewTrack('audio')" class="text-gray-400 hover:text-emerald-400 text-xs transition-colors"><i class="fa-solid fa-plus"></i> Pista Audio</button>
+                    <div class="w-px h-4 bg-gray-700 mx-2"></div>
+                    <button onclick="NLE_UI.deleteSelectedClip()" class="text-gray-400 hover:text-red-400 text-xs transition-colors"><i class="fa-solid fa-trash"></i> Eliminar Selección</button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="NLE_UI.zoomOut()" class="text-gray-400 hover:text-white p-1" title="Alejar"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+                    <span id="nle-zoom-display" class="text-[10px] font-bold text-gray-500 w-12 text-center">100%</span>
+                    <button onclick="NLE_UI.zoomIn()" class="text-gray-400 hover:text-white p-1" title="Acercar"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+                </div>
+            </div>
+            
+            <div id="nle-timeline-scroll" class="flex-1 overflow-auto relative flex flex-col scroll-smooth">
+                <div id="nle-timeline-content" class="min-w-full relative flex flex-col min-h-full">
+                    
+                    <div id="nle-ruler-container" class="h-6 bg-gray-800 border-b border-gray-700 relative pl-32 cursor-ew-resize sticky top-0 z-40 select-none" title="Haz clic o arrastra para moverte en el tiempo">
+                        <div id="nle-ruler" class="absolute inset-0 left-32 pointer-events-none"></div>
+                    </div>
+                    
+                    <div id="nle-tracks-container" class="flex flex-col relative pb-32"></div>
+                    
+                    <div id="nle-playhead" class="absolute top-0 bottom-0 w-px bg-red-500 z-50 pointer-events-none transition-transform duration-75">
+                        <div id="nle-playhead-handle" class="w-5 h-5 bg-red-500 rounded-b-sm absolute top-0 -left-[9.5px] shadow-[0_0_8px_rgba(239,68,68,0.8)] pointer-events-auto cursor-ew-resize flex items-center justify-center">
+                            <i class="fa-solid fa-grip-lines-vertical text-[10px] text-white/80"></i>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="system-config-modal" class="fixed inset-0 z-[260] flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4 hidden">
+        <div class="bg-white w-full max-w-md border border-gray-200 shadow-2xl rounded flex flex-col overflow-hidden animate-fade-in">
+            <div class="h-14 border-b border-gray-100 flex items-center justify-between px-6 bg-slate-900 text-white shrink-0">
+                <h2 class="font-bold text-sm tracking-[0.2em] uppercase"><i class="fa-solid fa-gear mr-2 text-indigo-400"></i>Ajustes del Sistema</h2>
+                <button onclick="EscaletaUI.toggleConfigModal()" class="text-gray-400 hover:text-white text-xl">&times;</button>
+            </div>
+            <div class="p-6 space-y-6 bg-white overflow-y-auto max-h-[70vh]">
+                
+                <div class="p-4 bg-slate-50 border border-gray-100 rounded space-y-3">
+                    <span class="label-text text-indigo-600 font-bold"><i class="fa-solid fa-brain mr-1"></i> Motor de Procesamiento (Cerebro)</span>
+                    <select id="cfg-ai-provider" class="config-input bg-white px-2 rounded font-bold" onchange="EscaletaUI.updateProviderFieldsVisibility(this.value)">
+                        <option value="pollinations">POLLINATIONS AI (Cloud Engines)</option>
+                        <option value="ollama">OLLAMA ENGINE (Local Engine)</option>
+                    </select>
+                </div>
+
+                <div id="cfg-pollinations-model-block" class="p-4 bg-slate-50 border border-gray-100 rounded space-y-3">
+                    <span class="label-text text-purple-600 font-bold"><i class="fa-solid fa-robot mr-1"></i> Modelo LLM de Pollinations</span>
+                    <select id="cfg-pollinations-model-select" class="config-input bg-white px-2 rounded font-mono text-xs border border-gray-200">
+                        <option value="gemini-fast">Gemini 2.5 Flash Lite (gemini-fast)</option>
+                        <option value="gemini-flash-lite-3.1">Gemini 3.1 Flash Lite (gemini-flash-lite-3.1)</option>
+                        <option value="gemini">Gemini 3 Flash (gemini)</option>
+                        <option value="gemini-large">Gemini 3.1 Pro (gemini-large)</option>
+                        <option value="gemini-3.5-flash">Gemini 3.5 Flash (gemini-3.5-flash)</option>
+                        <option value="gemini-search">Google Gemini 2.5 Flash Lite Search (gemini-search)</option>
+                        <option value="openai-fast">GPT-5 Nano (openai-fast)</option>
+                        <option value="openai">GPT-5.4 Nano (openai)</option>
+                        <option value="gpt-5.4-mini">GPT-5.4 Mini (gpt-5.4-mini)</option>
+                        <option value="openai-large">GPT-5.4 (openai-large)</option>
+                        <option value="gpt-5.5">GPT-5.5 (gpt-5.5)</option>
+                        <option value="claude-fast">Claude Haiku 4.5 (claude-fast)</option>
+                        <option value="claude">Claude Sonnet 4.6 (claude)</option>
+                        <option value="claude-large">Claude Opus 4.6 (claude-large)</option>
+                        <option value="claude-opus-4.7">Claude Opus 4.7 (claude-opus-4.7)</option>
+                        <option value="nova-fast">Nova Micro (nova-fast)</option>
+                        <option value="nova">Nova 2 Lite (nova)</option>
+                        <option value="mistral">Mistral Small 3.2 (mistral)</option>
+                        <option value="mistral-4">Mistral Small 4 (mistral-4)</option>
+                        <option value="mistral-large">Mistral Large 3 (mistral-large)</option>
+                        <option value="llama-scout">Meta Llama 4 Scout (llama-scout)</option>
+                        <option value="llama-maverick">Meta Llama 4 Maverick (llama-maverick)</option>
+                        <option value="llama">Meta Llama 3.3 70B (llama)</option>
+                        <option value="qwen-safety">Qwen3Guard 8B (qwen-safety)</option>
+                        <option value="qwen-coder">Qwen3 Coder 30B (qwen-coder)</option>
+                        <option value="qwen-coder-large">Qwen3 Coder Next (qwen-coder-large)</option>
+                        <option value="qwen-vision">Qwen3 VL 30B A3B Instruct (qwen-vision)</option>
+                        <option value="qwen-vision-pro">Qwen3 VL 235B A22B Thinking (qwen-vision-pro)</option>
+                        <option value="qwen-large">Qwen3.6 Plus (qwen-large)</option>
+                        <option value="gemma">Gemma 4 26B A4B (gemma)</option>
+                        <option value="deepseek">DeepSeek V4 Flash (Lite) (deepseek)</option>
+                        <option value="deepseek-pro">DeepSeek V4 Pro (deepseek-pro)</option>
+                        <option value="perplexity-fast">Perplexity Sonar (perplexity-fast)</option>
+                        <option value="perplexity-reasoning">Perplexity Sonar Reasoning (perplexity-reasoning)</option>
+                        <option value="grok">Grok 4.20 Non-Reasoning (grok)</option>
+                        <option value="grok-large">Grok 4.20 Reasoning (grok-large)</option>
+                        <option value="minimax">MiniMax M2.7 (minimax)</option>
+                        <option value="kimi">Moonshot Kimi K2.5 (kimi)</option>
+                        <option value="kimi-k2.6">Moonshot Kimi K2.6 (kimi-k2.6)</option>
+                        <option value="glm">Z.ai GLM-5.1 (glm)</option>
+                        <option value="midijourney">MIDljourney (midijourney)</option>
+                        <option value="midijourney-large">MIDljourney Large (midijourney-large)</option>
+                        <option value="openai-audio">GPT Audio Mini (openai-audio)</option>
+                        <option value="openai-audio-large">GPT Audio 1.5 (openai-audio-large)</option>
+                        <option value="polly">Polly by @Itachi-1824 (polly)</option>
+                    </select>
+                </div>
+
+                <div id="cfg-pollinations-block" class="p-4 bg-slate-50 border border-gray-100 rounded space-y-3">
+                    <span class="label-text text-indigo-600 font-bold"><i class="fa-solid fa-network-wired mr-1"></i> Autenticación de Pollinations</span>
+                    <p class="text-[10px] text-gray-500 leading-tight">Autentícate de forma nativa mediante la ventana segura de Pollinations para habilitar las peticiones.</p>
+                    <button onclick="ai.login(); EscaletaUI.toggleConfigModal();" class="btn-primary bg-indigo-600 hover:bg-indigo-700 py-2 shadow-md w-full">
+                        <i class="fa-solid fa-right-to-bracket mr-1"></i> Conectar con Pollinations
+                    </button>
+                </div>
+
+                <div id="cfg-ollama-block" class="p-4 bg-slate-50 border border-gray-100 rounded space-y-3 hidden">
+                    <span class="label-text text-blue-600 font-bold"><i class="fa-solid fa-server mr-1"></i> Configuración de Ollama Local</span>
+                    <div>
+                        <label class="label-text text-[8px] text-gray-400">Dirección URL Ollama API</label>
+                        <input type="text" id="cfg-ollama-url" class="config-input bg-white px-2 rounded font-mono text-xs border border-gray-200" placeholder="http://127.0.0.1:11434/api">
+                    </div>
+                    <div>
+                        <label class="label-text text-[8px] text-gray-400">Modelo Ollama Local Activo</label>
+                        <select id="cfg-ollama-model-select" class="config-input bg-white px-2 rounded font-mono text-xs border border-gray-200">
+                            <option value="">Cargando modelos de Ollama...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-slate-50 border border-gray-100 rounded space-y-3">
+                    <span class="label-text text-orange-600 font-bold"><i class="fa-solid fa-palette mr-1"></i> Configuración de ComfyUI Local</span>
+                    <div>
+                        <label class="label-text text-[8px] text-gray-400">Checkpoint Principal (.safetensors)</label>
+                        <input type="text" id="cfg-comfy-model" class="config-input bg-white px-2 rounded font-mono text-xs border border-gray-200" value="juggernautXL_ragnarokBy.safetensors">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="label-text text-[8px] text-gray-400">Ancho</label>
+                            <input type="number" id="cfg-comfy-width" class="config-input bg-white px-2 rounded font-mono text-xs border border-gray-200" value="1024">
+                        </div>
+                        <div>
+                            <label class="label-text text-[8px] text-gray-400">Alto</label>
+                            <input type="number" id="cfg-comfy-height" class="config-input bg-white px-2 rounded font-mono text-xs border border-gray-200" value="1024">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="label-text text-[8px] text-gray-400">Pasos</label>
+                            <input type="number" id="cfg-comfy-steps" class="config-input bg-white px-2 rounded font-mono text-xs border border-gray-200" value="6">
+                        </div>
+                        <div>
+                            <label class="label-text text-[8px] text-gray-400">CFG</label>
+                            <input type="number" id="cfg-comfy-cfg" class="config-input bg-white px-2 rounded font-mono text-xs border border-gray-200" value="2.0" step="0.5">
+                        </div>
+                        <div>
+                            <label class="label-text text-[8px] text-gray-400">Sampler</label>
+                            <input type="text" id="cfg-comfy-sampler" class="config-input bg-white px-2 rounded font-mono text-xs border border-gray-200" value="dpmpp_sde">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="label-text text-[8px] text-gray-400">Prompt Negativo</label>
+                        <textarea id="cfg-comfy-neg" class="config-input bg-white px-2 rounded text-xs border border-gray-200 h-12 resize-none">bad anatomy, blurry, watermark, worst quality</textarea>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-slate-50 border border-gray-100 rounded space-y-3">
+                    <span class="label-text text-blue-600 font-bold"><i class="fa-solid fa-cloud mr-1"></i> Motor de Voz (Google Cloud TTS)</span>
+                    <p class="text-[10px] text-gray-500 leading-tight">Introduce tu API Key de Google Cloud para inicializar de forma segura las voces neuronales de alta fidelidad.</p>
+                    <div>
+                        <label class="label-text text-[8px] text-gray-400">Google Cloud API Key</label>
+                        <input type="password" id="cfg-google-key" class="config-input bg-white px-2 rounded tracking-widest font-mono text-xs border border-gray-200" placeholder="AIzaSy...">
+                    </div>
+                    <button onclick="EscaletaUI.saveGoogleKeyFromModal()" class="btn-primary bg-slate-900 hover:bg-black py-2 shadow-md w-full">
+                        <i class="fa-solid fa-floppy-disk mr-1"></i> Guardar Configuración de Voz
+                    </button>
+                </div>
+
+                <button onclick="EscaletaUI.saveSystemConfig()" class="btn-primary bg-emerald-600 hover:bg-emerald-700 py-3 shadow-lg w-full font-bold">
+                    <i class="fa-solid fa-floppy-disk mr-1"></i> APLICAR TODA LA CONFIGURACIÓN
+                </button>
+            </div>
+            <div class="p-4 bg-gray-50 border-t border-gray-100 text-center">
+                <button onclick="EscaletaUI.toggleConfigModal()" class="text-[10px] font-bold text-gray-400 hover:text-gray-600 uppercase tracking-wide">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-20 shadow-sm">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-indigo-600 flex items-center justify-center text-white rounded-sm shadow-md">
+                <i class="fa-solid fa-clapperboard text-lg"></i>
+            </div>
+            <div class="flex flex-col">
+                <h1 class="font-bold text-slate-800 text-sm tracking-[0.15em] leading-tight">ESCALETA<span class="text-indigo-500">.AI</span></h1>
+                <span class="text-[9px] text-slate-400 tracking-wide uppercase">Pre-Visualización & Production</span>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <button onclick="EscaletaUI.toggleConfigModal()" class="btn-nordic justify-center bg-gray-100 border-gray-300 hover:bg-gray-200 font-bold" title="Configuración del Sistema">
+                <i class="fa-solid fa-sliders text-slate-700 mr-1"></i> [CFG]
+            </button>
+
+            <button onclick="NLE_UI.openEditor()" class="btn-nordic justify-center bg-purple-900 text-white border-purple-900 hover:bg-purple-800 shadow-md">
+                <i class="fa-solid fa-scissors text-purple-300 mr-2"></i> EDITOR AVANZADO
+            </button>
+
+            <div class="relative group">
+                <button class="btn-nordic justify-center bg-slate-900 text-white border-slate-900 hover:bg-slate-800 shadow-md tracking-widest font-bold">
+                    <i class="fa-solid fa-bars-staggered text-indigo-300 mr-2"></i> ACCIONES <i class="fa-solid fa-angle-down text-[8px] ml-1 opacity-60"></i>
+                </button>
+                <div class="absolute right-0 top-full mt-1 w-56 bg-white border border-gray-200 shadow-xl rounded-sm z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 flex flex-col py-1 font-mono text-[10px]">
+                    <button onclick="AiWriter.generateStructure()" class="w-full text-left px-4 py-2.5 text-gray-700 hover:bg-indigo-50 hover:text-indigo-900 flex items-center gap-2 border-b border-gray-50">
+                        <i class="fa-solid fa-database text-indigo-500 w-4 text-center"></i> Desde Cronología
+                    </button>
+                    <button onclick="EscaletaUI.toggleScriptModal()" class="w-full text-left px-4 py-2.5 text-gray-700 hover:bg-indigo-50 hover:text-indigo-900 flex items-center gap-2 border-b border-gray-50">
+                        <i class="fa-solid fa-pen-nib text-indigo-500 w-4 text-center"></i> Guion Rápido
+                    </button>
+                    <button onclick="EscaletaUI.toggleComicModal()" class="w-full text-left px-4 py-2.5 text-gray-700 hover:bg-indigo-50 hover:text-indigo-900 flex items-center gap-2 border-b border-gray-50">
+                        <i class="fa-solid fa-book-open text-orange-600 w-4 text-center"></i> Cómic Animado
+                    </button>
+                    <button onclick="DirectorUI.toggleModal()" class="w-full text-left px-4 py-2.5 text-gray-700 hover:bg-indigo-50 hover:text-indigo-900 flex items-center gap-2">
+                        <i class="fa-solid fa-film text-purple-600 w-4 text-center"></i> Modo Director (Película)
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex flex-col items-end ml-2">
+                <span class="label-text mb-0">AI Connection</span>
+                <div class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" onclick="if(ai.aiProvider==='pollinations') ai.login()">
+                    <span id="auth-status-text" class="text-[10px] font-bold text-gray-400">OFFLINE</span>
+                    <div id="auth-indicator" class="w-2 h-2 rounded-full bg-gray-300"></div>
+                </div>
+            </div>
+
+            <div class="h-8 w-px bg-gray-100 mx-1"></div>
+
+            <button onclick="EscaletaUI.selectProjectFolderNative()" id="btn-project-folder" class="btn-nordic text-slate-600 border-slate-200 hover:border-indigo-500 hover:text-indigo-600">
+                <i class="fa-solid fa-folder-open"></i> <span id="project-name-display">Cargar Proyecto</span>
+            </button>
+            
+            <div class="flex gap-2">
+                <button onclick="SequencePlayer.openModal()" class="btn-primary bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-sm shadow-lg flex items-center gap-2 transition-colors w-auto">
+                    <i class="fa-solid fa-play"></i> PREVISUALIZAR
+                </button>
+                <button onclick="EscaletaUI.toggleExportModal()" class="btn-primary bg-slate-900 hover:bg-black text-white px-6 py-3 rounded-sm shadow-lg flex items-center gap-2 w-auto">
+                    <i class="fa-solid fa-film"></i> RENDERIZAR
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-layout flex-1 flex overflow-hidden">
+        <aside class="w-80 bg-white border-r border-gray-200 flex flex-col z-10 shrink-0">
+            <div class="p-6 border-b border-gray-100">
+                <h2 class="label-text text-indigo-500 mb-4"><i class="fa-solid fa-sliders mr-1"></i> Configuración de IA</h2>
+                
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="label-text mb-0">Motor de Voz</label>
+                        <div class="flex bg-gray-100 p-0.5 rounded text-[9px] font-bold">
+                            <button id="tab-voice-openai" onclick="Generators.setVoiceProvider('openai')" class="px-2 py-1 bg-white shadow-sm rounded text-indigo-600 transition-colors">OpenAI</button>
+                            <button id="tab-voice-google" onclick="Generators.setVoiceProvider('google')" class="px-2 py-1 text-gray-400 hover:text-gray-600 transition-colors">Google</button>
+                        </div>
+                    </div>
+
+                    <div id="voice-container-openai" class="grid grid-cols-3 gap-2 mt-2">
+                        <button onclick="Generators.setVoice('alloy')" class="voice-btn active" data-voice="alloy">Alloy</button>
+                        <button onclick="Generators.setVoice('echo')" class="voice-btn" data-voice="echo">Echo</button>
+                        <button onclick="Generators.setVoice('fable')" class="voice-btn" data-voice="fable">Fable</button>
+                        <button onclick="Generators.setVoice('onyx')" class="voice-btn" data-voice="onyx">Onyx</button>
+                        <button onclick="Generators.setVoice('nova')" class="voice-btn" data-voice="nova">Nova</button>
+                        <button onclick="Generators.setVoice('shimmer')" class="voice-btn" data-voice="shimmer">Shimmer</button>
+                    </div>
+
+                    <div id="voice-container-google" class="hidden space-y-2 mt-2 p-2 bg-gray-50 border border-gray-100 rounded">
+                        <select id="google-lang-select" class="config-input cursor-pointer" onchange="Generators.filterGoogleVoices()">
+                            <option value="es-ES">🇪🇸 Español (España)</option>
+                            <option value="es-US">🇺🇸 Español (Latino/US)</option>
+                            <option value="en-US">🇺🇸 Inglés (US)</option>
+                            <option value="all">🌍 Todos</option>
+                        </select>
+                        <select id="google-voice-select" class="config-input cursor-pointer font-mono text-[10px]" onchange="Generators.setGoogleVoice()">
+                            <option disabled selected>Esperando API Key...</option>
+                        </select>
+                        <div id="google-voice-error" class="text-[9px] text-red-500 font-bold hidden leading-tight">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Requiere API Key en [CFG].
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="label-text">Modelo de Video</label>
+                    <select id="video-model-select" class="config-input mt-1 bg-white">
+                        <option value="ltx-2">LTX-2.3</option>
+                        <option value="grok-video">Grok pollination</option>
+                        <option value="grok-imagine-video">Grok AirFORCE</option>
+                        <option value="luma">Luma Dream Machine</option>
+                        <option value="wan">Wan 2.6</option>
+                        <option value="wan-fast">Wan 2.2</option>
+                        <option value="seedance">Seedance Lite</option>
+                        <option value="haiper">Haiper (Fast)</option>
+                    </select>
+                </div>
+
+                <div class="mb-6">
+                    <label class="label-text">Proveedor de Imagen</label>
+                    <select id="image-provider-select" class="config-input mt-1 bg-white font-bold text-orange-600" onchange="localStorage.setItem('escaleta_image_provider', this.value)">
+                        <option value="pollinations">POLLINATIONS AI (Cloud)</option>
+                        <option value="comfyui">COMFYUI ENGINE (Local)</option>
+                    </select>
+                </div>
+
+                <div class="mb-6">
+                    <label class="label-text">Modelo / Checkpoint Imagen</label>
+                    <select id="image-model-select" class="config-input mt-1 bg-white">
+                        <option value="flux">Flux Schnell (Estándar)</option>
+                        <option value="zimage">ZImage (Estándar)</option>
+                        <option value="klein">FLUX.2 Klein 4B</option>
+                        <option value="klein-large">FLUX.2 Klein 9B</option>
+                        <option value="imagen-4">Imagen 4 GOOGLE</option>
+                        <option value="gptimage">GPT Imagen 1</option>
+                    </select>
+                </div>
+
+                <div class="mb-6 p-3 bg-gray-50 border border-gray-100 rounded space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] font-bold text-gray-700 block">PROVEEDOR GROK</span>
+                            <span class="text-[9px] text-gray-400 block">Pollinations vs Airforce</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="provider-switch" class="sr-only peer" onchange="document.getElementById('airforce-key-container').classList.toggle('hidden', !this.checked)">
+                            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+
+                    <div id="airforce-key-container" class="hidden animate-fade-in border-t border-gray-200 pt-2 mt-1 space-y-2">
+                        <div class="flex items-center justify-between bg-white p-2 border border-gray-100 rounded shadow-sm">
+                            <div>
+                                <span class="text-[9px] font-bold text-indigo-700 block">ROTACIÓN DE APIs</span>
+                                <span class="text-[8px] text-gray-500 block">Alternar keys automáticamente</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="airforce-rotation-switch" class="sr-only peer" checked>
+                                <div class="w-7 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-indigo-600"></div>
+                            </label>
+                        </div>
+                        
+                        <div class="relative group mt-2">
+                            <button class="btn-nordic w-full justify-center flex items-center gap-2 px-4 shadow-sm transition-all duration-300 bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100">
+                                <i class="fa-solid fa-circle-notch fa-spin text-gray-400"></i>
+                                <span id="apikey-monitor-status" class="text-[10px] font-bold tracking-widest uppercase">Calculando...</span>
+                            </button>
+                            <div class="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 shadow-xl rounded-sm z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 max-h-48 overflow-y-auto">
+                                <div id="apikey-monitor-dropdown" class="flex flex-col">
+                                    <div class="p-4 text-xs text-gray-400 text-center">Cargando datos...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-2 bg-indigo-50 rounded border border-indigo-100 flex items-center gap-2">
+                            <i class="fa-solid fa-key text-indigo-400 text-xs"></i>
+                            <p class="text-[9px] text-indigo-800 leading-tight">AIRFORCE: La API Key se gestiona desde la <strong>Configuración del Sistema [CFG]</strong>.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="label-text">Formato de Generación</label>
+                    <select id="video-aspect-select" class="config-input mt-1 bg-white text-indigo-700 font-bold">
+                        <option value="landscape">Horizontal (16:9)</option>
+                        <option value="portrait">Vertical (9:16)</option>
+                        <option value="square">Cuadrado (1:1)</option>
+                    </select>
+                </div>
+
+                <div class="space-y-2">
+                    <button onclick="Generators.generateAllImages()" class="btn-nordic w-full justify-center border-orange-100 text-orange-700 hover:bg-orange-50">
+                        <i class="fa-solid fa-images"></i> Generar Todas las Imágenes
+                    </button>
+                    <button onclick="Generators.generateAllVideos()" class="btn-nordic w-full justify-center border-indigo-100 text-indigo-700 hover:bg-indigo-50">
+                        <i class="fa-solid fa-video"></i> Generar Todos los Videos
+                    </button>
+                    <button onclick="Generators.generateAllAudio()" class="btn-nordic w-full justify-center border-pink-100 text-pink-700 hover:bg-pink-50">
+                        <i class="fa-solid fa-microphone-lines"></i> Generar Todos los Audios
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 flex flex-col overflow-y-auto p-6 bg-slate-50/50 relative border-t border-gray-100">
+                <div class="flex justify-between items-center mb-3 sticky top-0 bg-slate-50/90 backdrop-blur-sm z-10 pb-2">
+                    <h2 class="label-text text-slate-400 mb-0"><i class="fa-solid fa-fingerprint mr-1"></i> Coherencia Visual</h2>
+                    <button onclick="CoherenceUI.openEditor()" class="btn-nordic text-[9px] px-2 py-1 border-indigo-200 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 transition-colors shadow-sm" title="Editar Biblia Visual"><i class="fa-solid fa-pen-to-square"></i> Editar</button>
+                </div>
+                <div id="coherence-list" class="space-y-2 flex-1">
+                    <div class="text-[10px] text-gray-400 italic">Carga un proyecto para escanear activos visuales...</div>
+                </div>
+            </div>
+        </aside>
+
+        <section class="flex-1 bg-slate-100/50 flex flex-col relative overflow-hidden">
+            <div class="h-10 border-b border-gray-200 bg-white px-4 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-4">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider" id="timeline-stats">0 Tomas | 00:00 Total</span>
+                    <div class="h-4 w-px bg-gray-200"></div>
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-bookmark text-indigo-400 text-xs"></i>
+                        <select id="act-navigator" class="text-[10px] uppercase font-bold text-gray-600 bg-transparent outline-none cursor-pointer hover:text-indigo-600 transition-colors w-32" onchange="EscaletaUI.jumpToAct(this.value)">
+                            <option value="">Navegar a Acto...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="EscaletaCore.copyAllPrompts()" class="text-[10px] text-blue-500 hover:text-blue-600 uppercase font-bold px-2"><i class="fa-solid fa-copy mr-1"></i> Copiar Prompts</button>
+                    <button onclick="EscaletaCore.sortActsAlphabetically()" class="text-[10px] text-indigo-500 hover:text-indigo-600 uppercase font-bold px-2"><i class="fa-solid fa-sort-alpha-down mr-1"></i> Ordenar Actos</button>
+                    <button onclick="EscaletaCore.addTake()" class="text-[10px] text-emerald-500 hover:text-emerald-600 uppercase font-bold px-2"><i class="fa-solid fa-plus mr-1"></i> Añadir Toma</button>
+                    <button onclick="EscaletaUI.clearAll()" class="text-[10px] text-red-400 hover:text-red-600 uppercase font-bold px-2">Limpiar Todo</button>
+                </div>
+            </div>
+
+            <div id="empty-state" class="absolute inset-0 top-10 flex flex-col items-center justify-center z-0 hidden">
+                <i class="fa-solid fa-layer-group text-6xl text-gray-300 mb-4"></i>
+                <p class="text-sm text-gray-500 font-light">No hay tomas generadas.</p>
+                <p class="text-xs text-gray-400 mt-1 mb-4">Carga un proyecto y pulsa "Generar Escaleta" o empieza desde cero</p>
+                <button onclick="EscaletaCore.addTake()" class="btn-nordic border-indigo-200 text-indigo-600 hover:bg-indigo-50 px-6 py-2 shadow-sm">
+                    <i class="fa-solid fa-plus mr-2"></i> CREAR PRIMERA TOMA MANUAL
+                </button>
+            </div>
+
+            <div id="takes-list" class="flex-1 overflow-y-auto p-8 space-y-4 pb-32 z-10 relative"></div>
+        </section>
+
+        <aside class="w-96 bg-white border-l border-gray-200 flex flex-col z-10 shrink-0 shadow-xl">
+            <div class="aspect-video bg-black relative group">
+                <video id="inspector-video" class="w-full h-full object-contain hidden" loop playsinline></video>
+                <img id="inspector-image" class="w-full h-full object-contain hidden">
+                <div class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <i id="play-icon" class="fa-solid fa-play text-white text-3xl"></i>
+                </div>
+                <div class="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onclick="Inspector.togglePlay()" class="w-6 h-6 bg-white/20 hover:bg-white/40 rounded text-white text-[10px] flex items-center justify-center"><i class="fa-solid fa-play"></i></button>
+                    <button onclick="Inspector.toggleMute()" class="w-6 h-6 bg-white/20 hover:bg-white/40 rounded text-white text-[10px] flex items-center justify-center"><i class="fa-solid fa-volume-high"></i></button>
+                </div>
+                <div id="video-placeholder" class="absolute inset-0 flex items-center justify-center bg-slate-900 text-slate-600">
+                    <span class="text-[10px] uppercase tracking-widest font-bold">Sin Multimedia</span>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 space-y-6" id="inspector-forms">
+                <div class="text-center text-gray-400 text-xs italic mt-10">Selecciona una toma para editar.</div>
+            </div>
+        </aside>
+    </main>
+
+    <div id="seq-player-modal" class="fixed inset-0 z-[150] bg-black/95 flex flex-col hidden backdrop-blur-md transition-opacity">
+        <div class="h-14 border-b border-gray-800 flex justify-between items-center px-6 text-white shrink-0">
+            <h2 class="text-xs font-bold tracking-[0.2em] text-indigo-400 uppercase"><i class="fa-solid fa-film mr-2"></i>Reproductor de Secuencia</h2>
+            <button onclick="SequencePlayer.closeModal()" class="text-gray-400 hover:text-white text-2xl transition-colors">&times;</button>
+        </div>
+        
+        <div class="flex-1 relative flex items-center justify-center overflow-hidden">
+            <video id="seq-video" class="max-w-full max-h-full object-contain shadow-2xl hidden" playsinline></video>
+            <img id="seq-image" class="max-w-full max-h-full object-contain shadow-2xl hidden">
+            <audio id="seq-audio" class="hidden"></audio>
+            <div id="seq-subtitles" class="absolute bottom-12 w-full px-12 text-center text-white font-bold text-2xl md:text-3xl lg:text-4xl drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]"></div>
+        </div>
+
+        <div class="h-24 bg-gray-900 border-t border-gray-800 flex flex-col px-6 justify-center shrink-0">
+            <div class="flex items-center gap-4 mb-3">
+                <span id="seq-time-current" class="text-[10px] text-gray-400 font-mono w-8 text-right">00:00</span>
+                <input type="range" id="seq-progress" value="0" min="0" max="100" step="0.01" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400 transition-all" oninput="SequencePlayer.onSeek(this.value)">
+                <span id="seq-time-total" class="text-[10px] text-gray-400 font-mono w-8">00:00</span>
+            </div>
+
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-6">
+                    <button onclick="SequencePlayer.togglePlay()" id="seq-btn-play" class="text-white hover:text-indigo-400 text-2xl w-8 flex justify-center transition-colors"><i class="fa-solid fa-play"></i></button>
+                    <div class="h-6 w-px bg-gray-700"></div>
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <input type="checkbox" id="seq-chk-ambience" checked onchange="SequencePlayer.updateTracks()" class="w-3.5 h-3.5 accent-indigo-500 rounded border-gray-600 bg-gray-800 cursor-pointer">
+                        <span class="text-[10px] font-bold tracking-wider text-gray-400 group-hover:text-white uppercase transition-colors">Ambiente</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <input type="checkbox" id="seq-chk-voice" checked onchange="SequencePlayer.updateTracks()" class="w-3.5 h-3.5 accent-indigo-500 rounded border-gray-600 bg-gray-800 cursor-pointer">
+                        <span class="text-[10px] font-bold tracking-wider text-gray-400 group-hover:text-white uppercase transition-colors">Voz</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <input type="checkbox" id="seq-chk-subs" checked onchange="SequencePlayer.updateTracks()" class="w-3.5 h-3.5 accent-indigo-500 rounded border-gray-600 bg-gray-800 cursor-pointer">
+                        <span class="text-[10px] font-bold tracking-wider text-gray-400 group-hover:text-white uppercase transition-colors">Subtítulos</span>
+                    </label>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-volume-low text-gray-400 text-xs"></i>
+                    <input type="range" id="seq-volume" value="100" min="0" max="100" class="w-24 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400 transition-all" oninput="SequencePlayer.onVolume(this.value)">
+                    <i class="fa-solid fa-volume-high text-gray-400 text-xs"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="ai.js"></script>
+    <script src="escaleta/airforce.js"></script>
+    <script src="escaleta/core.js"></script>
+    <script src="escaleta/coherence.js"></script>
+    <script src="escaleta/ai_writer.js"></script>
+    <script src="escaleta/sound_designer.js"></script>
+    <script src="escaleta/generators.core.js"></script>
+    <script src="escaleta/generators.video.js"></script>
+    <script src="escaleta/generators.audio.js"></script>
+    <script src="escaleta/generators.image.js"></script>
+    <script src="escaleta/exporter.js"></script>
+    <script src="escaleta/ui.js"></script>
+    <script src="escaleta/inspector.js"></script>
+    <script src="escaleta/player.js"></script>
+    <script src="escaleta/director.ui.js"></script>
+    <script src="escaleta/director.core.js"></script>
+    <script src="editor/models.js"></script>
+    <script src="editor/audio_engine.js"></script>
+    <script src="editor/video_engine.js"></script>
+    <script src="editor/player.js"></script>
+    <script src="editor/exporter.js"></script>
+    <script src="editor/ui.js"></script>
+
+    <script>
+        window.onload = () => {
+            EscaletaCore.init();
+            EscaletaUI.init();
+            DirectorUI.init();
+            if (window.NLE_UI) NLE_UI.init(); 
+            const savedKey = localStorage.getItem('airforce_key');
+            if (savedKey) { window.apikeyairforce = savedKey; }
+            
+            // Hidratar selector de proveedor de imagen
+            const savedImageProvider = localStorage.getItem('escaleta_image_provider') || 'pollinations';
+            const imgProvSelect = document.getElementById('image-provider-select');
+            if (imgProvSelect) imgProvSelect.value = savedImageProvider;
+        };
+    </script>
+</body>
+</html>
