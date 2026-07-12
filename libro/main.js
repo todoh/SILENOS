@@ -1,4 +1,3 @@
-// main.js
 let libroData = {
     "titulo": "",
     "portada": " ",
@@ -15,6 +14,13 @@ let libroData = {
 
 let agenteActivo = false;
 
+// Variables de persistencia de estado para reanudación de flujo tras error 429 o red
+let estadoProgreso = {
+    fase: 0, // 0 = Prólogo, 1 = Cierres, 2 = Capítulos, 3 = Completado
+    parteIndex: 0,
+    capituloIndex: 0
+};
+
 // Elementos del DOM
 const apiKeyInput = document.getElementById('api-key');
 const logConsole = document.getElementById('log-console');
@@ -22,6 +28,7 @@ const importFileInput = document.getElementById('import-file');
 const btnPegarJSON = document.getElementById('btn-pegar-json');
 const btnExportar = document.getElementById('btn-exportar');
 const btnRunAgent = document.getElementById('btn-run-agent');
+const btnResumeAgent = document.getElementById('btn-resume-agent');
 const btnAbortar = document.getElementById('btn-abortar');
 const btnPromptIA = document.getElementById('btn-prompt-ia');
 const agentBadge = document.getElementById('agent-status-badge');
@@ -80,6 +87,9 @@ function inicializarEstructuraBaseVacia() {
         libroData.indice.push("Apéndice", "Nota Final");
         libroData.partes = [parteUnica];
     }
+    estadoProgreso = { fase: 0, parteIndex: 0, capituloIndex: 0 };
+    btnResumeAgent.classList.add('hidden');
+    btnRunAgent.classList.remove('hidden');
     actualizarMatrizUI();
 }
 
@@ -142,69 +152,77 @@ async function ejecutarFlujoAgentico() {
     sincronizarDatosBase();
     agenteActivo = true;
     btnRunAgent.disabled = true;
+    btnResumeAgent.disabled = true;
     btnAbortar.classList.remove('hidden');
     agentBadge.classList.remove('hidden');
     agentBadge.classList.add('agent-active');
     const apiKey = apiKeyInput.value.trim();
+    
     try {
         const totalCapitulosRequeridos = libroData.partes.reduce((acc, p) => acc + p.capitulos.length, 0);
-        log(`[AGENTE NÚCLEO] Iniciando expansión cuántica literaria. Objetivo: ${totalCapitulosRequeridos} capítulos.`);
+        
+        // FASE 1: Prólogo
+        if (estadoProgreso.fase === 0) {
+            log(`[AGENTE NÚCLEO] Iniciando expansión cuántica literaria. Objetivo: ${totalCapitulosRequeridos} capítulos.`);
+            log("[AGENTE] Forjando Prólogo desde la raíz conceptual...");
+            const promptPrologo = GeminiPrompts.obtenerPromptPrologo(docIdea.value, libroData.tono, libroData.estilo);
+            libroData.prologo = (await llamarGemini(promptPrologo, "", apiKey)).trim();
+            log("[AGENTE] Prólogo integrated.");
+            estadoProgreso.fase = 1;
+        }
+        
         if (!agenteActivo) return;
         
-        // FASE 1: Prólogo (Se fuerza siempre la regeneración total)
-        log("[AGENTE] Forjando Prólogo desde la raíz conceptual...");
-        const promptPrologo = GeminiPrompts.obtenerPromptPrologo(docIdea.value, libroData.tono, libroData.estilo);
-        libroData.prologo = (await llamarGemini(promptPrologo, "", apiKey)).trim();
-        log("[AGENTE] Prólogo integrated.");
-        
-        if (!agenteActivo) return;
-        
-        // FASE 2: Cierres (Se fuerza siempre la regeneración total)
-        log("[AGENTE] Consolidando Apéndice Técnico y Cierres...");
-        const promptCierres = GeminiPrompts.obtenerPromptCierres(docIdea.value, libroData.tono);
-        let respuesta = await llamarGemini(promptCierres, "Devuelve únicamente JSON limpio.", apiKey);
-        respuesta = respuesta.replace(/```json/g, "").replace(/```/g, "").trim();
-        const parsed = JSON.parse(respuesta);
-        libroData.apendice = parsed.apendice;
-        libroData.nota_final = parsed.nota_final;
-        log("[AGENTE] Estructuras de cierre validadas.");
+        // FASE 2: Cierres
+        if (estadoProgreso.fase === 1) {
+            log("[AGENTE] Consolidando Apéndice Técnico y Cierres...");
+            const promptCierres = GeminiPrompts.obtenerPromptCierres(docIdea.value, libroData.tono);
+            let respuesta = await llamarGemini(promptCierres, "Devuelve únicamente JSON limpio.", apiKey);
+            respuesta = respuesta.replace(/```json/g, "").replace(/```/g, "").trim();
+            const parsed = JSON.parse(respuesta);
+            libroData.apendice = parsed.apendice;
+            libroData.nota_final = parsed.nota_final;
+            log("[AGENTE] Estructuras de cierre validadas.");
+            estadoProgreso.fase = 2;
+        }
         
         if (!agenteActivo) return;
         
         // FASE 3: Desarrollo Literario Masivo
-        log("[AGENTE] Entrando en Fase de Ampliación de Prosa (20-30 párrafos por capítulo)...");
-        const systemPromptEscritor = GeminiPrompts.obtenerSystemPromptEscritor();
-        
-        for (let p = 0; p < libroData.partes.length; p++) {
-            for (let c = 0; c < libroData.partes[p].capitulos.length; c++) {
-                if (!agenteActivo) return;
-                let cap = libroData.partes[p].capitulos[c];
-                
-                log(`[AGENTE IA] Ejecutando llamadas para Capítulo ${cap.numero}: "${cap.titulo}"...`);
-                actualizarMatrizUI(cap.numero);
-                
-                // Si ya existía texto de semilla o borrador estructural previo, se puede asimilar como hilo conductor, pero sin saltarse nunca el capítulo
-                let guiaCronologica = "";
-                if (cap.texto && cap.texto.length > 0 && !cap.expandido) {
-                    guiaCronologica = `\n\nESTRUCTURA HILO CONDUCTOR OBLIGATORIO (Toma cada una de estas afirmaciones base y expande cada punto redactando 2 o 3 párrafos masivos interconectados, respetando este orden cronológico estricto):\n${cap.texto.map((linea, i) => `${i+1}. ${linea}`).join("\n")}`;
-                }
-                
-                let promptCapitulo = GeminiPrompts.obtenerPromptCapitulo(
-                    cap.numero,
-                    cap.titulo,
-                    docIdea.value || libroData.prologo,
-                    libroData.tono,
-                    libroData.estilo,
-                    cap.sinopsis,
-                    libroData.prologo
-                );
-                
-                if (guiaCronologica) {
-                    promptCapitulo += guiaCronologica;
-                }
-                
-                try {
-                    // Llamada al modelo usando el escritor de párrafos limpios por \n\n
+        if (estadoProgreso.fase === 2) {
+            log("[AGENTE] Entrando/Retomando Fase de Ampliación de Prosa...");
+            const systemPromptEscritor = GeminiPrompts.obtenerSystemPromptEscritor();
+            
+            for (let p = estadoProgreso.parteIndex; p < libroData.partes.length; p++) {
+                estadoProgreso.parteIndex = p;
+                for (let c = estadoProgreso.capituloIndex; c < libroData.partes[p].capitulos.length; c++) {
+                    estadoProgreso.capituloIndex = c;
+                    if (!agenteActivo) return;
+                    
+                    let cap = libroData.partes[p].capitulos[c];
+                    log(`[AGENTE IA] Ejecutando llamadas para Capítulo ${cap.numero}: "${cap.titulo}"...`);
+                    actualizarMatrizUI(cap.numero);
+                    
+                    let guiaCronologica = "";
+                    if (cap.texto && cap.texto.length > 0 && !cap.expandido) {
+                        guiaCronologica = `\n\nESTRUCTURA HILO CONDUCTOR OBLIGATORIO (Toma cada una de estas afirmaciones base y expande cada punto redactando 2 o 3 párrafos masivos interconectados, respetando este orden cronológico estricto):\n${cap.texto.map((linea, i) => `${i+1}. ${linea}`).join("\n")}`;
+                    }
+                    
+                    let promptCapitulo = GeminiPrompts.obtenerPromptCapitulo(
+                        cap.numero,
+                        cap.titulo,
+                        docIdea.value || libroData.prologo,
+                        libroData.tono,
+                        libroData.estilo,
+                        cap.sinopsis,
+                        libroData.prologo
+                    );
+                    
+                    if (guiaCronologica) {
+                        promptCapitulo += guiaCronologica;
+                    }
+                    
+                    // Remoción del try-catch interno destructivo para permitir control global del flujo agéntico ante errores 429/red
                     let respuestaCruda = await llamarGemini(promptCapitulo, systemPromptEscritor, apiKey);
                     respuestaCruda = respuestaCruda.replace(/```markdown/g, "").replace(/```/g, "").trim();
                     
@@ -214,31 +232,34 @@ async function ejecutarFlujoAgentico() {
                         .filter(parrafo => parrafo.length > 0);
                     
                     if (parrafosProcesados.length > 0) {
-                        cap.texto = parrafosProcesados; // Sustituimos siempre por el nuevo manuscrito gigante
-                        cap.expandido = true;          // Encendemos el flag de control visual
+                        cap.texto = parrafosProcesados;
+                        cap.expandido = true;
                         log(`[ÉXITO] Capítulo ${cap.numero} expandido a ${parrafosProcesados.length} párrafos masivos.`);
                     } else {
                         throw new Error("La respuesta no contiene bloques separados por saltos de línea válidos.");
                     }
-                } catch (errCap) {
-                    log(`[CRÍTICO CAPÍTULO ${cap.numero}] Error de flujo de texto plano: ${errCap.message}`);
-                    const promptFallback = promptCapitulo + " Escribe el texto largo continuo en párrafos bien definidos.";
-                    const respuestaFallback = await llamarGemini(promptFallback, "", apiKey);
-                    cap.texto = respuestaFallback.trim().split(/\n\n/).filter(x => x.length > 0);
-                    cap.expandido = true;
-                    log(`[FALLBACK COMPLETADO] Capítulo ${cap.numero} salvaguardado.`);
+                    actualizarMatrizUI();
                 }
-                actualizarMatrizUI();
+                estadoProgreso.capituloIndex = 0; // Reseteamos contador de capítulos para la siguiente parte si existiese
             }
+            estadoProgreso.fase = 3;
         }
         
-        if (agenteActivo) {
+        if (agenteActivo && estadoProgreso.fase === 3) {
             log("[AGENTE SISTEMA] ¡Proceso Completado con Éxito! El manuscrito complejo se ha expandido a gran volumen.");
             log("Pulsa 'Exportar JSON' para descargar el Manuscrito definitivo.");
+            btnResumeAgent.classList.add('hidden');
+            btnRunAgent.classList.remove('hidden');
+            estadoProgreso = { fase: 0, parteIndex: 0, capituloIndex: 0 };
             actualizarMatrizUI();
         }
     } catch (e) {
         log(`[FALLO INMANENTE] Error en la ejecución de la red neuronal: ${e.message}`);
+        log(`[SISTEMA PAUSADO] Proceso detenido de forma segura. Puedes esperar la restauración de la cuota o sustituir la Gemini API Key. Usa el botón 'Retomar la Generación' para continuar.`);
+        
+        // Mutar la UI para permitir la reanudación segura
+        btnRunAgent.classList.add('hidden');
+        btnResumeAgent.classList.remove('hidden');
     } finally {
         desactivarAgenteUI();
     }
@@ -247,6 +268,7 @@ async function ejecutarFlujoAgentico() {
 function desactivarAgenteUI() {
     agenteActivo = false;
     btnRunAgent.disabled = false;
+    btnResumeAgent.disabled = false;
     btnAbortar.classList.add('hidden');
     agentBadge.classList.add('hidden');
     agentBadge.classList.remove('agent-active');
@@ -287,7 +309,6 @@ function procesarEstructuraJSON(objetoJSON) {
             libroData.partes.forEach(p => { 
                 if(p.capitulos) {
                     p.capitulos.forEach(c => {
-                        // Reseteamos el flag para que la interfaz sepa que está listo para sobrescribirse
                         c.expandido = false;
                         contadorCaps++;
                     });
@@ -296,6 +317,10 @@ function procesarEstructuraJSON(objetoJSON) {
         }
         if(contadorCaps > 0) docNumCaps.value = contadorCaps;
         log(`[SISTEMA] Estructura JSON mapeada con éxito. Detectados ${contadorCaps} capítulos listos para su procesamiento.`);
+        
+        estadoProgreso = { fase: 0, parteIndex: 0, capituloIndex: 0 };
+        btnResumeAgent.classList.add('hidden');
+        btnRunAgent.classList.remove('hidden');
         actualizarMatrizUI();
     } catch (err) {
         log(`Error crítico al procesar estructura JSON: ${err.message}`);
@@ -307,7 +332,12 @@ docNumCaps.addEventListener('change', () => {
     inicializarEstructuraBaseVacia();
 });
 
-btnRunAgent.addEventListener('click', ejecutarFlujoAgentico);
+btnRunAgent.addEventListener('click', () => {
+    estadoProgreso = { fase: 0, parteIndex: 0, capituloIndex: 0 };
+    ejecutarFlujoAgentico();
+});
+
+btnResumeAgent.addEventListener('click', ejecutarFlujoAgentico);
 
 btnAbortar.addEventListener('click', () => {
     log("[AGENTE] Cancelación manual del operador.");
