@@ -32,7 +32,7 @@ Estilo de escritura: "${estilo}".
 Guía u objetivo de lo que sucede en este capítulo específico: "${sinopsis || 'Desarrollo continuo del arco argumental central.'}".
 Prólogo de referencia: "${prologo}".
 
-REQUISITO CRÍTICO DE VOLUMEN: Debes expandir exhaustivamente el arco de este capítulo redactando de 20 a 30 párrafos literarios largos y descriptivos. Desarrolla minuciosamente cada interacción, entorno, subtexto y detalle mecánico o ambiental.
+REQUISITO CRÍTICO DE VOLUMEN: Debes expandir exhaustivamente el arco de este capítulo redactando de 8 a 14 párrafos literarios largos y descriptivos. Desarrolla minuciosamente cada interacción, entorno, subtexto y detalle mecánico o ambiental.
 
 Formato de salida: Devuelve el texto plano, separando cada párrafo únicamente con un doble salto de línea (\\n\\n). No uses markdown ni introducciones explicativas.`;
     },
