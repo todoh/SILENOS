@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silenos Studio - Serial Book Architecture Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="h-screen w-screen flex flex-col overflow-hidden bg-white">
+    <header class="h-14 border-b border-gray-100 flex items-center justify-between px-6 shrink-0">
+        <div class="flex items-center gap-3">
+            <h1 class="text-xs font-medium tracking-[0.2em] text-black uppercase">SERIAL BOOK ARCHITECTURE ENGINE</h1>
+            <span id="engine-badge" class="font-mono text-[9px] bg-black text-white px-2 py-0.5 uppercase">GEMINI PIPELINE</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+                <span class="label-text mb-0">API Key:</span>
+                <input type="password" id="gemini-api-key" placeholder="AIzaSy..." class="font-mono text-xs border-b border-gray-200 outline-none w-56 focus:border-black px-1">
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="label-text mb-0">Modelo:</span>
+                <input type="text" id="gemini-model" value="gemini-3.1-flash-lite" readonly class="font-mono text-xs border-b border-gray-200 outline-none w-36 bg-gray-50 uppercase font-bold text-blue-600 cursor-not-allowed">
+            </div>
+        </div>
+    </header>
+    <div class="flex-1 flex overflow-hidden w-full">
+        <!-- BARRA LATERAL CONFIGURACIÓN -->
+        <div class="w-80 border-r border-gray-100 p-6 flex flex-col gap-5 overflow-y-auto shrink-0">
+            <div>
+                <h3 class="text-xs font-semibold uppercase tracking-wider mb-3">Parámetros Iniciales</h3>
+                <div class="space-y-4">
+                    <div>
+                        <span class="label-text">Idea Semilla / Concepto Central</span>
+                        <textarea id="book-concept" rows="3" class="w-full p-2 border border-gray-200 text-xs rounded-sm outline-none resize-none focus:border-black" placeholder="Ej: Un tratado esotérico sobre Anubis..."></textarea>
+                    </div>
+                    <div>
+                        <span class="label-text">Género Principal</span>
+                        <select id="book-genre" class="w-full p-1.5 border border-gray-200 text-xs rounded-sm outline-none focus:border-black bg-white font-mono" onchange="updateSubgenres()">
+                            <option value="Ciencia Ficción">1. Ciencia Ficción</option>
+                            <option value="Misterio y Policiaco">2. Misterio, Policiaco y Detective</option>
+                            <option value="Terror y Gótico">3. Terror y Ficción Gótica</option>
+                            <option value="Fantasía">4. Fantasía</option>
+                            <option value="Romántico">5. Romántico</option>
+                            <option value="Histórica y Aventura">6. Histórica y Aventura</option>
+                        </select>
+                    </div>
+                    <div>
+                        <span class="label-text">Subgénero / Matiz Híbrido</span>
+                        <select id="book-subgenre" class="w-full p-1.5 border border-gray-200 text-xs rounded-sm outline-none focus:border-black bg-white font-mono" onchange="updateGenreTemplate()">
+                            <!-- Se rellena dinámicamente -->
+                        </select>
+                    </div>
+                    <div>
+                        <span class="label-text">Plantilla de Reglas de Campo</span>
+                        <textarea id="genre-template-rules" rows="3" class="w-full p-2 bg-gray-50 border border-gray-200 text-[11px] font-mono rounded-sm outline-none resize-none text-gray-600 focus:border-black" placeholder="Directrices específicas del género..."></textarea>
+                    </div>
+                    <div>
+                        <span class="label-text">Título Provisional</span>
+                        <input type="text" id="book-title" value="Nombre del Libro" class="config-input font-mono text-xs">
+                    </div>
+                    <div>
+                        <span class="label-text">Autores</span>
+                        <input type="text" id="book-authors" value="Manuel Rodsua & Cristina Lobo" class="config-input font-mono text-xs">
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-100 pt-3 space-y-2">
+                <span class="label-text">Monitor de Pipeline (Canvas Activo)</span>
+                <div class="flex justify-center bg-gray-50 p-2 border border-gray-200 rounded-sm">
+                    <canvas id="pipeline-canvas" width="240" height="40" class="w-full h-10 block"></canvas>
+                </div>
+            </div>
+            <div class="border-t border-gray-100 pt-3 flex flex-col gap-2">
+                <button id="btn-start" onclick="startPipeline()" class="btn-nordic w-full justify-center bg-black text-white border-black hover:bg-gray-900">
+                    <i class="fa-solid fa-play text-[9px]"></i> Iniciar Pipeline Serial
+                </button>
+                <button id="btn-download" onclick="downloadJSON()" class="btn-nordic w-full justify-center" disabled>
+                    <i class="fa-solid fa-download text-[9px]"></i> Descargar Libro Completo
+                </button>
+            </div>
+            <div class="border-t border-gray-100 pt-3 space-y-2">
+                <span class="label-text">Estado del Pipeline</span>
+                <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                    <div id="progress-bar" class="bg-black h-full w-0 transition-all duration-300"></div>
+                </div>
+                <div class="flex justify-between text-[10px] font-mono text-gray-400">
+                    <span id="progress-text">Paso 0 / 81</span>
+                    <span id="progress-percent">0%</span>
+                </div>
+            </div>
+        </div>
+        <!-- PANEL CENTRAL DE VISUALIZACIÓN -->
+        <div class="flex-1 bg-white flex flex-col overflow-hidden border-r border-gray-100">
+            <div class="h-10 border-b border-gray-100 px-6 flex items-center justify-between shrink-0 bg-gray-50/50">
+                <span class="font-mono text-[10px] tracking-wider text-black font-medium uppercase">Base de Datos de Contexto Estructural</span>
+                <span id="current-phase" class="text-[10px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-sm uppercase tracking-wider">Esperando inicio...</span>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 space-y-6 bg-white">
+                <div id="field-block-definicion_conjunto" class="border-b border-gray-100 pb-4">
+                    <span class="label-text text-gray-400 font-mono">1. DEFINICIÓN DEL CONJUNTO</span>
+                    <div id="view-definicion_conjunto" class="text-xs text-gray-400 italic mt-1 leading-relaxed">Sin procesar...</div>
+                </div>
+                <div id="field-block-definicion_individualidades" class="border-b border-gray-100 pb-4">
+                    <span class="label-text text-gray-400 font-mono">2. DEFINICIÓN DE INDIVIDUALIDADES</span>
+                    <div id="view-definicion_individualidades" class="text-xs text-gray-400 italic mt-1 leading-relaxed">Sin procesar...</div>
+                </div>
+                <div id="field-block-definicion_acciones" class="border-b border-gray-100 pb-4">
+                    <span class="label-text text-gray-400 font-mono">3. DEFINICIÓN DE ACCIONES</span>
+                    <div id="view-definicion_acciones" class="text-xs text-gray-400 italic mt-1 leading-relaxed">Sin procesar...</div>
+                </div>
+                <div id="field-block-definicion_equilibrios" class="border-b border-gray-100 pb-4">
+                    <span class="label-text text-gray-400 font-mono">4. DEFINICIÓN DE EQUILIBRIOS</span>
+                    <div id="view-definicion_equilibrios" class="text-xs text-gray-400 italic mt-1 leading-relaxed">Sin procesar...</div>
+                </div>
+                <div id="field-block-la_trama" class="border-b border-gray-100 pb-4">
+                    <span class="label-text text-gray-400 font-mono">5. EJE MACRO DE LA TRAMA CENTRAL</span>
+                    <div id="view-la_trama" class="text-xs text-gray-400 italic mt-1 leading-relaxed">Sin procesar...</div>
+                </div>
+                <div id="field-block-ciencias_historia" class="border-b border-gray-100 pb-4">
+                    <span class="label-text text-gray-400 font-mono">6. CIENCIAS DE LA HISTORIA</span>
+                    <div id="view-ciencias_historia" class="text-xs text-gray-400 italic mt-1 leading-relaxed">Sin procesar...</div>
+                </div>
+                <div id="field-block-los_eventos" class="border-b border-gray-100 pb-4">
+                    <span class="label-text text-gray-400 font-mono">7. LOS EVENTOS HITO</span>
+                    <div id="view-los_eventos" class="text-xs text-gray-400 italic mt-1 leading-relaxed">Sin procesar...</div>
+                </div>
+                <div id="field-block-los_sentimientos" class="border-b border-gray-100 pb-4">
+                    <span class="label-text text-gray-400 font-mono">8. LOS SENTIMIENTOS DOMINANTES</span>
+                    <div id="view-los_sentimientos" class="text-xs text-gray-400 italic mt-1 leading-relaxed">Sin procesar...</div>
+                </div>
+                <div id="field-block-los_motivos" class="border-b border-gray-100 pb-4">
+                    <span class="label-text text-gray-400 font-mono">9. LOS MOTIVOS ONTOLÓGICOS</span>
+                    <div id="view-los_motivos" class="text-xs text-gray-400 italic mt-1 leading-relaxed">Sin procesar...</div>
+                </div>
+                <div id="field-block-los_lugares" class="border-b border-gray-100 pb-4">
+                    <span class="label-text text-gray-400 font-mono">10. LOS LUGARES Y ESPACIOS</span>
+                    <div id="view-los_lugares" class="text-xs text-gray-400 italic mt-1 leading-relaxed">Sin procesar...</div>
+                </div>
+                <div id="field-block-historia_previa" class="border-b border-gray-100 pb-4">
+                    <span class="label-text text-gray-400 font-mono">11. LA HISTORIA PREVIA (LORE)</span>
+                    <div id="view-historia_previa" class="text-xs text-gray-400 italic mt-1 leading-relaxed">Sin procesar...</div>
+                </div>
+                <div id="field-block-los_grupos" class="border-b border-gray-100 pb-4">
+                    <span class="label-text text-gray-400 font-mono">12. LOS GRUPOS Y FACCIONES</span>
+                    <div id="view-los_grupos" class="text-xs text-gray-400 italic mt-1 leading-relaxed">Sin procesar...</div>
+                </div>
+                <div id="field-block-los_juegos" class="border-b border-gray-100 pb-4">
+                    <span class="label-text text-gray-400 font-mono">13. LOS JUEGOS O DINÁMICAS</span>
+                    <div id="view-los_juegos" class="text-xs text-gray-400 italic mt-1 leading-relaxed">Sin procesar...</div>
+                </div>
+                <div id="field-block-las_posibilidades" class="border-b border-gray-100 pb-4">
+                    <span class="label-text text-gray-400 font-mono">14. LAS POSIBILIDADES LATENTES</span>
+                    <div id="view-las_posibilidades" class="text-xs text-gray-400 italic mt-1 leading-relaxed">Sin procesar...</div>
+                </div>
+                <div id="field-block-la_variedad" class="border-b border-gray-100 pb-4">
+                    <span class="label-text text-gray-400 font-mono">15. LA VARIEDAD SIMBÓLICA</span>
+                    <div id="view-la_variedad" class="text-xs text-gray-400 italic mt-1 leading-relaxed">Sin procesar...</div>
+                </div>
+                <div id="field-block-la_repercusion" class="pb-4">
+                    <span class="label-text text-gray-400 font-mono">16. LA REPERCUSIÓN FINAL</span>
+                    <div id="view-la_repercusion" class="text-xs text-gray-400 italic mt-1 leading-relaxed">Sin procesar...</div>
+                </div>
+            </div>
+        </div>
+        <!-- ANALYTICS CONSOLE LOG -->
+        <div class="w-80 bg-gray-50 flex flex-col overflow-hidden relative shrink-0">
+            <div class="h-10 bg-gray-100/50 border-b border-gray-100 px-6 flex items-center justify-between shrink-0">
+                <span class="font-mono text-[10px] tracking-wider text-gray-500 uppercase">Execution Analytics</span>
+            </div>
+            <div id="console-log" class="flex-1 overflow-y-auto p-6 font-mono text-xs space-y-2 text-gray-700 select-text">
+                <div class="text-gray-400 italic">Silenos Serial Narrative Architecture cargado de forma correcta. Listo para procesar con modulación adaptativa de género literario.</div>
+            </div>
+        </div>
+    </div>
+    <script src="conexion.js"></script>
+    <script src="protocolo.js"></script>
+    <script src="libro.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

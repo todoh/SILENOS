@@ -1,0 +1,44 @@
+@import url('[https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap)');
+
+body {
+     font-family: 'Inter', sans-serif;
+     background: #ffffff;
+     color: #1a1a1a;
+     font-weight: 300;
+}
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 2px; }
+
+.font-mono { font-family: 'JetBrains Mono', monospace; letter-spacing: -0.02em; }
+
+.config-input {
+    background: transparent; border-bottom: 1px solid #e5e5e5; color: #1a1a1a;
+    padding: 6px 0; border-radius: 0; font-size: 0.8rem; outline: none;
+    transition: border-color 0.3s; width: 100%;
+}
+.config-input:focus { border-bottom: 1px solid #1a1a1a; }
+
+.btn-nordic {
+     background: #ffffff; color: #1a1a1a; text-transform: uppercase;
+     font-size: 10px; letter-spacing: 0.1em; font-weight: 500;
+     border: 1px solid #e5e5e5; padding: 8px 14px; transition: all 0.3s ease;
+     cursor: pointer; display: flex; align-items: center; gap: 6px;
+}
+.btn-nordic:hover:not(:disabled) { border-color: #1a1a1a; background: #fafafa; }
+.btn-nordic:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.label-text {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 0.2em;
+    color: #9ca3af; font-weight: 500; margin-bottom: 4px; display: block;
+}
+
+.console-line {
+    animation: fadeIn 0.2s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(2px); }
+    to { opacity: 1; transform: translateY(0); }
+}
