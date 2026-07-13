@@ -26,7 +26,7 @@ export function manualAuthPollinations() {
     // Cambiamos a la redirección limpia en la misma pestaña tal como lo hace Imagenes.html
     const params = new URLSearchParams({
         redirect_uri: window.location.href,
-        client_id: 'pk_abc123', // Usa tu clave pública asignada si dispones de ella, o se asume el flujo de host alternativo por defecto
+        client_id: 'pk_DWvEH6sktOqVwHAK', // Usa tu clave pública asignada si dispones de ella, o se asume el flujo de host alternativo por defecto
         scope: 'usage'
     });
     
