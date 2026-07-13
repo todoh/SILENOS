@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SILENOS Visual Production Asset Compiler</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>Silenos Visual Engine</h1>
+            <p class="subtitle">AUTOMATISMO EN CASCADA DE ENTORNO DE PRODUCCIÓN ARTÍSTICA</p>
+        </div>
+        <div id="agent-status-badge" class="agent-badge hidden">Agente Compilando</div>
+    </header>
+
+    <div class="layout-grid">
+        <div>
+            <div class="section-title">Llave del Sistema</div>
+            <div class="field">
+                <label for="api-key">Gemini API Key</label>
+                <input type="text" id="api-key" placeholder="AIzaSy..." value="">
+            </div>
+
+            <div class="section-title">Inyección de Obra Interactiva (.JSON)</div>
+            <div class="file-upload-wrapper">
+                <div class="input-file-custom">
+                    <span>Seleccionar JSON de Obra Original (ej. quijote.json)</span>
+                    <input type="file" id="import-file" accept=".json">
+                </div>
+            </div>
+            
+            <div class="field" style="margin-top: -10px; margin-bottom: 24px;">
+                <button id="btn-pegar-json" class="secondary" style="width: 100%; font-size: 11px; padding: 8px 16px;">Pegar Estructura desde el Portapapeles</button>
+            </div>
+
+            <div class="field">
+                <label for="doc-titulo">Título del Universo Narrativo</label>
+                <input type="text" id="doc-titulo" value="" readonly style="opacity: 0.7; cursor: not-allowed;">
+            </div>
+
+            <div style="background: #f9fafb; padding: 16px; margin-bottom: 20px; border-left: 3px solid #000;">
+                <label style="margin-bottom: 2px;">Monitor de Estado del Pipeline</label>
+                <div id="current-step-text" style="font-size: 13px; font-weight: bold; color: #059669;">Esperando Entrada de Datos...</div>
+            </div>
+
+            <div class="actions-bar">
+                <button id="btn-run-agent" class="agentic" disabled>Iniciar Bucle de Análisis (9 Llamadas)</button>
+                <button id="btn-exportar-bbdd" class="secondary">Guardar BBDD Artística Completa</button>
+                <button id="btn-abortar" class="secondary hidden" style="border-color:#ef4444; color:#ef4444;">Interrumpir Secuencia</button>
+            </div>
+        </div>
+
+        <div>
+            <div class="section-title">Base de Datos Artística Visual (Evolución)</div>
+            <div class="matrix-container" id="wrapper-bbdd-preview">
+                <p style='color:#6b7280; font-size:13px;'>Carga la matriz interactiva del libro para ver el desglose conceptual.</p>
+            </div>
+
+            <div class="section-title" style="margin-top: 32px;">Consola de Telemetría Agéntica</div>
+            <div id="log-console">Núcleo listo. Esperando inyección de JSON para disparar el flujo secuencial...</div>
+        </div>
+    </div>
+</div>
+
+<script src="gemini-api.js"></script>
+<script src="gemini-prompts.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
