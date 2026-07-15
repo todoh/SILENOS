@@ -1,6 +1,7 @@
  // Catálogos Estáticos Incorporados
 export const MODELOS_POLLINATIONS = [
-    { name: "Step 3.5 Flash (Free)", tag: "Spit-fires/step-3.5-flash-free" },
+       { name: "[Spit-fires/diffusiongemma-26b-a4b-it", tag: "[Spit-fires/diffusiongemma-26b-a4b-it" },
+        { name: "Step 3.5 Flash (Free)", tag: "Spit-fires/step-3.5-flash-free" },
     { name: "GPT OSS 20B (Free)", tag: "Spit-fires/gpt-oss-20b-free" },
     { name: "GLM 4.6V Flash (Free)", tag: "MarcosFRG/glm-4.6v-flash" },
     { name: "Free Model Router", tag: "solarnode-developement/free" },
