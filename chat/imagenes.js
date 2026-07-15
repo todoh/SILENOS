@@ -36,9 +36,10 @@ export const MODELOS_IMAGEN = [
  * @param {string} prompt - Texto descriptivo para la generación
  * @param {string} modelTag - Tag identificador del modelo en Pollinations
  * @param {string} apiKey - Clave de Pollinations (sk_ o pk_) para la transacción de pollen
+ * @param {Array} attachments - Lista opcional de adjuntos para usar como imagen de entrada
  * @returns {Promise<string>} Retorna un ObjectURL local con los datos binarios de la imagen
  */
-export async function queryImageGeneration(prompt, modelTag, apiKey) {
+export async function queryImageGeneration(prompt, modelTag, apiKey, attachments = []) {
     if (!prompt) {
         throw new Error("Se requiere un prompt textual para generar la imagen.");
     }
@@ -47,6 +48,14 @@ export async function queryImageGeneration(prompt, modelTag, apiKey) {
 
     if (apiKey) {
         url += `&key=${apiKey}`;
+    }
+
+    // Buscar la primera imagen adjunta en cola para utilizar como referencia (Image-to-Image / Edición)
+    if (attachments && attachments.length > 0) {
+        const firstImage = attachments.find(file => file.isImage);
+        if (firstImage) {
+            url += `&image=${encodeURIComponent(firstImage.data)}`;
+        }
     }
 
     const response = await fetch(url);

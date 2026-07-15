@@ -167,10 +167,10 @@ function initModeHandlers() {
         // Ocultar selector de proveedor (imágenes van nativas por Pollinations en este hub)
         providerContainer.classList.add('hidden');
         modelLabelText.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>Modelo Generativo`;
-        userInput.placeholder = "Describe detalladamente la imagen que deseas generar...";
+        userInput.placeholder = "Describe detalladamente la imagen que deseas generar o adjunta una de referencia...";
         
-        // Limpiar archivos en cola de imágenes
-        btnAttach.classList.add('hidden');
+        // Permitir adjuntar en modo imagen (no ocultamos el botón ni reiniciamos obligatoriamente a menos que se desee)
+        btnAttach.classList.remove('hidden');
         currentBufferAttachments = [];
         renderAttachmentPreviews();
 
@@ -547,7 +547,7 @@ async function handleSend() {
         if (appMode === 'image') {
             // Pipeline para la Generación Directa de Imágenes en el Chat
             const pollinationsKey = apiKeyPollinationsInput.value.trim();
-            generatedImageUrl = await queryImageGeneration(promptText, activeModel.tag, pollinationsKey);
+            generatedImageUrl = await queryImageGeneration(promptText, activeModel.tag, pollinationsKey, thisTurnAttachments);
             responseText = `He generado con éxito la imagen utilizando el modelo **${activeModel.name}** con el prompt:\n\n*"${promptText}"*`;
         } else {
             // Pipeline de Chat Estándar (Texto)
@@ -591,7 +591,7 @@ async function handleSend() {
     } finally {
         userInput.disabled = false;
         btnSend.disabled = false;
-        btnAttach.disabled = appMode === 'image'; // Deshabilitado en modo imagen
+        btnAttach.disabled = false; // Mantenemos habilitado para permitir adjuntar en cualquier modo de forma persistente
         userInput.focus();
         chatHistory.scrollTop = chatHistory.scrollHeight;
     }
