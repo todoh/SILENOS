@@ -32,7 +32,8 @@ export const MODELOS_IMAGEN = [
 ];
 
 /**
- * Genera una imagen a partir de un prompt y un modelo seleccionado
+ * Genera una imagen a partir de un prompt y un modelo seleccionado.
+ * Sube automáticamente las imágenes de referencia pesadas al almacenamiento de Pollinations.
  * @param {string} prompt - Texto descriptivo para la generación
  * @param {string} modelTag - Tag identificador del modelo en Pollinations
  * @param {string} apiKey - Clave de Pollinations (sk_ o pk_) para la transacción de pollen
@@ -43,6 +44,7 @@ export async function queryImageGeneration(prompt, modelTag, apiKey, attachments
     if (!prompt) {
         throw new Error("Se requiere un prompt textual para generar la imagen.");
     }
+    
     const encodedPrompt = encodeURIComponent(prompt);
     let url = `https://gen.pollinations.ai/image/${encodedPrompt}?model=${modelTag}`;
 
@@ -54,7 +56,43 @@ export async function queryImageGeneration(prompt, modelTag, apiKey, attachments
     if (attachments && attachments.length > 0) {
         const firstImage = attachments.find(file => file.isImage);
         if (firstImage) {
-            url += `&image=${encodeURIComponent(firstImage.data)}`;
+            let imageReferenceUrl = firstImage.data;
+
+            // Si es un Data URL en Base64, lo subimos al Media Storage de Pollinations para obtener una URL corta
+            if (imageReferenceUrl.startsWith('data:')) {
+                if (!apiKey) {
+                    throw new Error("Se requiere configurar una API Key de Pollinations para subir imágenes de referencia.");
+                }
+
+                try {
+                    const uploadResponse = await fetch("https://media.pollinations.ai/upload", {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Bearer ${apiKey}`,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            data: firstImage.data,
+                            contentType: firstImage.type || "image/png",
+                            name: firstImage.name || "referencia.png"
+                        })
+                    });
+
+                    if (!uploadResponse.ok) {
+                        throw new Error(`No se pudo subir la imagen de referencia (Status: ${uploadResponse.status})`);
+                    }
+
+                    const uploadData = await uploadResponse.json();
+                    // Resolvemos la URL corta retornada por el CDN de Pollinations
+                    const shortUrl = uploadData.url || uploadData.link || uploadData.id;
+                    imageReferenceUrl = shortUrl.startsWith('http') ? shortUrl : `https://media.pollinations.ai/${shortUrl}`;
+                } catch (uploadError) {
+                    throw new Error(`Error en la carga de medios: ${uploadError.message}`);
+                }
+            }
+
+            // Añadimos de forma segura la URL corta de la imagen al parámetro de consulta
+            url += `&image=${encodeURIComponent(imageReferenceUrl)}`;
         }
     }
 
