@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Model Hub - Gemini, Pollination & Ollama</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700&family=JetBrains+Mono:wght=400;500&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #080a10;
+        }
+        .code-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d111c;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f293d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b82f6;
+        }
+        .think-block {
+            border-left: 3px solid #d3c4a1;
+            background: #181d2a;
+            padding: 14px 18px;
+            margin: 16px 0;
+            border-radius: 0 8px 8px 0;
+            color: #a0aec0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        .think-header {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #e2e8f0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col overflow-hidden text-slate-100">
+
+    <header class="h-16 border-b border-slate-800 bg-[#0c111d] flex items-center justify-between px-6 shrink-0 z-30 shadow-md">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <i class="fa-solid fa-network-wired text-white text-sm"></i>
+            </div>
+            <div>
+                <h1 class="text-sm font-bold tracking-wider text-white uppercase font-mono">Multi-Model Gateway</h1>
+                <p class="text-[10px] text-slate-400 font-mono">INTEGRATED HUB v5.0</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <div id="connection-badge" class="bg-emerald-950/80 border border-emerald-800/60 text-emerald-400 text-[10px] px-3 py-1 rounded-full font-semibold tracking-wider flex items-center gap-1.5 uppercase font-mono">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Motores Listos
+            </div>
+            <button id="btn-open-settings" class="w-9 h-9 bg-[#161f30] hover:bg-blue-600 text-slate-300 hover:text-white border border-slate-700/60 rounded-xl flex items-center justify-center text-sm transition-all shadow-md cursor-pointer" title="Configuración de APIs">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="flex-1 flex overflow-hidden w-full relative z-10">
+        
+        <aside class="w-96 border-r border-slate-800 bg-[#090d16] p-6 flex flex-col justify-between shrink-0 relative z-20 overflow-y-auto">
+            <div class="space-y-6 flex-1 flex flex-col min-h-0">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 font-mono">
+                        <i class="fa-solid fa-server mr-1.5"></i>Proveedor Core
+                    </label>
+                    <select id="provider-select" class="w-full bg-[#121826] border border-slate-700 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-blue-500 transition-all font-mono cursor-pointer">
+                        <option value="pollinations">POLLINATIONS AI (Gateway Online)</option>
+                        <option value="gemini">GOOGLE GEMINI (API Oficial)</option>
+                        <option value="ollama">OLLAMA (Local Engine @ 127.0.0.1)</option>
+                    </select>
+                </div>
+
+                <div id="model-dropdown-container">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 font-mono">
+                        <i class="fa-solid fa-robot mr-1.5"></i>Seleccionar Modelo
+                    </label>
+                    
+                    <div id="dropdown-trigger" class="w-full bg-[#121826] border border-slate-700 hover:border-slate-600 rounded-xl px-4 py-3 text-xs text-white outline-none transition-all font-mono cursor-pointer shadow-inner flex justify-between items-center">
+                        <span id="selected-model-text" class="truncate">Cargando modelos...</span>
+                        <i class="fa-solid fa-chevron-down text-slate-400 ml-2 text-[10px] transition-transform duration-200" id="dropdown-arrow"></i>
+                    </div>
+
+                    <div id="dropdown-menu" class="hidden absolute left-6 mt-2 bg-[#0c111d] border border-slate-800 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50 max-h-64 overflow-y-auto w-80">
+                        <div id="dropdown-options" class="divide-y divide-slate-900 font-mono text-xs"></div>
+                    </div>
+                </div>
+
+                <div class="flex-1 flex flex-col min-h-0 border-t border-slate-800/80 pt-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-widest font-mono">
+                            <i class="fa-solid fa-comments mr-1.5"></i>Conversaciones
+                        </label>
+                        <button id="btn-new-chat" class="text-xs bg-blue-600/20 hover:bg-blue-600 border border-blue-500/30 text-blue-400 hover:text-white px-2 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer font-mono" title="Nueva Conversación">
+                            <i class="fa-solid fa-plus"></i> Nuevo
+                        </button>
+                    </div>
+                    <div id="chats-container" class="flex-1 overflow-y-auto space-y-1.5 pr-1 max-h-[320px]">
+                        </div>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-800/80 pt-4 mt-4">
+                <div class="bg-blue-950/20 border border-blue-900/40 rounded-xl p-4">
+                    <h4 class="text-xs font-bold text-blue-400 uppercase tracking-wider font-mono mb-1"><i class="fa-solid fa-circle-info mr-1.5"></i>Procesamiento Avanzado</h4>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">Soporte multicanal para adjuntar archivos de texto e imágenes con persistencia nativa.</p>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col bg-[#07090e] overflow-hidden relative z-10">
+            <div id="chat-history" class="flex-1 overflow-y-auto p-6 space-y-6">
+                </div>
+
+            <div class="p-6 bg-[#090d16] border-t border-slate-800 shrink-0">
+                <div class="max-w-4xl mx-auto space-y-3">
+                    
+                    <div id="attachment-preview-area" class="hidden flex flex-wrap gap-2 p-2 bg-[#121826] border border-slate-700/50 rounded-xl">
+                        </div>
+
+                    <div class="flex gap-3 relative items-end">
+                        <button id="btn-attach" class="h-11 w-11 bg-[#121826] hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700 rounded-xl flex items-center justify-center text-sm transition-all shrink-0 cursor-pointer" title="Adjuntar Archivo (Texto, Código o Imagen)">
+                            <i class="fa-solid fa-paperclip"></i>
+                        </button>
+                        <input type="file" id="file-uploader" class="hidden" multiple accept="*/*">
+
+                        <textarea id="user-input" rows="1" class="flex-1 bg-[#121826] border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 transition-all resize-none max-h-40 leading-relaxed" placeholder="Escribe un mensaje o arrastra un archivo..."></textarea>
+                        
+                        <button id="btn-send" class="h-11 px-5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl tracking-wider transition-all flex items-center justify-center gap-2 uppercase shrink-0 shadow-lg shadow-blue-500/20 cursor-pointer">
+                            <span>Enviar</span> <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modal-settings" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-[#0c111d] border border-slate-800 rounded-2xl w-full max-w-md shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] overflow-hidden transform transition-all">
+            <div class="px-6 py-4 border-b border-slate-800 bg-[#090d16] flex items-center justify-between">
+                <div class="flex items-center gap-2 text-white">
+                    <i class="fa-solid fa-sliders text-blue-500 text-xs"></i>
+                    <h2 class="text-xs font-bold uppercase font-mono tracking-wider">Ajustes de Credenciales</h2>
+                </div>
+                <button id="btn-close-modal" class="text-slate-400 hover:text-white transition-colors cursor-pointer text-sm">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="space-y-1.5">
+                    <div class="flex justify-between items-center">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">Pollinations Key (Opcional):</label>
+                        <button id="btn-login-pollinations" class="text-[9px] bg-emerald-600/20 hover:bg-emerald-600 border border-emerald-500/30 text-emerald-400 hover:text-white px-2 py-1 rounded-lg transition-all font-mono font-semibold flex items-center gap-1 cursor-pointer" title="Login Oficial BYOP">
+                            <i class="fa-solid fa-right-to-bracket"></i> Login Oficial
+                        </button>
+                    </div>
+                    <input type="password" id="api-key-pollinations" placeholder="pk_... (o autogenerada sk_)" class="font-mono text-xs bg-[#121826] border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-3 text-white outline-none w-full transition-all">
+                    <p class="text-[9px] text-slate-500 font-mono">Introduce tu App Key (pk_...) y pulsa "Login Oficial" para autorizar el saldo de tu cuenta.</p>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">Gemini API Key:</label>
+                    <input type="password" id="api-key-gemini" placeholder="AIzaSy..." class="font-mono text-xs bg-[#121826] border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-3 text-white outline-none w-full transition-all">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">Endpoint Local Ollama:</label>
+                    <input type="text" id="endpoint-ollama" value="http://127.0.0.1:11434" class="font-mono text-xs bg-[#121826] border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-3 text-white outline-none w-full transition-all">
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-slate-800 bg-[#090d16] flex justify-end gap-2">
+                <button id="btn-save-settings" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-[11px] rounded-xl tracking-wider uppercase transition-all shadow-md cursor-pointer">
+                    Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="canvas-procesado" class="hidden"></canvas>
+
+    <script type="module" src="pollinations.js"></script>
+    <script type="module" src="gemini.js"></script>
+    <script type="module" src="ollama.js"></script>
+    <script type="module" src="modelos.js"></script>
+    <script type="module" src="login.js"></script>
+    <script type="module" src="main.js"></script>
+</body>
+</html>
