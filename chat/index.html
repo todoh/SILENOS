@@ -77,7 +77,22 @@
         
         <aside class="w-96 border-r border-slate-800 bg-[#090d16] p-6 flex flex-col justify-between shrink-0 relative z-20 overflow-y-auto">
             <div class="space-y-6 flex-1 flex flex-col min-h-0">
+                
                 <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 font-mono">
+                        <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>Canal Activo
+                    </label>
+                    <div class="grid grid-cols-2 gap-2 bg-[#121826] p-1 rounded-xl border border-slate-700">
+                        <button id="btn-mode-chat" class="py-2 text-[10px] font-bold rounded-lg transition-all font-mono bg-blue-600 text-white cursor-pointer uppercase tracking-wider">
+                            <i class="fa-solid fa-comments mr-1"></i> Chat
+                        </button>
+                        <button id="btn-mode-image" class="py-2 text-[10px] font-bold rounded-lg transition-all font-mono text-slate-400 hover:text-white cursor-pointer uppercase tracking-wider">
+                            <i class="fa-solid fa-image mr-1"></i> Imagen
+                        </button>
+                    </div>
+                </div>
+
+                <div id="provider-container">
                     <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 font-mono">
                         <i class="fa-solid fa-server mr-1.5"></i>Proveedor Core
                     </label>
@@ -89,7 +104,7 @@
                 </div>
 
                 <div id="model-dropdown-container">
-                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 font-mono">
+                    <label id="model-label-text" class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 font-mono">
                         <i class="fa-solid fa-robot mr-1.5"></i>Seleccionar Modelo
                     </label>
                     
@@ -197,6 +212,7 @@
     <script type="module" src="gemini.js"></script>
     <script type="module" src="ollama.js"></script>
     <script type="module" src="modelos.js"></script>
+    <script type="module" src="imagenes.js"></script>
     <script type="module" src="login.js"></script>
     <script type="module" src="main.js"></script>
 </body>

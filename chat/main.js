@@ -2,6 +2,7 @@ import { queryPollinations } from './pollinations.js';
 import { queryGemini } from './gemini.js';
 import { queryOllama, fetchOllamaModels } from './ollama.js';
 import { MODELOS_POLLINATIONS, MODELOS_GEMINI } from './modelos.js';
+import { MODELOS_IMAGEN, queryImageGeneration } from './imagenes.js';
 import { iniciarSesionPollinations, procesarRetornoAutenticacion } from './login.js';
 
 // --- INICIALIZACIÓN DEL SISTEMA DE CANVAS [SOLICITUD LITERAL EXPLICITA] ---
@@ -16,9 +17,14 @@ function initCanvasSystem() {
     }
 }
 
+// Estado del Canal y Modelos
+let appMode = 'chat'; // Puede ser 'chat' o 'image'
 let modelosActuales = [...MODELOS_POLLINATIONS];
 let activeModelIndex = 0;
-let favoritos = []; // Almacena los tags de los modelos marcados como favoritos
+
+// Gestión de Favoritos Independientes
+let favoritosText = [];
+let favoritosImage = [];
 
 // --- GESTIÓN DE CONVERSACIONES MULTI-HILO ---
 let conversations = [];
@@ -27,14 +33,20 @@ let currentBufferAttachments = []; // Archivos en cola
 
 // Referencias DOM Base
 const providerSelect = document.getElementById('provider-select');
+const providerContainer = document.getElementById('provider-container');
 const dropdownTrigger = document.getElementById('dropdown-trigger');
 const dropdownMenu = document.getElementById('dropdown-menu');
 const dropdownArrow = document.getElementById('dropdown-arrow');
 const dropdownOptions = document.getElementById('dropdown-options');
 const selectedModelText = document.getElementById('selected-model-text');
+const modelLabelText = document.getElementById('model-label-text');
 const chatHistory = document.getElementById('chat-history');
 const userInput = document.getElementById('user-input');
 const btnSend = document.getElementById('btn-send');
+
+// selectores de Modo de Operación
+const btnModeChat = document.getElementById('btn-mode-chat');
+const btnModeImage = document.getElementById('btn-mode-image');
 
 // Referencias de Gestión de Conversaciones
 const btnNewChat = document.getElementById('btn-new-chat');
@@ -71,6 +83,7 @@ window.addEventListener('load', () => {
     loadConversations();
     loadFavorites();
     updateProviderLayout();
+    initModeHandlers();
 });
 
 function loadSavedSettings() {
@@ -80,18 +93,21 @@ function loadSavedSettings() {
     providerSelect.value = localStorage.getItem('hub_active_provider') || 'pollinations';
 }
 
-// Cargar y guardar favoritos de forma persistente
+// Cargar y guardar favoritos de forma persistente e independiente
 function loadFavorites() {
-    const data = localStorage.getItem('hub_favorites');
-    if (data) {
-        favoritos = JSON.parse(data);
-    } else {
-        favoritos = [];
-    }
+    const dataText = localStorage.getItem('hub_favorites_text');
+    favoritosText = dataText ? JSON.parse(dataText) : [];
+
+    const dataImg = localStorage.getItem('hub_favorites_image');
+    favoritosImage = dataImg ? JSON.parse(dataImg) : [];
 }
 
 function saveFavorites() {
-    localStorage.setItem('hub_favorites', JSON.stringify(favoritos));
+    if (appMode === 'chat') {
+        localStorage.setItem('hub_favorites_text', JSON.stringify(favoritosText));
+    } else {
+        localStorage.setItem('hub_favorites_image', JSON.stringify(favoritosImage));
+    }
 }
 
 // Control de Eventos de Interfaz para el Modal Flotante
@@ -124,6 +140,44 @@ btnSaveSettings.addEventListener('click', () => {
 modalSettings.addEventListener('click', (e) => {
     if (e.target === modalSettings) hideModal();
 });
+
+// --- INTERCONEXIÓN DE BOTONES DE MODO (CHAT vs IMAGEN) ---
+function initModeHandlers() {
+    btnModeChat.addEventListener('click', () => {
+        if (appMode === 'chat') return;
+        appMode = 'chat';
+        btnModeChat.className = "py-2 text-xs font-bold rounded-lg transition-all font-mono bg-blue-600 text-white cursor-pointer uppercase tracking-wider";
+        btnModeImage.className = "py-2 text-xs font-bold rounded-lg transition-all font-mono text-slate-400 hover:text-white cursor-pointer uppercase tracking-wider";
+        
+        // Mostrar selector de proveedor y label estándar
+        providerContainer.classList.remove('hidden');
+        modelLabelText.innerHTML = `<i class="fa-solid fa-robot mr-1.5"></i>Seleccionar Modelo`;
+        userInput.placeholder = "Escribe un mensaje o arrastra un archivo...";
+        btnAttach.classList.remove('hidden');
+        
+        updateProviderLayout();
+    });
+
+    btnModeImage.addEventListener('click', () => {
+        if (appMode === 'image') return;
+        appMode = 'image';
+        btnModeImage.className = "py-2 text-xs font-bold rounded-lg transition-all font-mono bg-blue-600 text-white cursor-pointer uppercase tracking-wider";
+        btnModeChat.className = "py-2 text-xs font-bold rounded-lg transition-all font-mono text-slate-400 hover:text-white cursor-pointer uppercase tracking-wider";
+        
+        // Ocultar selector de proveedor (imágenes van nativas por Pollinations en este hub)
+        providerContainer.classList.add('hidden');
+        modelLabelText.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>Modelo Generativo`;
+        userInput.placeholder = "Describe detalladamente la imagen que deseas generar...";
+        
+        // Limpiar archivos en cola de imágenes
+        btnAttach.classList.add('hidden');
+        currentBufferAttachments = [];
+        renderAttachmentPreviews();
+
+        modelosActuales = [...MODELOS_IMAGEN];
+        buildModelDropdown();
+    });
+}
 
 // --- LÓGICA DE GESTIÓN DE CONVERSACIONES ---
 function loadConversations() {
@@ -247,7 +301,7 @@ function renderActiveConversation() {
         `;
     } else {
         currentChat.messages.forEach(m => {
-            appendChatMessageToDOM(m.role, m.content, m.modelName || "Modelo", false);
+            appendChatMessageToDOM(m.role, m.content, m.modelName || "Modelo", false, m.imageUrl);
         });
     }
     chatHistory.scrollTop = chatHistory.scrollHeight;
@@ -329,6 +383,8 @@ function renderAttachmentPreviews() {
 
 // Re-renderizado estructural basado en el motor seleccionado
 async function updateProviderLayout() {
+    if (appMode === 'image') return; // En modo imagen no gestionamos proveedores de texto
+
     const provider = providerSelect.value;
     localStorage.setItem('hub_active_provider', provider);
 
@@ -359,18 +415,19 @@ providerSelect.addEventListener('change', updateProviderLayout);
 // Desplegable de Modelos Activos (Ordena favoritos primero y dibuja la estrella interactiva)
 function buildModelDropdown() {
     dropdownOptions.innerHTML = '';
+    const favoritosActivos = appMode === 'chat' ? favoritosText : favoritosImage;
 
     // Ordenar modelos: Favoritos primero, respetando el orden relativo original
     const ordenados = [...modelosActuales].sort((a, b) => {
-        const isAFav = favoritos.includes(a.tag);
-        const isBFav = favoritos.includes(b.tag);
+        const isAFav = favoritosActivos.includes(a.tag);
+        const isBFav = favoritosActivos.includes(b.tag);
         if (isAFav && !isBFav) return -1;
         if (!isAFav && isBFav) return 1;
         return 0;
     });
 
     ordenados.forEach((m, index) => {
-        const isFav = favoritos.includes(m.tag);
+        const isFav = favoritosActivos.includes(m.tag);
         
         const row = document.createElement('div');
         row.className = "px-4 py-2.5 cursor-pointer hover:bg-blue-600/10 hover:text-white text-slate-300 transition-colors truncate flex justify-between items-center";
@@ -403,7 +460,6 @@ function buildModelDropdown() {
 
     // Mantener la selección actual apuntando al primer elemento tras reordenar
     if (ordenados.length > 0) {
-        // Buscamos si el modelo actualmente seleccionado sigue existiendo
         const currentSelectedTag = modelosActuales[activeModelIndex]?.tag;
         const newIndex = modelosActuales.findIndex(original => original.tag === currentSelectedTag);
         selectModel(newIndex !== -1 ? newIndex : 0);
@@ -411,10 +467,18 @@ function buildModelDropdown() {
 }
 
 function toggleFavorite(tag) {
-    if (favoritos.includes(tag)) {
-        favoritos = favoritos.filter(f => f !== tag);
+    if (appMode === 'chat') {
+        if (favoritosText.includes(tag)) {
+            favoritosText = favoritosText.filter(f => f !== tag);
+        } else {
+            favoritosText.push(tag);
+        }
     } else {
-        favoritos.push(tag);
+        if (favoritosImage.includes(tag)) {
+            favoritosImage = favoritosImage.filter(f => f !== tag);
+        } else {
+            favoritosImage.push(tag);
+        }
     }
     saveFavorites();
     buildModelDropdown(); // Regenera y reordena la lista de inmediato
@@ -477,26 +541,40 @@ async function handleSend() {
     const waitingId = appendWaitingMessage(activeModel.name);
 
     try {
-        const historyPayload = getChatPayload();
         let responseText = "";
+        let generatedImageUrl = "";
 
-        if (provider === 'pollinations') {
-            responseText = await queryPollinations(historyPayload, activeModel.tag, apiKeyPollinationsInput.value.trim(), thisTurnAttachments);
-        } else if (provider === 'gemini') {
-            responseText = await queryGemini(historyPayload, activeModel.tag, apiKeyGeminiInput.value.trim(), thisTurnAttachments);
-        } else if (provider === 'ollama') {
-            responseText = await queryOllama(historyPayload, activeModel.tag, endpointOllamaInput.value.trim(), thisTurnAttachments);
+        if (appMode === 'image') {
+            // Pipeline para la Generación Directa de Imágenes en el Chat
+            const pollinationsKey = apiKeyPollinationsInput.value.trim();
+            generatedImageUrl = await queryImageGeneration(promptText, activeModel.tag, pollinationsKey);
+            responseText = `He generado con éxito la imagen utilizando el modelo **${activeModel.name}** con el prompt:\n\n*"${promptText}"*`;
+        } else {
+            // Pipeline de Chat Estándar (Texto)
+            const historyPayload = getChatPayload();
+            if (provider === 'pollinations') {
+                responseText = await queryPollinations(historyPayload, activeModel.tag, apiKeyPollinationsInput.value.trim(), thisTurnAttachments);
+            } else if (provider === 'gemini') {
+                responseText = await queryGemini(historyPayload, activeModel.tag, apiKeyGeminiInput.value.trim(), thisTurnAttachments);
+            } else if (provider === 'ollama') {
+                responseText = await queryOllama(historyPayload, activeModel.tag, endpointOllamaInput.value.trim(), thisTurnAttachments);
+            }
         }
 
         document.getElementById(waitingId)?.remove();
 
         // Guardar respuesta en la conversación activa
         if (currentChat) {
-            currentChat.messages.push({
+            const newMsg = {
                 role: 'asistente',
                 content: responseText,
                 modelName: activeModel.name
-            });
+            };
+            if (generatedImageUrl) {
+                newMsg.imageUrl = generatedImageUrl;
+            }
+            currentChat.messages.push(newMsg);
+
             // Si es el primer mensaje, renombramos automáticamente la conversación
             if (currentChat.title === "Nueva Conversación") {
                 currentChat.title = promptText.substring(0, 24) || "Hilo Activo";
@@ -505,7 +583,7 @@ async function handleSend() {
             saveConversations();
         }
 
-        appendChatMessageToDOM("asistente", responseText, activeModel.name);
+        appendChatMessageToDOM("asistente", responseText, activeModel.name, true, generatedImageUrl);
 
     } catch (err) {
         document.getElementById(waitingId)?.remove();
@@ -513,7 +591,7 @@ async function handleSend() {
     } finally {
         userInput.disabled = false;
         btnSend.disabled = false;
-        btnAttach.disabled = false;
+        btnAttach.disabled = appMode === 'image'; // Deshabilitado en modo imagen
         userInput.focus();
         chatHistory.scrollTop = chatHistory.scrollHeight;
     }
@@ -535,7 +613,7 @@ function formatModelOutput(text) {
                .replace(/<\/think>/gi, '</div>');
 }
 
-function appendChatMessageToDOM(role, text, modelName = "", autoScroll = true) {
+function appendChatMessageToDOM(role, text, modelName = "", autoScroll = true, imageUrl = "") {
     const messageId = `msg-${Date.now()}`;
     const card = document.createElement('div');
     card.id = messageId;
@@ -570,6 +648,24 @@ function appendChatMessageToDOM(role, text, modelName = "", autoScroll = true) {
     textParagraph.className = "msg-content text-sm text-slate-300 leading-relaxed whitespace-pre-wrap break-words";
     textParagraph.innerHTML = formatModelOutput(text);
     container.appendChild(textParagraph);
+
+    // Renderizar la Imagen si viene en la respuesta del pipeline
+    if (imageUrl) {
+        const imgContainer = document.createElement('div');
+        imgContainer.className = "mt-4 border border-slate-800 bg-slate-950 rounded-xl overflow-hidden p-4 space-y-3 max-w-lg";
+        imgContainer.innerHTML = `
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-2">
+                <span class="text-[10px] font-bold text-emerald-400 font-mono uppercase tracking-wider"><i class="fa-solid fa-image mr-1"></i>Imagen Generada</span>
+                <a href="${imageUrl}" download="generacion_${messageId}.png" class="btn-down text-[10px] bg-emerald-900/60 hover:bg-emerald-800 text-emerald-300 px-3 py-1.5 rounded-lg font-bold font-mono tracking-wider transition-all flex items-center gap-1 cursor-pointer">
+                    <i class="fa-solid fa-download"></i> Descargar Imagen
+                </a>
+            </div>
+            <div class="flex items-center justify-center max-w-full rounded-lg overflow-hidden bg-[#0a0f1d] border border-slate-900">
+                <img src="${imageUrl}" class="w-full h-auto max-h-[512px] object-contain rounded" alt="Imagen Generada" />
+            </div>
+        `;
+        container.appendChild(imgContainer);
+    }
 
     detectSvgStructures(text, container, messageId);
 
