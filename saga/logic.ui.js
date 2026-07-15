@@ -208,7 +208,16 @@ const ui = {
             
             const models = [
                 { val: 'flux', label: 'Flux Schnell' },
-                { val: 'zimage', label: 'Z-Image Turbo' }
+                { val: 'zimage', label: 'Z-Image Turbo' } ,   
+                { val: 'gptimage', label: 'gptimage' } ,
+                  { val: 'klein', label: 'klein' } ,
+                    { val: 'nova-canvas', label: 'nova-canvas' } ,   
+                     { val: 'kontext', label: 'kontext' },
+                  { val: 'gpt-image-2', label: 'gpt-image-2' } ,  
+                  { val: 'gptimage-large', label: 'gptimage-large' }   
+                
+                   
+
             ];
 
             const savedModel = localStorage.getItem('koreh_selected_image_model') || 'flux';
