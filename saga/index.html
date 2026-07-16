@@ -101,7 +101,7 @@
   <select id="pollinations-text-model" onchange="localStorage.setItem('koreh_selected_pollinations_model', this.value);" class="config-input text-xs font-sans uppercase cursor-pointer bg-transparent font-bold text-purple-600">
     <option value="qwen-safety">Qwen3Guard 8B (qwen-safety)</option>
     <option value="nova-fast">Nova Micro (nova-fast)</option>
-      <option value="gpt-5.6-luna">gpt-5.6-luna</option>
+     <option value="gpt-5.6-luna">gpt-5.6-luna</option>
      <option value="gpt-5.6-terra">gpt-5.6-terra</option> 
      <option value="gpt-5.6-sol">gpt-5.6-sol</option>
     <option value="mistral">Mistral Small 3.2 (mistral)</option>
@@ -653,7 +653,14 @@
                 <div class="flex-1 flex overflow-hidden">
                     <div class="w-1/4 p-6 overflow-y-auto border-r border-gray-100 dark:border-gray-800 flex flex-col">
                         <div class="flex justify-between items-end mb-2 shrink-0">
-                            <button onclick="app.generateImage()" class="text-[9px] font-bold text-black dark:text-white border-b border-gray-200 dark:border-gray-700 hover:border-black dark:hover:border-white uppercase tracking-wider transition-all">Generar Imagen</button>
+                            <div class="flex items-center gap-1">
+                                <button onclick="app.generateImage()" class="text-[9px] font-bold text-black dark:text-white border-b border-gray-200 dark:border-gray-700 hover:border-black dark:hover:border-white uppercase tracking-wider transition-all">Generar Imagen</button>
+                                <select id="inp-img-format" class="text-[9px] font-bold text-gray-500 bg-transparent dark:text-gray-400 uppercase cursor-pointer border-b border-gray-200 dark:border-gray-700 outline-none ml-1">
+                                    <option value="square" selected>CUADRADO</option>
+                                    <option value="horizontal">HORIZONTAL</option>
+                                    <option value="vertical">VERTICAL</option>
+                                </select>
+                            </div>
                             <input type="file" id="inp-upload-img" accept="image/png, image/jpeg, image/webp" class="hidden" onchange="app.uploadImage(event)">
                             <button onclick="document.getElementById('inp-upload-img').click()" class="text-[9px] font-bold text-gray-500 hover:text-black dark:hover:text-white uppercase tracking-wider transition-all"><i class="fa-solid fa-upload"></i> SUBIR</button>
                         </div>
@@ -866,7 +873,7 @@
                         <p class="text-[9px] text-gray-400 mt-1 leading-normal">Los datos del JSON se inyectarán en la línea de tiempo seleccionada en este menú en caliente.</p>
                     </div>
     
-                    <div class="space-y-3 mt-auto">
+                  <div class="space-y-3 mt-auto">
                         <span class="label-text tracking-widest text-rose-600 font-bold uppercase"><i class="fa-solid fa-file-export"></i> Selector de Exportación Nofraile</span>
                         <div>
                             <span class="label-text">Filtro de Emisión</span>
@@ -877,9 +884,14 @@
                                 <option value="cronologia">Solo Cronología (TIMELINE_DATA.json)</option>
                             </select>
                         </div>
-                        <button onclick="window.KorehIO.exportSystemJSON()" class="btn-primary bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center gap-2 shadow-lg">
-                            <i class="fa-solid fa-download text-[10px]"></i> DESCARGAR MATRIZ JSON
-                        </button>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="window.KorehIO.exportSystemJSON()" class="btn-primary bg-black text-white dark:bg-white dark:text-black py-3 text-xs flex items-center justify-center gap-2 shadow-md">
+                                <i class="fa-solid fa-download text-[10px]"></i> MATRIZ JSON
+                            </button>
+                            <button onclick="window.ComicExporter.exportAsComic()" class="btn-primary bg-indigo-600 hover:bg-indigo-700 text-white py-3 text-xs flex items-center justify-center gap-2 shadow-lg">
+                                <i class="fa-solid fa-images text-[10px]"></i> EXPORTAR CÓMIC 4K
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -995,6 +1007,8 @@
     <script src="tramas.ui.core.js"></script>
     <script src="tramas.ui.filters.js"></script>
     <script src="tramas.ui.inspector.js"></script>
+
+<script src="comic.exporter.js"></script>
 
     <script src="Cronologia 3/crono.js"></script>
     <script src="Cronologia 3/ai.js"></script>
