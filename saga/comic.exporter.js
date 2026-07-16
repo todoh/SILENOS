@@ -64,7 +64,7 @@ window.ComicExporter = {
             const ctx = canvas.getContext('2d');
 
             // Fondo Blanco Cómic Limpio
-            ctx.fillStyle = '#FFFFFF';
+            ctx.fillStyle = '#000000';
             ctx.fillRect(0, 0, PAGE_WIDTH, PAGE_HEIGHT);
 
             // Encabezado de página Premium
