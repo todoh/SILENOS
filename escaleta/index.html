@@ -507,6 +507,16 @@
                     </div>
                 </div>
 
+                <!-- CONTROL DE DURACIÓN EN AJUSTES DEL SISTEMA (MODAL) -->
+                <div class="p-4 bg-slate-50 border border-gray-100 rounded space-y-3">
+                    <span class="label-text text-indigo-600 font-bold"><i class="fa-solid fa-stopwatch mr-1"></i> Duración de Video Preferida</span>
+                    <p class="text-[10px] text-gray-500 leading-tight">Define la cantidad de segundos por defecto que durarán tus clips generados en Pollinations.</p>
+                    <div>
+                        <label class="label-text text-[8px] text-gray-400">Duración del Clip (Segundos)</label>
+                        <input type="number" id="video-duration-input" class="config-input bg-white px-2 rounded font-mono text-xs border border-gray-200" value="5" min="1" max="60">
+                    </div>
+                </div>
+
                 <div class="p-4 bg-slate-50 border border-gray-100 rounded space-y-3">
                     <span class="label-text text-orange-600 font-bold"><i class="fa-solid fa-palette mr-1"></i> Configuración de ComfyUI Local</span>
                     <div>
@@ -605,14 +615,6 @@
                 </div>
             </div>
 
-            <div class="flex flex-col items-end ml-2">
-                <span class="label-text mb-0">AI Connection</span>
-                <div class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" onclick="if(ai.aiProvider==='pollinations') ai.login()">
-                    <span id="auth-status-text" class="text-[10px] font-bold text-gray-400">OFFLINE</span>
-                    <div id="auth-indicator" class="w-2 h-2 rounded-full bg-gray-300"></div>
-                </div>
-            </div>
-
             <div class="h-8 w-px bg-gray-100 mx-1"></div>
 
             <button onclick="EscaletaUI.selectProjectFolderNative()" id="btn-project-folder" class="btn-nordic text-slate-600 border-slate-200 hover:border-indigo-500 hover:text-indigo-600">
@@ -681,6 +683,18 @@
                         <option value="seedance">Seedance Lite</option>
                         <option value="haiper">Haiper (Fast)</option>
                     </select>
+                </div>
+
+                <!-- CONTROL DIRECTO DE SEGUNDOS EN PANEL CONTROL LATERAL IZQUIERDO -->
+                <div class="mb-6 p-3 bg-slate-50 border border-slate-100 rounded">
+                    <label class="label-text text-indigo-600 font-bold flex items-center justify-between">
+                        <span><i class="fa-solid fa-stopwatch mr-1"></i> Duración del Video</span>
+                        <span class="text-[9px] text-gray-400 lowercase italic">Pollinations.ai</span>
+                    </label>
+                    <div class="flex items-center gap-2 mt-1.5">
+                        <input type="number" id="side-video-duration" class="config-input bg-white px-2.5 py-1 rounded text-center font-mono font-bold text-indigo-700 border border-gray-200" value="5" min="1" max="60" oninput="document.getElementById('video-duration-input').value = this.value; localStorage.setItem('escaleta_video_duration', this.value);">
+                        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Segs</span>
+                    </div>
                 </div>
 
                 <div class="mb-6">
@@ -915,6 +929,13 @@
             const savedImageProvider = localStorage.getItem('escaleta_image_provider') || 'pollinations';
             const imgProvSelect = document.getElementById('image-provider-select');
             if (imgProvSelect) imgProvSelect.value = savedImageProvider;
+
+            // HIDRATAR VALOR DE SEGUNDOS DESDE LOCAL STORAGE
+            const savedDuration = localStorage.getItem('escaleta_video_duration') || "5";
+            const durationInput = document.getElementById('video-duration-input');
+            const sideDurationInput = document.getElementById('side-video-duration');
+            if (durationInput) durationInput.value = savedDuration;
+            if (sideDurationInput) sideDurationInput.value = savedDuration;
         };
     </script>
 </body>
