@@ -1,35 +1,41 @@
 /**
- * Pipeline de Generación de Imágenes mediante Pollinations AI
+ * Pipeline de Genereación de Imágenes mediante Pollinations AI
  * Catálogo completo de modelos visuales incorporados con soporte de favoritos.
  */
-export const MODELOS_IMAGEN = [
-    { name: "Flux Schnell", tag: "flux" },
-    { name: "Z-Image Turbo", tag: "zimage" },
-    { name: "Pruna p-image", tag: "p-image" },
-    { name: "GPT Image 1 Mini", tag: "gptimage" },
-    { name: "FLUX.2 Klein 4B", tag: "klein" },
-    { name: "Pruna p-image-edit", tag: "p-image-edit" },
-    { name: "Grok Imagine", tag: "grok-imagine" },
-    { name: "Seedream 4.0", tag: "seedream" },
-    { name: "Ideogram 4.0 Turbo", tag: "ideogram-v4-turbo" },
-    { name: "Wan 2.7 Image Pro", tag: "wan-image-pro" },
-    { name: "Qwen Image Plus", tag: "qwen-image" },
-    { name: "Wan 2.7 Image", tag: "wan-image" },
-    { name: "NanoBanana 2 Lite", tag: "nanobanana-2-lite" },
-    { name: "Seedream 5.0 Lite", tag: "seedream5" },
-    { name: "NanoBanana", tag: "nanobanana" },
-    { name: "Seedream 4.5 Pro", tag: "seedream-pro" },
-    { name: "Nova Canvas", tag: "nova-canvas" },
-    { name: "FLUX.1 Kontext", tag: "kontext" },
-    { name: "GPT Image 2", tag: "gpt-image-2" },
-    { name: "Grok Imagine Pro", tag: "grok-imagine-pro" },
-    { name: "GPT Image 1.5", tag: "gptimage-large" },
-    { name: "NanoBanana 2", tag: "nanobanana-2" },
-    { name: "Seedream 5.0 Pro", tag: "seedream5-pro" },
-    { name: "Ideogram 4.0 Quality", tag: "ideogram-v4-quality" },
-    { name: "NanoBanana Pro", tag: "nanobanana-pro" },
-    { name: "Ideogram 4.0 Balanced", tag: "ideogram-v4-balanced" }
-];
+export let MODELOS_IMAGEN = [];
+
+/**
+ * Recupera de forma dinámica el catálogo de modelos de imágenes de Pollinations AI
+ * Ordena situando los modelos marcados como "free" (gratuitos) al principio.
+ */
+export async function fetchDynamicPollinationsImageModels() {
+    try {
+        const response = await fetch("https://gen.pollinations.ai/image/models");
+        if (!response.ok) throw new Error("Error en la respuesta del servidor de modelos de imagen.");
+        const data = await response.json();
+        
+        const models = data.map(m => {
+            const name = m.name || m.id || m;
+            const tag = m.id || m.name || m;
+            return { name: name, tag: tag };
+        });
+
+        // Ordenación de gratis ("free") a premium
+        models.sort((a, b) => {
+            const aFree = a.name.toLowerCase().includes('free') || a.tag.toLowerCase().includes('free');
+            const bFree = b.name.toLowerCase().includes('free') || b.tag.toLowerCase().includes('free');
+            if (aFree && !bFree) return -1;
+            if (!aFree && bFree) return 1;
+            return a.name.localeCompare(b.name);
+        });
+
+        MODELOS_IMAGEN = models;
+        return models;
+    } catch (e) {
+        console.error("No se pudieron sincronizar los modelos de imagen de Pollinations:", e);
+        return [];
+    }
+}
 
 /**
  * Genera una imagen a partir de un prompt y un modelo seleccionado.
@@ -38,15 +44,25 @@ export const MODELOS_IMAGEN = [
  * @param {string} modelTag - Tag identificador del modelo en Pollinations
  * @param {string} apiKey - Clave de Pollinations (sk_ o pk_) para la transacción de pollen
  * @param {Array} attachments - Lista opcional de adjuntos para usar como imagen de entrada
+ * @param {string} aspect - Formato de relación de aspecto ('1:1', '9:16', '16:9')
  * @returns {Promise<string>} Retorna un ObjectURL local con los datos binarios de la imagen
  */
-export async function queryImageGeneration(prompt, modelTag, apiKey, attachments = []) {
+export async function queryImageGeneration(prompt, modelTag, apiKey, attachments = [], aspect = '1:1') {
     if (!prompt) {
         throw new Error("Se requiere un prompt textual para generar la imagen.");
     }
     
     const encodedPrompt = encodeURIComponent(prompt);
     let url = `https://gen.pollinations.ai/image/${encodedPrompt}?model=${modelTag}`;
+
+    // Configuración minimalista de la resolución basada en la relación de aspecto elegida
+    if (aspect === '9:16') {
+        url += `&width=720&height=1280`;
+    } else if (aspect === '16:9') {
+        url += `&width=1280&height=720`;
+    } else {
+        url += `&width=1024&height=1024`;
+    }
 
     if (apiKey) {
         url += `&key=${apiKey}`;

@@ -1,78 +1,38 @@
- // Catálogos Estáticos Incorporados
-export const MODELOS_POLLINATIONS = [
-       { name: "[Spit-fires/diffusiongemma-26b-a4b-it", tag: "[Spit-fires/diffusiongemma-26b-a4b-it" },
-        { name: "Step 3.5 Flash (Free)", tag: "Spit-fires/step-3.5-flash-free" },
-    { name: "GPT OSS 20B (Free)", tag: "Spit-fires/gpt-oss-20b-free" },
-    { name: "GLM 4.6V Flash (Free)", tag: "MarcosFRG/glm-4.6v-flash" },
-    { name: "Free Model Router", tag: "solarnode-developement/free" },
-    { name: "Nemotron 3 Ultra (Free)", tag: "vendouple/nemotron-3-ultra" },
-    { name: "Free Bonsai Image 512p", tag: "Spit-fires/bonsai-image-512x512-4" },
-    { name: "Random Free Router", tag: "Spit-fires/free" },
-    { name: "Grok 4.1 Fast", tag: "YoannDev90/grok-4.1-fast" },
-    { name: "Qwen 3.7 Plus", tag: "YoannDev90/qwen3.7-plus" },
-    { name: "Llama 4 Scout", tag: "YoannDev90/llama-4-scout" },
-    { name: "Gemini 3 Pro", tag: "YoannDev90/gemini-3-pro" },
-    { name: "GPT OSS 120B (Yoann)", tag: "YoannDev90/gpt-oss-120b" },
-    { name: "Llama 3.3 70B Instruct", tag: "YoannDev90/llama-3.3-70b-instruct" },
-    { name: "GPT 4o Mini Search", tag: "YoannDev90/gpt-4o-mini-search-preview" },
-    { name: "MiniMax M3 (Yoann)", tag: "YoannDev90/minimax-m3" },
-    { name: "DeepSeek V4 Pro (Yoann)", tag: "YoannDev90/deepseek-v4-pro" },
-    { name: "Step 3.7 Flash (Yoann)", tag: "YoannDev90/step-3.7-flash" },
-    { name: "GPT 5.4 Mini (Yoann)", tag: "YoannDev90/gpt-5.4-mini" },
-    { name: "HY3 Preview", tag: "YoannDev90/hy3-preview" },
-    { name: "Falcon H1 Tiny 90M", tag: "smplstuff/falcon-h1-tiny" },
-    { name: "LongCat-2.0 (1.6T MoE)", tag: "Minor-fun/LongCat-2.0" },
-    { name: "Gemma 4 E2B", tag: "CloudCompile/gemma-4-e2b" },
-    { name: "Mistral Ministral 3 14B", tag: "mikl-shortcuts/ministral-3" },
-    { name: "DeepSeek V4 Flash (Lite)", tag: "vendouple/deepseek-v4-flash" },
-    { name: "DeepSeek Chat via AnyVM", tag: "voodoohop/anyvm-deepseek-chat" },
-    { name: "Gemma-4-31B-it (No Thinking)", tag: "Minor-fun/gemma-4-31B-it" },
-    { name: "Gemma 3 27B", tag: "MarcosFRG/gemma-3-27b" },
-    { name: "Gemma 4 31B", tag: "vendouple/gemma-4-31B" },
-    { name: "DeepSeek V3.2 (vendouple)", tag: "vendouple/deepseek-v3.2" },
-    { name: "Qwen 3.7 Plus (Cheap)", tag: "morriszdweck/qwen-3.7-plus-cheap" },
-    { name: "Step 3.5 Flash", tag: "MarcosFRG/step-3.5-flash" },
-    { name: "Gemma 4 31B via JankRouter", tag: "MarcosFRG/gemma-4-31b" },
-    { name: "Laguna xs 2.1", tag: "Catniti/Laguna-xs-2.1" },
-    { name: "DeepSeek V4 Flash via JankRouter", tag: "MarcosFRG/deepseek-v4-flash" },
-    { name: "OpenAI GPT-OSS 20B", tag: "sharktide/inferenceport.ai-gpt-oss-20b" },
-    { name: "deepseek-v3.2", tag: "Minor-fun/deepseek-v3.2" },
-    { name: "deepseek-v4-flash", tag: "Minor-fun/deepseek-v4-flash" },
-    { name: "Gemini 2.5 Flash Lite", tag: "MarcosFRG/gemini-2.5-flash-lite" },
-    { name: "DeepSeek V4 Pro", tag: "vendouple/deepseek-v4-pro" },
-    { name: "ChatGPT 4", tag: "Catniti/gpt-4.0" },
-    { name: "DeepSeek V3.2 via JankRouter", tag: "MarcosFRG/deepseek-v3.2" },
-    { name: "Tencent Hy3", tag: "solarnode-developement/hy3" },
-    { name: "GEMMA 4 31B IT", tag: "Bakhshi7889/gemma-4-31b-it" },
-    { name: "Grok 4 Fast via Airforce", tag: "voodoohop/airforce-grok-4-fast" },
-    { name: "Kimi K2.6 (Cheap)", tag: "morriszdweck/kimi-k2.6-cheap" },
-    { name: "MiniMax M2.7", tag: "MarcosFRG/minimax-m2.7" },
-    { name: "MiniMax M3", tag: "MarcosFRG/minimax-m3" },
-    { name: "Glm 4.7 Flash", tag: "Catniti/glm-4.7-flash" },
-    { name: "GLM-5.2 (Cheap)", tag: "solarnode-developement/glm-5.2-cheap" },
-    { name: "Gemini 3.1 Flash Lite via JankRouter", tag: "MarcosFRG/gemini-3.1-flash-lite" },
-    { name: "Agnes 2.0 Flash", tag: "Catniti/agnes-2.0-flash" },
-    { name: "Unlocked DeepSeek", tag: "vendouple/unlocked-deepseek" },
-    { name: "DeepSeek V4 Pro via JankRouter", tag: "MarcosFRG/deepseek-v4-pro" },
-    { name: "Gpt Oss 120B", tag: "Catniti/gpt-oss-120b" },
-    { name: "GLM 5.2 via JankRouter", tag: "MarcosFRG/glm-5.2" },
-    { name: "Gemini 3 Flash via JankRouter", tag: "MarcosFRG/gemini-3-flash-preview" },
-    { name: "Nemotron 3 Ultra 550B", tag: "Catniti/nemotron-3-ultra-550b-a55b" },
-    { name: "Kimi K2.6", tag: "vendouple/kimi-k2.6" },
-    { name: "Qwen 3 Max via Airforce", tag: "voodoohop/airforce-qwen3-max" },
-    { name: "elixpo-routerv2.6", tag: "Circuit-Overtime/lixsearch" },
-    { name: "Glm 4.7", tag: "Catniti/glm-4.7" },
-    { name: "Mimo v2.5 (sharktide)", tag: "sharktide/inferenceport-ai-mimo-v2.5" },
-    { name: "GPT-5.6 Terra (vendouple)", tag: "vendouple/gpt-5.6-terra" },
-    { name: "Gemini 3.1 Pro via JankRouter", tag: "MarcosFRG/gemini-3.1-pro-preview" },
-    { name: "Gemini 3.1 Flash Lite", tag: "tomdacatto/ezra" },
-    { name: "GPT-5.6 Sol (vendouple)", tag: "vendouple/gpt-5.6-sol" },
-    { name: "Claude Sonnet 4.6", tag: "Catniti/claude-sonnet-4.6" },
-    { name: "Cohere Command R+", tag: "sharktide/inferenceport-ai-command-r-plus" },
-    { name: "ChatGPT 5.5", tag: "Catniti/gpt-5.5" },
-    { name: "OpenAI GPT-OSS 4.1", tag: "sharktide/inferenceport-ai-gpt-4.1" },
-    { name: "OpenAI GPT-5 Chat Latest", tag: "sharktide/inferenceport.ai-gpt-5-chat-latest" }
-];
+// Catálogos Dinámicos y Estáticos Incorporados
+export let MODELOS_POLLINATIONS = [];
+
+/**
+ * Recupera de forma dinámica el catálogo de modelos de texto de Pollinations AI
+ * Ordena situando los modelos marcados como "free" (gratuitos) al principio.
+ */
+export async function fetchDynamicPollinationsTextModels() {
+    try {
+        const response = await fetch("https://gen.pollinations.ai/text/models");
+        if (!response.ok) throw new Error("Error en la respuesta del servidor de modelos de texto.");
+        const data = await response.json();
+        
+        const models = data.map(m => {
+            const name = m.name || m.id || m;
+            const tag = m.id || m.name || m;
+            return { name: name, tag: tag };
+        });
+
+        // Ordenación de gratis ("free") a de pago / comunidad
+        models.sort((a, b) => {
+            const aFree = a.name.toLowerCase().includes('free') || a.tag.toLowerCase().includes('free');
+            const bFree = b.name.toLowerCase().includes('free') || b.tag.toLowerCase().includes('free');
+            if (aFree && !bFree) return -1;
+            if (!aFree && bFree) return 1;
+            return a.name.localeCompare(b.name);
+        });
+
+        MODELOS_POLLINATIONS = models;
+        return models;
+    } catch (e) {
+        console.error("No se pudieron sincronizar los modelos de texto de Pollinations:", e);
+        return [];
+    }
+}
 
 export const MODELOS_GEMINI = [
     { name: "Gemini 3 Flash", tag: "gemini-3-flash" },

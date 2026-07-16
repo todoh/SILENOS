@@ -1,11 +1,11 @@
 import { queryPollinations } from './pollinations.js'; 
 import { queryGemini } from './gemini.js'; 
 import { queryOllama, fetchOllamaModels } from './ollama.js'; 
-import { MODELOS_POLLINATIONS, MODELOS_GEMINI } from './modelos.js'; 
-import { MODELOS_IMAGEN, queryImageGeneration } from './imagenes.js'; 
+import { fetchDynamicPollinationsTextModels, MODELOS_POLLINATIONS, MODELOS_GEMINI } from './modelos.js'; 
+import { fetchDynamicPollinationsImageModels, MODELOS_IMAGEN, queryImageGeneration } from './imagenes.js'; 
 import { iniciarSesionPollinations, procesarRetornoAutenticacion } from './login.js'; 
 
-// --- INICIALIZACI N DEL SISTEMA DE CANVAS [SOLICITUD LITERAL EXPLICITA] --- 
+// --- INICIALIZACIÓN DEL SISTEMA DE CANVAS [SOLICITUD LITERAL EXPLICITA] --- 
 function initCanvasSystem() {     
     const canvas = document.getElementById('canvas-procesado');     
     if (canvas) {         
@@ -27,7 +27,7 @@ let activeImageModelIndex = 0; // Guardar persistencia del último modelo de ima
 let favoritosText = []; 
 let favoritosImage = []; 
 
-// --- GESTI N DE CONVERSACIONES MULTI-HILO --- 
+// --- GESTIÓN DE CONVERSACIONES MULTI-HILO --- 
 let conversations = []; 
 let activeConversationId = null; 
 let currentBufferAttachments = []; // Archivos en cola 
@@ -43,6 +43,7 @@ const btnSend = document.getElementById('btn-send');
 
 // Herramienta de Crear Imagen Estilo Gemini 
 const btnToolImage = document.getElementById('btn-tool-image'); 
+const imageAspectSelector = document.getElementById('image-aspect-ratio-selector');
 
 // Referencias de Gestión de Conversaciones 
 const btnNewChat = document.getElementById('btn-new-chat'); 
@@ -78,8 +79,14 @@ window.addEventListener('load', async () => {
     loadSavedSettings();     
     loadConversations();     
     loadFavorites();     
+
+    // Sincronizar dinámicamente los catálogos antes de renderizar la UI
+    await fetchDynamicPollinationsTextModels();
+    await fetchDynamicPollinationsImageModels();
+
     await buildUnifiedTextModels();     
     initModeHandlers(); 
+    initAspectLabelsHandler();
 });
 
 function loadSavedSettings() {     
@@ -122,12 +129,16 @@ btnLoginPollinations.addEventListener('click', () => {
     iniciarSesionPollinations(customClientId); 
 });
 
-// Salvar datos explícitos en caché local y actualizar el entorno del buffer 
+// Salvar datos explícitos en cache local y actualizar el entorno del buffer 
 btnSaveSettings.addEventListener('click', async () => {     
     localStorage.setItem('hub_key_pollinations', apiKeyPollinationsInput.value.trim());     
     localStorage.setItem('hub_key_gemini', apiKeyGeminiInput.value.trim());     
     localStorage.setItem('hub_endpoint_ollama', endpointOllamaInput.value.trim());     
     hideModal();     
+    
+    // Volver a descargar catálogos en caso de que cambien las llaves o accesos
+    await fetchDynamicPollinationsTextModels();
+    await fetchDynamicPollinationsImageModels();
     await buildUnifiedTextModels(); 
 });
 
@@ -136,7 +147,7 @@ modalSettings.addEventListener('click', (e) => {
     if (e.target === modalSettings) hideModal(); 
 });
 
-// --- CONSTRUCCI N DEL MODELO UNIFICADO DE TEXTO (GEMINI -> POLLINATIONS -> OLLAMA) --- 
+// --- CONSTRUCCIÓN DEL MODELO UNIFICADO DE TEXTO (GEMINI -> POLLINATIONS -> OLLAMA) --- 
 async function buildUnifiedTextModels() {     
     listadoModelosTexto = [];          
     
@@ -145,7 +156,7 @@ async function buildUnifiedTextModels() {
         listadoModelosTexto.push({ ...m, provider: 'gemini' });     
     });          
     
-    // 2. Pollinations (Fijado segundo)     
+    // 2. Pollinations (Fijado segundo, ahora dinámico y ordenado por precio)     
     MODELOS_POLLINATIONS.forEach(m => {         
         listadoModelosTexto.push({ ...m, provider: 'pollinations' });     
     });          
@@ -167,18 +178,20 @@ async function buildUnifiedTextModels() {
     } 
 }
 
-// --- INTERCONEXI N DE BOTONES DE MODO (CHAT vs IMAGEN) --- 
+// --- INTERCONEXIÓN DE BOTONES DE MODO (CHAT vs IMAGEN) --- 
 function initModeHandlers() {     
     btnToolImage.addEventListener('click', () => {         
         if (appMode === 'image') {             
             appMode = 'chat';             
             btnToolImage.className = "text-xs font-semibold text-neutral-400 hover:text-black transition-colors cursor-pointer";             
-            userInput.placeholder = "Escribe tu consulta aquí ...";             
+            userInput.placeholder = "Escribe tu consulta aquí...";             
+            imageAspectSelector.classList.add('hidden');
             buildModelDropdown();         
         } else {             
             appMode = 'image';             
             btnToolImage.className = "text-xs font-bold text-black transition-all cursor-pointer";             
             userInput.placeholder = "Describe detalladamente la imagen que deseas generar...";                          
+            imageAspectSelector.classList.remove('hidden');
             if (activeImageModelIndex >= MODELOS_IMAGEN.length) {                 
                 activeImageModelIndex = 0;             
             }             
@@ -187,7 +200,24 @@ function initModeHandlers() {
     }); 
 }
 
-// --- L GICA DE GESTI N DE CONVERSACIONES --- 
+// Estilos dinámicos para los radio buttons de aspecto minimalista
+function initAspectLabelsHandler() {
+    const radios = document.querySelectorAll('input[name="aspect-ratio"]');
+    radios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            radios.forEach(r => {
+                const lbl = r.closest('label');
+                if (r.checked) {
+                    lbl.className = "flex items-center gap-1 cursor-pointer text-black font-semibold";
+                } else {
+                    lbl.className = "flex items-center gap-1 cursor-pointer text-neutral-400 hover:text-black transition-colors";
+                }
+            });
+        });
+    });
+}
+
+// --- LÓGICA DE GESTIÓN DE CONVERSACIONES --- 
 function loadConversations() {     
     const data = localStorage.getItem('hub_conversations');     
     if (data) {         
@@ -307,8 +337,8 @@ function renderActiveConversation() {
         chatHistory.innerHTML = `             
             <div class="h-full flex flex-col items-center justify-center text-center p-8 space-y-4 max-w-xl mx-auto my-auto">                 
                 <div class="space-y-1">                     
-                    <h3 class="text-xl font-bold tracking-tight text-black font-mono">Te damos la bienvenida</h3>                     
-                    <p class="text-sm text-black leading-relaxed">Selecciona un modelo unificado arriba a la izquierda o haz clic en "Crear Imagen" para activar el pipeline generativo.</p>                 
+                    <h3 class="text-xl font-bold tracking-tight text-black font-mono">Te damos la bienvenida a Silenos Chat</h3>                     
+                    <p class="text-sm text-black leading-relaxed">Selecciona un modelo y el modo arriba a la izquierda.</p>                 
                 </div>             
             </div>         `;     
     } else {         
@@ -321,7 +351,7 @@ function renderActiveConversation() {
 
 btnNewChat.addEventListener('click', () => createNewConversation()); 
 
-// --- GESTI N DE ADJUNTAR ARCHIVOS --- 
+// --- GESTIÓN DE ADJUNTAR ARCHIVOS --- 
 btnAttach.addEventListener('click', () => fileUploader.click()); 
 fileUploader.addEventListener('change', async (e) => {     
     const files = Array.from(e.target.files);     
@@ -393,14 +423,50 @@ function buildModelDropdown() {
         const row = document.createElement('div');         
         row.className = "px-4 py-2.5 cursor-pointer hover:bg-neutral-100 text-black transition-colors truncate flex justify-between items-center";                  
         const providerBadge = m.provider ? `<span class="text-[9px] px-1.5 py-0.5 rounded bg-neutral-200 text-black uppercase font-bold tracking-wider mr-2">${m.provider}</span>` : '';                  
+        
+        // --- CÁLCULO DINÁMICO DE COSTES Y PREMIUM ---
+        let badgeCoste = '';
+        const lowerName = m.name.toLowerCase();
+        const lowerTag = m.tag.toLowerCase();
+        
+        if (appMode === 'chat') {
+            if (m.provider === 'ollama') {
+                badgeCoste = `<span class="text-[9px] px-1 bg-green-50 text-green-700 rounded font-bold border border-green-200">LOCAL (FREE)</span>`;
+            } else if (m.provider === 'gemini') {
+                if (lowerTag.includes('flash-lite') || lowerTag.includes('2.5')) {
+                    badgeCoste = `<span class="text-[9px] px-1 bg-blue-50 text-blue-600 rounded font-mono font-medium">$0.0001/1K</span>`;
+                } else if (lowerTag.includes('flash')) {
+                    badgeCoste = `<span class="text-[9px] px-1 bg-blue-50 text-blue-600 rounded font-mono font-medium">$0.0003/1K</span>`;
+                } else {
+                    badgeCoste = `<span class="text-[9px] px-1 bg-purple-50 text-purple-600 rounded font-bold border border-purple-200">PREMIUM</span>`;
+                }
+            } else if (m.provider === 'pollinations') {
+                if (lowerName.includes('free') || lowerTag.includes('free')) {
+                    badgeCoste = `<span class="text-[9px] px-1 bg-green-50 text-green-600 rounded font-bold">FREE</span>`;
+                } else {
+                    badgeCoste = `<span class="text-[9px] px-1 bg-purple-50 text-purple-600 rounded font-bold border border-purple-200">PREMIUM</span>`;
+                }
+            }
+        } else {
+            // Catálogo de imágenes (Generativo)
+            if (lowerName.includes('free') || lowerTag.includes('free')) {
+                badgeCoste = `<span class="text-[9px] px-1 bg-green-50 text-green-600 rounded font-bold">FREE</span>`;
+            } else {
+                badgeCoste = `<span class="text-[9px] px-1 bg-purple-50 text-purple-600 rounded font-bold border border-purple-200">PREMIUM</span>`;
+            }
+        }
+
         row.innerHTML = `             
             <div class="flex items-center truncate pr-2">                 
                 ${providerBadge}                 
                 <span class="truncate">${m.name}</span>             
             </div>             
-            <button class="btn-fav text-neutral-400 hover:text-black transition-colors p-1">                 
-                ${isFav ? '★' : '☆'}             
-            </button>         `;                  
+            <div class="flex items-center gap-3 shrink-0">
+                ${badgeCoste}
+                <button class="btn-fav text-neutral-400 hover:text-black transition-colors p-1">                 
+                    ${isFav ? '★' : '☆'}             
+                </button>         
+            </div>`;                  
         
         row.addEventListener('click', (e) => {             
             if (e.target.closest('.btn-fav')) return;             
@@ -510,7 +576,12 @@ async function handleSend() {
             let generatedImageUrl = "";                  
             if (appMode === 'image') {             
                 const pollinationsKey = apiKeyPollinationsInput.value.trim();             
-                generatedImageUrl = await queryImageGeneration(promptText, activeModel.tag, pollinationsKey, thisTurnAttachments);             
+                
+                // Obtener el formato de aspecto seleccionado de manera minimalista
+                const selectedAspectInput = document.querySelector('input[name="aspect-ratio"]:checked');
+                const aspectValue = selectedAspectInput ? selectedAspectInput.value : '1:1';
+                
+                generatedImageUrl = await queryImageGeneration(promptText, activeModel.tag, pollinationsKey, thisTurnAttachments, aspectValue);             
                 responseText = `He generado con éxito la imagen utilizando el modelo **${activeModel.name}** con el prompt:\n\n*"${promptText}"*`;         
             } else {             
                 const historyPayload = getChatPayload(targetConversationId);             
@@ -579,6 +650,7 @@ function formatModelOutput(text) {
     return text.replace(/<think>/gi, '<div class="think-block"><div class="think-header">Razonamiento Interno</div>')                .replace(/<\/think>/gi, '</div>'); 
 }
 
+// Mantiene el código original para añadir mensajes al DOM con soporte SVG
 function appendChatMessageToDOM(role, text, modelName = "", autoScroll = true, imageUrl = "") {     
     const messageId = `msg-${Date.now()}`;     
     const card = document.createElement('div');     
@@ -686,8 +758,7 @@ function detectSvgStructures(rawText, container, messageId) {
                 URL.revokeObjectURL(url);             
             });             
             container.appendChild(previewBox);         
-        });     
-    } 
+        });     } 
 }
 
 btnSend.addEventListener('click', handleSend); 

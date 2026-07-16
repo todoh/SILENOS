@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SILENOS STUDIO</title>
+    <title>SILENOS CHAT</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -13,7 +13,7 @@
         <div class="flex flex-col flex-1 min-h-0 space-y-6">
             
             <div class="flex flex-col space-y-1">
-                <span class="text-xs font-bold tracking-tight text-black">SILEN<span class="text-xs font-bold tracking-tight text-red-500">OS</span> STUDIO</span>
+                <span class="text-xs font-bold tracking-tight text-black">SILEN<span class="text-xs font-bold tracking-tight text-red-500">OS</span> CHAT</span>
                 <span id="connection-badge" class="text-[9px] text-neutral-400 font-mono"> </span>
             </div>
 
@@ -45,7 +45,7 @@
                     <span id="selected-model-text">cargando...</span>
                 </div>
                 
-                <div id="dropdown-menu" class="hidden absolute left-0 top-8 bg-white rounded-none z-50 max-h-60 overflow-y-auto w-64">
+                <div id="dropdown-menu" class="hidden absolute left-0 top-8 bg-white rounded-none z-50 max-h-60 overflow-y-auto w-73">
                     <div id="dropdown-options" class="font-mono text-[11px]"></div>
                 </div>
 
@@ -60,12 +60,25 @@
 
         <div class="px-8 pb-8 bg-white shrink-0">
             <div class="max-w-2xl mx-auto space-y-2">
+                <div id="image-aspect-ratio-selector" class="hidden flex items-center gap-4 py-1 text-xs font-mono select-none text-neutral-400">
+                    <span class="text-[9px] font-bold uppercase tracking-wider text-neutral-400">formato:</span>
+                    <label class="flex items-center gap-1 cursor-pointer text-black font-semibold">
+                        <input type="radio" name="aspect-ratio" value="1:1" checked class="accent-black"> cuadrado
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer text-neutral-400 hover:text-black transition-colors">
+                        <input type="radio" name="aspect-ratio" value="9:16" class="accent-black"> vertical
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer text-neutral-400 hover:text-black transition-colors">
+                        <input type="radio" name="aspect-ratio" value="16:9" class="accent-black"> horizontal
+                    </label>
+                </div>
+
                 <div id="attachment-preview-area" class="hidden flex flex-wrap gap-2 py-1 bg-white">
                     </div>
                 
                 <div class="bg-white py-2 flex flex-col gap-2">
-                    <textarea id="user-input" rows="1" class="w-full bg-transparent text-sm text-black placeholder-neutral-300 resize-none leading-relaxed" placeholder="Escribe tu consulta aquí..."></textarea>
-                    
+                    <textarea id="user-input" style="height: 170px;" rows="1" class="w-full bg-transparent text-sm text-black placeholder-neutral-300 resize-none leading-relaxed" placeholder="Escribir  aquí..."> </textarea>
+                 
                     <div class="flex items-center justify-between pt-1">
                         <div class="flex items-center gap-4">
                             <button id="btn-attach" class="text-neutral-400 hover:text-black text-xs transition-colors cursor-pointer bg-transparent" title="Adjuntar Archivo">
