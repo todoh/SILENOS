@@ -112,7 +112,7 @@ window.Koreh.Image = {
         const promptNeg = config.negativePrompt || document.getElementById('comfy-neg-prompt')?.value || "bad anatomy, blurry, watermark, worst quality";
         const width = config.width || parseInt(document.getElementById('comfy-width')?.value || "1024");
         const height = config.height || parseInt(document.getElementById('comfy-height')?.value || "1024");
-        const steps = config.steps || 14;
+        const steps = config.steps || 24;
         const cfg = config.cfg || 2.0;
         const sampler = config.sampler || "dpmpp_sde";
         
