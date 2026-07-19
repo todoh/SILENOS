@@ -180,12 +180,12 @@ window.ComicExporter = {
                     ctx.fillStyle = '#FAFAFA';
                     ctx.fillRect(px, textY, PANEL_WIDTH, TEXT_BOX_HEIGHT);
                     ctx.strokeStyle = '#D1D5DB';
-                    ctx.lineWidth = 2;
+                    ctx.lineWidth = 7;
                     ctx.strokeRect(px, textY, PANEL_WIDTH, TEXT_BOX_HEIGHT);
 
                     // Renderizado del texto con sangría limpia
                     ctx.fillStyle = '#111111';
-                    ctx.font = '28px "Inter", "Segoe UI", sans-serif'; // Reducida ligeramente para encajar de forma óptima en 3x4
+                    ctx.font = '48px "Inter", "Segoe UI", sans-serif'; // Reducida ligeramente para encajar de forma óptima en 3x4
                     
                     const paragraphText = moment.text || "...";
                     this.wrapText(ctx, paragraphText, px + 20, textY + 45, PANEL_WIDTH - 40, 40);
