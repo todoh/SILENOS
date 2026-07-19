@@ -1,17 +1,15 @@
 /**
- * AI TEXT - Módulo de Generación de Texto y JSON (Ollama / Pollinations Router)
+ * AI TEXT - Módulo de Generación de Texto y JSON (Ollama / Pollinations / Gemini Router)
  * Dependencia: ai.core.js
  * Espacio de nombres: window.Koreh.Text
  */
-
 window.Koreh = window.Koreh || {};
-
 window.Koreh.Text = {
     
     // Limpieza de bloques de código Markdown
     cleanJSON(str) {
         if (!str) return "";
-        let clean = str.replace(/```json/g, '').replace(/```/g, '');
+        let clean = str.replace(/```json/g, '').replace(/```/g, '').trim();
         const firstOpen = clean.indexOf('{');
         const firstArr = clean.indexOf('[');
         const first = (firstOpen > -1 && firstArr > -1) ? Math.min(firstOpen, firstArr) : Math.max(firstOpen, firstArr);
@@ -19,28 +17,28 @@ window.Koreh.Text = {
         const lastClose = clean.lastIndexOf('}');
         const lastArr = clean.lastIndexOf(']');
         const last = Math.max(lastClose, lastArr);
-
         if (first !== -1 && last !== -1) {
             return clean.substring(first, last + 1);
         }
         return clean;
     },
-
+    
     // Función principal de generación adaptada a la red de agentes local/cloud y online
     async generate(systemPrompt, userPrompt, config = {}) {
         if (!window.Koreh.Core) throw new Error("Koreh.Core no cargado.");
         window.Koreh.Core.syncConfig();
-
         const apiMode = window.Koreh.Core.config.apiMode;
         let model = config.model || localStorage.getItem('koreh_selected_ollama_model') || 'qwen3.5:cloud';
         const jsonMode = config.jsonMode || false;
         const signal = config.signal || null;
         
         let resultText = "";
-
-        // Enrutamiento primario basado en la configuración global de la UI
-        if (apiMode === 'pollinations') {
-            // El modelo activo para pollinations se obtiene de la preferencia guardada si no viene forzado
+        
+        // Enrutamiento basado en la configuración global de la UI
+        if (apiMode === 'gemini') {
+            const geminiModel = localStorage.getItem('koreh_selected_gemini_model') || 'gemini-3.1-flash-lite'; 
+            resultText = await window.Koreh.Core.callGeminiDirectAPI(geminiModel, userPrompt, jsonMode, systemPrompt, signal);
+        } else if (apiMode === 'pollinations') {
             const pollinationsModel = localStorage.getItem('koreh_selected_pollinations_model') || 'gemini-fast';
             resultText = await window.Koreh.Core.callPollinationsAPI(pollinationsModel, userPrompt, jsonMode, systemPrompt, signal);
         } else {
@@ -52,7 +50,7 @@ window.Koreh.Text = {
                 resultText = await window.Koreh.Core.callOllamaAPI(model, userPrompt, jsonMode, systemPrompt, signal);
             }
         }
-
+        
         if (jsonMode) {
             try {
                 const cleaned = this.cleanJSON(resultText);
@@ -72,7 +70,6 @@ window.Koreh.Text = {
                 }
             }
         }
-
         return resultText;
     }
 };

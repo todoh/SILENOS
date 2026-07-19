@@ -1,21 +1,18 @@
 // --- GESTIÓN DE UI (Edición Local/Híbrida con Soporte de Múltiples Motores e IO) ---
 const ui = {
-    // Alternancia dinámica entre Tema Oscuro y Claro con almacenamiento persistente
     toggleTheme: () => {
         const isDark = document.documentElement.classList.toggle('dark');
         localStorage.setItem('koreh_theme', isDark ? 'dark' : 'light');
-        
+                 
         const btn = document.getElementById('theme-toggle-btn');
         if (btn) {
             btn.innerHTML = isDark ? '<i class="fa-solid fa-sun text-[11px]"></i>' : '<i class="fa-solid fa-moon text-[11px]"></i>';
         }
-        
-        // Si el canvas de tramas está instanciado, forzamos su repintado inmediato con el nuevo color base de fondo
+                 
         if (window.TramasCanvas && typeof window.TramasCanvas.render === 'function') {
             window.TramasCanvas.render();
         }
     },
-
     switchTab: (tabId) => {
         const tabDatos = document.getElementById('tab-datos');
         const tabTramas = document.getElementById('tab-tramas');
@@ -23,20 +20,20 @@ const ui = {
         const tabIO = document.getElementById('tab-io');
         const tabLibros = document.getElementById('tab-libros');
         const cronoToolbar = document.getElementById('crono-toolbar');
-        
+                 
         if (tabDatos) tabDatos.classList.add('hidden');
         if (tabTramas) tabTramas.classList.add('hidden');
         if (tabCrono) tabCrono.classList.add('hidden');
         if (tabIO) tabIO.classList.add('hidden');
         if (tabLibros) tabLibros.classList.add('hidden');
         if (cronoToolbar) cronoToolbar.classList.add('hidden');
-        
+                 
         const btnDatos = document.getElementById('btn-tab-datos');
         const btnTramas = document.getElementById('btn-tab-tramas');
         const btnCrono = document.getElementById('btn-tab-cronologia');
         const btnIO = document.getElementById('btn-tab-io');
         const btnLibros = document.getElementById('btn-tab-libros');
-        
+                 
         if (btnDatos) {
             btnDatos.classList.remove('border-black', 'text-black', 'border-white', 'text-white');
             btnDatos.classList.add('border-transparent', 'text-gray-400');
@@ -57,17 +54,16 @@ const ui = {
             btnLibros.classList.remove('border-black', 'text-black', 'border-white', 'text-white');
             btnLibros.classList.add('border-transparent', 'text-gray-400');
         }
-
         const targetTab = document.getElementById(`tab-${tabId}`);
         if (targetTab) targetTab.classList.remove('hidden');
-        
+                 
         const btn = document.getElementById(`btn-tab-${tabId}`);
         if (btn) {
             const isDark = document.documentElement.classList.contains('dark');
             btn.classList.add(isDark ? 'border-white' : 'border-black');
             btn.classList.remove('border-transparent', 'text-gray-400');
         }
-        
+                 
         if (tabId === 'datos' && typeof app !== 'undefined') {
             app.renderGrid();
         }
@@ -87,7 +83,6 @@ const ui = {
             window.KorehIO.refreshTargetTimelineSelect();
         }
     },
-
     toggleFolderModal: () => {
         const modal = document.getElementById('folder-modal');
         if (modal) {
@@ -97,7 +92,6 @@ const ui = {
             }
         }
     },
-    
     toggleNameModal: () => {
         const modal = document.getElementById('name-modal');
         const input = document.getElementById('new-item-name');
@@ -109,21 +103,18 @@ const ui = {
             }
         }
     },
-
     toggleImageConfigModal: () => {
         const modal = document.getElementById('image-config-modal');
         if (modal) {
             modal.classList.toggle('hidden');
         }
     },
-
     toggleOllamaConfigModal: () => {
         const modal = document.getElementById('ollama-config-modal');
         if (modal) {
             modal.classList.toggle('hidden');
         }
     },
-
     toggleGenerator: () => {
         const sidebar = document.getElementById('generator-sidebar');
         const btn = document.getElementById('btn-toggle-gen');
@@ -137,7 +128,6 @@ const ui = {
         const sidebar = document.getElementById('editor-sidebar');
         if (sidebar) sidebar.classList.add('open');
     },
-    
     closeSidebar: async () => {
         if (typeof app !== 'undefined' && app.saveTimer) {
             clearTimeout(app.saveTimer);
@@ -148,7 +138,6 @@ const ui = {
         if (sidebar) sidebar.classList.remove('open');
         if (typeof app !== 'undefined') app.currentFileHandle = null; 
     },
-    
     setLoading: (loading, msg = "Procesando...") => {
         const loader = document.getElementById('sidebar-loader');
         if (loader) {
@@ -157,24 +146,22 @@ const ui = {
             if(loading) loader.classList.add('active'); else loader.classList.remove('active');
         }
     },
-
     fetchOllamaModels: async () => {
         const select = document.getElementById('ollama-text-model');
         if (!select) return;
-
         const baseUrl = localStorage.getItem('koreh_ollama_local_url') || 'http://127.0.0.1:11434/api';
-        
+                 
         try {
             const cleanUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
             const res = await fetch(`${cleanUrl}/tags`);
-            
+                         
             if (!res.ok) throw new Error();
             const data = await res.json();
-            
+                         
             select.innerHTML = '';
             if (data.models && data.models.length > 0) {
                 const savedSelected = localStorage.getItem('koreh_selected_ollama_model') || '';
-                
+                                 
                 data.models.forEach(model => {
                     const opt = document.createElement('option');
                     opt.value = model.name;
@@ -182,7 +169,6 @@ const ui = {
                     if (model.name === savedSelected) opt.selected = true;
                     select.appendChild(opt);
                 });
-
                 if (!select.value && select.options.length > 0) {
                     localStorage.setItem('koreh_selected_ollama_model', select.options[0].value);
                 }
@@ -194,49 +180,75 @@ const ui = {
             select.innerHTML = '<option value="">OFFLINE / DESCONECTADO</option>';
         }
     },
-
     handleImageEngineChange: () => {
         const engine = document.getElementById('global-image-engine')?.value || 'comfyui';
         const modelSelect = document.getElementById('global-image-model');
         const comfyParamsBlock = document.getElementById('box-config-comfyui-params');
         if (!modelSelect) return;
-
         modelSelect.innerHTML = '';
-
-        if (engine === 'pollinations') {
-            if (comfyParamsBlock) comfyParamsBlock.classList.add('hidden');
-            
-            const models = [
-                { val: 'flux', label: 'Flux Schnell' },
-                { val: 'zimage', label: 'Z-Image Turbo' } ,   
-                { val: 'gptimage', label: 'gptimage' } ,
-                  { val: 'klein', label: 'klein' } ,
-                    { val: 'nova-canvas', label: 'nova-canvas' } ,   
-                     { val: 'kontext', label: 'kontext' },
-                  { val: 'gpt-image-2', label: 'gpt-image-2' } ,  
-                  { val: 'gptimage-large', label: 'gptimage-large' }   
-                
-                   
-
-            ];
-
-            const savedModel = localStorage.getItem('koreh_selected_image_model') || 'flux';
-            models.forEach(m => {
-                const opt = document.createElement('option');
-                opt.value = m.val;
-                opt.innerText = m.label.toUpperCase();
-                if (m.val === savedModel) opt.selected = true;
-                modelSelect.appendChild(opt);
-            });
-        } else {
+        
+        if (engine === 'fooocus') {
             if (comfyParamsBlock) comfyParamsBlock.classList.remove('hidden');
             const opt = document.createElement('option');
-            opt.value = 'juggernautXL_ragnarokBy.safetensors';
-            opt.innerText = 'JUGGERNAUT XL (COMFY)';
+            opt.value = 'juggernautXL_v8Rundiffusion.safetensors';
+            opt.innerText = 'JUGGERNAUT XL (FOOOCUS)';
             modelSelect.appendChild(opt);
+            
+            // Inyectar selector LoRA dinámicamente si no existe en los parámetros
+            let loraBox = document.getElementById('box-config-fooocus-lora');
+            if (!loraBox && comfyParamsBlock) {
+                loraBox = document.createElement('div');
+                loraBox.id = 'box-config-fooocus-lora';
+                loraBox.className = 'mt-2';
+                loraBox.innerHTML = `
+                    <span class="label-text">LoRA Acelerador (Fooocus)</span>
+                    <select id="fooocus-lora-select" onchange="localStorage.setItem('koreh_fooocus_lora', this.value);" class="config-input text-xs font-bold bg-transparent text-black dark:text-white border-b">
+                        <option value="sdxl_lightning_4step.safetensors">SDXL Lightning (4 Steps)</option>
+                        <option value="lcm_xl.safetensors">LCM SDXL</option>
+                    </select>
+                `;
+                comfyParamsBlock.parentNode.insertBefore(loraBox, comfyParamsBlock.nextSibling);
+            }
+            const savedLora = localStorage.getItem('koreh_fooocus_lora') || 'sdxl_lightning_4step.safetensors';
+            const loraSelect = document.getElementById('fooocus-lora-select');
+            if (loraSelect) loraSelect.value = savedLora;
+        } else {
+            const loraBox = document.getElementById('box-config-fooocus-lora');
+            if (loraBox) loraBox.remove();
+            
+            if (engine === 'pollinations') {
+                if (comfyParamsBlock) comfyParamsBlock.classList.add('hidden');
+                             
+                const models = [
+                    { val: 'flux', label: 'Flux Schnell' },
+                    { val: 'zimage', label: 'Z-Image Turbo' } ,   
+                    { val: 'gptimage', label: 'gptimage' } ,   
+                    { val: 'klein', label: 'klein' } ,     
+                    { val: 'nova-canvas', label: 'nova-canvas' } ,         
+                    { val: 'kontext', label: 'kontext' },   
+                    { val: 'gpt-image-2', label: 'gpt-image-2' } ,     
+                    { val: 'gptimage-large', label: 'gptimage-large' }                                     
+                ];
+                const savedModel = localStorage.getItem('koreh_selected_image_model') || 'flux';
+                models.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.val;
+                    opt.innerText = m.label.toUpperCase();
+                    if (m.val === savedModel) opt.selected = true;
+                    modelSelect.appendChild(opt);
+                });
+            } else {
+                if (comfyParamsBlock) comfyParamsBlock.classList.remove('hidden');
+                const opt = document.createElement('option');
+                opt.value = 'juggernautXL_ragnarokBy.safetensors';
+                opt.innerText = 'JUGGERNAUT XL (COMFY)';
+                modelSelect.appendChild(opt);
+            }
         }
     },
+    // Reemplaza o localiza la función updateAuthUI dentro de logic.ui.js para reflejar este estado completo:
 
+    // REEMPLAZAR LA FUNCIÓN updateAuthUI DENTRO DE window.ui EN logic.ui.js
     updateAuthUI: () => {
         const indicator = document.getElementById('status-indicator');
         const text = document.getElementById('status-text');
@@ -245,7 +257,8 @@ const ui = {
         const modeSelector = document.getElementById('koreh-api-mode');
         const imageEngineSelector = document.getElementById('global-image-engine');
         const keyInput = document.getElementById('pollinations-api-key-inp');
-
+        const geminiKeyInput = document.getElementById('gemini-api-key-inp');
+        
         if (modeSelector) {
             modeSelector.value = localStorage.getItem('koreh_api_mode') || 'local';
         }
@@ -255,6 +268,9 @@ const ui = {
         if (keyInput) {
             keyInput.value = localStorage.getItem('pollinations_api_key') || '';
         }
+        if (geminiKeyInput) {
+            geminiKeyInput.value = localStorage.getItem('koreh_gemini_book_api_key') || '';
+        }
         if (ollamaLocalInp) {
             const savedLocalUrl = localStorage.getItem('koreh_ollama_local_url') || 'http://127.0.0.1:11434/api';
             ollamaLocalInp.value = savedLocalUrl;
@@ -263,32 +279,49 @@ const ui = {
             const savedCloudUrl = localStorage.getItem('koreh_ollama_cloud_url') || 'http://127.0.0.1:11434/api';
             ollamaCloudInp.value = savedCloudUrl;
         }
-
         ui.fetchOllamaModels();
         ui.handleModeChangeChangeVisibility();
         ui.handleImageEngineChange();
-
-        // Inicialización y sincronización en frío de la preferencia de color guardada
+        
         const savedTheme = localStorage.getItem('koreh_theme') || 'light';
         if (savedTheme === 'dark') {
             document.documentElement.classList.add('dark');
             const btn = document.getElementById('theme-toggle-btn');
             if (btn) btn.innerHTML = '<i class="fa-solid fa-sun text-[11px]"></i>';
         }
-
         if (!indicator || !text) return;
-
         const currentMode = localStorage.getItem('koreh_api_mode') || 'local';
         indicator.className = "w-1.5 h-1.5 rounded-full bg-black dark:bg-white"; 
-        text.innerText = currentMode === 'local' ? "LOCAL ENGINE" : "POLLINATION ENGINE";
+        
+        if (currentMode === 'local') {
+            text.innerText = "LOCAL ENGINE";
+        } else if (currentMode === 'pollinations') {
+            text.innerText = "POLLINATION ENGINE";
+        } else if (currentMode === 'gemini') {
+            text.innerText = "GEMINI NATIVE ENGINE";
+        }
         text.className = "text-[10px] font-medium text-black dark:text-white uppercase tracking-wider";
     },
 
+    // Adicionalmente, actualizar handleModeChangeChangeVisibility para alternar las cajas de la UI
     handleModeChangeChangeVisibility: () => {
         const currentMode = localStorage.getItem('koreh_api_mode') || 'local';
         const ollamaBox = document.getElementById('box-config-ollama');
         const pollinationsBox = document.getElementById('box-config-pollinations');
         
+        if (currentMode === 'pollinations' || currentMode === 'gemini') {
+            if (ollamaBox) ollamaBox.classList.add('hidden');
+            if (pollinationsBox) pollinationsBox.classList.remove('hidden');
+        } else {
+            if (ollamaBox) document.getElementById('box-config-ollama')?.classList.remove('hidden');
+            if (pollinationsBox) pollinationsBox.classList.add('hidden');
+        }
+    },
+    handleModeChangeChangeVisibility: () => {
+        const currentMode = localStorage.getItem('koreh_api_mode') || 'local';
+        const ollamaBox = document.getElementById('box-config-ollama');
+        const pollinationsBox = document.getElementById('box-config-pollinations');
+                 
         if (currentMode === 'pollinations') {
             if (ollamaBox) ollamaBox.classList.add('hidden');
             if (pollinationsBox) pollinationsBox.classList.remove('hidden');
@@ -297,36 +330,32 @@ const ui = {
             if (pollinationsBox) pollinationsBox.classList.add('hidden');
         }
     },
-
     alert: (msg) => {
         const modal = document.getElementById('msg-modal');
         const content = document.getElementById('msg-content');
         const actions = document.getElementById('msg-actions');
-        
+                 
         if (!modal || !content || !actions) return;
-        
+                 
         content.innerText = msg;
         actions.innerHTML = `
             <button onclick="document.getElementById('msg-modal').classList.add('hidden')" class="btn-primary w-24">OK</button>
         `;
         modal.classList.remove('hidden');
     },
-
     confirm: (msg, onYes) => {
         const modal = document.getElementById('msg-modal');
         const content = document.getElementById('msg-content');
         const actions = document.getElementById('msg-actions');
-        
+                 
         if (!modal || !content || !actions) return;
-        
+                 
         content.innerText = msg;
         actions.innerHTML = '';
-
         const btnCancel = document.createElement('button');
         btnCancel.className = "btn-nordic text-gray-400 border-none hover:bg-gray-50 dark:hover:bg-gray-800";
         btnCancel.innerText = "CANCELAR";
         btnCancel.onclick = () => modal.classList.add('hidden');
-
         const btnOk = document.createElement('button');
         btnOk.className = "btn-primary w-24";
         btnOk.innerText = "ACEPTAR";
@@ -334,20 +363,16 @@ const ui = {
             modal.classList.add('hidden');
             onYes();
         };
-
         actions.appendChild(btnCancel);
         actions.appendChild(btnOk);
         modal.classList.remove('hidden');
     },
-
     toggleFileSelector() {
         if(window.uiCrono) window.uiCrono.toggleFileSelector();
     },
-
     toggleLoading(show, text, subtext="") {
         if(window.uiCrono) window.uiCrono.toggleLoading(show, text, subtext);
     },
-
     zoomImage: (src) => {
         let overlay = document.getElementById('ui-zoom-overlay');
         if (!overlay) {
@@ -362,33 +387,30 @@ const ui = {
             };
             document.body.appendChild(overlay);
         }
-        
+                 
         const img = document.getElementById('ui-zoom-img');
         if (img) img.src = src;
-        
+                 
         overlay.classList.remove('hidden');
         setTimeout(() => {
             overlay.classList.remove('opacity-0');
             overlay.classList.add('opacity-100');
         }, 10);
     },
-
     triggerDirectoryPicker: async () => {
         if (typeof app !== 'undefined') {
             ui.toggleFolderModal(); 
             await app.selectDirectoryAPI(); 
         }
     },
-
     renderContextMenu: (x, y, itemIndex = null) => {
         ui.closeContextMenu();
-        
+                 
         const menu = document.createElement('div');
         menu.id = 'datos-context-menu';
         menu.className = 'fixed bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl py-1 z-[200] min-w-[160px] font-sans text-xs text-gray-700 dark:text-gray-300';
         menu.style.left = `${x}px`;
         menu.style.top = `${y}px`;
-
         if (itemIndex !== null) {
             menu.innerHTML = `
                 <div onclick="ui.closeContextMenu(); app.duplicateItemAtIndex(${itemIndex});" class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center gap-2"><i class="fa-regular fa-copy text-gray-400"></i> DUPLICAR DATO</div>
@@ -401,24 +423,19 @@ const ui = {
                 <div onclick="ui.closeContextMenu(); app.createNewItem();" class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center gap-2"><i class="fa-solid fa-plus text-gray-400"></i> CREAR NUEVO DATO</div>
             `;
         }
-
         document.body.appendChild(menu);
-
         const closeHandler = () => {
             ui.closeContextMenu();
             document.removeEventListener('click', closeHandler);
         };
         setTimeout(() => document.addEventListener('click', closeHandler), 10);
     },
-
     closeContextMenu: () => {
         const existing = document.getElementById('datos-context-menu');
         if (existing) existing.remove();
     },
-
     toggleAIModal() { document.getElementById('ai-modal').classList.toggle('hidden'); },
     togglePremiseModal() { document.getElementById('premise-modal').classList.toggle('hidden'); },
     toggleStoryboardModal() { document.getElementById('storyboard-modal').classList.toggle('hidden'); }
 };
-
 window.ui = ui;
