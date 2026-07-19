@@ -1,16 +1,23 @@
 // --- cronologia/storyboard.core.js ---
 // MOTOR DE STORYBOARD Y CONSISTENCIA VISUAL (V4.0 - NARRATIVA VOICEOVER)
+// REFACTORIZADO: Corrección absoluta del ReferenceError reemplazando 'ai' por los componentes nativos de window.Koreh
 
 const Storyboard = {
     
     async analyzeAndGenerate(storyText) {
-        if (!ai.apiKey) return alert("Conecta la IA primero.");
+        // Validación de autenticación alineada con el Core centralizado
+        const authKey = window.Koreh.Core ? window.Koreh.Core.getAuthKey() : '';
+        if (window.Koreh.Core && window.Koreh.Core.config.apiMode === 'pollinations' && !authKey) {
+            return alert("Conecta la IA primero. Falta clave de autenticación en la configuración global.");
+        }
         if (!storyText) return alert("Escribe una historia primero.");
 
         const cleanStory = storyText.substring(0, 20000); 
-        const inventoryList = ai.inventory || [];
         
-        const existingAssets = main.visualBibleData || [];
+        // Recuperar el inventario del buscador de cronoAI o la app principal de forma segura
+        const inventoryList = (window.cronoAI && window.cronoAI.inventory) ? window.cronoAI.inventory : [];
+        
+        const existingAssets = window.mainCrono.visualBibleData || [];
         const hasMemory = existingAssets.length > 0;
 
         const getVisual = (asset) => {
@@ -20,7 +27,7 @@ const Storyboard = {
         };
 
         try {
-            ui.toggleLoading(true, "FASE 1: CONTINUIDAD VISUAL", hasMemory ? "Consultando VISUAL_BIBLE.json y detectando nuevos elementos..." : "Creando Biblia Visual desde cero...");
+            window.ui.toggleLoading(true, "FASE 1: CONTINUIDAD VISUAL", hasMemory ? "Consultando VISUAL_BIBLE.json y detectando nuevos elementos..." : "Creando Biblia Visual desde cero...");
 
             const memoryString = JSON.stringify(existingAssets.map(a => ({ name: a.name, desc: getVisual(a) })));
 
@@ -61,8 +68,15 @@ const Storyboard = {
                 ]
             }`;
 
-            const bibleRes = await ai.callModel(biblePrompt, "Genera solo los NUEVOS activos visuales.", 0.2, 'claude-fast');
-            const newAssets = JSON.parse(ai.cleanJSON(bibleRes)).new_assets || [];
+            // Reemplazo de ai.callModel por window.Koreh.Text.generate con jsonMode activo
+            let bibleRes = await window.Koreh.Text.generate(
+                "Eres un analizador semántico de dirección de arte. Devuelve estrictamente un objeto JSON.", 
+                biblePrompt, 
+                { jsonMode: true }
+            );
+            
+            if (typeof bibleRes === 'string') bibleRes = JSON.parse(window.Koreh.Text.cleanJSON(bibleRes));
+            const newAssets = bibleRes.new_assets || [];
             
             console.log(`Nuevos activos detectados: ${newAssets.length}`);
             
@@ -75,14 +89,23 @@ const Storyboard = {
                 }
             });
 
-            await main.saveVisualBible(finalVisualBible);
+            // Guardado persistente a través de mainCrono (antiguo main que actúa como namespace)
+            if (window.mainCrono && typeof window.mainCrono.saveData === 'function') {
+                // Sincronizar en caliente el array interno de la biblia visual en disco
+                if (window.mainCrono.visualBibleHandle) {
+                    const writable = await window.mainCrono.visualBibleHandle.createWritable();
+                    await writable.write(JSON.stringify(finalVisualBible, null, 2));
+                    await writable.close();
+                }
+                window.mainCrono.visualBibleData = finalVisualBible;
+            }
 
             window.currentVisualBible = finalVisualBible.map(x => ({ name: x.name, visual_tags: getVisual(x) }));
             if (typeof SbUI !== 'undefined' && SbUI.renderBible) {
                 SbUI.renderBible(window.currentVisualBible);
             }
 
-            ui.toggleLoading(true, "FASE 2: ESTRUCTURA LITERARIA", "Escribiendo guion de narrador y separando acciones técnicas...");
+            window.ui.toggleLoading(true, "FASE 2: ESTRUCTURA LITERARIA", "Escribiendo guion de narrador y separando acciones técnicas...");
 
             const skeletonPrompt = `
             ACTÚA COMO: Un Guionista de Documental Poético y Director Técnico.
@@ -112,10 +135,16 @@ const Storyboard = {
                 ]
             }`;
 
-            const skeletonRes = await ai.callModel(skeletonPrompt, "Genera la estructura con narración literaria.", 0.4, 'claude-fast');
-            const sceneSkeleton = JSON.parse(ai.cleanJSON(skeletonRes)).scenes;
+            let skeletonRes = await window.Koreh.Text.generate(
+                "Eres un estructurador cinematográfico. Devuelve estrictamente un objeto JSON.", 
+                skeletonPrompt, 
+                { jsonMode: true }
+            );
+            
+            if (typeof skeletonRes === 'string') skeletonRes = JSON.parse(window.Koreh.Text.cleanJSON(skeletonRes));
+            const sceneSkeleton = skeletonRes.scenes || [];
 
-            ui.toggleLoading(true, "FASE 3: INGENIERÍA DE PROMPTS 8K", "Generando prompts basados en la acción técnica...");
+            window.ui.toggleLoading(true, "FASE 3: INGENIERÍA DE PROMPTS 8K", "Generando prompts basados en la acción técnica...");
 
             const substitutionMap = finalVisualBible.map(a => 
                 `- IDENTIFICADOR: "${a.name}"  >>>  SUSTITUIR POR: "${getVisual(a)}"`
@@ -124,7 +153,7 @@ const Storyboard = {
             const promptEngineeringPrompt = `
             ACTÚA COMO: Un "Traductor Visual".
             
-            TU FUENTE DE VERDAD:
+            TU FUENTE DE VERDAT:
             Usa ÚNICAMENTE el campo "visual_action" del JSON de entrada. IGNORA el campo "narrator_text".
             
             TU MISIÓN (SUSTITUCIÓN OBLIGATORIA):
@@ -149,8 +178,14 @@ const Storyboard = {
                 ]
             }`;
 
-            const promptsRes = await ai.callModel(promptEngineeringPrompt, "Genera los Prompts Maestros.", 0.2, 'claude-fast');
-            const promptList = JSON.parse(ai.cleanJSON(promptsRes)).prompts;
+            let promptsRes = await window.Koreh.Text.generate(
+                "You are an expert prompt builder. Return strictly valid pure JSON format.", 
+                promptEngineeringPrompt, 
+                { jsonMode: true }
+            );
+            
+            if (typeof promptsRes === 'string') promptsRes = JSON.parse(window.Koreh.Text.cleanJSON(promptsRes));
+            const promptList = promptsRes.prompts || [];
             
             const finalEvents = [];
             
@@ -159,29 +194,41 @@ const Storyboard = {
                 
                 finalEvents.push({
                     id: 'evt-' + Date.now() + Math.floor(Math.random() * 10000),
-                    time: scene.time,
-                    description: scene.title,
+                    time: parseFloat(scene.time || (index + 1)),
+                    description: scene.title || "Escena Storyboard",
                     moments: [{ 
-                        id: Date.now() + Math.floor(Math.random() * 10000), 
-                        text: scene.narrator_text || scene.visual_action,
-                        visualPrompt: visual,
+                        id: Date.now() + Math.floor(Math.random() * 10000) + index, 
+                        text: scene.narrator_text || scene.visual_action || "Acción sin texto...",
+                        visualPrompt: visual.trim(),
                         image64: null,
                         aspectRatio: 'landscape'
                     }]
                 });
             });
 
-            main.loadEvents(finalEvents);
-            main.saveData();
+            // Carga y guardado determinista en el gestor de la línea temporal
+            if (window.mainCrono) {
+                await window.mainCrono.loadEvents(finalEvents);
+                await window.mainCrono.saveData();
+            }
 
-            ui.toggleLoading(false);
-            ui.togglePremiseModal();
+            window.ui.toggleLoading(false);
+            window.ui.toggleStoryboardModal(); // Cierra ventana de entrada
+            
+            // Apertura explícita de la función del canvas para actualizar toda la renderización de la escaleta
+            if (window.timeline && typeof window.timeline.renderAll === 'function') {
+                window.timeline.renderAll();
+                window.timeline.resetView();
+            }
+            
             alert(`Storyboard Generado con Narrativa Literaria.\n\nSe han guardado ${newAssets.length} nuevos activos visuales.`);
 
         } catch (e) {
             console.error(e);
-            ui.toggleLoading(false);
+            window.ui.toggleLoading(false);
             alert("Error Crítico en Storyboard Core: " + e.message);
         }
     }
 };
+
+window.Storyboard = Storyboard; 
