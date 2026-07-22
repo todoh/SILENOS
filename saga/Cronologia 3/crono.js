@@ -1,3 +1,4 @@
+// Abrir Canvas: Cronologia 3/crono.js
 // --- crono.js: SISTEMA DE VISUALIZACIÓN (ADAPTATIVO INTEGRADO) ---
 
 class TimelineSystem {
@@ -5,6 +6,7 @@ class TimelineSystem {
         this.zoom = 50; 
         this.panX = 0;
         this.events = [];
+        this.markers = []; // Array para almacenar las posiciones horizontales (tiempo) de los marcadores
         this.container = document.getElementById('timeline-container');
         this.viewport = document.getElementById('viewport-layer');
         this.ruler = document.getElementById('ruler-ticks');
@@ -22,10 +24,12 @@ class TimelineSystem {
 
     initInteraction() {
         this.container.addEventListener('mousedown', e => {
-            if (e.target.closest('.evt-group-fixed') || e.target.closest('.timeline-minimap-fixed')) return; 
-            this.isDragging = true;
-            this.startX = e.clientX;
-            this.container.style.cursor = 'grabbing';
+            if (e.button === 0) { // Clic izquierdo para arrastrar
+                if (e.target.closest('.evt-group-fixed') || e.target.closest('.timeline-minimap-fixed')) return; 
+                this.isDragging = true;
+                this.startX = e.clientX;
+                this.container.style.cursor = 'grabbing';
+            }
         });
 
         window.addEventListener('mousemove', e => {
@@ -65,6 +69,39 @@ class TimelineSystem {
             window.mainCrono.createEventAt(parseFloat(worldX.toFixed(1)));
         });
 
+        // Evento de Clic Derecho para Añadir o Eliminar Marcadores
+        this.container.addEventListener('contextmenu', e => {
+            if (e.target.closest('.evt-group-fixed') || e.target.closest('.timeline-minimap-fixed')) return;
+            e.preventDefault();
+
+            const rect = this.container.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const worldTime = (clickX - this.panX) / this.zoom;
+
+            // Tolerancia de selección en píxeles para borrar
+            const tolerancePx = 12;
+            const existingIndex = this.markers.findIndex(mTime => {
+                const screenX = (mTime * this.zoom) + this.panX;
+                return Math.abs(screenX - clickX) <= tolerancePx;
+            });
+
+            if (existingIndex !== -1) {
+                // Si hay un marcador bajo el cursor, lo borramos
+                this.markers.splice(existingIndex, 1);
+            } else {
+                // Si no hay ningún marcador, creamos uno nuevo en esa coordenada
+                this.markers.push(parseFloat(worldTime.toFixed(2)));
+            }
+
+            // Mantenemos los marcadores ordenados cronológicamente
+            this.markers.sort((a, b) => a - b);
+
+            // Persistir los marcadores en el archivo del proyecto mediante mainCrono
+            this.saveMarkersToProject();
+
+            this.renderAll();
+        });
+
         if (this.minimap) {
             this.minimap.addEventListener('mousedown', e => {
                 this.jumpToMinimapRatio(e);
@@ -76,6 +113,15 @@ class TimelineSystem {
                 document.addEventListener('mousemove', onMove);
                 document.addEventListener('mouseup', onUp);
             });
+        }
+    }
+
+    saveMarkersToProject() {
+        if (window.mainCrono && window.mainCrono.data) {
+            window.mainCrono.data.markers = [...this.markers];
+            if (typeof window.mainCrono.saveData === 'function') {
+                window.mainCrono.saveData();
+            }
         }
     }
 
@@ -95,8 +141,11 @@ class TimelineSystem {
         this.renderAll();
     }
 
-    setData(events) {
-        this.events = events;
+    setData(events, markers = null) {
+        this.events = events || [];
+        if (Array.isArray(markers)) {
+            this.markers = [...markers];
+        }
         this.renderAll(); 
     }
 
@@ -129,6 +178,7 @@ class TimelineSystem {
 
     renderAll() {
         this.renderRuler();
+        this.renderMarkers();
         this.renderEvents();
         this.renderTransforms();
     }
@@ -159,6 +209,32 @@ class TimelineSystem {
             
             this.ruler.appendChild(tick);
         }
+    }
+
+    renderMarkers() {
+        document.querySelectorAll('.crono-marker-flag').forEach(el => el.remove());
+
+        this.markers.sort((a, b) => a - b);
+
+        this.markers.forEach((mTime, idx) => {
+            const pos = mTime * this.zoom;
+
+            const el = document.createElement('div');
+            el.className = 'crono-marker-flag absolute top-0 flex flex-col items-center pointer-events-none z-30';
+            el.style.left = `${pos}px`;
+            el.style.transform = 'translateX(-50%)';
+
+            const numberOrdinal = `${idx + 1}º`;
+
+            el.innerHTML = `
+              <div style="height: 50px"> </div> <div  class="bg-indigo-600 text-white font-mono text-[24px] font-bold px-1.5 py-0.5 rounded shadow-md border border-indigo-400 select-none">
+                    ${numberOrdinal}
+                </div>
+                <div class="w-[2px] h-[calc(100vh-120px)] bg-indigo-500/50 border-r border-dashed border-indigo-400/80"></div>
+            `;
+
+            this.viewport.appendChild(el);
+        });
     }
 
     renderMinimap() {

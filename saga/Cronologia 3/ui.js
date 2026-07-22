@@ -1,6 +1,8 @@
-// --- cronologia/ui.js ---
-// INTERFAZ DE USUARIO (ACTUALIZADO: NAMESPACE INDEPENDIENTE CON DRAG AND DROP NATIVO PARA ORDENAR SUBPARTES)
-
+// Abrir Canvas: Cronologia 3/ui.js
+/**
+ * CRONOLOGIA UI - Inspector y Renderizado de Subpartes / Momentos
+ * Incluye resaltado y subrayado dinámico de nombres de la Base de Datos en la caja de texto.
+ */
 const uiCrono = {
     selectedFolderHandle: null,
     selectedEventId: null,
@@ -178,7 +180,7 @@ const uiCrono = {
             if (!m.aspectRatio) m.aspectRatio = 'landscape';
             const safeId = String(m.id).replace('.', '-');
             const row = document.createElement('div');
-            row.className = "p-3 border bg-white space-y-3 mb-4 shadow-sm rounded-sm flex flex-col cursor-grab active:cursor-grabbing transition-all border-gray-200 duration-150 relative group/row";
+            row.className = "p-3 border bg-white dark:bg-gray-800 space-y-3 mb-4 shadow-sm rounded-sm flex flex-col cursor-grab active:cursor-grabbing transition-all border-gray-200 dark:border-gray-700 duration-150 relative group/row";
             row.setAttribute('draggable', 'true');
             row.dataset.index = idx;
             
@@ -219,7 +221,6 @@ const uiCrono = {
                     const offset = e.clientY - bounding.top;
                     let targetActualIndex = toIndex;
                     
-                    // Si se suelta en la mitad inferior, se desplaza hacia abajo
                     if (offset >= bounding.height / 2 && fromIndex > toIndex) {
                         targetActualIndex++;
                     } else if (offset < bounding.height / 2 && fromIndex < toIndex) {
@@ -229,11 +230,9 @@ const uiCrono = {
                     const movedElement = ev.moments.splice(fromIndex, 1)[0];
                     ev.moments.splice(targetActualIndex, 0, movedElement);
                     
-                    // Persistencia y refresco de interfaz
                     window.mainCrono.saveData();
                     this.renderMoments(ev);
                     
-                    // Apertura explícita de la función del canvas para actualizar la renderización
                     if (window.timeline && typeof window.timeline.renderEvents === 'function') {
                         window.timeline.renderEvents();
                     }
@@ -246,7 +245,7 @@ const uiCrono = {
             if (srcTarget) {
                 const aspectClass = m.aspectRatio === 'portrait' ? 'aspect-[9/16]' : 'aspect-video';
                 imgPreviewHtml = `
-                    <div class="w-full ${aspectClass} bg-gray-100 border border-gray-100 overflow-hidden rounded-sm group relative cursor-zoom-in shadow-inner" 
+                    <div class="w-full ${aspectClass} bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 overflow-hidden rounded-sm group relative cursor-zoom-in shadow-inner" 
                          onclick="if(window.ui && ui.zoomImage) ui.zoomImage('${srcTarget}')">
                         <img src="${srcTarget}" class="w-full h-full object-cover">
                         <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
@@ -256,36 +255,57 @@ const uiCrono = {
                 `;
             } else {
                 imgPreviewHtml = `
-                    <div class="w-full h-16 bg-gray-50 border border-dashed border-gray-200 flex flex-col items-center justify-center rounded-sm text-gray-400 cursor-pointer hover:bg-gray-100 transition-colors" onclick="document.getElementById('file-upload-${safeId}').click()">
+                    <div class="w-full h-16 bg-gray-50 dark:bg-gray-900 border border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center rounded-sm text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" onclick="document.getElementById('file-upload-${safeId}').click()">
                         <i class="fa-regular fa-image text-sm mb-1"></i>
                         <span class="text-[8px] uppercase tracking-widest font-bold">Añadir Ilustración</span>
                     </div>
                 `;
             }
 
+            // Formatear texto aplicando el resaltado de la base de datos
+            const highlightedHTML = (window.KorehIO && typeof window.KorehIO.highlightDataNames === 'function') 
+                ? window.KorehIO.highlightDataNames(m.text || "")
+                : (m.text || "");
+
             row.innerHTML = `
                 <div class="flex justify-between text-[10px] text-gray-400 font-bold select-none items-center">
-                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-grip-lines text-gray-300 group-hover/row:text-gray-400 cursor-grab"></i> SUBPARTE ${idx+1}</span>
+                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-grip-lines text-gray-300 dark:text-gray-600 group-hover/row:text-gray-400 cursor-grab"></i> SUBPARTE ${idx+1}</span>
                     <button class="text-red-400 font-mono hover:text-red-600 transition-colors" id="btn-del-moment-${safeId}">ELIMINAR</button>
                 </div>
                 ${imgPreviewHtml}
                 <input type="file" id="file-upload-${safeId}" class="hidden" accept="image/*">
-                <textarea class="config-input text-xs font-sans w-full bg-gray-50 p-2 border border-gray-100 focus:bg-white" id="txt-desc-${safeId}" placeholder="Descripción de la acción...">${m.text || ''}</textarea>
+                
+                <div>
+                    <label class="label-text text-[8px] text-gray-400 mb-1 block uppercase">DESCRIPCIÓN DE LA ACCIÓN</label>
+                    <div 
+                        contenteditable="true" 
+                        id="txt-desc-${safeId}" 
+                        class="config-input min-h-[60px] text-xs font-sans w-full bg-gray-50 dark:bg-gray-900 p-2 border border-gray-100 dark:border-gray-700 focus:bg-white dark:focus:bg-gray-900 outline-none rounded-sm leading-relaxed overflow-y-auto text-gray-800 dark:text-gray-200"
+                    >${highlightedHTML || "Detalle inicial..."}</div>
+                </div>
+
                 <div class="space-y-1">
                     <span class="label-text text-[8px] text-purple-400">PROMPT VISUAL</span>
-                    <textarea class="config-input text-[10px] font-mono text-purple-700 bg-purple-50/40 p-2 border border-purple-100 focus:bg-white" id="txt-prompt-${safeId}" placeholder="Prompt visual...">${m.visualPrompt || ''}</textarea>
+                    <textarea class="config-input text-[10px] font-mono text-purple-700 dark:text-purple-300 bg-purple-50/40 dark:bg-purple-950/20 p-2 border border-purple-100 dark:border-purple-900 focus:bg-white dark:focus:bg-gray-900" id="txt-prompt-${safeId}" placeholder="Prompt visual...">${m.visualPrompt || ''}</textarea>
                 </div>
-                <div class="flex gap-2 items-center pt-1 border-t border-gray-50 mt-2">
+
+                <div class="flex gap-2 items-center pt-1 border-t border-gray-50 dark:border-gray-700 mt-2">
                     <button id="btn-gen-${safeId}" class="bg-purple-600 hover:bg-purple-700 text-white text-[9px] px-3 py-1.5 uppercase font-bold transition-colors rounded-sm flex items-center gap-2">
                         <i class="fa-solid fa-paintbrush"></i> PINTAR
                     </button>
                     <button id="btn-rewrite-${safeId}" class="bg-blue-500 hover:bg-blue-600 text-white text-[9px] px-3 py-1.5 uppercase font-bold transition-colors rounded-sm flex items-center gap-2" title="Reescribir Prompt con IA">
                         <i class="fa-solid fa-wand-sparkles"></i>
                     </button>
-                    <select id="sel-aspect-${safeId}" class="text-[9px] border border-gray-200 p-1 rounded-sm bg-white cursor-pointer ml-auto">
+                    <select id="sel-aspect-${safeId}" class="text-[9px] border border-gray-200 dark:border-gray-700 p-1 rounded-sm bg-white dark:bg-gray-900 text-black dark:text-white cursor-pointer ml-auto">
                         <option value="landscape" ${m.aspectRatio==='landscape'?'selected':''}>16:9</option>
                         <option value="portrait" ${m.aspectRatio==='portrait'?'selected':''}>9:16</option>
                     </select>
+
+ <div class="w-full h-16 bg-gray-50 dark:bg-gray-900 border border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center rounded-sm text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" onclick="document.getElementById('file-upload-${safeId}').click()">
+                        <i class="fa-regular fa-image text-sm mb-1"></i>
+                        <span class="text-[8px] uppercase tracking-widest font-bold">Añadir Ilustración</span>
+                    </div>
+
                 </div>
             `;
 
@@ -301,7 +321,26 @@ const uiCrono = {
                     }).catch(err => console.warn("Binario no encontrado para:", m.imageFile));
             }
 
-            row.querySelector(`#txt-desc-${safeId}`).onchange = (e) => { m.text = e.target.value; window.mainCrono.saveData(); };
+            const descEditable = row.querySelector(`#txt-desc-${safeId}`);
+            if (descEditable) {
+                descEditable.onfocus = () => {
+                    if (descEditable.innerText.trim() === "Detalle inicial...") {
+                        descEditable.innerText = "";
+                    } else {
+                        descEditable.innerText = m.text || "";
+                    }
+                };
+
+                descEditable.onblur = () => {
+                    const plainText = descEditable.innerText.trim();
+                    m.text = plainText;
+                    window.mainCrono.saveData();
+                    if (window.KorehIO && typeof window.KorehIO.highlightDataNames === 'function') {
+                        descEditable.innerHTML = window.KorehIO.highlightDataNames(plainText) || "Detalle inicial...";
+                    }
+                };
+            }
+
             row.querySelector(`#txt-prompt-${safeId}`).onchange = (e) => { m.visualPrompt = e.target.value; window.mainCrono.saveData(); };
             row.querySelector(`#btn-del-moment-${safeId}`).onclick = () => window.mainCrono.deleteMoment(idx);
             

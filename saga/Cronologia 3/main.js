@@ -1,7 +1,11 @@
+// Abrir Canvas: Cronologia 3/main.js
 // --- Cronologia 3/main.js ---    
-// REFACTORIZADO: Integración como Namespace no colisionante (mainCrono) en DatosStudio con inmunidad a InvalidStateError de caché en disco
+// REFACTORIZADO: Integración como Namespace no colisionante (mainCrono) en DatosStudio con inmunidad a InvalidStateError de caché en disco y persistencia de marcadores
 const mainCrono = {
-    data: { events: [] },
+    data: { 
+        events: [],
+        markers: []
+    },
     visualBibleData: [],
     fileHandle: null,
     visualBibleHandle: null,
@@ -62,19 +66,26 @@ const mainCrono = {
             const text = await file.text();
             try {
                 const parsed = JSON.parse(text);
-                this.data = parsed && parsed.events ? parsed : { events: [] };
+                if (Array.isArray(parsed)) {
+                    this.data = { events: parsed, markers: [] };
+                } else {
+                    this.data = {
+                        events: parsed && parsed.events ? parsed.events : [],
+                        markers: parsed && Array.isArray(parsed.markers) ? parsed.markers : []
+                    };
+                }
             } catch (e) {
                 console.warn("Archivo JSON vacío o corrupto, preservando estado en memoria o forzando estructura base.");
-                this.data = this.data && this.data.events && this.data.events.length > 0 ? this.data : { events: [] };
+                this.data = this.data && this.data.events ? this.data : { events: [], markers: [] };
             }
-            await this.loadEvents(this.data.events);
+            await this.loadEvents(this.data.events, this.data.markers);
             if (window.Utils && typeof window.Utils.log === 'function') {
                 window.Utils.log(`Línea de tiempo cargada: ${this.currentTimelineName}`, "success");
             }
         } catch (err) {
             console.error("Error cargando la cronología activa:", err);
-            this.data = { events: [] };
-            await this.loadEvents([]);
+            this.data = { events: [], markers: [] };
+            await this.loadEvents([], []);
         }
     },
     renderTimelineSelector() {
@@ -123,7 +134,7 @@ const mainCrono = {
         if (!this.rootHandle) return;
         try {
             const newHandle = await this.rootHandle.getFileHandle(filename, { create: true });
-            const emptyData = { events: [] };
+            const emptyData = { events: [], markers: [] };
             const writable = await newHandle.createWritable();
             await writable.write(JSON.stringify(emptyData, null, 2));
             await writable.close();
@@ -159,21 +170,21 @@ const mainCrono = {
         const activeRoot = this.rootHandle || window.ui.selectedFolderHandle || (window.app && window.app.targetHandle);
         if (!activeRoot) return;
         try {
-            // REFACTORIZACIÓN CRÍTICA: Adquirir un file handle fresco en caliente para mitigar de raíz el InvalidStateError por colisiones de concurrencia masiva
             const freshHandle = await activeRoot.getFileHandle(this.currentTimelineName, { create: true });
             const writable = await freshHandle.createWritable();
             const cleanSaveData = {
-                events: this.data.events.map(ev => ({
+                events: (this.data.events || []).map(ev => ({
                     ...ev,
-                    moments: ev.moments.map(m => {
+                    moments: (ev.moments || []).map(m => {
                         const { displayUrl, ...cleanMoment } = m;
                         return cleanMoment;
                     })
-                }))
+                })),
+                markers: Array.isArray(this.data.markers) ? [...this.data.markers] : []
             };
             await writable.write(JSON.stringify(cleanSaveData, null, 2));
             await writable.close();
-            this.fileHandle = freshHandle; // Actualizar referencia segura
+            this.fileHandle = freshHandle;
         } catch (e) {
             console.error("Error guardando timeline:", e);
         }
@@ -189,7 +200,7 @@ const mainCrono = {
         if(!this.rootHandle) return alert("Abre una carpeta primero.");
         alert("Buscando archivos PLANT_SAGA o PLANT_LIT en la raíz...");
     },
-    async loadEvents(events) {
+    async loadEvents(events, markers = []) {
         const activeRoot = this.rootHandle || window.ui.selectedFolderHandle || (window.app && window.app.targetHandle);
         for (const ev of events) {
             if (!ev.moments || ev.moments.length === 0) {
@@ -215,7 +226,8 @@ const mainCrono = {
             }
         }
         this.data.events = events;
-        window.timeline.setData(events);
+        this.data.markers = Array.isArray(markers) ? markers : [];
+        window.timeline.setData(events, this.data.markers);
         if(events.length > 0) this.selectEvent(events[0].id);
     },
     selectEvent(id) {
@@ -273,7 +285,7 @@ const mainCrono = {
         };
         this.data.events.push(newEv);
         this.saveData();
-        window.timeline.setData(this.data.events);
+        window.timeline.setData(this.data.events, this.data.markers);
         this.selectEvent(newEv.id);
     },
     createNewEvent() {
@@ -286,7 +298,7 @@ const mainCrono = {
         this.saveData();
         window.ui.selectedEventId = null;
         if (window.uiCrono) window.uiCrono.selectedEventId = null;
-        window.timeline.setData(this.data.events);
+        window.timeline.setData(this.data.events, this.data.markers);
         document.getElementById('inspector-crono-content').classList.add('hidden');
         document.getElementById('inspector-crono-empty').classList.remove('hidden');
     },

@@ -15,8 +15,8 @@ const ImgGen = {
             paintBtn.disabled = true;
         }
         try {
-            const width = m.aspectRatio === 'portrait' ? 720 : 1280;
-            const height = m.aspectRatio === 'portrait' ? 1280 : 720;
+            const width = m.aspectRatio === 'portrait' ? 1088 : 1920;
+            const height = m.aspectRatio === 'portrait' ? 1920 : 1088 
             
             let fullPrompt = m.visualPrompt;
             if (window.ChromaUI && window.ChromaUI.isEnabled()) {
