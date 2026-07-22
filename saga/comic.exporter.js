@@ -1,6 +1,6 @@
 /**
  * Módulo de Exportación de Cronología como Cómic en Alta Resolución (4K)
- * Configuración: 3 Columnas x 4 Filas (Imágenes Horizontales Completas)
+ * Configuración: 1 Columna x 2 Filas (Imágenes Completa ocupando medio folio)
  * Espacio de nombres: window.ComicExporter
  */
 
@@ -29,30 +29,26 @@ window.ComicExporter = {
             return alert("La cronología actual no contiene momentos con viñetas para renderizar.");
         }
 
-        alert(`Iniciando renderizado optimizado de cómic 4K (3x4). Total de viñetas detectadas: ${allMoments.length}. Por favor espere...`);
+        alert(`Iniciando renderizado optimizado de cómic 4K (1x2 medio folio). Total de viñetas detectadas: ${allMoments.length}. Por favor espere...`);
 
         // Configuración de página de alta definición 4K Estándar Vertical
         const PAGE_WIDTH = 3840;
         const PAGE_HEIGHT = 5430; 
         
-        // Nueva Rejilla solicitada
-        const COLS = 3;
-        const ROWS = 4; 
+        // Rejilla 1x2 (Medio folio por viñeta)
+        const COLS = 1;
+        const ROWS = 2; 
         
         const MARGIN_X = 140;
         const MARGIN_Y = 180;
-        const GAP_X = 80;
-        const GAP_Y = 110; // Espaciado vertical entre filas adaptado
+        const GAP_X = 0;
+        const GAP_Y = 80; // Espaciado vertical entre paneles
 
-        const AVAILABLE_WIDTH = PAGE_WIDTH - (MARGIN_X * 2) - (GAP_X * (COLS - 1));
+        const AVAILABLE_WIDTH = PAGE_WIDTH - (MARGIN_X * 2);
         const AVAILABLE_HEIGHT = PAGE_HEIGHT - (MARGIN_Y * 2) - (GAP_Y * (ROWS - 1));
         
         const PANEL_WIDTH = AVAILABLE_WIDTH / COLS;
         const PANEL_HEIGHT = AVAILABLE_HEIGHT / ROWS;
-        
-        // Proporción dorada para imágenes horizontales dentro de la rejilla 3x4:
-        const IMAGE_HEIGHT = PANEL_WIDTH * (9 / 16); // Forzado de caja base a proporción panorámica ideal
-        const TEXT_BOX_HEIGHT = PANEL_HEIGHT - IMAGE_HEIGHT - 15;
 
         let momentIndex = 0;
         let pageNumber = 1;
@@ -63,47 +59,43 @@ window.ComicExporter = {
             canvas.height = PAGE_HEIGHT;
             const ctx = canvas.getContext('2d');
 
-            // Fondo Blanco Cómic Limpio
+            // Fondo Negro Cómic Limpio
             ctx.fillStyle = '#000000';
             ctx.fillRect(0, 0, PAGE_WIDTH, PAGE_HEIGHT);
 
             // Encabezado de página Premium
-            ctx.fillStyle = '#000000';
+            ctx.fillStyle = '#FFFFFF';
             ctx.font = 'bold 52px "Inter", "Roboto", "Segoe UI", sans-serif';
             const bookTitle = (document.getElementById('gemini-book-title')?.value || "NEXUS SAGA").toUpperCase();
-            ctx.fillText(`${bookTitle}   |   CRONOLOGÍA NARRATIVA VISUAL`, MARGIN_X, MARGIN_Y - 80);
+            ctx.fillText(bookTitle, MARGIN_X, MARGIN_Y - 80);
             
             ctx.font = 'bold 38px "Courier New", monospace';
-            ctx.fillStyle = '#666666';
+            ctx.fillStyle = '#AAAAAA';
             ctx.fillText(`PÁGINA ${pageNumber}`, PAGE_WIDTH - MARGIN_X - 240, MARGIN_Y - 80);
 
             // Línea de separación superior
-            ctx.strokeStyle = '#111111';
+            ctx.strokeStyle = '#333333';
             ctx.lineWidth = 6;
             ctx.beginPath();
             ctx.moveTo(MARGIN_X, MARGIN_Y - 45);
             ctx.lineTo(PAGE_WIDTH - MARGIN_X, MARGIN_Y - 45);
             ctx.stroke();
 
-            // Renderizar la rejilla dinámica de 3x4
+            // Renderizar la rejilla de 1x2
             for (let r = 0; r < ROWS; r++) {
                 for (let c = 0; c < COLS; c++) {
                     if (momentIndex >= allMoments.length) break;
 
                     const moment = allMoments[momentIndex];
                     
-                    // Coordenadas del slot de la rejilla
+                    // Coordenadas del slot del panel
                     const px = MARGIN_X + c * (PANEL_WIDTH + GAP_X);
                     const py = MARGIN_Y + r * (PANEL_HEIGHT + GAP_Y);
-
-                    // Fondo de seguridad oscuro para la viñeta por si la imagen horizontal es más estrecha
-                    ctx.fillStyle = '#1A1A1A';
-                    ctx.fillRect(px, py, PANEL_WIDTH, IMAGE_HEIGHT);
 
                     // RECOLECCIÓN OPTIMIZADA Y CORRECTA DE IMÁGENES
                     let imgSource = null;
                     
-                    // Prioridad 1: Buscar archivo físico real en la carpeta abierta como imagen
+                    // Prioridad 1: Buscar archivo físico real en la carpeta abierta
                     if (moment.imageFile && window.app && window.app.targetHandle) {
                         try {
                             const imgHandle = await window.app.targetHandle.getFileHandle(moment.imageFile);
@@ -114,17 +106,16 @@ window.ComicExporter = {
                         }
                     }
 
-                    // Prioridad 2: Si no hay archivo o falló, usar su base64 embebido original
+                    // Prioridad 2: Usar base64 embebido original
                     if (!imgSource && moment.image64) {
                         imgSource = moment.image64;
                     }
 
-                    // Prioridad 3 (Fallback restrictivo): Solo si no tiene imagen propia, buscar ítem estricto por ID o Prompt Visual
+                    // Prioridad 3: Fallback por ítem coincidente
                     if (!imgSource && window.app && window.app.items) {
                         const matchingItem = window.app.items.find(item => {
                             if (!item.displayImage) return false;
                             const filenameClean = item.name.toLowerCase().replace('.json', '');
-                            // Se remueve la búsqueda difusa por texto descriptivo para prevenir la duplicación accidental de fotos de personajes
                             return filenameClean === moment.id || (moment.visualPrompt && moment.visualPrompt.toLowerCase().includes(filenameClean));
                         });
                         if (matchingItem) {
@@ -132,69 +123,116 @@ window.ComicExporter = {
                         }
                     }
 
+                    // 1. DIBUJAR LA IMAGEN OCUPANDO TODO EL ESPACIO DE LA VIÑETA (COVER FULL PANEL)
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.rect(px, py, PANEL_WIDTH, PANEL_HEIGHT);
+                    ctx.clip();
+
                     if (imgSource) {
                         try {
                             const img = await this.loadImageAsync(imgSource);
-                            ctx.save();
-                            ctx.beginPath();
-                            ctx.rect(px, py, PANEL_WIDTH, IMAGE_HEIGHT);
-                            ctx.clip();
                             
-                            // LÓGICA DE AJUSTE PROPORCIONAL COMPLETO (CONTAIN) NO-DEFORMABLE
+                            // Algoritmo COVER para llenar el 100% del cuadro sin bordes negros
                             const imgRatio = img.width / img.height;
-                            const containerRatio = PANEL_WIDTH / IMAGE_HEIGHT;
+                            const containerRatio = PANEL_WIDTH / PANEL_HEIGHT;
                             let nw, nh, nx, ny;
-                            
+
                             if (imgRatio > containerRatio) {
-                                // La imagen es proporcionalmente más ancha que el contenedor
+                                nh = PANEL_HEIGHT;
+                                nw = PANEL_HEIGHT * imgRatio;
+                                nx = px + (PANEL_WIDTH - nw) / 2;
+                                ny = py;
+                            } else {
                                 nw = PANEL_WIDTH;
                                 nh = PANEL_WIDTH / imgRatio;
                                 nx = px;
-                                ny = py + (IMAGE_HEIGHT - nh) / 2;
-                            } else {
-                                // La imagen es proporcionalmente más alta
-                                nh = IMAGE_HEIGHT;
-                                nw = IMAGE_HEIGHT * imgRatio;
-                                nx = px + (PANEL_WIDTH - nw) / 2;
-                                ny = py;
+                                ny = py + (PANEL_HEIGHT - nh) / 2;
                             }
                             
                             ctx.drawImage(img, nx, ny, nw, nh);
-                            ctx.restore();
                         } catch (err) {
-                            this.drawPlaceholder(ctx, px, py, PANEL_WIDTH, IMAGE_HEIGHT, "Error de Imagen");
+                            this.drawPlaceholder(ctx, px, py, PANEL_WIDTH, PANEL_HEIGHT, "Error de Imagen");
                         }
                     } else {
-                        this.drawPlaceholder(ctx, px, py, PANEL_WIDTH, IMAGE_HEIGHT, "Viñeta sin Ilustración");
+                        this.drawPlaceholder(ctx, px, py, PANEL_WIDTH, PANEL_HEIGHT, "Viñeta sin Ilustración");
+                    }
+                    ctx.restore();
+
+                    // 2. DIBUJAR LA CAJA DE TEXTO DENTRO DE LA IMAGEN (TEXTO TRIPLICADO Y CAJA DINÁMICA)
+                    const textMargin = 50; // Margen entre el borde del panel y la caja flotante
+                    const boxPaddingX = 60;
+                    const boxPaddingY = 50;
+                    const maxTextWidth = PANEL_WIDTH - (textMargin * 2) - (boxPaddingX * 2);
+
+                    const paragraphText = moment.text || "...";
+                    
+                    // Tamaño de letra triplicado (44px * 3 = 132px) e interlineado proporcional (168px)
+                    const fontSize = 78;
+                    const lineHeight = 98;
+                    const fontStyle = `bold ${fontSize}px "Inter", "Segoe UI", sans-serif`;
+
+                    ctx.font = fontStyle;
+                    const lines = this.calculateLines(ctx, paragraphText, maxTextWidth);
+                    
+                    // Cálculo dinámico de alto y ancho de la caja según el contenido exacto
+                    const calculatedBoxHeight = (lines.length * lineHeight) + (boxPaddingY * 2);
+
+                    let maxLineWidth = 0;
+                    for (let l = 0; l < lines.length; l++) {
+                        const w = ctx.measureText(lines[l]).width;
+                        if (w > maxLineWidth) maxLineWidth = w;
                     }
 
-                    // Marco exterior negro nítido (Estilo Novela Gráfica / Manga)
+                    // El ancho se adapta al contenido más sus paddings
+                    const calculatedBoxWidth = Math.min(PANEL_WIDTH - (textMargin * 2), maxLineWidth + (boxPaddingX * 2));
+
+                    // Dimensiones y coordenadas de la caja flotante alineada abajo a la izquierda con sus márgenes
+                    const boxX = px + textMargin;
+                    const boxY = py + PANEL_HEIGHT - textMargin - calculatedBoxHeight;
+
+                    // Dibujar fondo flotante de la caja de texto (blanco con opacidad)
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
+                    
+                    // Sombreado suave para destacar del fondo de la imagen
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+                    ctx.shadowBlur = 30;
+                    ctx.shadowOffsetY = 12;
+
+                    this.drawRoundedRect(ctx, boxX, boxY, calculatedBoxWidth, calculatedBoxHeight, 28);
+                    ctx.fill();
+
+                    // Borde de la caja flotante
+                    ctx.restore();
+                    ctx.strokeStyle = '#000000';
+                    ctx.lineWidth = 6;
+                    this.drawRoundedRect(ctx, boxX, boxY, calculatedBoxWidth, calculatedBoxHeight, 28);
+                    ctx.stroke();
+
+                    // Renderizar texto en color oscuro
+                    ctx.fillStyle = '#111111';
+                    ctx.font = fontStyle;
+                    ctx.textBaseline = 'top';
+                    
+                    let currentY = boxY + boxPaddingY;
+                    for (let l = 0; l < lines.length; l++) {
+                        ctx.fillText(lines[l], boxX + boxPaddingX, currentY);
+                        currentY += lineHeight;
+                    }
+
+                    ctx.textBaseline = 'alphabetic'; // Restaurar baseline
+
+                    // Marco exterior de la viñeta
                     ctx.strokeStyle = '#000000';
                     ctx.lineWidth = 8;
-                    ctx.strokeRect(px, py, PANEL_WIDTH, IMAGE_HEIGHT);
-
-                    // 3. Bloque de Texto Inferior Estilizado
-                    const textY = py + IMAGE_HEIGHT + 15;
-                    
-                    // Fondo limpio para lectura optimizada de los subtítulos
-                    ctx.fillStyle = '#FAFAFA';
-                    ctx.fillRect(px, textY, PANEL_WIDTH, TEXT_BOX_HEIGHT);
-                    ctx.strokeStyle = '#D1D5DB';
-                    ctx.lineWidth = 7;
-                    ctx.strokeRect(px, textY, PANEL_WIDTH, TEXT_BOX_HEIGHT);
-
-                    // Renderizado del texto con sangría limpia
-                    ctx.fillStyle = '#111111';
-                    ctx.font = '48px "Inter", "Segoe UI", sans-serif'; // Reducida ligeramente para encajar de forma óptima en 3x4
-                    
-                    const paragraphText = moment.text || "...";
-                    this.wrapText(ctx, paragraphText, px + 20, textY + 45, PANEL_WIDTH - 40, 40);
+                    ctx.strokeRect(px, py, PANEL_WIDTH, PANEL_HEIGHT);
 
                     momentIndex++;
                 }
             }
 
-            // Descargar folio resultante en formato de alta calidad PNG 4K
+            // Descargar folio resultante en formato PNG 4K
             const dataUrl = canvas.toDataURL('image/png');
             const downloadLink = document.createElement('a');
             const timelineName = (window.mainCrono?.currentTimelineName || "TIMELINE").replace('.json', '');
@@ -208,7 +246,7 @@ window.ComicExporter = {
             await new Promise(resolve => setTimeout(resolve, 400));
         }
 
-        alert("¡Páginas de cómic 3x4 exportadas exitosamente en PNG de alta resolución!");
+        alert("¡Páginas de cómic 1x2 exportadas exitosamente en PNG de alta resolución!");
     },
 
     loadImageAsync(src) {
@@ -222,10 +260,10 @@ window.ComicExporter = {
     },
 
     drawPlaceholder(ctx, x, y, width, height, text) {
-        ctx.fillStyle = '#F3F4F6';
+        ctx.fillStyle = '#111111';
         ctx.fillRect(x, y, width, height);
-        ctx.fillStyle = '#9CA3AF';
-        ctx.font = 'italic bold 28px "JetBrains Mono", monospace';
+        ctx.fillStyle = '#6B7280';
+        ctx.font = 'italic bold 32px "JetBrains Mono", monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(text, x + width / 2, y + height / 2);
@@ -233,10 +271,24 @@ window.ComicExporter = {
         ctx.textBaseline = 'alphabetic';
     },
 
-    wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+    drawRoundedRect(ctx, x, y, width, height, radius) {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+    },
+
+    calculateLines(ctx, text, maxWidth) {
         const words = text.split(' ');
+        const lines = [];
         let line = '';
-        let currentY = y;
 
         for (let n = 0; n < words.length; n++) {
             let testLine = line + words[n] + ' ';
@@ -244,13 +296,13 @@ window.ComicExporter = {
             let testWidth = metrics.width;
 
             if (testWidth > maxWidth && n > 0) {
-                ctx.fillText(line, x, currentY);
+                lines.push(line.trim());
                 line = words[n] + ' ';
-                currentY += lineHeight;
             } else {
                 line = testLine;
             }
         }
-        ctx.fillText(line, x, currentY);
+        lines.push(line.trim());
+        return lines;
     }
 };

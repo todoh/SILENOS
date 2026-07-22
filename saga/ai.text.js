@@ -36,7 +36,7 @@ window.Koreh.Text = {
         
         // Enrutamiento basado en la configuración global de la UI
         if (apiMode === 'gemini') {
-            const geminiModel = localStorage.getItem('koreh_selected_gemini_model') || 'gemini-3.1-flash-lite'; 
+            const geminiModel = localStorage.getItem('koreh_selected_gemini_model') || 'gemini-3.5-flash-lite'; 
             resultText = await window.Koreh.Core.callGeminiDirectAPI(geminiModel, userPrompt, jsonMode, systemPrompt, signal);
         } else if (apiMode === 'pollinations') {
             const pollinationsModel = localStorage.getItem('koreh_selected_pollinations_model') || 'gemini-fast';

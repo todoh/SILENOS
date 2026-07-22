@@ -1,3 +1,4 @@
+<!-- Abrir Canvas: index.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -6,13 +7,11 @@
     <title>SAGA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // CONFIGURACI N DE APERTURA: Strategy class para Dark Mode ONSD.
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        // Adaptaciones de colores de acento para fondo negro puro
                         nordic: {
                             black: '#000000',
                             panel: '#09090b',
@@ -33,9 +32,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/BufferGeometryUtils.js"></script>
 </head>
 <body>
-
     <div id="loading-bar" class="loading-bar" style="width: 0%"></div>
-
     <div id="msg-modal" class="fixed inset-0 z-[120] flex items-center justify-center bg-black/20 hidden backdrop-blur-sm transition-opacity">
         <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl p-6 max-w-sm w-full flex flex-col gap-4">
             <h3 id="msg-title" class="label-text text-black dark:text-white text-center tracking-widest mb-1">NOTIFICACIÓN</h3>
@@ -43,7 +40,6 @@
             <div class="flex gap-2 justify-center mt-2 pt-4 border-t border-gray-50 dark:border-gray-800" id="msg-actions"></div>
         </div>
     </div>
-
     <div id="tramas-expand-modal" class="fixed inset-0 z-[130] flex items-center justify-center bg-black/40 hidden backdrop-blur-sm transition-opacity">
         <div oncontextmenu="return false;" class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl p-8 max-w-md w-full flex flex-col gap-4">
             <div class="flex justify-between items-center mb-2">
@@ -54,24 +50,20 @@
             <div class="bg-indigo-50/50 dark:bg-indigo-950/30 p-3 rounded text-xs text-indigo-900 dark:text-indigo-200 border border-indigo-100 dark:border-indigo-900 mb-2">
                 <span class="font-bold">Nodo Origen:</span> <span id="expand-node-title" class="italic">...</span>
             </div>
-
             <div>
                 <span class="label-text">¿Hacia dónde va la trama ahora? (Premisa / Direction)</span>
                 <textarea id="expand-direction" rows="3" class="config-input resize-none" placeholder="Ej. El personaje decide traicionar a su gremio y huir por las alcantarillas..."></textarea>
             </div>
-
             <div>
                 <span class="label-text">Nuevos eventos a generar en esta rama</span>
                 <input type="number" id="expand-count" class="config-input" value="2" min="1" max="5">
             </div>
-
             <div class="flex gap-2 justify-end mt-4 pt-4 border-t border-gray-50 dark:border-gray-800">
                 <button onclick="if(window.TramasUI) TramasUI.closeExpandModal()" class="btn-nordic text-gray-400 border-none hover:bg-gray-50 dark:hover:bg-gray-800">Cancelar</button>
                 <button onclick="if(window.TramasUI) TramasUI.confirmExpandNode()" class="btn-primary w-auto px-6 bg-indigo-600 hover:bg-indigo-700"><i class="fa-solid fa-wand-magic-sparkles"></i> EXPANDIR</button>
             </div>
         </div>
     </div>
-
     <div id="image-config-modal" class="fixed inset-0 z-[140] flex items-center justify-center bg-black/40 hidden backdrop-blur-sm transition-opacity">
         <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl p-8 max-w-lg w-full flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-2 border-b border-gray-100 dark:border-gray-800 pb-2">
@@ -79,169 +71,102 @@
                 <button onclick="ui.toggleImageConfigModal()" class="text-gray-300 hover:text-red-500"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
-          <div class="space-y-3">
-    <h4 class="text-[10px] font-bold tracking-wider text-purple-600 uppercase">SELECCIÓN DE MOTOR DE TEXTO / LORE</h4>
-    <div class="grid grid-cols-2 gap-4">
-        <div>
-            <span class="label-text">Proveedor Activo</span>
-            <select id="koreh-api-mode" onchange="localStorage.setItem('koreh_api_mode', this.value); ui.updateAuthUI();" class="config-input text-xs font-bold uppercase cursor-pointer bg-transparent text-black dark:text-white border-b border-gray-300 dark:border-gray-700">
-                <option value="local">OLLAMA ENGINE (LOCAL/HÍBRIDO)</option>
-                <option value="pollinations">POLLINATIONS ONLINE ENGINE</option>
-                <option value="gemini">GEMINI 3.1 NATIVE ROUTER</option>
-            </select>
-        </div>
-        <div>
-            <div id="box-config-ollama">
-                <span class="label-text">Modelo Ollama</span>
-                <select id="ollama-text-model" onchange="localStorage.setItem('koreh_selected_ollama_model', this.value); if(window.cronoAI) window.cronoAI.syncModelFromStudio();" class="config-input text-xs font-mono uppercase cursor-pointer bg-transparent font-bold text-blue-600">
-                    <option value="">Cargando modelos...</option>
-                </select>
+            <div class="space-y-3">
+                <h4 class="text-[10px] font-bold tracking-wider text-purple-600 uppercase">SELECCIÓN DE MOTOR DE TEXTO / LORE</h4>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <span class="label-text">Proveedor Activo</span>
+                        <select id="koreh-api-mode" onchange="localStorage.setItem('koreh_api_mode', this.value); ui.updateAuthUI();" class="config-input text-xs font-bold uppercase cursor-pointer bg-transparent text-black dark:text-white border-b border-gray-300 dark:border-gray-700">
+                            <option value="local">OLLAMA ENGINE (LOCAL/HÍBRIDO)</option>
+                            <option value="pollinations">POLLINATIONS ONLINE ENGINE</option>
+                            <option value="gemini">GEMINI 3.5 NATIVE ROUTER</option>
+                        </select>
+                    </div>
+                    <div>
+                        <div id="box-config-ollama">
+                            <span class="label-text">Modelo Ollama</span>
+                            <select id="ollama-text-model" onchange="localStorage.setItem('koreh_selected_ollama_model', this.value); if(window.cronoAI) window.cronoAI.syncModelFromStudio();" class="config-input text-xs font-mono uppercase cursor-pointer bg-transparent font-bold text-blue-600">
+                                <option value="">Cargando modelos...</option>
+                            </select>
+                        </div>
+                        
+                        <div id="box-config-pollinations" class="hidden">
+                            <span class="label-text">Modelo Pollinations</span>
+                            <select id="pollinations-text-model" onchange="localStorage.setItem('koreh_selected_pollinations_model', this.value);" class="config-input text-xs font-sans uppercase cursor-pointer bg-transparent font-bold text-purple-600">
+                                <option value="qwen-safety">Qwen3Guard 8B (qwen-safety)</option>
+                                <option value="nova-fast">Nova Micro (nova-fast)</option>
+                                <option value="gpt-5.6-luna">gpt-5.6-luna</option>
+                                <option value="gpt-5.6-terra">gpt-5.6-terra</option>
+                                <option value="gpt-5.6-sol">gpt-5.6-sol</option>
+                                <option value="mistral">Mistral Small 3.2 (mistral)</option>
+                                <option value="gemini-search">Google Gemini 2.5 Flash Lite Search (gemini-search)</option>
+                                <option value="qwen-coder">Qwen3 Coder 30B (qwen-coder)</option>
+                                <option value="llama-scout">Meta Llama 4 Scout (llama-scout)</option>
+                                <option value="mistral-4">Mistral Small 4 (mistral-4)</option>
+                                <option value="gemma">Gemma 4 26B A4B (gemma)</option>
+                                <option value="mercury-2">Mercury 2 (mercury-2)</option>
+                                <option value="openai">GPT-5.4 Nano (openai)</option>
+                                <option value="qwen-coder-large">Qwen3 Coder Next (qwen-coder-large)</option>
+                                <option value="qwen-vision">Qwen3 VL 30B A3B Instruct (qwen-vision)</option>
+                                <option value="gemini-flash-lite-3.1">Gemini 3.1 Flash Lite (gemini-flash-lite-3.1)</option>
+                                <option value="perplexity-fast">Perplexity Sonar (perplexity-fast)</option>
+                                <option value="openai-fast">GPT-5 Nano (openai-fast)</option>
+                                <option value="minimax">MiniMax M2.7 (minimax)</option>
+                                <option value="stepfun-3.5">StepFun Step 3.5 Flash (stepfun-3.5)</option>
+                                <option value="deepseek">DeepSeek V4 Flash (Lite) (deepseek)</option>
+                                <option value="llama">Meta Llama 3.3 70B (llama)</option>
+                                <option value="gemini-search-fast">Gemini 3.1 Flash Lite Search (gemini-search-fast)</option>
+                                <option value="midijourney">MIDIjourney (midijourney)</option>
+                                <option value="nova">Nova 2 Lite (nova)</option>
+                                <option value="stepfun-3.7">StepFun Step 3.7 Flash (stepfun-3.7)</option>
+                                <option value="llama-maverick">Meta Llama 4 Maverick (llama-maverick)</option>
+                                <option value="grok">Grok 4.20 Non-Reasoning (grok)</option>
+                                <option value="mistral-large">Mistral Large 3 (mistral-large)</option>
+                                <option value="gpt-5.4-mini">GPT-5.4 Mini (gpt-5.4-mini)</option>
+                                <option value="qwen-vision-pro">Qwen3 VL 235B A22B Thinking (qwen-vision-pro)</option>
+                                <option value="openai-audio">GPT Audio Mini (openai-audio)</option>
+                                <option value="gemini">Gemini 3 Flash (gemini)</option>
+                                <option value="grok-4.3">Grok 4.3 (grok-4.3)</option>
+                                <option value="minimax-m3">MiniMax M3 (minimax-m3)</option>
+                                <option value="grok-large">Grok 4.20 Reasoning (grok-large)</option>
+                                <option value="claude-fast">Claude Haiku 4.5 (claude-fast)</option>
+                                <option value="perplexity-sonar-pro">Perplexity Sonar Pro (perplexity-sonar-pro)</option>
+                                <option value="qwen-large">Qwen3.7 Plus (qwen-large)</option>
+                                <option value="perplexity-reasoning">Perplexity Sonar Reasoning (perplexity-reasoning)</option>
+                                <option value="kimi">Moonshot Kimi K2.6 (kimi)</option>
+                                <option value="gemini-3.5-flash">Gemini 3.5 Flash (gemini-3.5-flash)</option>
+                                <option value="glm">Z.ai GLM-5.2 (glm)</option>
+                                <option value="deepseek-pro">DeepSeek V4 Pro (deepseek-pro)</option>
+                                <option value="midijourney-large">MIDIjourney Large (midijourney-large)</option>
+                                <option value="kimi-k2.7">Moonshot Kimi K2.7 Code (kimi-k2.7)</option>
+                                <option value="gpt-5.5">GPT-5.5 (gpt-5.5)</option>
+                                <option value="gpt-5.4">GPT-5.4 (gpt-5.4)</option>
+                                <option value="gemini-large">Gemini 3.1 Pro (gemini-large)</option>
+                                <option value="gemini-search-large">Gemini 3.5 Flash Search (gemini-search-large)</option>
+                                <option value="claude-opus-4.7">Claude Opus 4.7 (claude-opus-4.7)</option>
+                                <option value="claude">Claude Sonnet 4.6 (claude)</option>
+                                <option value="claude-opus-4.8">Claude Opus 4.8 (claude-opus-4.8)</option>
+                                <option value="claude-opus-4.6">Claude Opus 4.6 (claude-opus-4.6)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 mt-2">
+                    <div>
+                        <span class="label-text">API Key Pollinations</span>
+                        <input id="pollinations-api-key-inp" type="password" placeholder="Bearer Token..." class="config-input font-mono text-xs text-black dark:text-white" oninput="localStorage.setItem('pollinations_api_key', this.value); if(window.Koreh.Core) ui.updateAuthUI();">
+                    </div>
+                    <div>
+                        <span class="label-text">Gemini API Key</span>
+                        <input id="gemini-api-key-inp" type="password" placeholder="AIzaSy..." class="config-input font-mono text-xs text-black dark:text-white" oninput="localStorage.setItem('koreh_gemini_book_api_key', this.value); if(window.Koreh.Core) ui.updateAuthUI();">
+                    </div>
+                    <div>
+                        <span class="label-text">Runware API Key</span>
+                        <input id="runware-api-key-inp" type="password" placeholder="Introduce tu API Key..." class="config-input font-mono text-xs text-black dark:text-white" oninput="localStorage.setItem('koreh_runware_api_key', this.value); if(window.Koreh.Core) ui.updateAuthUI();">
+                    </div>
+                </div>
             </div>
-            
-            <div id="box-config-pollinations" class="hidden">
-                <span class="label-text">Modelo Pollinations</span>
-                <select id="pollinations-text-model" onchange="localStorage.setItem('koreh_selected_pollinations_model', this.value);" class="config-input text-xs font-sans uppercase cursor-pointer bg-transparent font-bold text-purple-600">
-                    <option value="qwen-safety">Qwen3Guard 8B (qwen-safety)</option>
-                    <option value="nova-fast">Nova Micro (nova-fast)</option>
-                    <option value="gpt-5.6-luna">gpt-5.6-luna</option>
-                    <option value="gpt-5.6-terra">gpt-5.6-terra</option> 
-                    <option value="gpt-5.6-sol">gpt-5.6-sol</option>
-                    <option value="mistral">Mistral Small 3.2 (mistral)</option>
-                    <option value="gemini-search">Google Gemini 2.5 Flash Lite Search (gemini-search)</option>
-                    <option value="qwen-coder">Qwen3 Coder 30B (qwen-coder)</option>
-                    <option value="llama-scout">Meta Llama 4 Scout (llama-scout)</option>
-                    <option value="mistral-4">Mistral Small 4 (mistral-4)</option>
-                    <option value="gemma">Gemma 4 26B A4B (gemma)</option>
-                    <option value="mercury-2">Mercury 2 (mercury-2)</option>
-                    <option value="openai">GPT-5.4 Nano (openai)</option>
-                    <option value="qwen-coder-large">Qwen3 Coder Next (qwen-coder-large)</option>
-                    <option value="qwen-vision">Qwen3 VL 30B A3B Instruct (qwen-vision)</option>
-                    <option value="gemini-flash-lite-3.1">Gemini 3.1 Flash Lite (gemini-flash-lite-3.1)</option>
-                    <option value="perplexity-fast">Perplexity Sonar (perplexity-fast)</option>
-                    <option value="openai-fast">GPT-5 Nano (openai-fast)</option>
-                    <option value="minimax">MiniMax M2.7 (minimax)</option>
-                    <option value="stepfun-3.5">StepFun Step 3.5 Flash (stepfun-3.5)</option>
-                    <option value="deepseek">DeepSeek V4 Flash (Lite) (deepseek)</option>
-                    <option value="llama">Meta Llama 3.3 70B (llama)</option>
-                    <option value="gemini-search-fast">Gemini 3.1 Flash Lite Search (gemini-search-fast)</option>
-                    <option value="midijourney">MIDIjourney (midijourney)</option>
-                    <option value="nova">Nova 2 Lite (nova)</option>
-                    <option value="stepfun-3.7">StepFun Step 3.7 Flash (stepfun-3.7)</option>
-                    <option value="llama-maverick">Meta Llama 4 Maverick (llama-maverick)</option>
-                    <option value="grok">Grok 4.20 Non-Reasoning (grok)</option>
-                    <option value="mistral-large">Mistral Large 3 (mistral-large)</option>
-                    <option value="gpt-5.4-mini">GPT-5.4 Mini (gpt-5.4-mini)</option>
-                    <option value="qwen-vision-pro">Qwen3 VL 235B A22B Thinking (qwen-vision-pro)</option>
-                    <option value="openai-audio">GPT Audio Mini (openai-audio)</option>
-                    <option value="gemini">Gemini 3 Flash (gemini)</option>
-                    <option value="grok-4.3">Grok 4.3 (grok-4.3)</option>
-                    <option value="minimax-m3">MiniMax M3 (minimax-m3)</option>
-                    <option value="grok-large">Grok 4.20 Reasoning (grok-large)</option>
-                    <option value="claude-fast">Claude Haiku 4.5 (claude-fast)</option>
-                    <option value="perplexity-sonar-pro">Perplexity Sonar Pro (perplexity-sonar-pro)</option>
-                    <option value="qwen-large">Qwen3.7 Plus (qwen-large)</option>
-                    <option value="perplexity-reasoning">Perplexity Sonar Reasoning (perplexity-reasoning)</option>
-                    <option value="kimi">Moonshot Kimi K2.6 (kimi)</option>
-                    <option value="gemini-3.5-flash">Gemini 3.5 Flash (gemini-3.5-flash)</option>
-                    <option value="glm">Z.ai GLM-5.2 (glm)</option>
-                    <option value="deepseek-pro">DeepSeek V4 Pro (deepseek-pro)</option>
-                    <option value="midijourney-large">MIDIjourney Large (midijourney-large)</option>
-                    <option value="kimi-k2.7">Moonshot Kimi K2.7 Code (kimi-k2.7)</option>
-                    <option value="gpt-5.5">GPT-5.5 (gpt-5.5)</option>
-                    <option value="gpt-5.4">GPT-5.4 (gpt-5.4)</option>
-                    <option value="gemini-large">Gemini 3.1 Pro (gemini-large)</option>
-                    <option value="gemini-search-large">Gemini 3.5 Flash Search (gemini-search-large)</option>
-                    <option value="claude-opus-4.7">Claude Opus 4.7 (claude-opus-4.7)</option>
-                    <option value="claude">Claude Sonnet 4.6 (claude)</option>
-                    <option value="claude-opus-4.8">Claude Opus 4.8 (claude-opus-4.8)</option>
-                    <option value="claude-opus-4.6">Claude Opus 4.6 (claude-opus-4.6)</option>
-                    <option value="Spit-fires/step-3.5-flash-free">Step 3.5 Flash (Free) (Spit-fires/step-3.5-flash-free)</option>
-                    <option value="Spit-fires/gpt-oss-20b-free">GPT OSS 20B (Free) (Spit-fires/gpt-oss-20b-free)</option>
-                    <option value="MarcosFRG/glm-4.6v-flash">GLM 4.6V Flash (Free) (MarcosFRG/glm-4.6v-flash)</option>
-                    <option value="solarnode-developement/free">Free Model Router (solarnode-developement/free)</option>
-                    <option value="vendouple/nemotron-3-ultra">Nemotron 3 Ultra (Free) (vendouple/nemotron-3-ultra)</option>
-                    <option value="Spit-fires/bonsai-image-512x512-4">Free Bonsai Image 512p (Spit-fires/bonsai-image-512x512-4)</option>
-                    <option value="Spit-fires/free">Random Free Router (Spit-fires/free)</option>
-                    <option value="YoannDev90/grok-4.1-fast">Grok 4.1 Fast (YoannDev90/grok-4.1-fast)</option>
-                    <option value="YoannDev90/qwen3.7-plus">Qwen 3.7 Plus (YoannDev90/qwen3.7-plus)</option>
-                    <option value="YoannDev90/llama-4-scout">Llama 4 Scout (YoannDev90/llama-4-scout)</option>
-                    <option value="YoannDev90/gemini-3-pro">Gemini 3 Pro (YoannDev90/gemini-3-pro)</option>
-                    <option value="YoannDev90/gpt-oss-120b">GPT OSS 120B (Yoann) (YoannDev90/gpt-oss-120b)</option>
-                    <option value="YoannDev90/llama-3.3-70b-instruct">Llama 3.3 70B Instruct (YoannDev90/llama-3.3-70b-instruct)</option>
-                    <option value="YoannDev90/gpt-4o-mini-search-preview">GPT 4o Mini Search (YoannDev90/gpt-4o-mini-search-preview)</option>
-                    <option value="YoannDev90/minimax-m3">MiniMax M3 (Yoann) (YoannDev90/minimax-m3)</option>
-                    <option value="YoannDev90/deepseek-v4-pro">DeepSeek V4 Pro (Yoann) (YoannDev90/deepseek-v4-pro)</option>
-                    <option value="YoannDev90/step-3.7-flash">Step 3.7 Flash (Yoann) (YoannDev90/step-3.7-flash)</option>
-                    <option value="YoannDev90/gpt-5.4-mini">GPT 5.4 Mini (Yoann) (YoannDev90/gpt-5.4-mini)</option>
-                    <option value="YoannDev90/hy3-preview">HY3 Preview (YoannDev90/hy3-preview)</option>
-                    <option value="smplstuff/falcon-h1-tiny">Falcon H1 Tiny 90M (smplstuff/falcon-h1-tiny)</option>
-                    <option value="Minor-fun/LongCat-2.0">LongCat-2.0 (1.6T MoE) (Minor-fun/LongCat-2.0)</option>
-                    <option value="CloudCompile/gemma-4-e2b">Gemma 4 E2B (CloudCompile/gemma-4-e2b)</option>
-                    <option value="mikl-shortcuts/ministral-3">Mistral Ministral 3 14B (mikl-shortcuts/ministral-3)</option>
-                    <option value="vendouple/deepseek-v4-flash">DeepSeek V4 Flash (Lite) (vendouple/deepseek-v4-flash)</option>
-                    <option value="voodoohop/anyvm-deepseek-chat">DeepSeek Chat via AnyVM (voodoohop/anyvm-deepseek-chat)</option>
-                    <option value="Minor-fun/gemma-4-31B-it">Gemma-4-31B-it (No Thinking) (Minor-fun/gemma-4-31B-it)</option>
-                    <option value="MarcosFRG/gemma-3-27b">Gemma 3 27B (MarcosFRG/gemma-3-27b)</option>
-                    <option value="vendouple/gemma-4-31B">Gemma 4 31B (vendouple/gemma-4-31B)</option>
-                    <option value="vendouple/deepseek-v3.2">DeepSeek V3.2 (vendouple) (vendouple/deepseek-v3.2)</option>
-                    <option value="morriszdweck/qwen-3.7-plus-cheap">Qwen 3.7 Plus (Cheap) (morriszdweck/qwen-3.7-plus-cheap)</option>
-                    <option value="MarcosFRG/step-3.5-flash">Step 3.5 Flash (MarcosFRG/step-3.5-flash)</option>
-                    <option value="MarcosFRG/gemma-4-31b">Gemma 4 31B via JankRouter (MarcosFRG/gemma-4-31b)</option>
-                    <option value="Catniti/Laguna-xs-2.1">Laguna xs 2.1 (Catniti/Laguna-xs-2.1)</option>
-                    <option value="MarcosFRG/deepseek-v4-flash">DeepSeek V4 Flash via JankRouter (MarcosFRG/deepseek-v4-flash)</option>
-                    <option value="sharktide/inferenceport.ai-gpt-oss-20b">OpenAI GPT-OSS 20B (sharktide/inferenceport.ai-gpt-oss-20b)</option>
-                    <option value="Minor-fun/deepseek-v3.2">deepseek-v3.2 (Minor-fun/deepseek-v3.2)</option>
-                    <option value="Minor-fun/deepseek-v4-flash">deepseek-v4-flash (Minor-fun/deepseek-v4-flash)</option>
-                    <option value="MarcosFRG/gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (MarcosFRG/gemini-2.5-flash-lite)</option>
-                    <option value="vendouple/deepseek-v4-pro">DeepSeek V4 Pro (vendouple/deepseek-v4-pro)</option>
-                    <option value="Catniti/gpt-4.0">ChatGPT 4 (Catniti/gpt-4.0)</option>
-                    <option value="MarcosFRG/deepseek-v3.2">DeepSeek V3.2 via JankRouter (MarcosFRG/deepseek-v3.2)</option>
-                    <option value="solarnode-developement/hy3">Tencent Hy3 (solarnode-developement/hy3)</option>
-                    <option value="Bakhshi7889/gemma-4-31b-it">GEMMA 4 31B IT (Bakhshi7889/gemma-4-31b-it)</option>
-                    <option value="voodoohop/airforce-grok-4-fast">Grok 4 Fast via Airforce (voodoohop/airforce-grok-4-fast)</option>
-                    <option value="morriszdweck/kimi-k2.6-cheap">Kimi K2.6 (Cheap) (morriszdweck/kimi-k2.6-cheap)</option>
-                    <option value="MarcosFRG/minimax-m2.7">MiniMax M2.7 (MarcosFRG/minimax-m2.7)</option>
-                    <option value="MarcosFRG/minimax-m3">MiniMax M3 (MarcosFRG/minimax-m3)</option>
-                    <option value="Catniti/glm-4.7-flash">Glm 4.7 Flash (Catniti/glm-4.7-flash)</option>
-                    <option value="solarnode-developement/glm-5.2-cheap">GLM-5.2 (Cheap) (solarnode-developement/glm-5.2-cheap)</option>
-                    <option value="MarcosFRG/gemini-3.1-flash-lite">Gemini 3.1 Flash Lite via JankRouter (MarcosFRG/gemini-3.1-flash-lite)</option>
-                    <option value="Catniti/agnes-2.0-flash">Agnes 2.0 Flash (Catniti/agnes-2.0-flash)</option>
-                    <option value="vendouple/unlocked-deepseek">Unlocked DeepSeek (vendouple/unlocked-deepseek)</option>
-                    <option value="MarcosFRG/deepseek-v4-pro">DeepSeek V4 Pro via JankRouter (MarcosFRG/deepseek-v4-pro)</option>
-                    <option value="Catniti/gpt-oss-120b">Gpt Oss 120B (Catniti/gpt-oss-120b)</option>
-                    <option value="MarcosFRG/glm-5.2">GLM 5.2 via JankRouter (MarcosFRG/glm-5.2)</option>
-                    <option value="MarcosFRG/gemini-3-flash-preview">Gemini 3 Flash via JankRouter (MarcosFRG/gemini-3-flash-preview)</option>
-                    <option value="Catniti/nemotron-3-ultra-550b-a55b">Nemotron 3 Ultra 550B (Catniti/nemotron-3-ultra-550b-a55b)</option>
-                    <option value="vendouple/kimi-k2.6">Kimi K2.6 (vendouple/kimi-k2.6)</option>
-                    <option value="voodoohop/airforce-qwen3-max">Qwen 3 Max via Airforce (voodoohop/airforce-qwen3-max)</option>
-                    <option value="Circuit-Overtime/lixsearch">elixpo-routerv2.6 (Circuit-Overtime/lixsearch)</option>
-                    <option value="Catniti/glm-4.7">Glm 4.7 (Catniti/glm-4.7)</option>
-                    <option value="sharktide/inferenceport-ai-mimo-v2.5">Mimo v2.5 (sharktide) (sharktide/inferenceport-ai-mimo-v2.5)</option>
-                    <option value="vendouple/gpt-5.6-terra">GPT-5.6 Terra (vendouple) (vendouple/gpt-5.6-terra)</option>
-                    <option value="MarcosFRG/gemini-3.1-pro-preview">Gemini 3.1 Pro via JankRouter (MarcosFRG/gemini-3.1-pro-preview)</option>
-                    <option value="tomdacatto/ezra">Gemini 3.1 Flash Lite (tomdacatto/ezra)</option>
-                    <option value="vendouple/gpt-5.6-sol">GPT-5.6 Sol (vendouple) (vendouple/gpt-5.6-sol)</option>
-                    <option value="Catniti/claude-sonnet-4.6">Claude Sonnet 4.6 (Catniti/claude-sonnet-4.6)</option>
-                    <option value="sharktide/inferenceport-ai-command-r-plus">Cohere Command R+ (sharktide/inferenceport-ai-command-r-plus)</option>
-                    <option value="Catniti/gpt-5.5">ChatGPT 5.5 (Catniti/gpt-5.5)</option>
-                    <option value="sharktide/inferenceport-ai-gpt-4.1">OpenAI GPT-OSS 4.1 (sharktide/inferenceport-ai-gpt-4.1)</option>
-                    <option value="sharktide/inferenceport.ai-gpt-5-chat-latest">OpenAI GPT-5 Chat Latest (sharktide/inferenceport.ai-gpt-5-chat-latest)</option>
-                </select>
-            </div>
-        </div>
-    </div>
-    
-    <div class="grid grid-cols-2 gap-4 mt-2">
-        <div>
-            <span class="label-text">API Key / Token de Pollinations</span>
-            <input id="pollinations-api-key-inp" type="password" placeholder="Bearer Token..." class="config-input font-mono text-xs text-black dark:text-white" oninput="localStorage.setItem('pollinations_api_key', this.value); if(window.Koreh.Core) ui.updateAuthUI();">
-        </div>
-        <div>
-            <span class="label-text">Google Gemini API Key</span>
-            <input id="gemini-api-key-inp" type="password" placeholder="AIzaSy..." class="config-input font-mono text-xs text-black dark:text-white" oninput="localStorage.setItem('koreh_gemini_book_api_key', this.value); if(window.Koreh.Core) ui.updateAuthUI();">
-        </div>
-    </div>
-</div>
 
             <div class="border-t border-gray-100 dark:border-gray-800 my-1"></div>
 
@@ -253,21 +178,23 @@
                 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-    <span class="label-text">Proveedor de Imagen</span>
-    <select id="global-image-engine" onchange="localStorage.setItem('koreh_image_engine', this.value); ui.handleImageEngineChange();" class="config-input text-xs font-bold uppercase cursor-pointer text-black dark:text-white border-b border-gray-300 dark:border-gray-700">
-        <option value="comfyui">COMFYUI (LOCAL)</option>
-        <option value="pollinations">POLLINATIONS (NUBE)</option>
-        <option value="fooocus">FOOOCUS (LOCAL)</option>
-    </select>
-</div>
+                        <span class="label-text">Proveedor de Imagen</span>
+                        <select id="global-image-engine" onchange="localStorage.setItem('koreh_image_engine', this.value); ui.handleImageEngineChange();" class="config-input text-xs font-bold uppercase cursor-pointer text-black dark:text-white border-b border-gray-300 dark:border-gray-700">
+                            <option value="comfyui">COMFYUI (LOCAL)</option>
+                            <option value="pollinations">POLLINATIONS (NUBE)</option>
+                            <option value="fooocus">FOOOCUS (LOCAL)</option>
+                            <option value="runware">RUNWARE.COM (TURBO)</option>
+                        </select>
+                    </div>
                     <div>
                         <span class="label-text">Modelo Asignado</span>
                         <select id="global-image-model" onchange="localStorage.setItem('koreh_selected_image_model', this.value);" class="config-input text-xs font-bold uppercase cursor-pointer text-purple-600 border-b border-gray-300 dark:border-gray-700">
                             <option value="juggernautXL_ragnarokBy.safetensors">JUGGERNAUT XL (COMFY)</option>
+                            <option value="dreamshaperXL_lightningDPMSDE.safetensors">dreamshaperXL_lightningDPMSDE</option>
+                            <option value="flux-2-klein-base-4b-fp8.safetensors">flux-2-klein-base-4b-fp8</option>
                         </select>
                     </div>
                 </div>
-
                 <div id="box-config-comfyui-params" class="space-y-3">
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -299,13 +226,11 @@
                     <textarea id="comfy-neg-prompt" rows="2" class="config-input resize-none text-xs leading-relaxed">bad anatomy, blurry, watermark, worst quality, messy</textarea>
                 </div>
             </div>
-
             <div class="flex gap-2 justify-end mt-4 pt-4 border-t border-gray-50 dark:border-gray-800">
                 <button onclick="ui.toggleImageConfigModal()" class="btn-primary w-auto px-8 bg-black dark:bg-white dark:text-black hover:opacity-90">GUARDAR CONFIGURACIÓN</button>
             </div>
         </div>
     </div>
-
     <div id="ollama-config-modal" class="fixed inset-0 z-[145] flex items-center justify-center bg-black/40 hidden backdrop-blur-sm transition-opacity">
         <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl p-8 max-w-md w-full flex flex-col gap-4">
             <div class="flex justify-between items-center mb-2">
@@ -328,7 +253,6 @@
             </div>
         </div>
     </div>
-
     <div id="folder-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-white/95 dark:bg-gray-950/95 p-8 hidden transition-opacity">
         <div class="bg-white dark:bg-gray-900 w-full max-w-lg flex flex-col border border-gray-200 dark:border-gray-800 shadow-xl">
             <div class="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
@@ -343,11 +267,9 @@
                     <i class="fa-solid fa-hdd text-[10px]"></i> PANEL DE REPOSITORIOS
                 </button>
             </div>
-
             <div class="p-4 bg-white dark:bg-gray-900 max-h-[30vh] overflow-y-auto" id="folder-list-container"></div>
         </div>
     </div>
-
     <div id="name-modal" class="fixed inset-0 z-[110] flex items-center justify-center bg-white/95 dark:bg-gray-950/95 p-8 hidden transition-opacity">
         <div class="bg-white dark:bg-gray-900 w-full max-w-sm border border-gray-200 dark:border-gray-800 shadow-xl p-6 flex flex-col gap-4">
             <div class="flex justify-between items-center">
@@ -361,7 +283,6 @@
             </div>
         </div>
     </div>
-
     <div id="premise-modal" class="fixed inset-0 z-[110] flex items-center justify-center bg-white/98 dark:bg-gray-950/98 p-4 hidden">
         <div class="bg-white dark:bg-gray-900 w-full max-w-2xl border border-gray-200 dark:border-gray-800 shadow-2xl flex flex-col">
             <div class="h-14 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-6 bg-gray-50 dark:bg-gray-800">
@@ -378,14 +299,12 @@
                     <label class="label-text text-green-600">Premisa Sugerida</label>
                     <textarea id="genesis-output" class="config-input border border-green-100 dark:border-green-950 p-3 h-32 rounded bg-green-50/30 dark:bg-green-950/10 focus:bg-white dark:focus:bg-gray-900 text-gray-700 dark:text-gray-300 leading-relaxed"></textarea>
                 </div>
-
                 <button onclick="cronoAI.generateSmartPremise()" id="btn-genesis" class="btn-primary bg-indigo-600 hover:bg-indigo-700">
                     <i class="fa-solid fa-brain"></i> ANALIZAR DATOS Y SUGERIR
                 </button>
             </div>
         </div>
     </div>
-
     <div id="storyboard-modal" class="fixed inset-0 z-[110] flex items-center justify-center bg-white/98 dark:bg-gray-950/98 p-4 hidden">
         <div class="bg-white dark:bg-gray-900 w-full max-w-3xl border border-gray-200 dark:border-gray-800 shadow-2xl flex flex-col h-[80vh]">
             <div class="h-14 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-6 bg-gray-50 dark:bg-gray-800 shrink-0">
@@ -410,9 +329,8 @@
                     </div>
                     
                     <div id="bible-panel" class="hidden mb-4"></div>
-
                     <div class="mt-auto">
-                         <button onclick="Storyboard.analyzeAndGenerate(document.getElementById('sb-story-text').value)" class="btn-primary bg-indigo-600 hover:bg-indigo-700 w-full py-4 shadow-lg">
+                        <button onclick="Storyboard.analyzeAndGenerate(document.getElementById('sb-story-text').value)" class="btn-primary bg-indigo-600 hover:bg-indigo-700 w-full py-4 shadow-lg">
                             <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> CREAR STORYBOARD
                         </button>
                     </div>
@@ -420,7 +338,6 @@
             </div>
         </div>
     </div>
-
     <div id="ai-modal" class="fixed inset-0 z-[90] flex items-center justify-center bg-white/98 dark:bg-gray-950/98 p-4 hidden">
         <div class="bg-white dark:bg-gray-900 w-full max-w-6xl h-[95vh] flex flex-col border border-gray-200 dark:border-gray-800 shadow-2xl">
             <div class="h-16 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-8 bg-gray-50 dark:bg-gray-800 shrink-0">
@@ -430,7 +347,6 @@
                 </div>
                 <button onclick="ui.toggleAIModal()" class="w-8 h-8 flex items-center justify-center border border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-950 text-gray-400 hover:text-red-500 transition-colors">&times;</button>
             </div>
-
             <div class="flex flex-1 overflow-hidden">
                 <div class="w-1/3 min-w-[380px] border-r border-gray-100 dark:border-gray-800 p-6 flex flex-col overflow-y-auto bg-white dark:bg-gray-900">
                     <div id="ai-inventory" class="mb-6 p-4 bg-indigo-50/50 dark:bg-indigo-950/10 rounded border border-indigo-100 dark:border-indigo-900">
@@ -448,7 +364,6 @@
                         </div>
                         <textarea id="ai-prompt" class="config-input border border-gray-200 dark:border-gray-800 p-3 h-48 rounded bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-900 text-xs font-mono" placeholder="Pega aquí tu índice de capítulos o una premisa general. La IA extraerá la estructura automáticamente..."></textarea>
                     </div>
-
                     <div class="mb-6 p-4 border border-indigo-100 dark:border-indigo-900 rounded bg-indigo-50/30 dark:bg-indigo-950/5">
                         <h4 class="label-text text-indigo-600 mb-2"><i class="fa-solid fa-microchip mr-1"></i> Pipeline Camaleónico</h4>
                         <div class="space-y-2 text-[10px] font-mono text-gray-500 dark:text-gray-400" id="pipeline-tracker">
@@ -468,7 +383,6 @@
                     
                     <button onclick="cronoAI.runPipeline()" id="btn-run-ai" class="btn-primary mt-auto">INICIAR ARQUITECTURA</button>
                 </div>
-
                 <div class="w-2/3 bg-gray-50 dark:bg-gray-800 p-8 flex flex-col relative overflow-hidden">
                     <div id="ai-console" class="font-mono text-[11px] space-y-3 text-gray-600 dark:text-gray-300 h-full overflow-y-auto pb-10 pr-4">
                         <div class="text-indigo-600 font-bold">> Sistema Estructural Listo.</div>
@@ -477,7 +391,6 @@
             </div>
         </div>
     </div>
-
     <header class="h-8 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-6 z-[1000] shrink-0 relative">
         <div class="flex items-center gap-4">
             <button onclick="ui.toggleGenerator()" id="btn-toggle-gen" class="w-8 h-8 flex items-center justify-center text-black dark:text-white border border-gray-200 dark:border-gray-700 hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black transition-colors">
@@ -487,7 +400,7 @@
                 <h1 class="font-medium text-black dark:text-white text-xs tracking-[0.15em] leading-tight">NS</h1>
             </div>
             
-           <div class="flex items-center gap-6 ml-8 h-full pt-1">
+            <div class="flex items-center gap-6 ml-8 h-full pt-1">
                 <button id="btn-tab-datos" onclick="ui.switchTab('datos')" class="text-xs font-bold tracking-widest uppercase pb-1 border-b-2 border-black dark:border-white text-black dark:text-white transition-colors">Data</button>
                 <button id="btn-tab-tramas" onclick="ui.switchTab('tramas')" class="text-xs font-bold tracking-widest uppercase pb-1 border-b-2 border-transparent text-gray-400 hover:text-black dark:hover:text-white transition-colors">Trama</button>
                 <button id="btn-tab-cronologia" onclick="ui.switchTab('cronologia')" class="text-xs font-bold tracking-widest uppercase pb-1 border-b-2 border-transparent text-gray-400 hover:text-black dark:hover:text-white transition-colors">Crono</button>
@@ -527,11 +440,9 @@
                     </div>
                 </div>
             </div>
-
             <button onclick="ui.toggleImageConfigModal()" class="btn-nordic tracking-wider font-bold text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700">
                 <i class="fa-solid fa-gear text-[11px] text-black dark:text-white animate-hover-spin"></i> CONFIGURACIÓN
             </button>
-
             <div class="flex items-center gap-3 border-l border-r border-gray-100 dark:border-gray-800 px-4 h-8">
                 <span class="label-text mb-0 cursor-pointer text-[9px]" onclick="document.getElementById('chroma-toggle').click()">CHROMA</span>
                 <div class="relative">
@@ -541,11 +452,9 @@
                     </label>
                 </div>
             </div>
-
             <button onclick="app.illustrateAll()" id="btn-illustrate-all" class="btn-nordic">
                 <i class="fa-solid fa-palette text-[10px]"></i>
             </button>
-
             <button onclick="app.createNewItem()" class="btn-nordic">
                 <i class="fa-solid fa-plus text-[10px]"></i> 
             </button>
@@ -559,18 +468,15 @@
                 </button>
                 <div class="h-4 w-[1px] bg-gray-100 dark:bg-gray-800 mx-2"></div>
             </div>
-
             <button onclick="ui.toggleFolderModal()" id="folder-label-btn" class="btn-nordic min-w-[140px] justify-between">
                 <span>Seleccionar Carpeta</span>
                 <i class="fa-solid fa-folder-open text-gray-400"></i>
             </button>
-
             <button onclick="ui.toggleTheme()" id="theme-toggle-btn" class="btn-nordic" title="Alternar Modo Oscuro/Claro">
                 <i class="fa-solid fa-moon text-[11px]"></i>
             </button>
         </div>
     </header>
-
     <main class="app-container flex-1 flex overflow-hidden relative bg-gray-50/30 dark:bg-gray-950/30">
         
         <div id="tab-datos" class="w-full h-full flex relative overflow-hidden transition-opacity duration-300">
@@ -579,7 +485,6 @@
                     <span class="label-text text-black dark:text-white tracking-widest">MOTOR DE GÉNESIS</span>
                     <i class="fa-solid fa-bolt text-xs text-gray-300"></i>
                 </div>
-
                 <div class="flex-1 overflow-y-auto p-6 space-y-6">
                     <div class="space-y-4">
                         <div>
@@ -590,17 +495,14 @@
                                 <option value="database">Base de Datos (Multi-Prompt)</option>
                             </select>
                         </div>
-
                         <div>
                             <span class="label-text">Premisa / Semilla</span>
                             <textarea id="gen-premise" rows="3" class="config-input resize-none leading-relaxed" placeholder="Separa por puntos para Multi-Prompt de base de datos..."></textarea>
                         </div>
-
                         <div>
                             <span class="label-text">Estilo Visual Global</span>
                             <textarea id="gen-visual" rows="2" class="config-input resize-none" placeholder="Cyberpunk, óleo clásico, etc..."></textarea>
                         </div>
-
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <span class="label-text">Categoría</span>
@@ -632,12 +534,10 @@
                                 <input type="number" id="gen-count" class="config-input" value="3" min="1" max="10">
                             </div>
                         </div>
-
                         <button onclick="app.generateBatch()" id="btn-gen-batch" class="btn-primary mt-4">
                             <i class="fa-solid fa-wand-magic-sparkles"></i> GENERAR LOTE
                         </button>
                     </div>
-
                     <div class="pt-6 border-t border-gray-100 dark:border-gray-800">
                         <div class="flex justify-between items-center mb-2">
                             <span class="label-text">Registro de Sistema</span>
@@ -649,7 +549,6 @@
                     </div>
                 </div>
             </aside>
-
             <div class="flex-1 overflow-y-auto relative transition-all duration-300" id="main-scroll">
                 <div id="grid-container" class="grid-container">
                     <div class="col-span-full flex flex-col items-center justify-center h-64 text-gray-300">
@@ -658,7 +557,6 @@
                     </div>
                 </div>
             </div>
-
             <aside id="editor-sidebar" class="sidebar sidebar-bottom bg-white dark:bg-gray-900 flex flex-col">
                 <div class="flex-1 flex overflow-hidden">
                     <div class="w-1/4 p-6 overflow-y-auto border-r border-gray-100 dark:border-gray-800 flex flex-col">
@@ -678,7 +576,6 @@
                             <i class="fa-regular fa-image text-gray-300 text-2xl"></i>
                         </div>
                     </div>
-
                     <div class="w-1/3 p-6 overflow-y-auto border-r border-gray-100 dark:border-gray-800 space-y-4">
                         <input type="text" id="inp-title" class="config-input font-medium text-lg" placeholder="Nombre...">
                         <div class="grid grid-cols-2 gap-4">
@@ -687,7 +584,6 @@
                         </div>
                         <textarea id="inp-visual" rows="3" class="config-input resize-none font-mono text-xs text-purple-800 dark:text-purple-300 bg-purple-50/50 dark:bg-purple-950/20 p-2 border-purple-100 dark:border-purple-900" placeholder="Prompt..."></textarea>
                     </div>
-
                     <div class="flex-1 p-6 overflow-y-auto flex flex-col">
                         <div class="flex-1 flex flex-col">
                             <button onclick="app.refineText('desc')" class="text-[9px] text-gray-400 hover:text-black dark:hover:text-white uppercase tracking-wider transition-colors self-end"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>Refinar</button>
@@ -706,7 +602,7 @@
             </aside>
         </div>
 
-       <div id="tab-tramas" class="w-full h-full flex relative overflow-hidden transition-opacity duration-300 hidden">
+        <div id="tab-tramas" class="w-full h-full flex relative overflow-hidden transition-opacity duration-300 hidden">
             <aside id="tramas-generator-sidebar" class="sidebar sidebar-left bg-white dark:bg-gray-900">
                 <div class="h-16 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-6 bg-indigo-50 dark:bg-indigo-950/20 shrink-0">
                     <span class="label-text text-indigo-900 dark:text-indigo-200 tracking-widest font-bold">IA TRAMAS (ORÁCULO)</span>
@@ -724,7 +620,6 @@
                     </div>
                 </div>
             </aside>
-
             <div class="flex-1 relative bg-gray-50/50 dark:bg-gray-950/50 overflow-hidden" id="tramas-canvas-container">
                 <canvas id="tramas-canvas" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
                 <div class="absolute top-6 left-6 flex gap-2 z-30">
@@ -733,7 +628,6 @@
                     <button class="btn-nordic bg-white dark:bg-gray-800 w-auto px-6 py-3 shadow-lg" onclick="if(window.TramasUI) window.TramasUI.createNewRegion()">NUEVA REGIÓN</button>
                     <button class="btn-nordic bg-white dark:bg-gray-800 w-auto px-6 py-3 shadow-lg" onclick="if(window.TramasUI) window.TramasUI.autoLayout()">ORDENAR TRAMA</button>
                 </div>
-
                 <div class="absolute top-6 left-[620px] flex gap-2 z-30 bg-white dark:bg-gray-900 p-2 rounded shadow-sm border border-gray-200 dark:border-gray-800 items-center">
                     <select id="filter-type" class="config-input text-[10px] uppercase font-bold tracking-wider border-none w-36 outline-none" onchange="if(window.TramasUI) window.TramasUI.updateFilterUI()">
                         <option value="">SIN FILTRO VISUAL</option>
@@ -743,7 +637,6 @@
                     <select id="filter-value" class="config-input text-[10px] uppercase border-none w-36 hidden outline-none" onchange="if(window.TramasUI) window.TramasUI.applyFilter()"></select>
                 </div>
             </div>
-
             <aside id="omega-sidebar" class="sidebar sidebar-right bg-white dark:bg-gray-900">
                 <div class="h-16 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-6 bg-white dark:bg-gray-900 shrink-0">
                     <span class="label-text text-black dark:text-white">Inspector Omega</span>
@@ -766,7 +659,6 @@
                         <button onclick="mainCrono.deleteEvent()" class="text-gray-400 hover:text-red-500"><i class="fa-regular fa-trash-can"></i></button>
                     </div>
                 </div>
-
                 <div id="inspector-crono-content" class="flex-1 overflow-y-auto p-6 space-y-6 hidden">
                     <div class="flex gap-4">
                         <div class="w-1/3">
@@ -786,13 +678,11 @@
                         <div id="crono-moments-list" class="space-y-3 pl-2 border-l-2 border-gray-100 dark:border-gray-800"></div>
                     </div>
                 </div>
-
                 <div id="inspector-crono-empty" class="flex-1 flex flex-col items-center justify-center text-gray-300 p-8 text-center">
                     <i class="fa-solid fa-clapperboard text-3xl mb-4 opacity-30"></i>
                     <p class="text-xs font-light tracking-wide">Selecciona un frame en la línea temporal para editar su contenido.</p>
                 </div>
             </aside>
-
             <div class="flex-1 relative flex flex-col bg-[#f8f9fa] dark:bg-gray-950 overflow-hidden">
                 <div class="timeline-container-fixed flex-1" id="timeline-container">
                     <div class="ruler-container-fixed"><div class="ruler-ticks-fixed" id="ruler-ticks"></div></div>
@@ -812,13 +702,11 @@
                     </div>
                     <button class="btn-nordic bg-white dark:bg-gray-800 shadow-sm" onclick="window.timeline.resetView()">CENTRAR</button>
                 </div>
-
                 <div id="ai-loading-overlay" class="absolute inset-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm flex flex-col items-center justify-center hidden z-50">
                     <i class="fa-solid fa-circle-notch fa-spin text-2xl text-indigo-600 mb-2"></i>
                     <h3 class="text-xs font-bold tracking-[0.2em] uppercase text-black dark:text-white mb-2" id="ai-loading-text">PROCESANDO</h3>
                     <p class="text-[10px] text-gray-400 font-mono" id="ai-loading-subtext">Analizando...</p>
                 </div>
-
                 <div id="book-loading-overlay" class="absolute inset-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md flex flex-col items-center justify-center hidden z-50">
                     <div class="w-full max-w-lg p-8 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl rounded-sm">
                         <div class="flex items-center justify-between mb-4">
@@ -840,17 +728,15 @@
         <div id="tab-io" class="w-full h-full flex flex-col relative overflow-hidden transition-opacity duration-300 p-8 bg-white dark:bg-gray-900 hidden">
             <div class="flex flex-col gap-2 border-b border-gray-100 dark:border-gray-800 pb-4 mb-6">
                 <h2 class="text-xs font-medium tracking-[0.2em] text-black dark:text-white uppercase flex items-center gap-2">
-                    <i class="fa-solid fa-right-left text-gray-400"></i> Núcleo de Entrada / Salina (IO)
+                    <i class="fa-solid fa-right-left text-gray-400"></i> Núcleo de Entrada / Salida (IO)
                 </h2>
                 <p class="text-[10px] text-gray-400 font-light max-w-xl leading-relaxed">Pega fragmentos o estructuras completas en formato JSON nativo para inyectarlos en caliente en tu espacio de trabajo local, o empaqueta tus sistemas para salvaguarda distribuida.</p>
             </div>
-
             <div class="flex flex-1 gap-6 overflow-hidden">
                 <div class="flex-1 flex flex-col border border-gray-200 dark:border-gray-800 p-4 bg-gray-50/50 dark:bg-gray-800/20">
                     <span class="label-text mb-2 text-black dark:text-white font-semibold tracking-wider uppercase"><i class="fa-solid fa-code mr-1"></i> Consola de Estructuras JSON</span>
                     <textarea id="io-json-area" class="flex-1 font-mono text-xs p-4 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 resize-none outline-none leading-relaxed text-gray-700 dark:text-gray-300" placeholder='{\n  "info": "Pega tu JSON aquí..."\n}'></textarea>
                 </div>
-
                 <div class="w-80 flex flex-col gap-6 bg-white dark:bg-gray-900">
                     <div class="space-y-2">
                         <span class="label-text tracking-widest text-indigo-500 font-bold uppercase"><i class="fa-solid fa-paste"></i> Inyección de Plantillas</span>
@@ -864,16 +750,13 @@
                             <span>Frame de Cronología</span> <i class="fa-solid fa-clapperboard text-gray-300"></i>
                         </button>
                     </div>
-
                     <div class="border-t border-gray-100 dark:border-gray-800 my-1"></div>
-
                     <div class="space-y-3">
                         <span class="label-text tracking-widest text-black dark:text-white font-bold uppercase"><i class="fa-solid fa-arrow-down-long"></i> Cargar al Sistema</span>
                         <button onclick="window.KorehIO.loadIntoSystem()" class="btn-primary bg-black text-white dark:bg-white dark:text-black py-4 shadow-md flex items-center justify-center gap-2">
                             <i class="fa-solid fa-cloud-arrow-up text-[10px]"></i> EJECUTAR E INYECTAR
                         </button>
                     </div>
-
                     <div class="border-t border-gray-100 dark:border-gray-800 my-1"></div>
                     <div class="space-y-2 bg-gray-50 dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-sm">
                         <span class="label-text tracking-widest text-purple-600 font-bold uppercase"><i class="fa-solid fa-clock-rotate-left"></i> Cronología de Destino</span>
@@ -882,8 +765,8 @@
                         </select>
                         <p class="text-[9px] text-gray-400 mt-1 leading-normal">Los datos del JSON se inyectarán en la línea de tiempo seleccionada en este menú en caliente.</p>
                     </div>
-    
-                  <div class="space-y-3 mt-auto">
+                    
+                    <div class="space-y-3 mt-auto">
                         <span class="label-text tracking-widest text-rose-600 font-bold uppercase"><i class="fa-solid fa-file-export"></i> Selector de Exportación Nofraile</span>
                         <div>
                             <span class="label-text">Filtro de Emisión</span>
@@ -909,7 +792,6 @@
 
         <div id="tab-libros" class="w-full h-full flex relative overflow-hidden transition-opacity duration-300 p-8 bg-white dark:bg-gray-900 hidden">
             <div class="flex flex-col w-full h-full gap-4">
-                
                 <div class="flex flex-col gap-1 border-b border-gray-100 dark:border-gray-800 pb-4">
                     <h2 class="text-xs font-medium tracking-[0.2em] text-black dark:text-white uppercase flex items-center gap-2">
                         <i class="fa-solid fa-book-open text-rose-500"></i> Núcleo Editorial en Serie (Gemini Engine)
@@ -918,7 +800,6 @@
                         Compila manuscritos estructurados a partir de la cronología activa usando relevo XML de hitos consumados de forma persistente.
                     </p>
                 </div>
-
                 <div class="flex flex-1 gap-6 overflow-hidden">
                     <div class="w-80 flex flex-col gap-4 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 pr-2 overflow-y-auto">
                         <span class="label-text tracking-widest text-rose-500 font-bold uppercase"><i class="fa-solid fa-sliders"></i> Parámetros de la Obra</span>
@@ -927,22 +808,18 @@
                             <span class="label-text">Título del Volumen</span>
                             <input type="text" id="gemini-book-title" class="config-input font-medium text-sm text-black dark:text-white" value="Novela Nexus">
                         </div>
-
                         <div>
                             <span class="label-text">Autor / Firma</span>
                             <input type="text" id="gemini-book-author" class="config-input text-xs text-gray-700 dark:text-gray-300" value="Manuel Rodsua">
                         </div>
-
                         <div>
                             <span class="label-text">Google Gemini API Key</span>
                             <input type="password" id="gemini-book-api-key" placeholder="AIzaSy..." class="config-input font-mono text-xs text-black dark:text-white" oninput="localStorage.setItem('koreh_gemini_book_api_key', this.value);">
                         </div>
-
                         <div>
                             <span class="label-text">Estilo Literario y Tonalidad</span>
                             <textarea id="gemini-book-style" rows="4" class="config-input text-xs leading-relaxed resize-none" placeholder="Prosa madura, fluida, inmersiva, ritmo cinematográfico con descripciones táctiles."></textarea>
                         </div>
-
                         <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-sm">
                             <div class="flex justify-between items-center mb-1">
                                 <span class="label-text text-black dark:text-white font-bold mb-0">Estado del Motor:</span>
@@ -956,7 +833,6 @@
                                 <span id="gemini-book-progress-text">0 / 0</span>
                             </div>
                         </div>
-
                         <div class="space-y-2 mt-auto pt-4">
                             <button id="btn-gemini-book-generate" onclick="window.GeminiBookAssembler.startProduction()" class="btn-primary bg-rose-600 hover:bg-rose-700 text-white py-3.5 flex items-center justify-center gap-2 shadow-md">
                                 <i class="fa-solid fa-play text-[10px]"></i> COMPILAR CON GEMINI
@@ -966,7 +842,6 @@
                             </button>
                         </div>
                     </div>
-
                     <div class="flex-1 flex flex-col border border-gray-200 p-4 bg-gray-900 rounded-sm shadow-inner relative overflow-hidden">
                         <div class="flex justify-between items-center mb-2 shrink-0 select-none">
                             <span class="text-[9px] font-mono text-emerald-400 tracking-widest uppercase flex items-center gap-1.5">
@@ -978,7 +853,6 @@
                             <div class="text-gray-500">&gt; Sistema listo para orquestación secuencial XML...</div>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>
@@ -990,23 +864,19 @@
     <script src="ai.text.js"></script>
     <script src="ai.image.js"></script>
     <script src="logic.utils.js"></script>
-    <script src="logic.ui.js"></script>     
-
+    <script src="logic.ui.js"></script>
     <script src="chroma.core.js"></script>
     <script src="chroma.ui.js"></script>
     <script src="coherence.core.js"></script>
-
     <script src="logic.core.js"></script>
     <script src="logic.fs.js"></script> 
     <script src="logic.editor.js"></script>
-
     <script src="database.generator.js"></script>
     <script src="imagen.batch.js"></script>
     <script src="imagen.text.js"></script>
     <script src="imagen.core.js"></script>
     <script src="exporter.logic.js"></script>
     <script src="io.logic.js"></script>
-
     <script src="tramas.config.js"></script>
     <script src="tramas.state.js"></script>
     <script src="tramas.connections.js"></script> 
@@ -1017,9 +887,7 @@
     <script src="tramas.ui.core.js"></script>
     <script src="tramas.ui.filters.js"></script>
     <script src="tramas.ui.inspector.js"></script>
-
-<script src="comic.exporter.js"></script>
-
+    <script src="comic.exporter.js"></script>
     <script src="Cronologia 3/crono.js"></script>
     <script src="Cronologia 3/ai.js"></script>
     <script src="Cronologia 3/ai2.js"></script>
@@ -1037,6 +905,5 @@
     <script src="book_gemini.js"></script>
     <script src="book_gemini_tools.js"></script>
     <script src="main.js"></script>
-    
 </body>
 </html>

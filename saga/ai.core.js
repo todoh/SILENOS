@@ -1,5 +1,6 @@
+// Abrir Canvas: ai.core.js
 /**
- * AI CORE - Módulo de Configuración y Autenticación Central (Local/Híbrido/Pollinations/Gemini)
+ * AI CORE - Módulo de Configuración y Autenticación Central (Local/Híbrido/Pollinations/Gemini/Runware)
  * Espacio de nombres: window.Koreh.Core
  */
 window.Koreh = window.Koreh || {};
@@ -8,7 +9,7 @@ window.Koreh.Core = {
         ollamaUrl: 'http://127.0.0.1:11434/api',
         ollamaCloudUrl: localStorage.getItem('koreh_ollama_cloud_url') || 'http://127.0.0.1:11434/api',
         comfyUrl: 'http://127.0.0.1:8188',
-        apiMode: localStorage.getItem('koreh_api_mode') || 'local' // 'local', 'pollinations' o 'gemini'
+        apiMode: localStorage.getItem('koreh_api_mode') || 'local' // 'local', 'pollinations', 'gemini'
     },
     
     // Obtiene el token de autenticación del sistema o fallback de localStorage según el motor
@@ -23,6 +24,9 @@ window.Koreh.Core = {
         const mode = targetMode || this.config.apiMode;
         if (mode === 'gemini') {
             return localStorage.getItem('koreh_gemini_book_api_key') || '';
+        }
+        if (mode === 'runware') {
+            return localStorage.getItem('koreh_runware_api_key') || '';
         }
         
         return localStorage.getItem('pollinations_api_key') || localStorage.getItem('silenos_auth_key') || '';
@@ -40,9 +44,7 @@ window.Koreh.Core = {
             model: modelName,
             prompt: prompt,
             stream: false,
-            options: {
-                temperature: isJsonMode ? 0.0 : 0.7
-            }
+            options: { temperature: isJsonMode ? 0.0 : 0.7 }
         };
         if (systemPrompt) body.system = systemPrompt;
         if (isJsonMode) body.format = "json";
@@ -67,9 +69,7 @@ window.Koreh.Core = {
             model: modelName,
             prompt: prompt,
             stream: false,
-            options: {
-                temperature: isJsonMode ? 0.0 : 0.7
-            }
+            options: { temperature: isJsonMode ? 0.0 : 0.7 }
         };
         if (systemPrompt) body.system = systemPrompt;
         if (isJsonMode) body.format = "json";
@@ -88,7 +88,7 @@ window.Koreh.Core = {
         return json.response;
     },
     
-    // Nuevo Conector para la API de Chat Completions de Pollinations
+    // Conector para la API de Chat Completions de Pollinations
     async callPollinationsAPI(modelName, prompt, isJsonMode, systemPrompt, signal = null) {
         const authKey = this.getAuthKey('pollinations');
         const headers = { 'Content-Type': 'application/json' };
@@ -120,12 +120,12 @@ window.Koreh.Core = {
         return json.choices[0].message.content;
     },
 
-    // Nuevo Conector Global Nativo para la API Directa de Google Gemini
+    // Conector Global Nativo para la API Directa de Google Gemini
     async callGeminiDirectAPI(modelName, prompt, isJsonMode, systemPrompt, signal = null) {
         const apiKey = this.getAuthKey('gemini');
         if (!apiKey) throw new Error("API Key de Gemini no configurada en los parámetros globales.");
         
-        const model = modelName || "gemini-3.1-flash-lite"; 
+        const model = modelName || "gemini-3.5-flash-lite"; 
         let url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
         
         let finalUserPrompt = prompt;
@@ -142,9 +142,7 @@ window.Koreh.Core = {
         
         const body = { contents: contents };
         if (isJsonMode) {
-            body.generationConfig = {
-                responseMimeType: "application/json"
-            };
+            body.generationConfig = { responseMimeType: "application/json" };
         }
         
         const fetchOpts = {

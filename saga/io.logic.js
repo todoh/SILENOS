@@ -1,9 +1,8 @@
 /**
  * IO LOGIC - Módulo unificado para la carga, copia y exportación de estructuras JSON
  * Espacio de nombres: window.KorehIO
- * Versión: 4.1 - Soporte de Inyección Dinámica e Inmunidad de Sobrescritura en Cronografías
+ * Versión: 4.3 - Exportación extendida de marcadores e información de línea de tiempo
  */
-
 window.KorehIO = {
     templates: {
         datos: {
@@ -85,7 +84,7 @@ window.KorehIO = {
                     "timestamp": "Año 1, Invierno",
                     "duration": "2 horas",
                     "pov": "silenos_el_erudito.json",
-                    "desc": "Las fuerzas camaleónicas detectan la fluctuación del éter e interceptan a Silenos en los acantalidos de la costa.",
+                    "desc": "Las fuerzas camaleónicas detectan la fluctuación del éter e interceptan a Silenos en los acantilados de la costa.",
                     "notes": "Momento de alta tensión física en el entorno.",
                     "threadName": "Trama Principal",
                     "threadColor": "#8b5cf6",
@@ -103,7 +102,7 @@ window.KorehIO = {
                 "=========================================================================\n" +
                 "ROL: Director de Continuidad, Guionista de Cine y Diseñador de Storyboards.\n\n" +
                 "REGLAS DE ORO:\n" +
-                "1. Ubicación Temporal Explicita: El campo 'time' define la coordenada horizontal de la escena en la línea de tiempo. Debe ser un valor numérico secuencial o fraccionario progresivo (ej: 1.0, 1.5, 2.0).\n" +
+                "1. Ubicación Temporal Explícita: El campo 'time' define la coordenada horizontal de la escena en la línea de tiempo. Debe ser un valor numérico secuencial o fraccionario progresivo (ej: 1.0, 1.5, 2.0).\n" +
                 "2. Desglose en Latidos ('moments'): Cada escena contiene un array de 'moments' que subdivide el capítulo en planos secuenciales directos.\n" +
                 "3. Prompts Cinematográficos Puros: El campo 'visualPrompt' dentro de los momentos DEBE escribirse por completo en INGLÉS técnico descriptivo. Define el tipo de plano (Close up, Wide angle), la iluminación (cinematic lighting, dramatic shadows) y la estética visual de la toma sin usar nombres propios.\n" +
                 "4. Narración Literaria: El campo 'text' contiene la prosa poética o el guion narrativo descriptivo de lo que acontece en español.\n\n" +
@@ -117,7 +116,7 @@ window.KorehIO = {
                     "moments": [
                         {
                             "id": 90001,
-                            "text": "Con las manos temblorosas por el frío y el miedo, Silenos encajó la Arandela de Luz en la ranura de piedra. El suelo vibró al instante.",
+                            "text": "Con las manos temblorosas por el frío y el miedo, Silenos encajó la Arandela de Luz Antigua en la ranura de piedra. El suelo vibró al instante.",
                             "visualPrompt": "Close up shot of wrinkled old hands inserting a glowing brass metallic ring into a dark ancient stone altar, cyan sparks flying, high contrast shadow, macro photography, cinematic lighting, 8k",
                             "image64": null,
                             "aspectRatio": "landscape"
@@ -135,6 +134,19 @@ window.KorehIO = {
         }
     },
 
+    highlightDataNames(text) {
+        if (!text || typeof text !== 'string') return text || "";
+        if (!window.app || !window.app.items || window.app.items.length === 0) return text;
+        const databaseNames = window.app.items
+            .map(item => item.data && (item.data.name || item.data.title))
+            .filter(name => name && typeof name === 'string' && name.trim().length > 2);
+        if (databaseNames.length === 0) return text;
+        databaseNames.sort((a, b) => b.length - a.length);
+        const escapedNames = databaseNames.map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+        const pattern = new RegExp(`\\b(${escapedNames.join('|')})\\b`, 'gi');
+        return text.replace(pattern, '<span class="underline decoration-indigo-500 decoration-2 font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50/60 dark:bg-indigo-950/40 px-1 rounded-sm">$1</span>');
+    },
+
     refreshTargetTimelineSelect() {
         const select = document.getElementById('io-import-crono-target');
         if (!select) return;
@@ -150,13 +162,10 @@ window.KorehIO = {
     copyTemplate(type) {
         const template = this.templates[type];
         if (!template) return;
-
         const jsonString = JSON.stringify(template.ejemplo_matriz, null, 2);
         const fullOutputText = template.instrucciones_ia + "\n" + jsonString;
-
         const txtArea = document.getElementById('io-json-area');
         if (txtArea) txtArea.value = fullOutputText;
-
         navigator.clipboard.writeText(fullOutputText).then(() => {
             if (window.ui && window.ui.alert) {
                 window.ui.alert(`Instrucciones lógicas y JSON de [${type.toUpperCase()}] listados y copiados.`);
@@ -172,36 +181,29 @@ window.KorehIO = {
         if (!window.app || !window.app.targetHandle) {
             return alert("Primero debes seleccionar una carpeta del proyecto en la interfaz.");
         }
-
         const txtArea = document.getElementById('io-json-area');
         let content = txtArea ? txtArea.value.trim() : '';
-
         if (!content) return alert("La consola JSON está vacía.");
-
         try {
             const firstOpenBrace = content.indexOf('{');
             const firstOpenBracket = content.indexOf('[');
             let jsonStartIndex = -1;
-
             if (firstOpenBrace !== -1 && firstOpenBracket !== -1) {
                 jsonStartIndex = Math.min(firstOpenBrace, firstOpenBracket);
             } else {
                 jsonStartIndex = firstOpenBrace !== -1 ? firstOpenBrace : firstOpenBracket;
             }
-
             if (jsonStartIndex !== -1) {
                 content = content.substring(jsonStartIndex);
             }
-
             const parsedData = JSON.parse(content);
             
-            // Caso 1: Es una exportación completa previa del sistema completo
+            // Caso 1: Exportación completa previa
             if (parsedData.__nexus_saga_export__) {
                 const targetCronoFile = document.getElementById('io-import-crono-target')?.value || 'TIMELINE_DATA.json';
                 if (window.mainCrono && window.mainCrono.currentTimelineName !== targetCronoFile) {
                     await window.mainCrono.switchTimelineFile(targetCronoFile);
                 }
-
                 if (parsedData.datos && Array.isArray(parsedData.datos)) {
                     for (const item of parsedData.datos) {
                         await this.writeItemToDisk(item.filename, item.data);
@@ -212,31 +214,36 @@ window.KorehIO = {
                     await window.app.saveTramas();
                 }
                 if (parsedData.cronologia && window.mainCrono) {
-                    window.mainCrono.data.events = parsedData.cronologia;
+                    if (Array.isArray(parsedData.cronologia)) {
+                        window.mainCrono.data.events = parsedData.cronologia;
+                    } else if (typeof parsedData.cronologia === 'object') {
+                        if (parsedData.cronologia.events) {
+                            window.mainCrono.data.events = parsedData.cronologia.events;
+                        }
+                        if (parsedData.cronologia.markers) {
+                            window.mainCrono.data.markers = parsedData.cronologia.markers;
+                        }
+                    }
                     await window.mainCrono.saveData();
                 }
-
                 alert("¡Matriz estructural completa restaurada con éxito!");
                 await window.app.loadFiles();
                 return;
             }
 
-            // Detectar si el payload contiene elementos cronológicos puros antes de tocar la línea de tiempo
+            // Detectar si contiene elementos cronológicos
             let containsTimelinePayload = false;
             if (Array.isArray(parsedData)) {
                 containsTimelinePayload = parsedData.some(obj => obj.moments !== undefined || obj.time !== undefined);
             } else {
-                containsTimelinePayload = (parsedData.moments !== undefined || parsedData.time !== undefined);
+                containsTimelinePayload = (parsedData.moments !== undefined || parsedData.time !== undefined || parsedData.events !== undefined);
             }
-
             const targetCronoFile = document.getElementById('io-import-crono-target')?.value || 'TIMELINE_DATA.json';
-
-            // BLINDAJE CRÍTICO: Solo conmutamos y cargamos el archivo crono si los datos entrantes van a modificar la línea temporal
+            
             if (containsTimelinePayload && window.mainCrono && window.mainCrono.currentTimelineName !== targetCronoFile) {
                 await window.mainCrono.switchTimelineFile(targetCronoFile);
             }
 
-            // Caso 2: Es un array de elementos o un objeto único suelto
             if (Array.isArray(parsedData)) {
                 alert("Se ha detectado un lote. Procesando inserción paralela...");
                 for (let i = 0; i < parsedData.length; i++) {
@@ -245,10 +252,8 @@ window.KorehIO = {
             } else {
                 await this.injectSingleObject(parsedData, 0);
             }
-
             alert(`Operación de inyección finalizada con éxito.`);
             await window.app.loadFiles();
-
         } catch (e) {
             console.error(e);
             alert("Error al parsear o procesar el JSON: " + e.message);
@@ -268,7 +273,6 @@ window.KorehIO = {
             await window.mainCrono.saveData();
             return;
         }
-
         if (obj.threadName !== undefined || obj.type === 'Region' || (obj.id && obj.id.startsWith('omega-'))) {
             const cleanOmegaNode = {
                 id: obj.id || `omega-${Date.now().toString(36)}-${index}`,
@@ -290,13 +294,11 @@ window.KorehIO = {
             };
             window.app.tramas.push(cleanOmegaNode);
             await window.app.saveTramas();
-
             if (window.TramasCanvas && typeof window.TramasCanvas.render === 'function') {
                 window.TramasCanvas.render();
             }
             return;
         }
-
         const cleanName = (obj.name || "elemento_io_" + index).trim().replace(/[^a-z0-9]/gi, '_').toLowerCase();
         const filename = `${cleanName}_${Date.now()}_${index}.json`;
         const dataPayload = {
@@ -325,14 +327,12 @@ window.KorehIO = {
         if (!window.app || !window.app.targetHandle) {
             return alert("Selecciona una carpeta activa primero.");
         }
-
         const filter = document.getElementById('io-export-filter').value;
         const exportPackage = {
             __nexus_saga_export__: true,
             timestamp: new Date().toISOString(),
             scope: filter
         };
-
         try {
             if (filter === 'all' || filter === 'datos') {
                 exportPackage.datos = [];
@@ -349,16 +349,17 @@ window.KorehIO = {
                     }
                 }
             }
-
             if (filter === 'all' || filter === 'tramas') {
                 exportPackage.tramas = window.app.tramas || [];
             }
-
             if (filter === 'all' || filter === 'cronologia') {
-                exportPackage.cronologia = (window.mainCrono && window.mainCrono.data) ? window.mainCrono.data.events : [];
+                const cronoData = (window.mainCrono && window.mainCrono.data) ? window.mainCrono.data : {};
+                exportPackage.cronologia = {
+                    events: cronoData.events || [],
+                    markers: cronoData.markers || []
+                };
                 exportPackage.active_timeline_filename = window.mainCrono ? window.mainCrono.currentTimelineName : 'TIMELINE_DATA.json';
             }
-
             const jsonBlob = new Blob([JSON.stringify(exportPackage, null, 2)], { type: 'application/json;charset=utf-8' });
             const downloadUrl = URL.createObjectURL(jsonBlob);
             const a = document.createElement('a');
@@ -374,7 +375,6 @@ window.KorehIO = {
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(downloadUrl);
             }, 100);
-
         } catch (err) {
             console.error("Fallo crítico en exportador IO:", err);
             alert("Error empaquetando exportación JSON.");
