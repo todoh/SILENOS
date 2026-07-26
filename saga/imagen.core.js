@@ -13,7 +13,7 @@ DataStudio.prototype.generateImageForItem = async function(filename, data, handl
 
         const width = parseInt(document.getElementById('comfy-width')?.value || "1024");
         const height = parseInt(document.getElementById('comfy-height')?.value || "1024");
-        const steps = parseInt(document.getElementById('comfy-steps')?.value || "6");
+        const steps = parseInt(document.getElementById('comfy-steps')?.value || "4");
         const cfg = parseFloat(document.getElementById('comfy-cfg')?.value || "2.0");
         const sampler = document.getElementById('comfy-sampler')?.value || "dpmpp_sde";
 

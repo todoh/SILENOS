@@ -97,7 +97,7 @@ select.config-input { cursor: pointer; border-radius: 0; -webkit-appearance: non
 .grid-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 1.5rem; margin : 3%; margin-bottom: 20%; padding: 1rem; width: 94%;
+    gap: 01.1rem; margin : 5%; margin-bottom: 20%;margin-top: 5%; padding: 1rem; width: 90%;
 }
 
 .data-card {
@@ -113,7 +113,7 @@ select.config-input { cursor: pointer; border-radius: 0; -webkit-appearance: non
 .card-img-box {
     width: 100%; aspect-ratio: 1 / 1; background: #fafafa00; border-bottom: 0px solid #f0f0f0;
     display: flex; align-items: center; justify-content: center; overflow: hidden;
-    position: relative; border-radius: 28%;
+    position: relative; border-radius: 1%;
 }
 .dark .card-img-box { border: 1px solid #27272a; }
 

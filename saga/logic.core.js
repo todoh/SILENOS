@@ -98,7 +98,7 @@ class DataStudio {
                 <div class="card-img-box">${imgHTML}</div>
                 <div class="p-4 flex-1 flex flex-col">
                     <h3 class="font-medium text-sm text-black mb-1 truncate">${item.data.name || item.data.title || "Sin Nombre"}</h3>
-                    <p class="text-[10px] text-gray-400 line-clamp-3 leading-relaxed">${item.data.desc || "Sin descripción..."}</p>
+                    <p  class="text-[10px] text-gray-400 line-clamp-3 leading-relaxed">${item.data.desc || "Sin descripción..."}</p>
                 </div>
             `;
             grid.appendChild(card);
