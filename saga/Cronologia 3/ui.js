@@ -10,6 +10,7 @@ const uiCrono = {
     init() {
         const inpTime = document.getElementById('crono-inp-time');
         const inpTitle = document.getElementById('crono-inp-title');
+
         if (inpTime) {
             inpTime.addEventListener('input', (e) => window.mainCrono.updateSelected('time', parseFloat(e.target.value)));
         }
@@ -63,6 +64,7 @@ const uiCrono = {
             list.innerHTML = '<div class="p-8 text-center text-xs text-red-400 font-light">Root Handle no accesible.</div>';
             return;
         }
+
         this.addFolderOption(list, FS.rootHandle, 'RAÍZ DEL PROYECTO', true);
         await this.scanDirRecursive(FS.rootHandle, list, 'ROOT');
     },
@@ -101,6 +103,7 @@ const uiCrono = {
 
         const inpTime = document.getElementById('crono-inp-time');
         const inpTitle = document.getElementById('crono-inp-title');
+
         if (inpTime) inpTime.value = ev.time;
         if (inpTitle) inpTitle.value = ev.description || "";
 
@@ -164,6 +167,7 @@ const uiCrono = {
         const list = document.getElementById('crono-moments-list');
         if (!list) return;
         list.innerHTML = '';
+
         const moments = ev.moments || [];
         
         let hasInlinedImages = moments.some(m => m.image64 && m.image64.startsWith('data:image'));
@@ -175,7 +179,7 @@ const uiCrono = {
             purgeBtn.onclick = () => this.migrateOldCronoBase64();
             list.parentNode.insertBefore(purgeBtn, list);
         }
-        
+
         moments.forEach((m, idx) => {
             if (!m.aspectRatio) m.aspectRatio = 'landscape';
             const safeId = String(m.id).replace('.', '-');
@@ -183,7 +187,7 @@ const uiCrono = {
             row.className = "p-3 border bg-white dark:bg-gray-800 space-y-3 mb-4 shadow-sm rounded-sm flex flex-col cursor-grab active:cursor-grabbing transition-all border-gray-200 dark:border-gray-700 duration-150 relative group/row";
             row.setAttribute('draggable', 'true');
             row.dataset.index = idx;
-            
+
             // Eventos de arrastre nativos (Drag and Drop)
             row.addEventListener('dragstart', (e) => {
                 e.dataTransfer.setData('text/plain', idx);
@@ -238,17 +242,17 @@ const uiCrono = {
                     }
                 }
             });
-            
+
             const srcTarget = m.displayUrl || m.image64 || '';
             let imgPreviewHtml = '';
-            
+
             if (srcTarget) {
                 const aspectClass = m.aspectRatio === 'portrait' ? 'aspect-[9/16]' : 'aspect-video';
                 imgPreviewHtml = `
-                    <div class="w-full ${aspectClass} bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 overflow-hidden rounded-sm group relative cursor-zoom-in shadow-inner" 
-                         onclick="if(window.ui && ui.zoomImage) ui.zoomImage('${srcTarget}')">
+                    <div class="w-full ${aspectClass} bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 overflow-hidden rounded-sm group relative cursor-pointer shadow-inner" 
+                          onclick="if(window.CronoViewer){ window.CronoViewer.open('${ev.id}', '${m.id}'); }">
                         <img src="${srcTarget}" class="w-full h-full object-cover">
-                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center"> 
                              <i class="fa-solid fa-expand text-white opacity-0 group-hover:opacity-100 transition-opacity"></i>
                         </div>
                     </div>
@@ -300,12 +304,10 @@ const uiCrono = {
                         <option value="landscape" ${m.aspectRatio==='landscape'?'selected':''}>16:9</option>
                         <option value="portrait" ${m.aspectRatio==='portrait'?'selected':''}>9:16</option>
                     </select>
-
- <div class="w-full h-16 bg-gray-50 dark:bg-gray-900 border border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center rounded-sm text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" onclick="document.getElementById('file-upload-${safeId}').click()">
+                    <div class="w-full h-16 bg-gray-50 dark:bg-gray-900 border border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center rounded-sm text-gray-400 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" onclick="document.getElementById('file-upload-${safeId}').click()">
                         <i class="fa-regular fa-image text-sm mb-1"></i>
                         <span class="text-[8px] uppercase tracking-widest font-bold">Añadir Ilustración</span>
                     </div>
-
                 </div>
             `;
 
@@ -330,7 +332,6 @@ const uiCrono = {
                         descEditable.innerText = m.text || "";
                     }
                 };
-
                 descEditable.onblur = () => {
                     const plainText = descEditable.innerText.trim();
                     m.text = plainText;
@@ -380,6 +381,7 @@ const uiCrono = {
                     if (m.imageFile) {
                         try { await window.mainCrono.rootHandle.removeEntry(m.imageFile); } catch(err){}
                     }
+
                     const imgHandle = await window.mainCrono.rootHandle.getFileHandle(targetFilename, { create: true });
                     const imgWritable = await imgHandle.createWritable();
                     await imgWritable.write(file);

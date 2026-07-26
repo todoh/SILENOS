@@ -100,7 +100,7 @@ html.dark .btn-primary { background: #f4f4f5; color: #09090b; }
     transition: all 0.3s ease;
     cursor: pointer;
     height: auto; 
-    min-height: 190px;
+    min-height: 170px;
     position: relative;
     overflow: visible;
 }
@@ -113,7 +113,7 @@ html.dark .data-card:hover { box-shadow: 0 4px 12px rgba(255,255,255,0.02); }
     background: #fafafa00; 
     border-bottom: 0px solid #f0f0f0;
     display: flex; align-items: center; justify-content: center; overflow: hidden;
-    position: relative;  border-radius: 28%;
+    position: relative;  border-radius: 0%;
 }
 .card-img { 
     width: 100%; 
