@@ -31,15 +31,49 @@
         </div>
     </div>
 
-    <div class="main-layout">
-        <!-- COLUMNA IZQUIERDA: Sistema y Estado -->
-        <div class="col col-left">
-            <div class="header-title">MADDNACITY MMO</div>
+    <!-- Header Fijo para Móvil (Sticky Status) -->
+    <div id="mobile-top-bar" class="mobile-top-bar">
+        <div id="mobile-profile-toggle" class="mobile-profile-toggle">
+            <div class="profile-summary">
+                <img id="m-p-avatar" src="images/1.jpg" alt="Avatar" class="avatar-img-leaderboard">
+                <div>
+                    <div id="m-p-name" style="font-weight:700; font-size:0.85em; color:var(--accent);">-</div>
+                    <div id="m-p-money" style="font-size:0.75em; color:var(--text-dim);">0 $</div>
+                </div>
+            </div>
+            <div class="toggle-icon">▼</div>
+        </div>
+
+        <!-- Panel de Estado Desplegable para Móvil -->
+        <div id="mobile-player-panel" class="card mobile-player-panel" style="display: none;">
+            <h2>Status Ciudadano</h2>
+            <div class="avatar-display-box">
+                <img id="m-p-avatar-detail" src="images/1.jpg" alt="Avatar Jugador" class="avatar-img-profile">
+                <div>
+                    <div class="stat-label">Nombre</div>
+                    <div id="m-p-name-detail" class="stat-value">-</div>
+                </div>
+            </div>
+            <button id="m-btn-edit-profile" style="width: 100%; margin-bottom: 12px;" class="btn-secondary">EDITAR PERFIL</button>
+            <div class="grid">
+                <div>
+                    <div class="stat-label">Edad</div>
+                    <div id="m-p-age" class="stat-value">18y</div>
+                </div>
+                <div>
+                    <div class="stat-label">Créditos</div>
+                    <div id="m-p-money-detail" class="stat-value">0 $</div>
+                </div>
+                <div style="grid-column: span 2;">
+                    <div class="stat-label">Rep / Inf</div>
+                    <div id="m-p-rep-inf" class="stat-value">0 / 0</div>
+                </div>
+                <div style="grid-column: span 2;">
+                    <div class="stat-label">Vitals (Puntos de Vida/Energía/Estado de Ánimo)</div>
+                    <div id="m-p-stats" class="stat-value">100 / 100 / 100</div>
+                </div>
             
-            <!-- Reloj Global -->
-            <div class="card">
-                <h2>[SYS] Reloj Global</h2>
-                <div class="grid">
+            <div class="grid">
                     <div>
                         <div class="stat-label">Fecha</div>
                         <div id="game-date" class="stat-value">Cargando...</div>
@@ -57,33 +91,23 @@
                         <div class="stat-value">24h = 30d</div>
                     </div>
                 </div>
-            </div>
             
-            <!-- Autenticación -->
-            <div class="card" id="auth-panel">
-                <h2>[ACC] Autenticación</h2>
-                <div id="auth-forms">
-                    <button id="btn-google-login" style="width:100%; margin-bottom: 12px; background: #ffffff; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        <svg width="14" height="14" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.15C3.26 21.3 7.37 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.26 2.7 1.29 6.61l3.99 3.15c.95-2.85 3.6-4.96 6.72-4.96z"/></svg>
-                        ACCEDER CON GOOGLE
-                    </button>
-                    <div style="text-align: center; font-size: 0.65em; color: var(--text-dim); margin-bottom: 12px;"> O CORREO TRADICIONAL </div>
-                    <input type="email" id="auth-email" placeholder="CORREO ELECTRÓNICO">
-                    <input type="password" id="auth-password" placeholder="CONTRASEÑA">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-                        <input type="checkbox" id="auth-remember" checked style="width: auto; margin-bottom: 0; cursor: pointer;">
-                        <label for="auth-remember" style="font-size: 0.7em; color: var(--text-dim); cursor: pointer; user-select: none;">MANTENER SESIÓN INICIADA</label>
-                    </div>
-                    <div style="display: flex; gap: 8px;">
-                        <button id="btn-login" style="flex:1;">LOGIN</button>
-                        <button id="btn-register" style="flex:1;">CREAR</button>
-                    </div>
-                </div>
-            </div>
             
-            <!-- Estado del Personaje -->
+            
+            </div>
+            <br>
+            <button id="m-btn-logout" style="width: 100%;">DESCONECTAR</button>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <!-- COLUMNA IZQUIERDA: Sistema y Estado (Escritorio) -->
+        <div class="col col-left">
+           
+            
+            <!-- Estado del Personaje en PC -->
             <div class="card" id="player-panel" style="display: none;">
-                <h2>[USR] Status Ciudadano</h2>
+                <h2> Status Ciudadano</h2>
                 <div class="avatar-display-box">
                     <img id="p-avatar" src="images/1.jpg" alt="Avatar Jugador" class="avatar-img-profile">
                     <div>
@@ -106,22 +130,54 @@
                         <div id="p-rep-inf" class="stat-value">0 / 0</div>
                     </div>
                     <div style="grid-column: span 2;">
-                        <div class="stat-label">Vitals (HP/EN/MOOD)</div>
+                        <div class="stat-label">Vitals (Puntos de Vida/Energía/Estado de Ánimo)</div>
                         <div id="p-stats" class="stat-value">100 / 100 / 100</div>
                     </div>
-                </div>
+           
+
+ 
+                
+               
+         
+     
+
                 <br>
                 <button id="btn-logout" style="width: 100%;">DESCONECTAR</button>
+            </div> 
+
+            <!-- Reloj Global -->
+            
+            
+            <!-- Autenticación -->
+            <div class="card" id="auth-panel">
+                <h2>[ACC] Autenticación</h2>
+                <div id="auth-forms">
+                    <button id="btn-google-login" style="width:100%; margin-bottom: 12px; background: #ffffff; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.15C3.26 21.3 7.37 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.26 2.7 1.29 6.61l3.99 3.15c.95-2.85 3.6-4.96 6.72-4.96z"/></svg>
+                        ACCEDER CON GOOGLE
+                    </button>
+                    <div style="text-align: center; font-size: 0.65em; color: var(--text-dim); margin-bottom: 12px;"> O CORREO TRADICIONAL </div>
+                    <input type="email" id="auth-email" placeholder="CORREO ELECTRÓNICO">
+                    <input type="password" id="auth-password" placeholder="CONTRASEÑA">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                        <input type="checkbox" id="auth-remember" checked style="width: auto; margin-bottom: 0; cursor: pointer;">
+                        <label for="auth-remember" style="font-size: 0.7em; color: var(--text-dim); cursor: pointer; user-select: none;">MANTENER SESIÓN INICIADA</label>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button id="btn-login" style="flex:1;">LOGIN</button>
+                        <button id="btn-register" style="flex:1;">CREAR</button>
+                    </div>
+                </div>
             </div>
         </div>
         
         <!-- COLUMNA CENTRO: Contenido Principal y Secciones -->
         <div class="col col-center" id="center-container">
-            <!-- Pestañas y contenido dinámico inyectado por JS -->
+             <!-- Pestañas y contenido dinámico inyectado por JS -->
         </div>
         
         <!-- COLUMNA DERECHA: Telemetría / Monitor Rápido -->
-        <div class="col col-right">
+        <div class="col col-right" style="display: none;">
             <div class="card">
                 <h2>[ACT] Monitor Activo</h2>
                 <div id="quick-action-status" style="font-size:0.8em; color:var(--text-dim); line-height: 1.5;">
@@ -139,6 +195,34 @@
             </div>
         </div>
     </div>
+
+    <!-- Barra de Navegación Inferior para Móviles -->
+    <nav id="mobile-bottom-nav" class="mobile-bottom-nav">
+        <button class="nav-item active" data-tab="tab-actions">
+            <span class="nav-item-icon">⚡</span>
+            <span>ACTIVIDAD</span>
+        </button>
+        <button class="nav-item" data-tab="tab-skills">
+            <span class="nav-item-icon">🧠</span>
+            <span>SKILLS</span>
+        </button>
+        <button class="nav-item" data-tab="tab-economy">
+            <span class="nav-item-icon">🏢</span>
+            <span>BIENES</span>
+        </button>
+        <button class="nav-item" data-tab="tab-market">
+            <span class="nav-item-icon">🛒</span>
+            <span>MERCADO</span>
+        </button>
+        <button class="nav-item" data-tab="tab-news">
+            <span class="nav-item-icon">📰</span>
+            <span>NOTICIAS</span>
+        </button>
+        <button class="nav-item" data-tab="tab-multiplayer">
+            <span class="nav-item-icon">🌐</span>
+            <span>RED</span>
+        </button>
+    </nav>
 
     <!-- Script de aplicación tipo módulo -->
     <script type="module" src="js/app.js"></script>
