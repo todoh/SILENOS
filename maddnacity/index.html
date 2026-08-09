@@ -13,7 +13,7 @@
             <h2 id="modal-setup-title">[REGISTRAR CIUDADANO]</h2>
             <p style="font-size: 0.8em; color: var(--text-dim); margin-bottom: 8px;">Introduce el alias público de tu personaje:</p>
             <input type="text" id="setup-player-name" placeholder="ALIAS DE CIUDADANO" maxlength="20">
-            
+                         
             <p style="font-size: 0.8em; color: var(--text-dim); margin-bottom: 8px;">Selecciona tu Avatar:</p>
             <div id="avatar-selector" class="avatar-selector">
                 <img src="images/1.jpg" class="avatar-option selected" data-avatar="images/1.jpg" alt="Avatar 1">
@@ -32,7 +32,7 @@
     </div>
 
     <!-- Header Fijo para Móvil (Sticky Status) -->
-    <div id="mobile-top-bar" class="mobile-top-bar">
+    <div id="mobile-top-bar" class="mobile-top-bar" style="display: none;">
         <div id="mobile-profile-toggle" class="mobile-profile-toggle">
             <div class="profile-summary">
                 <img id="m-p-avatar" src="images/1.jpg" alt="Avatar" class="avatar-img-leaderboard">
@@ -43,7 +43,6 @@
             </div>
             <div class="toggle-icon">▼</div>
         </div>
-
         <!-- Panel de Estado Desplegable para Móvil -->
         <div id="mobile-player-panel" class="card mobile-player-panel" style="display: none;">
             <h2>Status Ciudadano</h2>
@@ -69,31 +68,9 @@
                     <div id="m-p-rep-inf" class="stat-value">0 / 0</div>
                 </div>
                 <div style="grid-column: span 2;">
-                    <div class="stat-label">Vitals (Puntos de Vida/Energía/Estado de Ánimo)</div>
+                    <div class="stat-label">Vitals (Salud / Energía / Ánimo)</div>
                     <div id="m-p-stats" class="stat-value">100 / 100 / 100</div>
                 </div>
-            
-            <div class="grid">
-                    <div>
-                        <div class="stat-label">Fecha</div>
-                        <div id="game-date" class="stat-value">Cargando...</div>
-                    </div>
-                    <div>
-                        <div class="stat-label">Hora</div>
-                        <div id="game-time" class="stat-value">Cargando...</div>
-                    </div>
-                    <div>
-                        <div class="stat-label">Año</div>
-                        <div id="game-year" class="stat-value">3000</div>
-                    </div>
-                    <div>
-                        <div class="stat-label">Escala</div>
-                        <div class="stat-value">24h = 30d</div>
-                    </div>
-                </div>
-            
-            
-            
             </div>
             <br>
             <button id="m-btn-logout" style="width: 100%;">DESCONECTAR</button>
@@ -101,22 +78,41 @@
     </div>
 
     <div class="main-layout">
-        <!-- COLUMNA IZQUIERDA: Sistema y Estado (Escritorio) -->
+        <!-- COLUMNA IZQUIERDA: Estado del Personaje (Escritorio) -->
         <div class="col col-left">
-           
-            
-            <!-- Estado del Personaje en PC -->
             <div class="card" id="player-panel" style="display: none;">
-                <h2> Status Ciudadano</h2>
+                <h2>Status Ciudadano</h2>
                 <div class="avatar-display-box">
                     <img id="p-avatar" src="images/1.jpg" alt="Avatar Jugador" class="avatar-img-profile">
                     <div>
                         <div class="stat-label">Nombre</div>
                         <div id="p-name" class="stat-value">-</div>
                     </div>
+
+
+
+
+
+
                 </div>
                 <button id="btn-edit-profile" style="width: 100%; margin-bottom: 12px;" class="btn-secondary">EDITAR PERFIL</button>
+               
+            
+                        
+            
+               
+               
                 <div class="grid">
+
+
+ 
+                  
+           
+
+
+
+
+
                     <div>
                         <div class="stat-label">Edad</div>
                         <div id="p-age" class="stat-value">18y</div>
@@ -130,25 +126,42 @@
                         <div id="p-rep-inf" class="stat-value">0 / 0</div>
                     </div>
                     <div style="grid-column: span 2;">
-                        <div class="stat-label">Vitals (Puntos de Vida/Energía/Estado de Ánimo)</div>
+                        <div class="stat-label">Vitals (Salud / Energía / Ánimo)</div>
                         <div id="p-stats" class="stat-value">100 / 100 / 100</div>
                     </div>
-           
+                </div>
 
- 
+<div class="stat-label">Fecha</div>
+                        <div id="game-date" class="stat-value">Cargando...</div>
+                  
+                    
+                        <div class="stat-label">Hora</div>
+                        <div id="game-time" class="stat-value">Cargando...</div>
+                  
+                 
+                        <div class="stat-label">Año</div>
+                        <div id="game-year" class="stat-value">3000</div>
+            
+                        <div class="stat-label">Escala</div>
+                        <div class="stat-value">24h = 30d</div>
+
+
                 
-               
-         
-     
-
                 <br>
                 <button id="btn-logout" style="width: 100%;">DESCONECTAR</button>
-            </div> 
 
-            <!-- Reloj Global -->
+
+
+                
+            </div>
+
+            <!-- Reloj / Telemetría Global -->
             
-            
-            <!-- Autenticación -->
+        </div>
+                 
+        <!-- COLUMNA CENTRO: Autenticación / Dashboard Principal -->
+        <div class="col col-center" id="center-container">
+            <!-- Autenticación visible por defecto al estar desconectado -->
             <div class="card" id="auth-panel">
                 <h2>[ACC] Autenticación</h2>
                 <div id="auth-forms">
@@ -169,15 +182,11 @@
                     </div>
                 </div>
             </div>
+            <!-- Contenido dinámico (pestañas) inyectado por JS -->
         </div>
-        
-        <!-- COLUMNA CENTRO: Contenido Principal y Secciones -->
-        <div class="col col-center" id="center-container">
-             <!-- Pestañas y contenido dinámico inyectado por JS -->
-        </div>
-        
+                 
         <!-- COLUMNA DERECHA: Telemetría / Monitor Rápido -->
-        <div class="col col-right" style="display: none;">
+        <div class="col col-right" id="right-panel" style="display: none;">
             <div class="card">
                 <h2>[ACT] Monitor Activo</h2>
                 <div id="quick-action-status" style="font-size:0.8em; color:var(--text-dim); line-height: 1.5;">
@@ -197,13 +206,13 @@
     </div>
 
     <!-- Barra de Navegación Inferior para Móviles -->
-    <nav id="mobile-bottom-nav" class="mobile-bottom-nav">
+    <nav id="mobile-bottom-nav" class="mobile-bottom-nav" style="display: none;">
         <button class="nav-item active" data-tab="tab-actions">
             <span class="nav-item-icon">⚡</span>
             <span>ACTIVIDAD</span>
         </button>
         <button class="nav-item" data-tab="tab-skills">
-            <span class="nav-item-icon">🧠</span>
+            <span class="nav-item-icon">★</span>
             <span>SKILLS</span>
         </button>
         <button class="nav-item" data-tab="tab-economy">
