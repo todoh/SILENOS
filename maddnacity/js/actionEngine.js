@@ -11,6 +11,7 @@ export class ActionEngine {
         const lastUpdate = player.lastUpdate || currentRealTimestamp;
         if (currentRealTimestamp <= lastUpdate) return false;
 
+        // Calcular minutos de juego transcurridos desde la última conexión
         const elapsedRealMs = currentRealTimestamp - lastUpdate;
         const elapsedRealSeconds = elapsedRealMs / 1000;
         let remainingGameMinutes = (elapsedRealSeconds * this.timeEngine.TIME_FACTOR) / 60;
@@ -63,19 +64,9 @@ export class ActionEngine {
         return modified;
     }
 
-    // Aplica proporcionalmente los cambios de estadísticas y experiencia incorporando la eficiencia de habilidades
+    // Aplica proporcionalmente los cambios de estadísticas y experiencia
     applyActionEffects(player, actionDef, durationGameMinutes) {
         if (!actionDef) return;
-
-        // Calcular multiplicador de eficiencia según la habilidad asociada (+2% de ganancia/rendimiento y -1.5% de desgaste por nivel)
-        let efficiencyMultiplier = 1.0;
-        let fatigueReductionMultiplier = 1.0;
-
-        if (actionDef.xpGain && actionDef.xpGain.skill && player.skills?.[actionDef.xpGain.skill]) {
-            const skillLevel = player.skills[actionDef.xpGain.skill].level;
-            efficiencyMultiplier += (skillLevel - 1) * 0.02;
-            fatigueReductionMultiplier = Math.max(0.5, 1.0 - ((skillLevel - 1) * 0.015));
-        }
 
         // Costes monetarios
         if (actionDef.costPerMinute) {
@@ -83,26 +74,17 @@ export class ActionEngine {
             player.money = Math.max(0, player.money - cost);
         }
 
-        // Ganancia monetaria con bonificación de eficiencia de habilidad
+        // Ganancia monetaria
         if (actionDef.moneyGainPerMinute) {
-            const gain = (actionDef.moneyGainPerMinute * efficiencyMultiplier) * durationGameMinutes;
+            const gain = actionDef.moneyGainPerMinute * durationGameMinutes;
             player.money += gain;
         }
 
-        // Stats con reducción de fatiga / incremento de regeneración
+        // Stats
         if (actionDef.effectsPerMinute) {
-            let healthDelta = (actionDef.effectsPerMinute.health || 0) * durationGameMinutes;
-            let energyDelta = (actionDef.effectsPerMinute.energy || 0) * durationGameMinutes;
-            let moodDelta = (actionDef.effectsPerMinute.mood || 0) * durationGameMinutes;
-
-            // Si el efecto es pérdida (negativo), se reduce con la habilidad. Si es ganancia (positivo), se multiplica por la eficiencia.
-            healthDelta = healthDelta < 0 ? healthDelta * fatigueReductionMultiplier : healthDelta * efficiencyMultiplier;
-            energyDelta = energyDelta < 0 ? energyDelta * fatigueReductionMultiplier : energyDelta * efficiencyMultiplier;
-            moodDelta = moodDelta < 0 ? moodDelta * fatigueReductionMultiplier : moodDelta * efficiencyMultiplier;
-
-            player.stats.health = Math.min(100, Math.max(0, player.stats.health + healthDelta));
-            player.stats.energy = Math.min(100, Math.max(0, player.stats.energy + energyDelta));
-            player.stats.mood = Math.min(100, Math.max(0, player.stats.mood + moodDelta));
+            player.stats.health = Math.min(100, Math.max(0, player.stats.health + (actionDef.effectsPerMinute.health || 0) * durationGameMinutes));
+            player.stats.energy = Math.min(100, Math.max(0, player.stats.energy + (actionDef.effectsPerMinute.energy || 0) * durationGameMinutes));
+            player.stats.mood = Math.min(100, Math.max(0, player.stats.mood + (actionDef.effectsPerMinute.mood || 0) * durationGameMinutes));
         }
 
         // Experiencia
@@ -112,20 +94,21 @@ export class ActionEngine {
             skillObj.xp += xpGained;
 
             // Requisito subida nivel: Nivel * 100 XP
-            let neededXp = skillObj.level * 100;
-            while (skillObj.xp >= neededXp) {
+            const neededXp = skillObj.level * 100;
+            if (skillObj.xp >= neededXp) {
                 skillObj.xp -= neededXp;
                 skillObj.level += 1;
-                neededXp = skillObj.level * 100;
             }
         }
     }
 
     // Desgaste natural cuando el ciudadano no está realizando ninguna actividad
     applyIdleDecay(player, gameMinutes) {
+        // -0.05 energía y -0.02 ánimo por minuto de juego en reposo
         player.stats.energy = Math.max(0, player.stats.energy - (0.05 * gameMinutes));
         player.stats.mood = Math.max(0, player.stats.mood - (0.02 * gameMinutes));
 
+        // Si la energía cae a 0, empieza a perder salud lentamente
         if (player.stats.energy === 0) {
             player.stats.health = Math.max(0, player.stats.health - (0.08 * gameMinutes));
         }

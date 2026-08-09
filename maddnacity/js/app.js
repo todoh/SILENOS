@@ -48,6 +48,7 @@ const gameTimeEl = document.getElementById("game-time");
 const gameYearEl = document.getElementById("game-year");
 const authPanel = document.getElementById("auth-panel");
 const playerPanel = document.getElementById("player-panel");
+const rightPanel = document.getElementById("right-panel");
 const emailInput = document.getElementById("auth-email");
 const passwordInput = document.getElementById("auth-password");
 const rememberInput = document.getElementById("auth-remember");
@@ -98,7 +99,6 @@ function openProfileEditModal() {
     const player = playerManager.currentPlayer;
     if (!player) return;
     
-    // Cerrar panel desplegable móvil si está abierto
     if (mobilePlayerPanel) {
         mobilePlayerPanel.style.display = "none";
         mobileProfileToggle.classList.remove("open");
@@ -131,23 +131,19 @@ function openProfileEditModal() {
     modalNameSetup.style.display = "flex";
 }
 
-// Alternar visibilidad de pestañas compartidas entre PC y Móvil
 function switchTab(tabId) {
-    // Actualizar botones superiores de PC
     const pcTabs = document.querySelectorAll("#nav-tabs .tab-btn");
     pcTabs.forEach(b => {
         if (b.dataset.tab === tabId) b.classList.add("active");
         else b.classList.remove("active");
     });
 
-    // Actualizar botones inferiores de Móvil
     const mobileTabs = document.querySelectorAll("#mobile-bottom-nav .nav-item");
     mobileTabs.forEach(b => {
         if (b.dataset.tab === tabId) b.classList.add("active");
         else b.classList.remove("active");
     });
 
-    // Mostrar sección correspondiente
     document.querySelectorAll(".tab-page").forEach(page => page.style.display = "none");
     const targetPage = document.getElementById(tabId);
     if (targetPage) targetPage.style.display = "block";
@@ -163,7 +159,7 @@ function injectMainUI() {
 
     const tabsNav = document.createElement("div");
     tabsNav.id = "nav-tabs";
-    tabsNav.style.cssText = "display:flex; gap:6px; flex-wrap:wrap;";
+    tabsNav.style.cssText = "display:none; gap:6px; flex-wrap:wrap;";
     tabsNav.innerHTML = `
         <button class="tab-btn active" data-tab="tab-actions">ACTIVIDADES</button>
         <button class="tab-btn" data-tab="tab-skills">HABILIDADES</button>
@@ -175,8 +171,8 @@ function injectMainUI() {
 
     const contentArea = document.createElement("div");
     contentArea.id = "tabs-content";
+    contentArea.style.display = "none";
 
-    // Pestaña 1: Actividades
     const tabActions = document.createElement("div");
     tabActions.id = "tab-actions";
     tabActions.className = "tab-page";
@@ -191,7 +187,7 @@ function injectMainUI() {
                 <button id="btn-add-action">+ AÑADIR A COLA</button>
             </div>
             <h3>Actividad En Curso</h3>
-            <div id="current-action-box" style="background:#000; padding:12px; border:1px solid #222; margin-bottom:15px; font-size:0.85em;">
+            <div id="current-action-box" style="padding:12px; margin-bottom:15px; font-size:0.85em;">
                 Sin actividad programada.
             </div>
             <h3>Cola de Procesamiento (<span id="queue-count">0</span>/4)</h3>
@@ -199,7 +195,6 @@ function injectMainUI() {
         </div>
     `;
 
-    // Pestaña Habilidades
     const tabSkills = document.createElement("div");
     tabSkills.id = "tab-skills";
     tabSkills.className = "tab-page";
@@ -211,7 +206,6 @@ function injectMainUI() {
         </div>
     `;
 
-    // Pestaña Economía y Propiedades
     const tabEconomy = document.createElement("div");
     tabEconomy.id = "tab-economy";
     tabEconomy.className = "tab-page";
@@ -221,7 +215,7 @@ function injectMainUI() {
             <h2>[EST] Bienes Inmuebles Disponibles</h2>
             <div id="properties-catalog" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;"></div>
             <h2>[OWN] Tus Propiedades</h2>
-            <div id="my-properties" style="margin-bottom:20px; font-size:0.85em; color:#777;">Sin propiedades asignadas.</div>
+            <div id="my-properties" style="margin-bottom:20px; font-size:0.85em; color:var(--text-dim);">Sin propiedades asignadas.</div>
             <h2>[CORP] Fundar Nueva Empresa</h2>
             <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
                 <input type="text" id="input-biz-name" placeholder="NOMBRE DE TU EMPRESA" style="margin-bottom:0;">
@@ -234,11 +228,10 @@ function injectMainUI() {
                 <button id="btn-found-biz">REGISTRAR EMPRESA</button>
             </div>
             <h2>Tus Empresas</h2>
-            <div id="my-businesses" style="font-size:0.85em; color:#777;">Sin empresas registradas.</div>
+            <div id="my-businesses" style="font-size:0.85em; color:var(--text-dim);">Sin empresas registradas.</div>
         </div>
     `;
 
-    // Pestaña Mercado
     const tabMarket = document.createElement("div");
     tabMarket.id = "tab-market";
     tabMarket.className = "tab-page";
@@ -248,11 +241,10 @@ function injectMainUI() {
             <h2>[MKT] Mercado de Suministros</h2>
             <div id="market-items-list" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;"></div>
             <h2>[INV] Inventario del Ciudadano</h2>
-            <div id="my-inventory" style="font-size:0.85em; color:#777;">Inventario vacío.</div>
+            <div id="my-inventory" style="font-size:0.85em; color:var(--text-dim);">Inventario vacío.</div>
         </div>
     `;
 
-    // Pestaña Noticias
     const tabNews = document.createElement("div");
     tabNews.id = "tab-news";
     tabNews.className = "tab-page";
@@ -265,7 +257,6 @@ function injectMainUI() {
         </div>
     `;
 
-    // Pestaña Ciudadanos / Multijugador
     const tabMultiplayer = document.createElement("div");
     tabMultiplayer.id = "tab-multiplayer";
     tabMultiplayer.className = "tab-page";
@@ -288,35 +279,32 @@ function injectMainUI() {
     centerContainer.appendChild(tabsNav);
     centerContainer.appendChild(contentArea);
 
-    // Navegación Pestañas Escritorio
     tabsNav.querySelectorAll(".tab-btn").forEach(btn => {
         btn.addEventListener("click", () => switchTab(btn.dataset.tab));
     });
 
-    // Navegación Barra Inferior Móvil
     document.querySelectorAll("#mobile-bottom-nav .nav-item").forEach(btn => {
         btn.addEventListener("click", () => switchTab(btn.dataset.tab));
     });
 
-    // Evento desplegable del Perfil en Móvil (Overlay Superpuesto)
-    mobileProfileToggle.addEventListener("click", () => {
-        const isVisible = mobilePlayerPanel.style.display === "block";
-        if (isVisible) {
-            mobilePlayerPanel.style.display = "none";
-            mobileProfileToggle.classList.remove("open");
-        } else {
-            mobilePlayerPanel.style.display = "block";
-            mobileProfileToggle.classList.add("open");
-        }
-    });
+    if (mobileProfileToggle) {
+        mobileProfileToggle.addEventListener("click", () => {
+            const isVisible = mobilePlayerPanel.style.display === "block";
+            if (isVisible) {
+                mobilePlayerPanel.style.display = "none";
+                mobileProfileToggle.classList.remove("open");
+            } else {
+                mobilePlayerPanel.style.display = "block";
+                mobileProfileToggle.classList.add("open");
+            }
+        });
+    }
 
-    // Listeners del Formulario de Actividades
     document.getElementById("btn-add-action").addEventListener("click", () => {
         const actionType = document.getElementById("select-action").value;
         const duration = parseInt(document.getElementById("input-duration").value, 10) || 60;
         const player = playerManager.currentPlayer;
         if (!player) return;
-
         const res = actionEngine.enqueueAction(player, actionType, duration);
         if (!res.success) alert(res.reason);
         else {
@@ -325,14 +313,12 @@ function injectMainUI() {
         }
     });
 
-    // Listeners de Fundar Empresa
     document.getElementById("btn-found-biz").addEventListener("click", () => {
         const name = document.getElementById("input-biz-name").value;
         const bizTypeId = document.getElementById("select-biz-type").value;
         const propId = document.getElementById("select-biz-prop").value;
         const player = playerManager.currentPlayer;
         if (!player) return;
-
         const res = businessEngine.foundBusiness(player, bizTypeId, name, propId);
         if (!res.success) alert(res.reason);
         else {
@@ -344,7 +330,6 @@ function injectMainUI() {
         }
     });
 
-    // Refreshers
     document.getElementById("btn-refresh-news").addEventListener("click", loadNews);
     document.getElementById("btn-refresh-leaderboard").addEventListener("click", loadLeaderboard);
 }
@@ -354,13 +339,13 @@ async function loadNews() {
     list.textContent = "Obteniendo últimas noticias...";
     const items = await newsEngine.getLatestNews(6);
     if (items.length === 0) {
-        list.innerHTML = `<p style="color:#777; font-size:0.85em;">No hay boletines informativos recientes.</p>`;
+        list.innerHTML = `<p style="color:var(--text-dim); font-size:0.85em;">No hay boletines informativos recientes.</p>`;
         return;
     }
     list.innerHTML = items.map(n => `
-        <div style="background:#000; padding:10px; margin-bottom:10px; border:1px solid #222;">
-            <strong style="color:#fff; font-size:0.85em;">${n.title.toUpperCase()}</strong>
-            <p style="margin:5px 0 0 0; font-size:0.8em; color:#aaa;">${n.content}</p>
+        <div style="padding:10px; margin-bottom:10px; border:1px solid var(--border-glass); border-radius:8px;">
+            <strong style="color:var(--accent); font-size:0.85em;">${n.title.toUpperCase()}</strong>
+            <p style="margin:5px 0 0 0; font-size:0.8em; color:var(--text-main);">${n.content}</p>
         </div>
     `).join('');
 }
@@ -370,11 +355,11 @@ async function loadLeaderboard() {
     list.textContent = "Cargando clasificación de ciudadanos...";
     const citizens = await multiplayerEngine.getTopCitizens(10);
     if (citizens.length === 0) {
-        list.innerHTML = `<p style="color:#777; font-size:0.85em;">No se registraron otros ciudadanos en la red.</p>`;
+        list.innerHTML = `<p style="color:var(--text-dim); font-size:0.85em;">No se registraron otros ciudadanos en la red.</p>`;
         return;
     }
     list.innerHTML = citizens.map((c, idx) => `
-        <div style="background:#000; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border:1px solid #222; font-size:0.8em;">
+        <div style="padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border-glass); font-size:0.8em; border-radius:8px;">
             <div style="display:flex; align-items:center; gap:10px;">
                 <img src="${c.avatar || 'images/1.jpg'}" class="avatar-img-leaderboard" alt="Avatar">
                 <span><strong>#${idx + 1} ${c.name.toUpperCase()}</strong></span>
@@ -387,9 +372,9 @@ async function loadLeaderboard() {
 function startMainLoop() {
     setInterval(() => {
         const timeData = timeEngine.getFormattedTime();
-        gameDateEl.textContent = timeData.dateStr;
-        gameTimeEl.textContent = timeData.timeStr;
-        gameYearEl.textContent = timeData.year;
+        if (gameDateEl) gameDateEl.textContent = timeData.dateStr;
+        if (gameTimeEl) gameTimeEl.textContent = timeData.timeStr;
+        if (gameYearEl) gameYearEl.textContent = timeData.year;
 
         if (playerManager.currentPlayer) {
             const player = playerManager.currentPlayer;
@@ -414,18 +399,16 @@ function renderUI() {
     const player = playerManager.currentPlayer;
     if (!player) return;
 
-    // Indicadores superiores (PC)
     document.getElementById("p-name").textContent = player.name;
     document.getElementById("p-age").textContent = `${player.age}y`;
     document.getElementById("p-money").textContent = `${player.money.toFixed(2)} $`;
     document.getElementById("p-rep-inf").textContent = `${player.reputation} / ${player.influence}`;
     document.getElementById("p-stats").textContent = 
         `${Math.round(player.stats.health)} / ${Math.round(player.stats.energy)} / ${Math.round(player.stats.mood)}`;
-    
+        
     const avatarImgEl = document.getElementById("p-avatar");
     if (avatarImgEl) avatarImgEl.src = player.avatar || "images/1.jpg";
 
-    // Resumen Perfil Móvil Top Bar
     const mobileAvatar = document.getElementById("m-p-avatar");
     const mobileName = document.getElementById("m-p-name");
     const mobileMoney = document.getElementById("m-p-money");
@@ -433,7 +416,6 @@ function renderUI() {
     if (mobileName) mobileName.textContent = player.name;
     if (mobileMoney) mobileMoney.textContent = `${player.money.toFixed(2)} $`;
 
-    // Panel Desplegable Móvil Detallado
     const mAvatarDetail = document.getElementById("m-p-avatar-detail");
     const mNameDetail = document.getElementById("m-p-name-detail");
     const mAgeDetail = document.getElementById("m-p-age");
@@ -451,7 +433,6 @@ function renderUI() {
 
     const quickStatus = document.getElementById("quick-action-status");
 
-    // Actividad Actual
     const box = document.getElementById("current-action-box");
     if (player.activeAction) {
         const def = ACTIONS_CATALOG[player.activeAction.type];
@@ -459,31 +440,34 @@ function renderUI() {
         
         box.innerHTML = `
             <strong>${def.name.toUpperCase()}</strong> (${Math.round(player.activeAction.progressMinutes)} / ${player.activeAction.durationMinutes}m)
-            <div style="background:#222; height:6px; margin-top:8px; border:1px solid #444;">
-                <div style="background:#fff; height:100%; width:${progressPct}%;"></div>
+            <div style="background:rgba(0,0,0,0.1); height:6px; margin-top:8px; border:1px solid var(--border-subtle); border-radius:3px; overflow:hidden;">
+                <div style="background:var(--accent); height:100%; width:${progressPct}%;"></div>
             </div>
         `;
-        quickStatus.innerHTML = `
-            <div>EJECUTANDO: <span style="color:#fff;">${def.name.toUpperCase()}</span></div>
-            <div>PROGRESO: <span style="color:#fff;">${progressPct}%</span></div>
-            <div>EN COLA: <span style="color:#fff;">${player.actionQueue.length} tareas</span></div>
-        `;
+        if (quickStatus) {
+            quickStatus.innerHTML = `
+                <div>EJECUTANDO: <span style="color:var(--accent); font-weight:600;">${def.name.toUpperCase()}</span></div>
+                <div>PROGRESO: <span style="color:var(--accent); font-weight:600;">${progressPct}%</span></div>
+                <div>EN COLA: <span style="color:var(--accent); font-weight:600;">${player.actionQueue.length} tareas</span></div>
+            `;
+        }
     } else {
-        box.innerHTML = `<span style="color:#777;">Ciudadano en reposo pasivo.</span>`;
-        quickStatus.innerHTML = `
-            <div>ESTADO: <span style="color:#fff;">IDLE / REPOSO</span></div>
-            <div>EN COLA: <span style="color:#fff;">${player.actionQueue.length} tareas</span></div>
-        `;
+        box.innerHTML = `<span style="color:var(--text-dim);">Ciudadano en reposo pasivo.</span>`;
+        if (quickStatus) {
+            quickStatus.innerHTML = `
+                <div>ESTADO: <span style="color:var(--accent); font-weight:600;">IDLE / REPOSO</span></div>
+                <div>EN COLA: <span style="color:var(--accent); font-weight:600;">${player.actionQueue.length} tareas</span></div>
+            `;
+        }
     }
 
-    // Cola
     const queueList = document.getElementById("queue-list");
     document.getElementById("queue-count").textContent = player.actionQueue.length;
     queueList.innerHTML = "";
     player.actionQueue.forEach((item, index) => {
         const def = ACTIONS_CATALOG[item.type];
         const li = document.createElement("li");
-        li.style.cssText = "background:#000; padding:8px 10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border:1px solid #222; font-size:0.8em;";
+        li.style.cssText = "padding:8px 10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border-glass); font-size:0.8em; border-radius:8px;";
         li.innerHTML = `
             <span><strong>${index + 1}. ${def.name.toUpperCase()}</strong> (${item.durationMinutes}m)</span>
             <button class="btn-cancel" style="padding:2px 6px; font-size:0.75em;">X</button>
@@ -496,7 +480,6 @@ function renderUI() {
         queueList.appendChild(li);
     });
 
-    // Habilidades
     const skillsList = document.getElementById("skills-list");
     if (skillsList && player.skills) {
         skillsList.innerHTML = "";
@@ -516,7 +499,7 @@ function renderUI() {
             const bizIncBonusPct = Math.round((sk.level - 1) * 10);
 
             const div = document.createElement("div");
-            div.style.cssText = "background:rgba(255,255,255,0.5); padding:12px; border:1px solid var(--border-glass); border-radius:10px; font-size:0.8em;";
+            div.style.cssText = "padding:12px; border:1px solid var(--border-glass); border-radius:10px; font-size:0.8em;";
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                     <strong style="color:var(--accent); font-size:0.9em;">${name.toUpperCase()}</strong>
@@ -544,17 +527,16 @@ function renderUI() {
         });
     }
 
-    // Propiedades
     const propsCatalog = document.getElementById("properties-catalog");
     propsCatalog.innerHTML = "";
     Object.values(PROPERTY_TYPES).forEach(p => {
         const imgSrc = PROPERTY_IMAGES[p.id] || "";
         const div = document.createElement("div");
-        div.style.cssText = "background:#000; padding:10px; border:1px solid #222; font-size:0.8em; display:flex; flex-direction:column;";
+        div.style.cssText = "padding:10px; border:1px solid var(--border-glass); border-radius:10px; font-size:0.8em; display:flex; flex-direction:column;";
         div.innerHTML = `
             ${imgSrc ? `<img src="${imgSrc}" alt="${p.name}" style="width:100%; height:110px; object-fit:cover; border-radius:8px; margin-bottom:8px;">` : ""}
             <strong>${p.name.toUpperCase()}</strong>
-            <span style="color:#777; margin-top:2px;">Precio: ${p.price.toLocaleString()} $</span>
+            <span style="color:var(--text-dim); margin-top:2px;">Precio: ${p.price.toLocaleString()} $</span>
             <button style="margin-top:auto; width:100%;">COMPRAR</button>
         `;
         div.querySelector("button").addEventListener("click", () => {
@@ -573,14 +555,13 @@ function renderUI() {
     const selectBizProp = document.getElementById("select-biz-prop");
     myProps.innerHTML = "";
     selectBizProp.innerHTML = `<option value="">SELECCIONA PROPIEDAD VINCULADA...</option>`;
-
     if (!player.properties || player.properties.length === 0) {
         myProps.textContent = "No posees propiedades en tu activo.";
     } else {
         player.properties.forEach(p => {
             const def = PROPERTY_TYPES[p.typeId];
             const div = document.createElement("div");
-            div.style.cssText = "background:#000; padding:8px; margin-bottom:5px; border:1px solid #222; font-size:0.8em;";
+            div.style.cssText = "padding:8px; margin-bottom:5px; border:1px solid var(--border-glass); border-radius:8px; font-size:0.8em;";
             div.textContent = `${def.name.toUpperCase()} [ID: ${p.id.substr(0, 6)}]`;
             myProps.appendChild(div);
 
@@ -591,7 +572,6 @@ function renderUI() {
         });
     }
 
-    // Empresas
     const myBiz = document.getElementById("my-businesses");
     myBiz.innerHTML = "";
     if (!player.businesses || player.businesses.length === 0) {
@@ -600,10 +580,10 @@ function renderUI() {
         player.businesses.forEach(b => {
             const def = BUSINESS_TYPES[b.typeId];
             const div = document.createElement("div");
-            div.style.cssText = "background:#000; padding:10px; margin-bottom:10px; border:1px solid #222; font-size:0.8em;";
+            div.style.cssText = "padding:10px; margin-bottom:10px; border:1px solid var(--border-glass); border-radius:10px; font-size:0.8em;";
             div.innerHTML = `
                 <strong>${b.name.toUpperCase()}</strong> (${def.name})<br>
-                Caja Fuerte: <span style="color:#fff;">${(b.vaultMoney || 0).toFixed(2)} $</span><br>
+                Caja Fuerte: <span style="color:var(--accent); font-weight:700;">${(b.vaultMoney || 0).toFixed(2)} $</span><br>
                 <button class="btn-withdraw" style="margin-top:8px; width:100%;">RETIRAR FONDOS</button>
             `;
             div.querySelector(".btn-withdraw").addEventListener("click", () => {
@@ -619,17 +599,16 @@ function renderUI() {
         });
     }
 
-    // Mercado
     const marketList = document.getElementById("market-items-list");
     marketList.innerHTML = "";
     Object.values(MARKET_ITEMS).forEach(item => {
         const imgSrc = MARKET_IMAGES[item.id] || "";
         const div = document.createElement("div");
-        div.style.cssText = "background:#000; padding:10px; border:1px solid #222; font-size:0.8em; display:flex; flex-direction:column;";
+        div.style.cssText = "padding:10px; border:1px solid var(--border-glass); border-radius:10px; font-size:0.8em; display:flex; flex-direction:column;";
         div.innerHTML = `
             ${imgSrc ? `<img src="${imgSrc}" alt="${item.name}" style="width:100%; height:110px; object-fit:cover; border-radius:8px; margin-bottom:8px;">` : ""}
             <strong>${item.name.toUpperCase()}</strong>
-            <span style="color:#777; margin-top:2px;">Precio: ${item.price} $</span>
+            <span style="color:var(--text-dim); margin-top:2px;">Precio: ${item.price} $</span>
             <button style="margin-top:auto; width:100%;">COMPRAR</button>
         `;
         div.querySelector("button").addEventListener("click", () => {
@@ -643,7 +622,6 @@ function renderUI() {
         marketList.appendChild(div);
     });
 
-    // Inventario
     const myInv = document.getElementById("my-inventory");
     myInv.innerHTML = "";
     const invKeys = Object.keys(player.inventory || {}).filter(k => player.inventory[k] > 0);
@@ -654,7 +632,7 @@ function renderUI() {
             const itemDef = MARKET_ITEMS[k];
             const count = player.inventory[k];
             const div = document.createElement("div");
-            div.style.cssText = "background:#000; padding:8px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center; border:1px solid #222; font-size:0.8em;";
+            div.style.cssText = "padding:8px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border-glass); border-radius:8px; font-size:0.8em;";
             div.innerHTML = `
                 <span>${itemDef ? itemDef.name.toUpperCase() : k} (x${count})</span>
                 <button class="btn-use" style="padding:4px 8px;">CONSUMIR</button>
@@ -709,10 +687,12 @@ async function completeSessionInit(player) {
         if (mobileTopBar) mobileTopBar.style.display = "block";
         playerPanel.style.display = "none";
         if (bottomNav) bottomNav.style.display = "flex";
+        if (rightPanel) rightPanel.style.display = "none";
     } else {
         if (mobileTopBar) mobileTopBar.style.display = "none";
         playerPanel.style.display = "block";
         if (bottomNav) bottomNav.style.display = "none";
+        if (rightPanel) rightPanel.style.display = "flex";
     }
 
     if (tabs) tabs.style.display = "flex";
@@ -722,6 +702,8 @@ async function completeSessionInit(player) {
     businessEngine.processBusinessIncome(player, Date.now());
     await playerManager.savePlayerState();
     await multiplayerEngine.updatePublicProfile(player);
+
+    switchTab("tab-actions");
     renderUI();
 }
 
@@ -740,6 +722,7 @@ onAuthStateChanged(auth, async (user) => {
     if (user) {
         await handleUserSession(user);
     } else {
+        // MODO DESCONECTADO
         authPanel.style.display = "block";
         playerPanel.style.display = "none";
         if (mobileTopBar) mobileTopBar.style.display = "none";
@@ -748,6 +731,7 @@ onAuthStateChanged(auth, async (user) => {
         if (tabs) tabs.style.display = "none";
         if (content) content.style.display = "none";
         if (bottomNav) bottomNav.style.display = "none";
+        if (rightPanel) rightPanel.style.display = "none";
         playerManager.currentPlayer = null;
     }
 });
