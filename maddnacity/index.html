@@ -178,7 +178,7 @@
             font-weight: 700;
             box-shadow: var(--shadow-soft);
         }
-        /* Modal para la creación de nombre del jugador */
+        /* Modal para la creación y edición de nombre y avatar del jugador */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -245,7 +245,6 @@
             object-fit: cover;
             border: 1px solid var(--border-glass);
         }
-
         /* Correcciones generales para contenedores inyectados por JS */
         #current-action-box, 
         #queue-list li, 
@@ -277,10 +276,10 @@
     </style>
 </head>
 <body>
-    <!-- Modal de Creación de Nombre y Selección de Avatar del Jugador -->
+    <!-- Modal de Creación y Edición de Nombre y Selección de Avatar del Jugador -->
     <div id="modal-name-setup" class="modal-overlay" style="display: none;">
         <div class="modal-card">
-            <h2>[REGISTRAR CIUDADANO]</h2>
+            <h2 id="modal-setup-title">[REGISTRAR CIUDADANO]</h2>
             <p style="font-size: 0.8em; color: var(--text-dim); margin-bottom: 8px;">Introduce el alias público de tu personaje:</p>
             <input type="text" id="setup-player-name" placeholder="ALIAS DE CIUDADANO" maxlength="20">
             
@@ -294,8 +293,10 @@
                 <img src="images/6.jpg" class="avatar-option" data-avatar="images/6.jpg" alt="Avatar 6">
                 <img src="images/7.jpg" class="avatar-option" data-avatar="images/7.jpg" alt="Avatar 7">
             </div>
-
-            <button id="btn-save-player-name" style="width: 100%;">CONFIRMAR E INGRESAR</button>
+            <div style="display: flex; gap: 8px;">
+                <button id="btn-save-player-name" style="flex: 1;">CONFIRMAR E INGRESAR</button>
+                <button id="btn-cancel-modal" class="btn-cancel" style="display: none; flex: 1;">CANCELAR</button>
+            </div>
         </div>
     </div>
 
@@ -359,6 +360,7 @@
                         <div id="p-name" class="stat-value">-</div>
                     </div>
                 </div>
+                <button id="btn-edit-profile" style="width: 100%; margin-bottom: 12px;" class="btn-secondary">EDITAR PERFIL</button>
                 <div class="grid">
                     <div>
                         <div class="stat-label">Edad</div>
