@@ -1,5 +1,4 @@
- 
-// Controlador Principal Integral – Dashboard UI y Loop Completo de Maddna City MMO
+// Controlador Principal Integral - Dashboard UI y Loop Completo de Maddna City MMO
 import { auth } from "./firebase.js";
 import { 
     createUserWithEmailAndPassword, 
@@ -28,10 +27,8 @@ const businessEngine = new BusinessEngine(timeEngine);
 const newsEngine = new NewsEngine();
 const multiplayerEngine = new MultiplayerEngine();
 
-// Variable local para almacenar el avatar seleccionado en el modal
 let selectedAvatarPath = "images/1.jpg";
 
-// Mapeo local de rutas de imágenes para Inmuebles y Mercado
 const PROPERTY_IMAGES = {
     APARTMENT_BASIC: "images/apartamento.jpg",
     LUXURY_PENTHOUSE: "images/tower.jpg",
@@ -60,6 +57,13 @@ const btnGoogleLogin = document.getElementById("btn-google-login");
 const btnLogout = document.getElementById("btn-logout");
 const btnEditProfile = document.getElementById("btn-edit-profile");
 
+// DOM Elements Móvil
+const mobileTopBar = document.getElementById("mobile-top-bar");
+const mobileProfileToggle = document.getElementById("mobile-profile-toggle");
+const mobilePlayerPanel = document.getElementById("mobile-player-panel");
+const mBtnEditProfile = document.getElementById("m-btn-edit-profile");
+const mBtnLogout = document.getElementById("m-btn-logout");
+
 // DOM Elements Modal Configuración Jugador
 const modalNameSetup = document.getElementById("modal-name-setup");
 const modalSetupTitle = document.getElementById("modal-setup-title");
@@ -67,7 +71,6 @@ const setupPlayerNameInput = document.getElementById("setup-player-name");
 const btnSavePlayerName = document.getElementById("btn-save-player-name");
 const btnCancelModal = document.getElementById("btn-cancel-modal");
 
-// Seleccionar visualmente un avatar en el selector
 function setAvatarSelection(avatarPath) {
     selectedAvatarPath = avatarPath || "images/1.jpg";
     const avatarOptions = document.querySelectorAll(".avatar-option");
@@ -80,7 +83,6 @@ function setAvatarSelection(avatarPath) {
     });
 }
 
-// Inicializador de eventos para el selector de avatar del modal
 function initAvatarSelector() {
     const avatarOptions = document.querySelectorAll(".avatar-option");
     avatarOptions.forEach(img => {
@@ -92,10 +94,15 @@ function initAvatarSelector() {
     });
 }
 
-// Abrir modal en modo Edición de Perfil
 function openProfileEditModal() {
     const player = playerManager.currentPlayer;
     if (!player) return;
+    
+    // Cerrar panel desplegable móvil si está abierto
+    if (mobilePlayerPanel) {
+        mobilePlayerPanel.style.display = "none";
+        mobileProfileToggle.classList.remove("open");
+    }
 
     modalSetupTitle.textContent = "[EDITAR PERFIL]";
     setupPlayerNameInput.value = player.name || "";
@@ -124,11 +131,36 @@ function openProfileEditModal() {
     modalNameSetup.style.display = "flex";
 }
 
-// Construcción del Dashboard Principal con Navegación de Pestañas
+// Alternar visibilidad de pestañas compartidas entre PC y Móvil
+function switchTab(tabId) {
+    // Actualizar botones superiores de PC
+    const pcTabs = document.querySelectorAll("#nav-tabs .tab-btn");
+    pcTabs.forEach(b => {
+        if (b.dataset.tab === tabId) b.classList.add("active");
+        else b.classList.remove("active");
+    });
+
+    // Actualizar botones inferiores de Móvil
+    const mobileTabs = document.querySelectorAll("#mobile-bottom-nav .nav-item");
+    mobileTabs.forEach(b => {
+        if (b.dataset.tab === tabId) b.classList.add("active");
+        else b.classList.remove("active");
+    });
+
+    // Mostrar sección correspondiente
+    document.querySelectorAll(".tab-page").forEach(page => page.style.display = "none");
+    const targetPage = document.getElementById(tabId);
+    if (targetPage) targetPage.style.display = "block";
+
+    if (tabId === "tab-news") loadNews();
+    if (tabId === "tab-multiplayer") loadLeaderboard();
+}
+
 function injectMainUI() {
     if (document.getElementById("nav-tabs")) return;
 
     const centerContainer = document.getElementById("center-container");
+
     const tabsNav = document.createElement("div");
     tabsNav.id = "nav-tabs";
     tabsNav.style.cssText = "display:flex; gap:6px; flex-wrap:wrap;";
@@ -256,17 +288,26 @@ function injectMainUI() {
     centerContainer.appendChild(tabsNav);
     centerContainer.appendChild(contentArea);
 
-    // Navegación por pestañas
+    // Navegación Pestañas Escritorio
     tabsNav.querySelectorAll(".tab-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            tabsNav.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            document.querySelectorAll(".tab-page").forEach(page => page.style.display = "none");
-            document.getElementById(btn.dataset.tab).style.display = "block";
+        btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+    });
 
-            if (btn.dataset.tab === "tab-news") loadNews();
-            if (btn.dataset.tab === "tab-multiplayer") loadLeaderboard();
-        });
+    // Navegación Barra Inferior Móvil
+    document.querySelectorAll("#mobile-bottom-nav .nav-item").forEach(btn => {
+        btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+    });
+
+    // Evento desplegable del Perfil en Móvil (Overlay Superpuesto)
+    mobileProfileToggle.addEventListener("click", () => {
+        const isVisible = mobilePlayerPanel.style.display === "block";
+        if (isVisible) {
+            mobilePlayerPanel.style.display = "none";
+            mobileProfileToggle.classList.remove("open");
+        } else {
+            mobilePlayerPanel.style.display = "block";
+            mobileProfileToggle.classList.add("open");
+        }
     });
 
     // Listeners del Formulario de Actividades
@@ -308,7 +349,6 @@ function injectMainUI() {
     document.getElementById("btn-refresh-leaderboard").addEventListener("click", loadLeaderboard);
 }
 
-// Cargar Noticias
 async function loadNews() {
     const list = document.getElementById("news-feed-list");
     list.textContent = "Obteniendo últimas noticias...";
@@ -325,7 +365,6 @@ async function loadNews() {
     `).join('');
 }
 
-// Cargar Ranking Global con visualización de Avatar
 async function loadLeaderboard() {
     const list = document.getElementById("leaderboard-list");
     list.textContent = "Cargando clasificación de ciudadanos...";
@@ -345,16 +384,13 @@ async function loadLeaderboard() {
     `).join('');
 }
 
-// Bucle Principal de Juego (Game Loop)
 function startMainLoop() {
     setInterval(() => {
-        // Update Reloj UI
         const timeData = timeEngine.getFormattedTime();
         gameDateEl.textContent = timeData.dateStr;
         gameTimeEl.textContent = timeData.timeStr;
         gameYearEl.textContent = timeData.year;
 
-        // Procesar simulación para personaje autenticado
         if (playerManager.currentPlayer) {
             const player = playerManager.currentPlayer;
             const now = Date.now();
@@ -366,7 +402,6 @@ function startMainLoop() {
         }
     }, 1000);
 
-    // Auto-Guardado y Sincronización Multijugador cada 15 segundos
     setInterval(async () => {
         if (playerManager.currentPlayer) {
             await playerManager.savePlayerState();
@@ -375,28 +410,48 @@ function startMainLoop() {
     }, 15000);
 }
 
-// Renderizado de la Interfaz del Dashboard
 function renderUI() {
     const player = playerManager.currentPlayer;
     if (!player) return;
 
-    // Indicadores superiores y avatar del perfil
+    // Indicadores superiores (PC)
     document.getElementById("p-name").textContent = player.name;
     document.getElementById("p-age").textContent = `${player.age}y`;
     document.getElementById("p-money").textContent = `${player.money.toFixed(2)} $`;
     document.getElementById("p-rep-inf").textContent = `${player.reputation} / ${player.influence}`;
     document.getElementById("p-stats").textContent = 
         `${Math.round(player.stats.health)} / ${Math.round(player.stats.energy)} / ${Math.round(player.stats.mood)}`;
-
+    
     const avatarImgEl = document.getElementById("p-avatar");
-    if (avatarImgEl) {
-        avatarImgEl.src = player.avatar || "images/1.jpg";
-    }
+    if (avatarImgEl) avatarImgEl.src = player.avatar || "images/1.jpg";
 
-    // Panel lateral de Monitor Rápido
+    // Resumen Perfil Móvil Top Bar
+    const mobileAvatar = document.getElementById("m-p-avatar");
+    const mobileName = document.getElementById("m-p-name");
+    const mobileMoney = document.getElementById("m-p-money");
+    if (mobileAvatar) mobileAvatar.src = player.avatar || "images/1.jpg";
+    if (mobileName) mobileName.textContent = player.name;
+    if (mobileMoney) mobileMoney.textContent = `${player.money.toFixed(2)} $`;
+
+    // Panel Desplegable Móvil Detallado
+    const mAvatarDetail = document.getElementById("m-p-avatar-detail");
+    const mNameDetail = document.getElementById("m-p-name-detail");
+    const mAgeDetail = document.getElementById("m-p-age");
+    const mMoneyDetail = document.getElementById("m-p-money-detail");
+    const mRepInfDetail = document.getElementById("m-p-rep-inf");
+    const mStatsDetail = document.getElementById("m-p-stats");
+
+    if (mAvatarDetail) mAvatarDetail.src = player.avatar || "images/1.jpg";
+    if (mNameDetail) mNameDetail.textContent = player.name;
+    if (mAgeDetail) mAgeDetail.textContent = `${player.age}y`;
+    if (mMoneyDetail) mMoneyDetail.textContent = `${player.money.toFixed(2)} $`;
+    if (mRepInfDetail) mRepInfDetail.textContent = `${player.reputation} / ${player.influence}`;
+    if (mStatsDetail) mStatsDetail.textContent = 
+        `${Math.round(player.stats.health)} / ${Math.round(player.stats.energy)} / ${Math.round(player.stats.mood)}`;
+
     const quickStatus = document.getElementById("quick-action-status");
 
-    // Pestaña Actividades - Estado Actual
+    // Actividad Actual
     const box = document.getElementById("current-action-box");
     if (player.activeAction) {
         const def = ACTIONS_CATALOG[player.activeAction.type];
@@ -408,7 +463,6 @@ function renderUI() {
                 <div style="background:#fff; height:100%; width:${progressPct}%;"></div>
             </div>
         `;
-
         quickStatus.innerHTML = `
             <div>EJECUTANDO: <span style="color:#fff;">${def.name.toUpperCase()}</span></div>
             <div>PROGRESO: <span style="color:#fff;">${progressPct}%</span></div>
@@ -422,7 +476,7 @@ function renderUI() {
         `;
     }
 
-    // Pestaña Actividades - Cola
+    // Cola
     const queueList = document.getElementById("queue-list");
     document.getElementById("queue-count").textContent = player.actionQueue.length;
     queueList.innerHTML = "";
@@ -442,7 +496,7 @@ function renderUI() {
         queueList.appendChild(li);
     });
 
-    // Pestaña Habilidades - Renderizado de niveles, progreso y bonificaciones
+    // Habilidades
     const skillsList = document.getElementById("skills-list");
     if (skillsList && player.skills) {
         skillsList.innerHTML = "";
@@ -457,8 +511,6 @@ function renderUI() {
             const name = skillNames[skillKey] || skillKey.toUpperCase();
             const neededXp = sk.level * 100;
             const pct = Math.min(100, Math.round((sk.xp / neededXp) * 100));
-
-            // Cálculo de bonificaciones actuales
             const effBonusPct = Math.round((sk.level - 1) * 2);
             const fatigueRedPct = Math.round((sk.level - 1) * 1.5);
             const bizIncBonusPct = Math.round((sk.level - 1) * 10);
@@ -492,7 +544,7 @@ function renderUI() {
         });
     }
 
-    // Pestaña Economía - Propiedades
+    // Propiedades
     const propsCatalog = document.getElementById("properties-catalog");
     propsCatalog.innerHTML = "";
     Object.values(PROPERTY_TYPES).forEach(p => {
@@ -539,7 +591,7 @@ function renderUI() {
         });
     }
 
-    // Pestaña Economía - Empresas
+    // Empresas
     const myBiz = document.getElementById("my-businesses");
     myBiz.innerHTML = "";
     if (!player.businesses || player.businesses.length === 0) {
@@ -567,7 +619,7 @@ function renderUI() {
         });
     }
 
-    // Pestaña Mercado
+    // Mercado
     const marketList = document.getElementById("market-items-list");
     marketList.innerHTML = "";
     Object.values(MARKET_ITEMS).forEach(item => {
@@ -591,7 +643,7 @@ function renderUI() {
         marketList.appendChild(div);
     });
 
-    // Pestaña Inventario
+    // Inventario
     const myInv = document.getElementById("my-inventory");
     myInv.innerHTML = "";
     const invKeys = Object.keys(player.inventory || {}).filter(k => player.inventory[k] > 0);
@@ -620,7 +672,6 @@ function renderUI() {
     }
 }
 
-// Inicialización de la sesión del jugador tras autenticación
 async function handleUserSession(user) {
     const player = await playerManager.loadOrCreatePlayer(user.uid);
     if (!player.name || player.name === "Ciudadano") {
@@ -650,21 +701,30 @@ async function handleUserSession(user) {
 async function completeSessionInit(player) {
     const tabs = document.getElementById("nav-tabs");
     const content = document.getElementById("tabs-content");
+    const bottomNav = document.getElementById("mobile-bottom-nav");
+
     authPanel.style.display = "none";
-    playerPanel.style.display = "block";
+
+    if (window.innerWidth <= 768) {
+        if (mobileTopBar) mobileTopBar.style.display = "block";
+        playerPanel.style.display = "none";
+        if (bottomNav) bottomNav.style.display = "flex";
+    } else {
+        if (mobileTopBar) mobileTopBar.style.display = "none";
+        playerPanel.style.display = "block";
+        if (bottomNav) bottomNav.style.display = "none";
+    }
+
     if (tabs) tabs.style.display = "flex";
     if (content) content.style.display = "block";
 
-    // Simulación offline acumulada
     actionEngine.processOfflineTime(player, Date.now());
     businessEngine.processBusinessIncome(player, Date.now());
-
     await playerManager.savePlayerState();
     await multiplayerEngine.updatePublicProfile(player);
     renderUI();
 }
 
-// Configuración dinámica del tipo de persistencia en Firebase Auth
 async function applyPersistence() {
     const persistenceMode = rememberInput.checked 
         ? browserLocalPersistence 
@@ -672,23 +732,26 @@ async function applyPersistence() {
     await setPersistence(auth, persistenceMode);
 }
 
-// Escuchador de Autenticación de Firebase
 onAuthStateChanged(auth, async (user) => {
     const tabs = document.getElementById("nav-tabs");
     const content = document.getElementById("tabs-content");
+    const bottomNav = document.getElementById("mobile-bottom-nav");
+
     if (user) {
         await handleUserSession(user);
     } else {
         authPanel.style.display = "block";
         playerPanel.style.display = "none";
+        if (mobileTopBar) mobileTopBar.style.display = "none";
+        if (mobilePlayerPanel) mobilePlayerPanel.style.display = "none";
         modalNameSetup.style.display = "none";
         if (tabs) tabs.style.display = "none";
         if (content) content.style.display = "none";
+        if (bottomNav) bottomNav.style.display = "none";
         playerManager.currentPlayer = null;
     }
 });
 
-// Eventos de Autenticación
 btnLogin.addEventListener("click", async () => {
     try {
         await applyPersistence();
@@ -714,8 +777,9 @@ btnGoogleLogin.addEventListener("click", async () => {
 btnLogout.addEventListener("click", () => signOut(auth));
 btnEditProfile.addEventListener("click", openProfileEditModal);
 
-// Inicialización del Dashboard y selectores
+if (mBtnLogout) mBtnLogout.addEventListener("click", () => signOut(auth));
+if (mBtnEditProfile) mBtnEditProfile.addEventListener("click", openProfileEditModal);
+
 initAvatarSelector();
 injectMainUI();
 startMainLoop();
- 
