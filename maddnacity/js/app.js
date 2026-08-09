@@ -1,3 +1,4 @@
+ 
 // Controlador Principal Integral – Dashboard UI y Loop Completo de Maddna City MMO
 import { auth } from "./firebase.js";
 import { 
@@ -48,7 +49,6 @@ const MARKET_IMAGES = {
 const gameDateEl = document.getElementById("game-date");
 const gameTimeEl = document.getElementById("game-time");
 const gameYearEl = document.getElementById("game-year");
-
 const authPanel = document.getElementById("auth-panel");
 const playerPanel = document.getElementById("player-panel");
 const emailInput = document.getElementById("auth-email");
@@ -124,17 +124,17 @@ function openProfileEditModal() {
     modalNameSetup.style.display = "flex";
 }
 
-// Construcción del Dashboard Principal con Navegación de 5 Pestañas
+// Construcción del Dashboard Principal con Navegación de Pestañas
 function injectMainUI() {
     if (document.getElementById("nav-tabs")) return;
 
     const centerContainer = document.getElementById("center-container");
-
     const tabsNav = document.createElement("div");
     tabsNav.id = "nav-tabs";
     tabsNav.style.cssText = "display:flex; gap:6px; flex-wrap:wrap;";
     tabsNav.innerHTML = `
         <button class="tab-btn active" data-tab="tab-actions">ACTIVIDADES</button>
+        <button class="tab-btn" data-tab="tab-skills">HABILIDADES</button>
         <button class="tab-btn" data-tab="tab-economy">EMPRESAS & BIENES</button>
         <button class="tab-btn" data-tab="tab-market">MERCADO</button>
         <button class="tab-btn" data-tab="tab-news">NOTICIAS</button>
@@ -167,7 +167,19 @@ function injectMainUI() {
         </div>
     `;
 
-    // Pestaña 2: Economía y Propiedades
+    // Pestaña Habilidades
+    const tabSkills = document.createElement("div");
+    tabSkills.id = "tab-skills";
+    tabSkills.className = "tab-page";
+    tabSkills.style.display = "none";
+    tabSkills.innerHTML = `
+        <div class="card">
+            <h2>[SKL] Habilidades del Ciudadano</h2>
+            <div id="skills-list" style="display:flex; flex-direction:column; gap:12px;"></div>
+        </div>
+    `;
+
+    // Pestaña Economía y Propiedades
     const tabEconomy = document.createElement("div");
     tabEconomy.id = "tab-economy";
     tabEconomy.className = "tab-page";
@@ -194,7 +206,7 @@ function injectMainUI() {
         </div>
     `;
 
-    // Pestaña 3: Mercado
+    // Pestaña Mercado
     const tabMarket = document.createElement("div");
     tabMarket.id = "tab-market";
     tabMarket.className = "tab-page";
@@ -208,7 +220,7 @@ function injectMainUI() {
         </div>
     `;
 
-    // Pestaña 4: Noticias
+    // Pestaña Noticias
     const tabNews = document.createElement("div");
     tabNews.id = "tab-news";
     tabNews.className = "tab-page";
@@ -221,7 +233,7 @@ function injectMainUI() {
         </div>
     `;
 
-    // Pestaña 5: Ciudadanos / Multijugador
+    // Pestaña Ciudadanos / Multijugador
     const tabMultiplayer = document.createElement("div");
     tabMultiplayer.id = "tab-multiplayer";
     tabMultiplayer.className = "tab-page";
@@ -235,6 +247,7 @@ function injectMainUI() {
     `;
 
     contentArea.appendChild(tabActions);
+    contentArea.appendChild(tabSkills);
     contentArea.appendChild(tabEconomy);
     contentArea.appendChild(tabMarket);
     contentArea.appendChild(tabNews);
@@ -250,6 +263,7 @@ function injectMainUI() {
             btn.classList.add("active");
             document.querySelectorAll(".tab-page").forEach(page => page.style.display = "none");
             document.getElementById(btn.dataset.tab).style.display = "block";
+
             if (btn.dataset.tab === "tab-news") loadNews();
             if (btn.dataset.tab === "tab-multiplayer") loadLeaderboard();
         });
@@ -373,7 +387,7 @@ function renderUI() {
     document.getElementById("p-rep-inf").textContent = `${player.reputation} / ${player.influence}`;
     document.getElementById("p-stats").textContent = 
         `${Math.round(player.stats.health)} / ${Math.round(player.stats.energy)} / ${Math.round(player.stats.mood)}`;
-    
+
     const avatarImgEl = document.getElementById("p-avatar");
     if (avatarImgEl) {
         avatarImgEl.src = player.avatar || "images/1.jpg";
@@ -427,6 +441,56 @@ function renderUI() {
         });
         queueList.appendChild(li);
     });
+
+    // Pestaña Habilidades - Renderizado de niveles, progreso y bonificaciones
+    const skillsList = document.getElementById("skills-list");
+    if (skillsList && player.skills) {
+        skillsList.innerHTML = "";
+        const skillNames = {
+            cooking: "Cocina",
+            training: "Entrenamiento",
+            talking: "Socialización",
+            working: "Trabajo"
+        };
+        Object.keys(player.skills).forEach(skillKey => {
+            const sk = player.skills[skillKey];
+            const name = skillNames[skillKey] || skillKey.toUpperCase();
+            const neededXp = sk.level * 100;
+            const pct = Math.min(100, Math.round((sk.xp / neededXp) * 100));
+
+            // Cálculo de bonificaciones actuales
+            const effBonusPct = Math.round((sk.level - 1) * 2);
+            const fatigueRedPct = Math.round((sk.level - 1) * 1.5);
+            const bizIncBonusPct = Math.round((sk.level - 1) * 10);
+
+            const div = document.createElement("div");
+            div.style.cssText = "background:rgba(255,255,255,0.5); padding:12px; border:1px solid var(--border-glass); border-radius:10px; font-size:0.8em;";
+            div.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <strong style="color:var(--accent); font-size:0.9em;">${name.toUpperCase()}</strong>
+                    <span style="font-weight:700;">NIVEL ${sk.level}</span>
+                </div>
+                <div style="color:var(--text-dim); font-size:0.85em; margin-bottom:6px;">
+                    XP: ${Math.floor(sk.xp)} / ${neededXp} (${pct}%)
+                </div>
+                <div style="background:rgba(0,0,0,0.06); height:8px; border-radius:4px; overflow:hidden; border:1px solid var(--border-subtle); margin-bottom:10px;">
+                    <div style="background:var(--accent); height:100%; width:${pct}%; transition:width 0.3s ease;"></div>
+                </div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap; font-size:0.75em;">
+                    <span style="background:rgba(44, 62, 80, 0.08); border:1px solid var(--border-subtle); padding:3px 6px; border-radius:6px; color:var(--accent); font-weight:600;">
+                        Eficiencia / Ingreso Activo: +${effBonusPct}%
+                    </span>
+                    <span style="background:rgba(44, 62, 80, 0.08); border:1px solid var(--border-subtle); padding:3px 6px; border-radius:6px; color:var(--accent); font-weight:600;">
+                        Reducción de Fatiga: -${fatigueRedPct}%
+                    </span>
+                    <span style="background:rgba(44, 62, 80, 0.08); border:1px solid var(--border-subtle); padding:3px 6px; border-radius:6px; color:var(--accent); font-weight:600;">
+                        Ingreso Pasivo Empresa: +${bizIncBonusPct}%
+                    </span>
+                </div>
+            `;
+            skillsList.appendChild(div);
+        });
+    }
 
     // Pestaña Economía - Propiedades
     const propsCatalog = document.getElementById("properties-catalog");
@@ -586,7 +650,6 @@ async function handleUserSession(user) {
 async function completeSessionInit(player) {
     const tabs = document.getElementById("nav-tabs");
     const content = document.getElementById("tabs-content");
-
     authPanel.style.display = "none";
     playerPanel.style.display = "block";
     if (tabs) tabs.style.display = "flex";
@@ -598,7 +661,6 @@ async function completeSessionInit(player) {
 
     await playerManager.savePlayerState();
     await multiplayerEngine.updatePublicProfile(player);
-
     renderUI();
 }
 
@@ -614,7 +676,6 @@ async function applyPersistence() {
 onAuthStateChanged(auth, async (user) => {
     const tabs = document.getElementById("nav-tabs");
     const content = document.getElementById("tabs-content");
-
     if (user) {
         await handleUserSession(user);
     } else {
@@ -657,3 +718,4 @@ btnEditProfile.addEventListener("click", openProfileEditModal);
 initAvatarSelector();
 injectMainUI();
 startMainLoop();
+ 

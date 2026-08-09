@@ -10,7 +10,6 @@ export class BusinessEngine {
     buyProperty(player, propertyTypeId) {
         const propDef = PROPERTY_TYPES[propertyTypeId];
         if (!propDef) return { success: false, reason: "Inmueble no reconocido." };
-
         if (player.money < propDef.price) {
             return { success: false, reason: "Fondos insuficientes para esta propiedad." };
         }
@@ -28,10 +27,31 @@ export class BusinessEngine {
         return { success: true, property: newProperty };
     }
 
-    // Fundar una nueva empresa
+    // Fundar una nueva empresa con verificación de nivel de habilidad requerido
     foundBusiness(player, businessTypeId, businessName, propertyId) {
         const bizDef = BUSINESS_TYPES[businessTypeId];
         if (!bizDef) return { success: false, reason: "Tipo de empresa no válido." };
+
+        // 1. Verificación de nivel mínimo de habilidad
+        if (bizDef.requiredSkill) {
+            const playerSkill = player.skills?.[bizDef.requiredSkill];
+            const currentLevel = playerSkill ? playerSkill.level : 1;
+            const minLevel = bizDef.minSkillLevel || 1;
+
+            if (currentLevel < minLevel) {
+                const skillNames = {
+                    cooking: "Cocina",
+                    training: "Entrenamiento",
+                    talking: "Socialización",
+                    working: "Trabajo"
+                };
+                const readableSkill = skillNames[bizDef.requiredSkill] || bizDef.requiredSkill;
+                return { 
+                    success: false, 
+                    reason: `Requiere Nivel ${minLevel} en ${readableSkill} (Nivel actual: ${currentLevel}).` 
+                };
+            }
+        }
 
         if (player.money < bizDef.creationCost) {
             return { success: false, reason: "Fondos insuficientes para capital inicial." };
@@ -78,6 +98,7 @@ export class BusinessEngine {
         }
 
         player.money -= totalCost;
+
         if (!player.inventory) player.inventory = {};
         player.inventory[itemId] = (player.inventory[itemId] || 0) + quantity;
 
@@ -102,7 +123,7 @@ export class BusinessEngine {
         return { success: true };
     }
 
-    // Procesar beneficios e ingresos pasivos de las empresas
+    // Procesar beneficios e ingresos pasivos de las empresas con bonificación por habilidad
     processBusinessIncome(player, currentRealTimestamp) {
         if (!player.businesses || player.businesses.length === 0) return false;
 
@@ -118,8 +139,17 @@ export class BusinessEngine {
                 const bizDef = BUSINESS_TYPES[biz.typeId];
 
                 if (bizDef) {
-                    const netProfitPerHour = bizDef.baseRevenuePerGameHour - bizDef.baseMaintenancePerGameHour;
-                    const totalProfit = netProfitPerHour * gameHours * biz.level;
+                    // Cálculo de multiplicador por habilidad (+10% de ingresos por nivel adicional)
+                    let skillMultiplier = 1.0;
+                    if (bizDef.requiredSkill && player.skills?.[bizDef.requiredSkill]) {
+                        const skillLevel = player.skills[bizDef.requiredSkill].level;
+                        const minLevel = bizDef.minSkillLevel || 1;
+                        const bonusLevels = Math.max(0, skillLevel - minLevel);
+                        skillMultiplier += bonusLevels * 0.10;
+                    }
+
+                    const netProfitPerHour = (bizDef.baseRevenuePerGameHour * skillMultiplier) - bizDef.baseMaintenancePerGameHour;
+                    const totalProfit = Math.max(0, netProfitPerHour) * gameHours * biz.level;
 
                     biz.vaultMoney += totalProfit;
                     biz.lastIncomeUpdate = currentRealTimestamp;
