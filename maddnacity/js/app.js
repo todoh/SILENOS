@@ -46,9 +46,11 @@ const MARKET_IMAGES = {
 const gameDateEl = document.getElementById("game-date");
 const gameTimeEl = document.getElementById("game-time");
 const gameYearEl = document.getElementById("game-year");
+
 const authPanel = document.getElementById("auth-panel");
 const playerPanel = document.getElementById("player-panel");
 const rightPanel = document.getElementById("right-panel");
+
 const emailInput = document.getElementById("auth-email");
 const passwordInput = document.getElementById("auth-password");
 const rememberInput = document.getElementById("auth-remember");
@@ -98,7 +100,7 @@ function initAvatarSelector() {
 function openProfileEditModal() {
     const player = playerManager.currentPlayer;
     if (!player) return;
-    
+
     if (mobilePlayerPanel) {
         mobilePlayerPanel.style.display = "none";
         mobileProfileToggle.classList.remove("open");
@@ -150,6 +152,21 @@ function switchTab(tabId) {
 
     if (tabId === "tab-news") loadNews();
     if (tabId === "tab-multiplayer") loadLeaderboard();
+
+    renderUI();
+}
+
+function checkPlayerVitals(player) {
+    if (player.stats.health <= 0) {
+        alert("¡Atención! Has colapsado por falta de salud. Has sido trasladado al hospital de Maddna City.");
+        player.stats.health = 50;
+        player.stats.energy = 50;
+        player.stats.mood = 50;
+        player.money = Math.max(0, player.money - 100);
+        player.activeAction = null;
+        player.actionQueue = [];
+        playerManager.savePlayerState();
+    }
 }
 
 function injectMainUI() {
@@ -166,7 +183,7 @@ function injectMainUI() {
         <button class="tab-btn" data-tab="tab-economy">EMPRESAS & BIENES</button>
         <button class="tab-btn" data-tab="tab-market">MERCADO</button>
         <button class="tab-btn" data-tab="tab-news">NOTICIAS</button>
-        <button class="tab-btn" data-tab="tab-multiplayer">CIUDADANOS</button>
+        <button class="tab-btn" data-tab="tab-multiplayer">CIUDADANOS & CHAT</button>
     `;
 
     const contentArea = document.createElement("div");
@@ -186,10 +203,12 @@ function injectMainUI() {
                 <input type="number" id="input-duration" value="60" min="15" max="480" step="15" style="width: 100px; margin-bottom:0;" placeholder="Minutos">
                 <button id="btn-add-action">+ AÑADIR A COLA</button>
             </div>
+
             <h3>Actividad En Curso</h3>
             <div id="current-action-box" style="padding:12px; margin-bottom:15px; font-size:0.85em;">
                 Sin actividad programada.
             </div>
+
             <h3>Cola de Procesamiento (<span id="queue-count">0</span>/4)</h3>
             <ul id="queue-list" style="list-style:none; padding:0; margin:0;"></ul>
         </div>
@@ -214,8 +233,10 @@ function injectMainUI() {
         <div class="card">
             <h2>[EST] Bienes Inmuebles Disponibles</h2>
             <div id="properties-catalog" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;"></div>
+
             <h2>[OWN] Tus Propiedades</h2>
             <div id="my-properties" style="margin-bottom:20px; font-size:0.85em; color:var(--text-dim);">Sin propiedades asignadas.</div>
+
             <h2>[CORP] Fundar Nueva Empresa</h2>
             <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
                 <input type="text" id="input-biz-name" placeholder="NOMBRE DE TU EMPRESA" style="margin-bottom:0;">
@@ -227,6 +248,7 @@ function injectMainUI() {
                 </select>
                 <button id="btn-found-biz">REGISTRAR EMPRESA</button>
             </div>
+
             <h2>Tus Empresas</h2>
             <div id="my-businesses" style="font-size:0.85em; color:var(--text-dim);">Sin empresas registradas.</div>
         </div>
@@ -240,6 +262,7 @@ function injectMainUI() {
         <div class="card">
             <h2>[MKT] Mercado de Suministros</h2>
             <div id="market-items-list" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;"></div>
+
             <h2>[INV] Inventario del Ciudadano</h2>
             <div id="my-inventory" style="font-size:0.85em; color:var(--text-dim);">Inventario vacío.</div>
         </div>
@@ -262,6 +285,17 @@ function injectMainUI() {
     tabMultiplayer.className = "tab-page";
     tabMultiplayer.style.display = "none";
     tabMultiplayer.innerHTML = `
+        <div class="card" style="margin-bottom: 20px;">
+            <h2>[CHAT] Canal Frecuencia Global</h2>
+            <div id="chat-messages-box" style="height: 220px; overflow-y: auto; padding: 10px; border: 1px solid var(--border-glass); border-radius: 10px; margin-bottom: 12px; background: rgba(255,255,255,0.3); display: flex; flex-direction: column; gap: 8px;">
+                <span style="color: var(--text-dim); font-size:0.8em;">Conectando a la red neuronal de chat...</span>
+            </div>
+            <form id="chat-form" style="display: flex; gap: 8px; margin-bottom: 0;">
+                <input type="text" id="chat-input-text" placeholder="Escribe un mensaje público..." style="flex:1; margin-bottom:0;" maxlength="150" required autocomplete="off">
+                <button type="submit" id="btn-send-chat">ENVIAR</button>
+            </form>
+        </div>
+
         <div class="card">
             <h2>[NET] Registro Global de Ciudadanos</h2>
             <button id="btn-refresh-leaderboard" style="margin-bottom:15px; width:100%;">CARGAR RANKING</button>
@@ -305,6 +339,7 @@ function injectMainUI() {
         const duration = parseInt(document.getElementById("input-duration").value, 10) || 60;
         const player = playerManager.currentPlayer;
         if (!player) return;
+
         const res = actionEngine.enqueueAction(player, actionType, duration);
         if (!res.success) alert(res.reason);
         else {
@@ -319,6 +354,7 @@ function injectMainUI() {
         const propId = document.getElementById("select-biz-prop").value;
         const player = playerManager.currentPlayer;
         if (!player) return;
+
         const res = businessEngine.foundBusiness(player, bizTypeId, name, propId);
         if (!res.success) alert(res.reason);
         else {
@@ -332,16 +368,82 @@ function injectMainUI() {
 
     document.getElementById("btn-refresh-news").addEventListener("click", loadNews);
     document.getElementById("btn-refresh-leaderboard").addEventListener("click", loadLeaderboard);
+
+    const chatForm = document.getElementById("chat-form");
+    if (chatForm) {
+        chatForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const input = document.getElementById("chat-input-text");
+            const player = playerManager.currentPlayer;
+            if (!player || !input || !input.value.trim()) return;
+
+            const text = input.value.trim();
+            input.value = "";
+            await multiplayerEngine.sendChatMessage(player, text);
+        });
+    }
+}
+
+function initChatListener() {
+    const box = document.getElementById("chat-messages-box");
+    if (!box) return;
+
+    multiplayerEngine.listenToGlobalChat((messages) => {
+        const currentPlayer = playerManager.currentPlayer;
+        if (!currentPlayer) return;
+
+        if (messages.length === 0) {
+            box.innerHTML = `<span style="color:var(--text-dim); font-size:0.8em;">No hay mensajes en la frecuencia global. ¡Sé el primero en hablar!</span>`;
+            return;
+        }
+
+        box.innerHTML = "";
+        messages.forEach(m => {
+            const time = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const isOwner = m.senderId === currentPlayer.id;
+
+            const div = document.createElement("div");
+            div.style.cssText = "display:flex; align-items:flex-start; gap:8px; font-size:0.8em; padding:4px 6px; border-bottom:1px solid var(--border-subtle);";
+            div.innerHTML = `
+                <img src="${m.senderAvatar || 'images/1.jpg'}" class="avatar-img-leaderboard" style="width:24px; height:24px;" alt="Avatar">
+                <div style="flex:1;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong style="color:var(--accent); font-size:0.85em;">${m.senderName}</strong>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="font-size:0.7em; color:var(--text-dim);">${time}</span>
+                            ${isOwner ? `<button class="btn-cancel btn-delete-msg" data-msg-id="${m.id}" style="padding:1px 5px; font-size:0.65em; border-radius:4px;">BORRAR</button>` : ''}
+                        </div>
+                    </div>
+                    <div style="color:var(--text-main); margin-top:2px; word-break:break-word;">${m.text}</div>
+                </div>
+            `;
+
+            if (isOwner) {
+                const delBtn = div.querySelector(".btn-delete-msg");
+                if (delBtn) {
+                    delBtn.addEventListener("click", async () => {
+                        await multiplayerEngine.deleteChatMessage(m.id, currentPlayer.id);
+                    });
+                }
+            }
+
+            box.appendChild(div);
+        });
+
+        box.scrollTop = box.scrollHeight;
+    });
 }
 
 async function loadNews() {
     const list = document.getElementById("news-feed-list");
     list.textContent = "Obteniendo últimas noticias...";
     const items = await newsEngine.getLatestNews(6);
+
     if (items.length === 0) {
         list.innerHTML = `<p style="color:var(--text-dim); font-size:0.85em;">No hay boletines informativos recientes.</p>`;
         return;
     }
+
     list.innerHTML = items.map(n => `
         <div style="padding:10px; margin-bottom:10px; border:1px solid var(--border-glass); border-radius:8px;">
             <strong style="color:var(--accent); font-size:0.85em;">${n.title.toUpperCase()}</strong>
@@ -354,10 +456,12 @@ async function loadLeaderboard() {
     const list = document.getElementById("leaderboard-list");
     list.textContent = "Cargando clasificación de ciudadanos...";
     const citizens = await multiplayerEngine.getTopCitizens(10);
+
     if (citizens.length === 0) {
         list.innerHTML = `<p style="color:var(--text-dim); font-size:0.85em;">No se registraron otros ciudadanos en la red.</p>`;
         return;
     }
+
     list.innerHTML = citizens.map((c, idx) => `
         <div style="padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border-glass); font-size:0.8em; border-radius:8px;">
             <div style="display:flex; align-items:center; gap:10px;">
@@ -381,11 +485,19 @@ function startMainLoop() {
             const now = Date.now();
             const mod1 = actionEngine.processOfflineTime(player, now);
             const mod2 = businessEngine.processBusinessIncome(player, now);
+            
+            checkPlayerVitals(player);
+
             if (mod1 || mod2) {
                 renderUI();
             }
         }
     }, 1000);
+
+    // Bucle para purgar mensajes del chat caducados
+    setInterval(() => {
+        multiplayerEngine.cleanOldChatMessages();
+    }, 60000);
 
     setInterval(async () => {
         if (playerManager.currentPlayer) {
@@ -405,13 +517,14 @@ function renderUI() {
     document.getElementById("p-rep-inf").textContent = `${player.reputation} / ${player.influence}`;
     document.getElementById("p-stats").textContent = 
         `${Math.round(player.stats.health)} / ${Math.round(player.stats.energy)} / ${Math.round(player.stats.mood)}`;
-        
+    
     const avatarImgEl = document.getElementById("p-avatar");
     if (avatarImgEl) avatarImgEl.src = player.avatar || "images/1.jpg";
 
     const mobileAvatar = document.getElementById("m-p-avatar");
     const mobileName = document.getElementById("m-p-name");
     const mobileMoney = document.getElementById("m-p-money");
+
     if (mobileAvatar) mobileAvatar.src = player.avatar || "images/1.jpg";
     if (mobileName) mobileName.textContent = player.name;
     if (mobileMoney) mobileMoney.textContent = `${player.money.toFixed(2)} $`;
@@ -432,18 +545,34 @@ function renderUI() {
         `${Math.round(player.stats.health)} / ${Math.round(player.stats.energy)} / ${Math.round(player.stats.mood)}`;
 
     const quickStatus = document.getElementById("quick-action-status");
-
     const box = document.getElementById("current-action-box");
+
     if (player.activeAction) {
         const def = ACTIONS_CATALOG[player.activeAction.type];
         const progressPct = Math.min(100, Math.round((player.activeAction.progressMinutes / player.activeAction.durationMinutes) * 100));
         
         box.innerHTML = `
-            <strong>${def.name.toUpperCase()}</strong> (${Math.round(player.activeAction.progressMinutes)} / ${player.activeAction.durationMinutes}m)
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong>${def.name.toUpperCase()}</strong>
+                <button id="btn-cancel-active" class="btn-cancel" style="padding:2px 6px; font-size:0.75em;">CANCELAR</button>
+            </div>
+            <div style="font-size:0.9em; margin-top:4px;">Progreso: ${Math.round(player.activeAction.progressMinutes)} / ${player.activeAction.durationMinutes}m</div>
             <div style="background:rgba(0,0,0,0.1); height:6px; margin-top:8px; border:1px solid var(--border-subtle); border-radius:3px; overflow:hidden;">
                 <div style="background:var(--accent); height:100%; width:${progressPct}%;"></div>
             </div>
         `;
+
+        document.getElementById("btn-cancel-active").addEventListener("click", () => {
+            player.activeAction = null;
+            if (player.actionQueue.length > 0) {
+                player.activeAction = player.actionQueue.shift();
+                player.activeAction.startTimeReal = Date.now();
+                player.activeAction.progressMinutes = 0;
+            }
+            playerManager.savePlayerState();
+            renderUI();
+        });
+
         if (quickStatus) {
             quickStatus.innerHTML = `
                 <div>EJECUTANDO: <span style="color:var(--accent); font-weight:600;">${def.name.toUpperCase()}</span></div>
@@ -464,6 +593,7 @@ function renderUI() {
     const queueList = document.getElementById("queue-list");
     document.getElementById("queue-count").textContent = player.actionQueue.length;
     queueList.innerHTML = "";
+
     player.actionQueue.forEach((item, index) => {
         const def = ACTIONS_CATALOG[item.type];
         const li = document.createElement("li");
@@ -472,11 +602,13 @@ function renderUI() {
             <span><strong>${index + 1}. ${def.name.toUpperCase()}</strong> (${item.durationMinutes}m)</span>
             <button class="btn-cancel" style="padding:2px 6px; font-size:0.75em;">X</button>
         `;
+
         li.querySelector(".btn-cancel").addEventListener("click", () => {
             actionEngine.cancelQueueItem(player, index);
             playerManager.savePlayerState();
             renderUI();
         });
+
         queueList.appendChild(li);
     });
 
@@ -489,11 +621,13 @@ function renderUI() {
             talking: "Socialización",
             working: "Trabajo"
         };
+
         Object.keys(player.skills).forEach(skillKey => {
             const sk = player.skills[skillKey];
             const name = skillNames[skillKey] || skillKey.toUpperCase();
             const neededXp = sk.level * 100;
             const pct = Math.min(100, Math.round((sk.xp / neededXp) * 100));
+
             const effBonusPct = Math.round((sk.level - 1) * 2);
             const fatigueRedPct = Math.round((sk.level - 1) * 1.5);
             const bizIncBonusPct = Math.round((sk.level - 1) * 10);
@@ -539,6 +673,7 @@ function renderUI() {
             <span style="color:var(--text-dim); margin-top:2px;">Precio: ${p.price.toLocaleString()} $</span>
             <button style="margin-top:auto; width:100%;">COMPRAR</button>
         `;
+
         div.querySelector("button").addEventListener("click", () => {
             const res = businessEngine.buyProperty(player, p.id);
             if (!res.success) alert(res.reason);
@@ -555,6 +690,7 @@ function renderUI() {
     const selectBizProp = document.getElementById("select-biz-prop");
     myProps.innerHTML = "";
     selectBizProp.innerHTML = `<option value="">SELECCIONA PROPIEDAD VINCULADA...</option>`;
+
     if (!player.properties || player.properties.length === 0) {
         myProps.textContent = "No posees propiedades en tu activo.";
     } else {
@@ -586,6 +722,7 @@ function renderUI() {
                 Caja Fuerte: <span style="color:var(--accent); font-weight:700;">${(b.vaultMoney || 0).toFixed(2)} $</span><br>
                 <button class="btn-withdraw" style="margin-top:8px; width:100%;">RETIRAR FONDOS</button>
             `;
+
             div.querySelector(".btn-withdraw").addEventListener("click", () => {
                 const res = businessEngine.withdrawBusinessVault(player, b.id);
                 if (!res.success) alert(res.reason);
@@ -595,6 +732,7 @@ function renderUI() {
                     renderUI();
                 }
             });
+
             myBiz.appendChild(div);
         });
     }
@@ -611,6 +749,7 @@ function renderUI() {
             <span style="color:var(--text-dim); margin-top:2px;">Precio: ${item.price} $</span>
             <button style="margin-top:auto; width:100%;">COMPRAR</button>
         `;
+
         div.querySelector("button").addEventListener("click", () => {
             const res = businessEngine.buyMarketItem(player, item.id, 1);
             if (!res.success) alert(res.reason);
@@ -625,6 +764,7 @@ function renderUI() {
     const myInv = document.getElementById("my-inventory");
     myInv.innerHTML = "";
     const invKeys = Object.keys(player.inventory || {}).filter(k => player.inventory[k] > 0);
+
     if (invKeys.length === 0) {
         myInv.textContent = "Inventario vacío.";
     } else {
@@ -637,10 +777,14 @@ function renderUI() {
                 <span>${itemDef ? itemDef.name.toUpperCase() : k} (x${count})</span>
                 <button class="btn-use" style="padding:4px 8px;">CONSUMIR</button>
             `;
+
             div.querySelector(".btn-use").addEventListener("click", () => {
                 const res = businessEngine.useMarketItem(player, k);
                 if (!res.success) alert(res.reason);
                 else {
+                    if (player.inventory[k] <= 0) {
+                        delete player.inventory[k];
+                    }
                     playerManager.savePlayerState();
                     renderUI();
                 }
@@ -652,6 +796,7 @@ function renderUI() {
 
 async function handleUserSession(user) {
     const player = await playerManager.loadOrCreatePlayer(user.uid);
+
     if (!player.name || player.name === "Ciudadano") {
         modalSetupTitle.textContent = "[REGISTRAR CIUDADANO]";
         btnSavePlayerName.textContent = "CONFIRMAR E INGRESAR";
@@ -700,9 +845,11 @@ async function completeSessionInit(player) {
 
     actionEngine.processOfflineTime(player, Date.now());
     businessEngine.processBusinessIncome(player, Date.now());
+
     await playerManager.savePlayerState();
     await multiplayerEngine.updatePublicProfile(player);
 
+    initChatListener();
     switchTab("tab-actions");
     renderUI();
 }
@@ -722,7 +869,6 @@ onAuthStateChanged(auth, async (user) => {
     if (user) {
         await handleUserSession(user);
     } else {
-        // MODO DESCONECTADO
         authPanel.style.display = "block";
         playerPanel.style.display = "none";
         if (mobileTopBar) mobileTopBar.style.display = "none";
@@ -732,6 +878,7 @@ onAuthStateChanged(auth, async (user) => {
         if (content) content.style.display = "none";
         if (bottomNav) bottomNav.style.display = "none";
         if (rightPanel) rightPanel.style.display = "none";
+
         playerManager.currentPlayer = null;
     }
 });
