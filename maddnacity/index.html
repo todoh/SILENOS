@@ -13,7 +13,7 @@
             <h2 id="modal-setup-title">[REGISTRAR CIUDADANO]</h2>
             <p style="font-size: 0.8em; color: var(--text-dim); margin-bottom: 8px;">Introduce el alias público de tu personaje:</p>
             <input type="text" id="setup-player-name" placeholder="ALIAS DE CIUDADANO" maxlength="20">
-                         
+            
             <p style="font-size: 0.8em; color: var(--text-dim); margin-bottom: 8px;">Selecciona tu Avatar:</p>
             <div id="avatar-selector" class="avatar-selector">
                 <img src="images/1.jpg" class="avatar-option selected" data-avatar="images/1.jpg" alt="Avatar 1">
@@ -88,31 +88,9 @@
                         <div class="stat-label">Nombre</div>
                         <div id="p-name" class="stat-value">-</div>
                     </div>
-
-
-
-
-
-
                 </div>
                 <button id="btn-edit-profile" style="width: 100%; margin-bottom: 12px;" class="btn-secondary">EDITAR PERFIL</button>
-               
-            
-                        
-            
-               
-               
                 <div class="grid">
-
-
- 
-                  
-           
-
-
-
-
-
                     <div>
                         <div class="stat-label">Edad</div>
                         <div id="p-age" class="stat-value">18y</div>
@@ -130,35 +108,19 @@
                         <div id="p-stats" class="stat-value">100 / 100 / 100</div>
                     </div>
                 </div>
-
-<div class="stat-label">Fecha</div>
-                        <div id="game-date" class="stat-value">Cargando...</div>
-                  
-                    
-                        <div class="stat-label">Hora</div>
-                        <div id="game-time" class="stat-value">Cargando...</div>
-                  
-                 
-                        <div class="stat-label">Año</div>
-                        <div id="game-year" class="stat-value">3000</div>
-            
-                        <div class="stat-label">Escala</div>
-                        <div class="stat-value">24h = 30d</div>
-
-
-                
+                <div class="stat-label">Fecha</div>
+                <div id="game-date" class="stat-value">Cargando...</div>
+                <div class="stat-label">Hora</div>
+                <div id="game-time" class="stat-value">Cargando...</div>
+                <div class="stat-label">Año</div>
+                <div id="game-year" class="stat-value">3000</div>
+                <div class="stat-label">Escala</div>
+                <div class="stat-value">24h = 30d</div>
                 <br>
                 <button id="btn-logout" style="width: 100%;">DESCONECTAR</button>
-
-
-
-                
             </div>
-
-            <!-- Reloj / Telemetría Global -->
-            
         </div>
-                 
+
         <!-- COLUMNA CENTRO: Autenticación / Dashboard Principal -->
         <div class="col col-center" id="center-container">
             <!-- Autenticación visible por defecto al estar desconectado -->
@@ -184,7 +146,7 @@
             </div>
             <!-- Contenido dinámico (pestañas) inyectado por JS -->
         </div>
-                 
+
         <!-- COLUMNA DERECHA: Telemetría / Monitor Rápido -->
         <div class="col col-right" id="right-panel" style="display: none;">
             <div class="card">
@@ -211,12 +173,16 @@
             <span class="nav-item-icon">⚡</span>
             <span>ACTIVIDAD</span>
         </button>
+        <button class="nav-item" data-tab="tab-quests">
+            <span class="nav-item-icon">📜</span>
+            <span>MISIONES</span>
+        </button>
         <button class="nav-item" data-tab="tab-skills">
-            <span class="nav-item-icon">★</span>
+            <span class="nav-item-icon">🧠</span>
             <span>SKILLS</span>
         </button>
         <button class="nav-item" data-tab="tab-economy">
-            <span class="nav-item-icon">🏢</span>
+            <span class="nav-item-icon">🏬</span>
             <span>BIENES</span>
         </button>
         <button class="nav-item" data-tab="tab-market">
