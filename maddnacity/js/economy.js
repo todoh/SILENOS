@@ -75,18 +75,21 @@ export const MARKET_ITEMS = {
     ENERGY_DRINK: {
         id: "ENERGY_DRINK",
         name: "Bebida Energética Maddna",
+        description: "Regenera energía instantáneamente y aporta un ligero extra de ánimo.",
         price: 15,
         effects: { energy: +25, mood: +5 }
     },
     HEALTH_KIT: {
         id: "HEALTH_KIT",
         name: "Botiquín de Primeros Auxilios",
+        description: "Suministros médicos básicos para restaurar la salud del personaje.",
         price: 50,
         effects: { health: +40 }
     },
     GOURMET_MEAL: {
         id: "GOURMET_MEAL",
         name: "Cena de Gran Lujo",
+        description: "Plato de alta cocina que incrementa notablemente el ánimo y recarga energía.",
         price: 100,
         effects: { mood: +40, energy: +15 }
     }

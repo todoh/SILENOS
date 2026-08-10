@@ -1,3 +1,4 @@
+// js/app.js
 // Controlador Principal Integral - Dashboard UI y Loop Completo de Maddna City MMO
 import { auth } from "./firebase.js";
 import { 
@@ -11,14 +12,18 @@ import {
     browserLocalPersistence,
     browserSessionPersistence
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
 import { TimeEngine } from "./time.js";
 import { PlayerManager } from "./player.js";
 import { ActionEngine } from "./actionEngine.js";
 import { BusinessEngine } from "./businessEngine.js";
 import { NewsEngine } from "./newsEngine.js";
 import { MultiplayerEngine } from "./multiplayerEngine.js";
+
 import { ACTIONS_CATALOG } from "./actions.js";
 import { PROPERTY_TYPES, BUSINESS_TYPES, MARKET_ITEMS } from "./economy.js";
+import { SPECIALIZATIONS_CATALOG } from "./skillsCatalog.js";
+import { LIFESTYLE_CATALOG, LIFESTYLE_TYPES } from "./lifestyleCatalog.js";
 
 const timeEngine = new TimeEngine();
 const playerManager = new PlayerManager();
@@ -54,6 +59,7 @@ const rightPanel = document.getElementById("right-panel");
 const emailInput = document.getElementById("auth-email");
 const passwordInput = document.getElementById("auth-password");
 const rememberInput = document.getElementById("auth-remember");
+
 const btnLogin = document.getElementById("btn-login");
 const btnRegister = document.getElementById("btn-register");
 const btnGoogleLogin = document.getElementById("btn-google-login");
@@ -158,11 +164,14 @@ function switchTab(tabId) {
 
 function checkPlayerVitals(player) {
     if (player.stats.health <= 0) {
-        alert("¡Atención! Has colapsado por falta de salud. Has sido trasladado al hospital de Maddna City.");
-        player.stats.health = 50;
+        let penaltyMod = player.modifiers?.collapsePenaltyRed || 0;
+        let penaltyMoney = Math.round(100 * (1 - penaltyMod));
+        alert(`¡Atención! Has colapsado por falta de salud. Has sido atendido en el hospital. Coste médico: ${penaltyMoney} $.`);
+        const maxHealth = 100 + (player.modifiers?.maxHealthBonus || 0);
+        player.stats.health = Math.round(maxHealth * 0.5);
         player.stats.energy = 50;
         player.stats.mood = 50;
-        player.money = Math.max(0, player.money - 100);
+        player.money = Math.max(0, player.money - penaltyMoney);
         player.activeAction = null;
         player.actionQueue = [];
         playerManager.savePlayerState();
@@ -179,9 +188,9 @@ function injectMainUI() {
     tabsNav.style.cssText = "display:none; gap:6px; flex-wrap:wrap;";
     tabsNav.innerHTML = `
         <button class="tab-btn active" data-tab="tab-actions">ACTIVIDADES</button>
-        <button class="tab-btn" data-tab="tab-skills">HABILIDADES</button>
+        <button class="tab-btn" data-tab="tab-skills">HABILIDADES & TALENTOS</button>
         <button class="tab-btn" data-tab="tab-economy">EMPRESAS & BIENES</button>
-        <button class="tab-btn" data-tab="tab-market">MERCADO</button>
+        <button class="tab-btn" data-tab="tab-market">MERCADO & LIFESTYLE</button>
         <button class="tab-btn" data-tab="tab-news">NOTICIAS</button>
         <button class="tab-btn" data-tab="tab-multiplayer">CIUDADANOS & CHAT</button>
     `;
@@ -196,20 +205,12 @@ function injectMainUI() {
     tabActions.innerHTML = `
         <div class="card">
             <h2>[PLAN] Planificador de Actividades</h2>
-            <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
-                <select id="select-action" style="flex-grow:1; margin-bottom:0;">
-                    ${Object.values(ACTIONS_CATALOG).map(act => `<option value="${act.id}">${act.name.toUpperCase()}</option>`).join('')}
-                </select>
-                <input type="number" id="input-duration" value="60" min="15" max="480" step="15" style="width: 100px; margin-bottom:0;" placeholder="Minutos">
-                <button id="btn-add-action">+ AÑADIR A COLA</button>
-            </div>
-
+            <div id="actions-catalog-list" style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;"></div>
             <h3>Actividad En Curso</h3>
             <div id="current-action-box" style="padding:12px; margin-bottom:15px; font-size:0.85em;">
                 Sin actividad programada.
             </div>
-
-            <h3>Cola de Procesamiento (<span id="queue-count">0</span>/4)</h3>
+            <h3>Cola de Procesamiento (<span id="queue-count">0</span>/<span id="queue-max">5</span>)</h3>
             <ul id="queue-list" style="list-style:none; padding:0; margin:0;"></ul>
         </div>
     `;
@@ -220,7 +221,7 @@ function injectMainUI() {
     tabSkills.style.display = "none";
     tabSkills.innerHTML = `
         <div class="card">
-            <h2>[SKL] Habilidades del Ciudadano</h2>
+            <h2>[SKL] Habilidades y Árbol de Talentos</h2>
             <div id="skills-list" style="display:flex; flex-direction:column; gap:12px;"></div>
         </div>
     `;
@@ -233,10 +234,8 @@ function injectMainUI() {
         <div class="card">
             <h2>[EST] Bienes Inmuebles Disponibles</h2>
             <div id="properties-catalog" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;"></div>
-
             <h2>[OWN] Tus Propiedades</h2>
             <div id="my-properties" style="margin-bottom:20px; font-size:0.85em; color:var(--text-dim);">Sin propiedades asignadas.</div>
-
             <h2>[CORP] Fundar Nueva Empresa</h2>
             <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
                 <input type="text" id="input-biz-name" placeholder="NOMBRE DE TU EMPRESA" style="margin-bottom:0;">
@@ -248,7 +247,6 @@ function injectMainUI() {
                 </select>
                 <button id="btn-found-biz">REGISTRAR EMPRESA</button>
             </div>
-
             <h2>Tus Empresas</h2>
             <div id="my-businesses" style="font-size:0.85em; color:var(--text-dim);">Sin empresas registradas.</div>
         </div>
@@ -261,10 +259,13 @@ function injectMainUI() {
     tabMarket.innerHTML = `
         <div class="card">
             <h2>[MKT] Mercado de Suministros</h2>
-            <div id="market-items-list" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;"></div>
-
+            <div id="market-items-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:12px; margin-bottom:20px;"></div>
+            <h2>[LUX] Catálogo de Estilo de Vida (Vehículos, Ropa, Hogar)</h2>
+            <div id="lifestyle-catalog-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap:12px; margin-bottom:20px;"></div>
             <h2>[INV] Inventario del Ciudadano</h2>
-            <div id="my-inventory" style="font-size:0.85em; color:var(--text-dim);">Inventario vacío.</div>
+            <div id="my-inventory" style="font-size:0.85em; color:var(--text-dim); margin-bottom:20px;">Inventario vacío.</div>
+            <h2>[EQUIP] Equipamiento y Bienes Activos</h2>
+            <div id="my-lifestyle-equipped" style="font-size:0.85em; color:var(--text-dim);">Sin objetos de lujo equipados.</div>
         </div>
     `;
 
@@ -295,7 +296,6 @@ function injectMainUI() {
                 <button type="submit" id="btn-send-chat">ENVIAR</button>
             </form>
         </div>
-
         <div class="card">
             <h2>[NET] Registro Global de Ciudadanos</h2>
             <button id="btn-refresh-leaderboard" style="margin-bottom:15px; width:100%;">CARGAR RANKING</button>
@@ -334,20 +334,6 @@ function injectMainUI() {
         });
     }
 
-    document.getElementById("btn-add-action").addEventListener("click", () => {
-        const actionType = document.getElementById("select-action").value;
-        const duration = parseInt(document.getElementById("input-duration").value, 10) || 60;
-        const player = playerManager.currentPlayer;
-        if (!player) return;
-
-        const res = actionEngine.enqueueAction(player, actionType, duration);
-        if (!res.success) alert(res.reason);
-        else {
-            playerManager.savePlayerState();
-            renderUI();
-        }
-    });
-
     document.getElementById("btn-found-biz").addEventListener("click", () => {
         const name = document.getElementById("input-biz-name").value;
         const bizTypeId = document.getElementById("select-biz-type").value;
@@ -376,7 +362,6 @@ function injectMainUI() {
             const input = document.getElementById("chat-input-text");
             const player = playerManager.currentPlayer;
             if (!player || !input || !input.value.trim()) return;
-
             const text = input.value.trim();
             input.value = "";
             await multiplayerEngine.sendChatMessage(player, text);
@@ -401,7 +386,6 @@ function initChatListener() {
         messages.forEach(m => {
             const time = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const isOwner = m.senderId === currentPlayer.id;
-
             const div = document.createElement("div");
             div.style.cssText = "display:flex; align-items:flex-start; gap:8px; font-size:0.8em; padding:4px 6px; border-bottom:1px solid var(--border-subtle);";
             div.innerHTML = `
@@ -417,7 +401,6 @@ function initChatListener() {
                     <div style="color:var(--text-main); margin-top:2px; word-break:break-word;">${m.text}</div>
                 </div>
             `;
-
             if (isOwner) {
                 const delBtn = div.querySelector(".btn-delete-msg");
                 if (delBtn) {
@@ -426,10 +409,8 @@ function initChatListener() {
                     });
                 }
             }
-
             box.appendChild(div);
         });
-
         box.scrollTop = box.scrollHeight;
     });
 }
@@ -438,12 +419,10 @@ async function loadNews() {
     const list = document.getElementById("news-feed-list");
     list.textContent = "Obteniendo últimas noticias...";
     const items = await newsEngine.getLatestNews(6);
-
     if (items.length === 0) {
         list.innerHTML = `<p style="color:var(--text-dim); font-size:0.85em;">No hay boletines informativos recientes.</p>`;
         return;
     }
-
     list.innerHTML = items.map(n => `
         <div style="padding:10px; margin-bottom:10px; border:1px solid var(--border-glass); border-radius:8px;">
             <strong style="color:var(--accent); font-size:0.85em;">${n.title.toUpperCase()}</strong>
@@ -456,12 +435,10 @@ async function loadLeaderboard() {
     const list = document.getElementById("leaderboard-list");
     list.textContent = "Cargando clasificación de ciudadanos...";
     const citizens = await multiplayerEngine.getTopCitizens(10);
-
     if (citizens.length === 0) {
         list.innerHTML = `<p style="color:var(--text-dim); font-size:0.85em;">No se registraron otros ciudadanos en la red.</p>`;
         return;
     }
-
     list.innerHTML = citizens.map((c, idx) => `
         <div style="padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border-glass); font-size:0.8em; border-radius:8px;">
             <div style="display:flex; align-items:center; gap:10px;">
@@ -485,16 +462,16 @@ function startMainLoop() {
             const now = Date.now();
             const mod1 = actionEngine.processOfflineTime(player, now);
             const mod2 = businessEngine.processBusinessIncome(player, now);
-            
+            const mod3 = businessEngine.processDailyRent(player, now);
+
             checkPlayerVitals(player);
 
-            if (mod1 || mod2) {
+            if (mod1 || mod2 || mod3) {
                 renderUI();
             }
         }
     }, 1000);
 
-    // Bucle para purgar mensajes del chat caducados
     setInterval(() => {
         multiplayerEngine.cleanOldChatMessages();
     }, 60000);
@@ -511,13 +488,17 @@ function renderUI() {
     const player = playerManager.currentPlayer;
     if (!player) return;
 
+    playerManager.recalculatePlayerModifiers(player);
+
+    const maxHealth = 100 + (player.modifiers?.maxHealthBonus || 0);
+
     document.getElementById("p-name").textContent = player.name;
     document.getElementById("p-age").textContent = `${player.age}y`;
     document.getElementById("p-money").textContent = `${player.money.toFixed(2)} $`;
     document.getElementById("p-rep-inf").textContent = `${player.reputation} / ${player.influence}`;
     document.getElementById("p-stats").textContent = 
-        `${Math.round(player.stats.health)} / ${Math.round(player.stats.energy)} / ${Math.round(player.stats.mood)}`;
-    
+        `${Math.round(player.stats.health)} (${maxHealth}) / ${Math.round(player.stats.energy)} / ${Math.round(player.stats.mood)}`;
+
     const avatarImgEl = document.getElementById("p-avatar");
     if (avatarImgEl) avatarImgEl.src = player.avatar || "images/1.jpg";
 
@@ -542,7 +523,39 @@ function renderUI() {
     if (mMoneyDetail) mMoneyDetail.textContent = `${player.money.toFixed(2)} $`;
     if (mRepInfDetail) mRepInfDetail.textContent = `${player.reputation} / ${player.influence}`;
     if (mStatsDetail) mStatsDetail.textContent = 
-        `${Math.round(player.stats.health)} / ${Math.round(player.stats.energy)} / ${Math.round(player.stats.mood)}`;
+        `${Math.round(player.stats.health)} (${maxHealth}) / ${Math.round(player.stats.energy)} / ${Math.round(player.stats.mood)}`;
+
+    // Renderizar Lista de Selección de Acciones
+    const actionsCatalogList = document.getElementById("actions-catalog-list");
+    if (actionsCatalogList && actionsCatalogList.children.length === 0) {
+        actionsCatalogList.innerHTML = "";
+        Object.values(ACTIONS_CATALOG).forEach(act => {
+            const card = document.createElement("div");
+            card.style.cssText = "display:flex; align-items:center; gap:12px; padding:10px; border:1px solid var(--border-glass); border-radius:10px; background:rgba(255,255,255,0.5);";
+            card.innerHTML = `
+                <img src="${act.image}" alt="${act.name}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; flex-shrink:0;">
+                <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+                    <strong style="color:var(--accent); font-size:0.85em;">${act.name.toUpperCase()}</strong>
+                    <span style="font-size:0.75em; color:var(--text-dim); line-height:1.2;">${act.description}</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end; min-width:110px;">
+                    <input type="number" id="duration-${act.id}" value="${act.minGameMinutes}" min="${act.minGameMinutes}" max="${act.maxGameMinutes}" step="15" style="width:90px; margin-bottom:0; text-align:center; font-size:0.8em;" placeholder="Minutos">
+                    <button class="btn-enqueue-action" data-action="${act.id}" style="padding:6px 10px; font-size:0.65em; width:90px;">+ AÑADIR</button>
+                </div>
+            `;
+            card.querySelector(".btn-enqueue-action").addEventListener("click", () => {
+                const durationInput = card.querySelector(`#duration-${act.id}`);
+                const duration = parseInt(durationInput.value, 10) || act.minGameMinutes;
+                const res = actionEngine.enqueueAction(player, act.id, duration);
+                if (!res.success) alert(res.reason);
+                else {
+                    playerManager.savePlayerState();
+                    renderUI();
+                }
+            });
+            actionsCatalogList.appendChild(card);
+        });
+    }
 
     const quickStatus = document.getElementById("quick-action-status");
     const box = document.getElementById("current-action-box");
@@ -550,7 +563,7 @@ function renderUI() {
     if (player.activeAction) {
         const def = ACTIONS_CATALOG[player.activeAction.type];
         const progressPct = Math.min(100, Math.round((player.activeAction.progressMinutes / player.activeAction.durationMinutes) * 100));
-        
+
         box.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <strong>${def.name.toUpperCase()}</strong>
@@ -590,8 +603,10 @@ function renderUI() {
         }
     }
 
+    const maxQueue = 5 + (player.modifiers?.maxQueueBonus || 0);
     const queueList = document.getElementById("queue-list");
     document.getElementById("queue-count").textContent = player.actionQueue.length;
+    document.getElementById("queue-max").textContent = maxQueue;
     queueList.innerHTML = "";
 
     player.actionQueue.forEach((item, index) => {
@@ -602,16 +617,15 @@ function renderUI() {
             <span><strong>${index + 1}. ${def.name.toUpperCase()}</strong> (${item.durationMinutes}m)</span>
             <button class="btn-cancel" style="padding:2px 6px; font-size:0.75em;">X</button>
         `;
-
         li.querySelector(".btn-cancel").addEventListener("click", () => {
             actionEngine.cancelQueueItem(player, index);
             playerManager.savePlayerState();
             renderUI();
         });
-
         queueList.appendChild(li);
     });
 
+    // Renderizar Habilidades y Especializaciones de Talentos
     const skillsList = document.getElementById("skills-list");
     if (skillsList && player.skills) {
         skillsList.innerHTML = "";
@@ -628,12 +642,55 @@ function renderUI() {
             const neededXp = sk.level * 100;
             const pct = Math.min(100, Math.round((sk.xp / neededXp) * 100));
 
-            const effBonusPct = Math.round((sk.level - 1) * 2);
-            const fatigueRedPct = Math.round((sk.level - 1) * 1.5);
-            const bizIncBonusPct = Math.round((sk.level - 1) * 10);
-
             const div = document.createElement("div");
             div.style.cssText = "padding:12px; border:1px solid var(--border-glass); border-radius:10px; font-size:0.8em;";
+
+            let branchHTML = "";
+            const specDef = SPECIALIZATIONS_CATALOG[skillKey];
+
+            if (sk.level >= (specDef?.minSkillLevel || 5)) {
+                if (!sk.specialization) {
+                    branchHTML = `
+                        <div style="margin-top:10px; padding:10px; background:rgba(255,255,255,0.6); border-radius:8px;">
+                            <strong style="color:var(--accent);">¡Especialización Disponible!</strong>
+                            <div style="display:flex; gap:8px; margin-top:6px;">
+                                ${Object.values(specDef.branches).map(b => `
+                                    <button class="btn-select-branch" data-skill="${skillKey}" data-branch="${b.id}" style="flex:1;">
+                                        Elegir ${b.name}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    const currentBranch = specDef.branches[sk.specialization];
+                    branchHTML = `
+                        <div style="margin-top:10px; padding:10px; background:rgba(255,255,255,0.6); border-radius:8px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <strong>Rama: <span style="color:var(--accent);">${currentBranch.name}</span></strong>
+                                <span>Puntos TP Disponibles: <strong>${sk.talentPoints || 0}</strong></span>
+                            </div>
+                            <div style="margin-top:8px; display:flex; flex-direction:column; gap:6px;">
+                                ${Object.values(currentBranch.nodes).map(node => {
+                                    const isUnlocked = (sk.unlockedNodes || []).includes(node.id);
+                                    return `
+                                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.8); padding:6px 10px; border-radius:6px;">
+                                            <div>
+                                                <strong>${node.name}</strong>: ${node.description}
+                                            </div>
+                                            ${isUnlocked 
+                                                ? `<span style="color:green; font-weight:bold;">[ADQUIRIDO]</span>`
+                                                : `<button class="btn-unlock-node" data-skill="${skillKey}" data-node="${node.id}" style="padding:4px 8px;">Aprender (1 TP)</button>`
+                                            }
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                     <strong style="color:var(--accent); font-size:0.9em;">${name.toUpperCase()}</strong>
@@ -645,18 +702,40 @@ function renderUI() {
                 <div style="background:rgba(0,0,0,0.06); height:8px; border-radius:4px; overflow:hidden; border:1px solid var(--border-subtle); margin-bottom:10px;">
                     <div style="background:var(--accent); height:100%; width:${pct}%; transition:width 0.3s ease;"></div>
                 </div>
-                <div style="display:flex; gap:6px; flex-wrap:wrap; font-size:0.75em;">
-                    <span style="background:rgba(44, 62, 80, 0.08); border:1px solid var(--border-subtle); padding:3px 6px; border-radius:6px; color:var(--accent); font-weight:600;">
-                        Eficiencia / Ingreso Activo: +${effBonusPct}%
-                    </span>
-                    <span style="background:rgba(44, 62, 80, 0.08); border:1px solid var(--border-subtle); padding:3px 6px; border-radius:6px; color:var(--accent); font-weight:600;">
-                        Reducción de Fatiga: -${fatigueRedPct}%
-                    </span>
-                    <span style="background:rgba(44, 62, 80, 0.08); border:1px solid var(--border-subtle); padding:3px 6px; border-radius:6px; color:var(--accent); font-weight:600;">
-                        Ingreso Pasivo Empresa: +${bizIncBonusPct}%
-                    </span>
-                </div>
+                ${branchHTML}
             `;
+
+            // Event Listeners para Selección de Especialización
+            div.querySelectorAll(".btn-select-branch").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const skKey = btn.dataset.skill;
+                    const branchKey = btn.dataset.branch;
+                    player.skills[skKey].specialization = branchKey;
+                    playerManager.recalculatePlayerModifiers(player);
+                    playerManager.savePlayerState();
+                    renderUI();
+                });
+            });
+
+            // Event Listeners para Desbloqueo de Talentos
+            div.querySelectorAll(".btn-unlock-node").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const skKey = btn.dataset.skill;
+                    const nodeId = btn.dataset.node;
+                    const targetSkill = player.skills[skKey];
+                    if ((targetSkill.talentPoints || 0) >= 1) {
+                        targetSkill.talentPoints -= 1;
+                        if (!targetSkill.unlockedNodes) targetSkill.unlockedNodes = [];
+                        targetSkill.unlockedNodes.push(nodeId);
+                        playerManager.recalculatePlayerModifiers(player);
+                        playerManager.savePlayerState();
+                        renderUI();
+                    } else {
+                        alert("No dispones de suficientes Puntos de Talento (TP). Subes nivel tras el Nivel 5 para conseguir más.");
+                    }
+                });
+            });
+
             skillsList.appendChild(div);
         });
     }
@@ -665,15 +744,17 @@ function renderUI() {
     propsCatalog.innerHTML = "";
     Object.values(PROPERTY_TYPES).forEach(p => {
         const imgSrc = PROPERTY_IMAGES[p.id] || "";
+        const discount = player.modifiers?.purchaseDiscount || 0;
+        const finalPrice = Math.round(p.price * (1 - discount));
+
         const div = document.createElement("div");
         div.style.cssText = "padding:10px; border:1px solid var(--border-glass); border-radius:10px; font-size:0.8em; display:flex; flex-direction:column;";
         div.innerHTML = `
             ${imgSrc ? `<img src="${imgSrc}" alt="${p.name}" style="width:100%; height:110px; object-fit:cover; border-radius:8px; margin-bottom:8px;">` : ""}
             <strong>${p.name.toUpperCase()}</strong>
-            <span style="color:var(--text-dim); margin-top:2px;">Precio: ${p.price.toLocaleString()} $</span>
+            <span style="color:var(--text-dim); margin-top:2px;">Precio: ${finalPrice.toLocaleString()} $ ${discount > 0 ? `(-${Math.round(discount*100)}%)` : ""}</span>
             <button style="margin-top:auto; width:100%;">COMPRAR</button>
         `;
-
         div.querySelector("button").addEventListener("click", () => {
             const res = businessEngine.buyProperty(player, p.id);
             if (!res.success) alert(res.reason);
@@ -722,7 +803,6 @@ function renderUI() {
                 Caja Fuerte: <span style="color:var(--accent); font-weight:700;">${(b.vaultMoney || 0).toFixed(2)} $</span><br>
                 <button class="btn-withdraw" style="margin-top:8px; width:100%;">RETIRAR FONDOS</button>
             `;
-
             div.querySelector(".btn-withdraw").addEventListener("click", () => {
                 const res = businessEngine.withdrawBusinessVault(player, b.id);
                 if (!res.success) alert(res.reason);
@@ -732,25 +812,34 @@ function renderUI() {
                     renderUI();
                 }
             });
-
             myBiz.appendChild(div);
         });
     }
 
+    // Renderizar Mercado de Suministros (Tarjetas Cuadradas Completa con Datos y Descripción)
     const marketList = document.getElementById("market-items-list");
     marketList.innerHTML = "";
     Object.values(MARKET_ITEMS).forEach(item => {
         const imgSrc = MARKET_IMAGES[item.id] || "";
-        const div = document.createElement("div");
-        div.style.cssText = "padding:10px; border:1px solid var(--border-glass); border-radius:10px; font-size:0.8em; display:flex; flex-direction:column;";
-        div.innerHTML = `
-            ${imgSrc ? `<img src="${imgSrc}" alt="${item.name}" style="width:100%; height:110px; object-fit:cover; border-radius:8px; margin-bottom:8px;">` : ""}
-            <strong>${item.name.toUpperCase()}</strong>
-            <span style="color:var(--text-dim); margin-top:2px;">Precio: ${item.price} $</span>
-            <button style="margin-top:auto; width:100%;">COMPRAR</button>
-        `;
+        const discount = player.modifiers?.purchaseDiscount || 0;
+        const finalPrice = Math.round(item.price * (1 - discount));
 
-        div.querySelector("button").addEventListener("click", () => {
+        const card = document.createElement("div");
+        card.className = "square-card";
+        card.innerHTML = `
+            ${imgSrc ? `<img src="${imgSrc}" alt="${item.name}" class="square-card-img">` : ""}
+            <div class="square-card-content">
+                <div>
+                    <strong class="square-card-title">${item.name.toUpperCase()}</strong>
+                    <div class="square-card-desc">${item.description || "Sin descripción."}</div>
+                </div>
+                <div>
+                    <span class="square-card-price">${finalPrice} $</span>
+                    <button class="btn-buy-market" style="padding:4px 6px; font-size:0.6em; width:100%; margin-top:4px;">COMPRAR</button>
+                </div>
+            </div>
+        `;
+        card.querySelector("button").addEventListener("click", () => {
             const res = businessEngine.buyMarketItem(player, item.id, 1);
             if (!res.success) alert(res.reason);
             else {
@@ -758,13 +847,57 @@ function renderUI() {
                 renderUI();
             }
         });
-        marketList.appendChild(div);
+        marketList.appendChild(card);
+    });
+
+    // Renderizar Catálogo de Estilo de Vida (Tarjetas Cuadradas Completa con Datos y Descripción)
+    const lifestyleCatalogList = document.getElementById("lifestyle-catalog-list");
+    lifestyleCatalogList.innerHTML = "";
+    Object.values(LIFESTYLE_CATALOG).forEach(item => {
+        const discount = player.modifiers?.purchaseDiscount || 0;
+        const finalPrice = Math.round(item.price * (1 - discount));
+        const isOwned = player.lifestyle?.ownedItems && player.lifestyle.ownedItems[item.id];
+        const imgSrc = item.image || "";
+
+        const card = document.createElement("div");
+        card.className = "square-card";
+        card.innerHTML = `
+            ${imgSrc ? `<img src="${imgSrc}" alt="${item.name}" class="square-card-img">` : ""}
+            <div class="square-card-content">
+                <div>
+                    <strong class="square-card-title">${item.name.toUpperCase()}</strong>
+                    <div class="square-card-desc">${item.description}</div>
+                </div>
+                <div>
+                    <div class="square-card-price">${finalPrice.toLocaleString()} $</div>
+                    <div class="square-card-maint">Maint: ${item.dailyMaintenance} $/d</div>
+                    <div style="margin-top:4px; width:100%;">
+                        ${isOwned 
+                            ? `<button disabled style="width:100%; opacity:0.6; padding:4px 6px; font-size:0.6em;">POSEÍDO</button>` 
+                            : `<button class="btn-buy-lifestyle" style="width:100%; padding:4px 6px; font-size:0.6em;">ADQUIRIR</button>`
+                        }
+                    </div>
+                </div>
+            </div>
+        `;
+        if (!isOwned) {
+            card.querySelector(".btn-buy-lifestyle").addEventListener("click", () => {
+                const res = businessEngine.buyLifestyleItem(player, item.id);
+                if (!res.success) alert(res.reason);
+                else {
+                    alert("Objeto de lujo adquirido.");
+                    playerManager.recalculatePlayerModifiers(player);
+                    playerManager.savePlayerState();
+                    renderUI();
+                }
+            });
+        }
+        lifestyleCatalogList.appendChild(card);
     });
 
     const myInv = document.getElementById("my-inventory");
     myInv.innerHTML = "";
     const invKeys = Object.keys(player.inventory || {}).filter(k => player.inventory[k] > 0);
-
     if (invKeys.length === 0) {
         myInv.textContent = "Inventario vacío.";
     } else {
@@ -777,7 +910,6 @@ function renderUI() {
                 <span>${itemDef ? itemDef.name.toUpperCase() : k} (x${count})</span>
                 <button class="btn-use" style="padding:4px 8px;">CONSUMIR</button>
             `;
-
             div.querySelector(".btn-use").addEventListener("click", () => {
                 const res = businessEngine.useMarketItem(player, k);
                 if (!res.success) alert(res.reason);
@@ -792,11 +924,54 @@ function renderUI() {
             myInv.appendChild(div);
         });
     }
+
+    // Renderizar Equipamiento Activo
+    const myLifestyleEquipped = document.getElementById("my-lifestyle-equipped");
+    myLifestyleEquipped.innerHTML = "";
+    const ownedItemsKeys = Object.keys(player.lifestyle?.ownedItems || {});
+    if (ownedItemsKeys.length === 0) {
+        myLifestyleEquipped.textContent = "Sin objetos de lujo poseídos.";
+    } else {
+        ownedItemsKeys.forEach(itemId => {
+            const itemDef = LIFESTYLE_CATALOG[itemId];
+            const itemState = player.lifestyle.ownedItems[itemId];
+            const isEquipped = 
+                player.lifestyle.equippedVehicle === itemId ||
+                player.lifestyle.equippedApparel === itemId ||
+                player.lifestyle.equippedHomeComfort === itemId;
+
+            const div = document.createElement("div");
+            div.style.cssText = "padding:8px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border-glass); border-radius:8px; font-size:0.8em;";
+            div.innerHTML = `
+                <div>
+                    <strong>${itemDef.name.toUpperCase()}</strong> 
+                    <span style="font-size:0.8em; color:${itemState.status === "ACTIVE" ? "green" : "red"};">
+                        [${itemState.status}]
+                    </span>
+                </div>
+                ${isEquipped 
+                    ? `<span style="font-weight:bold; color:var(--accent);">[EQUIPADO]</span>`
+                    : `<button class="btn-equip-lifestyle" style="padding:4px 8px;">EQUIPAR</button>`
+                }
+            `;
+            if (!isEquipped) {
+                div.querySelector(".btn-equip-lifestyle").addEventListener("click", () => {
+                    const res = businessEngine.equipLifestyleItem(player, itemId);
+                    if (!res.success) alert(res.reason);
+                    else {
+                        playerManager.recalculatePlayerModifiers(player);
+                        playerManager.savePlayerState();
+                        renderUI();
+                    }
+                });
+            }
+            myLifestyleEquipped.appendChild(div);
+        });
+    }
 }
 
 async function handleUserSession(user) {
     const player = await playerManager.loadOrCreatePlayer(user.uid);
-
     if (!player.name || player.name === "Ciudadano") {
         modalSetupTitle.textContent = "[REGISTRAR CIUDADANO]";
         btnSavePlayerName.textContent = "CONFIRMAR E INGRESAR";
@@ -845,6 +1020,7 @@ async function completeSessionInit(player) {
 
     actionEngine.processOfflineTime(player, Date.now());
     businessEngine.processBusinessIncome(player, Date.now());
+    businessEngine.processDailyRent(player, Date.now());
 
     await playerManager.savePlayerState();
     await multiplayerEngine.updatePublicProfile(player);
@@ -874,6 +1050,7 @@ onAuthStateChanged(auth, async (user) => {
         if (mobileTopBar) mobileTopBar.style.display = "none";
         if (mobilePlayerPanel) mobilePlayerPanel.style.display = "none";
         modalNameSetup.style.display = "none";
+
         if (tabs) tabs.style.display = "none";
         if (content) content.style.display = "none";
         if (bottomNav) bottomNav.style.display = "none";

@@ -14,6 +14,7 @@ export const ACTIONS_CATALOG = {
         id: ACTION_TYPES.SLEEP,
         name: "Dormir / Descansar",
         description: "Recupera energía y salud gradualmente.",
+        image: "images/dormir.jpg",
         minGameMinutes: 60,
         maxGameMinutes: 480,
         costPerMinute: 0,
@@ -28,9 +29,10 @@ export const ACTIONS_CATALOG = {
         id: ACTION_TYPES.EAT,
         name: "Cocinar / Comer",
         description: "Restaura salud y ánimo a cambio de un coste de suministros.",
+        image: "images/cocinar.jpg",
         minGameMinutes: 15,
         maxGameMinutes: 60,
-        costPerMinute: 0.5, // ~30€ por 1 hora de comida
+        costPerMinute: 0.5, // ~30$ por 1 hora de comida
         effectsPerMinute: {
             health: +0.2,
             energy: +0.1,
@@ -42,10 +44,11 @@ export const ACTIONS_CATALOG = {
         id: ACTION_TYPES.WORK_ENTRY,
         name: "Trabajo No Cualificado",
         description: "Genera dinero a costa de energía y salud.",
+        image: "images/trabajar.jpg",
         minGameMinutes: 60,
         maxGameMinutes: 480,
         costPerMinute: 0,
-        moneyGainPerMinute: 0.25, // 15€/hora nivel base
+        moneyGainPerMinute: 0.25, // 15$/hora nivel base
         effectsPerMinute: {
             health: -0.02,
             energy: -0.2,
@@ -57,6 +60,7 @@ export const ACTIONS_CATALOG = {
         id: ACTION_TYPES.TRAIN,
         name: "Entrenar en el Gimnasio",
         description: "Aumenta la salud y disciplina reduciendo energía.",
+        image: "images/entrenar.jpg",
         minGameMinutes: 30,
         maxGameMinutes: 120,
         costPerMinute: 0.2, // Coste de pase/equipamiento
@@ -71,6 +75,7 @@ export const ACTIONS_CATALOG = {
         id: ACTION_TYPES.SOCIALIZE,
         name: "Socializar en el Centro",
         description: "Aumenta significativamente el ánimo y mejora tus dotes de comunicación.",
+        image: "images/socializar.jpg",
         minGameMinutes: 30,
         maxGameMinutes: 180,
         costPerMinute: 0.3,
