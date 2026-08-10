@@ -309,7 +309,7 @@ input:focus, select:focus {
     }
 }
  #nav-tabs {
-        display: none !important;
+        display: flex !important;
     }
 @media (max-width: 768px) {
     body {
