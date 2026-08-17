@@ -1,24 +1,41 @@
-/**
- * Controlador General de Eventos e Interacciones del Panel CORE-AI (Ligero y Refactorizado)
- */
-import { queryPollinations } from './pollinations.js'; 
-import { queryGemini } from './gemini.js'; 
-import { queryOllama, fetchOllamaModels } from './ollama.js'; 
-import { fetchDynamicPollinationsTextModels, MODELOS_POLLINATIONS, MODELOS_GEMINI } from './modelos.js'; 
-import { fetchDynamicPollinationsImageModels, MODELOS_IMAGEN, queryImageGeneration } from './imagenes.js'; 
-import { iniciarSesionPollinations, procesarRetornoAutenticacion } from './login.js'; 
-import { runAgentPipeline } from './agente.js';
-import {
-    activeConversationId, currentBufferAttachments, favoritosText, favoritosImage, agentTools, conversations,
-    loadSavedSettings, loadFavorites, loadAgentTools, loadConversations, createNewConversation, saveConversations, 
-    getChatPayload, setFavoritosText, setFavoritosImage, saveFavorites
+// main.js
+// Controlador General de Eventos e Interacciones del Panel CORE-AI
+import { queryPollinations } from './pollinations.js';
+import { queryGemini } from './gemini.js';
+import { queryOllama, fetchOllamaModels } from './ollama.js';
+import { fetchDynamicPollinationsTextModels, MODELOS_POLLINATIONS, MODELOS_GEMINI } from './modelos.js';
+import { fetchDynamicPollinationsImageModels, MODELOS_IMAGEN, queryImageGeneration } from './imagenes.js';
+import { iniciarSesionPollinations, procesarRetornoAutenticacion } from './login.js';
+import { runAgentPipeline, requestAgentPause } from './agente.js';
+import { filterLibraryWithFlashLite } from './agent_helpers.js';
+import { 
+    activeConversationId, currentBufferAttachments, favoritosText, favoritosImage, conversations, 
+    saveConversations, createNewConversation, getChatPayload, setFavoritosText, setFavoritosImage, 
+    saveFavorites, directoryHandle, saveSettingsToFolder 
 } from './conversations.js';
-import {
-    renderAgentToolsListUI, renderConversationSidebarUI, renderActiveConversationUI, renderAttachmentPreviewsUI,
-    buildModelDropdownUI, appendChatMessageToDOMUI, appendWaitingMessageUI
+import { 
+    renderAgentToolsListUI, renderConversationSidebarUI, renderActiveConversationUI, 
+    renderAttachmentPreviewsUI, buildModelDropdownUI, appendChatMessageToDOMUI, 
+    appendWaitingMessageUI, formatModelOutput 
 } from './ui.js';
+import { injectReferencedLibraryFunctions } from './mode_html.js';
+import { 
+    state, setAppMode, setWithFunctionsMode, setListadoModelosTexto, 
+    setActiveModelIndex, setActiveImageModelIndex, getCombinedFunctionLibrary 
+} from './app_state.js';
+import { 
+    syncWorkspaceFolder, checkAndDisplayCheckpointBanner, initToolsModalHandlers, 
+    initFunctionsModalHandlers, initGalleryModalHandlers 
+} from './app_modals.js';
 
-// --- INICIALIZACI N DEL SISTEMA DE CANVAS --- 
+// Importación de Pipelines y Clasificador de Modos (+FX)
+import { runModoFXAgent } from './mode_fx_agent.js';
+import { classifyTaskMode } from './mode_classifier.js';
+import { runModoEscritura } from './mode_escritura.js';
+import { runModoHTML } from './mode_html.js';
+import { runModoInvestigacion } from './mode_investigacion.js';
+import { runModoLibre } from './mode_libre.js';
+
 function initCanvasSystem() {
     const canvas = document.getElementById('canvas-procesado');
     if (canvas) {
@@ -30,52 +47,43 @@ function initCanvasSystem() {
     }
 }
 
-// Estado del Canal, Modos y Proveedores 
-let appMode = 'chat'; 
-let listadoModelosTexto = []; 
-let activeModelIndex = 0; 
-let activeImageModelIndex = 0; 
-
-// Referencias DOM Base 
-const dropdownTrigger = document.getElementById('dropdown-trigger'); 
-const dropdownMenu = document.getElementById('dropdown-menu'); 
-const dropdownOptions = document.getElementById('dropdown-options'); 
-const selectedModelText = document.getElementById('selected-model-text'); 
-const chatHistory = document.getElementById('chat-history'); 
-const userInput = document.getElementById('user-input'); 
-const btnSend = document.getElementById('btn-send'); 
-
-// Herramienta de Crear Imagen e Interfaz de Agente
-const btnToolImage = document.getElementById('btn-tool-image'); 
+// Elementos del DOM
+const dropdownTrigger = document.getElementById('dropdown-trigger');
+const dropdownMenu = document.getElementById('dropdown-menu');
+const dropdownOptions = document.getElementById('dropdown-options');
+const selectedModelText = document.getElementById('selected-model-text');
+const chatHistory = document.getElementById('chat-history');
+const userInput = document.getElementById('user-input');
+const btnSend = document.getElementById('btn-send');
+const btnToolImage = document.getElementById('btn-tool-image');
 const btnToolAgent = document.getElementById('btn-tool-agent');
 const imageAspectSelector = document.getElementById('image-aspect-ratio-selector');
 const agentConfigBar = document.getElementById('agent-config-bar');
 const selectAgentFastModel = document.getElementById('select-agent-fast-model');
 const selectAgentStrongLimit = document.getElementById('select-agent-strong-limit');
 const selectAgentFastLimit = document.getElementById('select-agent-fast-limit');
-
-// Referencias de Gesti n de Conversaciones 
-const btnNewChat = document.getElementById('btn-new-chat'); 
-const chatsContainer = document.getElementById('chats-container'); 
-
-// Referencias de Carga de Archivos 
-const btnAttach = document.getElementById('btn-attach'); 
-const fileUploader = document.getElementById('file-uploader'); 
-const attachmentPreviewArea = document.getElementById('attachment-preview-area'); 
-
-// Referencias DOM Sistema de Modales Integrado (Ajustes)
-const modalSettings = document.getElementById('modal-settings'); 
-const btnOpenSettings = document.getElementById('btn-open-settings'); 
-const btnCloseModal = document.getElementById('btn-close-modal'); 
-const btnSaveSettings = document.getElementById('btn-save-settings'); 
-
-// Inputs de Configuraci n del Modal y Bot n de Login BYOP 
-const apiKeyPollinationsInput = document.getElementById('api-key-pollinations'); 
-const btnLoginPollinations = document.getElementById('btn-login-pollinations'); 
-const apiKeyGeminiInput = document.getElementById('api-key-gemini'); 
-const endpointOllamaInput = document.getElementById('endpoint-ollama'); 
-
-// Referencias DOM Sistema de Herramientas del Agente
+const btnNewChat = document.getElementById('btn-new-chat');
+const chatsContainer = document.getElementById('chats-container');
+const btnAttach = document.getElementById('btn-attach');
+const btnToggleFnMode = document.getElementById('btn-toggle-fn-mode');
+const fileUploader = document.getElementById('file-uploader');
+const attachmentPreviewArea = document.getElementById('attachment-preview-area');
+const modalFolderRequired = document.getElementById('modal-folder-required');
+const btnModalSelectFolder = document.getElementById('btn-modal-select-folder');
+const btnLoadFolder = document.getElementById('btn-load-folder');
+const folderBtnLabel = document.getElementById('folder-btn-label');
+const modalSettings = document.getElementById('modal-settings');
+const btnOpenSettings = document.getElementById('btn-open-settings');
+const btnCloseModal = document.getElementById('btn-close-modal');
+const btnSaveSettings = document.getElementById('btn-save-settings');
+const btnOpenGallery = document.getElementById('btn-open-gallery');
+const modalGallery = document.getElementById('modal-gallery');
+const btnCloseGallery = document.getElementById('btn-close-gallery');
+const galleryGrid = document.getElementById('gallery-grid');
+const apiKeyPollinationsInput = document.getElementById('api-key-pollinations');
+const btnLoginPollinations = document.getElementById('btn-login-pollinations');
+const apiKeyGeminiInput = document.getElementById('api-key-gemini');
+const endpointOllamaInput = document.getElementById('endpoint-ollama');
 const modalTools = document.getElementById('modal-tools');
 const btnOpenTools = document.getElementById('btn-open-tools');
 const btnCloseTools = document.getElementById('btn-close-tools');
@@ -83,29 +91,62 @@ const btnAddTool = document.getElementById('btn-add-tool');
 const toolNewName = document.getElementById('tool-new-name');
 const toolNewDesc = document.getElementById('tool-new-desc');
 const toolsListContainer = document.getElementById('tools-list-container');
+const modalFunctions = document.getElementById('modal-functions');
+const btnOpenFunctions = document.getElementById('btn-open-functions');
+const btnCloseFunctions = document.getElementById('btn-close-functions');
+const btnAddFunction = document.getElementById('btn-add-function');
+const fnNewName = document.getElementById('fn-new-name');
+const fnNewDesc = document.getElementById('fn-new-desc');
+const functionsListContainer = document.getElementById('functions-list-container');
 
-// Cargar persistencia al arrancar 
+function triggerWorkspaceSync() {
+    syncWorkspaceFolder(
+        {
+            folderBtnLabel, modalFolderRequired, apiKeyPollinationsInput, 
+            apiKeyGeminiInput, endpointOllamaInput, toolsListContainer, 
+            functionsListContainer, chatHistory
+        },
+        {
+            renderSidebar, renderActive, buildUnifiedTextModels, handleSend
+        }
+    );
+}
+
 window.addEventListener('load', async () => {
     initCanvasSystem();
     
     const tokenAutenticado = procesarRetornoAutenticacion();
     if (tokenAutenticado) {
-        console.log("Sesi n de Pollinations BYOP iniciada de forma exitosa.");
+        console.log("Sesión de Pollinations BYOP iniciada de forma exitosa.");
     }
     
-    loadSavedSettings(apiKeyPollinationsInput, apiKeyGeminiInput, endpointOllamaInput);
-    loadConversations(renderSidebar, renderActive);
-    loadFavorites();
-    loadAgentTools(() => renderAgentToolsListUI(toolsListContainer));
-
     await fetchDynamicPollinationsTextModels();
     await fetchDynamicPollinationsImageModels();
-    await buildUnifiedTextModels();
     
-    initModeHandlers(); 
+    initModeHandlers();
     initAspectLabelsHandler();
-    initToolsModalHandlers();
+    initToolsModalHandlers(btnOpenTools, btnCloseTools, modalTools, btnAddTool, toolNewName, toolNewDesc, toolsListContainer);
+    initFunctionsModalHandlers(btnOpenFunctions, btnCloseFunctions, modalFunctions, btnAddFunction, fnNewName, fnNewDesc, functionsListContainer);
+    initGalleryModalHandlers(btnOpenGallery, btnCloseGallery, modalGallery, galleryGrid, modalFolderRequired);
+    initFnToggleHandler();
+    
+    btnModalSelectFolder.addEventListener('click', triggerWorkspaceSync);
+    btnLoadFolder.addEventListener('click', triggerWorkspaceSync);
 });
+
+function initFnToggleHandler() {
+    if (!btnToggleFnMode) return;
+    btnToggleFnMode.addEventListener('click', () => {
+        setWithFunctionsMode(!state.withFunctionsMode);
+        if (state.withFunctionsMode) {
+            btnToggleFnMode.textContent = "fx: on";
+            btnToggleFnMode.className = "text-[10px] font-mono border border-black bg-black text-white px-2 py-0.5 rounded transition-all cursor-pointer font-bold";
+        } else {
+            btnToggleFnMode.textContent = "fx: off";
+            btnToggleFnMode.className = "text-[10px] font-mono border border-neutral-200 text-neutral-400 hover:text-black px-2 py-0.5 rounded transition-all cursor-pointer bg-transparent";
+        }
+    });
+}
 
 function renderSidebar() {
     renderConversationSidebarUI(chatsContainer, renderSidebar, renderActive);
@@ -113,33 +154,38 @@ function renderSidebar() {
 
 function renderActive() {
     renderActiveConversationUI(chatHistory);
+    checkAndDisplayCheckpointBanner(chatHistory, handleSend);
 }
 
 async function buildUnifiedTextModels() {
-    listadoModelosTexto = [];
+    const listado = [];
     
     MODELOS_GEMINI.forEach(m => {
-        listadoModelosTexto.push({ ...m, provider: 'gemini' });
+        if (!m.isImageModel) {
+            listado.push({ ...m, provider: 'gemini' });
+        }
     });
     
     MODELOS_POLLINATIONS.forEach(m => {
-        listadoModelosTexto.push({ ...m, provider: 'pollinations' });
+        listado.push({ ...m, provider: 'pollinations' });
     });
     
     try {
         const list = await fetchOllamaModels(endpointOllamaInput.value.trim());
         if (list && list.length > 0) {
             list.forEach(m => {
-                listadoModelosTexto.push({ name: m.name.toUpperCase(), tag: m.name, provider: 'ollama' });
+                listado.push({ name: m.name.toUpperCase(), tag: m.name, provider: 'ollama' });
             });
         }
     } catch (e) {
         console.warn("Ollama local no disponible o desconectado.");
     }
     
-    if (appMode === 'chat' || appMode === 'agent') {
+    setListadoModelosTexto(listado);
+    
+    if (state.appMode === 'chat' || state.appMode === 'agent') {
         buildModelDropdown();
-    } 
+    }
     populateAgentFastModels();
 }
 
@@ -147,7 +193,7 @@ function populateAgentFastModels() {
     if (!selectAgentFastModel) return;
     selectAgentFastModel.innerHTML = '';
     
-    listadoModelosTexto.forEach(m => {
+    state.listadoModelosTexto.forEach(m => {
         const option = document.createElement('option');
         option.value = m.tag;
         option.textContent = `${m.name} (${m.provider.toUpperCase()})`;
@@ -160,39 +206,30 @@ function populateAgentFastModels() {
 
 function initModeHandlers() {
     btnToolImage.addEventListener('click', () => {
-        if (appMode === 'image') {
-            setAppMode('chat');
-        } else {
-            setAppMode('image');
-        }
+        if (state.appMode === 'image') setMode('chat');
+        else setMode('image');
     });
-
     btnToolAgent.addEventListener('click', () => {
-        if (appMode === 'agent') {
-            setAppMode('chat');
-        } else {
-            setAppMode('agent');
-        }
+        if (state.appMode === 'agent') setMode('chat');
+        else setMode('agent');
     });
 }
 
-function setAppMode(mode) {
-    appMode = mode;
+function setMode(mode) {
+    setAppMode(mode);
     btnToolImage.className = "text-xs font-semibold text-neutral-400 hover:text-black transition-colors cursor-pointer";
     btnToolAgent.className = "text-xs font-semibold text-neutral-400 hover:text-black transition-colors cursor-pointer";
     imageAspectSelector.classList.add('hidden');
     agentConfigBar.classList.add('hidden');
-
+    
     if (mode === 'chat') {
-        userInput.placeholder = "Escribe tu consulta aqu ...";
+        userInput.placeholder = "Escribe tu consulta aquí...";
         buildModelDropdown();
     } else if (mode === 'image') {
         btnToolImage.className = "text-xs font-bold text-black transition-all cursor-pointer";
         userInput.placeholder = "Describe detalladamente la imagen que deseas generar...";
         imageAspectSelector.classList.remove('hidden');
-        if (activeImageModelIndex >= MODELOS_IMAGEN.length) {
-            activeImageModelIndex = 0;
-        }
+        if (state.activeImageModelIndex >= MODELOS_IMAGEN.length) setActiveImageModelIndex(0);
         buildModelDropdown();
     } else if (mode === 'agent') {
         btnToolAgent.className = "text-xs font-bold text-black transition-all cursor-pointer";
@@ -218,42 +255,8 @@ function initAspectLabelsHandler() {
     });
 }
 
-function initToolsModalHandlers() {
-    btnOpenTools.addEventListener('click', () => modalTools.classList.remove('hidden'));
-    btnCloseTools.addEventListener('click', () => modalTools.classList.add('hidden'));
-    modalTools.addEventListener('click', (e) => { if (e.target === modalTools) modalTools.classList.add('hidden'); });
-    
-    btnAddTool.addEventListener('click', () => {
-        const name = toolNewName.value.trim().toLowerCase().replace(/\s+/g, '_');
-        const desc = toolNewDesc.value.trim();
-        if (!name || !desc) return;
-        
-        // CORRECCIÓN: Se le añade una estructura de código ejecutable por defecto para que compile al guardarse manualmente
-        const defaultJsCode = `function execute(args) {\n  // Escribe tu lógica personalizada aquí\n  return "Herramienta ${name} ejecutada correctamente";\n}`;
-        
-        agentTools.push({
-            id: `tool-${Date.now()}`,
-            name: name,
-            desc: desc,
-            javascript_code: defaultJsCode
-        });
-        
-        localStorage.setItem('hub_agent_tools', JSON.stringify(agentTools));
-        renderAgentToolsListUI(toolsListContainer);
-        
-        toolNewName.value = '';
-        toolNewDesc.value = '';
-    });
-}
-
-btnOpenSettings.addEventListener('click', () => {
-    modalSettings.classList.remove('hidden');
-});
-
-function hideModal() {
-    modalSettings.classList.add('hidden');
-}
-
+btnOpenSettings.addEventListener('click', () => modalSettings.classList.remove('hidden'));
+function hideModal() { modalSettings.classList.add('hidden'); }
 btnCloseModal.addEventListener('click', hideModal);
 
 btnLoginPollinations.addEventListener('click', () => {
@@ -262,58 +265,50 @@ btnLoginPollinations.addEventListener('click', () => {
 });
 
 btnSaveSettings.addEventListener('click', async () => {
-    localStorage.setItem('hub_key_pollinations', apiKeyPollinationsInput.value.trim());
-    localStorage.setItem('hub_key_gemini', apiKeyGeminiInput.value.trim());
-    localStorage.setItem('hub_endpoint_ollama', endpointOllamaInput.value.trim());
+    await saveSettingsToFolder(
+        apiKeyPollinationsInput.value.trim(),
+        apiKeyGeminiInput.value.trim(),
+        endpointOllamaInput.value.trim()
+    );
     hideModal();
-    
     await fetchDynamicPollinationsTextModels();
     await fetchDynamicPollinationsImageModels();
     await buildUnifiedTextModels();
 });
 
-modalSettings.addEventListener('click', (e) => {
-    if (e.target === modalSettings) hideModal();
-});
+modalSettings.addEventListener('click', (e) => { if (e.target === modalSettings) hideModal(); });
 
 function buildModelDropdown() {
     buildModelDropdownUI(
-        appMode, listadoModelosTexto, MODELOS_IMAGEN, activeModelIndex, activeImageModelIndex, 
+        state.appMode, state.listadoModelosTexto, MODELOS_IMAGEN, state.activeModelIndex, state.activeImageModelIndex, 
         dropdownOptions, dropdownMenu, selectModel, toggleFavorite
     );
 }
 
 function selectModel(index) {
-    if (appMode === 'chat' || appMode === 'agent') {
-        activeModelIndex = index;
-        if (listadoModelosTexto[index]) {
-            const rolAgenteLabel = appMode === 'agent' ? ' (FUERTE / ORQUESTADOR)' : '';
-            selectedModelText.textContent = `${listadoModelosTexto[index].name} (${listadoModelosTexto[index].provider.toUpperCase()})${rolAgenteLabel}`;
+    if (state.appMode === 'chat' || state.appMode === 'agent') {
+        setActiveModelIndex(index);
+        if (state.listadoModelosTexto[index]) {
+            const rolAgenteLabel = state.appMode === 'agent' ? ' (FUERTE / ORQUESTADOR)' : '';
+            selectedModelText.textContent = `${state.listadoModelosTexto[index].name} (${state.listadoModelosTexto[index].provider.toUpperCase()})${rolAgenteLabel}`;
         }
     } else {
-        activeImageModelIndex = index;
-        localStorage.setItem('hub_active_image_model_index', index);
+        setActiveImageModelIndex(index);
         if (MODELOS_IMAGEN[index]) {
             selectedModelText.textContent = `${MODELOS_IMAGEN[index].name} (GENERATIVO)`;
         }
     }
 }
 
-function toggleFavorite(tag) {
-    if (appMode === 'chat' || appMode === 'agent') {
-        if (favoritosText.includes(tag)) {
-            setFavoritosText(favoritosText.filter(f => f !== tag));
-        } else {
-            favoritosText.push(tag);
-        }
+async function toggleFavorite(tag) {
+    if (state.appMode === 'chat' || state.appMode === 'agent') {
+        if (favoritosText.includes(tag)) setFavoritosText(favoritosText.filter(f => f !== tag));
+        else favoritosText.push(tag);
     } else {
-        if (favoritosImage.includes(tag)) {
-            setFavoritosImage(favoritosImage.filter(f => f !== tag));
-        } else {
-            favoritosImage.push(tag);
-        }
+        if (favoritosImage.includes(tag)) setFavoritosImage(favoritosImage.filter(f => f !== tag));
+        else favoritosImage.push(tag);
     }
-    saveFavorites(appMode);
+    await saveFavorites(state.appMode);
     buildModelDropdown();
 }
 
@@ -328,13 +323,13 @@ document.addEventListener('click', (e) => {
     }
 });
 
-btnNewChat.addEventListener('click', () => createNewConversation("Nueva Conversaci n", renderSidebar, renderActive));
-
+btnNewChat.addEventListener('click', () => createNewConversation("Nueva Conversación", renderSidebar, renderActive));
 btnAttach.addEventListener('click', () => fileUploader.click());
 
 fileUploader.addEventListener('change', async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
+    
     for (const file of files) {
         const isImage = file.type.startsWith('image/');
         const fileObj = {
@@ -343,12 +338,11 @@ fileUploader.addEventListener('change', async (e) => {
             type: file.type,
             isImage: isImage
         };
+        
         const reader = new FileReader();
-        if (isImage) {
-            reader.readAsDataURL(file);
-        } else {
-            reader.readAsText(file);
-        }
+        if (isImage) reader.readAsDataURL(file);
+        else reader.readAsText(file);
+        
         await new Promise((resolve) => {
             reader.onload = () => {
                 fileObj.data = reader.result;
@@ -357,61 +351,128 @@ fileUploader.addEventListener('change', async (e) => {
             };
         });
     }
+    
     fileUploader.value = '';
     renderAttachmentPreviewsUI(attachmentPreviewArea);
 });
 
-async function handleSend() {
+function testCodeInSandbox(htmlCode) {
+    return new Promise((resolve) => {
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+        let errorDetected = null;
+        const cleanup = () => {
+            if (iframe && iframe.parentNode) {
+                iframe.parentNode.removeChild(iframe);
+            }
+        };
+        const timeoutId = setTimeout(() => {
+            cleanup();
+            resolve(errorDetected);
+        }, 1500);
+        iframe.contentWindow.onerror = function (msg, url, line, col, error) {
+            errorDetected = `Error en Runtime: ${msg} (Línea: ${line}, Columna: ${col})`;
+            clearTimeout(timeoutId);
+            cleanup();
+            resolve(errorDetected);
+            return true;
+        };
+        iframe.contentWindow.addEventListener('unhandledrejection', function (event) {
+            errorDetected = `Promesa No Capturada: ${event.reason ? (event.reason.message || event.reason) : 'Error desconocido'}`;
+            clearTimeout(timeoutId);
+            cleanup();
+            resolve(errorDetected);
+        });
+        try {
+            iframe.srcdoc = htmlCode;
+        } catch (err) {
+            errorDetected = `Error al parsear documento sandbox: ${err.message}`;
+            clearTimeout(timeoutId);
+            cleanup();
+            resolve(errorDetected);
+        }
+    });
+}
+
+// main.js - Funciï¿½n handleSend adaptada con Renderizado Optimista a 0ms
+async function handleSend(isResumingFromCheckpoint = false) {
+    if (!directoryHandle) {
+        modalFolderRequired.classList.remove('hidden');
+        return;
+    }
+    
     const promptText = userInput.value.trim();
     const hasAttachments = currentBufferAttachments.length > 0;
     
-    if (!promptText && !hasAttachments) return;
+    if (!promptText && !hasAttachments && !isResumingFromCheckpoint) return;
     
-    const activeModel = (appMode === 'chat' || appMode === 'agent') ? listadoModelosTexto[activeModelIndex] : MODELOS_IMAGEN[activeImageModelIndex];
+    const activeModel = (state.appMode === 'chat' || state.appMode === 'agent') ? state.listadoModelosTexto[state.activeModelIndex] : MODELOS_IMAGEN[state.activeImageModelIndex];
     if (!activeModel) return;
     
-    userInput.value = '';
+    // Configurar el nombre exacto del modelo
+    let displayModelName = activeModel.name;
+    if (state.appMode === 'agent') {
+        displayModelName = `${activeModel.name} (AGENTE)`;
+    } else if (state.appMode === 'chat' && state.withFunctionsMode) {
+        displayModelName = `${activeModel.name} [+FX]`;
+    } else if (state.appMode === 'image') {
+        displayModelName = `${activeModel.name} (GENERATIVO)`;
+    }
+
+    const targetConversationId = activeConversationId;
+    const currentChat = conversations.find(c => c.id === targetConversationId);
     
+    // ----------------------------------------------------
+    // PASO 1: RENDERIZADO OPTIMISTA INMEDIATO (0ms delay)
+    // ----------------------------------------------------
+    let waitingNodeId = "";
+    if (targetConversationId === activeConversationId) {
+        if (!isResumingFromCheckpoint) {
+            appendChatMessageToDOMUI(chatHistory, "usuario", promptText || "[Archivos Adjuntos]");
+        }
+        waitingNodeId = appendWaitingMessageUI(chatHistory, displayModelName, targetConversationId);
+    }
+
+    // Vaciar interfaz inmediatamente para dar respuesta instantánea
+    if (!isResumingFromCheckpoint) userInput.value = '';
     const thisTurnAttachments = [...currentBufferAttachments];
     currentBufferAttachments.length = 0;
     renderAttachmentPreviewsUI(attachmentPreviewArea);
-    
-    const targetConversationId = activeConversationId;
-    const currentChat = conversations.find(c => c.id === targetConversationId);
-    if (currentChat) {
-        currentChat.messages.push({
-            role: 'usuario',
-            content: promptText || "[Archivos Adjuntos]",
-            modelName: 'T'
-        });
-        currentChat.status = 'processing';
-        if (currentChat.title === "Nueva Conversaci n") {
-            currentChat.title = promptText.substring(0, 24) || "Hilo Activo";
-        }
-        saveConversations();
-        renderSidebar();
-    }
-    
-    let waitingNodeId = "";
-    if (targetConversationId === activeConversationId) {
-        appendChatMessageToDOMUI(chatHistory, "usuario", promptText || "[Archivos Adjuntos]");
-        waitingNodeId = appendWaitingMessageUI(chatHistory, activeModel.name, targetConversationId);
-    }
-    
+
+    // ----------------------------------------------------
+    // PASO 2: GUARDADO EN DISCO Y EJECUCIÓN EN SEGUNDO PLANO
+    // ----------------------------------------------------
     (async () => {
         try {
+            if (currentChat && !isResumingFromCheckpoint) {
+                currentChat.messages.push({
+                    role: 'usuario',
+                    content: promptText || "[Archivos Adjuntos]",
+                    modelName: 'Tú'
+                });
+                currentChat.status = 'processing';
+                if (currentChat.title === "Nueva Conversación") {
+                    currentChat.title = promptText.substring(0, 24) || "Hilo Activo";
+                }
+                saveConversations().then(() => renderSidebar());
+            }
+
             let responseText = "";
             let generatedImageUrl = "";
             
-            if (appMode === 'image') {
+            if (state.appMode === 'image') {
                 const pollinationsKey = apiKeyPollinationsInput.value.trim();
+                const geminiKey = apiKeyGeminiInput.value.trim();
                 const selectedAspectInput = document.querySelector('input[name="aspect-ratio"]:checked');
                 const aspectValue = selectedAspectInput ? selectedAspectInput.value : '1:1';
                 
-                generatedImageUrl = await queryImageGeneration(promptText, activeModel.tag, pollinationsKey, thisTurnAttachments, aspectValue);
-                responseText = `He generado con  xito la imagen utilizando el modelo **${activeModel.name}** con el prompt:\n\n*"${promptText}"*`;
+                generatedImageUrl = await queryImageGeneration(
+                    promptText, activeModel.tag, pollinationsKey, thisTurnAttachments, aspectValue, geminiKey
+                );
+                responseText = `He generado con éxito la imagen utilizando el modelo **${activeModel.name}** con el prompt:\n\n*"${promptText}"*`;
             } 
-            else if (appMode === 'agent') {
+            else if (state.appMode === 'agent') {
                 const configKeys = {
                     gemini: apiKeyGeminiInput.value.trim(),
                     pollinations: apiKeyPollinationsInput.value.trim(),
@@ -422,27 +483,81 @@ async function handleSend() {
                     maxFast: selectAgentFastLimit.value
                 };
                 const fastModelTag = selectAgentFastModel.value;
-                const fastModel = listadoModelosTexto.find(m => m.tag === fastModelTag) || activeModel;
+                const fastModel = state.listadoModelosTexto.find(m => m.tag === fastModelTag) || activeModel;
+                
                 const historyPayload = getChatPayload(targetConversationId);
+                const waitingNode = document.getElementById(waitingNodeId);
+                if (waitingNode) {
+                    const btnPause = document.createElement('button');
+                    btnPause.className = "text-[10px] bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-mono px-2 py-0.5 rounded flex items-center gap-1 cursor-pointer select-none my-1";
+                    btnPause.innerHTML = `<i class="fa-solid fa-pause"></i> Pausar Agente`;
+                    btnPause.addEventListener('click', () => {
+                        requestAgentPause(targetConversationId);
+                        btnPause.disabled = true;
+                        btnPause.textContent = "Guardando Checkpoint...";
+                    });
+                    const container = waitingNode.querySelector('.space-y-1\\.5');
+                    if (container) container.appendChild(btnPause);
+                }
                 
                 responseText = await runAgentPipeline(
-                    historyPayload,
-                    activeModel,
-                    fastModel,
-                    configKeys,
-                    agentLimits,
-                    waitingNodeId,
-                    thisTurnAttachments
+                    historyPayload, activeModel, fastModel, configKeys, agentLimits, waitingNodeId, thisTurnAttachments, targetConversationId
                 );
             } 
             else {
-                const historyPayload = getChatPayload(targetConversationId);
-                if (activeModel.provider === 'pollinations') {
-                    responseText = await queryPollinations(historyPayload, activeModel.tag, apiKeyPollinationsInput.value.trim(), thisTurnAttachments);
-                } else if (activeModel.provider === 'gemini') {
-                    responseText = await queryGemini(historyPayload, activeModel.tag, apiKeyGeminiInput.value.trim(), thisTurnAttachments);
-                } else if (activeModel.provider === 'ollama') {
-                    responseText = await queryOllama(historyPayload, activeModel.tag, endpointOllamaInput.value.trim(), thisTurnAttachments);
+                let historyPayload = getChatPayload(targetConversationId);
+                const configKeys = {
+                    gemini: apiKeyGeminiInput.value.trim(),
+                    pollinations: apiKeyPollinationsInput.value.trim(),
+                    ollamaEndpoint: endpointOllamaInput.value.trim()
+                };
+                const fastModel = state.listadoModelosTexto.find(m => m.tag.includes('flash-lite')) || activeModel;
+                
+                if (state.withFunctionsMode) {
+                    responseText = await runModoFXAgent(
+                        historyPayload,
+                        activeModel,
+                        fastModel,
+                        configKeys,
+                        waitingNodeId
+                    );
+                } 
+                else {
+                    if (activeModel.provider === 'pollinations') {
+                        responseText = await queryPollinations(historyPayload, activeModel.tag, apiKeyPollinationsInput.value.trim(), thisTurnAttachments);
+                    } else if (activeModel.provider === 'gemini') {
+                        responseText = await queryGemini(historyPayload, activeModel.tag, apiKeyGeminiInput.value.trim(), thisTurnAttachments);
+                    } else if (activeModel.provider === 'ollama') {
+                        const waitingNode = document.getElementById(waitingNodeId);
+                        let streamTextContainer = null;
+                        if (waitingNode) {
+                            streamTextContainer = waitingNode.querySelector('.space-y-1\\.5') || waitingNode.querySelector('.flex.items-center').parentNode;
+                        }
+                        responseText = await queryOllama(historyPayload, activeModel.tag, endpointOllamaInput.value.trim(), thisTurnAttachments, (currentProgress) => {
+                            if (streamTextContainer && targetConversationId === activeConversationId) {
+                                let innerLabel = streamTextContainer.querySelector('.stream-live-preview');
+                                if (!innerLabel) {
+                                    innerLabel = document.createElement('div');
+                                    innerLabel.className = "stream-live-preview text-xs text-black font-sans leading-relaxed mt-2 p-1 whitespace-pre-wrap";
+                                    streamTextContainer.appendChild(innerLabel);
+                                }
+                                innerLabel.innerHTML = formatModelOutput(currentProgress);
+                                chatHistory.scrollTop = chatHistory.scrollHeight;
+                            }
+                        });
+                    }
+                    
+                    if (responseText) {
+                        const fullLibrary = getCombinedFunctionLibrary();
+                        if (responseText.includes('```html')) {
+                            responseText = responseText.replace(/```html([\s\S]*?)```/gi, (match, htmlContent) => {
+                                const bundledHtml = injectReferencedLibraryFunctions(htmlContent, fullLibrary);
+                                return '```html\n' + bundledHtml + '\n```';
+                            });
+                        } else {
+                            responseText = injectReferencedLibraryFunctions(responseText, fullLibrary);
+                        }
+                    }
                 }
             }
             
@@ -451,20 +566,20 @@ async function handleSend() {
                 const newMsg = {
                     role: 'asistente',
                     content: responseText,
-                    modelName: appMode === 'agent' ? `${activeModel.name} (AGENTE)` : activeModel.name
+                    modelName: displayModelName
                 };
-                if (generatedImageUrl) {
-                    newMsg.imageUrl = generatedImageUrl;
-                }
+                if (generatedImageUrl) newMsg.imageUrl = generatedImageUrl;
+                
                 chatAlFinalizar.messages.push(newMsg);
                 chatAlFinalizar.status = (targetConversationId === activeConversationId) ? 'none' : 'completed';
-                saveConversations();
+                await saveConversations();
             }
             
             if (targetConversationId === activeConversationId) {
                 const waitingNode = document.querySelector(`[data-waiting-chat="${targetConversationId}"]`);
                 if (waitingNode) waitingNode.remove();
-                appendChatMessageToDOMUI(chatHistory, "asistente", responseText, appMode === 'agent' ? `${activeModel.name} (AGENTE)` : activeModel.name, true, generatedImageUrl);
+                appendChatMessageToDOMUI(chatHistory, "asistente", responseText, displayModelName, true, generatedImageUrl);
+                checkAndDisplayCheckpointBanner(chatHistory, handleSend);
             } else {
                 renderSidebar();
             }
@@ -473,11 +588,12 @@ async function handleSend() {
                 const waitingNode = document.querySelector(`[data-waiting-chat="${targetConversationId}"]`);
                 if (waitingNode) waitingNode.remove();
                 appendChatMessageToDOMUI(chatHistory, "sistema-error", `Pipeline interrumpido: ${err.message}`);
+                checkAndDisplayCheckpointBanner(chatHistory, handleSend);
             }
             const chatConError = conversations.find(c => c.id === targetConversationId);
             if (chatConError) {
                 chatConError.status = 'none';
-                saveConversations();
+                await saveConversations();
                 renderSidebar();
             }
         } finally {
@@ -489,10 +605,10 @@ async function handleSend() {
     })();
 }
 
-btnSend.addEventListener('click', handleSend);
+btnSend.addEventListener('click', () => handleSend(false));
 userInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        handleSend();
+        handleSend(false);
     }
 });
