@@ -2,9 +2,9 @@
 
 // ─── GESTOR DE ARCHIVOS LOCALES (FILE SYSTEM ACCESS API) ───
 let directoryHandle = null;
-let memoriaDirHandle = null; // Handler para la carpeta Memoria
+let memoriaDirHandle = null;
 
-// Historial para deshacer y rehacer
+// Historial unificado para deshacer y rehacer (archivos y carpetas)
 let historialDeshacer = [];
 let historialRehacer = [];
 let ejecutandoHistorial = false;
@@ -16,10 +16,8 @@ async function abrirCarpeta() {
         });
         document.getElementById('folderStatus').innerText = "📁 " + directoryHandle.name;
         
-        // --- NUEVO: CREAR O ACCEDER A CARPETA "Memoria" ---
         memoriaDirHandle = await directoryHandle.getDirectoryHandle('Memoria', { create: true });
         
-        // Iniciar los bucles paralelos de análisis con Gemma
         if (typeof iniciarAnalisisCognitivo === 'function') {
             iniciarAnalisisCognitivo();
         }
@@ -29,7 +27,7 @@ async function abrirCarpeta() {
         document.getElementById('newFileBtn').style.display = 'block';
         
         if (typeof addMessage === 'function') {
-            addMessage('system', `Carpeta "${directoryHandle.name}" vinculada. Subcarpeta "Memoria" activa y análisis cognitivo paralelo iniciado.`);
+            addMessage('system', `Carpeta "${directoryHandle.name}" vinculada con subcarpetas activas y análisis cognitivo paralelo iniciado.`);
         }
     } catch (e) {
         console.error("Error al abrir carpeta:", e);
@@ -61,64 +59,257 @@ async function leerMemoria(nombre) {
         const file = await fileHandle.getFile();
         return await file.text();
     } catch (e) {
-        return ""; // Si aún no existe, devuelve vacío
+        return "";
     }
 }
 
-// MODIFICADO: Ahora lista tanto .txt como formatos de desarrollo .html, .css y .js
-async function listarArchivos() {
-    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: No puedes ejecutar esta acción porque el usuario no ha conectado la carpeta. Infórmale de esto amablemente y explícale que debe pulsar el botón '📂 ABRIR CARPETA TXT' en la interfaz para conectarla.");
+// ─── HELPER DE RESOLUCIÓN DE RUTAS EN SUBCARPETAS ───
+async function obtenerFileHandlePorRuta(ruta, crear = false) {
+    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
+    
+    let partes = ruta.replace(/\\/g, '/').split('/').filter(p => p.length > 0 && p !== '.');
+    if (partes.length === 0) throw new Error("Ruta de archivo inválida.");
+    
+    let actualHandle = directoryHandle;
+    for (let i = 0; i < partes.length - 1; i++) {
+        actualHandle = await actualHandle.getDirectoryHandle(partes[i], { create: crear });
+    }
+    
+    const nombreArchivo = partes[partes.length - 1];
+    return await actualHandle.getFileHandle(nombreArchivo, { create: crear });
+}
+
+async function obtenerDirHandlePorRuta(ruta, crear = false) {
+    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
+    
+    let partes = ruta.replace(/\\/g, '/').split('/').filter(p => p.length > 0 && p !== '.');
+    if (partes.length === 0) return directoryHandle;
+    
+    let actualHandle = directoryHandle;
+    for (let i = 0; i < partes.length; i++) {
+        actualHandle = await actualHandle.getDirectoryHandle(partes[i], { create: crear });
+    }
+    return actualHandle;
+}
+
+// Helper para respaldar carpetas completas antes de eliminarlas (necesario para deshacer)
+async function capturarEstructuraDirectorio(dirHandle, rutaBase = '') {
+    const estructura = [];
+    for await (const entry of dirHandle.values()) {
+        const relPath = rutaBase ? `${rutaBase}/${entry.name}` : entry.name;
+        if (entry.kind === 'file') {
+            const file = await entry.getFile();
+            const content = await file.text();
+            estructura.push({ tipo: 'archivo', ruta: relPath, contenido: content });
+        } else if (entry.kind === 'directory') {
+            estructura.push({ tipo: 'carpeta', ruta: relPath });
+            const subEstructura = await capturarEstructuraDirectorio(entry, relPath);
+            estructura.push(...subEstructura);
+        }
+    }
+    return estructura;
+}
+
+// ─── GESTIÓN DE CARPETAS ───
+
+async function crearCarpeta(rutaCarpeta) {
+    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: No puedes ejecutar esta acción porque el usuario no ha conectado la carpeta.");
+    
+    if (!ejecutandoHistorial) {
+        historialDeshacer.push({
+            accion: 'crearCarpeta',
+            rutaCarpeta: rutaCarpeta
+        });
+        historialRehacer = [];
+    }
+
+    await obtenerDirHandlePorRuta(rutaCarpeta, true);
+    await actualizarUIArchivos();
+    return `Carpeta '${rutaCarpeta}' creada correctamente.`;
+}
+
+async function copiarDirectorioRecursivo(origenHandle, destinoHandle) {
+    for await (const entry of origenHandle.values()) {
+        if (entry.kind === 'file') {
+            const file = await entry.getFile();
+            const nuevoArchivo = await destinoHandle.getFileHandle(entry.name, { create: true });
+            const writable = await nuevoArchivo.createWritable();
+            await writable.write(await file.arrayBuffer());
+            await writable.close();
+        } else if (entry.kind === 'directory') {
+            const nuevaSubCarpeta = await destinoHandle.getDirectoryHandle(entry.name, { create: true });
+            await copiarDirectorioRecursivo(entry, nuevaSubCarpeta);
+        }
+    }
+}
+
+async function renombrarCarpeta(rutaAntigua, rutaNueva) {
+    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: No puedes ejecutar esta acción porque el usuario no ha conectado la carpeta.");
+    
+    const origenHandle = await obtenerDirHandlePorRuta(rutaAntigua, false);
+    const destinoHandle = await obtenerDirHandlePorRuta(rutaNueva, true);
+    
+    await copiarDirectorioRecursivo(origenHandle, destinoHandle);
+    
+    let partes = rutaAntigua.replace(/\\/g, '/').split('/').filter(p => p.length > 0);
+    let padreHandle = directoryHandle;
+    for (let i = 0; i < partes.length - 1; i++) {
+        padreHandle = await padreHandle.getDirectoryHandle(partes[i]);
+    }
+    await padreHandle.removeEntry(partes[partes.length - 1], { recursive: true });
+    await actualizarUIArchivos();
+    return `Carpeta '${rutaAntigua}' renombrada exitosamente a '${rutaNueva}'.`;
+}
+
+async function borrarCarpeta(rutaCarpeta, autorizacionExpresa = false) {
+    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: No puedes ejecutar esta acción porque el usuario no ha conectado la carpeta.");
+    if (!autorizacionExpresa) {
+        throw new Error("ACCESO DENEGADO: Se requiere confirmación y respuesta explícita del usuario en la charla.");
+    }
+    
+    const carpetasProtegidas = ['Memoria', 'analisis_masivo', '.git', 'node_modules'];
+    if (carpetasProtegidas.includes(rutaCarpeta)) {
+        throw new Error(`ACCESO DENEGADO: La carpeta '${rutaCarpeta}' está protegida por el sistema y no puede ser eliminada.`);
+    }
+
+    let partes = rutaCarpeta.replace(/\\/g, '/').split('/').filter(p => p.length > 0);
+    if (partes.length === 0) throw new Error("No puedes eliminar la carpeta raíz.");
+
+    let padreHandle = directoryHandle;
+    for (let i = 0; i < partes.length - 1; i++) {
+        padreHandle = await padreHandle.getDirectoryHandle(partes[i]);
+    }
+
+    const carpetaTargetHandle = await padreHandle.getDirectoryHandle(partes[partes.length - 1]);
+    
+    // Si no proviene de una ejecución de deshacer/rehacer, hacemos respaldo completo
+    if (!ejecutandoHistorial) {
+        const respaldoContenido = await capturarEstructuraDirectorio(carpetaTargetHandle);
+        historialDeshacer.push({
+            accion: 'borrarCarpeta',
+            rutaCarpeta: rutaCarpeta,
+            respaldo: respaldoContenido
+        });
+        historialRehacer = [];
+    }
+    
+    await padreHandle.removeEntry(partes[partes.length - 1], { recursive: true });
+    await actualizarUIArchivos();
+    return `Carpeta '${rutaCarpeta}' y todo su contenido han sido eliminados de forma permanente tras confirmación expresada.`;
+}
+
+// ─── OPERACIONES DE ARCHIVO Y NÚCLEO DESHACER/REHACER ───
+
+async function deshacerAccionSistema() {
+    if (!directoryHandle) throw new Error("Carpeta no conectada.");
+    if (historialDeshacer.length === 0) return "No hay ninguna acción en el historial para deshacer.";
+    
+    const ultima = historialDeshacer.pop();
+    ejecutandoHistorial = true;
+    
+    try {
+        if (ultima.accion === 'escribir') {
+            if (ultima.contenidoAnterior === null) {
+                await borrarArchivo(ultima.nombre);
+            } else {
+                await escribirArchivo(ultima.nombre, ultima.contenidoAnterior);
+            }
+        } else if (ultima.accion === 'borrar') {
+            await escribirArchivo(ultima.nombre, ultima.contenidoAnterior);
+        } else if (ultima.accion === 'crearCarpeta') {
+            await borrarCarpeta(ultima.rutaCarpeta, true);
+        } else if (ultima.accion === 'borrarCarpeta') {
+            await obtenerDirHandlePorRuta(ultima.rutaCarpeta, true);
+            for (const item of ultima.respaldo) {
+                const fullPath = `${ultima.rutaCarpeta}/${item.ruta}`;
+                if (item.tipo === 'carpeta') {
+                    await obtenerDirHandlePorRuta(fullPath, true);
+                } else if (item.tipo === 'archivo') {
+                    await escribirArchivo(fullPath, item.contenido);
+                }
+            }
+        }
+        await actualizarUIArchivos();
+        historialRehacer.push(ultima);
+    } finally {
+        ejecutandoHistorial = false;
+    }
+    return `Se ha deshecho la acción (${ultima.accion}) con éxito. El estado anterior ha sido restaurado.`;
+}
+
+async function rehacerAccionSistema() {
+    if (!directoryHandle) throw new Error("Carpeta no conectada.");
+    if (historialRehacer.length === 0) return "No hay ninguna acción en el historial para rehacer.";
+    
+    const siguiente = historialRehacer.pop();
+    ejecutandoHistorial = true;
+    
+    try {
+        if (siguiente.accion === 'escribir') {
+            await escribirArchivo(siguiente.nombre, siguiente.contenidoNuevo);
+        } else if (siguiente.accion === 'borrar') {
+            await borrarArchivo(siguiente.nombre);
+        } else if (siguiente.accion === 'crearCarpeta') {
+            await crearCarpeta(siguiente.rutaCarpeta);
+        } else if (siguiente.accion === 'borrarCarpeta') {
+            await borrarCarpeta(siguiente.rutaCarpeta, true);
+        }
+        await actualizarUIArchivos();
+        historialDeshacer.push(siguiente);
+    } finally {
+        ejecutandoHistorial = false;
+    }
+    return `Se ha rehecho la acción (${siguiente.accion}) con éxito.`;
+}
+
+// Lista recursivamente todos los archivos válidos
+async function listarArchivos(dirHandle = directoryHandle, rutaRelativa = '') {
+    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
+    
     const archivos = [];
-    const extensionesPermitidas = ['.txt', '.html', '.css', '.js'];
-    for await (const entry of directoryHandle.values()) {
+    const extensionesPermitidas = ['.txt', '.html', '.css', '.js', '.json'];
+    const carpetasIgnoradas = ['Memoria', 'analisis_masivo', '.git', 'node_modules', 'dist', 'build', '.next', 'vendor'];
+
+    for await (const entry of dirHandle.values()) {
+        if (carpetasIgnoradas.includes(entry.name)) continue;
+
+        const pathActual = rutaRelativa ? `${rutaRelativa}/${entry.name}` : entry.name;
+
         if (entry.kind === 'file') {
             const nombreMinuscula = entry.name.toLowerCase();
             if (extensionesPermitidas.some(ext => nombreMinuscula.endsWith(ext))) {
-                archivos.push(entry.name);
+                archivos.push(pathActual);
             }
+        } else if (entry.kind === 'directory') {
+            const subArchivos = await listarArchivos(entry, pathActual);
+            archivos.push(...subArchivos);
         }
     }
     return archivos;
 }
 
-// MODIFICADO: Auto-asigna .txt solo si no tiene ya una extensión web válida (.html, .css, .js)
 async function leerArchivo(nombre) {
-    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: No puedes ejecutar esta acción porque el usuario no ha conectado la carpeta. Infórmale de esto amablemente y explícale que debe pulsar el botón '📂 ABRIR CARPETA TXT' en la interfaz para conectarla.");
-    
-    const nombreMinuscula = nombre.toLowerCase();
-    if (!nombreMinuscula.endsWith('.txt') && !nombreMinuscula.endsWith('.html') && !nombreMinuscula.endsWith('.css') && !nombreMinuscula.endsWith('.js')) {
-        nombre += '.txt';
-    }
+    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
     try {
-        const fileHandle = await directoryHandle.getFileHandle(nombre);
+        const fileHandle = await obtenerFileHandlePorRuta(nombre, false);
         const file = await fileHandle.getFile();
-        const text = await file.text();
-        return text;
+        return await file.text();
     } catch (e) {
         throw new Error(`No se pudo leer el archivo ${nombre}. ¿Existe?`);
     }
 }
 
-// MODIFICADO: Soporta escritura nativa de código web respetando su formato original
 async function escribirArchivo(nombre, contenido) {
-    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: No puedes ejecutar esta acción porque el usuario no ha conectado la carpeta. Infórmale de esto amablemente y explícale que debe pulsar el botón '📂 ABRIR CARPETA TXT' en la interfaz para conectarla.");
+    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
-    const nombreMinuscula = nombre.toLowerCase();
-    if (!nombreMinuscula.endsWith('.txt') && !nombreMinuscula.endsWith('.html') && !nombreMinuscula.endsWith('.css') && !nombreMinuscula.endsWith('.js')) {
-        nombre += '.txt';
-    }
-    
-    // Guardar estado para historial si no estamos deshaciendo/rehaciendo
     if (!ejecutandoHistorial) {
         let contenidoAnterior = null;
         try {
-            const fileHandle = await directoryHandle.getFileHandle(nombre);
+            const fileHandle = await obtenerFileHandlePorRuta(nombre, false);
             const file = await fileHandle.getFile();
             contenidoAnterior = await file.text();
-        } catch (e) {
-            // El archivo no existía, es nuevo
-        }
+        } catch (e) {}
         
         historialDeshacer.push({
             accion: 'escribir',
@@ -126,10 +317,10 @@ async function escribirArchivo(nombre, contenido) {
             contenidoAnterior: contenidoAnterior,
             contenidoNuevo: contenido
         });
-        historialRehacer = []; // Se invalida el futuro al hacer un cambio nuevo
+        historialRehacer = [];
     }
 
-    const fileHandle = await directoryHandle.getFileHandle(nombre, { create: true });
+    const fileHandle = await obtenerFileHandlePorRuta(nombre, true);
     const writable = await fileHandle.createWritable();
     await writable.write(contenido);
     await writable.close();
@@ -137,20 +328,12 @@ async function escribirArchivo(nombre, contenido) {
 }
 
 async function borrarArchivo(nombre) {
-    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: No puedes ejecutar esta acción porque el usuario no ha conectado la carpeta. Infórmale de esto amablemente y explícale que debe pulsar el botón '📂 ABRIR CARPETA TXT' en la interfaz para conectarla.");
+    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
-    const nombreMinuscula = nombre.toLowerCase();
-    if (!nombreMinuscula.endsWith('.txt') && !nombreMinuscula.endsWith('.html') && !nombreMinuscula.endsWith('.css') && !nombreMinuscula.endsWith('.js')) {
-        nombre += '.txt';
-    }
-    
-    // Guardar estado para historial si no estamos deshaciendo/rehaciendo
     if (!ejecutandoHistorial) {
         let contenidoAnterior = null;
         try {
-            const fileHandle = await directoryHandle.getFileHandle(nombre);
-            const file = await fileHandle.getFile();
-            contenidoAnterior = await file.text();
+            contenidoAnterior = await leerArchivo(nombre);
         } catch (e) {
             throw new Error(`El archivo ${nombre} no existe o no se pudo leer.`);
         }
@@ -163,24 +346,21 @@ async function borrarArchivo(nombre) {
         historialRehacer = []; 
     }
 
-    await directoryHandle.removeEntry(nombre);
+    let partes = nombre.replace(/\\/g, '/').split('/').filter(p => p.length > 0);
+    let dirHandle = directoryHandle;
+    for (let i = 0; i < partes.length - 1; i++) {
+        dirHandle = await dirHandle.getDirectoryHandle(partes[i]);
+    }
+    await dirHandle.removeEntry(partes[partes.length - 1]);
     await actualizarUIArchivos();
 }
 
-// ─── FUNCIONES PARA EDICIÓN PARCIAL ───
-
 async function reemplazarTextoArchivo(nombre, textoBuscado, textoNuevo) {
-    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: No puedes ejecutar esta acción porque el usuario no ha conectado la carpeta.");
+    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
-    const nombreMinuscula = nombre.toLowerCase();
-    if (!nombreMinuscula.endsWith('.txt') && !nombreMinuscula.endsWith('.html') && !nombreMinuscula.endsWith('.css') && !nombreMinuscula.endsWith('.js')) {
-        nombre += '.txt';
-    }
-
     const contenidoActual = await leerArchivo(nombre);
-    
     if (!contenidoActual.includes(textoBuscado)) {
-        throw new Error(`El texto exacto a buscar no se encontró en el archivo ${nombre}. Asegúrate de que estás buscando la frase exacta.`);
+        throw new Error(`El texto exacto a buscar no se encontró en el archivo ${nombre}.`);
     }
 
     const nuevoContenido = contenidoActual.replace(textoBuscado, textoNuevo);
@@ -189,13 +369,8 @@ async function reemplazarTextoArchivo(nombre, textoBuscado, textoNuevo) {
 }
 
 async function agregarAlFinalArchivo(nombre, textoAgregar) {
-    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: No puedes ejecutar esta acción porque el usuario no ha conectado la carpeta.");
+    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
-    const nombreMinuscula = nombre.toLowerCase();
-    if (!nombreMinuscula.endsWith('.txt') && !nombreMinuscula.endsWith('.html') && !nombreMinuscula.endsWith('.css') && !nombreMinuscula.endsWith('.js')) {
-        nombre += '.txt';
-    }
-
     const contenidoActual = await leerArchivo(nombre);
     const prefijo = (contenidoActual && !contenidoActual.endsWith('\n')) ? '\n' : '';
     const nuevoContenido = contenidoActual + prefijo + textoAgregar;
@@ -204,10 +379,8 @@ async function agregarAlFinalArchivo(nombre, textoAgregar) {
     return nuevoContenido;
 }
 
-// ─── OTRAS LOGÍSTICAS COMPLEMENTARIAS ───
-
 async function leerLineas(nombre, lineaInicio, lineaFin) {
-    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: No puedes ejecutar esta acción porque el usuario no ha conectado la carpeta.");
+    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
     const contenido = await leerArchivo(nombre);
     const lineas = contenido.split('\n');
@@ -222,7 +395,7 @@ async function leerLineas(nombre, lineaInicio, lineaFin) {
 }
 
 async function buscarEnArchivos(textoBuscado) {
-    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: No puedes ejecutar esta acción porque el usuario no ha conectado la carpeta.");
+    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
     const archivos = await listarArchivos();
     let resultados = [];
@@ -241,27 +414,21 @@ async function buscarEnArchivos(textoBuscado) {
 }
 
 async function renombrarArchivoLocal(nombreAntiguo, nombreNuevo) {
-    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: No puedes ejecutar esta acción porque el usuario no ha conectado la carpeta.");
-    
-    const oldMin = nombreAntiguo.toLowerCase();
-    if (!oldMin.endsWith('.txt') && !oldMin.endsWith('.html') && !oldMin.endsWith('.css') && !oldMin.endsWith('.js')) nombreAntiguo += '.txt';
-    
-    const newMin = nombreNuevo.toLowerCase();
-    if (!newMin.endsWith('.txt') && !newMin.endsWith('.html') && !newMin.endsWith('.css') && !newMin.endsWith('.js')) nombreNuevo += '.txt';
+    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
     const contenido = await leerArchivo(nombreAntiguo);
     await escribirArchivo(nombreNuevo, contenido);
-    await directoryHandle.removeEntry(nombreAntiguo);
+    await borrarArchivo(nombreAntiguo);
     await actualizarUIArchivos();
     
     return `Archivo renombrado con éxito de ${nombreAntiguo} a ${nombreNuevo}.`;
 }
 
 async function leerTodosLosArchivos() {
-    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: No puedes ejecutar esta acción porque el usuario no ha conectado la carpeta.");
+    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
     const archivos = await listarArchivos();
-    if (archivos.length === 0) return "La carpeta está vacía o no contiene archivos de texto/desarrollo válidos.";
+    if (archivos.length === 0) return "La carpeta está vacía o no contiene archivos válidos.";
     
     let compiladoTotal = "";
     for (const arch of archivos) {
@@ -278,9 +445,8 @@ async function leerTodosLosArchivos() {
     return compiladoTotal;
 }
 
-// MODIFICADO: Ahora acepta el parámetro 'modelo' para alternar dinámicamente entre gemini-3.1-flash-lite y gemini-3.5-flash
 async function analizarContenido(tipoAnalisis, objetivo, instrucciones, nombreResultado, modelo) {
-    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: No puedes ejecutar esta acción porque el usuario no ha conectado la carpeta.");
+    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
     const apiKey = localStorage.getItem('gemini_api_key_standalone');
     if (!apiKey) throw new Error("No hay API Key configurada.");
@@ -311,10 +477,9 @@ async function analizarContenido(tipoAnalisis, objetivo, instrucciones, nombreRe
         datosAEnviar = `[CONCEPTO / CONTEXTO A PLANIFICAR O ANALIZAR]:\n${objetivo}`;
     }
 
-    const promptFinal = `Actúa como un ingeniero de software experto de alta precisión. Procesa el siguiente contexto y genera el código o análisis estrictamente limpio, libre de explicaciones innecesarias o markdown invasivo fuera del formato solicitado.\n\nDIRECTRICES:\n"${instrucciones}"\n\n${datosAEnviar}\n\nResultado completo:`;
+    const promptFinal = `Actúa como un ingeniero de software experto de alta precisión. Procesa el siguiente contexto y genera el código o análisis strictly limpio, libre de explicaciones innecesarias o markdown invasivo fuera del formato solicitado.\n\nDIRECTRICES:\n"${instrucciones}"\n\n${datosAEnviar}\n\nResultado completo:`;
 
-    // Selección inteligente del modelo basado en la orden del usuario
-    let modeloId = "gemini-3.1-flash-lite";
+    let modeloId = "gemini-3.5-flash-lite";
     if (modelo === 'gemini-3.5-flash') {
         modeloId = "gemini-3.5-flash";
     }
@@ -340,7 +505,6 @@ async function analizarContenido(tipoAnalisis, objetivo, instrucciones, nombreRe
 
     let resultadoAnalisis = data.candidates[0].content.parts[0].text;
     
-    // Limpieza opcional de bloques de código markdown que meta la API por error en archivos puros
     if (resultadoAnalisis.startsWith("```")) {
         const lineas = resultadoAnalisis.split("\n");
         if (lineas[0].startsWith("```")) lineas.shift();
@@ -349,12 +513,65 @@ async function analizarContenido(tipoAnalisis, objetivo, instrucciones, nombreRe
     }
 
     let nombreArchivoFinal = nombreResultado || "resultado_desarrollo.html";
-    const oldMin = nombreArchivoFinal.toLowerCase();
-    if (!oldMin.endsWith('.txt') && !oldMin.endsWith('.html') && !oldMin.endsWith('.css') && !oldMin.endsWith('.js')) {
-        nombreArchivoFinal += '.html';
-    }
-    
     await escribirArchivo(nombreArchivoFinal, resultadoAnalisis);
     
     return `Generación y análisis finalizado utilizando ${modeloId}. Los datos estructurados han sido guardados con éxito en "${nombreArchivoFinal}".`;
+}
+
+async function ejecutarAnalisisCompletoModeloFuerte(objetivo, instrucciones) {
+    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta de trabajo.");
+
+    const apiKey = localStorage.getItem('gemini_api_key_standalone');
+    if (!apiKey) throw new Error("No hay API Key configurada.");
+
+    let compiladoArchivos = "";
+    const todosLosArchivos = await listarArchivos();
+
+    if (!objetivo || objetivo.toUpperCase() === 'PROYECTO_COMPLETO') {
+        for (const arch of todosLosArchivos) {
+            try {
+                const txt = await leerArchivo(arch);
+                compiladoArchivos += `\n--- ARCHIVO: ${arch} ---\n${txt}\n`;
+            } catch(e) {}
+        }
+    } else {
+        const listaTargets = objetivo.split(',').map(s => s.trim().toLowerCase());
+        for (const arch of todosLosArchivos) {
+            const archLower = arch.toLowerCase();
+            const coincide = listaTargets.some(t => archLower === t || archLower.startsWith(t + '/'));
+            if (coincide) {
+                try {
+                    const txt = await leerArchivo(arch);
+                    compiladoArchivos += `\n--- ARCHIVO: ${arch} ---\n${txt}\n`;
+                } catch(e) {}
+            }
+        }
+    }
+
+    if (!compiladoArchivos.trim()) {
+        compiladoArchivos = `[Aviso: No se encontraron archivos bajo el objetivo indicado: "${objetivo}"]`;
+    }
+
+    const promptFinal = `[ANALISIS COMPLETO - MODELO FUERTE]\n\nINSTRUCCIONES DE ANÁLISIS:\n${instrucciones}\n\nCONTENIDO Y ESTRUCTURA RECOPILADA:\n${compiladoArchivos}\n\nProporciona un análisis exhaustivo, técnico y completo:`;
+
+    const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=$){apiKey}`;
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            contents: [{ parts: [{ text: promptFinal }] }]
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`Error en llamada al modelo fuerte (${response.status}): ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    if (!data.candidates || data.candidates.length === 0) {
+        throw new Error("El modelo de análisis no devolvió una respuesta válida.");
+    }
+
+    return data.candidates[0].content.parts[0].text;
 }

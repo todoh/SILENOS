@@ -1,4 +1,5 @@
-// ─── EXPLORER LENS (Navegación e Inspección Profunda) ────────────────
+// live gemini/explorer.js
+
 const explorerLens = {
     async getHandleFromPath(path, baseHandle = null) {
         const root = baseHandle || workspaceHandle;
@@ -24,11 +25,9 @@ const explorerLens = {
         for (let i = 0; i < parts.length; i++) {
             const part = parts[i];
             
-            // Medida de seguridad y simplificación
             if (part === '..') {
                 throw new Error("La navegación hacia atrás (..) no está soportada de forma relativa. Usa rutas absolutas desde la raíz.");
             }
-
             let found = false;
             
             // Búsqueda tolerante (Insensible a mayúsculas/minúsculas)
@@ -43,7 +42,6 @@ const explorerLens = {
         }
         return currentHandle;
     },
-
     async navigateFolder(path) {
         try {
             const handle = await this.getHandleFromPath(path);
@@ -58,7 +56,6 @@ const explorerLens = {
             return `Error al navegar: ${e.message}`;
         }
     },
-
     async inspectFile(path) {
         try {
             const handle = await this.getHandleFromPath(path);
@@ -66,7 +63,7 @@ const explorerLens = {
             
             const file = await handle.getFile();
             const ext = file.name.split('.').pop().toLowerCase();
-            const isMedia = ['png', 'jpg', 'jpeg', 'gif', 'mp4', 'webm', 'mp3', 'wav', 'ogg', 'avi', 'mov'].includes(ext);
+            const isMedia = ['png', 'jpg', 'jpeg', 'gif', 'mp4', 'webm', 'mp3', 'wav', 'ogg', 'avi', 'mov', 'svg', 'webp'].includes(ext);
             
             let info = `=== METADATOS DEL ARCHIVO ===\n- Ruta: ${path}\n- Nombre: ${file.name}\n- Tamaño: ${(file.size / 1024).toFixed(2)} KB\n- Tipo MIME: ${file.type || 'Desconocido'}\n- Última modificación: ${new Date(file.lastModified).toLocaleString()}\n`;
             
@@ -75,7 +72,7 @@ const explorerLens = {
                 const snippet = text.substring(0, 300).replace(/\n/g, ' ');
                 info += `\n=== VISTA PREVIA (Primeros 300 caracteres) ===\n${snippet}...`;
             } else if (isMedia) {
-                info += `\n=== NOTA ===\nEs un archivo multimedia. No se puede leer como texto, pero ya conoces su tamaño y formato.`;
+                info += `\n=== NOTA ===\nEs un archivo multimedia/gráfico. No se puede leer como texto, pero puedes usar 'manage_visualizer' para abrirlo visualmente.`;
             } else {
                 info += `\n=== NOTA ===\nEl archivo es demasiado grande para una vista previa de texto.`;
             }
@@ -85,7 +82,6 @@ const explorerLens = {
             return `Error al inspeccionar: ${e.message}`;
         }
     },
-
     async openFileText(path) {
         try {
             const handle = await this.getHandleFromPath(path);
@@ -94,10 +90,9 @@ const explorerLens = {
             const file = await handle.getFile();
             
             const ext = file.name.split('.').pop().toLowerCase();
-            if (['png', 'jpg', 'jpeg', 'gif', 'mp4', 'webm', 'mp3', 'wav', 'ogg'].includes(ext)) {
-                return `Error: Intentaste abrir un archivo multimedia (${ext}) como texto. Usa inspect_file en su lugar.`;
+            if (['png', 'jpg', 'jpeg', 'gif', 'mp4', 'webm', 'mp3', 'wav', 'ogg', 'avi', 'mov', 'svg', 'webp'].includes(ext)) {
+                return `Error: Intentaste abrir un archivo multimedia o SVG (${ext}) como texto. Usa la herramienta 'manage_visualizer' con la acción 'open_file' en su lugar.`;
             }
-
             if (file.size > 3000000) {
                 return `Error: El archivo pesa más de 3MB. Es demasiado masivo para inyectar de golpe. Usa inspect_file.`;
             }
@@ -107,7 +102,6 @@ const explorerLens = {
             return `Error al abrir archivo: ${e.message}`;
         }
     },
-
     async analyzeTarget(path) {
         if (!pollinationsKey) return "Error: La IA de Pollinations (Nova) no está conectada. Pide al usuario que conecte la IA.";
         
@@ -121,27 +115,23 @@ const explorerLens = {
                 const file = await handle.getFile();
                 if (file.size > 1000000) return `Error: El archivo ${path} es demasiado grande (>1MB) para analizar de una vez.`;
                 const text = await file.text();
-                // Acotamos el tamaño para no desbordar el contexto de la API
                 contentToAnalyze = text.substring(0, 40000); 
             } else {
                 type = "carpeta";
                 contentToAnalyze = await this.navigateFolder(path);
             }
-
             if (typeof showToast === 'function') showToast(`Analizando ${type} con Nova-Fast...`, 'listening');
-
-            const systemPrompt = `Eres un Arquitecto de Software y Analista de Datos de Élite. 
+            const systemPrompt = `Eres un Arquitecto de Software y Analista de Datos de élite. 
             El usuario ha solicitado un análisis experto del siguiente ${type} ubicado en la ruta local: '${path}'.
             OBJETIVO: Analiza su contenido o estructura de forma profunda. Explica de qué trata, para qué sirve, sus dependencias clave (si es código) y qué función cumple dentro de su ecosistema. Sé sumamente estructurado y técnico.`;
-
             const res = await fetch(POLLINATIONS_API_URL, {
                 method: 'POST',
                 headers: { 
-                    'Authorization': `Bearer ${pollinationsKey}`, 
+                    'Authorization': `Bearer ${pollinationsKey}`,
                     'Content-Type': 'application/json' 
                 },
                 body: JSON.stringify({ 
-                    model: 'nova-fast', 
+                    model: 'nova-fast',
                     messages: [
                         { role: 'system', content: systemPrompt }, 
                         { role: 'user', content: contentToAnalyze }

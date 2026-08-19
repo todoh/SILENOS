@@ -15,6 +15,12 @@ async function toggleConnection() {
 
     localStorage.setItem('gemini_api_key_standalone', apiKey);
 
+    // Guardar la personalidad configurada si el elemento está disponible
+    const personalityInput = document.getElementById('personalityInstruction');
+    if (personalityInput && personalityInput.value.trim()) {
+        localStorage.setItem('gemini_assistant_personality', personalityInput.value.trim());
+    }
+
     document.getElementById('statusText').innerText = "🟡 CONECTANDO...";
     
     try {
@@ -22,17 +28,14 @@ async function toggleConnection() {
         ws = new WebSocket(wsUrl);
 
         ws.onopen = async () => {
-            // Extraemos estrictamente el código ISO (value) del select, no su texto visible
             const selectElement = document.getElementById('languageSelect');
             const targetLang = selectElement ? selectElement.value : 'es';
 
-            // Estructura base de configuración de generación
             const generationConfig = {
                 response_modalities: ['AUDIO'],
                 speech_config: { voice_config: { prebuilt_voice_config: { voice_name: 'Aoede' } } }
             };
 
-            // Si el modo traducción está activo, inyectamos la configuración nativa de traducción en tiempo real
             if (isTranslationMode) {
                 generationConfig.translation_config = {
                     target_language_code: targetLang,
@@ -40,10 +43,13 @@ async function toggleConnection() {
                 };
             }
 
-            // Instrucciones del sistema adaptativas según el modo seleccionado
+            const defaultPersonality = "Tu nombre es VOZ, tu titulo es SILENOS, tu nombre completo es Silenos Voz. Eres un asistente y arquitecto de desarrollo web brillante y observador. Tienes acceso completo a una carpeta local de trabajo a través de herramientas especializadas. Puedes leer, crear, modificar y eliminar archivos de texto (.txt) y código fuente (.html, .css, .js), así como administrar subcarpetas (crear, renombrar y borrar). REGLA CRÍTICA DE SEGURIDAD PARA CARPETAS: Está ESTRICTAMENTE PROHIBIDO ejecutar la función 'borrarCarpeta' sin antes haber preguntado verbalmente o por texto al usuario y haber recibido su confirmación o autorización explícita dentro de la conversación actual. Si el usuario te ha dado su permiso explícito en la charla justo antes, debes llamar a 'borrarCarpeta' pasando la propiedad 'autorizacionExpresa' en true. REGLA CRÍTICA DE INVOCACIÓN DE HERRAMIENTA: Antes de llamar a 'analisisCompleto', DEBES preguntar e informar verbalmente/por texto al usuario de que vas a utilizar el 'MODELO FUERTE' (gemini-3.6-flash).";
+            
+            const customPersonality = localStorage.getItem('gemini_assistant_personality') || defaultPersonality;
+
             const systemText = isTranslationMode 
-                ? `Actúa estrictamente como un motor de doblaje y traducción en vivo de alta fidelidad. Escucha la voz del usuario e interpreta su contenido, traduciéndolo inmediatamente al idioma destino configurado bajo el código ISO "${targetLang}". Traduce con fluidez natural, preservando el tono emocional, las pausas y los énfasis de forma transparente y conversacional, doblando la voz sin añadir comentarios adicionales propios.`
-                : "Tu nombre es VOZ. Eres un asistente y arquitecto de desarrollo web brillante y observador. Tienes acceso completo a una carpeta local de trabajo a través de herramientas especializadas. Puedes leer, crear, modificar y eliminar archivos de texto (.txt) y código fuente (.html, .css, .js). Cuando el usuario te pida construir una aplicación web o una nueva característica, DEBES PLANIFICAR primero la estructura general en tu mente (o proponerla en voz alta de forma ágil) y ejecutar llamadas de análisis/generación en paralelo a tu submodelo secundario (gemini-3.1-flash-lite) mediante la herramienta 'analizarContenido'. Puedes planificar de forma inteligente qué instrucciones precisas enviarle a cada llamada paralela de Gemini (por ejemplo, una llamada dedicada exclusivamente al desarrollo estructurado del 'index.html', otra para los estilos limpios de 'style.css' y otra para la lógica asíncrona de 'script.js'). Sabes gestionar los formatos correspondientes guardando cada archivo con la extensión exacta requerida (.html, .css, .js) de manera completamente funcional y limpia de markdown. Recibirás avisos ocultos del sistema con el formato (AVISO DEL SISTEMA: ...) que te mantendrán actualizado sobre el espacio de trabajo. Tu voz es natural, empática y resolutiva. Hablas con fluidez técnica y humana, evitando rigideces de robot.";
+                ? `Actúa strictly como un motor de doblaje y traducción en vivo de alta fidelidad. Escucha la voz del usuario e interpreta su contenido, traduciéndolo inmediatamente al idioma destino configurado bajo el código ISO "${targetLang}". Traduce con fluidez natural, preservando el tono emocional, las pausas y los énfasis de forma transparente y conversacional, doblando la voz sin añadir comentarios adicionales propios.`
+                : customPersonality;
 
             const setup = {
                 setup: {
@@ -57,6 +63,39 @@ async function toggleConnection() {
                             {
                                 name: "listarArchivos",
                                 description: "Obtiene la lista de todos los archivos compatibles (.txt, .html, .css, .js) presentes en la raíz de la carpeta de trabajo del usuario."
+                            },
+                            {
+                                name: "crearCarpeta",
+                                description: "Crea una nueva subcarpeta en la ruta especificada dentro del espacio de trabajo.",
+                                parameters: {
+                                    type: "OBJECT",
+                                    properties: { rutaCarpeta: { type: "STRING", description: "Ruta relativa de la carpeta a crear (ej: src/componentes)" } },
+                                    required: ["rutaCarpeta"]
+                                }
+                            },
+                            {
+                                name: "renombrarCarpeta",
+                                description: "Renombra o desplaza una carpeta existente a una nueva ruta.",
+                                parameters: {
+                                    type: "OBJECT",
+                                    properties: { 
+                                        rutaAntigua: { type: "STRING", description: "Ruta actual de la carpeta" },
+                                        rutaNueva: { type: "STRING", description: "Nueva ruta de la carpeta" }
+                                    },
+                                    required: ["rutaAntigua", "rutaNueva"]
+                                }
+                            },
+                            {
+                                name: "borrarCarpeta",
+                                description: "Elimina permanentemente una subcarpeta y todo su contenido. REGLA OBLIGATORIA: Requiere haber preguntado y recibido confirmación explícita verbal o escrita por parte del usuario en la conversación previa.",
+                                parameters: {
+                                    type: "OBJECT",
+                                    properties: { 
+                                        rutaCarpeta: { type: "STRING", description: "Ruta de la carpeta a eliminar" },
+                                        autorizacionExpresa: { type: "BOOLEAN", description: "Indica si el usuario otorgó confirmación o permiso explícito en la charla previo a la llamada." }
+                                    },
+                                    required: ["rutaCarpeta", "autorizacionExpresa"]
+                                }
                             },
                             {
                                 name: "leerArchivo",
@@ -162,36 +201,54 @@ async function toggleConnection() {
                             },
                             {
                                 name: "deshacerAccion",
-                                description: "Deshace la última modificación en los archivos."
+                                description: "Deshace la última modificación efectuada en los archivos o subcarpetas (incluyendo borrados de archivos o carpetas)."
                             },
                             {
                                 name: "rehacerAccion",
-                                description: "Rehace la acción deshecha."
+                                description: "Rehace la acción deshecha previamente."
                             },
                             {
                                 name: "analizarContenido",
-                                description: "Envía una solicitud estructurada en paralelo a gemini-3.1-flash-lite. Úsala para orquestar la generación paralela planificada de código de software (.html, .css, .js) o análisis de conceptos complejos, guardando de forma directa el resultado limpio de código en el archivo de destino indicado.",
+                                description: "Envía una solicitud estructurada en paralelo a gemini-3.5-flash-lite. Úsala para orquestar la generación paralela planificada de código de software (.html, .css, .js) o análisis de conceptos complejos.",
                                 parameters: {
                                     type: "OBJECT",
                                     properties: {
                                         tipoAnalisis: { 
                                             type: "STRING", 
-                                            description: "Debe ser obligatoriamente: 'archivo' (para procesar ficheros específicos), 'carpeta_completa' (para auditar el proyecto entero), o 'concepto' (para pasarle una planificación, idea abstracta, o instrucciones de generación de una nueva aplicación)." 
+                                            description: "Debe ser obligatoriamente: 'archivo', 'carpeta_completa', o 'concepto'." 
                                         },
                                         objetivo: { 
                                             type: "STRING", 
-                                            description: "Si el tipo de análisis es 'archivo', indica el nombre o lista de nombres de archivos separados por comas. Si es 'concepto', introduce aquí detalladamente la especificación de lo que se va a programar, diseñar o planificar." 
+                                            description: "Objeto a analizar o instruir." 
                                         },
                                         instrucciones: { 
                                             type: "STRING", 
-                                            description: "Directrices críticas sobre qué debe buscar, estructurar o escribir el modelo en el archivo final (ej: 'Escribe solo el código CSS completo para un diseño responsive and dark mode', 'Desarrolla la lógica JS pura con eventos para controlar el canvas')." 
+                                            description: "Directrices de análisis." 
                                         },
                                         nombreResultado: { 
                                             type: "STRING", 
-                                            description: "Nombre del archivo final donde se guardará el resultado de forma asíncrona en su formato correspondiente (ej: 'index.html', 'style.css', 'app.js')." 
+                                            description: "Nombre del archivo final." 
                                         }
                                     },
                                     required: ["tipoAnalisis", "objetivo", "instrucciones", "nombreResultado"]
+                                }
+                            },
+                            {
+                                name: "analisisCompleto",
+                                description: "Realiza un ANÁLISIS COMPLETO enviando los contenidos recopilados al MODELO FUERTE (gemini-3.6-flash) en una única llamada directa. OBLIGATORIO: Debes avisar e informar siempre al usuario verbalmente antes de invocar esta función.",
+                                parameters: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        objetivo: { 
+                                            type: "STRING", 
+                                            description: "Ruta de archivo, subcarpeta, lista de rutas separadas por comas o 'PROYECTO_COMPLETO' para analizar todo el espacio de trabajo." 
+                                        },
+                                        instrucciones: { 
+                                            type: "STRING", 
+                                            description: "Detalle técnico de lo que debe analizar o inspeccionar el modelo fuerte." 
+                                        }
+                                    },
+                                    required: ["objetivo", "instrucciones"]
                                 }
                             }
                         ]
@@ -317,10 +374,10 @@ function toggleMode() {
     const btnMode = document.getElementById('modeToggleBtn');
     if (btnMode) {
         if (isTranslationMode) {
-            btnMode.innerText = "🔄 MODO: TRADUCTOR / DOBLAJE";
+            btnMode.innerText = "🔄 TRADUCTOR";
             btnMode.style.background = "#007acc";
         } else {
-            btnMode.innerText = "💬 MODO: CHARLA ASISTENTE";
+            btnMode.innerText = "💬 ASISTENTE";
             btnMode.style.background = "var(--primary)";
         }
     }

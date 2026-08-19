@@ -29,7 +29,7 @@ let analysisHandle = null; // Handle para los JSON generados por los agentes
 let currentConversationFileHandle = null;
 let memoryHandle = null; // Handle para la carpeta de memoria de Gemini
 
-const MODEL = 'gemini-3.1-flash-live-preview';
+const MODEL = 'gemini-3.5-flash-live-preview';
 const WS_HOST = 'generativelanguage.googleapis.com';
 const POLLINATIONS_API_URL = 'https://gen.pollinations.ai/v1/chat/completions';
 

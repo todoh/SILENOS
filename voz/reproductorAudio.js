@@ -1,9 +1,12 @@
-// ─── MOTOR DE REPRODUCCIÓN (ANTI-POP CONTINUO + PROCESADO) ───
+// SILENOS 5 VOZ / reproductorAudio.js
+
+// ─── MOTOR DE REPRODUCCIÓN (ANTI-POP CONTINUO + JITTER BUFFER BAJA LATENCIA) ───
 function queueAudio(float32) {
     audioQueue.push(float32);
     if (!isPlayingAudio) {
         if (audioContext) {
-            nextAudioTime = audioContext.currentTime + 0.05; // 50ms buffer para suavidad
+            // Buffer inicial ajustado a 30ms para reducir la latencia de respuesta
+            nextAudioTime = audioContext.currentTime + 0.03; 
         }
         playNextChunk();
     }
@@ -23,31 +26,33 @@ function playNextChunk() {
     const src = audioContext.createBufferSource();
     src.buffer = buf;
     
-    // Conectar el audio a la cadena de procesamiento en lugar de salida directa
-    src.connect(voiceFilter);
-
-    // Auto-corrección si el tiempo matemático se ha quedado atrás respecto a la realidad
-    if (nextAudioTime < audioContext.currentTime) {
-        nextAudioTime = audioContext.currentTime + 0.05;
+    if (typeof voiceFilter !== 'undefined' && voiceFilter) {
+        src.connect(voiceFilter);
+    } else {
+        src.connect(audioContext.destination);
     }
 
-    // Programar el nodo en la línea de tiempo matemática exacta
+    if (nextAudioTime < audioContext.currentTime) {
+        nextAudioTime = audioContext.currentTime + 0.03;
+    }
+
     src.start(nextAudioTime);
     currentActiveSource = src;
     
     const duration = buf.duration;
     nextAudioTime += duration;
     
-    // Disparamos la preparación del siguiente nodo 50ms antes de que acabe el actual (empalme perfecto)
-    const timeToNext = (nextAudioTime - audioContext.currentTime - 0.05) * 1000;
+    // Empalme anticipado en 30ms
+    const timeToNext = (nextAudioTime - audioContext.currentTime - 0.03) * 1000;
     setTimeout(playNextChunk, Math.max(0, timeToNext));
 }
 
-// ─── SISTEMA DE INTERRUPCIÓN FLUIDA ───
+// ─── SISTEMA DE INTERRUPCIÓN FLUIDA (0ms CLIENTE) ───
 let lastInterruptTime = 0;
 
 function interruptAudio() {
-    audioQueue = []; // Vaciar la cola de audio pendiente instantáneamente
+    // Vaciar buffers en local inmediatamente
+    audioQueue = []; 
     isPlayingAudio = false;
     
     if (currentActiveSource) {
@@ -57,8 +62,8 @@ function interruptAudio() {
         currentActiveSource = null;
     }
 
-    // Enviar señal de interrupción al servidor (corte de turno)
-    if (ws && ws.readyState === WebSocket.OPEN) {
+    // Notificación asíncrona al servidor WebSocket
+    if (typeof ws !== 'undefined' && ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({
             clientContent: {
                 turnComplete: true

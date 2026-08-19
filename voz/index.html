@@ -3,42 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini Live - Standalone Modular</title>
+    <title>VOZ Gemini</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        glass: 'rgba(255, 255, 255, 0.65)',
+                        glassBorder: 'rgba(255, 255, 255, 0.8)',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="flex h-screen p-4 gap-4 box-border overflow-hidden">
 
-    <div class="main-container">
+    <!-- Workspace Principal (Modo Cristal Ultra-Minimalista) -->
+    <main class="flex flex-1 gap-4 overflow-hidden main-container">
         
-        <div class="file-section">
-            <div class="file-header">
-                <button id="folderBtn" onclick="abrirCarpeta()">📂 ABRIR CARPETA TXT</button>
-                <div id="folderStatus" class="status-minimal">Ninguna carpeta abierta</div>
-                <button onclick="abrirModalConfig()" class="config-btn">⚙️ API</button>
-            </div>
-
-            <div class="file-workspace">
-                <div class="file-sidebar">
-                    <button id="newFileBtn" onclick="nuevoArchivoManual()" style="display: none;">➕ NUEVO TXT</button>
-                    <div id="fileList"></div>
+        <!-- File System Section -->
+        <section class="file-section glass-panel flex-1 flex flex-col rounded-2xl overflow-hidden">
+            <!-- Header de Navegación -->
+            <header class="file-header flex items-center justify-between px-6 h-16 shrink-0 border-b border-white/60">
+                <div class="flex items-center gap-3">
+                    <button id="folderBtn" onclick="abrirCarpeta()" class="bg-white/80 hover:bg-white text-slate-800 px-4 py-2 rounded-full text-xs font-semibold shadow-sm border border-white transition-all flex items-center gap-2">
+                        <span>ABRIR CARPETA</span>
+                    </button>
+                    <div id="folderStatus" class="text-xs text-slate-500 font-medium">Ninguna carpeta abierta</div>
                 </div>
+                
+                <!-- Botones de Navegación, Comandos de Voz y Ajustes -->
+                <div class="flex items-center gap-2">
+                    <button onclick="deshacerAccionSistema()" title="Echar atrás" class="p-2 bg-white/60 hover:bg-white rounded-full shadow-sm transition-all flex items-center justify-center">
+                        <i data-lucide="arrow-left" class="w-4 h-4 text-slate-700"></i>
+                    </button>
+                    <button onclick="rehacerAccionSistema()" title="Echar adelante" class="p-2 bg-white/60 hover:bg-white rounded-full shadow-sm transition-all flex items-center justify-center">
+                        <i data-lucide="arrow-right" class="w-4 h-4 text-slate-700"></i>
+                    </button>
+                    <button onclick="abrirModalComandos()" title="Comandos de voz" class="p-2 bg-white/60 hover:bg-white rounded-full shadow-sm transition-all flex items-center justify-center">
+                        <i data-lucide="help-circle" class="w-4 h-4 text-slate-700"></i>
+                    </button>
+                    <button onclick="abrirModalConfig()" title="Ajustes" class="p-2 bg-white/60 hover:bg-white rounded-full shadow-sm transition-all flex items-center justify-center">
+                        <i data-lucide="settings" class="w-4 h-4 text-slate-700"></i>
+                    </button>
+                </div>
+            </header>
 
-                <div id="editorPanel" style="display: none;">
-                    <input type="text" id="editorFilename" placeholder="nombre_archivo.txt">
-                    <textarea id="editorContent" placeholder="Contenido del archivo..."></textarea>
-                    <div class="editor-controls">
-                        <button onclick="guardarManual()">GUARDAR</button>
-                        <button onclick="borrarManual()" class="danger">BORRAR</button>
+            <!-- Workspace de Exploración -->
+            <div class="file-workspace flex flex-1 overflow-hidden">
+                <!-- Sidebar Explorador -->
+                <aside class="file-sidebar w-64 flex flex-col border-r border-white/60 p-3">
+                    <button id="newFileBtn" onclick="nuevoArchivoManual()" style="display: none;" class="mb-3 bg-white/80 hover:bg-white text-slate-800 py-2 px-3 rounded-xl text-xs font-semibold shadow-sm border border-white transition-all flex items-center gap-2 justify-center">
+                        <i data-lucide="file-plus" class="w-4 h-4"></i>
+                        <span>NUEVO TXT</span>
+                    </button>
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">Explorador</div>
+                    <div id="fileList" class="flex-1 overflow-y-auto"></div>
+                </aside>
+
+                <!-- Grid Visual Estilo Clara / Rejilla de Archivos -->
+                <div class="flex-1 flex flex-col overflow-hidden">
+                    <div id="gridContainer" class="grid-container flex-1">
+                        <div class="flex flex-col items-center justify-center h-full text-slate-400 gap-2 opacity-60">
+                            <i data-lucide="hard-drive" class="w-10 h-10"></i>
+                            <p class="text-xs font-medium">Selecciona una carpeta para navegar por tus archivos</p>
+                        </div>
+                    </div>
+
+                    <!-- Panel Editor Integrado (Oculto por defecto) -->
+                    <div id="editorPanel" style="display: none;">
+                        <input type="text" id="editorFilename" placeholder="nombre_archivo.txt">
+                        <textarea id="editorContent" placeholder="Contenido del archivo..."></textarea>
+                        <div class="flex gap-2">
+                            <button onclick="guardarManual()" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-slate-800 transition-all">GUARDAR</button>
+                            <button onclick="borrarManual()" class="bg-red-500 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-red-600 transition-all">BORRAR</button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <div class="chat-section">
-            <div class="header">
-                <button id="connectBtn" onclick="toggleConnection()">CONECTAR</button>
-                <button id="modeToggleBtn" onclick="toggleMode()" style="background: var(--primary);">💬 MODO: CHARLA ASISTENTE</button>
-                <span class="status" id="statusText">🔴 DESCONECTADO</span>
+        <!-- Panel de Asistente de Voz SILENOS (VOZ 2) -->
+        <aside class="chat-section glass-panel w-96 rounded-2xl flex flex-col p-4 shrink-0">
+            <div class="chat-header flex items-center justify-between pb-3 border-b border-white/60">
+                <button id="connectBtn" onclick="toggleConnection()" class="bg-slate-900 text-white px-4 py-2 rounded-full text-xs font-semibold shadow-sm transition-all">CONECTAR</button>
+                <button id="modeToggleBtn" onclick="toggleMode()" style="background: var(--primary);" class="bg-slate-900 text-white px-3 py-1.5 rounded-full text-[11px] font-semibold">MODO: ASISTENTE</button>
+                <span id="statusText" class="text-xs text-slate-400 font-mono">DESCONECTADO</span>
             </div>
 
             <div style="margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px;">
@@ -98,41 +154,56 @@
                 </select>
             </div>
 
-            <div id="chat"></div>
+            <div id="chat" class="flex-1 overflow-y-auto my-3 p-2"></div>
 
-            <div class="controls">
-                <button id="micBtn" onclick="toggleMic()" disabled>🎤 MIC</button>
-                <input type="text" id="textInput" placeholder="Escribe un mensaje..." onkeypress="handleKey(event)" disabled>
-                <button id="sendBtn" onclick="sendText()" disabled>ENVIAR</button>
+            <div class="controls flex gap-2 pt-2 border-t border-white/60">
+                <button id="micBtn" onclick="toggleMic()" disabled class="bg-white/80 hover:bg-white text-slate-800 p-3 rounded-full shadow-sm border border-white transition-all flex items-center justify-center flex-1">
+                    <i data-lucide="mic" class="w-4 h-4"></i>
+                </button>
+                <input type="text" id="textInput" placeholder="Escribe un mensaje..." onkeypress="handleKey(event)" disabled class="bg-white/60 border border-white/80 focus:bg-white rounded-full px-4 text-xs outline-none flex-[2]">
+                <button id="sendBtn" onclick="sendText()" disabled class="bg-slate-900 text-white p-3 rounded-full shadow-sm hover:bg-slate-800 transition-all flex items-center justify-center">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                </button>
             </div>
-        </div>
+        </aside>
 
-    </div>
+    </main>
 
+    <!-- Modal Configuración -->
     <div id="apiModal" class="modal">
         <div class="modal-content">
             <h3>Configuración</h3>
-            <p class="modal-desc">Introduce tu API Key de Google Gemini para habilitar la conexión bidireccional.</p>
-            <input type="password" id="apiKey" placeholder="Pega tu Google API Key aquí...">
-            <div class="modal-buttons">
-                <button onclick="guardarApiKey()">GUARDAR</button>
-                <button onclick="cerrarModalConfig()">CERRAR</button>
+            <p class="modal-desc">Introduce tu API Key de Google Gemini e instruye la personalidad de tu asistente.</p>
+            
+            <label style="font-size: 11px; font-weight: 600; color: var(--text-dim); font-family: monospace;">GOOGLE API KEY:</label>
+            <input type="password" id="apiKey" placeholder="Pega tu Google API Key aquí..." class="w-full bg-slate-100 p-3 rounded-xl text-xs border border-slate-200 outline-none mb-4">
+            
+            <label style="font-size: 11px; font-weight: 600; color: var(--text-dim); font-family: monospace; margin-top: 10px;">PERSONALIDAD DEL ASISTENTE:</label>
+            <select id="personalityPreset" onchange="cambiarPresetPersonalidad()" style="padding: 8px; border: 1px solid var(--border); background: var(--bg); border-radius: var(--radius-sm); font-size: 13px; font-family: inherit; outline: none; width: 100%;">
+                <option value="default">Por defecto (VOZ SILENOS - Arquitecto Web)</option>
+                <option value="concise">Técnico y Conciso (Solo código y respuestas directas)</option>
+                <option value="creative">Colector Creativo (Narrador y Diseñador entusiasta)</option>
+                <option value="custom">Personalizado (Escribir instrucciones abajo...)</option>
+            </select>
+            
+            <textarea id="personalityInstruction" placeholder="Describe cómo debe comportarse el asistente..." style="height: 100px; font-size: 12px; margin-top: 5px;" class="w-full bg-slate-100 p-3 rounded-xl border border-slate-200 outline-none mb-4"></textarea>
+            
+            <div class="flex gap-2 modal-buttons">
+                <button onclick="guardarApiKey()" class="bg-slate-900 text-white flex-1 py-2 rounded-xl text-xs font-semibold">GUARDAR</button>
+                <button onclick="cerrarModalConfig()" class="bg-slate-200 text-slate-700 flex-1 py-2 rounded-xl text-xs font-semibold">CERRAR</button>
             </div>
         </div>
     </div>
 
     <div id="customContextMenu" class="custom-menu" style="display: none; position: absolute; z-index: 10000;">
-        <div onclick="ejecutarPrevisualizarDesdeMenu()">🌐 PREVISUALIZAR</div>
+        <div onclick="ejecutarPrevisualizarDesdeMenu()">🔍 PREVISUALIZAR</div>
     </div>
 
-    <div id="previewModal" class="modal" style="display: none;">
-        <div class="modal-content preview-content" style="width: 90%; max-width: 1200px; height: 85vh; padding: 10px; position: relative; display: flex; flex-direction: column;">
-            <span class="close-preview" onclick="cerrarPrevisualizacion()" style="position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; z-index: 1001;">&times;</span>
-            <h3 id="previewTitle" style="margin: 5px 0 10px 0;">Previsualización Local Virtual</h3>
-            <iframe id="previewFrame" style="width: 100%; flex-grow: 1; border: 1px solid #ccc; background: white;"></iframe>
-        </div>
+    <div id="previewModal" onclick="manejarClickFueraModal(event)">
+        <div id="previewMediaContainer"></div>
     </div>
 
+    <!-- Scripts del Sistema -->
     <script src="main.js"></script>
     <script src="ui.js"></script>
     <script src="reproductorAudio.js"></script>
@@ -141,6 +212,11 @@
     <script src="toolsArchivos.js"></script>
     <script src="conexionWebSocket.js"></script>
     <script src="gestorMicrofono.js"></script>
-
+    <script src="comandosModal.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) lucide.createIcons();
+        });
+    </script>
 </body>
 </html>

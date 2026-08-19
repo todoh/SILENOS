@@ -25,6 +25,27 @@ let isMicActive = false;
 // Modelo exacto solicitado principal
 const MODEL = 'gemini-3.1-flash-live-preview';
 
+// ─── ATAJOS DE TECLADO GLOBALES (CTRL+Z y CTRL+Y) ───
+document.addEventListener('keydown', (e) => {
+    // Si el usuario está escribiendo en un input o textarea, dejamos que el comportamiento por defecto funcione normalmente
+    const targetTag = e.target.tagName.toLowerCase();
+    if (targetTag === 'input' || targetTag === 'textarea') return;
+
+    if (e.ctrlKey || e.metaKey) {
+        if (e.key.toLowerCase() === 'z') {
+            e.preventDefault();
+            if (typeof deshacerAccionSistema === 'function') {
+                deshacerAccionSistema();
+            }
+        } else if (e.key.toLowerCase() === 'y') {
+            e.preventDefault();
+            if (typeof rehacerAccionSistema === 'function') {
+                rehacerAccionSistema();
+            }
+        }
+    }
+});
+
 // ─── UTILIDADES GLOBALES ───
 function base64ToFloat32(b64) {
     const binary = atob(b64);
