@@ -9,26 +9,25 @@ import { iniciarSesionPollinations, procesarRetornoAutenticacion } from './login
 import { runAgentPipeline, requestAgentPause } from './agente.js';
 import { filterLibraryWithFlashLite } from './agent_helpers.js';
 import { 
-    activeConversationId, currentBufferAttachments, favoritosText, favoritosImage, conversations, 
-    saveConversations, createNewConversation, getChatPayload, setFavoritosText, setFavoritosImage, 
+    activeConversationId, currentBufferAttachments, favoritosText, favoritosImage, conversations,
+    saveConversations, createNewConversation, getChatPayload, setFavoritosText, setFavoritosImage,
     saveFavorites, directoryHandle, saveSettingsToFolder 
 } from './conversations.js';
 import { 
-    renderAgentToolsListUI, renderConversationSidebarUI, renderActiveConversationUI, 
-    renderAttachmentPreviewsUI, buildModelDropdownUI, appendChatMessageToDOMUI, 
+    renderAgentToolsListUI, renderConversationSidebarUI, renderActiveConversationUI,
+    renderAttachmentPreviewsUI, buildModelDropdownUI, appendChatMessageToDOMUI,
     appendWaitingMessageUI, formatModelOutput 
 } from './ui.js';
 import { injectReferencedLibraryFunctions } from './mode_html.js';
 import { 
-    state, setAppMode, setWithFunctionsMode, setListadoModelosTexto, 
+    state, setAppMode, setWithFunctionsMode, setListadoModelosTexto,
     setActiveModelIndex, setActiveImageModelIndex, getCombinedFunctionLibrary 
 } from './app_state.js';
 import { 
-    syncWorkspaceFolder, checkAndDisplayCheckpointBanner, initToolsModalHandlers, 
-    initFunctionsModalHandlers, initGalleryModalHandlers 
+    syncWorkspaceFolder, checkAndDisplayCheckpointBanner, initToolsModalHandlers,
+    initFunctionsModalHandlers, initGalleryModalHandlers, initStatsModalHandlers 
 } from './app_modals.js';
 
-// Importación de Pipelines y Clasificador de Modos (+FX)
 import { runModoFXAgent } from './mode_fx_agent.js';
 import { classifyTaskMode } from './mode_classifier.js';
 import { runModoEscritura } from './mode_escritura.js';
@@ -47,7 +46,6 @@ function initCanvasSystem() {
     }
 }
 
-// Elementos del DOM
 const dropdownTrigger = document.getElementById('dropdown-trigger');
 const dropdownMenu = document.getElementById('dropdown-menu');
 const dropdownOptions = document.getElementById('dropdown-options');
@@ -98,6 +96,10 @@ const btnAddFunction = document.getElementById('btn-add-function');
 const fnNewName = document.getElementById('fn-new-name');
 const fnNewDesc = document.getElementById('fn-new-desc');
 const functionsListContainer = document.getElementById('functions-list-container');
+const btnOpenStats = document.getElementById('btn-open-stats');
+const modalStats = document.getElementById('modal-stats');
+const btnCloseStats = document.getElementById('btn-close-stats');
+const statsContainer = document.getElementById('stats-container');
 
 function triggerWorkspaceSync() {
     syncWorkspaceFolder(
@@ -128,6 +130,7 @@ window.addEventListener('load', async () => {
     initToolsModalHandlers(btnOpenTools, btnCloseTools, modalTools, btnAddTool, toolNewName, toolNewDesc, toolsListContainer);
     initFunctionsModalHandlers(btnOpenFunctions, btnCloseFunctions, modalFunctions, btnAddFunction, fnNewName, fnNewDesc, functionsListContainer);
     initGalleryModalHandlers(btnOpenGallery, btnCloseGallery, modalGallery, galleryGrid, modalFolderRequired);
+    initStatsModalHandlers(btnOpenStats, btnCloseStats, modalStats, statsContainer);
     initFnToggleHandler();
     
     btnModalSelectFolder.addEventListener('click', triggerWorkspaceSync);
@@ -356,46 +359,6 @@ fileUploader.addEventListener('change', async (e) => {
     renderAttachmentPreviewsUI(attachmentPreviewArea);
 });
 
-function testCodeInSandbox(htmlCode) {
-    return new Promise((resolve) => {
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-        let errorDetected = null;
-        const cleanup = () => {
-            if (iframe && iframe.parentNode) {
-                iframe.parentNode.removeChild(iframe);
-            }
-        };
-        const timeoutId = setTimeout(() => {
-            cleanup();
-            resolve(errorDetected);
-        }, 1500);
-        iframe.contentWindow.onerror = function (msg, url, line, col, error) {
-            errorDetected = `Error en Runtime: ${msg} (Línea: ${line}, Columna: ${col})`;
-            clearTimeout(timeoutId);
-            cleanup();
-            resolve(errorDetected);
-            return true;
-        };
-        iframe.contentWindow.addEventListener('unhandledrejection', function (event) {
-            errorDetected = `Promesa No Capturada: ${event.reason ? (event.reason.message || event.reason) : 'Error desconocido'}`;
-            clearTimeout(timeoutId);
-            cleanup();
-            resolve(errorDetected);
-        });
-        try {
-            iframe.srcdoc = htmlCode;
-        } catch (err) {
-            errorDetected = `Error al parsear documento sandbox: ${err.message}`;
-            clearTimeout(timeoutId);
-            cleanup();
-            resolve(errorDetected);
-        }
-    });
-}
-
-// main.js - Funciï¿½n handleSend adaptada con Renderizado Optimista a 0ms
 async function handleSend(isResumingFromCheckpoint = false) {
     if (!directoryHandle) {
         modalFolderRequired.classList.remove('hidden');
@@ -410,7 +373,6 @@ async function handleSend(isResumingFromCheckpoint = false) {
     const activeModel = (state.appMode === 'chat' || state.appMode === 'agent') ? state.listadoModelosTexto[state.activeModelIndex] : MODELOS_IMAGEN[state.activeImageModelIndex];
     if (!activeModel) return;
     
-    // Configurar el nombre exacto del modelo
     let displayModelName = activeModel.name;
     if (state.appMode === 'agent') {
         displayModelName = `${activeModel.name} (AGENTE)`;
@@ -423,9 +385,6 @@ async function handleSend(isResumingFromCheckpoint = false) {
     const targetConversationId = activeConversationId;
     const currentChat = conversations.find(c => c.id === targetConversationId);
     
-    // ----------------------------------------------------
-    // PASO 1: RENDERIZADO OPTIMISTA INMEDIATO (0ms delay)
-    // ----------------------------------------------------
     let waitingNodeId = "";
     if (targetConversationId === activeConversationId) {
         if (!isResumingFromCheckpoint) {
@@ -434,22 +393,18 @@ async function handleSend(isResumingFromCheckpoint = false) {
         waitingNodeId = appendWaitingMessageUI(chatHistory, displayModelName, targetConversationId);
     }
 
-    // Vaciar interfaz inmediatamente para dar respuesta instantánea
     if (!isResumingFromCheckpoint) userInput.value = '';
     const thisTurnAttachments = [...currentBufferAttachments];
     currentBufferAttachments.length = 0;
     renderAttachmentPreviewsUI(attachmentPreviewArea);
 
-    // ----------------------------------------------------
-    // PASO 2: GUARDADO EN DISCO Y EJECUCIÓN EN SEGUNDO PLANO
-    // ----------------------------------------------------
     (async () => {
         try {
             if (currentChat && !isResumingFromCheckpoint) {
                 currentChat.messages.push({
                     role: 'usuario',
                     content: promptText || "[Archivos Adjuntos]",
-                    modelName: 'Tú'
+                    modelName: 'TÚ'
                 });
                 currentChat.status = 'processing';
                 if (currentChat.title === "Nueva Conversación") {
@@ -460,6 +415,8 @@ async function handleSend(isResumingFromCheckpoint = false) {
 
             let responseText = "";
             let generatedImageUrl = "";
+            let responseMetrics = null;
+            const startTime = performance.now();
             
             if (state.appMode === 'image') {
                 const pollinationsKey = apiKeyPollinationsInput.value.trim();
@@ -533,7 +490,7 @@ async function handleSend(isResumingFromCheckpoint = false) {
                         if (waitingNode) {
                             streamTextContainer = waitingNode.querySelector('.space-y-1\\.5') || waitingNode.querySelector('.flex.items-center').parentNode;
                         }
-                        responseText = await queryOllama(historyPayload, activeModel.tag, endpointOllamaInput.value.trim(), thisTurnAttachments, (currentProgress) => {
+                        const resObj = await queryOllama(historyPayload, activeModel.tag, endpointOllamaInput.value.trim(), thisTurnAttachments, (currentProgress) => {
                             if (streamTextContainer && targetConversationId === activeConversationId) {
                                 let innerLabel = streamTextContainer.querySelector('.stream-live-preview');
                                 if (!innerLabel) {
@@ -545,6 +502,12 @@ async function handleSend(isResumingFromCheckpoint = false) {
                                 chatHistory.scrollTop = chatHistory.scrollHeight;
                             }
                         });
+                        if (typeof resObj === 'object' && resObj.text) {
+                            responseText = resObj.text;
+                            responseMetrics = resObj.metrics;
+                        } else {
+                            responseText = resObj;
+                        }
                     }
                     
                     if (responseText) {
@@ -561,12 +524,25 @@ async function handleSend(isResumingFromCheckpoint = false) {
                 }
             }
             
+            // Cálculo genérico de respaldo para métricas si el proveedor API no lo generó nativamente
+            if (!responseMetrics && responseText) {
+                const totalTimeSec = (performance.now() - startTime) / 1000;
+                const tokenCount = Math.ceil(responseText.length / 4);
+                const tokSec = (tokenCount / (totalTimeSec || 1)).toFixed(1);
+                responseMetrics = {
+                    tokens: tokenCount,
+                    tokSec: parseFloat(tokSec),
+                    timeSec: totalTimeSec.toFixed(2)
+                };
+            }
+
             const chatAlFinalizar = conversations.find(c => c.id === targetConversationId);
             if (chatAlFinalizar) {
                 const newMsg = {
                     role: 'asistente',
                     content: responseText,
-                    modelName: displayModelName
+                    modelName: displayModelName,
+                    metrics: responseMetrics
                 };
                 if (generatedImageUrl) newMsg.imageUrl = generatedImageUrl;
                 
@@ -578,7 +554,7 @@ async function handleSend(isResumingFromCheckpoint = false) {
             if (targetConversationId === activeConversationId) {
                 const waitingNode = document.querySelector(`[data-waiting-chat="${targetConversationId}"]`);
                 if (waitingNode) waitingNode.remove();
-                appendChatMessageToDOMUI(chatHistory, "asistente", responseText, displayModelName, true, generatedImageUrl);
+                appendChatMessageToDOMUI(chatHistory, "asistente", responseText, displayModelName, true, generatedImageUrl, responseMetrics);
                 checkAndDisplayCheckpointBanner(chatHistory, handleSend);
             } else {
                 renderSidebar();

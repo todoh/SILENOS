@@ -183,3 +183,22 @@ export async function renderGalleryGrid(galleryGrid) {
         galleryGrid.appendChild(card);
     }
 }
+// Añadir en app_modals.js
+import { renderStatsUI } from './estadisticas.js';
+
+export function initStatsModalHandlers(btnOpenStats, btnCloseStats, modalStats, statsContainer) {
+    if (!btnOpenStats || !modalStats) return;
+
+    btnOpenStats.addEventListener('click', () => {
+        modalStats.classList.remove('hidden');
+        renderStatsUI(statsContainer, 'todos', 'modelos');
+    });
+
+    if (btnCloseStats) {
+        btnCloseStats.addEventListener('click', () => modalStats.classList.add('hidden'));
+    }
+
+    modalStats.addEventListener('click', (e) => {
+        if (e.target === modalStats) modalStats.classList.add('hidden');
+    });
+}

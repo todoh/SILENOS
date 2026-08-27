@@ -1,5 +1,5 @@
 // ui_messages.js
-// Renderizado de Mensajes, Bloques de Razonamiento, Búferes y Mime-Types de Descarga
+// Renderizado de Mensajes, Bloques de Razonamiento, Búferes, Mime-Types de Descargas e Indicador de Métricas de Rendimiento (tokens/s)
 import { conversations, activeConversationId, writeFileToDirectory, readFileFromDirectory } from './conversations.js';
 import { getBufferContent } from './db.js';
 
@@ -26,7 +26,7 @@ export function renderActiveConversationUI(chatHistory) {
         `;
     } else {
         currentChat.messages.forEach(m => {
-            appendChatMessageToDOMUI(chatHistory, m.role, m.content, m.modelName || "Modelo", false, m.imageUrl);
+            appendChatMessageToDOMUI(chatHistory, m.role, m.content, m.modelName || "Modelo", false, m.imageUrl, m.metrics);
         });
     }
     chatHistory.scrollTop = chatHistory.scrollHeight;
@@ -87,7 +87,7 @@ function highlightSyntax(code, lang) {
     return safeCode;
 }
 
-export function appendChatMessageToDOMUI(chatHistory, role, text, modelName = "", autoScroll = true, imageUrl = "") {
+export function appendChatMessageToDOMUI(chatHistory, role, text, modelName = "", autoScroll = true, imageUrl = "", metrics = null) {
     const messageId = `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const card = document.createElement('div');
     card.id = messageId;
@@ -98,7 +98,7 @@ export function appendChatMessageToDOMUI(chatHistory, role, text, modelName = ""
     
     if (role === 'usuario') {
         icon = `<div class="w-8 h-8 rounded-full bg-neutral-200 flex items-center justify-center shrink-0 text-black font-mono font-bold text-xs select-none">U</div>`;
-        title = `<p class="text-xs text-black font-bold uppercase tracking-wider font-mono">Tú</p>`;
+        title = `<p class="text-xs text-black font-bold uppercase tracking-wider font-mono">TÚ</p>`;
     } else if (role === 'asistente') {
         icon = `<div class="w-8 h-8 rounded-full bg-neutral-900 flex items-center justify-center shrink-0 text-white font-mono font-bold text-xs select-none">AI</div>`;
         title = `<p class="text-xs text-black font-bold uppercase tracking-wider font-mono">${modelName}</p>`;
@@ -156,6 +156,19 @@ export function appendChatMessageToDOMUI(chatHistory, role, text, modelName = ""
     detectSvgStructuresUI(text, container, messageId, role);
     detectGenericCodeStructuresUI(text, container, messageId);
     detectBufferStructuresUI(text, container, messageId);
+    
+    // RENDERIZADO DISCRETO DE MÉTRICAS (TOKENS Y TOKENS/S)
+    if (role === 'asistente' && metrics && metrics.tokens !== undefined) {
+        const metricsFooter = document.createElement('div');
+        metricsFooter.className = "mt-2 pt-1 border-t border-neutral-100/50 flex items-center gap-3 text-[10px] font-mono text-neutral-400 select-none";
+        metricsFooter.innerHTML = `
+            <span><i class="fa-solid fa-bolt text-[9px] mr-0.5"></i> ${metrics.tokSec} tok/s</span>
+            <span>•</span>
+            <span>${metrics.tokens} tokens</span>
+            ${metrics.timeSec ? `<span>•</span><span>${metrics.timeSec}s</span>` : ''}
+        `;
+        container.appendChild(metricsFooter);
+    }
     
     card.appendChild(iconNode);
     card.appendChild(container);

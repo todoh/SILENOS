@@ -42,6 +42,9 @@
             <button id="btn-open-settings" class="text-left text-xs font-medium text-neutral-400 hover:text-black transition-colors cursor-pointer bg-transparent p-0">
                 configuración
             </button>
+            <button id="btn-open-stats" class="text-left text-xs font-medium text-neutral-400 hover:text-black transition-colors cursor-pointer bg-transparent p-0 flex items-center gap-1.5">
+                <i class="fa-solid fa-chart-line text-[10px]"></i> <span>estadísticas</span>
+            </button>
         </div>
     </aside>
     <main class="flex-1 flex flex-col bg-white overflow-hidden relative">
@@ -243,6 +246,22 @@
             </div>
         </div>
     </div>
+    <div id="modal-stats" class="hidden fixed inset-0 bg-white/95 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-3xl space-y-4 border border-neutral-200 rounded-2xl p-6 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-neutral-100 pb-3">
+                <h2 class="text-xs font-bold uppercase font-mono tracking-wider text-black flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-sm"></i> Estadísticas de Uso y Llamadas
+                </h2>
+                <button id="btn-close-stats" class="text-neutral-400 hover:text-black transition-colors cursor-pointer text-xs font-mono font-bold">
+                    cerrar
+                </button>
+            </div>
+            <div id="stats-container" class="space-y-4">
+            </div>
+        </div>
+    </div>
+
+    <!-- Cargar el script de estadísticas al final -->
     <canvas id="canvas-procesado" class="hidden"></canvas>
     <script type="module" src="pollinations.js"></script>
     <script type="module" src="gemini.js"></script>
@@ -254,6 +273,8 @@
     <script type="module" src="conversations.js"></script>
     <script type="module" src="ui_tools.js"></script>
     <script type="module" src="ui.js"></script>
+    <script type="module" src="estadisticas.js"></script>
+
     <script type="module" src="main.js"></script>
 </body>
 </html>
