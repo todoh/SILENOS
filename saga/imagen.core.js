@@ -142,7 +142,7 @@ DataStudio.prototype.generateImage = async function() {
                 height = 1024;
             }
 
-            const steps = parseInt(document.getElementById('comfy-steps')?.value || "6");
+            const steps = parseInt(document.getElementById('comfy-steps')?.value || "5");
             const cfg = parseFloat(document.getElementById('comfy-cfg')?.value || "2.0");
             const sampler = document.getElementById('comfy-sampler')?.value || "dpmpp_sde";
 

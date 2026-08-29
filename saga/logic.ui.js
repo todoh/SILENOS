@@ -53,6 +53,7 @@ const ui = {
             btnLibros.classList.remove('border-black', 'text-black', 'border-white', 'text-white');
             btnLibros.classList.add('border-transparent', 'text-gray-400');
         }
+
         const targetTab = document.getElementById(`tab-${tabId}`);
         if (targetTab) targetTab.classList.remove('hidden');
         
@@ -189,8 +190,7 @@ const ui = {
             opt.value = 'runware:twinflow-z-image-turbo@0';
             opt.innerText = 'TWINFLOW Z-IMAGE TURBO (RUNWARE)';
             modelSelect.appendChild(opt);
-
-            // Ajustar automáticamente parámetros requeridos
+            
             const wInput = document.getElementById('comfy-width');
             const hInput = document.getElementById('comfy-height');
             const stepsInput = document.getElementById('comfy-steps');
@@ -301,6 +301,7 @@ const ui = {
             const savedCloudUrl = localStorage.getItem('koreh_ollama_cloud_url') || 'http://127.0.0.1:11434/api';
             ollamaCloudInp.value = savedCloudUrl;
         }
+
         ui.fetchOllamaModels();
         ui.handleModeChangeChangeVisibility();
         ui.handleImageEngineChange();
@@ -311,6 +312,7 @@ const ui = {
             const btn = document.getElementById('theme-toggle-btn');
             if (btn) btn.innerHTML = '<i class="fa-solid fa-sun text-[11px]"></i>';
         }
+
         if (!indicator || !text) return;
         const currentMode = localStorage.getItem('koreh_api_mode') || 'local';
         indicator.className = "w-1.5 h-1.5 rounded-full bg-black dark:bg-white";
@@ -355,10 +357,12 @@ const ui = {
         if (!modal || !content || !actions) return;
         content.innerText = msg;
         actions.innerHTML = '';
+
         const btnCancel = document.createElement('button');
         btnCancel.className = "btn-nordic text-gray-400 border-none hover:bg-gray-50 dark:hover:bg-gray-800";
         btnCancel.innerText = "CANCELAR";
         btnCancel.onclick = () => modal.classList.add('hidden');
+
         const btnOk = document.createElement('button');
         btnOk.className = "btn-primary w-24";
         btnOk.innerText = "ACEPTAR";
@@ -366,6 +370,7 @@ const ui = {
             modal.classList.add('hidden');
             onYes();
         };
+
         actions.appendChild(btnCancel);
         actions.appendChild(btnOk);
         modal.classList.remove('hidden');
@@ -404,26 +409,52 @@ const ui = {
             await app.selectDirectoryAPI();
         }
     },
+    setSortMode: (mode) => {
+        if (typeof app !== 'undefined') {
+            app.sortBy = mode;
+            app.renderGrid();
+        }
+    },
     renderContextMenu: (x, y, itemIndex = null) => {
         ui.closeContextMenu();
         const menu = document.createElement('div');
         menu.id = 'datos-context-menu';
-        menu.className = 'fixed bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl py-1 z-[200] min-w-[160px] font-sans text-xs text-gray-700 dark:text-gray-300';
+        menu.className = 'fixed bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl py-1 z-[200] min-w-[180px] font-sans text-xs text-gray-700 dark:text-gray-300';
         menu.style.left = `${x}px`;
         menu.style.top = `${y}px`;
+
+        const isSortByName = (typeof app !== 'undefined' && app.sortBy === 'name');
+        const isSortByType = (typeof app !== 'undefined' && app.sortBy === 'type');
+
+        let sortOptionsHTML = `
+            <div class="border-t border-gray-100 dark:border-gray-800 my-1"></div>
+            <div onclick="ui.closeContextMenu(); ui.setSortMode('name');" class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center justify-between">
+                <span class="flex items-center gap-2"><i class="fa-solid fa-arrow-down-a-z text-gray-400"></i> Ordenar por Nombre</span>
+                ${isSortByName ? '<i class="fa-solid fa-check text-indigo-500 text-[10px]"></i>' : ''}
+            </div>
+            <div onclick="ui.closeContextMenu(); ui.setSortMode('type');" class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center justify-between">
+                <span class="flex items-center gap-2"><i class="fa-solid fa-tags text-gray-400"></i> Ordenar por Etiqueta</span>
+                ${isSortByType ? '<i class="fa-solid fa-check text-indigo-500 text-[10px]"></i>' : ''}
+            </div>
+        `;
+
         if (itemIndex !== null) {
             menu.innerHTML = `
                 <div onclick="ui.closeContextMenu(); app.duplicateItemAtIndex(${itemIndex});" class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center gap-2"><i class="fa-regular fa-copy text-gray-400"></i> DUPLICAR DATO</div>
                 <div onclick="ui.closeContextMenu(); app.deleteItemAtIndex(${itemIndex});" class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-red-500 flex items-center gap-2"><i class="fa-regular fa-trash-can text-red-400"></i> ELIMINAR DATO</div>
                 <div class="border-t border-gray-100 dark:border-gray-800 my-1"></div>
                 <div onclick="ui.closeContextMenu(); app.createNewItem();" class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center gap-2"><i class="fa-solid fa-plus text-gray-400"></i> CREAR NUEVO</div>
+                ${sortOptionsHTML}
             `;
         } else {
             menu.innerHTML = `
                 <div onclick="ui.closeContextMenu(); app.createNewItem();" class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center gap-2"><i class="fa-solid fa-plus text-gray-400"></i> CREAR NUEVO DATO</div>
+                ${sortOptionsHTML}
             `;
         }
+
         document.body.appendChild(menu);
+
         const closeHandler = () => {
             ui.closeContextMenu();
             document.removeEventListener('click', closeHandler);
@@ -438,4 +469,5 @@ const ui = {
     togglePremiseModal() { document.getElementById('premise-modal').classList.toggle('hidden'); },
     toggleStoryboardModal() { document.getElementById('storyboard-modal').classList.toggle('hidden'); }
 };
+
 window.ui = ui;

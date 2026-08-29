@@ -1,20 +1,12 @@
-// --- datosstudio/database.generator.js ---
-/**
- * GENERADOR DE BASE DE DATOS (MULTI-PROMPT PARALELO + CLASIFICADOR SEMÁNTICO)
- * Ejecuta clasificación previa, creación de lore ultra-fiel, 
- * prompts visuales integrando el Estilo Global y generación de imágenes en paralelo.
- * Adaptado para respetar dinámicamente el modelo o proveedor seleccionado en la interfaz.
- */
-
 const DatabaseGenerator = {
     async processSingleItem(promptText, defaultType, globalStyle, isChroma, appInstance, index, placeholderFilename) {
         try {
             const memoryItem = appInstance.items.find(i => i.name === placeholderFilename);
             const activeConfig = { jsonMode: true };
-
+            
             const classSystem = "Eres un analista semántico para un motor de worldbuilding. Devuelve estrictamente JSON puro.";
             const classUser = `Analiza la siguiente premisa del usuario: "${promptText}".
-            Tu objetivo es clasificarla en la categoría que MEJOR encaje de esta lista exacta: 
+            Tu objetivo es clasificarla en la categoría que MEJOR encaje de esta lista exacta:
             Dato, Personaje, Criatura, Flora, Raza, Lugar, Asentamiento, Estructura, Cosmología, Objeto, Arma, Vehículo, Recurso, Comida, Facción, Religión, Idioma, Profesión, Evento, Hechizo, Ley, Misión, Concepto.
             
             REGLA: Si la premisa es simple o mundana (ej. "gato", "espada", "manzana"), clasifícala de forma literal y lógica (Criatura, Arma, Comida) sin inventar contextos épicos.
@@ -34,10 +26,10 @@ const DatabaseGenerator = {
                 appInstance.renderGrid();
             }
 
-            let protocolo = "Describe este concept de forma enciclopédica, directa y ultra fiel a la premisa. No inventes tramas innecesarias.";
+            let protocolo = "Describe este concepto de forma enciclopédica, directa y ultra fiel a la premisa. No inventes tramas innecesarias.";
             
             if (tipoFinal === "Personaje") {
-                protocolo = "Describe a este individuo: su aspect, personalidad básica y su rol directo, manteniendo estricta fidelidad a la premisa. Si es un concept simple, adáptalo a un arquetipo humanoide.";
+                protocolo = "Describe a este individuo: su aspecto, personalidad básica y su rol directo, manteniendo estricta fidelidad a la premisa. Si es un concepto simple, adáptalo a un arquetipo humanoide.";
             } else if (["Criatura", "Flora", "Raza", "Dato"].includes(tipoFinal)) {
                 protocolo = "Describe sus características biológicas, físicas o naturales de forma objetiva y documental, sin humanizarlo ni inventarle roles sociales complejos o magia a menos que la premisa lo pida explícitamente.";
             } else if (["Lugar", "Asentamiento", "Estructura", "Cosmología"].includes(tipoFinal)) {
@@ -46,7 +38,7 @@ const DatabaseGenerator = {
                 protocolo = "Describe sus propiedades tangibles: forma, materiales, utilidad, peso y aspecto visual directo.";
             }
 
-            const text1System = "Eres un redactor de enciclopedias hiper-preciso. Devuelve estrictamente JSON puro.";
+            const text1System = "Eres un redactor de enciclopedias hiper-preciso. Devuelve strictly JSON puro.";
             const text1User = `Genera 1 entrada para la base de datos basada ÚNICA Y EXCLUSIVAMENTE en esta premisa: "${promptText}".
             
             CATEGORÍA ASIGNADA: "${tipoFinal}".
@@ -118,7 +110,7 @@ const DatabaseGenerator = {
             appInstance.processingIds.delete(placeholderFilename);
             appInstance.processingIds.add(filename);
             appInstance.renderGrid();
-            
+
             if (typeof Coherence !== 'undefined') Coherence.updateItem(finalData);
 
             let fullPrompt = `${finalData.name}, ${finalData.visualDesc}, ${globalStyle}, high quality, highly detailed`;
@@ -126,7 +118,6 @@ const DatabaseGenerator = {
             else fullPrompt += ", solid background";
 
             const selectedModel = localStorage.getItem('koreh_selected_image_model') || 'flux';
-
             let blob = await window.Koreh.Image.generate(fullPrompt, {
                 model: selectedModel,
                 width: 1024,
@@ -141,8 +132,8 @@ const DatabaseGenerator = {
             let ext = 'png';
             if (blob.type === 'image/jpeg') ext = 'jpg';
             if (blob.type === 'image/webp') ext = 'webp';
-            const imgFilename = filename.replace('.json', `.${ext}`);
 
+            const imgFilename = filename.replace('.json', `.${ext}`);
             const imgHandle = await appInstance.targetHandle.getFileHandle(imgFilename, { create: true });
             const imgWritable = await imgHandle.createWritable();
             await imgWritable.write(blob);
@@ -150,8 +141,8 @@ const DatabaseGenerator = {
 
             finalData.imageFile = imgFilename;
             finalData.imagen64 = null;
-            const displayUrl = URL.createObjectURL(blob);
 
+            const displayUrl = URL.createObjectURL(blob);
             writable = await fileHandle.createWritable();
             await writable.write(JSON.stringify(finalData, null, 2));
             await writable.close();
@@ -165,7 +156,6 @@ const DatabaseGenerator = {
             
             appInstance.renderGrid();
             Utils.log(`[Base de Datos] Imagen creada en archivo: ${imgFilename} (${tipoFinal}) con modelo ${selectedModel}`, "success");
-
             return finalData;
 
         } catch (error) {
@@ -187,7 +177,7 @@ const DatabaseGenerator = {
 
         const totalTasks = prompts.length * count;
         Utils.log(`[Base de Datos] Iniciando ${totalTasks} tareas paralelas (${prompts.length} prompts x ${count} copias)...`, "info");
-        
+
         const parallelPromises = [];
         let globalIndex = 0;
 
@@ -195,7 +185,7 @@ const DatabaseGenerator = {
             for (let i = 0; i < count; i++) {
                 const index = globalIndex++;
                 const placeholderFilename = `placeholder_db_${Date.now()}_${index}.json`;
-
+                
                 const mockData = {
                     name: `Generando (${index + 1}/${totalTasks})...`,
                     type: defaultType,
@@ -216,6 +206,7 @@ const DatabaseGenerator = {
                     name: placeholderFilename,
                     displayImage: null
                 });
+                
                 appInstance.processingIds.add(placeholderFilename);
 
                 parallelPromises.push(
@@ -225,7 +216,6 @@ const DatabaseGenerator = {
         }
 
         appInstance.renderGrid();
-
         await Promise.all(parallelPromises);
         await appInstance.loadFiles();
         Utils.log(`[Base de Datos] Lote completado exitosamente.`, "success");

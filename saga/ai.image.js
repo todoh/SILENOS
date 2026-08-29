@@ -43,9 +43,9 @@ window.Koreh.Image = {
             if (!apiKey) {
                 throw new Error("API Key de Runware no configurada. Introduce tu apikey en la configuración.");
             }
-            const width = config.width || 1344;
-            const height = config.height || 768;
-            const steps = config.steps || 4;
+            const width = config.width || 2048;
+            const height = config.height || 1152;
+            const steps = config.steps || 7;
             const taskUUID = crypto.randomUUID();
 
             const requestBody = [
@@ -206,9 +206,9 @@ window.Koreh.Image = {
         const clipName = allowedClips.includes(rawClipName) ? rawClipName : "qwen_3_4b_fp8_mixed.safetensors";
         
         const vaeName = config.vae || localStorage.getItem('koreh_comfy_vae_model') || document.getElementById('chat-img-vae')?.value || "ae.safetensors";
-        const width = config.width || parseInt(document.getElementById('comfy-width')?.value || document.getElementById('chat-img-width')?.value || "1920");
-        const height = config.height || parseInt(document.getElementById('comfy-height')?.value || document.getElementById('chat-img-height')?.value || "1088");
-        const steps = config.steps || parseInt(document.getElementById('comfy-steps')?.value || document.getElementById('chat-img-steps')?.value || "4");
+        const width = config.width || parseInt(document.getElementById('comfy-width')?.value || document.getElementById('chat-img-width')?.value || "2048");
+        const height = config.height || parseInt(document.getElementById('comfy-height')?.value || document.getElementById('chat-img-height')?.value || "1152");
+        const steps = config.steps || parseInt(document.getElementById('comfy-steps')?.value || document.getElementById('chat-img-steps')?.value || "7");
         const cfg = config.cfg || parseFloat(document.getElementById('comfy-cfg')?.value || document.getElementById('chat-img-cfg')?.value || "1.0");
         const sampler = config.sampler || document.getElementById('comfy-sampler')?.value || document.getElementById('chat-img-sampler')?.value || "res_multistep";
 
