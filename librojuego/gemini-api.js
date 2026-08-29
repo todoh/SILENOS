@@ -1,4 +1,4 @@
-const MODELO_computacional = "gemini-3.1-flash-lite";
+const MODELO_computacional = "gemini-3.5-flash-lite";
 
 /**
  * Realiza una llamada directa a la API de Gemini.
