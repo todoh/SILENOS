@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LIBROS & LIBROJUEGOS</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
+</head>
+<style>
+/* ==========================================================================
+   LIBROS & LIBROJUEGOS - STYLE 2 (LAYOUT DESKTOP CON ESPACIOS RESERVADOS PARA ADSENSE)
+   ========================================================================== */
+
+/* 1. RESET Y ESTRUCTURA GLOBAL EN ESCRITORIO */
+@media (min-width: 1024px) {
+
+    body {
+        /* Se define un grid de 3 columnas: Lateral Izquierdo (Ad), Contenido Central, Lateral Derecho (Ad) */
+        display: grid;
+        grid-template-columns: minmax(160px, 1fr) minmax(768px, 1024px) minmax(160px, 1fr);
+        grid-template-rows: auto auto 1fr auto;
+        grid-template-areas:
+            "header  header  header"
+            "banner  banner  banner"
+            "sidebar-left main sidebar-right"
+            "footer  footer  footer";
+        background-color: #0a0a0a;
+        min-height: 100vh;
+    }
+
+    /* Cabecera adaptada al ancho completo con alineación máxima de área */
+    header#mainHeader {
+        grid-area: header;
+        position: sticky;
+        top: 0;
+        width: 100%;
+        max-width: 100%;
+        padding: 0 32px;
+        box-sizing: border-box;
+        border-bottom: 1px solid #1a1a1a;
+    }
+
+    /* Buscador persistente desacoplado en el flujo desktop */
+    #searchContainer {
+        position: relative;
+        top: 0;
+        grid-area: banner;
+        width: 100%;
+        max-width: 1024px;
+        margin: 16px auto 0 auto;
+        padding: 0;
+        background-color: transparent;
+    }
+
+    #inputBuscar {
+        border-color: #222222;
+        padding: 0 16px;
+    }
+
+    /* Contenedor principal de vistas ajustado al centro */
+    main {
+        grid-area: main;
+        position: relative !important;
+        top: 0 !important;
+        width: 100% !important;
+        max-width: 1024px;
+        margin: 0 auto;
+        padding: 24px 0 100px 0;
+        box-sizing: border-box;
+    }
+
+    /* 2. ESPACIOS PREDETERMINADOS Y SLOTS PARA PUBLICIDAD DE ADSENSE */
+
+    /* Slot Banner Horizontal Superior (Leaderboard 728x90 o similar) */
+    .adsense-slot-header {
+        grid-area: banner;
+        width: 100%;
+        max-width: 970px;
+        min-height: 90px;
+        margin: 16px auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #000000;
+        border: 1px dashed #222222;
+        box-sizing: border-box;
+    }
+
+    /* Slot Lateral Izquierdo (Skyscraper / Rascacielos 160x600 o 300x600) */
+    .adsense-slot-sidebar-left {
+        grid-area: sidebar-left;
+        position: sticky;
+        top: 80px;
+        height: calc(100vh - 100px);
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-end;
+        padding: 24px 16px;
+        box-sizing: border-box;
+    }
+
+    /* Slot Lateral Derecho (Skyscraper / Rascacielos 160x600 o 300x600) */
+    .adsense-slot-sidebar-right {
+        grid-area: sidebar-right;
+        position: sticky;
+        top: 80px;
+        height: calc(100vh - 100px);
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
+        padding: 24px 16px;
+        box-sizing: border-box;
+    }
+
+    /* Slot In-Feed / In-Article para inserciones intercaladas en el contenido */
+    .adsense-slot-infeed {
+        width: 100%;
+        min-height: 120px;
+        margin: 24px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #0d0d0d;
+        border: 1px dashed #222222;
+        box-sizing: border-box;
+    }
+
+    /* Estilo del texto indicador visual del placeholder publicitario */
+    .adsense-placeholder-text {
+        font-size: 0.6rem;
+        font-weight: 700;
+        color: #444444;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* 3. ADAPTACIÓN DE LAS VISTAS Y GRID DE LIBROS A ESCRITORIO */
+
+    /* La cuadrícula pasa a mostrar 5 o 6 columnas por fila según densidad */
+    .grid-view {
+        padding: 16px 0 40px 0;
+        gap: 16px;
+    }
+
+    .book-card {
+        width: calc((100% - (16px * 4)) / 5);
+        transition: transform 0.2s ease, filter 0.2s ease;
+    }
+
+    .book-card:hover {
+        transform: translateY(-4px);
+        filter: brightness(1.15);
+    }
+
+    .book-cover-container {
+        border: 1px solid #1a1a1a;
+    }
+
+    /* 4. MODO LECTOR EN ESCRITORIO (LECTURA TIPOGRÁFICA OPTIMIZADA) */
+
+    .reader-content {
+        max-width: 768px;
+        margin: 0 auto;
+        padding: 48px 48px 160px 48px;
+        background-color: #ffffff;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        border: 1px solid #e5e5e5;
+    }
+
+    .reader-nav {
+        max-width: 768px;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 1px solid #222222;
+        border-bottom: none;
+    }
+
+    #gamebookReaderNav {
+        max-width: 768px;
+        left: 50% !important;
+        transform: translateX(-50%);
+        border: 1px solid #222222;
+        border-bottom: none;
+    }
+
+    .edge-nav {
+        display: none; /* Desactivar clics en bordes invisibles en desktop para no interferir con el ratón */
+    }
+
+    /* Modales centrados en escritorio */
+    #indexModal, #desleerModal, #reiniciarLibroModal {
+        max-width: 768px;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 1px solid #333333;
+        border-bottom: none;
+    }
+
+    #tiendaModal {
+        max-width: 900px;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 1px solid #333333;
+    }
+
+    /* 5. MENÚ INFERIOR REDISEÑADO COMO BARRA FLOTANTE / CABECERA COMPLEMENTARIA */
+
+    .global-nav {
+        grid-area: footer;
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: auto;
+        min-width: 480px;
+        height: 50px;
+        border-radius: 0px;
+        border: 1px solid #222222;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8);
+        padding: 0 16px;
+    }
+
+    .nav-tab {
+        padding: 0 16px;
+        flex-direction: row;
+        gap: 8px;
+        justify-content: center;
+    }
+
+    .nav-icon {
+        font-size: 0.9rem;
+        margin-bottom: 0;
+    }
+
+    .nav-label {
+        font-size: 0.65rem;
+    }
+}
+</style>
+<body>
+    <div id="introOverlay">
+        <div id="introTitle">SILEN<span style="color: rgb(131, 0, 0);">OS</span> LIBROS & LIBROJUEGOS</div>
+        <div id="introDisclaimer">TODOS LOS CONTENIDOS HAS SIDO PRODUCIDOS USANDO INTELIGENCIA ARTIFICIAL DE VANGUARDIA.</div>
+    </div>
+    <header id="mainHeader">
+        <div class="header-left">
+            <div id="headerTitle">SILEN<span style="color: rgb(131, 0, 0);">OS</span> LIBROS & LIBROJUEGOS</div>
+        </div>
+        <div class="header-right" id="uploadContainer">
+            <select id="selectIdioma" class="lang-select">
+                <option value="ES" selected>Español</option>
+                <option value="EN">English</option>
+                <option value="RU">Русский</option>
+                <option value="AR">العربية</option>
+                <option value="CH">中文</option>
+                <option value="FR">Français</option>
+                <option value="JN">日本語</option>
+            </select>
+            <button class="btn" id="btnFiltroGamebook" style="font-size: 1.1rem; padding: 0 8px; color: #ffffff !important; opacity: 0.4; display: none;">🎮</button>
+            <button class="btn" id="btnBuscarToggle" style="font-size: 1.1rem; padding: 0 8px; color: #ffffff !important; opacity: 1 !important;">🔍</button>
+        </div>
+        <div class="header-right" id="backContainer" style="display: none;">
+            <button class="btn secondary" id="btnVolver">Volver</button>
+        </div>
+    </header>
+    <div id="searchContainer" style="display: none;">
+        <input type="text" id="inputBuscar" placeholder="BUSCAR MANUSCRITO POR NOMBRE..." autocomplete="off">
+    </div>
+    <main style="top: 60px; width: 100%; position:absolute;">
+        <div id="gridView" class="grid-view">
+            <div class="empty-state">Conectando con el repositorio de manuscritos...</div>
+        </div>
+        
+        <div id="newsView" class="grid-view" style="display: none;">
+            <div class="empty-state">Cargando noticias de Silenos...</div>
+        </div>
+
+        <div id="favoritesView" class="grid-view" style="display: none;">
+            <div class="empty-state">No tienes manuscritos en tus favoritos.</div>
+        </div>
+        
+        <div id="usuarioView" class="preferences-view" style="display: none;">
+            <div class="preferences-content">
+              
+                <div class="pref-group" style="display:none;">
+                    <label>Páginas Leídas por Día</label>
+                    <div class="pref-buttons" style="margin-bottom: 12px; gap: 8px;">
+                        <button class="btn pref-btn" onclick="cambiarPeriodoGrafica(7)">7 Días</button>
+                        <button class="btn pref-btn" onclick="cambiarPeriodoGrafica(30)">30 Días</button>
+                        <button class="btn pref-btn" onclick="cambiarPeriodoGrafica(90)">3 Meses</button>
+                        <button class="btn pref-btn" onclick="cambiarPeriodoGrafica(365)">1 Año</button>
+                    </div>
+                    <canvas id="graficaLectura" width="400" height="160" style="width: 100%; height: auto; background: #111111; border: 1px solid #222222; display: block;"></canvas>
+                </div>
+
+                <div class="pref-group">
+                    <label>Libros Leídos</label>
+                    <div id="listaLibrosLeidos" class="lista-usuario-brutalista"></div>
+                </div>
+
+                <div class="pref-group">
+                    <label>Libros Empezados a Leer</label>
+                    <div id="listaLibrosEmpezados" class="lista-usuario-brutalista"></div>
+                </div>
+
+                <hr style="border: none; border-top: 1px dashed #333333; margin: 32px 0;">
+
+                <div class="pref-group">
+                    <label>Tipografía</label>
+                    <div class="pref-buttons">
+                        <button class="btn pref-btn" onclick="cambiarTipografia('Roboto')">Roboto</button>
+                        <button class="btn pref-btn" onclick="cambiarTipografia('Helvetica Neue')">Helvetica</button>
+                        <button class="btn pref-btn" onclick="cambiarTipografia('Georgia')">Georgia</button>
+                        <button class="btn pref-btn" onclick="cambiarTipografia('Courier New')">Monospace</button>
+                    </div>
+                </div>
+                <div class="pref-group">
+                    <label>Tamaño de Letra</label>
+                    <div class="pref-buttons">
+                        <button class="btn pref-btn" onclick="cambiarTamanoLetra('0.9rem')">A-</button>
+                        <button class="btn pref-btn" onclick="cambiarTamanoLetra('1.1rem')">Norm</button>
+                        <button class="btn pref-btn" onclick="cambiarTamanoLetra('1.3rem')">A+</button>
+                        <button class="btn pref-btn" onclick="cambiarTamanoLetra('1.6rem')">A++</button>
+                    </div>
+                </div>
+                <div class="pref-group">
+                    <label>Vista Previa del Texto</label>
+                    <div id="previewTextContainer" style="font-family: var(--reader-font-family); font-size: var(--reader-font-size); line-height: 1.75; text-align: justify; padding: 16px; border: 1px dashed #333333; color: var(--text-main); background-color: var(--bg-main); margin-top: 12px; user-select: none; -webkit-user-select: none;">
+                        Amanecía en Silenos. Las letras comenzaban a ordenarse de manera fluida sobre el pergamino digital, revelando misterios e historias que se verán reflejadas directamente con este formato en tus lecturas.
+                    </div>
+                </div>
+                <div class="pref-group" style="margin-top: 40px;">
+                    <label>Restablecer Lecturas</label>
+                    <div class="pref-buttons">
+                        <button class="btn pref-btn" style="color: rgb(180, 0, 0) !important;" onclick="abrirModalDesleer()">Desleer todos los libros</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tiendaView" class="preferences-view" style="display: none;">
+            <div class="preferences-content">
+                <div class="pref-group">
+                    <label>Filtro de Colecciones</label>
+                    <div id="tiendaCollectionsList" class="tienda-filter-bar"></div>
+                </div>
+                <div class="pref-group">
+                    
+                    <div id="tiendaBooksGrid" class="grid-view" style="padding: 8px 0;">
+                        <div class="empty-state">Sincronizando con el mercado de Silenos...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="readerView" class="reader-view">
+            <div id="edgePrev" class="edge-nav"></div>
+            <div id="edgeNext" class="edge-nav"></div>
+            <div id="readerContent" class="reader-content"></div>
+            <div class="reader-nav" id="normalReaderNav">
+                <div class="nav-cell" style="width: 20%;">
+                    <button class="btn secondary" id="btnPrev" style="z-index: 10; width: 100%; text-align: left;">Ant.</button>
+                </div>
+                <div class="nav-cell" style="width: 60%; text-align: center; cursor: pointer;" id="btnIndexTrigger">
+                    <span id="readerProgressText" style="font-size: 0.65rem; color: #888888; font-weight: bold; display: block; text-transform: uppercase; letter-spacing: 0.5px;"></span>
+                </div>
+                <div class="nav-cell" style="width: 20%; text-align: right;">
+                    <button class="btn secondary" id="btnNext" style="z-index: 10; width: 100%; text-align: right;">Sig.</button>
+                </div>
+            </div>
+            <div id="gamebookReaderNav" style="display: none; position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--bg-dark); padding: 16px; z-index: 15; box-sizing: border-box;">
+                <div id="gamebookChoicesContainer" style="display: flex; flex-direction: column; gap: 12px; width: 100%;"></div>
+            </div>
+            <div id="indexModal" style="display: none;">
+                <div id="indexModalContent"></div>
+            </div>
+        </div>
+    </main>
+    <div id="desleerModal" style="display: none;">
+        <div style="font-size: 0.75rem; font-weight: 700; color: #888888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Confirmar acción?</div>
+        <div style="font-size: 0.9rem; font-weight: 100; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 24px; line-height: 1.4;">¿Estás seguro de que quieres desleer todos los libros? Se perderá todo el progreso acumulado de forma permanente.</div>
+        <div style="display: flex; gap: 24px; justify-content: flex-end;">
+            <button class="btn" style="color: #aaaaaa;" onclick="cerrarModalDesleer()">Cancelar</button>
+            <button class="btn" style="color: rgb(220, 0, 0);" onclick="confirmarDesleerTodo()">Desleer todo</button>
+        </div>
+    </div>
+    <div id="reiniciarLibroModal" style="display: none; position: fixed; bottom: 58px; left: 0; width: 100%; background-color: var(--bg-dark); color: var(--text-light); z-index: 110; padding: 24px; box-sizing: border-box;">
+        <div style="font-size: 0.75rem; font-weight: 700; color: #888888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Reiniciar aventura?</div>
+        <div style="font-size: 0.9rem; font-weight: 100; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 24px; line-height: 1.4;">¿Estás seguro de que deseas reiniciar este librojuego? Regresarás al inicio y se perderá tu progreso actual en esta lectura.</div>
+        <div style="display: flex; gap: 24px; justify-content: flex-end;">
+            <button class="btn" style="color: #aaaaaa;" onclick="cerrarModalReiniciarLibro()">Cancelar</button>
+            <button class="btn" style="color: rgb(220, 0, 0);" onclick="confirmarReiniciarLibro()">Reiniciar</button>
+        </div>
+    </div>
+    <div id="tiendaModal" style="display: none; position: fixed; bottom: 58px; left: 0; width: 100%; height: calc(100% - 118px); background-color: var(--bg-dark); color: var(--text-light); z-index: 120; padding: 24px; box-sizing: border-box; overflow-y: auto;">
+        <div id="tiendaModalContent" class="reader-content" style="background-color: transparent; color: var(--text-light); padding: 0 0 40px 0;"></div>
+    </div>
+    <nav id="navView" class="global-nav">
+        <div class="nav-tab" id="tabCatalogo" onclick="cambiarSeccionPrincipal('catalogo')">
+            <span class="nav-icon">📚</span>
+            <span class="nav-label">Catálogo</span>
+        </div>
+        <div class="nav-tab" id="tabNews" onclick="cambiarSeccionPrincipal('news')">
+            <span class="nav-icon">📰</span>
+            <span class="nav-label">News</span>
+        </div>
+        <div class="nav-tab" id="tabFavoritos" onclick="cambiarSeccionPrincipal('favoritos')">
+            <span class="nav-icon">⭐</span>
+            <span class="nav-label">Favoritos</span>
+        </div>
+        <div class="nav-tab" id="tabUsuario" onclick="cambiarSeccionPrincipal('usuario')">
+            <span class="nav-icon">👤</span>
+            <span class="nav-label">Usuario</span>
+        </div>
+        <div class="nav-tab" id="tabTienda" onclick="cambiarSeccionPrincipal('tienda')">
+            <span class="nav-icon">🛒</span>
+            <span class="nav-label">Tienda</span>
+        </div>
+    </nav>
+    <script src="oi.js"></script>
+    <script src="ui.js"></script>
+    <script src="gestos.js"></script>
+    <script src="utilidades.js"></script>
+    <script src="render_lector.js"></script>
+    <script src="render_galeria.js"></script>
+    <script src="gamebook.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
