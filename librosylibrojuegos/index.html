@@ -6,6 +6,9 @@
     <title>LIBROS & LIBROJUEGOS</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
+    
+    <!-- GOOGLE ADSENSE INTEGRADO CON TU CLIENT ID REAL -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7136138379132657" crossorigin="anonymous"></script>
 </head>
 <style>
 /* ==========================================================================
@@ -14,7 +17,6 @@
 
 /* 1. RESET Y ESTRUCTURA GLOBAL EN ESCRITORIO */
 @media (min-width: 1024px) {
-
     body {
         /* Se define un grid de 3 columnas: Lateral Izquierdo (Ad), Contenido Central, Lateral Derecho (Ad) */
         display: grid;
@@ -71,7 +73,6 @@
     }
 
     /* 2. ESPACIOS PREDETERMINADOS Y SLOTS PARA PUBLICIDAD DE ADSENSE */
-
     /* Slot Banner Horizontal Superior (Leaderboard 728x90 o similar) */
     .adsense-slot-header {
         grid-area: banner;
@@ -136,8 +137,6 @@
     }
 
     /* 3. ADAPTACIÓN DE LAS VISTAS Y GRID DE LIBROS A ESCRITORIO */
-
-    /* La cuadrícula pasa a mostrar 5 o 6 columnas por fila según densidad */
     .grid-view {
         padding: 16px 0 40px 0;
         gap: 16px;
@@ -158,7 +157,6 @@
     }
 
     /* 4. MODO LECTOR EN ESCRITORIO (LECTURA TIPOGRÁFICA OPTIMIZADA) */
-
     .reader-content {
         max-width: 768px;
         margin: 0 auto;
@@ -185,7 +183,7 @@
     }
 
     .edge-nav {
-        display: none; /* Desactivar clics en bordes invisibles en desktop para no interferir con el ratón */
+        display: none;
     }
 
     /* Modales centrados en escritorio */
@@ -204,8 +202,7 @@
         border: 1px solid #333333;
     }
 
-    /* 5. MENÚ INFERIOR REDISEÑADO COMO BARRA FLOTANTE / CABECERA COMPLEMENTARIA */
-
+    /* 5. MENÚ INFERIOR REDISEÑADO COMO BARRA FLOTANTE */
     .global-nav {
         grid-area: footer;
         position: fixed;
@@ -243,6 +240,7 @@
         <div id="introTitle">SILEN<span style="color: rgb(131, 0, 0);">OS</span> LIBROS & LIBROJUEGOS</div>
         <div id="introDisclaimer">TODOS LOS CONTENIDOS HAS SIDO PRODUCIDOS USANDO INTELIGENCIA ARTIFICIAL DE VANGUARDIA.</div>
     </div>
+
     <header id="mainHeader">
         <div class="header-left">
             <div id="headerTitle">SILEN<span style="color: rgb(131, 0, 0);">OS</span> LIBROS & LIBROJUEGOS</div>
@@ -257,16 +255,52 @@
                 <option value="FR">Français</option>
                 <option value="JN">日本語</option>
             </select>
-            <button class="btn" id="btnFiltroGamebook" style="font-size: 1.1rem; padding: 0 8px; color: #ffffff !important; opacity: 0.4; display: none;">🎮</button>
-            <button class="btn" id="btnBuscarToggle" style="font-size: 1.1rem; padding: 0 8px; color: #ffffff !important; opacity: 1 !important;">🔍</button>
+            <button class="btn" id="btnFiltroGamebook" style="font-size: 1.1rem; padding: 0 8px; color: #ffffff !important; opacity: 0.4; display: none;"></button>
+            <button class="btn" id="btnBuscarToggle" style="font-size: 1.1rem; padding: 0 8px; color: #ffffff !important; opacity: 1 !important;"></button>
         </div>
         <div class="header-right" id="backContainer" style="display: none;">
             <button class="btn secondary" id="btnVolver">Volver</button>
         </div>
     </header>
+
+    <!-- BANNER PUBLICITARIO SUPERIOR -->
+    <div class="adsense-slot-header">
+        <ins class="adsbygoogle"
+             style="display:block; width:100%; height:90px;"
+             data-ad-client="ca-pub-7136138379132657"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>
+             (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+    </div>
+
+    <!-- LATERAL IZQUIERDO PUBLICITARIO -->
+    <aside class="adsense-slot-sidebar-left">
+        <ins class="adsbygoogle"
+             style="display:block; width:160px; height:600px;"
+             data-ad-client="ca-pub-7136138379132657"
+             data-ad-format="vertical"></ins>
+        <script>
+             (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+    </aside>
+
+    <!-- LATERAL DERECHO PUBLICITARIO -->
+    <aside class="adsense-slot-sidebar-right">
+        <ins class="adsbygoogle"
+             style="display:block; width:160px; height:600px;"
+             data-ad-client="ca-pub-7136138379132657"
+             data-ad-format="vertical"></ins>
+        <script>
+             (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+    </aside>
+
     <div id="searchContainer" style="display: none;">
         <input type="text" id="inputBuscar" placeholder="BUSCAR MANUSCRITO POR NOMBRE..." autocomplete="off">
     </div>
+
     <main style="top: 60px; width: 100%; position:absolute;">
         <div id="gridView" class="grid-view">
             <div class="empty-state">Conectando con el repositorio de manuscritos...</div>
@@ -282,7 +316,6 @@
         
         <div id="usuarioView" class="preferences-view" style="display: none;">
             <div class="preferences-content">
-              
                 <div class="pref-group" style="display:none;">
                     <label>Páginas Leídas por Día</label>
                     <div class="pref-buttons" style="margin-bottom: 12px; gap: 8px;">
@@ -315,6 +348,7 @@
                         <button class="btn pref-btn" onclick="cambiarTipografia('Courier New')">Monospace</button>
                     </div>
                 </div>
+
                 <div class="pref-group">
                     <label>Tamaño de Letra</label>
                     <div class="pref-buttons">
@@ -324,12 +358,14 @@
                         <button class="btn pref-btn" onclick="cambiarTamanoLetra('1.6rem')">A++</button>
                     </div>
                 </div>
+
                 <div class="pref-group">
                     <label>Vista Previa del Texto</label>
                     <div id="previewTextContainer" style="font-family: var(--reader-font-family); font-size: var(--reader-font-size); line-height: 1.75; text-align: justify; padding: 16px; border: 1px dashed #333333; color: var(--text-main); background-color: var(--bg-main); margin-top: 12px; user-select: none; -webkit-user-select: none;">
                         Amanecía en Silenos. Las letras comenzaban a ordenarse de manera fluida sobre el pergamino digital, revelando misterios e historias que se verán reflejadas directamente con este formato en tus lecturas.
                     </div>
                 </div>
+
                 <div class="pref-group" style="margin-top: 40px;">
                     <label>Restablecer Lecturas</label>
                     <div class="pref-buttons">
@@ -346,7 +382,6 @@
                     <div id="tiendaCollectionsList" class="tienda-filter-bar"></div>
                 </div>
                 <div class="pref-group">
-                    
                     <div id="tiendaBooksGrid" class="grid-view" style="padding: 8px 0;">
                         <div class="empty-state">Sincronizando con el mercado de Silenos...</div>
                     </div>
@@ -358,6 +393,7 @@
             <div id="edgePrev" class="edge-nav"></div>
             <div id="edgeNext" class="edge-nav"></div>
             <div id="readerContent" class="reader-content"></div>
+
             <div class="reader-nav" id="normalReaderNav">
                 <div class="nav-cell" style="width: 20%;">
                     <button class="btn secondary" id="btnPrev" style="z-index: 10; width: 100%; text-align: left;">Ant.</button>
@@ -369,36 +405,42 @@
                     <button class="btn secondary" id="btnNext" style="z-index: 10; width: 100%; text-align: right;">Sig.</button>
                 </div>
             </div>
+
             <div id="gamebookReaderNav" style="display: none; position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--bg-dark); padding: 16px; z-index: 15; box-sizing: border-box;">
                 <div id="gamebookChoicesContainer" style="display: flex; flex-direction: column; gap: 12px; width: 100%;"></div>
             </div>
+
             <div id="indexModal" style="display: none;">
                 <div id="indexModalContent"></div>
             </div>
         </div>
     </main>
+
     <div id="desleerModal" style="display: none;">
-        <div style="font-size: 0.75rem; font-weight: 700; color: #888888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Confirmar acción?</div>
+        <div style="font-size: 0.75rem; font-weight: 700; color: #888888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">¿Confirmar acción?</div>
         <div style="font-size: 0.9rem; font-weight: 100; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 24px; line-height: 1.4;">¿Estás seguro de que quieres desleer todos los libros? Se perderá todo el progreso acumulado de forma permanente.</div>
         <div style="display: flex; gap: 24px; justify-content: flex-end;">
             <button class="btn" style="color: #aaaaaa;" onclick="cerrarModalDesleer()">Cancelar</button>
             <button class="btn" style="color: rgb(220, 0, 0);" onclick="confirmarDesleerTodo()">Desleer todo</button>
         </div>
     </div>
+
     <div id="reiniciarLibroModal" style="display: none; position: fixed; bottom: 58px; left: 0; width: 100%; background-color: var(--bg-dark); color: var(--text-light); z-index: 110; padding: 24px; box-sizing: border-box;">
-        <div style="font-size: 0.75rem; font-weight: 700; color: #888888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Reiniciar aventura?</div>
+        <div style="font-size: 0.75rem; font-weight: 700; color: #888888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">¿Reiniciar aventura?</div>
         <div style="font-size: 0.9rem; font-weight: 100; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 24px; line-height: 1.4;">¿Estás seguro de que deseas reiniciar este librojuego? Regresarás al inicio y se perderá tu progreso actual en esta lectura.</div>
         <div style="display: flex; gap: 24px; justify-content: flex-end;">
             <button class="btn" style="color: #aaaaaa;" onclick="cerrarModalReiniciarLibro()">Cancelar</button>
             <button class="btn" style="color: rgb(220, 0, 0);" onclick="confirmarReiniciarLibro()">Reiniciar</button>
         </div>
     </div>
+
     <div id="tiendaModal" style="display: none; position: fixed; bottom: 58px; left: 0; width: 100%; height: calc(100% - 118px); background-color: var(--bg-dark); color: var(--text-light); z-index: 120; padding: 24px; box-sizing: border-box; overflow-y: auto;">
         <div id="tiendaModalContent" class="reader-content" style="background-color: transparent; color: var(--text-light); padding: 0 0 40px 0;"></div>
     </div>
+
     <nav id="navView" class="global-nav">
         <div class="nav-tab" id="tabCatalogo" onclick="cambiarSeccionPrincipal('catalogo')">
-            <span class="nav-icon">📚</span>
+            <span class="nav-icon">📖</span>
             <span class="nav-label">Catálogo</span>
         </div>
         <div class="nav-tab" id="tabNews" onclick="cambiarSeccionPrincipal('news')">
@@ -418,6 +460,7 @@
             <span class="nav-label">Tienda</span>
         </div>
     </nav>
+
     <script src="oi.js"></script>
     <script src="ui.js"></script>
     <script src="gestos.js"></script>
