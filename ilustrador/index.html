@@ -1,169 +1,804 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SILENOS Visual Node Illustrator & Compilador</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Ilustración de Librojuegos</title>
+  <style>
+    :root {
+      --bg: #0d0d0d;
+      --panel: #161616;
+      --border: #262626;
+      --text: #e5e5e5;
+      --muted: #888888;
+      --accent: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--panel);
+    }
+
+    h1 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+    }
+
+    .main-container {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      flex: 1;
+      height: calc(100vh - 57px);
+      overflow: hidden;
+    }
+
+    .sidebar {
+      background-color: var(--panel);
+      border-right: 1px solid var(--border);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      overflow-y: auto;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .row-group {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .row-group > div {
+      flex: 1;
+    }
+
+    label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.6rem 0.8rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      outline: none;
+      width: 100%;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--text);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 70px;
+    }
+
+    .btn {
+      background: var(--text);
+      color: var(--bg);
+      border: 1px solid var(--text);
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      transition: opacity 0.2s, background 0.2s;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    .btn:disabled {
+      background: var(--border);
+      color: var(--muted);
+      border-color: var(--border);
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--text);
+    }
+
+    .btn-sm {
+      padding: 0.4rem 0.6rem;
+      font-size: 0.75rem;
+    }
+
+    .content-area {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      overflow-y: auto;
+    }
+
+    .status-panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1rem;
+      font-family: monospace;
+      font-size: 0.8rem;
+      max-height: 140px;
+      overflow-y: auto;
+      color: var(--muted);
+    }
+
+    .status-panel p {
+      margin-bottom: 0.3rem;
+    }
+
+    .status-panel p.info { color: var(--text); }
+    .status-panel p.error { color: #ff5555; }
+    .status-panel p.success { color: #55ff55; }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .node-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      position: relative;
+    }
+
+    .node-card header {
+      padding: 0;
+      background: transparent;
+      border: none;
+      font-weight: bold;
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .node-card p {
+      font-size: 0.8rem;
+      color: var(--muted);
+      max-height: 80px;
+      overflow-y: auto;
+    }
+
+    .node-card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 2px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    .empty-img {
+      width: 100%;
+      height: 200px;
+      border: 1px dashed var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+
+    .badge-queue {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #ff9900;
+      color: #000;
+      font-size: 0.65rem;
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 3px;
+      display: none;
+    }
+
+    .node-card.queued .badge-queue {
+      display: block;
+    }
+  </style>
 </head>
-<body class="h-screen overflow-hidden flex flex-col">
+<body>
 
-    <header class="bg-[#111827] border-b border-[#1f2937] px-6 py-4 flex justify-between items-center shrink-0">
+  <header>
+    <h1 id="appTitle">Generador e Ilustrador de Librojuegos JSON</h1>
+    <div style="display: flex; gap: 0.5rem;">
+      <button class="btn btn-secondary" id="btnExportar" disabled>Guardar Librojuego JSON</button>
+      <button class="btn btn-secondary" id="btnExportarBiblia" disabled>Guardar Biblia Visual JSON</button>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <aside class="sidebar">
+      <div class="field-group">
+        <label>Gemini API Key</label>
+        <input type="password" id="apiKey" placeholder="AIzaSy..." />
+      </div>
+
+      <div class="field-group">
+        <label>ComfyUI Server URL</label>
+        <input type="text" id="comfyUrl" value="http://127.0.0.1:8188" />
+      </div>
+
+      <div class="row-group">
         <div>
-            <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-                <i class="fa-solid fa-wand-magic-sparkles text-sky-400"></i> Silenos Visual Production & Illustration Studio
-            </h1>
-            <p class="text-xs text-slate-400 tracking-wider uppercase mt-0.5">Compilador Automatizado en Cascada de Assets de Producción</p>
+          <label>Ancho</label>
+          <select id="comfyWidth">
+            <option value="512">512</option>
+            <option value="768">768</option>
+            <option value="1024" selected>1024</option>
+            <option value="1280">1280</option>
+          </select>
         </div>
-        <div class="flex items-center gap-4">
-            <div id="polli-auth-status" class="bg-slate-800 text-slate-400 text-xs px-3 py-1.5 rounded-full font-medium flex items-center gap-2 border border-transparent hover:border-slate-600 cursor-pointer transition-all">
-                <span class="text-[10px] tracking-wider uppercase">Pollinations:</span>
-                <span id="polli-status-text">OFFLINE</span>
-                <span id="polli-status-dot" class="w-2 h-2 rounded-full bg-slate-500"></span>
-            </div>
-            <div id="status-badge" class="bg-slate-800 text-slate-400 text-xs px-3 py-1.5 rounded-full font-medium flex items-center gap-2 transition-all">
-                <span class="w-2 h-2 rounded-full bg-slate-500" id="status-dot"></span> <span id="status-text">Inerte</span>
-            </div>
+        <div>
+          <label>Alto</label>
+          <select id="comfyHeight">
+            <option value="512">512</option>
+            <option value="768">768</option>
+            <option value="1024" selected>1024</option>
+            <option value="1280">1280</option>
+          </select>
         </div>
-    </header>
+      </div>
 
-    <main class="flex-1 flex overflow-hidden grid grid-cols-1 lg:grid-cols-12">
-        
-        <section class="lg:col-span-5 border-r border-[#1f2937] p-6 overflow-y-auto space-y-6 bg-[#0f172a]">
-            
-            <div class="space-y-4">
-                <h2 class="text-xs font-semibold uppercase text-slate-400 tracking-wider flex items-center gap-2">
-                    <i class="fa-solid fa-key text-amber-500"></i> Llaves de Acceso y Modelado
-                </h2>
-                <div>
-                    <label class="block text-xs font-medium text-slate-300 mb-1">Gemini API Key</label>
-                    <input type="password" id="api-key" placeholder="AIzaSy..." class="w-full bg-[#1e293b] border border-[#334155] rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500 code-font">
-                </div>
-            </div>
+      <div class="field-group">
+        <label>Pasos (Steps)</label>
+        <input type="number" id="comfySteps" value="6" min="1" max="50" />
+      </div>
 
-            <div class="space-y-4 border-t border-[#1f2937] pt-4">
-                <h2 class="text-xs font-semibold uppercase text-slate-400 tracking-wider flex items-center gap-2">
-                    <i class="fa-solid fa-file-import text-emerald-500"></i> Inyección de Estructuras (.JSON)
-                </h2>
-                
-                <div>
-                    <label class="block text-xs font-medium text-slate-300 mb-1">1. Obra Original (Librojuego)</label>
-                    <div class="flex gap-2">
-                        <label class="flex-1 bg-[#1e293b] border border-[#334155] hover:border-slate-500 rounded px-3 py-2 text-xs text-slate-300 cursor-pointer flex items-center justify-between transition-colors">
-                            <span id="label-librojuego">Seleccionar JSON de Librojuego...</span>
-                            <input type="file" id="file-librojuego" accept=".json" class="hidden">
-                            <i class="fa-solid fa-book-open text-slate-400"></i>
-                        </label>
-                    </div>
-                </div>
+      <div class="field-group">
+        <label>1. Cargar Librojuego JSON</label>
+        <input type="file" id="fileLibrojuego" accept=".json" />
+      </div>
 
-                <div>
-                    <label class="block text-xs font-medium text-slate-300 mb-1">2. Base de Datos Artística (Guía de Arte)</label>
-                    <div class="flex gap-2">
-                        <label class="flex-1 bg-[#1e293b] border border-[#334155] hover:border-slate-500 rounded px-3 py-2 text-xs text-slate-300 cursor-pointer flex items-center justify-between transition-colors">
-                            <span id="label-arte">Seleccionar JSON de Referencia Visual...</span>
-                            <input type="file" id="file-arte" accept=".json" class="hidden">
-                            <i class="fa-solid fa-palette text-slate-400"></i>
-                        </label>
-                    </div>
-                </div>
-            </div>
+      <div class="field-group">
+        <label>2. Cargar Compendio de Estilo (JSON)</label>
+        <input type="file" id="fileCompendio" accept=".json" />
+      </div>
 
-            <div class="space-y-4 border-t border-[#1f2937] pt-4">
-                <h2 class="text-xs font-semibold uppercase text-slate-400 tracking-wider flex items-center gap-2">
-                    <i class="fa-solid fa-sliders text-sky-500"></i> Parámetros de Síntesis de Imagen (Pollinations)
-                </h2>
-                
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Modelo de Imagen</label>
-                        <select id="pollinations-model" class="w-full bg-[#1e293b] border border-[#334155] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500">
-                            <option value="flux" selected>Flux Schnell (Estándar)</option>
-                            <option value="zimage">Z-Image Turbo</option>
-                            <option value="imagen-4">Imagen 4 GOOGLE</option>
-                            <option value="klein">FLUX.2 Klein 4B</option>
-                            <option value="klein-large">FLUX.2 Klein 9B</option>
-                            <option value="gptimage">GPT Imagen 1</option>
+      <div class="field-group">
+        <label>Guía de Estilo Adicional (Texto)</label>
+        <textarea id="guiaTexto" placeholder="Ej: Estética cyberpunk distópica, complejo criogénico subglacial, luz estroboscópica roja..."></textarea>
+      </div>
+    </aside>
 
-                            <option value="gpt-image-2">gpt-image-2</option>
-                            <option value="gptimage-large">gptimage-large</option>
-                      
-                        </select>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-medium text-slate-300 mb-1">Formato / Dimensión</label>
-                            <select id="pollinations-ratio" class="w-full bg-[#1e293b] border border-[#334155] rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500">
-                                <option value="landscape" selected>Horizontal - 2344x1768</option>
-                                <option value="square">Cuadrado - 2024x2024</option>
-                                <option value="portrait">Vertical - 1768x2344</option>
-                            </select>
-                        </div>
-                        <div class="flex flex-col items-center justify-center">
-                            <label class="block text-[10px] uppercase tracking-wider font-medium text-slate-400 mb-1">Chroma Key</label>
-                            <div class="flex items-center mt-1">
-                                <input type="checkbox" id="chroma-toggle" class="toggle-checkbox" style="display:none">
-                                <label for="chroma-toggle" class="toggle-label">
-                                    <div class="toggle-circle"></div>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <main class="content-area">
+      <div class="status-panel" id="logPanel">
+        <p class="info">Esperando carga de datos...</p>
+      </div>
 
-            <div class="pt-4 border-t border-[#1f2937] space-y-3">
-                <button id="btn-start" class="w-full bg-sky-600 hover:bg-sky-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-medium text-sm py-3 px-4 rounded shadow transition-all flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed" disabled>
-                    <i class="fa-solid fa-play"></i> Iniciar Pipeline de Compilación Estética
-                </button>
-                <div class="grid grid-cols-2 gap-2">
-                    <button id="btn-abort" class="w-full bg-rose-950 hover:bg-rose-900 border border-rose-800 text-rose-200 text-xs py-2 px-3 rounded transition-colors hidden">
-                        <i class="fa-solid fa-ban"></i> Abortar Bucle
-                    </button>
-                    <button id="btn-export" class="w-full bg-emerald-950 hover:bg-emerald-900 border border-emerald-800 text-emerald-200 text-xs py-2 px-3 rounded transition-colors" disabled>
-                        <i class="fa-solid fa-file-arrow-down"></i> Exportar Obra (.JSON)
-                    </button>
-                </div>
-            </div>
-
-        </section>
-
-        <section class="lg:col-span-7 flex flex-col overflow-hidden bg-[#0b0f17]">
-            
-            <div class="bg-[#111827] border-b border-[#1f2937] p-4 flex justify-between items-center shrink-0">
-                <div class="flex items-center gap-3">
-                    <span class="text-xs font-semibold uppercase text-slate-400 tracking-wider">Pipeline Monitor:</span>
-                    <span id="pipeline-step-text" class="text-xs font-medium text-amber-400 code-font">Esperando Inyección Estructural...</span>
-                </div>
-                <div class="w-32 bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                    <div id="pipeline-progress" class="bg-sky-500 h-full w-0 transition-all duration-300"></div>
-                </div>
-            </div>
-
-            <div class="flex-1 flex flex-col overflow-hidden">
-                
-                <div class="h-1/3 border-b border-[#1f2937] p-4 flex flex-col bg-[#070a10]">
-                    <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1.5 block">Consola de Telemetría Agéntica</span>
-                    <div id="console-output" class="flex-1 overflow-y-auto text-xs code-font text-emerald-400 space-y-1 bg-black/40 p-3 rounded border border-slate-900/60 leading-relaxed">
-                        [SISTEMA] Núcleo listo. Cargue las referencias JSON para iniciar la compilación...
-                    </div>
-                </div>
-
-                <div class="h-2/3 p-6 overflow-y-auto space-y-4">
-                    <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-widest block">Matriz de Ilustración en Tiempo Real</span>
-                    <div id="gallery-container" class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    </div>
-                </div>
-
-            </div>
-
-        </section>
+      <div class="preview-grid" id="previewGrid"></div>
     </main>
+  </div>
 
-    <canvas id="hidden-canvas" style="display: none;"></canvas>
+  <script>
+    class IlustradorLibrojuego {
+      constructor(config = {}) {
+        this.geminiApiKey = config.geminiApiKey || '';
+        this.comfyUrl = config.comfyUrl || 'http://127.0.0.1:8188';
+        this.bibliaVisual = {};
+        this.onLog = config.onLog || console.log;
+        this.clientId = "saga_mini_" + Math.random().toString(36).substring(2, 9);
+        this.ws = null;
+      }
 
-    <script type="module" src="main.js"></script>
+      log(msg, type = 'info') {
+        this.onLog(msg, type);
+      }
+
+      setApiKey(key) {
+        this.geminiApiKey = key;
+      }
+
+      setComfyUrl(url) {
+        this.comfyUrl = url;
+      }
+
+      initWebSocket() {
+        return new Promise((resolve, reject) => {
+          if (this.ws && this.ws.readyState === WebSocket.OPEN) return resolve(this.ws);
+          
+          const baseUrl = this.comfyUrl.replace(/\/$/, '');
+          const wsUrl = baseUrl.replace(/^http/, 'ws') + `/ws?clientId=${this.clientId}`;
+          this.ws = new WebSocket(wsUrl);
+          this.ws.onopen = () => resolve(this.ws);
+          this.ws.onerror = (err) => reject(new Error("No se pudo conectar con ComfyUI WebSocket."));
+          this.ws.onclose = () => { this.ws = null; };
+        });
+      }
+
+      async generarPromptArte(nodoTexto, compendioEstilo = '', guiaTexto = '') {
+        let objetoCompendio = {};
+        if (typeof compendioEstilo === 'object' && compendioEstilo !== null) {
+          objetoCompendio = compendioEstilo;
+        } else if (typeof compendioEstilo === 'string' && compendioEstilo.trim() !== '') {
+          try {
+            objetoCompendio = JSON.parse(compendioEstilo);
+          } catch (e) {
+            objetoCompendio = { textoLibre: compendioEstilo };
+          }
+        }
+
+        const loreData = objetoCompendio.lore || objetoCompendio;
+        const listaClavesCompendio = Object.keys(loreData);
+
+        // =========================================================================
+        // PRIMERA LLAMADA: Filtrar elementos de compendio relevantes
+        // =========================================================================
+        this.log('- API Paso 1: Seleccionando contexto del compendio...', 'info');
+        const promptPaso1 = `Eres un Curador de Contexto Visual para una IA de arte.
+Analiza el siguiente texto de un nodo y la lista de nombres de secciones disponibles en el compendio de diseño.
+Selecciona ÚNICAMENTE los nombres de las secciones que contengan información visual o narrativa estrictamente relevante para esta escena.
+
+Texto del Nodo: "${nodoTexto}"
+Secciones Disponibles en el Compendio:
+${JSON.stringify(listaClavesCompendio, null, 2)}
+
+Devuelve ÚNICAMENTE un JSON con este formato exacto:
+{
+  "seccionesSeleccionadas": ["nombre_seccion_1", "nombre_seccion_2"]
+}`;
+
+        let seccionesElegidas = [];
+        try {
+          const resPaso1Text = await this._llamarGemini(promptPaso1);
+          const limpiadoPaso1 = resPaso1Text.replace(/```json|```/g, '').trim();
+          const resultadoPaso1 = JSON.parse(limpiadoPaso1);
+          seccionesElegidas = resultadoPaso1.seccionesSeleccionadas || [];
+          this.log(`- Paso 1 OK. Secciones seleccionadas: ${seccionesElegidas.join(', ') || 'Ninguna'}`, 'info');
+        } catch (e) {
+          this.log('Falló la selección del Paso 1, usando compendio completo como fallback.', 'error');
+          seccionesElegidas = listaClavesCompendio;
+        }
+
+        const contextoFiltrado = {};
+        seccionesElegidas.forEach(clave => {
+          if (loreData[clave] !== undefined) {
+            contextoFiltrado[clave] = loreData[clave];
+          }
+        });
+
+        // =========================================================================
+        // SEGUNDA LLAMADA: Generar prompt ComfyUI y actualizar elementos persistentes
+        // =========================================================================
+        this.log('- API Paso 2: Generando prompt en inglés para ComfyUI...', 'info');
+        const promptPaso2 = `Eres un Director de Arte para IA. Basándote en la información proporcionada, genera un prompt descriptivo en inglés optimizado para ComfyUI que capture la escena de este nodo.
+Analiza la Biblia Visual proporcionada y utiliza únicamente los elementos persistentes relevantes para este texto. Si en el nodo aparece un nuevo elemento visual clave (un personaje, un objeto clave, un entorno), defínelo en el objeto "nuevosElementosVisuales" para mantener la coherencia.
+
+Guía de Estilo Adicional: ${guiaTexto}
+Compendio de Estilo (Filtrado para esta escena): ${JSON.stringify(contextoFiltrado, null, 2)}
+Biblia Visual Acumulada: ${JSON.stringify(this.bibliaVisual, null, 2)}
+Texto del Nodo Actual: "${nodoTexto}"
+
+Devuelve ÚNICAMENTE un JSON con este formato exacto:
+{
+  "promptComfyUI": "Descripción detallada en inglés...",
+  "nuevosElementosVisuales": {
+    "nombreElemento": "descripción visual persistente"
+  }
+}`;
+
+        const responseTextPaso2 = await this._llamarGemini(promptPaso2);
+        try {
+          const limpiadoPaso2 = responseTextPaso2.replace(/```json|```/g, '').trim();
+          const resultado = JSON.parse(limpiadoPaso2);
+          
+          if (resultado.nuevosElementosVisuales) {
+            Object.assign(this.bibliaVisual, resultado.nuevosElementosVisuales);
+          }
+          
+          return resultado.promptComfyUI;
+        } catch (e) {
+          this.log('Error al parsear el prompt de arte en Paso 2: ' + responseTextPaso2, 'error');
+          throw new Error('La respuesta del Director de Arte no es un JSON válido.');
+        }
+      }
+
+      async renderizarEnComfyUI(promptTexto, width = 1024, height = 1024, steps = 6) {
+        const baseUrl = this.comfyUrl.replace(/\/$/, '');
+        const ws = await this.initWebSocket();
+
+        const workflowAPI = {
+          "9": {
+            "class_type": "SaveImage",
+            "inputs": { "filename_prefix": "saga_mini", "images": ["57:8", 0] }
+          },
+          "57:30": {
+            "class_type": "CLIPLoader",
+            "inputs": { "clip_name": "qwen_3_4b_fp8_mixed.safetensors", "type": "lumina2", "device": "default" }
+          },
+          "57:29": {
+            "class_type": "VAELoader",
+            "inputs": { "vae_name": "ae.safetensors" }
+          },
+          "57:33": {
+            "class_type": "ConditioningZeroOut",
+            "inputs": { "conditioning": ["57:27", 0] }
+          },
+          "57:8": {
+            "class_type": "VAEDecode",
+            "inputs": { "samples": ["57:3", 0], "vae": ["57:29", 0] }
+          },
+          "57:28": {
+            "class_type": "UNETLoader",
+            "inputs": { "unet_name": "z_image_turbo_int8_convrot.safetensors", "weight_dtype": "default" }
+          },
+          "57:27": {
+            "class_type": "CLIPTextEncode",
+            "inputs": { "text": promptTexto, "clip": ["57:30", 0] }
+          },
+          "57:13": {
+            "class_type": "EmptySD3LatentImage",
+            "inputs": { "width": width, "height": height, "batch_size": 1 }
+          },
+          "57:11": {
+            "class_type": "ModelSamplingAuraFlow",
+            "inputs": { "shift": 3, "model": ["57:28", 0] }
+          },
+          "57:3": {
+            "class_type": "KSampler",
+            "inputs": {
+              "seed": Math.floor(Math.random() * 1e15),
+              "steps": steps,
+              "cfg": 1.0,
+              "sampler_name": "res_multistep",
+              "scheduler": "simple",
+              "denoise": 1,
+              "model": ["57:11", 0],
+              "positive": ["57:27", 0],
+              "negative": ["57:33", 0],
+              "latent_image": ["57:13", 0]
+            }
+          }
+        };
+
+        return new Promise(async (resolve, reject) => {
+          let targetPromptId = null;
+          const messageHandler = async (event) => {
+            if (typeof event.data === 'string') {
+              const msg = JSON.parse(event.data);
+              if (msg.type === 'executed' && msg.data.node === "9" && msg.data.prompt_id === targetPromptId) {
+                ws.removeEventListener('message', messageHandler);
+                const imgData = msg.data.output.images[0];
+                const imgUrl = `${baseUrl}/view?filename=${encodeURIComponent(imgData.filename)}&subfolder=${encodeURIComponent(imgData.subfolder)}&type=${encodeURIComponent(imgData.type)}`;
+                try {
+                  const res = await fetch(imgUrl);
+                  const blob = await res.blob();
+                  resolve(blob);
+                } catch (err) {
+                  reject(err);
+                }
+              }
+            }
+          };
+          ws.addEventListener('message', messageHandler);
+          try {
+            const res = await fetch(`${baseUrl}/prompt`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ prompt: workflowAPI, client_id: this.clientId })
+            });
+            if (!res.ok) {
+              ws.removeEventListener('message', messageHandler);
+              reject(new Error("ComfyUI rechazó la estructura del pipeline."));
+              return;
+            }
+            const data = await res.json();
+            targetPromptId = data.prompt_id;
+          } catch (err) {
+            ws.removeEventListener('message', messageHandler);
+            reject(err);
+          }
+        });
+      }
+
+      async blobToBase64(blob) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      }
+
+      async _llamarGemini(promptText, retries = 3, delay = 8000) {
+        if (!this.geminiApiKey) {
+          throw new Error('Debes ingresar una Gemini API Key válida.');
+        }
+
+        for (let i = 0; i < retries; i++) {
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${this.geminiApiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: promptText }] }]
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            return data.candidates[0].content.parts[0].text;
+          }
+
+          const errData = await response.json().catch(() => ({}));
+          const isRateLimit = response.status === 429 || errData.error?.message?.includes('quota');
+
+          if (isRateLimit && i < retries - 1) {
+            this.log(`Límite de API alcanzado. Esperando ${(delay / 1000).toFixed(1)}s antes de reintentar (Intento ${i + 1}/${retries})...`, 'error');
+            await new Promise(resolve => setTimeout(resolve, delay));
+            delay *= 1.5;
+          } else {
+            throw new Error(`Error Gemini: ${errData.error?.message || response.statusText}`);
+          }
+        }
+      }
+    }
+
+    class QueueManager {
+      constructor() {
+        this.queue = [];
+        this.isProcessing = false;
+        this.delayBetweenTasksMs = 3000;
+      }
+
+      enqueue(idNodo) {
+        if (!this.queue.includes(idNodo)) {
+          this.queue.push(idNodo);
+          const card = document.getElementById(`card-${idNodo}`);
+          if (card) card.classList.add('queued');
+          this.processNext();
+        }
+      }
+
+      async processNext() {
+        if (this.isProcessing || this.queue.length === 0) return;
+
+        this.isProcessing = true;
+        const idNodo = this.queue.shift();
+        const card = document.getElementById(`card-${idNodo}`);
+        if (card) card.classList.remove('queued');
+
+        try {
+          await procesarNodoIndividual(idNodo);
+        } catch (err) {
+          log(`Error procesando nodo ${idNodo}: ${err.message}`, 'error');
+        } finally {
+          await new Promise(resolve => setTimeout(resolve, this.delayBetweenTasksMs));
+          this.isProcessing = false;
+          this.processNext();
+        }
+      }
+    }
+
+    let dataLibrojuego = null;
+    let dataCompendio = null;
+    let ilustrador = null;
+    const renderQueue = new QueueManager();
+
+    const fileLibrojuego = document.getElementById('fileLibrojuego');
+    const fileCompendio = document.getElementById('fileCompendio');
+    const btnExportar = document.getElementById('btnExportar');
+    const btnExportarBiblia = document.getElementById('btnExportarBiblia');
+    const logPanel = document.getElementById('logPanel');
+    const previewGrid = document.getElementById('previewGrid');
+    const appTitle = document.getElementById('appTitle');
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const savedKey = localStorage.getItem('koreh_gemini_book_api_key') || '';
+      if (savedKey) document.getElementById('apiKey').value = savedKey;
+
+      ilustrador = new IlustradorLibrojuego({
+        geminiApiKey: savedKey,
+        comfyUrl: document.getElementById('comfyUrl').value.trim(),
+        onLog: log
+      });
+    });
+
+    document.getElementById('apiKey').addEventListener('change', (e) => {
+      const val = e.target.value.trim();
+      localStorage.setItem('koreh_gemini_book_api_key', val);
+      if (ilustrador) ilustrador.setApiKey(val);
+    });
+
+    document.getElementById('comfyUrl').addEventListener('change', (e) => {
+      if (ilustrador) ilustrador.setComfyUrl(e.target.value.trim());
+    });
+
+    function log(mensaje, tipo = 'info') {
+      const p = document.createElement('p');
+      p.className = tipo;
+      p.textContent = `[${new Date().toLocaleTimeString()}] ${mensaje}`;
+      logPanel.appendChild(p);
+      logPanel.scrollTop = logPanel.scrollHeight;
+    }
+
+    fileLibrojuego.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          dataLibrojuego = JSON.parse(evt.target.result);
+          
+          const secciones = dataLibrojuego.secciones || dataLibrojuego;
+          const totalNodos = Object.keys(secciones).length;
+          
+          if (dataLibrojuego.titulo) {
+            appTitle.textContent = `${dataLibrojuego.titulo}`;
+          }
+
+          log(`Librojuego cargado exitosamente (${totalNodos} secciones detectadas).`, 'success');
+          renderPreviewGrid(secciones);
+          btnExportar.disabled = false;
+          btnExportarBiblia.disabled = false;
+        } catch (err) {
+          log('Error al leer el JSON del librojuego.', 'error');
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    fileCompendio.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          dataCompendio = JSON.parse(evt.target.result);
+          log('Compendio de estilo cargado exitosamente.', 'success');
+        } catch (err) {
+          log('Error al leer el JSON del compendio.', 'error');
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    function renderPreviewGrid(secciones) {
+      previewGrid.innerHTML = '';
+      Object.keys(secciones).forEach(id => {
+        const nodo = secciones[id];
+        const card = document.createElement('div');
+        card.className = 'node-card';
+        card.id = `card-${id}`;
+
+        const texto = Array.isArray(nodo.texto) ? nodo.texto.join(' ') : (nodo.texto || '');
+
+        card.innerHTML = `
+          <div class="badge-queue">EN COLA</div>
+          <header>
+            <span>[${id}] ${nodo.titulo || ''}</span>
+            <button class="btn btn-secondary btn-sm" onclick="agregarACola('${id}')">Pintar</button>
+          </header>
+          <p>${texto}</p>
+          ${nodo.imagenBase64 
+            ? `<img src="${nodo.imagenBase64}" alt="Ilustración">` 
+            : `<div class="empty-img">Sin Ilustración</div>`}
+        `;
+        previewGrid.appendChild(card);
+      });
+    }
+
+    function agregarACola(idNodo) {
+      log(`Nodo "${idNodo}" agregado a la cola de generación.`, 'info');
+      renderQueue.enqueue(idNodo);
+    }
+
+    async function procesarNodoIndividual(idNodo) {
+      const apiKey = document.getElementById('apiKey').value.trim();
+      if (!apiKey) {
+        alert('Ingresa tu Gemini API Key');
+        throw new Error('API Key ausente');
+      }
+
+      ilustrador.setApiKey(apiKey);
+      ilustrador.setComfyUrl(document.getElementById('comfyUrl').value.trim());
+
+      const secciones = dataLibrojuego.secciones || dataLibrojuego;
+      const nodo = secciones[idNodo];
+      if (!nodo) {
+        log(`El nodo "${idNodo}" no existe. Omisión.`, 'error');
+        return;
+      }
+
+      const guiaTexto = document.getElementById('guiaTexto').value.trim();
+      const width = parseInt(document.getElementById('comfyWidth').value, 10);
+      const height = parseInt(document.getElementById('comfyHeight').value, 10);
+      const steps = parseInt(document.getElementById('comfySteps').value, 10);
+      const textoNodo = Array.isArray(nodo.texto) ? nodo.texto.join(' ') : (nodo.texto || '');
+
+      log(`Procesando nodo individual "${idNodo}"...`, 'info');
+      
+      const promptComfy = await ilustrador.generarPromptArte(textoNodo, dataCompendio || '', guiaTexto);
+      log(`- Prompt ("${idNodo}"): "${promptComfy}"`, 'info');
+
+      const blobImagen = await ilustrador.renderizarEnComfyUI(promptComfy, width, height, steps);
+      const base64Imagen = await ilustrador.blobToBase64(blobImagen);
+
+      nodo.imagenBase64 = base64Imagen;
+      log(`✓ Nodo "${idNodo}" ilustrado correctamente.`, 'success');
+
+      const card = document.getElementById(`card-${idNodo}`);
+      if (card) {
+        const imgContainer = card.querySelector('.empty-img') || card.querySelector('img');
+        if (imgContainer) {
+          const newImg = document.createElement('img');
+          newImg.src = base64Imagen;
+          imgContainer.replaceWith(newImg);
+        }
+      }
+    }
+
+    btnExportar.addEventListener('click', () => {
+      if (!dataLibrojuego) return;
+      guardarJSON(dataLibrojuego, 'ENDOTOS_2898_Ilustrado.json');
+    });
+
+    btnExportarBiblia.addEventListener('click', () => {
+      if (!ilustrador || !ilustrador.bibliaVisual) return;
+      guardarJSON(ilustrador.bibliaVisual, 'biblia_visual.json');
+    });
+
+    function guardarJSON(datos, nombreArchivo) {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(datos, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", nombreArchivo);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+  </script>
 </body>
 </html>
