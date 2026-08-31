@@ -1,3 +1,4 @@
+// utilidades.js
 // Inicialización automática de la aplicación al cargar el documento con intro fluida
 window.addEventListener('DOMContentLoaded', () => {
     // Desactivar el menú contextual del clic derecho en toda la aplicación
@@ -8,7 +9,7 @@ window.addEventListener('DOMContentLoaded', () => {
     // Inicializar la pestaña del catálogo activa por defecto de forma subyacente
     document.getElementById('tabCatalogo').classList.add('is-active');
     
-    // Iniciar flujo de descarga asíncrono en segundo plano para libros y noticias
+    // Iniciar flujo de descarga síncrono/asíncrono en segundo plano para libros y noticias
     cargarBibliotecaDesdeGitHub();
     cargarNoticiasDesdeGitHub();
 
@@ -42,6 +43,31 @@ window.addEventListener('DOMContentLoaded', () => {
             overlay.style.display = 'none';
         }, 800);
     }, 5700);
+});
+
+// Listener global de teclado para navegación con A/D y Flechas Izquierda/Derecha
+window.addEventListener('keydown', (e) => {
+    // Si el usuario está escribiendo en el buscador, no interferir con el teclado
+    const activeElement = document.activeElement;
+    if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+        return;
+    }
+
+    // Navegación solo activa si se está visualizando el lector (readerView activo)
+    if (readerView && readerView.style.display !== 'none' && libroActual) {
+        const key = e.key.toLowerCase();
+
+        // Retroceder: Flecha Izquierda o tecla 'A'
+        if (key === 'arrowleft' || key === 'a') {
+            e.preventDefault();
+            irBloqueAnterior();
+        }
+        // Avanzar: Flecha Derecha o tecla 'D'
+        else if (key === 'arrowright' || key === 'd') {
+            e.preventDefault();
+            irBloqueSiguiente();
+        }
+    }
 });
 
 // Función interna y profunda para transformar Base64 corruptos en URLs de objeto Blob nativas
