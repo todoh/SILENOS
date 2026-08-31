@@ -6,7 +6,7 @@
     <title>LIBROS & LIBROJUEGOS</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
-    
+         
     <!-- GOOGLE ADSENSE INTEGRADO -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7136138379132657" crossorigin="anonymous"></script>
 </head>
@@ -14,7 +14,6 @@
 /* ==========================================================================
    LIBROS & LIBROJUEGOS - LAYOUT DESKTOP CON ADSENSE Y BUSCADOR VISIBLE
    ========================================================================== */
-
 @media (min-width: 1024px) {
     body {
         display: grid;
@@ -29,7 +28,6 @@
         background-color: #0a0a0a;
         min-height: 100vh;
     }
-
     header#mainHeader {
         grid-area: header;
         position: sticky;
@@ -41,7 +39,6 @@
         border-bottom: 1px solid #1a1a1a;
         z-index: 100;
     }
-
     #searchContainer {
         grid-area: search;
         position: relative;
@@ -53,7 +50,6 @@
         background-color: transparent;
         height: 45px;
     }
-
     #inputBuscar {
         border-color: #222222;
         padding: 0 16px;
@@ -68,7 +64,6 @@
         outline: none;
         text-transform: uppercase;
     }
-
     main {
         grid-area: main;
         position: relative !important;
@@ -79,19 +74,17 @@
         padding: 24px 0 100px 0;
         box-sizing: border-box;
     }
-
     /* Slot Banner Horizontal Superior adaptativo sin borde ni altura fija vacía */
-.adsense-slot-header {
-    grid-area: banner;
-    width: 100%;
-    max-width: 970px;
-    margin: 16px auto 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-}
-
+    .adsense-slot-header {
+        grid-area: banner;
+        width: 100%;
+        max-width: 970px;
+        margin: 16px auto 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+    }
     .adsense-slot-sidebar-left {
         grid-area: sidebar-left;
         position: sticky;
@@ -103,7 +96,6 @@
         padding: 24px 16px;
         box-sizing: border-box;
     }
-
     .adsense-slot-sidebar-right {
         grid-area: sidebar-right;
         position: sticky;
@@ -115,7 +107,6 @@
         padding: 24px 16px;
         box-sizing: border-box;
     }
-
     .adsense-slot-infeed {
         width: 100%;
         min-height: 120px;
@@ -127,26 +118,21 @@
         border: 1px dashed #222222;
         box-sizing: border-box;
     }
-
     .grid-view {
         padding: 16px 0 40px 0;
         gap: 16px;
     }
-
     .book-card {
         width: calc((100% - (16px * 4)) / 5);
         transition: transform 0.2s ease, filter 0.2s ease;
     }
-
     .book-card:hover {
         transform: translateY(-4px);
         filter: brightness(1.15);
     }
-
     .book-cover-container {
         border: 1px solid #1a1a1a;
     }
-
     .reader-content {
         max-width: 768px;
         margin: 0 auto;
@@ -155,23 +141,25 @@
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         border: 1px solid #e5e5e5;
     }
-
     .reader-nav, #gamebookReaderNav, #indexModal, #desleerModal, #reiniciarLibroModal {
         max-width: 768px;
-        left: 50%;
-        transform: translateX(-50%);
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        box-sizing: border-box;
     }
-
     .edge-nav {
         display: none;
     }
-
     #tiendaModal {
-        max-width: 900px;
-        left: 50%;
-        transform: translateX(-50%);
+        max-width: 768px !important;
+        left: 50% !important;
+        top: 80px !important;
+        bottom: auto !important;
+        height: calc(100vh - 160px) !important;
+        transform: translateX(-50%) !important;
+        border: 1px solid #222222;
+        box-shadow: 0 16px 48px rgba(0,0,0,0.9);
     }
-
     .global-nav {
         grid-area: footer;
         position: fixed;
@@ -186,19 +174,16 @@
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8);
         padding: 0 16px;
     }
-
     .nav-tab {
         padding: 0 16px;
         flex-direction: row;
         gap: 8px;
         justify-content: center;
     }
-
     .nav-icon {
         font-size: 0.9rem;
         margin-bottom: 0;
     }
-
     .nav-label {
         font-size: 0.65rem;
     }
@@ -209,7 +194,6 @@
         <div id="introTitle">SILEN<span style="color: rgb(131, 0, 0);">OS</span> LIBROS & LIBROJUEGOS</div>
         <div id="introDisclaimer">TODOS LOS CONTENIDOS HAS SIDO PRODUCIDOS USANDO INTELIGENCIA ARTIFICIAL DE VANGUARDIA.</div>
     </div>
-
     <header id="mainHeader">
         <div class="header-left">
             <div id="headerTitle">SILEN<span style="color: rgb(131, 0, 0);">OS</span> LIBROS & LIBROJUEGOS</div>
@@ -218,20 +202,19 @@
             <select id="selectIdioma" class="lang-select">
                 <option value="ES" selected>Español</option>
                 <option value="EN">English</option>
-                <option value="RU">Русский</option>
-                <option value="AR">العربية</option>
-                <option value="CH">中文</option>
+                <option value="RU"> </option>
+                <option value="AR"> </option>
+                <option value="CH"> </option>
                 <option value="FR">Français</option>
-                <option value="JN">日本語</option>
+                <option value="JN"> </option>
             </select>
             <button class="btn" id="btnFiltroGamebook" style="font-size: 1.1rem; padding: 0 8px; color: #ffffff !important; opacity: 0.4; display: none;"></button>
-            <button class="btn" id="btnBuscarToggle" style="font-size: 1.1rem; padding: 0 8px; color: #ffffff !important; opacity: 1 !important;">🔍</button>
+            <button class="btn" id="btnBuscarToggle" style="font-size: 1.1rem; padding: 0 8px; color: #ffffff !important; opacity: 1 !important;"> </button>
         </div>
         <div class="header-right" id="backContainer" style="display: none;">
             <button class="btn secondary" id="btnVolver">Volver</button>
         </div>
     </header>
-
     <!-- BANNER PUBLICITARIO SUPERIOR -->
     <div class="adsense-slot-header">
         <ins class="adsbygoogle"
@@ -243,12 +226,10 @@
              (adsbygoogle = window.adsbygoogle || []).push({});
         </script>
     </div>
-
     <!-- CONTENEDOR DEL BUSCADOR RESTAURADO -->
     <div id="searchContainer" style="display: block;">
         <input type="text" id="inputBuscar" placeholder="BUSCAR MANUSCRITO POR NOMBRE..." autocomplete="off">
     </div>
-
     <!-- LATERAL IZQUIERDO PUBLICITARIO -->
     <aside class="adsense-slot-sidebar-left">
         <ins class="adsbygoogle"
@@ -259,7 +240,6 @@
              (adsbygoogle = window.adsbygoogle || []).push({});
         </script>
     </aside>
-
     <!-- LATERAL DERECHO PUBLICITARIO -->
     <aside class="adsense-slot-sidebar-right">
         <ins class="adsbygoogle"
@@ -270,7 +250,6 @@
              (adsbygoogle = window.adsbygoogle || []).push({});
         </script>
     </aside>
-
     <main style="top: 0px; width: 100%; position:relative;">
         <div id="gridView" class="grid-view">
             <div class="empty-state">Conectando con el repositorio de manuscritos...</div>
@@ -279,7 +258,6 @@
         <div id="newsView" class="grid-view" style="display: none;">
             <div class="empty-state">Cargando noticias de Silenos...</div>
         </div>
-
         <div id="favoritesView" class="grid-view" style="display: none;">
             <div class="empty-state">No tienes manuscritos en tus favoritos.</div>
         </div>
@@ -296,19 +274,15 @@
                     </div>
                     <canvas id="graficaLectura" width="400" height="160" style="width: 100%; height: auto; background: #111111; border: 1px solid #222222; display: block;"></canvas>
                 </div>
-
                 <div class="pref-group">
                     <label>Libros Leídos</label>
                     <div id="listaLibrosLeidos" class="lista-usuario-brutalista"></div>
                 </div>
-
                 <div class="pref-group">
                     <label>Libros Empezados a Leer</label>
                     <div id="listaLibrosEmpezados" class="lista-usuario-brutalista"></div>
                 </div>
-
                 <hr style="border: none; border-top: 1px dashed #333333; margin: 32px 0;">
-
                 <div class="pref-group">
                     <label>Tipografía</label>
                     <div class="pref-buttons">
@@ -318,7 +292,6 @@
                         <button class="btn pref-btn" onclick="cambiarTipografia('Courier New')">Monospace</button>
                     </div>
                 </div>
-
                 <div class="pref-group">
                     <label>Tamaño de Letra</label>
                     <div class="pref-buttons">
@@ -328,14 +301,12 @@
                         <button class="btn pref-btn" onclick="cambiarTamanoLetra('1.6rem')">A++</button>
                     </div>
                 </div>
-
                 <div class="pref-group">
                     <label>Vista Previa del Texto</label>
                     <div id="previewTextContainer" style="font-family: var(--reader-font-family); font-size: var(--reader-font-size); line-height: 1.75; text-align: justify; padding: 16px; border: 1px dashed #333333; color: var(--text-main); background-color: var(--bg-main); margin-top: 12px; user-select: none; -webkit-user-select: none;">
                         Amanecía en Silenos. Las letras comenzaban a ordenarse de manera fluida sobre el pergamino digital, revelando misterios e historias que se verán reflejadas directamente con este formato en tus lecturas.
                     </div>
                 </div>
-
                 <div class="pref-group" style="margin-top: 40px;">
                     <label>Restablecer Lecturas</label>
                     <div class="pref-buttons">
@@ -344,7 +315,6 @@
                 </div>
             </div>
         </div>
-
         <div id="tiendaView" class="preferences-view" style="display: none;">
             <div class="preferences-content">
                 <div class="pref-group">
@@ -358,12 +328,10 @@
                 </div>
             </div>
         </div>
-
         <div id="readerView" class="reader-view">
             <div id="edgePrev" class="edge-nav"></div>
             <div id="edgeNext" class="edge-nav"></div>
             <div id="readerContent" class="reader-content"></div>
-
             <div class="reader-nav" id="normalReaderNav">
                 <div class="nav-cell" style="width: 20%;">
                     <button class="btn secondary" id="btnPrev" style="z-index: 10; width: 100%; text-align: left;">Ant.</button>
@@ -375,17 +343,14 @@
                     <button class="btn secondary" id="btnNext" style="z-index: 10; width: 100%; text-align: right;">Sig.</button>
                 </div>
             </div>
-
             <div id="gamebookReaderNav" style="display: none; position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--bg-dark); padding: 16px; z-index: 15; box-sizing: border-box;">
                 <div id="gamebookChoicesContainer" style="display: flex; flex-direction: column; gap: 12px; width: 100%;"></div>
             </div>
-
             <div id="indexModal" style="display: none;">
                 <div id="indexModalContent"></div>
             </div>
         </div>
     </main>
-
     <div id="desleerModal" style="display: none;">
         <div style="font-size: 0.75rem; font-weight: 700; color: #888888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">¿Confirmar acción?</div>
         <div style="font-size: 0.9rem; font-weight: 100; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 24px; line-height: 1.4;">¿Estás seguro de que quieres desleer todos los libros? Se perderá todo el progreso acumulado de forma permanente.</div>
@@ -394,7 +359,6 @@
             <button class="btn" style="color: rgb(220, 0, 0);" onclick="confirmarDesleerTodo()">Desleer todo</button>
         </div>
     </div>
-
     <div id="reiniciarLibroModal" style="display: none; position: fixed; bottom: 58px; left: 0; width: 100%; background-color: var(--bg-dark); color: var(--text-light); z-index: 110; padding: 24px; box-sizing: border-box;">
         <div style="font-size: 0.75rem; font-weight: 700; color: #888888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">¿Reiniciar aventura?</div>
         <div style="font-size: 0.9rem; font-weight: 100; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 24px; line-height: 1.4;">¿Estás seguro de que deseas reiniciar este librojuego? Regresarás al inicio y se perderá tu progreso actual en esta lectura.</div>
@@ -403,34 +367,31 @@
             <button class="btn" style="color: rgb(220, 0, 0);" onclick="confirmarReiniciarLibro()">Reiniciar</button>
         </div>
     </div>
-
     <div id="tiendaModal" style="display: none; position: fixed; bottom: 58px; left: 0; width: 100%; height: calc(100% - 118px); background-color: var(--bg-dark); color: var(--text-light); z-index: 120; padding: 24px; box-sizing: border-box; overflow-y: auto;">
         <div id="tiendaModalContent" class="reader-content" style="background-color: transparent; color: var(--text-light); padding: 0 0 40px 0;"></div>
     </div>
-
     <nav id="navView" class="global-nav">
         <div class="nav-tab" id="tabCatalogo" onclick="cambiarSeccionPrincipal('catalogo')">
-            <span class="nav-icon">📖</span>
+            <span class="nav-icon"> </span>
             <span class="nav-label">Catálogo</span>
         </div>
         <div class="nav-tab" id="tabNews" onclick="cambiarSeccionPrincipal('news')">
-            <span class="nav-icon">📰</span>
+            <span class="nav-icon"> </span>
             <span class="nav-label">News</span>
         </div>
         <div class="nav-tab" id="tabFavoritos" onclick="cambiarSeccionPrincipal('favoritos')">
-            <span class="nav-icon">⭐</span>
+            <span class="nav-icon"> </span>
             <span class="nav-label">Favoritos</span>
         </div>
         <div class="nav-tab" id="tabUsuario" onclick="cambiarSeccionPrincipal('usuario')">
-            <span class="nav-icon">👤</span>
+            <span class="nav-icon"> </span>
             <span class="nav-label">Usuario</span>
         </div>
         <div class="nav-tab" id="tabTienda" onclick="cambiarSeccionPrincipal('tienda')">
-            <span class="nav-icon">🛒</span>
+            <span class="nav-icon"> </span>
             <span class="nav-label">Tienda</span>
         </div>
     </nav>
-
     <script src="oi.js"></script>
     <script src="ui.js"></script>
     <script src="gestos.js"></script>
