@@ -7,31 +7,29 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
     
-    <!-- GOOGLE ADSENSE INTEGRADO CON TU CLIENT ID REAL -->
+    <!-- GOOGLE ADSENSE INTEGRADO -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7136138379132657" crossorigin="anonymous"></script>
 </head>
 <style>
 /* ==========================================================================
-   LIBROS & LIBROJUEGOS - STYLE 2 (LAYOUT DESKTOP CON ESPACIOS RESERVADOS PARA ADSENSE)
+   LIBROS & LIBROJUEGOS - LAYOUT DESKTOP CON ADSENSE Y BUSCADOR VISIBLE
    ========================================================================== */
 
-/* 1. RESET Y ESTRUCTURA GLOBAL EN ESCRITORIO */
 @media (min-width: 1024px) {
     body {
-        /* Se define un grid de 3 columnas: Lateral Izquierdo (Ad), Contenido Central, Lateral Derecho (Ad) */
         display: grid;
         grid-template-columns: minmax(160px, 1fr) minmax(768px, 1024px) minmax(160px, 1fr);
-        grid-template-rows: auto auto 1fr auto;
+        grid-template-rows: auto auto auto 1fr auto;
         grid-template-areas:
             "header  header  header"
             "banner  banner  banner"
+            "search  search  search"
             "sidebar-left main sidebar-right"
             "footer  footer  footer";
         background-color: #0a0a0a;
         min-height: 100vh;
     }
 
-    /* Cabecera adaptada al ancho completo con alineación máxima de área */
     header#mainHeader {
         grid-area: header;
         position: sticky;
@@ -41,26 +39,36 @@
         padding: 0 32px;
         box-sizing: border-box;
         border-bottom: 1px solid #1a1a1a;
+        z-index: 100;
     }
 
-    /* Buscador persistente desacoplado en el flujo desktop */
     #searchContainer {
+        grid-area: search;
         position: relative;
         top: 0;
-        grid-area: banner;
         width: 100%;
         max-width: 1024px;
-        margin: 16px auto 0 auto;
+        margin: 12px auto 0 auto;
         padding: 0;
         background-color: transparent;
+        height: 45px;
     }
 
     #inputBuscar {
         border-color: #222222;
         padding: 0 16px;
+        width: 100%;
+        height: 100%;
+        background-color: #111111;
+        color: var(--text-light);
+        font-family: 'Roboto', sans-serif;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        outline: none;
+        text-transform: uppercase;
     }
 
-    /* Contenedor principal de vistas ajustado al centro */
     main {
         grid-area: main;
         position: relative !important;
@@ -72,14 +80,12 @@
         box-sizing: border-box;
     }
 
-    /* 2. ESPACIOS PREDETERMINADOS Y SLOTS PARA PUBLICIDAD DE ADSENSE */
-    /* Slot Banner Horizontal Superior (Leaderboard 728x90 o similar) */
     .adsense-slot-header {
         grid-area: banner;
         width: 100%;
         max-width: 970px;
         min-height: 90px;
-        margin: 16px auto;
+        margin: 16px auto 0 auto;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -88,7 +94,6 @@
         box-sizing: border-box;
     }
 
-    /* Slot Lateral Izquierdo (Skyscraper / Rascacielos 160x600 o 300x600) */
     .adsense-slot-sidebar-left {
         grid-area: sidebar-left;
         position: sticky;
@@ -101,7 +106,6 @@
         box-sizing: border-box;
     }
 
-    /* Slot Lateral Derecho (Skyscraper / Rascacielos 160x600 o 300x600) */
     .adsense-slot-sidebar-right {
         grid-area: sidebar-right;
         position: sticky;
@@ -114,7 +118,6 @@
         box-sizing: border-box;
     }
 
-    /* Slot In-Feed / In-Article para inserciones intercaladas en el contenido */
     .adsense-slot-infeed {
         width: 100%;
         min-height: 120px;
@@ -127,16 +130,6 @@
         box-sizing: border-box;
     }
 
-    /* Estilo del texto indicador visual del placeholder publicitario */
-    .adsense-placeholder-text {
-        font-size: 0.6rem;
-        font-weight: 700;
-        color: #444444;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    /* 3. ADAPTACIÓN DE LAS VISTAS Y GRID DE LIBROS A ESCRITORIO */
     .grid-view {
         padding: 16px 0 40px 0;
         gap: 16px;
@@ -156,7 +149,6 @@
         border: 1px solid #1a1a1a;
     }
 
-    /* 4. MODO LECTOR EN ESCRITORIO (LECTURA TIPOGRÁFICA OPTIMIZADA) */
     .reader-content {
         max-width: 768px;
         margin: 0 auto;
@@ -166,43 +158,22 @@
         border: 1px solid #e5e5e5;
     }
 
-    .reader-nav {
+    .reader-nav, #gamebookReaderNav, #indexModal, #desleerModal, #reiniciarLibroModal {
         max-width: 768px;
         left: 50%;
         transform: translateX(-50%);
-        border: 1px solid #222222;
-        border-bottom: none;
-    }
-
-    #gamebookReaderNav {
-        max-width: 768px;
-        left: 50% !important;
-        transform: translateX(-50%);
-        border: 1px solid #222222;
-        border-bottom: none;
     }
 
     .edge-nav {
         display: none;
     }
 
-    /* Modales centrados en escritorio */
-    #indexModal, #desleerModal, #reiniciarLibroModal {
-        max-width: 768px;
-        left: 50%;
-        transform: translateX(-50%);
-        border: 1px solid #333333;
-        border-bottom: none;
-    }
-
     #tiendaModal {
         max-width: 900px;
         left: 50%;
         transform: translateX(-50%);
-        border: 1px solid #333333;
     }
 
-    /* 5. MENÚ INFERIOR REDISEÑADO COMO BARRA FLOTANTE */
     .global-nav {
         grid-area: footer;
         position: fixed;
@@ -256,7 +227,7 @@
                 <option value="JN">日本語</option>
             </select>
             <button class="btn" id="btnFiltroGamebook" style="font-size: 1.1rem; padding: 0 8px; color: #ffffff !important; opacity: 0.4; display: none;"></button>
-            <button class="btn" id="btnBuscarToggle" style="font-size: 1.1rem; padding: 0 8px; color: #ffffff !important; opacity: 1 !important;"></button>
+            <button class="btn" id="btnBuscarToggle" style="font-size: 1.1rem; padding: 0 8px; color: #ffffff !important; opacity: 1 !important;">🔍</button>
         </div>
         <div class="header-right" id="backContainer" style="display: none;">
             <button class="btn secondary" id="btnVolver">Volver</button>
@@ -273,6 +244,11 @@
         <script>
              (adsbygoogle = window.adsbygoogle || []).push({});
         </script>
+    </div>
+
+    <!-- CONTENEDOR DEL BUSCADOR RESTAURADO -->
+    <div id="searchContainer" style="display: block;">
+        <input type="text" id="inputBuscar" placeholder="BUSCAR MANUSCRITO POR NOMBRE..." autocomplete="off">
     </div>
 
     <!-- LATERAL IZQUIERDO PUBLICITARIO -->
@@ -297,11 +273,7 @@
         </script>
     </aside>
 
-    <div id="searchContainer" style="display: none;">
-        <input type="text" id="inputBuscar" placeholder="BUSCAR MANUSCRITO POR NOMBRE..." autocomplete="off">
-    </div>
-
-    <main style="top: 60px; width: 100%; position:absolute;">
+    <main style="top: 0px; width: 100%; position:relative;">
         <div id="gridView" class="grid-view">
             <div class="empty-state">Conectando con el repositorio de manuscritos...</div>
         </div>
