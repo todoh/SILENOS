@@ -87,12 +87,12 @@
 
             <nav class="hidden md:flex items-center space-x-12 text-[11px] uppercase tracking-[0.25em] font-light">
                 <a href="#proyecto" class="hover:text-silenos-gray transition-colors">Proyecto</a>
-                <a href="#catalogo" class="hover:text-silenos-gray transition-colors">Catálogo</a>
                 <a href="#autores" class="hover:text-silenos-gray transition-colors">Autores</a>
-                <a href="#herramientas" class="hover:text-silenos-gray transition-colors">Herramientas</a>
-                <a href="#leer" class="hover:text-silenos-gray transition-colors">Leer Online</a>
+                       <a href="#catalogo" class="hover:text-silenos-gray transition-colors">Catálogo</a>
+         <a href="#leer" class="hover:text-silenos-gray transition-colors">Leer Online</a>
                 <a href="#seriesypeliculas" class="hover:text-silenos-gray transition-colors">Series & Películas</a>
-            </nav>
+                        
+   </nav>
 
             <div class="flex items-center space-x-6">
                 <button id="theme-toggle" class="text-[10px] uppercase tracking-widest text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white transition-colors" aria-label="Cambiar Tema">
@@ -109,12 +109,13 @@
 
     <div id="mobile-menu" class="fixed inset-0 z-45 bg-silenos-white dark:bg-silenos-black flex flex-col justify-center px-12 space-y-10 text-2xl font-serif tracking-[0.1em] transform translate-x-full transition-transform duration-500 ease-in-out md:hidden">
         <a href="#proyecto" class="mobile-link hover:text-silenos-gray transition-colors">El Proyecto</a>
-        <a href="#catalogo" class="mobile-link hover:text-silenos-gray transition-colors">Catálogo</a>
         <a href="#autores" class="mobile-link hover:text-silenos-gray transition-colors">Los Autores</a>
-        <a href="#herramientas" class="mobile-link hover:text-silenos-gray transition-colors">Nuestras Herramientas</a>
+        <a href="#catalogo" class="mobile-link hover:text-silenos-gray transition-colors">Catálogo</a>
         <a href="#leer" class="mobile-link hover:text-silenos-gray transition-colors">Leer Online</a>
         <a href="#seriesypeliculas" class="mobile-link hover:text-silenos-gray transition-colors">Series & Películas</a>
-    </div>
+        <a href="#herramientas" class="mobile-link hover:text-silenos-gray transition-colors">Nuestras Herramientas</a>
+
+        </div>
 
     <main class="flex-grow pt-24">
         
@@ -131,18 +132,16 @@
                 </p>
                 
                 <div class="flex flex-wrap gap-10 pt-4 text-[11px] uppercase tracking-[0.25em] font-light">
-                    <a href="#catalogo" class="hover:text-silenos-gray transition-colors">
+                    <a href="https://www.silenos.es/catalogo" target="_blank" class="hover:text-silenos-gray transition-colors">
                         Explorar Catálogo →
                     </a>
-                    <a href="#herramientas" class="hover:text-silenos-gray transition-colors">
-                        Sistemas & Enlaces ↓
+                    <a href="https://www.silenos.es/librosylibrojuegos" target="_blank" class="hover:text-silenos-gray transition-colors">
+                        Leer Online →
                     </a>
                 </div>
             </div>
             
-            <div class="absolute bottom-12 left-8 md:left-16">
-                <span class="text-[9px] uppercase tracking-[0.3em] text-silenos-gray/60 font-light">Desplazar</span>
-            </div>
+           
         </section>
 
         <section id="proyecto" class="py-32 md:py-48 px-8 md:px-16 max-w-6xl mx-auto">
@@ -161,30 +160,9 @@
                 </div>
             </div>
         </section>
-
-        <section id="catalogo" class="py-32 md:py-48 px-8 md:px-16 max-w-6xl mx-auto">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-20 space-y-6 md:space-y-0">
-                <div class="space-y-4">
-                    <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">02 / PUBLICACIONES</span>
-                    <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Catálogo Impreso</h2>
-                </div>
-                <a href="https://www.silenos.es/catalogo" target="_blank" class="group text-[11px] uppercase tracking-[0.25em] font-light hover:text-silenos-gray transition-colors">
-                    Ir a silenos.es/catalogo <span class="inline-block transform group-hover:translate-x-1 transition-transform">→</span>
-                </a>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-1 gap-16 md:gap-12">
-                <div>
-                    <p class="text-silenos-gray dark:text-neutral-400 font-light tracking-wide leading-relaxed mt-2">
-                        El catálogo impreso de Silenos constituye la materialización física de un universo literario coordinado por Cristina Lobo y Manuel Rodsua bajo el sello de La Tejedora de Mundos. Editados con una rigurosa pureza formal y concebidos para convivir de forma orgánica con nuestro ecosistema computacional, estos volúmenes abarcan desde la ciencia ficción experimental y la investigación histórica hasta narrativas interactivas y arquitecturas de diseño procedural. Cada obra funciona como un registro tangible e independiente en papel, un punto de convergencia donde la palabra desnudada y la documentación estructural se consolidan en distribución global.
-                    </p>
-                </div>
-            </div>
-        </section>
-
-        <section id="autores" class="py-32 md:py-48 px-8 md:px-16 max-w-6xl mx-auto">
+<section id="autores" class="py-32 md:py-48 px-8 md:px-16 max-w-6xl mx-auto">
             <div class="space-y-4 mb-20">
-                <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">03 / LOS CREADORES</span>
+                <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">02 / LOS CREADORES</span>
                 <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Autores de la Casa</h2>
             </div>
 
@@ -218,10 +196,72 @@
                 </div>
             </div>
         </section>
+        <section id="catalogo" class="py-32 md:py-48 px-8 md:px-16 max-w-6xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-20 space-y-6 md:space-y-0">
+                <div class="space-y-4">
+                    <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">03 / PUBLICACIONES</span>
+                    <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Catálogo Impreso</h2>
+                </div>
+                <a href="https://www.silenos.es/catalogo" target="_blank" class="group text-[11px] uppercase tracking-[0.25em] font-light hover:text-silenos-gray transition-colors">
+                    Ir a silenos.es/catalogo <span class="inline-block transform group-hover:translate-x-1 transition-transform">→</span>
+                </a>
+            </div>
 
-        <section id="herramientas" class="py-32 md:py-48 px-8 md:px-16 max-w-6xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-1 gap-16 md:gap-12">
+                <div>
+                    <p class="text-silenos-gray dark:text-neutral-400 font-light tracking-wide leading-relaxed mt-2">
+                        El catálogo impreso de Silenos constituye la materialización física de un universo literario coordinado por Cristina Lobo y Manuel Rodsua bajo el sello de La Tejedora de Mundos. Editados con una rigurosa pureza formal y concebidos para convivir de forma orgánica con nuestro ecosistema computacional, estos volúmenes abarcan desde la ciencia ficción experimental y la investigación histórica hasta narrativas interactivas y arquitecturas de diseño procedural. Cada obra funciona como un registro tangible e independiente en papel, un punto de convergencia donde la palabra desnudada y la documentación estructural se consolidan en distribución global.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        
+
+       
+
+        <section id="leer" class="py-32 md:py-48 px-8 md:px-16 max-w-6xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-20 space-y-6 md:space-y-0">
+                <div class="space-y-4">
+                    <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">04 / LEER ONLINE</span>
+                    <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Lectura Online</h2>
+                </div>
+                <a href="https://www.silenos.es/librosylibrojuegos" target="_blank" class="group text-[11px] uppercase tracking-[0.25em] font-light hover:text-silenos-gray transition-colors">
+                    Ir a silenos.es/librosylibrojuegos <span class="inline-block transform group-hover:translate-x-1 transition-transform">→</span>
+                </a>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-1 gap-16 md:gap-12">
+                <div>
+                    <p class="text-silenos-gray dark:text-neutral-400 font-light tracking-wide leading-relaxed mt-2">
+                        En Libros & Librojuegos puedes leer libros complejos y jugar historias con múltiples finales. Desde mitología clásica a ciencia ficción moderna pasando por el Español, Ruso, Árabe, Chino, Inglés, Francés y Japonés.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="seriesypeliculas" class="py-32 md:py-48 px-8 md:px-16 max-w-6xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-20 space-y-6 md:space-y-0">
+                <div class="space-y-4">
+                    <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">05 / AUDIOVISUAL</span>
+                    <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Series & Películas</h2>
+                </div>
+                <a href="https://www.silenos.es/seriesypeliculas" target="_blank" class="group text-[11px] uppercase tracking-[0.25em] font-light hover:text-silenos-gray transition-colors">
+                    Ir a silenos.es/seriesypeliculas <span class="inline-block transform group-hover:translate-x-1 transition-transform">→</span>
+                </a>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-1 gap-16 md:gap-12">
+                <div>
+                    <p class="text-silenos-gray dark:text-neutral-400 font-light tracking-wide leading-relaxed mt-2">
+                        Explora las producciones cinemáticas, series y piezas Audiovisuales de Silenos. Proyecciones que conectan nuestros universos narrativos con la generación de medios avanzados y el desarrollo de scripts cinemáticos.
+                    </p>
+                </div>
+            </div>
+        </section>
+ <section id="herramientas" class="py-32 md:py-48 px-8 md:px-16 max-w-6xl mx-auto">
             <div class="max-w-3xl space-y-4 mb-20">
-                <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">04 / ECOSISTEMA TÉCNICO</span>
+                <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">06 / ECOSISTEMA TÉCNICO</span>
                 <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Nuestras Herramientas</h2>
                 <p class="text-xs md:text-sm text-silenos-gray dark:text-neutral-400 font-light tracking-wide leading-relaxed">
                     Módulos lógicos y entornos de optimización libres de simulaciones o adornos pesados. Rutas físicas directas de cómputo ejecutable.
@@ -318,47 +358,6 @@
                 </div>
             </div>
         </section>
-
-        <section id="leer" class="py-32 md:py-48 px-8 md:px-16 max-w-6xl mx-auto">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-20 space-y-6 md:space-y-0">
-                <div class="space-y-4">
-                    <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">05 / LEER ONLINE</span>
-                    <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Lectura Online</h2>
-                </div>
-                <a href="https://www.silenos.es/librosylibrojuegos" target="_blank" class="group text-[11px] uppercase tracking-[0.25em] font-light hover:text-silenos-gray transition-colors">
-                    Ir a silenos.es/librosylibrojuegos <span class="inline-block transform group-hover:translate-x-1 transition-transform">→</span>
-                </a>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-1 gap-16 md:gap-12">
-                <div>
-                    <p class="text-silenos-gray dark:text-neutral-400 font-light tracking-wide leading-relaxed mt-2">
-                        En Libros & Librojuegos puedes leer libros complejos y jugar historias con múltiples finales. Desde mitología clásica a ciencia ficción moderna pasando por el Español, Ruso, Árabe, Chino, Inglés, Francés y Japonés.
-                    </p>
-                </div>
-            </div>
-        </section>
-
-        <section id="seriesypeliculas" class="py-32 md:py-48 px-8 md:px-16 max-w-6xl mx-auto">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-20 space-y-6 md:space-y-0">
-                <div class="space-y-4">
-                    <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">06 / AUDIOVISUAL</span>
-                    <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Series & Películas</h2>
-                </div>
-                <a href="https://www.silenos.es/seriesypeliculas" target="_blank" class="group text-[11px] uppercase tracking-[0.25em] font-light hover:text-silenos-gray transition-colors">
-                    Ir a silenos.es/seriesypeliculas <span class="inline-block transform group-hover:translate-x-1 transition-transform">→</span>
-                </a>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-1 gap-16 md:gap-12">
-                <div>
-                    <p class="text-silenos-gray dark:text-neutral-400 font-light tracking-wide leading-relaxed mt-2">
-                        Explora las producciones cinemáticas, series y piezas Audiovisuales de Silenos. Proyecciones que conectan nuestros universos narrativos con la generación de medios avanzados y el desarrollo de scripts cinemáticos.
-                    </p>
-                </div>
-            </div>
-        </section>
-
     </main>
 
     <footer class="py-24 px-8 md:px-16 bg-silenos-white dark:bg-silenos-black">
