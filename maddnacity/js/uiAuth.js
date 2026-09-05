@@ -60,9 +60,11 @@
         }
     </script>
     <style>
+        /* Desvanecimiento y transiciones puras */
         * {
             transition: background-color 0.4s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
+        /* Ocultar barra de scroll manteniendo navegación táctil/rueda */
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -70,6 +72,7 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+        /* Crystal Design Blanco Minimalista */
         .glass-panel {
             background: rgba(255, 255, 255, 0.45);
             backdrop-filter: blur(16px);
@@ -107,6 +110,7 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
         }
     </style>
+    <!-- CMP de ConsentManager exento de bloquear Firebase para autenticación esencial -->
     <script type="text/javascript" data-cmp-ab="1" src="https://cdn.consentmanager.net/delivery/autoblocking/420cc2acd22a4.js" data-cmp-host="b.delivery.consentmanager.net" data-cmp-cdn="cdn.consentmanager.net" data-cmp-codesrc="0"></script>
 </head>
 
@@ -133,8 +137,9 @@
                     <span id="theme-text-dark" class="hidden">Dark</span>
                 </button>
 
+                <!-- Auth Container Google Minimalista -->
                 <div class="relative">
-                    <button id="login-btn" onclick="loginWithGoogle()" class="text-[10px] uppercase tracking-widest border border-black/10 dark:border-white/20 bg-white/40 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 px-3 py-1.5 rounded-full transition-all flex items-center space-x-2">
+                    <button id="login-btn" class="text-[10px] uppercase tracking-widest border border-black/10 dark:border-white/20 bg-white/40 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 px-3 py-1.5 rounded-full transition-all flex items-center space-x-2">
                         <svg class="w-3 h-3" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
                         <span>Acceder</span>
                     </button>
@@ -143,6 +148,7 @@
                         <img id="user-avatar" src="" alt="Perfil" class="w-7 h-7 rounded-full object-cover">
                     </div>
 
+                    <!-- Dropdown Menú Crystal -->
                     <div id="user-dropdown" class="hidden absolute right-0 mt-3 w-56 rounded-2xl glass-panel p-3 space-y-2 z-50 text-xs">
                         <div class="px-3 py-2 border-b border-black/5 dark:border-white/5">
                             <p id="user-name" class="font-medium truncate"></p>
@@ -174,6 +180,7 @@
     </div>
 
     <main class="flex-grow pt-24">
+        
         <section id="inicio" class="min-h-[85vh] flex flex-col justify-center px-8 md:px-16 max-w-6xl mx-auto relative">
             <div class="max-w-4xl py-20 space-y-12 glass-panel p-10 md:p-16 rounded-3xl">
                 <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">SÍNTESIS EDITORIAL & ALGORITMIA</span>
@@ -305,6 +312,7 @@
             </div>
         </section>
 
+        <!-- Sección Privada Herramientas -->
         <section id="herramientas" class="py-24 px-8 md:px-16 max-w-6xl mx-auto hidden">
             <div class="glass-panel p-10 md:p-16 rounded-3xl space-y-12">
                 <div class="max-w-3xl space-y-4">
@@ -394,6 +402,7 @@
 
     <footer class="py-24 px-8 md:px-16 bg-silenos-white dark:bg-silenos-black border-t border-black/5 dark:border-white/5">
         <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-12 items-start">
+            
             <div class="md:col-span-4 space-y-3">
                 <span class="font-serif text-xl tracking-[0.2em] font-light block">SILEN<span style="color: rgb(131, 20, 20);" >OS</span></span>
                 <p class="text-[11px] text-silenos-gray font-light leading-relaxed max-w-xs tracking-wide">
@@ -432,6 +441,7 @@
         <span id="toast-message">Copiado</span>
     </div>
 
+    <!-- Firebase v10 Modular Import Map -->
     <script type="importmap">
       {
         "imports": {
@@ -458,12 +468,6 @@
 
         const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
         const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
-        provider.setCustomParameters({ prompt: 'select_account' });
-
-        setPersistence(auth, browserLocalPersistence).catch((error) => {
-            console.error("Error setting persistence:", error);
-        });
 
         onAuthStateChanged(auth, (user) => {
             const loginBtn = document.getElementById('login-btn');
@@ -490,27 +494,25 @@
             }
         });
 
-        window.loginWithGoogle = async function() {
-            try {
-                const result = await signInWithPopup(auth, provider);
-                showToast("Sesión iniciada correctamente");
-            } catch (error) {
-                console.error("Error detallado al autenticar:", error.code, error.message);
-                if (error.code === 'auth/popup-blocked') {
-                    showToast("Por favor, permite las ventanas emergentes (popups)");
-                } else if (error.code === 'auth/unauthorized-domain') {
-                    showToast("Dominio no autorizado en Firebase Console");
-                } else {
+        // Vinculación mediante addEventListener directo en un evento de usuario para evitar el bloqueo del Popup
+        const loginBtn = document.getElementById('login-btn');
+        if (loginBtn) {
+            loginBtn.addEventListener('click', async () => {
+                try {
+                    await setPersistence(auth, browserLocalPersistence);
+                    const provider = new GoogleAuthProvider();
+                    await signInWithPopup(auth, provider);
+                } catch (error) {
+                    console.error("Error al autenticar con Google:", error);
                     showToast("Error al iniciar sesión con Google");
                 }
-            }
-        };
+            });
+        }
 
         window.logout = async function() {
             try {
                 await signOut(auth);
                 toggleUserDropdown();
-                showToast("Sesión cerrada");
             } catch (error) {
                 console.error("Error al cerrar sesión:", error);
             }
