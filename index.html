@@ -466,6 +466,15 @@
                 auth = firebase.auth();
                 provider = new firebase.auth.GoogleAuthProvider();
 
+                // Capturar resultado si se usó redirección
+                auth.getRedirectResult().then((result) => {
+                    if (result && result.user) {
+                        console.log("Sesión iniciada con éxito por redirección");
+                    }
+                }).catch((error) => {
+                    console.error("Error en redirect de autenticación:", error);
+                });
+
                 auth.onAuthStateChanged((user) => {
                     const loginBtn = document.getElementById('login-btn');
                     const userMenuBtn = document.getElementById('user-menu-btn');
@@ -505,9 +514,8 @@
                 showToast("Firebase no está disponible / bloqueado");
                 return;
             }
-            auth.signInWithPopup(provider).catch((error) => {
-                console.error("Error al autenticar:", error);
-            });
+            // Cambiado a signInWithRedirect para evitar bloqueos COOP del navegador
+            auth.signInWithRedirect(provider);
         }
 
         function logout() {
