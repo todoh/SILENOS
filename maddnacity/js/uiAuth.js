@@ -1,150 +1,603 @@
-// js/uiAuth.js
-// Manejo de la sesión de usuario y eventos de Autenticación de Firebase
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SILENOS</title>
+ 
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-0KWWBWB4MS"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-import { auth } from "./firebase.js";
-import { 
-    createUserWithEmailAndPassword, 
-    signInWithEmailAndPassword, 
-    signOut, 
-    onAuthStateChanged, 
-    GoogleAuthProvider, 
-    signInWithPopup, 
-    setPersistence, 
-    browserLocalPersistence, 
-    browserSessionPersistence 
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+      gtag('config', 'G-0KWWBWB4MS');
+    </script>
+    <meta http-equiv="cache-control" content="no-cache">
+    <meta http-equiv="expires" content="0">
+    <meta http-equiv="pragma" content="no-cache">
 
-import { 
-    authPanel, playerPanel, rightPanel, mobileTopBar, mobilePlayerPanel,
-    modalNameSetup, modalSetupTitle, setupPlayerNameInput, btnSavePlayerName, 
-    btnCancelModal, emailInput, passwordInput, rememberInput, btnLogin, 
-    btnRegister, btnGoogleLogin, btnLogout, btnEditProfile, mBtnLogout, 
-    mBtnEditProfile, setAvatarSelection, selectedAvatarPath, switchTab, openProfileEditModal 
-} from "./uiBase.js";
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://silenos.es/">
+    <meta property="og:title" content="Silenos">
+    <meta property="og:description" content="Silenos">
+    <meta property="og:image" content="https://silenos.es/silenosweb.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:type" content="image/png">
 
-import { initChatListener, loadNews, loadLeaderboard } from "./uiViews.js";
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://silenos.es/">
+    <meta name="twitter:title" content="Silenos">
+    <meta name="twitter:description" content="Silenos">
+    <meta name="twitter:image" content="https://silenos.es/silenosweb.png">
 
-export async function handleUserSession(user, context) {
-    const { playerManager, actionEngine, businessEngine, multiplayerEngine, renderUI } = context;
-    const player = await playerManager.loadOrCreatePlayer(user.uid);
-
-    if (!player.name || player.name === "Ciudadano") {
-        modalSetupTitle.textContent = "[REGISTRAR CIUDADANO]";
-        btnSavePlayerName.textContent = "CONFIRMAR E INGRESAR";
-        btnCancelModal.style.display = "none";
-        setupPlayerNameInput.value = "";
-        setAvatarSelection("images/1.jpg");
-        modalNameSetup.style.display = "flex";
-
-        btnSavePlayerName.onclick = async () => {
-            const name = setupPlayerNameInput.value.trim();
-            if (!name) {
-                alert("Por favor introduce un nombre para tu personaje.");
-                return;
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Roboto"', 'sans-serif'],
+                        sans: ['"Roboto"', 'sans-serif'],
+                    },
+                    colors: {
+                        silenos: {
+                            white: '#FFFFFF',
+                            black: '#000000',
+                            gray: '#707070',
+                            lightGray: '#F5F5F5',
+                            darkGray: '#111111',
+                        }
+                    }
+                }
             }
-            player.name = name;
-            player.avatar = selectedAvatarPath;
-            modalNameSetup.style.display = "none";
-            await completeSessionInit(player, context);
-        };
-    } else {
-        await completeSessionInit(player, context);
-    }
-}
-
-export async function completeSessionInit(player, context) {
-    const { actionEngine, businessEngine, playerManager, multiplayerEngine, newsEngine, renderUI } = context;
-    const tabs = document.getElementById("nav-tabs");
-    const content = document.getElementById("tabs-content");
-    const bottomNav = document.getElementById("mobile-bottom-nav");
-
-    authPanel.style.display = "none";
-
-    if (window.innerWidth <= 768) {
-        if (mobileTopBar) mobileTopBar.style.display = "block";
-        playerPanel.style.display = "none";
-        if (bottomNav) bottomNav.style.display = "flex";
-        if (rightPanel) rightPanel.style.display = "none";
-    } else {
-        if (mobileTopBar) mobileTopBar.style.display = "none";
-        playerPanel.style.display = "block";
-        if (bottomNav) bottomNav.style.display = "none";
-        if (rightPanel) rightPanel.style.display = "flex";
-    }
-
-    if (tabs) tabs.style.display = "flex";
-    if (content) content.style.display = "block";
-
-    actionEngine.processOfflineTime(player, Date.now());
-    businessEngine.processBusinessIncome(player, Date.now());
-    businessEngine.processDailyRent(player, Date.now());
-
-    await playerManager.savePlayerState();
-    await multiplayerEngine.updatePublicProfile(player);
-
-    initChatListener(multiplayerEngine, playerManager);
-    switchTab("tab-actions", () => loadNews(newsEngine), () => loadLeaderboard(multiplayerEngine), renderUI);
-    renderUI();
-}
-
-export async function applyPersistence() {
-    const persistenceMode = rememberInput.checked 
-        ? browserLocalPersistence 
-        : browserSessionPersistence;
-    await setPersistence(auth, persistenceMode);
-}
-
-export function initAuthListeners(context) {
-    const { playerManager, renderUI, multiplayerEngine } = context;
-
-    onAuthStateChanged(auth, async (user) => {
-        const tabs = document.getElementById("nav-tabs");
-        const content = document.getElementById("tabs-content");
-        const bottomNav = document.getElementById("mobile-bottom-nav");
-
-        if (user) {
-            await handleUserSession(user, context);
-        } else {
-            authPanel.style.display = "block";
-            playerPanel.style.display = "none";
-            if (mobileTopBar) mobileTopBar.style.display = "none";
-            if (mobilePlayerPanel) mobilePlayerPanel.style.display = "none";
-            modalNameSetup.style.display = "none";
-
-            if (tabs) tabs.style.display = "none";
-            if (content) content.style.display = "none";
-            if (bottomNav) bottomNav.style.display = "none";
-            if (rightPanel) rightPanel.style.display = "none";
-
-            playerManager.currentPlayer = null;
         }
-    });
+    </script>
+    <style>
+        * {
+            transition: background-color 0.4s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.04);
+        }
+        .dark .glass-panel {
+            background: rgba(17, 17, 17, 0.55);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .dark .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.6);
+            border-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+        .dark .glass-card:hover {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+    </style>
+    <script type="text/javascript" data-cmp-ab="1" src="https://cdn.consentmanager.net/delivery/autoblocking/420cc2acd22a4.js" data-cmp-host="b.delivery.consentmanager.net" data-cmp-cdn="cdn.consentmanager.net" data-cmp-codesrc="0"></script>
+</head>
 
-    btnLogin.addEventListener("click", async () => {
-        try {
-            await applyPersistence();
-            await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-        } catch (err) { alert("Error de acceso: " + err.message); }
-    });
+<body class="bg-silenos-white text-silenos-black dark:bg-silenos-black dark:text-silenos-white font-sans selection:bg-silenos-black selection:text-silenos-white dark:selection:bg-silenos-white dark:selection:text-silenos-black antialiased min-h-screen flex flex-col justify-between overflow-x-hidden">
 
-    btnRegister.addEventListener("click", async () => {
-        try {
-            await applyPersistence();
-            await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-        } catch (err) { alert("Error de registro: " + err.message); }
-    });
+    <header class="fixed top-0 left-0 w-full z-50 bg-white/60 dark:bg-black/60 backdrop-blur-md border-b border-white/40 dark:border-white/5">
+        <div class="max-w-6xl mx-auto px-8 md:px-16 h-24 flex items-center justify-between">
+            <a href="#inicio" class="group flex items-baseline space-x-1">
+                <span class="font-serif text-2xl tracking-[0.4em] font-light">SILEN<span style="color: rgb(131, 20, 20);" class="font-serif text-2xl tracking-[0.4em] font-light">OS</span></span>
+                <span class="text-[10px] tracking-widest text-silenos-gray font-sans font-light">.ES</span>
+            </a>
 
-    btnGoogleLogin.addEventListener("click", async () => {
-        try {
-            await applyPersistence();
-            const provider = new GoogleAuthProvider();
-            await signInWithPopup(auth, provider);
-        } catch (err) { alert("Error al autenticar con Google: " + err.message); }
-    });
+            <nav class="hidden md:flex items-center space-x-12 text-[11px] uppercase tracking-[0.25em] font-light">
+                <a href="#proyecto" class="hover:text-silenos-gray transition-colors">Proyecto</a>
+                <a href="#autores" class="hover:text-silenos-gray transition-colors">Autores</a>
+                <a href="#catalogo" class="hover:text-silenos-gray transition-colors">Catálogo</a>
+                <a href="#leer" class="hover:text-silenos-gray transition-colors">Leer Online</a>
+                <a href="#seriesypeliculas" class="hover:text-silenos-gray transition-colors">Series & Películas</a>
+            </nav>
 
-    btnLogout.addEventListener("click", () => signOut(auth));
-    btnEditProfile.addEventListener("click", () => openProfileEditModal(playerManager, multiplayerEngine, renderUI));
+            <div class="flex items-center space-x-6">
+                <button id="theme-toggle" class="text-[10px] uppercase tracking-widest text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white transition-colors" aria-label="Cambiar Tema">
+                    <span id="theme-text-light" class="hidden">Light</span>
+                    <span id="theme-text-dark" class="hidden">Dark</span>
+                </button>
 
-    if (mBtnLogout) mBtnLogout.addEventListener("click", () => signOut(auth));
-    if (mBtnEditProfile) mBtnEditProfile.addEventListener("click", () => openProfileEditModal(playerManager, multiplayerEngine, renderUI));
-}
+                <div class="relative">
+                    <button id="login-btn" onclick="loginWithGoogle()" class="text-[10px] uppercase tracking-widest border border-black/10 dark:border-white/20 bg-white/40 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 px-3 py-1.5 rounded-full transition-all flex items-center space-x-2">
+                        <svg class="w-3 h-3" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                        <span>Acceder</span>
+                    </button>
+
+                    <div id="user-menu-btn" onclick="toggleUserDropdown()" class="hidden cursor-pointer flex items-center space-x-2 border border-white/60 dark:border-white/10 bg-white/50 dark:bg-white/5 p-1 rounded-full backdrop-blur-md">
+                        <img id="user-avatar" src="" alt="Perfil" class="w-7 h-7 rounded-full object-cover">
+                    </div>
+
+                    <div id="user-dropdown" class="hidden absolute right-0 mt-3 w-56 rounded-2xl glass-panel p-3 space-y-2 z-50 text-xs">
+                        <div class="px-3 py-2 border-b border-black/5 dark:border-white/5">
+                            <p id="user-name" class="font-medium truncate"></p>
+                            <p id="user-email" class="text-[10px] text-silenos-gray truncate"></p>
+                        </div>
+                        <a href="#herramientas" onclick="toggleUserDropdown()" class="block px-3 py-2 rounded-xl hover:bg-white/60 dark:hover:bg-white/10 transition-colors text-[11px] uppercase tracking-wider">
+                            Nuestras Herramientas
+                        </a>
+                        <button onclick="logout()" class="w-full text-left px-3 py-2 rounded-xl hover:bg-red-500/10 text-red-600 dark:text-red-400 transition-colors text-[11px] uppercase tracking-wider">
+                            Cerrar Sesión
+                        </button>
+                    </div>
+                </div>
+                
+                <button id="mobile-menu-btn" class="md:hidden text-[11px] uppercase tracking-widest text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white" aria-label="Menú">
+                    Menú
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div id="mobile-menu" class="fixed inset-0 z-40 bg-silenos-white/90 dark:bg-silenos-black/90 backdrop-blur-2xl flex flex-col justify-center px-12 space-y-8 text-2xl font-serif tracking-[0.1em] transform translate-x-full transition-transform duration-500 ease-in-out md:hidden">
+        <a href="#proyecto" class="mobile-link hover:text-silenos-gray transition-colors">El Proyecto</a>
+        <a href="#autores" class="mobile-link hover:text-silenos-gray transition-colors">Los Autores</a>
+        <a href="#catalogo" class="mobile-link hover:text-silenos-gray transition-colors">Catálogo</a>
+        <a href="#leer" class="mobile-link hover:text-silenos-gray transition-colors">Leer Online</a>
+        <a href="#seriesypeliculas" class="mobile-link hover:text-silenos-gray transition-colors">Series & Películas</a>
+        <a href="#herramientas" id="mobile-herramientas-link" class="mobile-link hover:text-silenos-gray transition-colors hidden">Nuestras Herramientas</a>
+    </div>
+
+    <main class="flex-grow pt-24">
+        <section id="inicio" class="min-h-[85vh] flex flex-col justify-center px-8 md:px-16 max-w-6xl mx-auto relative">
+            <div class="max-w-4xl py-20 space-y-12 glass-panel p-10 md:p-16 rounded-3xl">
+                <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">SÍNTESIS EDITORIAL & ALGORITMIA</span>
+                
+                <h1 class="font-serif text-5xl sm:text-7xl lg:text-8xl leading-[1.05] font-light tracking-tight">
+                    La belleza de la síntesis en su estado <span class="italic font-light text-silenos-gray">puro</span>.
+                </h1>
+                
+                <p class="text-silenos-gray dark:text-neutral-400 text-sm md:text-base max-w-2xl font-light leading-relaxed tracking-wide">
+                    Un espacio donde los libros dialogan con el desarrollo digital. Sin artificios ni simulaciones superfluas. El valor desnudo del contenido, las mentes creadoras y la precisión técnica de nuestras arquitecturas lógicas.
+                </p>
+                
+                <div class="flex flex-wrap gap-10 pt-4 text-[11px] uppercase tracking-[0.25em] font-light">
+                    <a href="https://www.silenos.es/catalogo" target="_blank" class="hover:text-silenos-gray transition-colors">
+                        Explorar Catálogo →
+                    </a>
+                    <a href="https://www.silenos.es/librosylibrojuegos" target="_blank" class="hover:text-silenos-gray transition-colors">
+                        Leer Online →
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section id="proyecto" class="py-24 px-8 md:px-16 max-w-6xl mx-auto">
+            <div class="glass-panel p-10 md:p-16 rounded-3xl grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24">
+                <div class="lg:col-span-4">
+                    <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block mb-4">01 / ENFOQUE</span>
+                    <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">El Proyecto Silenos</h2>
+                </div>
+                <div class="lg:col-span-6 space-y-8 text-silenos-gray dark:text-neutral-400 font-light leading-relaxed text-sm md:text-base tracking-wide">
+                    <p>
+                        Silenos es un manifiesto de resistencia contra la saturación digital y el adorno innecesario. Creemos en la pureza del diseño, en la relevancia de las palabras impresas y en la eficiencia silenciosa del código estructurado. No creamos interfaces cargadas de adornos; proyectamos herramientas y libros pensados para perdurar.
+                    </p>
+                    <p>
+                        Este nodo central unifica dos dimensiones aparentemente distantes pero íntimamente ligadas: el rigor estético del catálogo de libros impresos y la precisión aséptica de nuestros motores lógicos de análisis de datos y procesamiento de voz. Sin adornos interactivos absurdos, proporcionamos el acceso directo a los espacios de ejecución óptimos de cada una de nuestras divisiones.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="autores" class="py-24 px-8 md:px-16 max-w-6xl mx-auto">
+            <div class="space-y-4 mb-16">
+                <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">02 / LOS CREADORES</span>
+                <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Autores de la Casa</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div class="glass-panel p-8 rounded-3xl space-y-6">
+                    <div class="w-full flex justify-start mix-blend-multiply dark:mix-blend-normal opacity-90 dark:opacity-85 filter grayscale contrast-125 transition-all duration-300 hover:grayscale-0 hover:opacity-100">
+                        <img src="manuel.png" alt="Manuel Rodsua" class="w-48 h-auto object-contain">
+                    </div>
+                    <div class="flex justify-between items-baseline">
+                        <h3 class="font-serif text-2xl font-light tracking-wide">Manuel Rodsua</h3>
+                        <span class="text-[10px] font-mono text-silenos-gray"></span>
+                    </div>
+                    <span class="text-[10px] uppercase tracking-widest text-silenos-gray block font-light">Fundador · Desarrollador · Escritor · Diseño</span>
+                    <p class="text-xs md:text-sm text-silenos-gray dark:text-neutral-400 font-light leading-relaxed tracking-wide">
+                        Arquitecto del sistema SILENOS. Programa los puentes entre la palabra escrita y el código, defendiendo la soberanía local y la privacidad absoluta.
+                    </p>
+                </div>
+
+                <div class="glass-panel p-8 rounded-3xl space-y-6">
+                    <div class="w-full flex justify-start mix-blend-multiply dark:mix-blend-normal opacity-90 dark:opacity-85 filter grayscale contrast-125 transition-all duration-300 hover:grayscale-0 hover:opacity-100">
+                        <img src="cristina.png" alt="Cristina Lobo" class="w-48 h-auto object-contain">
+                    </div>
+                    <div class="flex justify-between items-baseline">
+                        <h3 class="font-serif text-2xl font-light tracking-wide">Cristina Lobo</h3>
+                        <span class="text-[10px] font-mono text-silenos-gray"></span>
+                    </div>
+                    <span class="text-[10px] uppercase tracking-widest text-silenos-gray block font-light">Co-Creadora · Diseño · Escritora · Creatividad</span>
+                    <p class="text-xs md:text-sm text-silenos-gray dark:text-neutral-400 font-light leading-relaxed tracking-wide">
+                        Tejedora visual y narrativa del proyecto. Diseña el lenguaje, los símbolos y la cosmología que dan forma a cada mundo dentro y fuera del editor.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="catalogo" class="py-24 px-8 md:px-16 max-w-6xl mx-auto">
+            <div class="glass-panel p-10 md:p-16 rounded-3xl">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 space-y-6 md:space-y-0">
+                    <div class="space-y-4">
+                        <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">03 / PUBLICACIONES</span>
+                        <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Catálogo Impreso</h2>
+                    </div>
+                    <a href="https://www.silenos.es/catalogo" target="_blank" class="group text-[11px] uppercase tracking-[0.25em] font-light hover:text-silenos-gray transition-colors">
+                        Ir a silenos.es/catalogo <span class="inline-block transform group-hover:translate-x-1 transition-transform">→</span>
+                    </a>
+                </div>
+
+                <p class="text-silenos-gray dark:text-neutral-400 font-light tracking-wide leading-relaxed">
+                    El catálogo impreso de Silenos constituye la materialización física de un universo literario coordinado por Cristina Lobo y Manuel Rodsua bajo el sello de La Tejedora de Mundos. Editados con una rigurosa pureza formal y concebidos para convivir de forma orgánica con nuestro ecosistema computacional, estos volúmenes abarcan desde la ciencia ficción experimental y la investigación histórica hasta narrativas interactivas y arquitecturas de diseño procedural. Cada obra funciona como un registro tangible e independiente en papel, un punto de convergencia donde la palabra desnudada y la documentación estructural se consolidan en distribución global.
+                </p>
+            </div>
+        </section>
+
+        <section id="leer" class="py-24 px-8 md:px-16 max-w-6xl mx-auto">
+            <div class="glass-panel p-10 md:p-16 rounded-3xl">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 space-y-6 md:space-y-0">
+                    <div class="space-y-4">
+                        <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">04 / LEER ONLINE</span>
+                        <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Lectura Online</h2>
+                    </div>
+                    <a href="https://www.silenos.es/librosylibrojuegos" target="_blank" class="group text-[11px] uppercase tracking-[0.25em] font-light hover:text-silenos-gray transition-colors">
+                        Ir a silenos.es/librosylibrojuegos <span class="inline-block transform group-hover:translate-x-1 transition-transform">→</span>
+                    </a>
+                </div>
+
+                <p class="text-silenos-gray dark:text-neutral-400 font-light tracking-wide leading-relaxed">
+                    En Libros & Librojuegos puedes leer libros complejos y jugar historias con múltiples finales. Desde mitología clásica a ciencia ficción moderna pasando por el Español, Ruso, Árabe, Chino, Inglés, Francés y Japonés.
+                </p>
+            </div>
+        </section>
+
+        <section id="seriesypeliculas" class="py-24 px-8 md:px-16 max-w-6xl mx-auto">
+            <div class="glass-panel p-10 md:p-16 rounded-3xl">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 space-y-6 md:space-y-0">
+                    <div class="space-y-4">
+                        <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">05 / AUDIOVISUAL</span>
+                        <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Series & Películas</h2>
+                    </div>
+                    <a href="https://www.silenos.es/seriesypeliculas" target="_blank" class="group text-[11px] uppercase tracking-[0.25em] font-light hover:text-silenos-gray transition-colors">
+                        Ir a silenos.es/seriesypeliculas <span class="inline-block transform group-hover:translate-x-1 transition-transform">→</span>
+                    </a>
+                </div>
+
+                <p class="text-silenos-gray dark:text-neutral-400 font-light tracking-wide leading-relaxed">
+                    Explora las producciones cinemáticas, series y piezas Audiovisuales de Silenos. Proyecciones que conectan nuestros universos narrativos con la generación de medios avanzados y el desarrollo de scripts cinemáticos.
+                </p>
+            </div>
+        </section>
+
+        <section id="herramientas" class="py-24 px-8 md:px-16 max-w-6xl mx-auto hidden">
+            <div class="glass-panel p-10 md:p-16 rounded-3xl space-y-12">
+                <div class="max-w-3xl space-y-4">
+                    <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">06 / ECOSISTEMA TÉCNICO PRIVADO</span>
+                    <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Nuestras Herramientas</h2>
+                    <p class="text-xs md:text-sm text-silenos-gray dark:text-neutral-400 font-light tracking-wide leading-relaxed">
+                        Módulos lógicos y entornos de optimización libres de simulaciones o adornos pesados. Rutas físicas directas de cómputo ejecutable.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="glass-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
+                        <div>
+                            <span class="text-[10px] font-mono text-silenos-gray block">/03</span>
+                            <h3 class="font-serif text-2xl font-light tracking-wide mt-1">Silenos v3</h3>
+                            <p class="text-xs text-silenos-gray dark:text-neutral-400 font-light tracking-wide mt-2">Análisis estructurado y depuración ontológica.</p>
+                        </div>
+                        <a href="https://www.silenos.es/3" target="_blank" class="text-[10px] font-mono text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white uppercase tracking-widest pt-2">Ejecutar →</a>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
+                        <div>
+                            <span class="text-[10px] font-mono text-silenos-gray block">/04</span>
+                            <h3 class="font-serif text-2xl font-light tracking-wide mt-1">Silenos v4</h3>
+                            <p class="text-xs text-silenos-gray dark:text-neutral-400 font-light tracking-wide mt-2">Motor semántico distribuido.</p>
+                        </div>
+                        <a href="https://www.silenos.es/4" target="_blank" class="text-[10px] font-mono text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white uppercase tracking-widest pt-2">Ejecutar →</a>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
+                        <div>
+                            <span class="text-[10px] font-mono text-silenos-gray block">/MK2</span>
+                            <h3 class="font-serif text-2xl font-light tracking-wide mt-1">Merkados</h3>
+                            <p class="text-xs text-silenos-gray dark:text-neutral-400 font-light tracking-wide mt-2">Visualización de flujos narrativos paralelos y librojuegos.</p>
+                        </div>
+                        <a href="https://www.silenos.es/merkados" target="_blank" class="text-[10px] font-mono text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white uppercase tracking-widest pt-2">Ejecutar →</a>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
+                        <div>
+                            <span class="text-[10px] font-mono text-silenos-gray block">/SG</span>
+                            <h3 class="font-serif text-2xl font-light tracking-wide mt-1">Saga</h3>
+                            <p class="text-xs text-silenos-gray dark:text-neutral-400 font-light tracking-wide mt-2">Asiste avanzado para sagas narrativas completas. Base de datos y generación literaria.</p>
+                        </div>
+                        <a href="https://www.silenos.es/saga" target="_blank" class="text-[10px] font-mono text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white uppercase tracking-widest pt-2">Ejecutar →</a>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
+                        <div>
+                            <span class="text-[10px] font-mono text-silenos-gray block">/VZ</span>
+                            <h3 class="font-serif text-2xl font-light tracking-wide mt-1">Voz</h3>
+                            <p class="text-xs text-silenos-gray dark:text-neutral-400 font-light tracking-wide mt-2">Asiste avanzado de voz impulsado por inteligencia artificial.</p>
+                        </div>
+                        <a href="https://www.silenos.es/voz" target="_blank" class="text-[10px] font-mono text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white uppercase tracking-widest pt-2">Ejecutar →</a>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
+                        <div>
+                            <span class="text-[10px] font-mono text-silenos-gray block">/ST</span>
+                            <h3 class="font-serif text-2xl font-light tracking-wide mt-1">Escaleta</h3>
+                            <p class="text-xs text-silenos-gray dark:text-neutral-400 font-light tracking-wide mt-2">Asiste avanzado de video, imagen y voz, impulsado por inteligencia artificial.</p>
+                        </div>
+                        <a href="https://www.silenos.es/escaleta" target="_blank" class="text-[10px] font-mono text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white uppercase tracking-widest pt-2">Ejecutar →</a>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
+                        <div>
+                            <span class="text-[10px] font-mono text-silenos-gray block">/CT</span>
+                            <h3 class="font-serif text-2xl font-light tracking-wide mt-1">Chat</h3>
+                            <p class="text-xs text-silenos-gray dark:text-neutral-400 font-light tracking-wide mt-2">Soporte de Chat y Agentes avanzado para OLLAMA y GEMINI. Memoria Local persistente.</p>
+                        </div>
+                        <a href="https://www.silenos.es/chat" target="_blank" class="text-[10px] font-mono text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white uppercase tracking-widest pt-2">Ejecutar →</a>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
+                        <div>
+                            <span class="text-[10px] font-mono text-silenos-gray block">/CV</span>
+                            <h3 class="font-serif text-2xl font-light tracking-wide mt-1">Canvas</h3>
+                            <p class="text-xs text-silenos-gray dark:text-neutral-400 font-light tracking-wide mt-2">Canvas para gestionar Datos compatibles con el resto de Silenos. Agentes avanzados para COMFYUI y GEMINI.</p>
+                        </div>
+                        <a href="https://www.silenos.es/canvas" target="_blank" class="text-[10px] font-mono text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white uppercase tracking-widest pt-2">Ejecutar →</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="py-24 px-8 md:px-16 bg-silenos-white dark:bg-silenos-black border-t border-black/5 dark:border-white/5">
+        <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-12 items-start">
+            <div class="md:col-span-4 space-y-3">
+                <span class="font-serif text-xl tracking-[0.2em] font-light block">SILEN<span style="color: rgb(131, 20, 20);" >OS</span></span>
+                <p class="text-[11px] text-silenos-gray font-light leading-relaxed max-w-xs tracking-wide">
+                    Plataforma interactiva con inteligencia artificial y herramientas narrativas basadas en Ollama, Gemini, Pollination y DeepSeek. Diseñada para la creación de libros, análisis de datos y procesamiento de voz.
+                </p>
+            </div>
+
+            <div class="md:col-span-4 space-y-4 text-[10px] font-mono text-silenos-gray">
+                <span class="text-[9px] uppercase tracking-widest text-silenos-black dark:text-silenos-white font-sans block">Sistemas</span>
+                <div class="grid grid-cols-2 gap-y-2 gap-x-4">
+                    <a href="https://www.silenos.es/catalogo" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/catalogo</a>
+                    <a href="https://www.silenos.es/seriesypeliculas" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/seriesypeliculas</a>
+                    <a href="https://www.silenos.es/3" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/3</a>
+                    <a href="https://www.silenos.es/4" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/4</a>
+                    <a href="https://www.silenos.es/merkados" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/merkados</a>
+                    <a href="https://www.silenos.es/voz" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/voz</a>
+                    <a href="https://www.silenos.es/escaleta" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/escaleta</a>
+                    <a href="https://www.silenos.es/ensayo" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/ensayo</a>
+                    <a href="https://www.silenos.es/libro" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/novela</a>
+                    <a href="https://www.silenos.es/librojuego" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/librojuego</a>
+                    <a href="https://www.silenos.es/nexus" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/nexus</a>
+                    <a href="https://www.silenos.es/visuales" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/visuales</a>
+                    <a href="https://www.silenos.es/ilustrador" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/ilustrador</a>
+                </div>
+            </div>
+
+            <div class="md:col-span-4 space-y-3 md:text-right">
+                <span class="text-[9px] uppercase tracking-widest text-silenos-black dark:text-silenos-white font-sans block">Contacto</span>
+                <a href="mailto:info@silenos.es" class="text-xs text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white block tracking-widest">silensystem@gmail.com</a>
+                <p class="text-[9px] text-silenos-gray font-mono mt-4">© 2026 SILENOS. BIENESTAR Y PERFECCIÓN PARA TODAS LAS PARTES DEL TODO. TODOS LOS DERECHOS RESERVADOS.</p>
+            </div>
+        </div>
+    </footer>
+
+    <div id="toast" class="fixed bottom-8 right-8 z-50 transform translate-y-12 opacity-0 pointer-events-none transition-all duration-300 text-[10px] font-mono tracking-widest uppercase text-silenos-black bg-silenos-lightGray dark:text-silenos-white dark:bg-silenos-darkGray px-4 py-2 rounded-xl">
+        <span id="toast-message">Copiado</span>
+    </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+          "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"
+        }
+      }
+    </script>
+
+    <script type="module">
+        import { initializeApp, getApps } from "firebase/app";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "firebase/auth";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBxlmzjYjOEAwc_DVtFpt9DnN7XnuRkbKw",
+            authDomain: "silenos-fc5e5.firebaseapp.com",
+            databaseURL: "https://silenos-fc5e5-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "silenos-fc5e5",
+            storageBucket: "silenos-fc5e5.firebasestorage.app",
+            messagingSenderId: "314671855826",
+            appId: "1:314671855826:web:ea0af5cd962baa1fd6150b",
+            measurementId: "G-V636CRYZ8X"
+        };
+
+        const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+
+        setPersistence(auth, browserLocalPersistence).catch((error) => {
+            console.error("Error setting persistence:", error);
+        });
+
+        onAuthStateChanged(auth, (user) => {
+            const loginBtn = document.getElementById('login-btn');
+            const userMenuBtn = document.getElementById('user-menu-btn');
+            const herramientasSec = document.getElementById('herramientas');
+            const mobileHerramientasLink = document.getElementById('mobile-herramientas-link');
+
+            if (user) {
+                loginBtn.classList.add('hidden');
+                userMenuBtn.classList.remove('hidden');
+                document.getElementById('user-avatar').src = user.photoURL || 'https://via.placeholder.com/150';
+                document.getElementById('user-name').innerText = user.displayName || 'Usuario';
+                document.getElementById('user-email').innerText = user.email || '';
+                
+                if (herramientasSec) herramientasSec.classList.remove('hidden');
+                if (mobileHerramientasLink) mobileHerramientasLink.classList.remove('hidden');
+            } else {
+                loginBtn.classList.remove('hidden');
+                userMenuBtn.classList.add('hidden');
+                document.getElementById('user-dropdown').classList.add('hidden');
+                
+                if (herramientasSec) herramientasSec.classList.add('hidden');
+                if (mobileHerramientasLink) mobileHerramientasLink.classList.add('hidden');
+            }
+        });
+
+        window.loginWithGoogle = async function() {
+            try {
+                const result = await signInWithPopup(auth, provider);
+                showToast("Sesión iniciada correctamente");
+            } catch (error) {
+                console.error("Error detallado al autenticar:", error.code, error.message);
+                if (error.code === 'auth/popup-blocked') {
+                    showToast("Por favor, permite las ventanas emergentes (popups)");
+                } else if (error.code === 'auth/unauthorized-domain') {
+                    showToast("Dominio no autorizado en Firebase Console");
+                } else {
+                    showToast("Error al iniciar sesión con Google");
+                }
+            }
+        };
+
+        window.logout = async function() {
+            try {
+                await signOut(auth);
+                toggleUserDropdown();
+                showToast("Sesión cerrada");
+            } catch (error) {
+                console.error("Error al cerrar sesión:", error);
+            }
+        };
+
+        window.toggleUserDropdown = function() {
+            const dropdown = document.getElementById('user-dropdown');
+            dropdown.classList.toggle('hidden');
+        };
+
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeTextLight = document.getElementById('theme-text-light');
+        const themeTextDark = document.getElementById('theme-text-dark');
+
+        function updateThemeUI() {
+            if (document.documentElement.classList.contains('dark')) {
+                themeTextLight.classList.remove('hidden');
+                themeTextDark.classList.add('hidden');
+            } else {
+                themeTextLight.classList.add('hidden');
+                themeTextDark.classList.remove('hidden');
+            }
+        }
+
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        updateThemeUI();
+
+        themeToggleBtn.addEventListener('click', function() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+            }
+            updateThemeUI();
+        });
+
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const mobileLinks = document.querySelectorAll('.mobile-link');
+
+        function toggleMenu() {
+            mobileMenu.classList.toggle('translate-x-full');
+            if (mobileMenu.classList.contains('translate-x-full')) {
+                mobileMenuBtn.innerText = "Menú";
+            } else {
+                mobileMenuBtn.innerText = "Cerrar";
+            }
+        }
+
+        mobileMenuBtn.addEventListener('click', toggleMenu);
+        mobileLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('translate-x-full');
+                mobileMenuBtn.innerText = "Menú";
+            });
+        });
+
+        window.copyToClipboard = function(text, name) {
+            const tempEl = document.createElement('textarea');
+            tempEl.value = text;
+            document.body.appendChild(tempEl);
+            tempEl.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempEl);
+
+            showToast(`Link a ${name} copiado`);
+        };
+
+        window.showToast = function(message) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            toastMsg.innerText = message;
+            
+            toast.classList.remove('translate-y-12', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 2500);
+        };
+    </script>
+</body>
+</html>
