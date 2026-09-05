@@ -441,11 +441,20 @@
         <span id="toast-message">Copiado</span>
     </div>
 
-    <!-- SDKs de Firebase clasificados para evitar bloqueos del ConsentManager -->
-    <script data-cmp-ab="0" class="cm-ignore" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script data-cmp-ab="0" class="cm-ignore" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <!-- Firebase v10 Modular Import Map -->
+    <script type="importmap">
+      {
+        "imports": {
+          "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+          "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"
+        }
+      }
+    </script>
 
-    <script>
+    <script type="module">
+        import { initializeApp, getApps } from "firebase/app";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "firebase/auth";
+
         const firebaseConfig = {
             apiKey: "AIzaSyBxlmzjYjOEAwc_DVtFpt9DnN7XnuRkbKw",
             authDomain: "silenos-fc5e5.firebaseapp.com",
@@ -457,78 +466,61 @@
             measurementId: "G-V636CRYZ8X"
         };
 
-        let auth;
-        let provider;
+        const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
 
-        function initFirebase() {
-            if (typeof firebase !== 'undefined' && !firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-                auth = firebase.auth();
-                provider = new firebase.auth.GoogleAuthProvider();
+        setPersistence(auth, browserLocalPersistence).catch((error) => {
+            console.error("Error setting persistence:", error);
+        });
 
-                // Capturar resultado si se usó redirección
-                auth.getRedirectResult().then((result) => {
-                    if (result && result.user) {
-                        console.log("Sesión iniciada con éxito por redirección");
-                    }
-                }).catch((error) => {
-                    console.error("Error en redirect de autenticación:", error);
-                });
+        onAuthStateChanged(auth, (user) => {
+            const loginBtn = document.getElementById('login-btn');
+            const userMenuBtn = document.getElementById('user-menu-btn');
+            const herramientasSec = document.getElementById('herramientas');
+            const mobileHerramientasLink = document.getElementById('mobile-herramientas-link');
 
-                auth.onAuthStateChanged((user) => {
-                    const loginBtn = document.getElementById('login-btn');
-                    const userMenuBtn = document.getElementById('user-menu-btn');
-                    const herramientasSec = document.getElementById('herramientas');
-                    const mobileHerramientasLink = document.getElementById('mobile-herramientas-link');
-
-                    if (user) {
-                        loginBtn.classList.add('hidden');
-                        userMenuBtn.classList.remove('hidden');
-                        document.getElementById('user-avatar').src = user.photoURL || 'https://via.placeholder.com/150';
-                        document.getElementById('user-name').innerText = user.displayName || 'Usuario';
-                        document.getElementById('user-email').innerText = user.email || '';
-                        
-                        if (herramientasSec) herramientasSec.classList.remove('hidden');
-                        if (mobileHerramientasLink) mobileHerramientasLink.classList.remove('hidden');
-                    } else {
-                        loginBtn.classList.remove('hidden');
-                        userMenuBtn.classList.add('hidden');
-                        document.getElementById('user-dropdown').classList.add('hidden');
-                        
-                        if (herramientasSec) herramientasSec.classList.add('hidden');
-                        if (mobileHerramientasLink) mobileHerramientasLink.classList.add('hidden');
-                    }
-                });
+            if (user) {
+                loginBtn.classList.add('hidden');
+                userMenuBtn.classList.remove('hidden');
+                document.getElementById('user-avatar').src = user.photoURL || 'https://via.placeholder.com/150';
+                document.getElementById('user-name').innerText = user.displayName || 'Usuario';
+                document.getElementById('user-email').innerText = user.email || '';
+                
+                if (herramientasSec) herramientasSec.classList.remove('hidden');
+                if (mobileHerramientasLink) mobileHerramientasLink.classList.remove('hidden');
+            } else {
+                loginBtn.classList.remove('hidden');
+                userMenuBtn.classList.add('hidden');
+                document.getElementById('user-dropdown').classList.add('hidden');
+                
+                if (herramientasSec) herramientasSec.classList.add('hidden');
+                if (mobileHerramientasLink) mobileHerramientasLink.classList.remove('hidden');
             }
-        }
+        });
 
-        // Inicialización segura
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initFirebase);
-        } else {
-            initFirebase();
-        }
-
-        function loginWithGoogle() {
-            if (!auth) {
-                showToast("Firebase no está disponible / bloqueado");
-                return;
+        window.loginWithGoogle = async function() {
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error("Error al autenticar:", error);
+                showToast("Error al iniciar sesión con Google");
             }
-            // Cambiado a signInWithRedirect para evitar bloqueos COOP del navegador
-            auth.signInWithRedirect(provider);
-        }
+        };
 
-        function logout() {
-            if (!auth) return;
-            auth.signOut().then(() => {
+        window.logout = async function() {
+            try {
+                await signOut(auth);
                 toggleUserDropdown();
-            });
-        }
+            } catch (error) {
+                console.error("Error al cerrar sesión:", error);
+            }
+        };
 
-        function toggleUserDropdown() {
+        window.toggleUserDropdown = function() {
             const dropdown = document.getElementById('user-dropdown');
             dropdown.classList.toggle('hidden');
-        }
+        };
 
         const themeToggleBtn = document.getElementById('theme-toggle');
         const themeTextLight = document.getElementById('theme-text-light');
@@ -583,7 +575,7 @@
             });
         });
 
-        function copyToClipboard(text, name) {
+        window.copyToClipboard = function(text, name) {
             const tempEl = document.createElement('textarea');
             tempEl.value = text;
             document.body.appendChild(tempEl);
@@ -592,9 +584,9 @@
             document.body.removeChild(tempEl);
 
             showToast(`Link a ${name} copiado`);
-        }
+        };
 
-        function showToast(message) {
+        window.showToast = function(message) {
             const toast = document.getElementById('toast');
             const toastMsg = document.getElementById('toast-message');
             toastMsg.innerText = message;
@@ -606,7 +598,7 @@
                 toast.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
                 toast.classList.remove('translate-y-0', 'opacity-100');
             }, 2500);
-        }
+        };
     </script>
 </body>
 </html>
