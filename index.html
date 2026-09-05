@@ -466,15 +466,6 @@
                 auth = firebase.auth();
                 provider = new firebase.auth.GoogleAuthProvider();
 
-                // Manejar el retorno de la redirección tras iniciar sesión
-                auth.getRedirectResult().then((result) => {
-                    if (result.user) {
-                        console.log("Inicio de sesión exitoso por redirección:", result.user);
-                    }
-                }).catch((error) => {
-                    console.error("Error al procesar redirección de autenticación:", error);
-                });
-
                 auth.onAuthStateChanged((user) => {
                     const loginBtn = document.getElementById('login-btn');
                     const userMenuBtn = document.getElementById('user-menu-btn');
@@ -514,8 +505,9 @@
                 showToast("Firebase no está disponible / bloqueado");
                 return;
             }
-            // Transición limpia sin ventanas emergentes
-            auth.signInWithRedirect(provider);
+            auth.signInWithPopup(provider).catch((error) => {
+                console.error("Error al autenticar:", error);
+            });
         }
 
         function logout() {
