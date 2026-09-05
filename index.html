@@ -110,6 +110,7 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
         }
     </style>
+    <!-- CMP de ConsentManager exento de bloquear Firebase para autenticación esencial -->
     <script type="text/javascript" data-cmp-ab="1" src="https://cdn.consentmanager.net/delivery/autoblocking/420cc2acd22a4.js" data-cmp-host="b.delivery.consentmanager.net" data-cmp-cdn="cdn.consentmanager.net" data-cmp-codesrc="0"></script>
 </head>
 
@@ -440,9 +441,9 @@
         <span id="toast-message">Copiado</span>
     </div>
 
-    <!-- SDKs de Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <!-- SDKs de Firebase clasificados para evitar bloqueos del ConsentManager -->
+    <script data-cmp-ab="0" class="cm-ignore" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script data-cmp-ab="0" class="cm-ignore" src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
     <script>
         const firebaseConfig = {
@@ -456,17 +457,61 @@
             measurementId: "G-V636CRYZ8X"
         };
 
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const provider = new firebase.auth.GoogleAuthProvider();
+        let auth;
+        let provider;
+
+        function initFirebase() {
+            if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+                provider = new firebase.auth.GoogleAuthProvider();
+
+                auth.onAuthStateChanged((user) => {
+                    const loginBtn = document.getElementById('login-btn');
+                    const userMenuBtn = document.getElementById('user-menu-btn');
+                    const herramientasSec = document.getElementById('herramientas');
+                    const mobileHerramientasLink = document.getElementById('mobile-herramientas-link');
+
+                    if (user) {
+                        loginBtn.classList.add('hidden');
+                        userMenuBtn.classList.remove('hidden');
+                        document.getElementById('user-avatar').src = user.photoURL || 'https://via.placeholder.com/150';
+                        document.getElementById('user-name').innerText = user.displayName || 'Usuario';
+                        document.getElementById('user-email').innerText = user.email || '';
+                        
+                        if (herramientasSec) herramientasSec.classList.remove('hidden');
+                        if (mobileHerramientasLink) mobileHerramientasLink.classList.remove('hidden');
+                    } else {
+                        loginBtn.classList.remove('hidden');
+                        userMenuBtn.classList.add('hidden');
+                        document.getElementById('user-dropdown').classList.add('hidden');
+                        
+                        if (herramientasSec) herramientasSec.classList.add('hidden');
+                        if (mobileHerramientasLink) mobileHerramientasLink.classList.add('hidden');
+                    }
+                });
+            }
+        }
+
+        // Inicialización segura
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initFirebase);
+        } else {
+            initFirebase();
+        }
 
         function loginWithGoogle() {
+            if (!auth) {
+                showToast("Firebase no está disponible / bloqueado");
+                return;
+            }
             auth.signInWithPopup(provider).catch((error) => {
                 console.error("Error al autenticar:", error);
             });
         }
 
         function logout() {
+            if (!auth) return;
             auth.signOut().then(() => {
                 toggleUserDropdown();
             });
@@ -476,31 +521,6 @@
             const dropdown = document.getElementById('user-dropdown');
             dropdown.classList.toggle('hidden');
         }
-
-        auth.onAuthStateChanged((user) => {
-            const loginBtn = document.getElementById('login-btn');
-            const userMenuBtn = document.getElementById('user-menu-btn');
-            const herramientasSec = document.getElementById('herramientas');
-            const mobileHerramientasLink = document.getElementById('mobile-herramientas-link');
-
-            if (user) {
-                loginBtn.classList.add('hidden');
-                userMenuBtn.classList.remove('hidden');
-                document.getElementById('user-avatar').src = user.photoURL || 'https://via.placeholder.com/150';
-                document.getElementById('user-name').innerText = user.displayName || 'Usuario';
-                document.getElementById('user-email').innerText = user.email || '';
-                
-                if (herramientasSec) herramientasSec.classList.remove('hidden');
-                if (mobileHerramientasLink) mobileHerramientasLink.classList.remove('hidden');
-            } else {
-                loginBtn.classList.remove('hidden');
-                userMenuBtn.classList.add('hidden');
-                document.getElementById('user-dropdown').classList.add('hidden');
-                
-                if (herramientasSec) herramientasSec.classList.add('hidden');
-                if (mobileHerramientasLink) mobileHerramientasLink.classList.add('hidden');
-            }
-        });
 
         const themeToggleBtn = document.getElementById('theme-toggle');
         const themeTextLight = document.getElementById('theme-text-light');
