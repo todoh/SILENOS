@@ -110,7 +110,6 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
         }
     </style>
-    <!-- CMP de ConsentManager exento de bloquear Firebase para autenticación esencial -->
     <script type="text/javascript" data-cmp-ab="1" src="https://cdn.consentmanager.net/delivery/autoblocking/420cc2acd22a4.js" data-cmp-host="b.delivery.consentmanager.net" data-cmp-cdn="cdn.consentmanager.net" data-cmp-codesrc="0"></script>
 </head>
 
@@ -128,7 +127,8 @@
                 <a href="#autores" class="hover:text-silenos-gray transition-colors">Autores</a>
                 <a href="#catalogo" class="hover:text-silenos-gray transition-colors">Catálogo</a>
                 <a href="#leer" class="hover:text-silenos-gray transition-colors">Leer Online</a>
-                <a href="#seriesypeliculas" class="hover:text-silenos-gray transition-colors">Series & Películas</a>
+                <a href="#seriesypeliculas" class="hover:text-silenos-gray transition-colors">Series</a>
+                <a href="#herramientas" class="hover:text-silenos-gray transition-colors">Herramientas</a>
             </nav>
 
             <div class="flex items-center space-x-6">
@@ -136,32 +136,6 @@
                     <span id="theme-text-light" class="hidden">Light</span>
                     <span id="theme-text-dark" class="hidden">Dark</span>
                 </button>
-
-                <!-- Auth Container Google Minimalista -->
-                <div class="relative">
-                    <button id="login-btn" class="text-[10px] uppercase tracking-widest border border-black/10 dark:border-white/20 bg-white/40 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 px-3 py-1.5 rounded-full transition-all flex items-center space-x-2">
-                        <svg class="w-3 h-3" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-                        <span>Acceder</span>
-                    </button>
-
-                    <div id="user-menu-btn" class="hidden cursor-pointer flex items-center space-x-2 border border-white/60 dark:border-white/10 bg-white/50 dark:bg-white/5 p-1 rounded-full backdrop-blur-md">
-                        <img id="user-avatar" src="" alt="Perfil" class="w-7 h-7 rounded-full object-cover">
-                    </div>
-
-                    <!-- Dropdown Menú Crystal -->
-                    <div id="user-dropdown" class="hidden absolute right-0 mt-3 w-56 rounded-2xl glass-panel p-3 space-y-2 z-50 text-xs">
-                        <div class="px-3 py-2 border-b border-black/5 dark:border-white/5">
-                            <p id="user-name" class="font-medium truncate"></p>
-                            <p id="user-email" class="text-[10px] text-silenos-gray truncate"></p>
-                        </div>
-                        <a href="#herramientas" id="dropdown-herramientas-link" class="block px-3 py-2 rounded-xl hover:bg-white/60 dark:hover:bg-white/10 transition-colors text-[11px] uppercase tracking-wider">
-                            Nuestras Herramientas
-                        </a>
-                        <button id="logout-btn" class="w-full text-left px-3 py-2 rounded-xl hover:bg-red-500/10 text-red-600 dark:text-red-400 transition-colors text-[11px] uppercase tracking-wider">
-                            Cerrar Sesión
-                        </button>
-                    </div>
-                </div>
                 
                 <button id="mobile-menu-btn" class="md:hidden text-[11px] uppercase tracking-widest text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white" aria-label="Menú">
                     Menú
@@ -176,7 +150,7 @@
         <a href="#catalogo" class="mobile-link hover:text-silenos-gray transition-colors">Catálogo</a>
         <a href="#leer" class="mobile-link hover:text-silenos-gray transition-colors">Leer Online</a>
         <a href="#seriesypeliculas" class="mobile-link hover:text-silenos-gray transition-colors">Series & Películas</a>
-        <a href="#herramientas" id="mobile-herramientas-link" class="mobile-link hover:text-silenos-gray transition-colors hidden">Nuestras Herramientas</a>
+        <a href="#herramientas" class="mobile-link hover:text-silenos-gray transition-colors">Nuestras Herramientas</a>
     </div>
 
     <main class="flex-grow pt-24">
@@ -312,11 +286,11 @@
             </div>
         </section>
 
-        <!-- Sección Privada Herramientas -->
-        <section id="herramientas" class="py-24 px-8 md:px-16 max-w-6xl mx-auto hidden">
+        <!-- Sección Herramientas (Pública y accesible) -->
+        <section id="herramientas" class="py-24 px-8 md:px-16 max-w-6xl mx-auto">
             <div class="glass-panel p-10 md:p-16 rounded-3xl space-y-12">
                 <div class="max-w-3xl space-y-4">
-                    <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">06 / ECOSISTEMA TÉCNICO PRIVADO</span>
+                    <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">06 / ECOSISTEMA TÉCNICO</span>
                     <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Nuestras Herramientas</h2>
                     <p class="text-xs md:text-sm text-silenos-gray dark:text-neutral-400 font-light tracking-wide leading-relaxed">
                         Módulos lógicos y entornos de optimización libres de simulaciones o adornos pesados. Rutas físicas directas de cómputo ejecutable.
@@ -441,140 +415,7 @@
         <span id="toast-message">Copiado</span>
     </div>
 
-    <!-- Firebase v10 Modular Import Map -->
-    <script type="importmap">
-      {
-        "imports": {
-          "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
-          "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"
-        }
-      }
-    </script>
-
-    <script type="module">
-        import { initializeApp, getApps } from "firebase/app";
-        import { 
-          getAuth, 
-          GoogleAuthProvider, 
-          signInWithPopup, 
-          signInWithRedirect, 
-          getRedirectResult, 
-          signOut, 
-          onAuthStateChanged, 
-          setPersistence, 
-          browserLocalPersistence 
-        } from "firebase/auth";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBxlmzjYjOEAwc_DVtFpt9DnN7XnuRkbKw",
-            authDomain: "silenos-fc5e5.firebaseapp.com",
-            databaseURL: "https://silenos-fc5e5-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "silenos-fc5e5",
-            storageBucket: "silenos-fc5e5.firebasestorage.app",
-            messagingSenderId: "314671855826",
-            appId: "1:314671855826:web:ea0af5cd962baa1fd6150b",
-            measurementId: "G-V636CRYZ8X"
-        };
-
-        const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
-        const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
-
-        const loginBtn = document.getElementById('login-btn');
-        const userMenuBtn = document.getElementById('user-menu-btn');
-        const logoutBtn = document.getElementById('logout-btn');
-        const dropdownHerramientasLink = document.getElementById('dropdown-herramientas-link');
-
-        // Procesar resultado si viene de un flujo de redirección
-        getRedirectResult(auth)
-            .then((result) => {
-                if (result) {
-                    console.log("Autenticado vía redirect:", result.user);
-                }
-            })
-            .catch((error) => {
-                console.error("Error en getRedirectResult:", error);
-            });
-
-        onAuthStateChanged(auth, (user) => {
-            const herramientasSec = document.getElementById('herramientas');
-            const mobileHerramientasLink = document.getElementById('mobile-herramientas-link');
-
-            if (user) {
-                loginBtn.classList.add('hidden');
-                userMenuBtn.classList.remove('hidden');
-                document.getElementById('user-avatar').src = user.photoURL || 'https://via.placeholder.com/150';
-                document.getElementById('user-name').innerText = user.displayName || 'Usuario';
-                document.getElementById('user-email').innerText = user.email || '';
-                
-                if (herramientasSec) herramientasSec.classList.remove('hidden');
-                if (mobileHerramientasLink) mobileHerramientasLink.classList.remove('hidden');
-            } else {
-                loginBtn.classList.remove('hidden');
-                userMenuBtn.classList.add('hidden');
-                document.getElementById('user-dropdown').classList.add('hidden');
-                
-                if (herramientasSec) herramientasSec.classList.add('hidden');
-                if (mobileHerramientasLink) mobileHerramientasLink.classList.add('hidden');
-            }
-        });
-
-        // Evento de Login con manejo de errores y fallback a Redirect
-        if (loginBtn) {
-            loginBtn.addEventListener("click", async () => {
-                try {
-                    await setPersistence(auth, browserLocalPersistence);
-                    await signInWithPopup(auth, provider);
-                } catch (error) {
-                    console.warn("Popup falló o fue bloqueado por el navegador. Código:", error.code);
-                    
-                    if (
-                        error.code === 'auth/popup-blocked' || 
-                        error.code === 'auth/popup-closed-by-user' ||
-                        error.code === 'auth/cancelled-popup-request'
-                    ) {
-                        try {
-                            await signInWithRedirect(auth, provider);
-                        } catch (redirectErr) {
-                            console.error("Error en signInWithRedirect:", redirectErr);
-                            showToast("Error al redirigir para autenticación");
-                        }
-                    } else {
-                        console.error("Error al autenticar con Google:", error);
-                        showToast("Error al iniciar sesión con Google");
-                    }
-                }
-            });
-        }
-
-        if (logoutBtn) {
-            logoutBtn.addEventListener("click", async () => {
-                try {
-                    await signOut(auth);
-                    toggleUserDropdown();
-                } catch (error) {
-                    console.error("Error al cerrar sesión:", error);
-                }
-            });
-        }
-
-        if (userMenuBtn) {
-            userMenuBtn.addEventListener("click", () => {
-                toggleUserDropdown();
-            });
-        }
-
-        if (dropdownHerramientasLink) {
-            dropdownHerramientasLink.addEventListener("click", () => {
-                toggleUserDropdown();
-            });
-        }
-
-        function toggleUserDropdown() {
-            const dropdown = document.getElementById('user-dropdown');
-            dropdown.classList.toggle('hidden');
-        }
-
+    <script>
         const themeToggleBtn = document.getElementById('theme-toggle');
         const themeTextLight = document.getElementById('theme-text-light');
         const themeTextDark = document.getElementById('theme-text-dark');
