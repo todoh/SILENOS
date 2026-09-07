@@ -6,7 +6,7 @@
     <title>LIBROS & LIBROJUEGOS</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
-         
+              
     <!-- GOOGLE ADSENSE INTEGRADO -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7136138379132657" crossorigin="anonymous"></script>
 </head>
@@ -25,7 +25,7 @@
             "search  search  search"
             "sidebar-left main sidebar-right"
             "footer  footer  footer";
-        background-color: #0a0a0a;
+        background-color: var(--bg-main);
         min-height: 100vh;
     }
     header#mainHeader {
@@ -137,7 +137,7 @@
         max-width: 768px;
         margin: 0 auto;
         padding: 48px 48px 160px 48px;
-        background-color: #ffffff;
+        background-color: var(--bg-main);
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         border: 1px solid #e5e5e5;
     }
@@ -199,16 +199,18 @@
             <div id="headerTitle">SILEN<span style="color: rgb(131, 0, 0);">OS</span> LIBROS & LIBROJUEGOS</div>
         </div>
         <div class="header-right" id="uploadContainer">
+            <button class="btn" id="btnThemeToggle" style="font-size: 0.75rem; padding: 4px 8px; border: 1px solid #333333; margin-right: 8px; vertical-align: middle; background: transparent; color: var(--text-light); cursor: pointer; text-transform: uppercase; font-family: 'Roboto', sans-serif; font-weight: 700; letter-spacing: 0.5px;" onclick="alternarTemaApp()">Tema</button>
             <select id="selectIdioma" class="lang-select">
                 <option value="ES" selected>Español</option>
                 <option value="EN">English</option>
-                <option value="RU"> </option>
-                <option value="AR"> </option>
-                <option value="CH"> </option>
+                <option value="RU">Русский</option>
+                <option value="AR">العربية</option>
+                <option value="CH">中文</option>
                 <option value="FR">Français</option>
-                <option value="JN"> </option>
+                <option value="JN">日本語</option>
             </select>
-             <button class="btn" id="btnFiltroGamebook" style="font-size: 1.1rem; padding: 0 8px; color: #ffffff !important; opacity: 0.4; display: none;"></button>
+             
+            <button class="btn" id="btnFiltroGamebook" style="font-size: 1.1rem; padding: 0 8px; color: #ffffff !important; opacity: 0.4; display: none;"></button>
             <button class="btn" id="btnBuscarToggle" style="font-size: 1.1rem; padding: 0 8px; color: #ffffff !important; opacity: 1 !important;">🔍</button>
        </div>
         <div class="header-right" id="backContainer" style="display: none;">
@@ -254,14 +256,14 @@
         <div id="gridView" class="grid-view">
             <div class="empty-state">Conectando con el repositorio de manuscritos...</div>
         </div>
-        
+         
         <div id="newsView" class="grid-view" style="display: none;">
             <div class="empty-state">Cargando noticias de Silenos...</div>
         </div>
         <div id="favoritesView" class="grid-view" style="display: none;">
             <div class="empty-state">No tienes manuscritos en tus favoritos.</div>
         </div>
-        
+         
         <div id="usuarioView" class="preferences-view" style="display: none;">
             <div class="preferences-content">
                 <div class="pref-group" style="display:none;">
@@ -372,23 +374,23 @@
     </div>
     <nav id="navView" class="global-nav">
         <div class="nav-tab" id="tabCatalogo" onclick="cambiarSeccionPrincipal('catalogo')">
-            <span class="nav-icon"> </span>
+            <span class="nav-icon">📚</span>
             <span class="nav-label">Catálogo</span>
         </div>
         <div class="nav-tab" id="tabNews" onclick="cambiarSeccionPrincipal('news')">
-            <span class="nav-icon"> </span>
+            <span class="nav-icon">📰</span>
             <span class="nav-label">News</span>
         </div>
         <div class="nav-tab" id="tabFavoritos" onclick="cambiarSeccionPrincipal('favoritos')">
-            <span class="nav-icon"> </span>
+            <span class="nav-icon">⭐</span>
             <span class="nav-label">Favoritos</span>
         </div>
         <div class="nav-tab" id="tabUsuario" onclick="cambiarSeccionPrincipal('usuario')">
-            <span class="nav-icon"> </span>
+            <span class="nav-icon">👤</span>
             <span class="nav-label">Usuario</span>
         </div>
         <div class="nav-tab" id="tabTienda" onclick="cambiarSeccionPrincipal('tienda')">
-            <span class="nav-icon"> </span>
+            <span class="nav-icon">🛒</span>
             <span class="nav-label">Tienda</span>
         </div>
     </nav>
