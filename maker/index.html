@@ -7,26 +7,27 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
 <div id="toolbar">
-    <button class="btn" id="btn-select-dir"> Abrir Carpeta Proyecto</button>
-    <button class="btn" id="btn-export-html" style="background: #0071e3; color: white; border-color: #0071e3;"> Exportar Juego Autoejecutable (.html)</button>
+    <button class="btn" id="btn-select-dir">📁 Abrir Carpeta Proyecto</button>
+    <button class="btn" id="btn-export-html" style="background: #0071e3; color: white; border-color: #0071e3;">⚡ Exportar Juego Autoejecutable (.html)</button>
     
     <div style="display: flex; gap: 4px; background: rgba(0,0,0,0.05); padding: 3px; border-radius: 8px; margin-left: 8px;">
-        <button class="btn active" id="btn-menu-assets" title="Galería y Assets de la Escena"> Assets</button>
-        <button class="btn" id="btn-menu-elements" title="Elementos Reutilizables Guardados"> Elementos</button>
-        <button class="btn" id="btn-menu-inventory" title="Configurar Ítems e Inventario del Juego"> Inventario</button>
-        <button class="btn" id="btn-menu-generation" title="Generación de Assets con ComfyUI / Gemini e IA"> Generación</button>
-        <button class="btn" id="btn-menu-agent" title="Agente Creador de Aventuras SVG"> Agente</button>
-        <button class="btn" id="btn-menu-logic" title="Variables y Lógica Global del Juego"> Lógica</button>
-        <button class="btn" id="btn-menu-io" title="Cargar y Guardar Mapas, Zonas y Configuraciones vía JSON"> IO</button>
+        <button class="btn active" id="btn-menu-assets" title="Galería y Assets de la Escena">🎨 Assets</button>
+        <button class="btn" id="btn-menu-elements" title="Elementos Reutilizables Guardados">🧩 Elementos</button>
+        <button class="btn" id="btn-menu-inventory" title="Configurar Ítems e Inventario del Juego">🎒 Inventario</button>
+        <button class="btn" id="btn-menu-generation" title="Generación de Assets con ComfyUI / Gemini e IA">✨ Generación</button>
+        <button class="btn" id="btn-menu-agent" title="Agente Creador de Aventuras SVG">🤖 Agente</button>
+        <button class="btn" id="btn-menu-logic" title="Variables y Lógica Global del Juego">⚙️ Lógica</button>
+        <button class="btn" id="btn-menu-io" title="Cargar y Guardar Mapas, Zonas y Configuraciones vía JSON">💾 IO</button>
     </div>
     
     <div style="flex:1"></div>
-    <button class="btn active" id="btn-mode-edit"> Editor</button>
-    <button class="btn" id="btn-mode-play"> Jugar</button>
+    <button class="btn active" id="btn-mode-edit">✏️ Editor</button>
+    <button class="btn" id="btn-mode-play">🎮 Jugar</button>
     
-    <button class="btn" id="btn-open-gemini-config" title="Configuración de Gemini API" style="margin-left: 8px; padding: 6px 10px;"> 
-        Config Gemini
+    <button class="btn" id="btn-open-gemini-config" title="Configuración de Gemini API" style="margin-left: 8px; padding: 6px 10px;">
+        🔑 Config Gemini
     </button>
 </div>
 
@@ -34,6 +35,7 @@
     <span style="font-size: 10px; color: #666; margin-right: 4px;">ZONAS:</span>
     <div id="scene-tabs-container" style="display: flex; gap: 6px; align-items: center;"></div>
     <button class="btn" id="btn-add-scene" style="padding: 2px 8px; font-size: 10px;">+ Crear Zona</button>
+    
     <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
         <div style="display: flex; align-items: center; gap: 4px;">
             <label for="select-aspect-ratio" style="font-size: 10px; color: #666; font-weight: 600;">FORMATO:</label>
@@ -68,7 +70,7 @@
             <div class="sidebar-section">
                 <div class="sidebar-title">Assets / Galería</div>
                 <input type="file" id="file-input" multiple accept="image/*,.svg" style="display:none">
-                <button class="btn" id="btn-load-files" style="width: 100%;"> Cargar Imágenes</button>
+                <button class="btn" id="btn-load-files" style="width: 100%;">📂 Cargar Imágenes</button>
             </div>
             <div id="file-list"></div>
         </div>
@@ -76,7 +78,7 @@
         <!-- NUEVA VISTA DE ELEMENTOS REUTILIZABLES -->
         <div id="view-elements" style="display: none; flex-direction: column; height: 100%; padding: 12px; gap: 12px; overflow-y: auto;">
             <div class="sidebar-title">Elementos Guardados</div>
-            <button class="btn" id="btn-save-copied-element" style="background: var(--accent-blue); color: white; border-color: var(--accent-blue); font-weight: 600;"> Guardar Elemento Copiado</button>
+            <button class="btn" id="btn-save-copied-element" style="background: var(--accent-blue); color: white; border-color: var(--accent-blue); font-weight: 600;">💾 Guardar Elemento Copiado</button>
             <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 2px 0;">
             <div id="saved-elements-list" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; align-content: start;"></div>
         </div>
@@ -106,9 +108,9 @@
             <div class="form-group">
                 <label>O Cargar Imagen desde Local:</label>
                 <input type="file" id="inv-item-file-input" accept="image/*,.svg" style="display:none">
-                <button class="btn" id="btn-load-item-image" style="width: 100%;"> Cargar Nueva Imagen</button>
+                <button class="btn" id="btn-load-item-image" style="width: 100%;">📁 Cargar Nueva Imagen</button>
             </div>
-            <button class="btn" id="btn-save-inv-item" style="background: var(--accent-blue); color: white; border-color: var(--accent-blue); margin-top: 4px;"> Guardar / Crear Ítem</button>
+            <button class="btn" id="btn-save-inv-item" style="background: var(--accent-blue); color: white; border-color: var(--accent-blue); margin-top: 4px;">💾 Guardar / Crear Ítem</button>
             <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 8px 0;">
             <div class="sidebar-title">Ítems Registrados</div>
             <div id="registered-items-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
@@ -127,7 +129,7 @@
             <div class="form-group">
                 <label for="gen-prompt">Prompt / Descripción:</label>
                 <textarea id="gen-prompt" rows="3" placeholder="Ej: A warrior knight character standing, detailed..."></textarea>
-                <button class="btn" id="btn-translate-prompt" style="font-size: 10px; padding: 4px 8px; margin-top: 4px; align-self: flex-start;"> Traducir al Inglés</button>
+                <button class="btn" id="btn-translate-prompt" style="font-size: 10px; padding: 4px 8px; margin-top: 4px; align-self: flex-start;">🌐 Traducir al Inglés</button>
             </div>
             <div id="group-comfy-settings">
                 <div class="form-group">
@@ -199,7 +201,7 @@
                 <label for="gen-edge-feather">Pulido de Borde / Suavizado (px):</label>
                 <input type="range" id="gen-edge-feather" min="0" max="10" value="2">
             </div>
-            <button class="btn" id="btn-generate-asset" style="background: #107c41; color: white; border-color: #107c41; font-weight: 600; margin-top: 4px;"> Generar Asset IA</button>
+            <button class="btn" id="btn-generate-asset" style="background: #107c41; color: white; border-color: #107c41; font-weight: 600; margin-top: 4px;">✨ Generar Asset IA</button>
             <div id="gen-status" style="font-size: 10px; color: var(--text-secondary); text-align: center; margin-top: 4px;"></div>
             <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 8px 0;">
             <div class="sidebar-title">Generaciones de la Sesión</div>
@@ -207,7 +209,7 @@
         </div>
 
         <div id="view-agent" style="display: none; flex-direction: column; height: 100%; padding: 12px; gap: 12px; overflow-y: auto;">
-            <div class="sidebar-title"> Agente Creador ODS</div>
+            <div class="sidebar-title">🤖 Agente Creador ODS</div>
             <div class="form-group">
                 <label for="agent-prompt">Premisa / Prompt Maestro:</label>
                 <textarea id="agent-prompt" rows="4" placeholder="Ej: Una aventura espacial cyberpunk donde debes reparar la nave antes de caer en un agujero negro..."></textarea>
@@ -222,10 +224,10 @@
             </div>
             <div style="display: flex; gap: 8px;">
                 <button class="btn" id="btn-start-agent" style="flex: 1; background: #0071e3; color: white; border-color: #0071e3; font-weight: 600; padding: 10px;">
-                      Generar Aventura
+                    ✨ Generar Aventura
                 </button>
                 <button class="btn" id="btn-resume-agent" style="display: none; flex: 1; background: #ff9500; color: white; border-color: #ff9500; font-weight: 600; padding: 10px;">
-                      Reanudar
+                    ▶️ Reanudar
                 </button>
             </div>
             <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 4px 0;">
@@ -257,7 +259,7 @@
                 <label for="var-val">Valor Inicial:</label>
                 <input type="text" id="var-val" placeholder="Ej: false, 0, inicio">
             </div>
-            <button class="btn" id="btn-save-variable" style="background: var(--accent-blue); color: white; border-color: var(--accent-blue); margin-top: 4px;"> Guardar / Crear Variable</button>
+            <button class="btn" id="btn-save-variable" style="background: var(--accent-blue); color: white; border-color: var(--accent-blue); margin-top: 4px;">💾 Guardar / Crear Variable</button>
             <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 8px 0;">
             <div class="sidebar-title">Variables Registradas</div>
             <div id="registered-variables-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
@@ -269,8 +271,12 @@
                 <input type="checkbox" id="io-include-base64" style="width: auto; cursor: pointer;">
                 <label for="io-include-base64" style="margin: 0; cursor: pointer; font-size: 11px; font-weight: 600;">Incrustar imágenes en Base64 en el JSON</label>
             </div>
+            <div class="form-group" style="flex-direction: row; align-items: center; gap: 8px; background: rgba(0,0,0,0.03); padding: 8px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+                <input type="checkbox" id="io-include-elements-base64" style="width: auto; cursor: pointer;">
+                <label for="io-include-elements-base64" style="margin: 0; cursor: pointer; font-size: 11px; font-weight: 600;">Guardar elementos y sus imágenes en Base64</label>
+            </div>
             <span style="font-size: 9px; color: var(--text-secondary); margin-top: -6px; display: block;">* Las rutas locales originales se conservan siempre por si el HTML se ejecuta en carpeta con assets directos.</span>
-            <button class="btn" id="btn-export-json" style="background: var(--accent-blue); color: white; border-color: var(--accent-blue); margin-top: 4px;"> Exportar Mapa / Proyecto Completo (.json)</button>
+            <button class="btn" id="btn-export-json" style="background: var(--accent-blue); color: white; border-color: var(--accent-blue); margin-top: 4px;">📤 Exportar Mapa / Proyecto Completo (.json)</button>
             <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 4px 0;">
             <div class="sidebar-title">Cargar / Anexar Mapas</div>
             <input type="file" id="io-json-file-input" accept=".json" style="display:none">
@@ -281,7 +287,7 @@
                     <option value="merge">Anexar Nuevas Zonas, Ítems y Objetos</option>
                 </select>
             </div>
-            <button class="btn" id="btn-import-json" style="width: 100%;"> Cargar o Añadir Mapa JSON</button>
+            <button class="btn" id="btn-import-json" style="width: 100%;">📥 Cargar o Añadir Mapa JSON</button>
             <div id="io-status" style="font-size: 10px; color: var(--text-secondary); text-align: center; margin-top: 4px;"></div>
         </div>
     </div>
@@ -343,10 +349,11 @@
                 <select id="prop-cond-item"></select>
                 <label for="prop-cond-item-state" style="margin-top: 4px;">Estado del Ítem:</label>
                 <select id="prop-cond-item-state">
-                    <option value="has">Posee el Ítem</option>
-                    <option value="not_has">NO posee el Ítem</option>
+                    <option value="has">Posee el ítem</option>
+                    <option value="not_has">NO posee el ítem</option>
                 </select>
             </div>
+
             <div id="interactive-props" style="display:none; flex-direction:column; gap:12px; margin-top: 4px;">
                 <hr style="border: none; border-top: 1px solid var(--border-subtle);">
                 <div class="sidebar-title">Interacción y Acciones</div>
@@ -373,8 +380,9 @@
                     <input type="text" id="prop-set-val" placeholder="Ej: true, 10, habitacion2">
                 </div>
             </div>
-            <button class="btn" id="btn-crop-element" style="background: var(--accent-blue); color: white; border-color: var(--accent-blue); margin-top: 12px; display: none;"> Recortar Imagen</button>
-            <button class="btn" id="btn-delete-element" style="margin-top:12px;"> Eliminar Elemento</button>
+
+            <button class="btn" id="btn-crop-element" style="background: var(--accent-blue); color: white; border-color: var(--accent-blue); margin-top: 12px; display: none;">✂️ Recortar Imagen</button>
+            <button class="btn" id="btn-delete-element" style="margin-top:12px;">🗑️ Eliminar Elemento</button>
         </div>
     </div>
 </div>
@@ -382,14 +390,14 @@
 <div id="gemini-config-modal">
     <div id="gemini-modal-content">
         <button id="gemini-modal-close" title="Cerrar">&times;</button>
-        <div class="sidebar-title" style="font-size: 13px; color: var(--text-primary); margin-bottom: 12px;"> Configuración Gemini API</div>
+        <div class="sidebar-title" style="font-size: 13px; color: var(--text-primary); margin-bottom: 12px;">🔑 Configuración Gemini API</div>
         <div class="form-group">
             <label for="modal-gemini-key">API Key de Gemini:</label>
             <input type="password" id="modal-gemini-key" placeholder="AIzaSy..." style="width: 100%;">
             <span style="font-size: 9px; color: var(--text-secondary); margin-top: 2px;">La clave se guardará localmente en el navegador.</span>
         </div>
         <button class="btn" id="btn-save-gemini-key" style="background: var(--accent-blue); color: white; border-color: var(--accent-blue); width: 100%; margin-top: 12px;">
-            Guardar Configuración
+            💾 Guardar Configuración
         </button>
     </div>
 </div>
@@ -403,8 +411,12 @@
 </div>
 
 <script src="state.js"></script>
+<script src="movement-pathfinding.js"></script>
+<script src="movement-entities.js"></script>
 <script src="movement.js"></script>
 <script src="render-crop.js"></script>
+<script src="render-selection.js"></script>
+<script src="render-transform.js"></script>
 <script src="render-events.js"></script>
 <script src="render-properties.js"></script>
 <script src="render.js"></script>
@@ -415,7 +427,8 @@
 <script src="context-menu.js"></script>
 <script src="io.js"></script>
 <script src="generation-ai.js"></script>
-<script src="agent-illustrator.js"></script> <script src="agent-orchestrator.js"></script>
+<script src="agent-illustrator.js"></script>
+<script src="agent-orchestrator.js"></script>
 <script src="logic.js"></script>
 </body>
 </html>

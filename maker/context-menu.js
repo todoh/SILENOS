@@ -111,13 +111,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Rastreo dinámico de las coordenadas del puntero sobre el Canvas
     if (stage) {
         stage.addEventListener('mousemove', (e) => {
-            const stageRect = stage.getBoundingClientRect();
-            const dim = getStageDimensions();
-            const scaleX = dim.width / stageRect.width;
-            const scaleY = dim.height / stageRect.height;
-
-            currentMousePos.x = Math.round((e.clientX - stageRect.left) * scaleX);
-            currentMousePos.y = Math.round((e.clientY - stageRect.top) * scaleY);
+            const coords = getCanvasWorldCoordinates(e);
+            currentMousePos.x = coords.clickX;
+            currentMousePos.y = coords.clickY;
         });
 
         stage.addEventListener('mouseleave', () => {
@@ -130,30 +126,19 @@ document.addEventListener('DOMContentLoaded', () => {
         viewportContainer.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             if (isPlayMode) return;
-
             removeContextMenu();
 
-            const stageRect = stage.getBoundingClientRect();
-            const dim = getStageDimensions();
-            const scaleX = dim.width / stageRect.width;
-            const scaleY = dim.height / stageRect.height;
+            const coords = getCanvasWorldCoordinates(e);
+            const clickX = coords.clickX;
+            const clickY = coords.clickY;
 
-            const clickX = Math.round((e.clientX - stageRect.left) * scaleX);
-            const clickY = Math.round((e.clientY - stageRect.top) * scaleY);
-
-            // Verificar si el clic fue sobre un elemento del Canvas
+            // Verificar si el clic fue sobre un elemento del Canvas (Raycasting por píxel)
             const scene = projectData.scenes[currentSceneId];
             let targetElem = null;
 
             if (scene) {
                 targetElem = [...scene.elements].reverse().find(elem => {
-                    const elRect = {
-                        left: elem.x,
-                        top: elem.y,
-                        right: elem.x + elem.width,
-                        bottom: elem.y + elem.height
-                    };
-                    return clickX >= elRect.left && clickX <= elRect.right && clickY >= elRect.top && clickY <= elRect.bottom;
+                    return checkPixelOpacityForEditor(elem, clickX, clickY);
                 });
             }
 
@@ -253,14 +238,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const itemArrows = document.createElement('div');
             itemArrows.className = 'context-menu-item';
             itemArrows.innerHTML = `<span>Añadir Flechas</span><span style="font-size:10px;">▶</span>`;
-
             const arrowsSubmenu = document.createElement('div');
             arrowsSubmenu.className = 'context-submenu';
-            const arrowList = ['⬅️', '➡️', '⬆️', '⬇️', '↗️', '↘️', '↙️', '↖️', '↕️', '↔️', '↩️', '↪️', '⤴️', '⤵️', '🔄', '🔄', '🔙', '🔚', '🔛', '🔝', '🔜', '🔼', '🔽', '◀️', '▶️', '🔺', '🔻'];
-
+            const arrowList = ['⬆️', '↗️', '➡️', '↘️', '⬇️', '↙️', '⬅️', '↖️', '↕️', '↔️', '↩️', '↪️', '⤴️', '⤵️', '🔃', '🔄', '🔀', '🔁', '🔂', '▶️', '⏩', '⏭️', '⏯️', '◀️', '⏪', '⏮️', '🔼', '⏫', '🔽', '⏬'];
             const arrowGrid = document.createElement('div');
             arrowGrid.className = 'emoji-grid';
-
             arrowList.forEach(arrow => {
                 const aCell = document.createElement('div');
                 aCell.className = 'emoji-item';
@@ -296,7 +278,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
                 arrowGrid.appendChild(aCell);
             });
-
             arrowsSubmenu.appendChild(arrowGrid);
             itemArrows.appendChild(arrowsSubmenu);
             menu.appendChild(itemArrows);
@@ -305,14 +286,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const itemEmojis = document.createElement('div');
             itemEmojis.className = 'context-menu-item';
             itemEmojis.innerHTML = `<span>Añadir Emojis</span><span style="font-size:10px;">▶</span>`;
-
             const emojisSubmenu = document.createElement('div');
             emojisSubmenu.className = 'context-submenu';
-            const emojiList = ['🔑', '🗝️', '📜', '📦', '🎁', '💎', '🏆', '👑', '🕯️', '💡', '🚪', '🗿', '🔮', '⚔️', '🛡️', '🏹', '💣', '🧪', '🩸', '❤️', '🔥', '💧', '⚡', '🌟', '✨', '💀', '👻', '🤖', '👾', '👤', '💬', '❓', '❗', '⚠️', '🚫', '⛔', '🟢', '🔴', '🟡', '🔵'];
-
+            const emojiList = ['⭐', '🌟', '✨', '⚡', '🔥', '💥', '❤️', '💎', '🔑', '🚪', '📦', '🎁', '📜', '🗺️', '🎯', '📍', '❓', '❗', '👁️', '💬', '💡', '⚙️', '🛡️', '⚔️', '🗡️', '🏹', '🧪', '🩸', '💀', '👑', '🏆', '🥇', '🎒', '🧭', '🔮', '🧿', '🕯️', '🪙', '💰', '🏷️'];
             const emojiGrid = document.createElement('div');
             emojiGrid.className = 'emoji-grid';
-
             emojiList.forEach(emoji => {
                 const eCell = document.createElement('div');
                 eCell.className = 'emoji-item';
@@ -348,7 +326,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
                 emojiGrid.appendChild(eCell);
             });
-
             emojisSubmenu.appendChild(emojiGrid);
             itemEmojis.appendChild(emojisSubmenu);
             menu.appendChild(itemEmojis);

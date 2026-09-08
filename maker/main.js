@@ -21,7 +21,20 @@ function setMode(play) {
         currentSceneId = projectData.startScene || Object.keys(projectData.scenes)[0];
         initRuntimeVariables();
         inventoryManager.clear();
+
+        // Inicializar el bucle de movimiento una sola vez al entrar en Play Mode
+        resetCamera();
+        renderStage(true); // Pasar flag indicando cambio de escena/reinicio de cámara
+        renderInventory();
+        if (typeof movementEngine !== 'undefined') {
+            movementEngine.init();
+        }
     } else {
+        // Detener el bucle de movimiento al salir a Edit Mode
+        if (typeof movementEngine !== 'undefined') {
+            movementEngine.stop();
+        }
+
         // 2. RESTAURAR EL ESTADO ORIGINAL AL SALIR DEL MODO PLAY
         if (playModeBackup) {
             projectData = JSON.parse(JSON.stringify(playModeBackup));
@@ -32,15 +45,15 @@ function setMode(play) {
         if (btnModePlay) btnModePlay.classList.remove('active');
         if (gameUI) gameUI.style.display = 'none';
         inventoryManager.clear();
+
         if (typeof updatePropertiesPanel === 'function') {
             updatePropertiesPanel();
         }
-    }
 
-    resetCamera();
-    renderStage();
-    renderInventory();
-    fitStage();
+        resetCamera();
+        renderStage();
+        renderInventory();
+    }
 }
 
 function resetCamera() {
@@ -59,7 +72,7 @@ function resetCamera() {
     }
 }
 
-function fitStage() {
+function fitStage(instantCamera = false) {
     const stage = document.getElementById('stage');
     const viewport = document.getElementById('viewport-container');
     if (!stage || !viewport) return;
@@ -71,7 +84,6 @@ function fitStage() {
     const padding = isPlayMode ? 0 : 40;
     const availableWidth = Math.max(100, viewport.clientWidth - padding);
     const availableHeight = Math.max(100, viewport.clientHeight - padding);
-
     const scaleX = availableWidth / dim.width;
     const scaleY = availableHeight / dim.height;
     const baseScale = Math.min(scaleX, scaleY);
@@ -82,14 +94,15 @@ function fitStage() {
     if (isPlayMode) {
         const scene = projectData.scenes[currentSceneId];
         const player = scene ? scene.elements.find(e => e.isPlayer) : null;
+
         if (player) {
             const playerCenterX = player.x + (player.width / 2);
             const playerCenterY = player.y + (player.height / 2);
-
             const targetPanX = (viewport.clientWidth / 2) - (playerCenterX * finalScale);
             const targetPanY = (viewport.clientHeight / 2) - (playerCenterY * finalScale);
 
-            if (cameraState.panX === 0 && cameraState.panY === 0) {
+            // Si es renderizado estático/cambio de escena o panX/panY están en 0, fijar instantáneamente
+            if (instantCamera || (cameraState.panX === 0 && cameraState.panY === 0)) {
                 cameraState.panX = targetPanX;
                 cameraState.panY = targetPanY;
             } else {
@@ -172,7 +185,7 @@ function setupCameraControls() {
     }, true);
 }
 
-window.addEventListener('resize', fitStage);
+window.addEventListener('resize', () => fitStage());
 
 document.addEventListener('DOMContentLoaded', () => {
     setupCameraControls();
@@ -183,8 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
             projectData.aspectRatio = selectAspectRatio.value;
             resetCamera();
             autoSaveJSON();
-            renderStage();
-            fitStage();
+            renderStage(true);
         });
     }
 
@@ -247,7 +259,7 @@ function handleEntityInteraction(elem) {
     if (!elem || elem._isProcessingInteraction) return;
     elem._isProcessingInteraction = true;
 
-    // Detener movimiento del jugador al interactuar
+    // Detener movimiento del jugador y limpiar entidad pendiente inmediatamente antes de continuar
     if (typeof movementEngine !== 'undefined') {
         movementEngine.pendingTargetEntity = null;
         movementEngine.path = [];
@@ -336,8 +348,8 @@ function handleEntityInteraction(elem) {
         }
     }
 
-    // Renderizar de nuevo el escenario
-    renderStage();
+    // Renderizar escenario fijando la cámara directamente en la posición actual
+    renderStage(true);
 
     // 7. Teletransporte / Cambio de Escena
     if (elem.targetScene && projectData.scenes[elem.targetScene]) {
@@ -377,6 +389,7 @@ function changeSceneWithTransition(targetSceneId, targetX = null, targetY = null
                     if (!projectData.scenes[targetSceneId].elements) projectData.scenes[targetSceneId].elements = [];
                     projectData.scenes[targetSceneId].elements.push(currentPlayer);
                 }
+
                 if (targetX !== null && targetX !== undefined && targetX !== '') {
                     currentPlayer.x = parseInt(targetX, 10);
                 }
@@ -388,7 +401,7 @@ function changeSceneWithTransition(targetSceneId, targetX = null, targetY = null
 
         currentSceneId = targetSceneId;
         resetCamera();
-        renderStage();
+        renderStage(true);
 
         setTimeout(() => {
             if (fadeOverlay) fadeOverlay.style.opacity = '0';

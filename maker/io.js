@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnImportJson = document.getElementById('btn-import-json');
     const ioJsonFileInput = document.getElementById('io-json-file-input');
     const ioIncludeBase64 = document.getElementById('io-include-base64');
+    const ioIncludeElementsBase64 = document.getElementById('io-include-elements-base64');
     const ioMergeMode = document.getElementById('io-merge-mode');
     const ioStatus = document.getElementById('io-status');
 
@@ -12,17 +13,25 @@ document.addEventListener('DOMContentLoaded', () => {
             ioStatus.textContent = "Generando archivo JSON...";
             try {
                 const exportData = JSON.parse(JSON.stringify(projectData));
+                
+                const includeBase64 = ioIncludeBase64 && ioIncludeBase64.checked;
+                const includeElementsBase64 = ioIncludeElementsBase64 && ioIncludeElementsBase64.checked;
 
-                // Si la casilla está marcada, incrustamos Base64.
-                // Si NO está marcada, eliminamos explícitamente assetsData para limpiar el JSON.
-                if (ioIncludeBase64 && ioIncludeBase64.checked) {
+                if (includeBase64 || includeElementsBase64) {
                     exportData.assetsData = {};
                     for (const key in assetsMap) {
                         exportData.assetsData[key] = assetsMap[key].dataUrl;
                     }
+                    if (includeElementsBase64 && exportData.savedElementsConfig) {
+                        Object.values(exportData.savedElementsConfig).forEach(elem => {
+                            if (!elem.isText && elem.image && assetsMap[elem.image]) {
+                                exportData.assetsData[elem.image] = assetsMap[elem.image].dataUrl;
+                            }
+                        });
+                    }
                 } else {
                     delete exportData.assetsData;
-                    delete projectData.assetsData; // Limpiar del estado global en memoria
+                    delete projectData.assetsData;
                 }
 
                 const jsonStr = JSON.stringify(exportData, null, 2);
@@ -33,12 +42,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 a.click();
                 URL.revokeObjectURL(a.href);
 
-                // Si se exportó ligero, sincronizar guardado local sin las imágenes incrustadas
-                if (!ioIncludeBase64 || !ioIncludeBase64.checked) {
+                if (!includeBase64 && !includeElementsBase64) {
                     await autoSaveJSON();
                 }
-
-                ioStatus.textContent = "✔ Proyecto exportado correctamente";
+                ioStatus.textContent = "💾 Proyecto exportado correctamente";
                 setTimeout(() => { ioStatus.textContent = ""; }, 3000);
             } catch (err) {
                 console.error(err);
@@ -57,7 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ioJsonFileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-
             ioStatus.textContent = "Cargando datos del JSON...";
             try {
                 const text = await file.text();
@@ -65,7 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isMerge = ioMergeMode ? ioMergeMode.value === 'merge' : false;
 
                 if (isMerge) {
-                    // Anexar datos manteniendo lo existente
                     if (importedData.scenes) {
                         Object.keys(importedData.scenes).forEach(sceneId => {
                             let newId = sceneId;
@@ -81,16 +86,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (importedData.variablesConfig) {
                         projectData.variablesConfig = { ...projectData.variablesConfig, ...importedData.variablesConfig };
                     }
+                    if (importedData.savedElementsConfig) {
+                        projectData.savedElementsConfig = { ...projectData.savedElementsConfig, ...importedData.savedElementsConfig };
+                    }
                 } else {
-                    // Reemplazar todo el proyecto
                     projectData = importedData;
                     if (!projectData.scenes) projectData.scenes = {};
                     if (!projectData.itemsConfig) projectData.itemsConfig = {};
                     if (!projectData.variablesConfig) projectData.variablesConfig = {};
+                    if (!projectData.savedElementsConfig) projectData.savedElementsConfig = {};
                     if (!projectData.aspectRatio) projectData.aspectRatio = "horizontal";
                 }
 
-                // Cargar assets si venían incrustados en Base64 o SVG Data URL
                 if (importedData.assetsData) {
                     for (const fileName in importedData.assetsData) {
                         const dataUrl = importedData.assetsData[fileName];
@@ -105,17 +112,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!projectData.startScene || !projectData.scenes[projectData.startScene]) {
                     projectData.startScene = Object.keys(projectData.scenes)[0] || "zona_1";
                 }
-
                 currentSceneId = projectData.startScene;
                 renderSceneTabs();
                 renderStage();
                 updateInventoryConfigUI();
                 updateVariablesConfigUI();
+                if (typeof updateElementsUI === 'function') updateElementsUI();
 
-                // Forzar guardado automático de JSON y extracción de archivos al directorio activo
                 await autoSaveJSON();
-
-                ioStatus.textContent = isMerge ? "✔ Zonas y datos anexados correctamente" : "✔ Proyecto cargado correctamente";
+                ioStatus.textContent = isMerge ? "✅ Zonas y datos anexados correctamente" : "✅ Proyecto cargado correctamente";
                 setTimeout(() => { ioStatus.textContent = ""; }, 3000);
             } catch (err) {
                 console.error(err);

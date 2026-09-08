@@ -3,18 +3,12 @@ function setupPixelPerfectClicks() {
     const stage = document.getElementById('stage');
     if (!stage || stage.dataset.pixelClickAttached) return;
     stage.dataset.pixelClickAttached = "true";
-    
+        
     stage.addEventListener('click', (e) => {
         if (!isPlayMode || e.shiftKey) return;
         if (e.target.closest('#game-ui') || e.target.closest('#inventory-bar') || e.target.closest('#dialog-box')) return;
         
-        const stageRect = stage.getBoundingClientRect();
-        const dim = getStageDimensions();
-        const scaleX = dim.width / stageRect.width;
-        const scaleY = dim.height / stageRect.height;
-        
-        const clickX = (e.clientX - stageRect.left) * scaleX;
-        const clickY = (e.clientY - stageRect.top) * scaleY;
+        const { clickX, clickY } = getCanvasWorldCoordinates(e);
         
         const scene = projectData.scenes[currentSceneId];
         if (!scene) return;
@@ -64,7 +58,6 @@ function setupPixelPerfectClicks() {
 
 function isPixelOpaque(elem, clickX, clickY) {
     if (elem.isPlayer) return false;
-
     // 1. Verificación por caja de colisión rectangular directa
     if (elem.hasCollision || elem.collisionW !== undefined) {
         const box = typeof movementEngine !== 'undefined' ? movementEngine.getColliderBox(elem) : { x: elem.x, y: elem.y, w: elem.width, h: elem.height };
@@ -72,14 +65,12 @@ function isPixelOpaque(elem, clickX, clickY) {
             return true;
         }
     }
-
     // 2. Verificación exacta del área visual de la imagen en base a rotación y píxeles opacos
     const rad = -elem.rotation * (Math.PI / 180);
     const centerX = elem.x + elem.width / 2;
     const centerY = elem.y + elem.height / 2;
     const dx = clickX - centerX;
     const dy = clickY - centerY;
-
     const localX = (dx * Math.cos(rad) - dy * Math.sin(rad)) + elem.width / 2;
     const localY = (dx * Math.sin(rad) + dy * Math.cos(rad)) + elem.height / 2;
 
