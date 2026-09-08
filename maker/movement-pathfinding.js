@@ -1,4 +1,4 @@
-// movement-pathfinding.js - ALGORITMOS DE BUSQUEDA DE RUTAS, A* Y COLISIONES DE LÍNEA
+// movement-pathfinding.js - ALGORITMOS DE BÚSQUEDA DE RUTAS, A* Y COLISIONES DE LÍNEA
 class MovementPathfinding {
     static checkLineCollision(engine, x1, y1, x2, y2, elem = engine.player) {
         const steps = Math.ceil(Math.hypot(x2 - x1, y2 - y1) / (engine.gridSize / 2));
@@ -18,6 +18,7 @@ class MovementPathfinding {
         const dim = getStageDimensions();
         const cols = Math.floor(dim.width / engine.gridSize);
         const rows = Math.floor(dim.height / engine.gridSize);
+
         const startNode = {
             col: Math.floor(startX / engine.gridSize),
             row: Math.floor(startY / engine.gridSize),
@@ -26,15 +27,17 @@ class MovementPathfinding {
             g: 0, h: 0, f: 0,
             parent: null
         };
+
         const targetNode = {
             col: Math.floor(targetX / engine.gridSize),
             row: Math.floor(targetY / engine.gridSize),
             x: targetX, y: targetY
         };
+
         const openList = [startNode];
         const closedSet = new Set();
         let iterations = 0;
-        const maxIterations = 1500;
+        const maxIterations = 10000; // Incrementado a 10.000 para recorrer distancias grandes con rejilla fina de 16px
 
         while (openList.length > 0 && iterations < maxIterations) {
             iterations++;
@@ -42,6 +45,7 @@ class MovementPathfinding {
             for (let i = 1; i < openList.length; i++) {
                 if (openList[i].f < openList[currentIndex].f) currentIndex = i;
             }
+
             const current = openList.splice(currentIndex, 1)[0];
             const key = `${current.col}_${current.row}`;
             closedSet.add(key);
@@ -65,6 +69,7 @@ class MovementPathfinding {
             for (const n of neighbors) {
                 const neighborCol = current.col + n.dc;
                 const neighborRow = current.row + n.dr;
+
                 if (neighborCol < 0 || neighborRow < 0 || neighborCol >= cols || neighborRow >= rows) continue;
 
                 const neighborKey = `${neighborCol}_${neighborRow}`;
@@ -72,8 +77,8 @@ class MovementPathfinding {
 
                 const nodeX = neighborCol * engine.gridSize + engine.gridSize / 2;
                 const nodeY = neighborRow * engine.gridSize + engine.gridSize / 2;
-                const origin = engine.pivotToOrigin(nodeX, nodeY, elem);
 
+                const origin = engine.pivotToOrigin(nodeX, nodeY, elem);
                 if (engine.checkCollision(origin.x, origin.y, elem)) continue;
 
                 const isDiagonal = n.dc !== 0 && n.dr !== 0;
@@ -81,6 +86,7 @@ class MovementPathfinding {
                 const gCost = current.g + distCost;
 
                 let neighbor = openList.find(item => item.col === neighborCol && item.row === neighborRow);
+
                 if (!neighbor) {
                     const hCost = Math.hypot(nodeX - targetX, nodeY - targetY) / engine.gridSize;
                     neighbor = {

@@ -527,6 +527,7 @@ body {
     justify-content: center;
     align-items: center;
     overflow: hidden;
+    perspective: 1000px; /* Perspectiva 3D para la proyección 2.5D Mode 7 */
 }
 
 #stage {
@@ -537,8 +538,27 @@ body {
     overflow: visible;
     will-change: transform;
     border: 1px solid var(--border-subtle);
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    transform-origin: center center;
+    transform-origin: 0 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform-style: preserve-3d; /* Permite transformaciones 3D para Mode 7 */
+}
+
+/* MODO 2.5D / MODE 7 ESTILOS */
+#stage.is-mode-7 {
+    transform-style: preserve-3d;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+.mode7-ground {
+    transform-style: preserve-3d;
+}
+
+.mode7-billboard {
+    transform-origin: center bottom !important;
+    transform-style: preserve-3d;
 }
 
 /* ELEMENTOS EN EL ESCENARIO */
@@ -631,9 +651,7 @@ body {
     color: var(--text-secondary);
 }
 
-.form-group input,
-.form-group select,
-.form-group textarea {
+.form-group input, .form-group select, .form-group textarea {
     background: rgba(255, 255, 255, 0.8);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
@@ -645,9 +663,7 @@ body {
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) inset;
 }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
     background: #ffffff;
     border-color: var(--accent-blue);
     outline: none;
@@ -967,7 +983,6 @@ body.play-mode-active #stage {
     pointer-events: auto;
 }
 
-/* style.css (Añadir al final del archivo) */
 .crop-overlay-gizmo {
     position: absolute;
     border: 2px dashed #0071e3;
@@ -1012,4 +1027,83 @@ body.play-mode-active #stage {
     border-radius: 4px;
     border: none;
     cursor: pointer;
+}
+
+/* ANIMACIONES DE MOVIMIENTO Y RESPIRACIÓN EN MODO 2D Y Mode 7 */
+.breathing-idle {
+    transform-origin: bottom center !important;
+    animation: playerBreathing 2.8s ease-in-out infinite;
+}
+
+#stage.is-mode-7 .breathing-idle {
+    animation: playerBreathingMode7 2.8s ease-in-out infinite !important;
+}
+
+@keyframes playerBreathing {
+    0%, 100% {
+        transform: scale(1, 1);
+    }
+    50% {
+        transform: scale(0.97, 1.03);
+    }
+}
+
+@keyframes playerBreathingMode7 {
+    0%, 100% {
+        transform: rotateX(-60deg) translateY(-10px) scale(1, 1);
+    }
+    50% {
+        transform: rotateX(-60deg) translateY(-10px) scale(0.97, 1.03);
+    }
+}
+
+/* CSS para el bamboleo al andar (2D y 2.5D Mode 7) */
+@keyframes southParkWalk {
+  0% {
+    transform: rotate(0deg) translateY(0px);
+  }
+  25% {
+    transform: rotate(-3.5deg) translateY(-3px);
+  }
+  50% {
+    transform: rotate(0deg) translateY(0px);
+  }
+  75% {
+    transform: rotate(3.5deg) translateY(-3px);
+  }
+  100% {
+    transform: rotate(0deg) translateY(0px);
+  }
+}
+
+@keyframes southParkWalkMode7 {
+  0% {
+    transform: rotateX(-60deg) translateY(-10px) rotate(0deg);
+  }
+  25% {
+    transform: rotateX(-60deg) translateY(-13px) rotate(-3.5deg);
+  }
+  50% {
+    transform: rotateX(-60deg) translateY(-10px) rotate(0deg);
+  }
+  75% {
+    transform: rotateX(-60deg) translateY(-13px) rotate(3.5deg);
+  }
+  100% {
+    transform: rotateX(-60deg) translateY(-10px) rotate(0deg);
+  }
+}
+
+.south-park-walk {
+  animation: southParkWalk 0.45s ease-in-out infinite !important;
+  transform-origin: bottom center !important;
+}
+
+#stage.is-mode-7 .south-park-walk {
+  animation: southParkWalkMode7 0.45s ease-in-out infinite !important;
+}
+
+/* Mantenimiento de elevación vertical para todos los objetos Billboard en 2.5D Mode 7 */
+#stage.is-mode-7 .mode7-billboard {
+    transform: rotateX(-60deg) translateY(-10px) !important;
 }

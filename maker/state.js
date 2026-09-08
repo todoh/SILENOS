@@ -1,4 +1,4 @@
-// state.js - ESTADO GLOBAL Y GESTIÓN DE ARCHIVOS
+// state.js - ESTADO GLOBAL Y GESTI N DE ARCHIVOS
 let dirHandle = null;
 let projectData = {
     startScene: "zona_1",
@@ -20,12 +20,13 @@ let selectedElementId = null;
 let assetsMap = {};
 let sessionGeneratedAssets = [];
 let isPlayMode = false;
+let isIsometricView = false; // Modo 2.5D Mode 7
 let copiedElementData = null; // Buffer para Copiar/Pegar
 
-// Estado de edición interactiva de rutas Waypoint en vivo
+// Estado de edici n interactiva de rutas Waypoint en vivo
 let isRouteEditingMode = false;
 
-// Estado de cámara (Zoom y Pan)
+// Estado de c mara (Zoom y Pan)
 let cameraState = {
     zoom: 1,
     panX: 0,
@@ -56,11 +57,7 @@ function getStageDimensions() {
 }
 
 function getGridSizeForDimensions(width, height) {
-    const maxDim = Math.max(width, height);
-    if (maxDim <= 1920) return 16;
-    if (maxDim <= 4320) return 32;
-    if (maxDim <= 8000) return 64;
-    return 128;
+    return 16;
 }
 
 function initRuntimeVariables() {
@@ -90,7 +87,7 @@ function checkCondition(cond) {
         if (varType === 'boolean') {
             targetVal = targetVal === true || targetVal === 'true';
         } else if (varType === 'number') {
-            targetVal = Number(targetVal) || 0;
+            targetVal = Number(varType) || 0;
         }
         const op = cond.op || '==';
         if (op === '==') return currentVal == targetVal;
@@ -178,6 +175,7 @@ async function registerAsset(fileName, fileOrBlob, isGenerated = false) {
             const naturalW = img.naturalWidth || 100;
             const naturalH = img.naturalHeight || 100;
             const aspect = naturalW / naturalH;
+            
             assetsMap[fileName] = { 
                 url, 
                 dataUrl, 
@@ -234,7 +232,6 @@ async function autoSaveJSON() {
                 }
             }
         }
-
         const fileHandle = await dirHandle.getFileHandle('adventure.json', { create: true });
         const writable = await fileHandle.createWritable();
         await writable.write(JSON.stringify(projectData, null, 2));

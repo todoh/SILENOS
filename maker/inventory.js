@@ -5,10 +5,8 @@ class InventoryManager {
         this.maxStack = 99;
         this.isOpen = false;
     }
-
     addItem(itemId, amount = 1) {
         if (!itemId) return false;
-
         const existingItem = this.items.find(item => item.id === itemId && item.count < this.maxStack);
         if (existingItem) {
             const spaceLeft = this.maxStack - existingItem.count;
@@ -29,7 +27,6 @@ class InventoryManager {
         this.render();
         return true;
     }
-
     removeItem(itemId, amount = 1) {
         if (!itemId) return false;
         for (let i = this.items.length - 1; i >= 0; i--) {
@@ -48,27 +45,31 @@ class InventoryManager {
         this.render();
         return amount <= 0;
     }
-
     hasItem(itemId) {
         if (!itemId) return false;
         return this.items.some(item => item.id === itemId && item.count > 0);
     }
-
     clear() {
         this.items = [];
         this.isOpen = false;
         this.render();
     }
-
     toggle() {
         this.isOpen = !this.isOpen;
         this.render();
     }
-
     render() {
         const inventoryBar = document.getElementById('inventory-bar');
         if (!inventoryBar) return;
         inventoryBar.innerHTML = '';
+
+        const statsConf = (typeof statsManager !== 'undefined') ? statsManager.getStatsConfig() : null;
+        if (statsConf && statsConf.inventoryButton && !statsConf.inventoryButton.enabled) {
+            inventoryBar.style.display = 'none';
+            return;
+        } else {
+            inventoryBar.style.display = 'flex';
+        }
 
         const toggleBtn = document.createElement('button');
         toggleBtn.className = `inv-toggle-btn ${this.isOpen ? 'active' : ''}`;
@@ -80,7 +81,6 @@ class InventoryManager {
                 <line x1="12" y1="12" x2="12" y2="12.01"></line>
             </svg>
         `;
-
         const totalItemsCount = this.items.reduce((acc, curr) => acc + curr.count, 0);
         if (totalItemsCount > 0) {
             const totalBadge = document.createElement('span');
@@ -88,16 +88,13 @@ class InventoryManager {
             totalBadge.textContent = totalItemsCount;
             toggleBtn.appendChild(totalBadge);
         }
-
         toggleBtn.onclick = (e) => {
             e.stopPropagation();
             this.toggle();
         };
         inventoryBar.appendChild(toggleBtn);
-
         const panel = document.createElement('div');
         panel.className = `inv-drawer ${this.isOpen ? 'open' : ''}`;
-
         if (this.items.length === 0) {
             const emptyMsg = document.createElement('div');
             emptyMsg.className = 'inv-empty-msg';
@@ -107,17 +104,14 @@ class InventoryManager {
             this.items.forEach((itemData) => {
                 const slot = document.createElement('div');
                 slot.className = 'inv-slot has-item';
-
                 const itemConfig = projectData.itemsConfig ? projectData.itemsConfig[itemData.id] : null;
                 const assetKey = itemConfig ? itemConfig.imageAsset : itemData.id;
                 const asset = typeof assetsMap !== 'undefined' ? assetsMap[assetKey] : null;
                 const imgSrc = asset ? (asset.dataUrl || asset.url) : assetKey;
-
                 const img = document.createElement('img');
                 img.src = imgSrc;
                 img.alt = itemConfig ? itemConfig.name : itemData.id;
                 img.title = itemConfig ? itemConfig.name : itemData.id;
-
                 img.onerror = () => {
                     img.remove();
                     const placeholder = document.createElement('span');
@@ -125,16 +119,13 @@ class InventoryManager {
                     placeholder.textContent = itemData.id.substring(0, 3).toUpperCase();
                     slot.appendChild(placeholder);
                 };
-
                 slot.appendChild(img);
-
                 if (itemData.count > 1) {
                     const badge = document.createElement('span');
                     badge.className = 'inv-badge';
                     badge.textContent = itemData.count;
                     slot.appendChild(badge);
                 }
-
                 panel.appendChild(slot);
             });
         }
@@ -152,20 +143,16 @@ function updateInventoryConfigUI() {
     const list = document.getElementById('registered-items-list');
     if (!list) return;
     list.innerHTML = '';
-
     if (!projectData.itemsConfig || Object.keys(projectData.itemsConfig).length === 0) {
         list.innerHTML = '<span style="font-size: 11px; color: var(--text-secondary);">No hay ítems configurados.</span>';
         return;
     }
-
     Object.keys(projectData.itemsConfig).forEach(itemId => {
         const item = projectData.itemsConfig[itemId];
         const card = document.createElement('div');
         card.style.cssText = 'display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.7); border: 1px solid var(--border-subtle); padding: 6px 10px; border-radius: 8px;';
-
         const asset = assetsMap[item.imageAsset];
         const imgSrc = asset ? asset.url : '';
-
         card.innerHTML = `
             <div style="display: flex; align-items: center; gap: 8px;">
                 ${imgSrc ? `<img src="${imgSrc}" style="width: 24px; height: 24px; object-fit: contain;">` : '<div style="width:24px;height:24px;background:#eee;border-radius:4px;"></div>'}
@@ -176,26 +163,22 @@ function updateInventoryConfigUI() {
             </div>
             <button class="btn" style="padding: 2px 6px; font-size: 10px; background: #ff3b30; color: white; border: none;">Borrar</button>
         `;
-
         card.querySelector('button').onclick = () => {
             delete projectData.itemsConfig[itemId];
             if (typeof autoSaveJSON === 'function') autoSaveJSON();
             updateInventoryConfigUI();
             if (typeof updatePropertiesPanel === 'function') updatePropertiesPanel();
         };
-
         list.appendChild(card);
     });
 }
 
-// Escuchadores de eventos para la configuración del inventario
 document.addEventListener('DOMContentLoaded', () => {
     const btnPickerTrigger = document.getElementById('btn-picker-trigger');
     const dropdown = document.getElementById('picker-grid-dropdown');
     const btnSaveInvItem = document.getElementById('btn-save-inv-item');
     const btnLoadItemImage = document.getElementById('btn-load-item-image');
     const invItemFileInput = document.getElementById('inv-item-file-input');
-
     if (btnPickerTrigger && dropdown) {
         btnPickerTrigger.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -205,14 +188,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderAssetPickerGrid();
             }
         });
-
         document.addEventListener('click', () => {
             dropdown.style.display = 'none';
         });
-
         dropdown.addEventListener('click', (e) => e.stopPropagation());
     }
-
     if (btnLoadItemImage && invItemFileInput) {
         btnLoadItemImage.addEventListener('click', () => invItemFileInput.click());
         invItemFileInput.addEventListener('change', async (e) => {
@@ -233,36 +213,28 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
     if (btnSaveInvItem) {
         btnSaveInvItem.addEventListener('click', () => {
             const idInput = document.getElementById('inv-item-id');
             const nameInput = document.getElementById('inv-item-name');
-
             const id = idInput ? idInput.value.trim().replace(/\s+/g, '_') : '';
             const name = nameInput ? nameInput.value.trim() : '';
-
             if (!id) {
                 alert('Por favor, introduce un ID único para el ítem.');
                 return;
             }
-
             if (!selectedPickerAssetKey) {
                 alert('Por favor, selecciona o carga una imagen para el ítem.');
                 return;
             }
-
             if (!projectData.itemsConfig) projectData.itemsConfig = {};
-
             projectData.itemsConfig[id] = {
                 name: name || id,
                 imageAsset: selectedPickerAssetKey
             };
-
             if (typeof autoSaveJSON === 'function') autoSaveJSON();
             updateInventoryConfigUI();
             if (typeof updatePropertiesPanel === 'function') updatePropertiesPanel();
-
             if (idInput) idInput.value = '';
             if (nameInput) nameInput.value = '';
             selectedPickerAssetKey = '';

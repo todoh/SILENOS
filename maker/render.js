@@ -3,17 +3,23 @@ function renderStage(instantCamera = false) {
     const stage = document.getElementById('stage');
     const fadeOverlay = document.getElementById('fade-overlay');
     if (!stage) return;
-
+         
     const dim = getStageDimensions();
     stage.style.width = dim.width + 'px';
     stage.style.height = dim.height + 'px';
     stage.innerHTML = '';
-
+         
     if (fadeOverlay) stage.appendChild(fadeOverlay);
-
+         
+    if (isIsometricView) {
+        stage.classList.add('is-mode-7');
+    } else {
+        stage.classList.remove('is-mode-7');
+    }
+         
     const scene = projectData.scenes[currentSceneId];
     if (!scene) return;
-
+         
     scene.elements.forEach(elem => {
         if (elem.type === 'fondo') {
             elem.x = 0;
@@ -21,36 +27,49 @@ function renderStage(instantCamera = false) {
             elem.width = dim.width;
             elem.height = dim.height;
         }
-
+                 
         if (isPlayMode && !checkCondition(elem.condition)) {
             return;
         }
-
+                 
+        const isIdleBreathing = isPlayMode && elem.isPlayer;
         const el = document.createElement('div');
-        el.className = `stage-element layer-${elem.type} ${elem.isText ? 'text-element' : ''} ${elem.id === selectedElementId && !isPlayMode ? 'selected' : ''}`;
+        el.className = `stage-element layer-${elem.type} ${elem.isText ? 'text-element' : ''} ${elem.id === selectedElementId && !isPlayMode ? 'selected' : ''} ${isIdleBreathing ? 'breathing-idle' : ''}`;
         el.id = `stage-el-${elem.id}`;
         el.style.left = elem.x + 'px';
         el.style.top = elem.y + 'px';
         el.style.width = elem.width + 'px';
         el.style.height = elem.height + 'px';
-        el.style.transform = `rotate(${elem.rotation || 0}deg)`;
-
+                 
+        const baseRotation = elem.rotation || 0;
+        if (isIsometricView) {
+            if (elem.type === 'fondo') {
+                el.classList.add('mode7-ground');
+                el.style.transform = `rotate(${baseRotation}deg)`;
+            } else {
+                // Cualquier elemento diferente al fondo (incluido el player) se orienta en vertical compensando la inclinación
+                el.classList.add('mode7-billboard');
+                el.style.transform = `rotate(${baseRotation}deg) rotateX(-60deg)`;
+            }
+        } else {
+            el.style.transform = `rotate(${baseRotation}deg)`;
+        }
+                 
         if (elem.type === 'fondo') {
             el.style.zIndex = 10;
         } else {
             const bottomY = Math.round((elem.y || 0) + (elem.height || 0));
             el.style.zIndex = 100 + bottomY;
         }
-
+                 
         if (isPlayMode) {
             el.style.pointerEvents = 'none';
         }
-
+                 
         // GIZMO Y EDICIÓN DE CAJA DE COLISIÓN (Editor)
         if ((elem.hasCollision || elem.isPlayer) && !isPlayMode) {
             const colGizmo = document.createElement('div');
             colGizmo.className = 'collision-box-gizmo';
-
             const cW = elem.collisionW !== undefined ? elem.collisionW : elem.width;
             const cH = elem.collisionH !== undefined ? elem.collisionH : elem.height;
             const cX = elem.collisionX !== undefined ? elem.collisionX : Math.round((elem.width - cW) / 2);
@@ -59,7 +78,6 @@ function renderStage(instantCamera = false) {
             elem.collisionH = cH;
             elem.collisionX = cX;
             elem.collisionY = cY;
-
             colGizmo.style.cssText = `
                 position: absolute;
                 left: ${cX}px;
@@ -73,8 +91,8 @@ function renderStage(instantCamera = false) {
                 pointer-events: auto;
                 cursor: move;
             `;
-
-            // EVENTO DE ARRASTRE DE LA CAJA DE COLISIÓN CON EL RATÓN
+                         
+            // EVENTO DE ARRASTRE DE LA CAJA DE COLISIÓN
             colGizmo.addEventListener('mousedown', (e) => {
                 if (e.button !== 0 || e.target.classList.contains('handle-col-resize')) return;
                 e.stopPropagation();
@@ -83,7 +101,6 @@ function renderStage(instantCamera = false) {
                 let initialColX = elem.collisionX;
                 let initialColY = elem.collisionY;
                 let rafId = null;
-
                 const onMouseMove = (ev) => {
                     if (rafId) cancelAnimationFrame(rafId);
                     rafId = requestAnimationFrame(() => {
@@ -99,7 +116,6 @@ function renderStage(instantCamera = false) {
                         }
                     });
                 };
-
                 const onMouseUp = () => {
                     if (rafId) cancelAnimationFrame(rafId);
                     window.removeEventListener('mousemove', onMouseMove);
@@ -107,11 +123,10 @@ function renderStage(instantCamera = false) {
                     autoSaveJSON();
                     renderStage();
                 };
-
                 window.addEventListener('mousemove', onMouseMove);
                 window.addEventListener('mouseup', onMouseUp);
             });
-
+                         
             // HANDLE DE RESIZE DE LA CAJA DE COLISIÓN
             const colResizeHandle = document.createElement('div');
             colResizeHandle.className = 'handle-col-resize';
@@ -130,7 +145,6 @@ function renderStage(instantCamera = false) {
             `;
             colGizmo.appendChild(colResizeHandle);
             el.appendChild(colGizmo);
-
             colResizeHandle.addEventListener('mousedown', (e) => {
                 if (e.button !== 0) return;
                 e.stopPropagation();
@@ -139,7 +153,6 @@ function renderStage(instantCamera = false) {
                 let startW = elem.collisionW;
                 let startH = elem.collisionH;
                 let rafId = null;
-
                 const onMouseMove = (ev) => {
                     if (rafId) cancelAnimationFrame(rafId);
                     rafId = requestAnimationFrame(() => {
@@ -157,7 +170,6 @@ function renderStage(instantCamera = false) {
                         }
                     });
                 };
-
                 const onMouseUp = () => {
                     if (rafId) cancelAnimationFrame(rafId);
                     window.removeEventListener('mousemove', onMouseMove);
@@ -165,12 +177,11 @@ function renderStage(instantCamera = false) {
                     autoSaveJSON();
                     renderStage();
                 };
-
                 window.addEventListener('mousemove', onMouseMove);
                 window.addEventListener('mouseup', onMouseUp);
             });
         }
-
+                 
         if (elem.isText) {
             el.textContent = elem.textContent || '';
             el.style.fontSize = (elem.fontSize || 24) + 'px';
@@ -187,30 +198,27 @@ function renderStage(instantCamera = false) {
             img.src = asset ? asset.url : elem.image;
             el.appendChild(img);
         }
-
+                 
         if (!isPlayMode) {
             const rotateHandle = document.createElement('div');
             rotateHandle.className = 'handle-rotate';
             el.appendChild(rotateHandle);
-
             const resizeHandle = document.createElement('div');
             resizeHandle.className = 'handle-resize';
             el.appendChild(resizeHandle);
-
             if (typeof setupTransformControls === 'function') {
                 setupTransformControls(el, elem, rotateHandle, resizeHandle);
             }
-
             if (activeCropElemId === elem.id && typeof renderCropGizmo === 'function') {
                 renderCropGizmo(el, elem);
             }
         } else {
             if (elem.type === 'entidad' && !elem.isPlayer) el.style.cursor = 'pointer';
         }
-
+                 
         stage.appendChild(el);
     });
-
+         
     if (!isPlayMode) {
         if (typeof setupEditorPixelPerfectSelection === 'function') {
             setupEditorPixelPerfectSelection();
@@ -222,13 +230,11 @@ function renderStage(instantCamera = false) {
             }
         }
     }
-
     if (isPlayMode) {
         if (typeof setupPixelPerfectClicks === 'function') {
             setupPixelPerfectClicks();
         }
     }
-
     fitStage(instantCamera);
 }
 
@@ -236,30 +242,27 @@ function renderWaypointsOverlayOnStage(elem) {
     const stage = document.getElementById('stage');
     const viewport = document.getElementById('viewport-container');
     if (!stage || !viewport) return;
-
     if (!elem.waypoints) elem.waypoints = [];
-
+         
     const overlay = document.createElement('div');
     overlay.id = 'stage-waypoints-overlay';
     overlay.style.cssText = `
         position: absolute; inset: 0; pointer-events: none; z-index: 90000;
     `;
-
+         
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.style.cssText = 'width:100%; height:100%; position:absolute; top:0; left:0; pointer-events:none;';
-
+         
     const colW = elem.collisionW !== undefined ? elem.collisionW : elem.width;
     const colH = elem.collisionH !== undefined ? elem.collisionH : elem.height;
     const offX = elem.collisionX !== undefined ? elem.collisionX : Math.round((elem.width - colW) / 2);
     const offY = elem.collisionY !== undefined ? elem.collisionY : (elem.height - colH);
-
     const originPivot = {
         x: elem.x + offX + colW / 2,
         y: elem.y + offY + colH
     };
-
+         
     const points = [originPivot, ...elem.waypoints];
-
     if (points.length > 1) {
         let pathStr = `M ${points[0].x} ${points[0].y}`;
         for (let i = 1; i < points.length; i++) {
@@ -268,7 +271,6 @@ function renderWaypointsOverlayOnStage(elem) {
         if (elem.waypointLoop === 'loop' && points.length > 2) {
             pathStr += ` Z`;
         }
-
         const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         pathEl.setAttribute('d', pathStr);
         pathEl.setAttribute('stroke', '#0071e3');
@@ -277,9 +279,9 @@ function renderWaypointsOverlayOnStage(elem) {
         pathEl.setAttribute('fill', 'none');
         svg.appendChild(pathEl);
     }
-
+         
     overlay.appendChild(svg);
-
+         
     elem.waypoints.forEach((wp, index) => {
         const node = document.createElement('div');
         node.className = 'waypoint-node-gizmo';
@@ -291,7 +293,7 @@ function renderWaypointsOverlayOnStage(elem) {
             box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: grab; pointer-events: auto; z-index: 90001;
         `;
         node.textContent = index + 1;
-
+                 
         node.addEventListener('mousedown', (e) => {
             if (e.button !== 0) return;
             e.stopPropagation();
@@ -300,7 +302,7 @@ function renderWaypointsOverlayOnStage(elem) {
             let startY = e.clientY;
             let initialX = wp.x;
             let initialY = wp.y;
-
+                         
             const onMouseMove = (ev) => {
                 const { finalScale } = getCanvasWorldCoordinates(ev);
                 const dx = (ev.clientX - startX) / finalScale;
@@ -309,18 +311,18 @@ function renderWaypointsOverlayOnStage(elem) {
                 wp.y = Math.round(initialY + dy);
                 renderStage();
             };
-
+                         
             const onMouseUp = () => {
                 window.removeEventListener('mousemove', onMouseMove);
                 window.removeEventListener('mouseup', onMouseUp);
                 autoSaveJSON();
                 if (typeof updatePropertiesPanel === 'function') updatePropertiesPanel();
             };
-
+                         
             window.addEventListener('mousemove', onMouseMove);
             window.addEventListener('mouseup', onMouseUp);
         });
-
+                 
         node.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -329,10 +331,10 @@ function renderWaypointsOverlayOnStage(elem) {
             renderStage();
             if (typeof updatePropertiesPanel === 'function') updatePropertiesPanel();
         });
-
+                 
         overlay.appendChild(node);
     });
-
+         
     if (isRouteEditingMode) {
         stage.style.cursor = 'crosshair';
         overlay.style.pointerEvents = 'auto';
@@ -346,6 +348,6 @@ function renderWaypointsOverlayOnStage(elem) {
             if (typeof updatePropertiesPanel === 'function') updatePropertiesPanel();
         });
     }
-
+         
     stage.appendChild(overlay);
 }

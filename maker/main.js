@@ -1,7 +1,27 @@
-// main.js - LÓGICA PRINCIPAL Y CONTROL DE INTERACCIONES DE ENTIDADES
-
-// Variable en memoria para almacenar la copia de respaldo antes de jugar
+// main.js - LOGICA PRINCIPAL Y CONTROL DE INTERACCIONES DE ENTIDADES
 let playModeBackup = null;
+let cachedViewportDimensions = { width: 0, height: 0 };
+
+function updateViewportCache() {
+    const viewport = document.getElementById('viewport-container');
+    if (viewport) {
+        cachedViewportDimensions.width = viewport.clientWidth;
+        cachedViewportDimensions.height = viewport.clientHeight;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const viewport = document.getElementById('viewport-container');
+    if (viewport && typeof ResizeObserver !== 'undefined') {
+        const ro = new ResizeObserver(() => {
+            updateViewportCache();
+            fitStage();
+        });
+        ro.observe(viewport);
+    } else {
+        updateViewportCache();
+    }
+});
 
 function setMode(play) {
     isPlayMode = play;
@@ -10,7 +30,6 @@ function setMode(play) {
     const gameUI = document.getElementById('game-ui');
 
     if (play) {
-        // 1. GUARDAR COPIA EXACTA DEL ESTADO ANTES DE EMPEZAR A JUGAR
         playModeBackup = JSON.parse(JSON.stringify(projectData));
         document.body.classList.add('play-mode-active');
         if (btnModeEdit) btnModeEdit.classList.remove('active');
@@ -21,35 +40,29 @@ function setMode(play) {
         currentSceneId = projectData.startScene || Object.keys(projectData.scenes)[0];
         initRuntimeVariables();
         inventoryManager.clear();
-
-        // Inicializar el bucle de movimiento una sola vez al entrar en Play Mode
         resetCamera();
-        renderStage(true); // Pasar flag indicando cambio de escena/reinicio de cámara
+        renderStage(true);
         renderInventory();
         if (typeof movementEngine !== 'undefined') {
             movementEngine.init();
         }
     } else {
-        // Detener el bucle de movimiento al salir a Edit Mode
         if (typeof movementEngine !== 'undefined') {
             movementEngine.stop();
         }
-
-        // 2. RESTAURAR EL ESTADO ORIGINAL AL SALIR DEL MODO PLAY
         if (playModeBackup) {
             projectData = JSON.parse(JSON.stringify(playModeBackup));
-            playModeBackup = null; // Limpiar buffer de respaldo
+            playModeBackup = null;
         }
         document.body.classList.remove('play-mode-active');
         if (btnModeEdit) btnModeEdit.classList.add('active');
         if (btnModePlay) btnModePlay.classList.remove('active');
         if (gameUI) gameUI.style.display = 'none';
-        inventoryManager.clear();
 
+        inventoryManager.clear();
         if (typeof updatePropertiesPanel === 'function') {
             updatePropertiesPanel();
         }
-
         resetCamera();
         renderStage();
         renderInventory();
@@ -57,75 +70,71 @@ function setMode(play) {
 }
 
 function resetCamera() {
-    const dim = getStageDimensions();
-    const maxDim = Math.max(dim.width, dim.height);
     cameraState.zoom = 1.0;
     cameraState.panX = 0;
     cameraState.panY = 0;
-
-    if (maxDim > 4000) {
-        cameraState.minZoom = 0.9;
-        cameraState.maxZoom = 5.0;
-    } else {
-        cameraState.minZoom = 0.9;
-        cameraState.maxZoom = 2.4;
-    }
+    cameraState.minZoom = 0.5;
+    cameraState.maxZoom = 3.0;
 }
 
 function fitStage(instantCamera = false) {
     const stage = document.getElementById('stage');
-    const viewport = document.getElementById('viewport-container');
-    if (!stage || !viewport) return;
+    if (!stage) return;
 
+    if (cachedViewportDimensions.width === 0) {
+        updateViewportCache();
+    }
     const dim = getStageDimensions();
     stage.style.width = dim.width + 'px';
     stage.style.height = dim.height + 'px';
 
-    const padding = isPlayMode ? 0 : 40;
-    const availableWidth = Math.max(100, viewport.clientWidth - padding);
-    const availableHeight = Math.max(100, viewport.clientHeight - padding);
-    const scaleX = availableWidth / dim.width;
-    const scaleY = availableHeight / dim.height;
-    const baseScale = Math.min(scaleX, scaleY);
+    stage.style.position = 'absolute';
+    stage.style.left = '0px';
+    stage.style.top = '0px';
+    stage.style.margin = '0';
+    stage.style.transformOrigin = '0 0';
 
-    const effectiveScale = isPlayMode ? baseScale : Math.max(baseScale, 0.05);
-    const finalScale = effectiveScale * cameraState.zoom;
+    const vw = cachedViewportDimensions.width || window.innerWidth;
+    const vh = cachedViewportDimensions.height || window.innerHeight;
+    const refWidth = 1920;
+    const refHeight = 1080;
+    const baseScale = Math.min(vw / refWidth, vh / refHeight);
+    const finalScale = (isPlayMode ? baseScale : Math.max(baseScale, 0.05)) * cameraState.zoom;
 
     if (isPlayMode) {
         const scene = projectData.scenes[currentSceneId];
         const player = scene ? scene.elements.find(e => e.isPlayer) : null;
-
         if (player) {
             const playerCenterX = player.x + (player.width / 2);
             const playerCenterY = player.y + (player.height / 2);
-            const targetPanX = (viewport.clientWidth / 2) - (playerCenterX * finalScale);
-            const targetPanY = (viewport.clientHeight / 2) - (playerCenterY * finalScale);
-
-            // Si es renderizado estático/cambio de escena o panX/panY están en 0, fijar instantáneamente
+            const targetPanX = (vw / 2) - (playerCenterX * finalScale);
+            const targetPanY = (vh / 2) - (playerCenterY * finalScale);
             if (instantCamera || (cameraState.panX === 0 && cameraState.panY === 0)) {
                 cameraState.panX = targetPanX;
                 cameraState.panY = targetPanY;
             } else {
-                const cameraLerp = 0.08;
+                const cameraLerp = 0.1;
                 cameraState.panX += (targetPanX - cameraState.panX) * cameraLerp;
                 cameraState.panY += (targetPanY - cameraState.panY) * cameraLerp;
             }
-
-            stage.style.transformOrigin = '0 0';
-            stage.style.transform = `translate(${cameraState.panX}px, ${cameraState.panY}px) scale(${finalScale})`;
         } else {
-            const centerX = (viewport.clientWidth - (dim.width * finalScale)) / 2;
-            const centerY = (viewport.clientHeight - (dim.height * finalScale)) / 2;
-            cameraState.panX = centerX;
-            cameraState.panY = centerY;
-            stage.style.transformOrigin = '0 0';
-            stage.style.transform = `translate(${centerX}px, ${centerY}px) scale(${finalScale})`;
+            if (cameraState.panX === 0 && cameraState.panY === 0) {
+                cameraState.panX = (vw / 2) - ((dim.width / 2) * finalScale);
+                cameraState.panY = (vh / 2) - ((dim.height / 2) * finalScale);
+            }
         }
     } else {
-        const baseCenterX = (viewport.clientWidth - (dim.width * finalScale)) / 2;
-        const baseCenterY = (viewport.clientHeight - (dim.height * finalScale)) / 2;
-        stage.style.transformOrigin = '0 0';
-        stage.style.transform = `translate(${baseCenterX + cameraState.panX}px, ${baseCenterY + cameraState.panY}px) scale(${finalScale})`;
+        if (cameraState.panX === 0 && cameraState.panY === 0) {
+            cameraState.panX = (vw / 2) - ((dim.width / 2) * finalScale);
+            cameraState.panY = (vh / 2) - ((dim.height / 2) * finalScale);
+        }
+    }
+
+    if (isIsometricView) {
+        // En 2.5D aplicamos la inclinación al mapa sobre el eje X manteniendo el desplazamiento panX / panY
+        stage.style.transform = `translate3d(${cameraState.panX}px, ${cameraState.panY}px, 0px) rotateX(60deg) scale(${finalScale})`;
+    } else {
+        stage.style.transform = `translate3d(${cameraState.panX}px, ${cameraState.panY}px, 0px) scale(${finalScale})`;
     }
 }
 
@@ -133,11 +142,13 @@ function setupCameraControls() {
     const viewport = document.getElementById('viewport-container');
     if (!viewport || viewport.dataset.cameraControlsAttached) return;
     viewport.dataset.cameraControlsAttached = "true";
-
     let isPanning = false;
+    let startMouseX = 0;
+    let startMouseY = 0;
     let startPanX = 0;
     let startPanY = 0;
     let hasDragged = false;
+    let panAnimationFrame = null;
 
     viewport.addEventListener('wheel', (e) => {
         e.preventDefault();
@@ -155,8 +166,10 @@ function setupCameraControls() {
         if (isMiddleClick || isShiftLeftClick || isRightClickEditing) {
             isPanning = true;
             hasDragged = false;
-            startPanX = e.clientX - cameraState.panX;
-            startPanY = e.clientY - cameraState.panY;
+            startMouseX = e.clientX;
+            startMouseY = e.clientY;
+            startPanX = cameraState.panX;
+            startPanY = cameraState.panY;
             viewport.style.cursor = 'grabbing';
         }
     });
@@ -164,9 +177,15 @@ function setupCameraControls() {
     window.addEventListener('mousemove', (e) => {
         if (!isPanning) return;
         hasDragged = true;
-        cameraState.panX = e.clientX - startPanX;
-        cameraState.panY = e.clientY - startPanY;
-        fitStage();
+        if (panAnimationFrame) cancelAnimationFrame(panAnimationFrame);
+        panAnimationFrame = requestAnimationFrame(() => {
+            const deltaX = e.clientX - startMouseX;
+            let deltaY = e.clientY - startMouseY;
+
+            cameraState.panX = startPanX + deltaX;
+            cameraState.panY = startPanY + deltaY;
+            fitStage();
+        });
     });
 
     window.addEventListener('mouseup', () => {
@@ -185,10 +204,14 @@ function setupCameraControls() {
     }, true);
 }
 
-window.addEventListener('resize', () => fitStage());
+window.addEventListener('resize', () => {
+    updateViewportCache();
+    fitStage();
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     setupCameraControls();
+    updateViewportCache();
 
     const selectAspectRatio = document.getElementById('select-aspect-ratio');
     if (selectAspectRatio) {
@@ -202,13 +225,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const lightboxModal = document.getElementById('lightbox-modal');
     const lightboxClose = document.getElementById('lightbox-close');
-
     if (lightboxModal) {
         lightboxModal.addEventListener('click', (e) => {
             if (e.target === lightboxModal) closeLightbox();
         });
     }
-
     if (lightboxClose) {
         lightboxClose.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -258,8 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
 function handleEntityInteraction(elem) {
     if (!elem || elem._isProcessingInteraction) return;
     elem._isProcessingInteraction = true;
-
-    // Detener movimiento del jugador y limpiar entidad pendiente inmediatamente antes de continuar
     if (typeof movementEngine !== 'undefined') {
         movementEngine.pendingTargetEntity = null;
         movementEngine.path = [];
@@ -270,7 +289,6 @@ function handleEntityInteraction(elem) {
     const dialogBox = document.getElementById('dialog-box');
     const dialogText = document.getElementById('dialog-text');
 
-    // 1. Modificación de variables globales
     if (elem.setVariable && elem.setVariable.varId) {
         const varId = elem.setVariable.varId;
         const conf = projectData.variablesConfig ? projectData.variablesConfig[varId] : null;
@@ -285,23 +303,20 @@ function handleEntityInteraction(elem) {
         gameState.variables[varId] = val;
     }
 
-    // 2. Adición de ítems al inventario
     if (elem.addItem) {
         const itemsToAdd = Array.isArray(elem.addItem)
-            ? elem.addItem
-            : elem.addItem.split(',').map(s => s.trim()).filter(Boolean);
+              ? elem.addItem
+              : elem.addItem.split(',').map(s => s.trim()).filter(Boolean);
         itemsToAdd.forEach(itemId => inventoryManager.addItem(itemId, 1));
     }
 
-    // 3. Remoción de ítems del inventario
     if (elem.removeItem) {
         const itemsToRemove = Array.isArray(elem.removeItem)
-            ? elem.removeItem
-            : elem.removeItem.split(',').map(s => s.trim()).filter(Boolean);
+              ? elem.removeItem
+              : elem.removeItem.split(',').map(s => s.trim()).filter(Boolean);
         itemsToRemove.forEach(itemId => inventoryManager.removeItem(itemId, 1));
     }
 
-    // 4. Transformación Visual del Elemento
     if (elem.transformAsset) {
         const savedConfig = projectData.savedElementsConfig || {};
         if (savedConfig[elem.transformAsset]) {
@@ -321,7 +336,6 @@ function handleEntityInteraction(elem) {
         }
     }
 
-    // 5. Destrucción / Desaparición del Elemento del Mapa
     let elementDestroyed = false;
     if (elem.destroyOnInteract) {
         const currentScene = projectData.scenes[currentSceneId];
@@ -331,7 +345,6 @@ function handleEntityInteraction(elem) {
         }
     }
 
-    // 6. Mostrar diálogo si aplica
     if (elem.dialog) {
         if (dialogText) dialogText.textContent = elem.dialog;
         if (dialogBox) {
@@ -348,10 +361,7 @@ function handleEntityInteraction(elem) {
         }
     }
 
-    // Renderizar escenario fijando la cámara directamente en la posición actual
     renderStage(true);
-
-    // 7. Teletransporte / Cambio de Escena
     if (elem.targetScene && projectData.scenes[elem.targetScene]) {
         changeSceneWithTransition(elem.targetScene, elem.targetX, elem.targetY);
     }
@@ -371,7 +381,6 @@ function changeSceneWithTransition(targetSceneId, targetX = null, targetY = null
         if (projectData.scenes) {
             let currentPlayer = null;
             let currentSceneOwner = null;
-
             for (const [sKey, sc] of Object.entries(projectData.scenes)) {
                 if (sc.elements) {
                     const p = sc.elements.find(e => e.isPlayer);
@@ -382,14 +391,12 @@ function changeSceneWithTransition(targetSceneId, targetX = null, targetY = null
                     }
                 }
             }
-
             if (currentPlayer) {
                 if (currentSceneOwner !== targetSceneId) {
                     projectData.scenes[currentSceneOwner].elements = projectData.scenes[currentSceneOwner].elements.filter(e => e.id !== currentPlayer.id);
                     if (!projectData.scenes[targetSceneId].elements) projectData.scenes[targetSceneId].elements = [];
                     projectData.scenes[targetSceneId].elements.push(currentPlayer);
                 }
-
                 if (targetX !== null && targetX !== undefined && targetX !== '') {
                     currentPlayer.x = parseInt(targetX, 10);
                 }
@@ -398,11 +405,9 @@ function changeSceneWithTransition(targetSceneId, targetX = null, targetY = null
                 }
             }
         }
-
         currentSceneId = targetSceneId;
         resetCamera();
         renderStage(true);
-
         setTimeout(() => {
             if (fadeOverlay) fadeOverlay.style.opacity = '0';
         }, 50);

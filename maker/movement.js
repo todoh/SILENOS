@@ -33,11 +33,8 @@ class MovementEngine {
         this.entityTimers.clear();
         this.entityWaypointIndex.clear();
         this.entityWaypointDirection.clear();
-
-        const dim = getStageDimensions();
-        this.gridSize = getGridSizeForDimensions(dim.width, dim.height);
-        this.maxSpeed = Math.max(5, Math.round(this.gridSize / 3));
-
+        this.gridSize = 16;
+        this.maxSpeed = 6;
         const scene = projectData.scenes[currentSceneId];
         if (!scene) return;
         this.player = scene.elements.find(e => e.isPlayer);
@@ -132,14 +129,14 @@ class MovementEngine {
         const marginX = Math.min(maxDist * 0.9, (pBox.w / 2) + 10);
 
         const candidates = [
-            { x: box.x + box.w / 2, y: box.y - marginYTop },                      // Arriba
-            { x: box.x + box.w / 2, y: box.y + box.h + marginYBottom },           // Abajo
-            { x: box.x - marginX, y: box.y + box.h / 2 },                         // Izquierda
-            { x: box.x + box.w + marginX, y: box.y + box.h / 2 },                 // Derecha
-            { x: box.x - marginX, y: box.y - marginYTop },                        // Arriba-Izquierda
-            { x: box.x + box.w + marginX, y: box.y - marginYTop },                // Arriba-Derecha
-            { x: box.x - marginX, y: box.y + box.h + marginYBottom },             // Abajo-Izquierda
-            { x: box.x + box.w + marginX, y: box.y + box.h + marginYBottom }      // Abajo-Derecha
+            { x: box.x + box.w / 2, y: box.y - marginYTop },
+            { x: box.x + box.w / 2, y: box.y + box.h + marginYBottom },
+            { x: box.x - marginX, y: box.y + box.h / 2 },
+            { x: box.x + box.w + marginX, y: box.y + box.h / 2 },
+            { x: box.x - marginX, y: box.y - marginYTop },
+            { x: box.x + box.w + marginX, y: box.y - marginYTop },
+            { x: box.x - marginX, y: box.y + box.h + marginYBottom },
+            { x: box.x + box.w + marginX, y: box.y + box.h + marginYBottom }
         ];
 
         const validCandidates = candidates.filter(pt => {
@@ -195,10 +192,14 @@ class MovementEngine {
                 if (this.player) {
                     if (this.isMoving || this.currentSpeed > 0.05) {
                         this.updatePosition();
+                    } else {
+                        this.syncElementDOM(this.player, false);
                     }
+
                     if (typeof fitStage === 'function') {
                         fitStage();
                     }
+
                     this.checkProximityTriggers();
                     this.checkPassiveTriggers();
                 } else {
@@ -206,6 +207,7 @@ class MovementEngine {
                         fitStage();
                     }
                 }
+
                 MovementEntities.updateEntitiesMovement(this);
             }
             this.animFrameId = requestAnimationFrame(update);
@@ -220,6 +222,7 @@ class MovementEngine {
                 this.currentSpeed = 0;
                 this.isMoving = false;
             }
+            this.syncElementDOM(this.player, this.isMoving);
             return;
         }
 
@@ -261,7 +264,7 @@ class MovementEngine {
                 this.currentSpeed = 0;
             }
         }
-        this.syncElementDOM(this.player);
+        this.syncElementDOM(this.player, this.isMoving);
     }
 
     getColliderBox(elem, overrideX = elem.x, overrideY = elem.y) {
@@ -272,7 +275,7 @@ class MovementEngine {
         return {
             x: overrideX + offX,
             y: overrideY + offY,
-            w: w, 
+            w: w,
             h: h
         };
     }
@@ -295,7 +298,6 @@ class MovementEngine {
             if (other.id === elem.id || other.id === ignoreEntityId) return false;
             if (!other.hasCollision) return false;
             if (isPlayMode && !checkCondition(other.condition)) return false;
-
             const otherBox = this.getColliderBox(other);
             return (
                 box.x < otherBox.x + otherBox.w &&
@@ -315,8 +317,8 @@ class MovementEngine {
 
         const closestX = Math.max(box.x, Math.min(pPivot.x, box.x + box.w));
         const closestY = Math.max(box.y, Math.min(pPivot.y, box.y + box.h));
-        const dist = Math.hypot(pPivot.x - closestX, pPivot.y - closestY);
 
+        const dist = Math.hypot(pPivot.x - closestX, pPivot.y - closestY);
         const baseDistance = entity.interactionDistance || 100;
         const effectiveDistance = Math.max(baseDistance, pBox.h + 15, (pBox.w / 2) + 15);
 
@@ -341,8 +343,8 @@ class MovementEngine {
                 const box = this.getColliderBox(elem);
                 const closestX = Math.max(box.x, Math.min(pPivot.x, box.x + box.w));
                 const closestY = Math.max(box.y, Math.min(pPivot.y, box.y + box.h));
-                const dist = Math.hypot(pPivot.x - closestX, pPivot.y - closestY);
 
+                const dist = Math.hypot(pPivot.x - closestX, pPivot.y - closestY);
                 const baseDistance = elem.interactionDistance || 100;
                 const effectiveDistance = Math.max(baseDistance, pBox.h + 15, (pBox.w / 2) + 15);
 
@@ -358,7 +360,7 @@ class MovementEngine {
         });
     }
 
-    syncElementDOM(elem) {
+    syncElementDOM(elem, isMoving = false) {
         if (!elem) return;
         const el = document.getElementById(`stage-el-${elem.id}`);
         if (el) {
@@ -366,6 +368,24 @@ class MovementEngine {
             el.style.top = `${elem.y}px`;
             const bottomY = Math.round(elem.y + elem.height);
             el.style.zIndex = 100 + bottomY;
+
+            // Lógica exclusiva para la animación de andar estilo South Park (solo para el player)
+            if (elem.isPlayer) {
+                if (isMoving) {
+                    el.classList.remove('breathing-idle');
+                    el.classList.add('south-park-walk');
+                } else {
+                    el.classList.remove('south-park-walk');
+                    if (isPlayMode) {
+                        el.classList.add('breathing-idle');
+                    } else {
+                        el.classList.remove('breathing-idle');
+                    }
+                }
+            } else {
+                el.classList.remove('south-park-walk');
+                el.classList.remove('breathing-idle');
+            }
         }
     }
 }
