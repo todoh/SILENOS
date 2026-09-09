@@ -1,4 +1,4 @@
-// state.js - ESTADO GLOBAL Y GESTI N DE ARCHIVOS
+// state.js - ESTADO GLOBAL Y GESTIÓN DE ARCHIVOS
 let dirHandle = null;
 let projectData = {
     startScene: "zona_1",
@@ -23,12 +23,14 @@ let isPlayMode = false;
 let isIsometricView = false; // Modo 2.5D Mode 7
 let copiedElementData = null; // Buffer para Copiar/Pegar
 
-// Estado de edici n interactiva de rutas Waypoint en vivo
+// Estado de edición interactiva de rutas Waypoint en vivo
 let isRouteEditingMode = false;
 
-// Estado de c mara (Zoom y Pan)
+// Estado de cámara (Zoom y Punto de Enfoque/Focus)
 let cameraState = {
     zoom: 1,
+    focusX: 0,
+    focusY: 0,
     panX: 0,
     panY: 0,
     minZoom: 0.1,
@@ -78,6 +80,7 @@ function initRuntimeVariables() {
 
 function checkCondition(cond) {
     if (!cond || cond.type === 'none' || !cond.type) return true;
+    
     if (cond.type === 'variable') {
         if (!cond.varId) return true;
         const currentVal = gameState.variables[cond.varId];
@@ -89,6 +92,7 @@ function checkCondition(cond) {
         } else if (varType === 'number') {
             targetVal = Number(varType) || 0;
         }
+        
         const op = cond.op || '==';
         if (op === '==') return currentVal == targetVal;
         if (op === '!=') return currentVal != targetVal;
@@ -96,12 +100,14 @@ function checkCondition(cond) {
         if (op === '<') return currentVal < targetVal;
         return true;
     }
+    
     if (cond.type === 'inventory') {
         if (!cond.itemId) return true;
         const hasItem = inventoryManager.hasItem(cond.itemId);
         if (cond.itemState === 'has') return hasItem;
         if (cond.itemState === 'not_has') return !hasItem;
     }
+    
     return true;
 }
 
@@ -201,6 +207,50 @@ async function registerAsset(fileName, fileOrBlob, isGenerated = false) {
     });
 }
 
+async function deleteAsset(fileName) {
+    if (!fileName) return;
+
+    // 1. Eliminar de la memoria de la aplicación
+    delete assetsMap[fileName];
+    sessionGeneratedAssets = sessionGeneratedAssets.filter(f => f !== fileName);
+
+    // 2. Eliminar del disco local si la carpeta del proyecto está montada
+    if (typeof dirHandle !== 'undefined' && dirHandle) {
+        try {
+            await dirHandle.removeEntry(fileName);
+        } catch (err) {
+            console.error(`Error borrando ${fileName} de la carpeta local:`, err);
+        }
+    }
+
+    // 3. Eliminar referencias de elementos en las escenas que usaban la imagen
+    if (projectData && projectData.scenes) {
+        Object.values(projectData.scenes).forEach(scene => {
+            if (scene.elements) {
+                scene.elements = scene.elements.filter(elem => elem.image !== fileName);
+            }
+        });
+    }
+
+    // 4. Actualizar el DOM y guardar estado
+    const card = document.getElementById(`asset-${fileName}`);
+    if (card) card.remove();
+
+    const genCard = document.getElementById(`gen-asset-${fileName}`);
+    if (genCard) genCard.remove();
+
+    if (typeof selectedPickerAssetKey !== 'undefined' && selectedPickerAssetKey === fileName) {
+        selectedPickerAssetKey = '';
+        const triggerText = document.getElementById('picker-trigger-text');
+        if (triggerText) triggerText.textContent = '-- Seleccionar Imagen --';
+    }
+
+    if (typeof renderAssetPickerGrid === 'function') renderAssetPickerGrid();
+    if (typeof updatePropertiesPanel === 'function') updatePropertiesPanel();
+    if (typeof renderStage === 'function') renderStage();
+    if (typeof autoSaveJSON === 'function') autoSaveJSON();
+}
+
 function fileToDataURL(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -232,6 +282,7 @@ async function autoSaveJSON() {
                 }
             }
         }
+
         const fileHandle = await dirHandle.getFileHandle('adventure.json', { create: true });
         const writable = await fileHandle.createWritable();
         await writable.write(JSON.stringify(projectData, null, 2));
@@ -250,18 +301,31 @@ function renderAssetCard(fileName, url) {
     card.className = 'asset-card';
     card.id = `asset-${fileName}`;
     card.draggable = true;
-    card.innerHTML = `<img src="${url}" alt="${fileName}"><span>${fileName}</span>`;
-    
+    card.style.position = 'relative';
+
+    card.innerHTML = `
+        <button class="btn-delete-asset" title="Borrar Asset" style="position: absolute; top: 4px; right: 4px; background: rgba(255,59,48,0.85); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 5;">✕</button>
+        <img src="${url}" alt="${fileName}">
+        <span>${fileName}</span>
+    `;
+
     const imgEl = card.querySelector('img');
     imgEl.addEventListener('click', (e) => {
         e.stopPropagation();
         openLightbox(url, fileName);
     });
 
+    const btnDelete = card.querySelector('.btn-delete-asset');
+    btnDelete.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (confirm(`¿Seguro que deseas borrar "${fileName}" del editor y de la carpeta abierta?`)) {
+            await deleteAsset(fileName);
+        }
+    });
+
     card.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData('text/plain', fileName);
     });
-
     fileList.appendChild(card);
 }
 
@@ -274,7 +338,13 @@ function renderSessionGenCard(fileName, url) {
     card.className = 'gen-card';
     card.id = `gen-asset-${fileName}`;
     card.draggable = true;
-    card.innerHTML = `<img src="${url}" alt="${fileName}"><span>${fileName}</span>`;
+    card.style.position = 'relative';
+
+    card.innerHTML = `
+        <button class="btn-delete-asset" title="Borrar Asset" style="position: absolute; top: 4px; right: 4px; background: rgba(255,59,48,0.85); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 5;">✕</button>
+        <img src="${url}" alt="${fileName}">
+        <span>${fileName}</span>
+    `;
 
     const imgEl = card.querySelector('img');
     imgEl.addEventListener('click', (e) => {
@@ -282,10 +352,17 @@ function renderSessionGenCard(fileName, url) {
         openLightbox(url, fileName);
     });
 
+    const btnDelete = card.querySelector('.btn-delete-asset');
+    btnDelete.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (confirm(`¿Seguro que deseas borrar "${fileName}" del editor y de la carpeta abierta?`)) {
+            await deleteAsset(fileName);
+        }
+    });
+
     card.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData('text/plain', fileName);
     });
-
     genGallery.prepend(card);
 }
 

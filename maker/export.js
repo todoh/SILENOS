@@ -1,8 +1,8 @@
 // export.js - MÓDULO EXCLUSIVO PARA LA EXPORTACIÓN DEL JUEGO AUTOEJECUTABLE (.HTML)
+
 function exportStandaloneHTML() {
     const usedAssetKeys = new Set();
     
-    // 1. Recopilar assets usados en las escenas y sus elementos
     if (projectData.scenes) {
         Object.values(projectData.scenes).forEach(scene => {
             if (scene.elements) {
@@ -23,7 +23,6 @@ function exportStandaloneHTML() {
         });
     }
 
-    // 2. Recopilar assets de elementos guardados
     if (projectData.savedElementsConfig) {
         Object.values(projectData.savedElementsConfig).forEach(savedElem => {
             if (!savedElem.isText && savedElem.image) {
@@ -31,8 +30,7 @@ function exportStandaloneHTML() {
             }
         });
     }
-    
-    // 3. Recopilar assets de la configuración de inventario
+
     if (projectData.itemsConfig) {
         Object.values(projectData.itemsConfig).forEach(item => {
             if (item.imageAsset) {
@@ -49,13 +47,22 @@ function exportStandaloneHTML() {
     });
 
     const runtimeScript = `
+        const CAMERA_SETTINGS = {
+            minPitch: 40,
+            maxPitch: 88,
+            headScreenOffsetPx: 350,
+            zoomLerp: 0.12,
+            cameraLerp: 0.15
+        };
+
         const projectData = ` + JSON.stringify(projectData) + `;
         const assetsData = ` + JSON.stringify(assetsData) + `;
         const canvasCache = {};
         let currentSceneId = projectData.startScene || Object.keys(projectData.scenes)[0];
         let gameState = { variables: {} };
-        let cameraState = { zoom: 1, panX: 0, panY: 0, minZoom: 0.7, maxZoom: 2.0 };
+        let cameraState = { zoom: 1, targetZoom: 1, focusX: 0, focusY: 0, panX: 0, panY: 0, minZoom: 0.5, maxZoom: 3.0 };
         const isPlayMode = true;
+        const isIsometricView = false;
         let cachedViewportDimensions = { width: 0, height: 0 };
 
         function updateViewportCache() {
@@ -320,14 +327,9 @@ function exportStandaloneHTML() {
                 });
             }
             processMouseTarget(e) {
-                const stage = document.getElementById('stage');
-                if (!stage) return;
-                const stageRect = stage.getBoundingClientRect();
-                const dim = getStageDimensions();
-                const scaleX = dim.width / stageRect.width;
-                const scaleY = dim.height / stageRect.height;
-                const clickX = (e.clientX - stageRect.left) * scaleX;
-                const clickY = (e.clientY - stageRect.top) * scaleY;
+                const coords = getCanvasWorldCoordinates(e);
+                const clickX = coords.clickX;
+                const clickY = coords.clickY;
                 if (this.lastTargetX !== null && Math.hypot(clickX - this.lastTargetX, clickY - this.lastTargetY) < 8) {
                     return;
                 }
@@ -810,6 +812,72 @@ function exportStandaloneHTML() {
         }
         const movementEngine = new MovementEngine();
 
+        function getScreenOffsetY() {
+            if (!isPlayMode) return 0;
+            const scene = projectData.scenes ? projectData.scenes[currentSceneId] : null;
+            const player = scene && scene.elements ? scene.elements.find(e => e.isPlayer) : null;
+            if (!player) return 0;
+            const minZ = cameraState.minZoom || 0.5;
+            const maxZ = cameraState.maxZoom || 3.0;
+            const zoomRatio = Math.max(0, Math.min(1, (cameraState.zoom - minZ) / (maxZ - minZ)));
+            const headOffset = typeof CAMERA_SETTINGS !== 'undefined' ? CAMERA_SETTINGS.headScreenOffsetPx : 350;
+            return headOffset * zoomRatio;
+        }
+
+        function getCanvasWorldCoordinates(e) {
+            const viewport = document.getElementById('viewport-container');
+            const dim = getStageDimensions();
+            if (!viewport || !dim.width || !dim.height) return { clickX: 0, clickY: 0, finalScale: 1 };
+            const viewportRect = viewport.getBoundingClientRect();
+            const mouseX = e.clientX - viewportRect.left;
+            const mouseY = e.clientY - viewportRect.top;
+            const vw = cachedViewportDimensions.width || viewport.clientWidth || window.innerWidth;
+            const vh = cachedViewportDimensions.height || viewport.clientHeight || window.innerHeight;
+            const refWidth = 1920;
+            const refHeight = 1080;
+            const baseScale = Math.min(vw / refWidth, vh / refHeight);
+            const finalScale = baseScale * cameraState.zoom;
+            const fx = cameraState.focusX !== undefined ? cameraState.focusX : (dim.width / 2);
+            const fy = cameraState.focusY !== undefined ? cameraState.focusY : (dim.height / 2);
+            
+            const is3DView = isIsometricView || (cameraState.pitch !== undefined && cameraState.pitch !== 0) || (cameraState.rotation !== undefined && cameraState.rotation !== 0);
+            const pitch = is3DView ? (cameraState.pitch !== undefined ? cameraState.pitch : (isIsometricView ? 60 : 0)) : 0;
+            const yaw = is3DView ? (cameraState.rotation !== undefined ? cameraState.rotation : 0) : 0;
+
+            const screenOffsetY = getScreenOffsetY();
+            const dyCenter = mouseY - (vh / 2);
+            const perspectiveD = 1200;
+
+            let X2, Y2;
+
+            if (is3DView && Math.abs(pitch) > 0.1) {
+                const pitchRad = pitch * (Math.PI / 180);
+                const sinPitch = Math.sin(pitchRad);
+                const cosPitch = Math.cos(pitchRad);
+
+                let denomY = perspectiveD * cosPitch + dyCenter * sinPitch;
+                if (Math.abs(denomY) < 0.001) denomY = 0.001 * (denomY < 0 ? -1 : 1);
+
+                Y2 = (perspectiveD * (dyCenter - screenOffsetY)) / (finalScale * denomY);
+                X2 = ((mouseX - (vw / 2)) * (perspectiveD - finalScale * Y2 * sinPitch)) / (perspectiveD * finalScale);
+            } else {
+                X2 = (mouseX - (vw / 2)) / finalScale;
+                Y2 = (dyCenter - screenOffsetY) / finalScale;
+            }
+
+            const yawRad = yaw * (Math.PI / 180);
+            const cosYaw = Math.cos(yawRad);
+            const sinYaw = Math.sin(yawRad);
+
+            const worldDx = X2 * cosYaw + Y2 * sinYaw;
+            const worldDy = -X2 * sinYaw + Y2 * cosYaw;
+
+            const clickX = Math.round(fx + worldDx);
+            const clickY = Math.round(fy + worldDy);
+
+            return { clickX, clickY, finalScale };
+        }
+
         function fitStage(instantCamera = false) {
             const stage = document.getElementById('stage');
             if (!stage) return;
@@ -830,36 +898,65 @@ function exportStandaloneHTML() {
             const refWidth = 1920;
             const refHeight = 1080;
             const baseScale = Math.min(vw / refWidth, vh / refHeight);
+            if (cameraState.targetZoom === undefined) cameraState.targetZoom = cameraState.zoom;
+            cameraState.zoom += (cameraState.targetZoom - cameraState.zoom) * CAMERA_SETTINGS.zoomLerp;
             const finalScale = baseScale * cameraState.zoom;
-
+            
+            if (cameraState.focusX === undefined || cameraState.focusX === null) {
+                cameraState.focusX = dim.width / 2;
+            }
+            if (cameraState.focusY === undefined || cameraState.focusY === null) {
+                cameraState.focusY = dim.height / 2;
+            }
+            const minZ = cameraState.minZoom || 0.5;
+            const maxZ = cameraState.maxZoom || 3.0;
+            const zoomRatio = Math.max(0, Math.min(1, (cameraState.zoom - minZ) / (maxZ - minZ)));
+            let screenOffsetY = 0;
+            
             const scene = projectData.scenes[currentSceneId];
             const player = scene ? scene.elements.find(e => e.isPlayer) : null;
             if (player) {
-                const playerCenterX = player.x + (player.width / 2);
-                const playerCenterY = player.y + (player.height / 2);
-                const targetPanX = (vw / 2) - (playerCenterX * finalScale);
-                const targetPanY = (vh / 2) - (playerCenterY * finalScale);
-                if (instantCamera || (cameraState.panX === 0 && cameraState.panY === 0)) {
-                    cameraState.panX = targetPanX;
-                    cameraState.panY = targetPanY;
-                } else {
-                    const cameraLerp = 0.1;
-                    cameraState.panX += (targetPanX - cameraState.panX) * cameraLerp;
-                    cameraState.panY += (targetPanY - cameraState.panY) * cameraLerp;
+                if (isIsometricView) {
+                    const targetPitch = CAMERA_SETTINGS.minPitch + (CAMERA_SETTINGS.maxPitch - CAMERA_SETTINGS.minPitch) * zoomRatio;
+                    if (cameraState.pitch === undefined) cameraState.pitch = 60;
+                    cameraState.pitch += (targetPitch - cameraState.pitch) * CAMERA_SETTINGS.zoomLerp;
                 }
-            } else {
-                cameraState.panX = (vw / 2) - ((dim.width / 2) * finalScale);
-                cameraState.panY = (vh / 2) - ((dim.height / 2) * finalScale);
+                const targetFocusX = player.x + (player.width / 2);
+                const targetFocusY = player.y + player.height;
+                screenOffsetY = CAMERA_SETTINGS.headScreenOffsetPx * zoomRatio;
+                
+                if (instantCamera || (cameraState.focusX === dim.width / 2 && cameraState.focusY === dim.height / 2)) {
+                    cameraState.focusX = targetFocusX;
+                    cameraState.focusY = targetFocusY;
+                } else {
+                    cameraState.focusX += (targetFocusX - cameraState.focusX) * CAMERA_SETTINGS.cameraLerp;
+                    cameraState.focusY += (targetFocusY - cameraState.focusY) * CAMERA_SETTINGS.cameraLerp;
+                }
             }
-            stage.style.transform = 'translate3d(' + cameraState.panX + 'px, ' + cameraState.panY + 'px, 0px) scale(' + finalScale + ')';
+
+            const fx = cameraState.focusX;
+            const fy = cameraState.focusY;
+            const pitch = isIsometricView ? (cameraState.pitch !== undefined ? cameraState.pitch : 60) : 0;
+            const yaw = isIsometricView ? (cameraState.rotation !== undefined ? cameraState.rotation : 0) : 0;
+            const centerY = (vh / 2) + screenOffsetY;
+            
+            if (isIsometricView) {
+                stage.style.transform = 'translate3d(' + (vw / 2) + 'px, ' + centerY + 'px, 0px) scale(' + finalScale + ') rotateX(' + pitch + 'deg) rotateZ(' + yaw + 'deg) translate3d(' + (-fx) + 'px, ' + (-fy) + 'px, 0px)';
+            } else {
+                stage.style.transform = 'translate3d(' + (vw / 2) + 'px, ' + centerY + 'px, 0px) scale(' + finalScale + ') translate3d(' + (-fx) + 'px, ' + (-fy) + 'px, 0px)';
+            }
         }
 
         function resetCamera() {
+            const dim = getStageDimensions();
             cameraState.zoom = 1.0;
+            cameraState.targetZoom = 1.0;
+            cameraState.focusX = dim.width / 2;
+            cameraState.focusY = dim.height / 2;
             cameraState.panX = 0;
             cameraState.panY = 0;
-            cameraState.minZoom = 0.7;
-            cameraState.maxZoom = 2.0;
+            cameraState.minZoom = 0.5;
+            cameraState.maxZoom = 3.0;
         }
 
         function setupCameraControls() {
@@ -869,40 +966,48 @@ function exportStandaloneHTML() {
             let isPanning = false;
             let startPanX = 0, startPanY = 0;
             let panAnimationFrame = null;
-
             viewport.addEventListener('wheel', (e) => {
                 e.preventDefault();
                 const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
-                cameraState.zoom = Math.max(cameraState.minZoom, Math.min(cameraState.maxZoom, cameraState.zoom * zoomFactor));
+                const currentTarget = cameraState.targetZoom !== undefined ? cameraState.targetZoom : cameraState.zoom;
+                cameraState.targetZoom = Math.max(cameraState.minZoom, Math.min(cameraState.maxZoom, currentTarget * zoomFactor));
                 fitStage();
             }, { passive: false });
-
             viewport.addEventListener('mousedown', (e) => {
                 if (e.button === 1 || (e.button === 0 && e.shiftKey) || e.button === 2) {
                     isPanning = true;
-                    startPanX = e.clientX - cameraState.panX;
-                    startPanY = e.clientY - cameraState.panY;
+                    startPanX = e.clientX;
+                    startPanY = e.clientY;
                     viewport.style.cursor = 'grabbing';
                 }
             });
-
             window.addEventListener('mousemove', (e) => {
                 if (!isPanning) return;
                 if (panAnimationFrame) cancelAnimationFrame(panAnimationFrame);
                 panAnimationFrame = requestAnimationFrame(() => {
-                    cameraState.panX = e.clientX - startPanX;
-                    cameraState.panY = e.clientY - startPanY;
+                    const vw = cachedViewportDimensions.width || window.innerWidth;
+                    const vh = cachedViewportDimensions.height || window.innerHeight;
+                    const refWidth = 1920;
+                    const refHeight = 1080;
+                    const baseScale = Math.min(vw / refWidth, vh / refHeight);
+                    const finalScale = baseScale * cameraState.zoom;
+                    const pitch = cameraState.pitch !== undefined ? cameraState.pitch : 60;
+                    const cosAngle = Math.max(0.1, Math.cos(pitch * Math.PI / 180));
+                    const deltaX = (e.clientX - startPanX) / finalScale;
+                    const deltaY = (e.clientY - startPanY) / (finalScale * cosAngle);
+                    cameraState.focusX -= deltaX;
+                    cameraState.focusY -= deltaY;
+                    startPanX = e.clientX;
+                    startPanY = e.clientY;
                     fitStage();
                 });
             });
-
             window.addEventListener('mouseup', () => {
                 if (isPanning) {
                     isPanning = false;
                     viewport.style.cursor = 'default';
                 }
             });
-
             viewport.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
             }, true);
@@ -917,10 +1022,17 @@ function exportStandaloneHTML() {
             stage.style.height = dim.height + 'px';
             stage.innerHTML = '';
             if (fadeOverlay) stage.appendChild(fadeOverlay);
-
+            const pitch = cameraState.pitch !== undefined ? cameraState.pitch : 60;
+            const yaw = cameraState.rotation !== undefined ? cameraState.rotation : 0;
+            
+            if (isIsometricView) {
+                stage.classList.add('is-mode-7');
+            } else {
+                stage.classList.remove('is-mode-7');
+            }
+            
             const scene = projectData.scenes[currentSceneId];
             if (!scene) return;
-
             scene.elements.forEach(elem => {
                 if (elem.type === 'fondo') {
                     elem.x = 0;
@@ -938,8 +1050,34 @@ function exportStandaloneHTML() {
                 el.style.top = elem.y + 'px';
                 el.style.width = elem.width + 'px';
                 el.style.height = elem.height + 'px';
-                el.style.transform = 'rotate(' + (elem.rotation || 0) + 'deg)';
-                el.style.pointerEvents = 'none';
+                const baseRotation = elem.rotation || 0;
+                const billboardMode = elem.billboardMode || 'camera';
+                
+                if (isIsometricView) {
+                    if (elem.type === 'fondo') {
+                        el.classList.add('mode7-ground');
+                        el.style.transform = 'rotate(' + baseRotation + 'deg)';
+                    } else {
+                        el.classList.add('mode7-billboard');
+                        el.style.transformStyle = 'preserve-3d';
+                        if (billboardMode === 'cross_x' && !elem.isText) {
+                            el.style.transform = 'rotateX(-90deg) rotate(' + baseRotation + 'deg)';
+                        } else if (billboardMode === 'fixed') {
+                            el.style.transform = 'rotateX(-90deg) rotate(' + baseRotation + 'deg)';
+                        } else if (billboardMode === 'flat' || billboardMode === 'plano') {
+                            el.classList.remove('mode7-billboard');
+                            el.classList.add('mode7-ground');
+                            el.style.transform = 'rotate(' + baseRotation + 'deg)';
+                        } else if (billboardMode === 'muro' || billboardMode === 'wall') {
+                            el.classList.remove('mode7-billboard');
+                            el.style.transform = 'rotate(' + baseRotation + 'deg)';
+                        } else {
+                            el.style.transform = 'rotateX(-90deg) rotateZ(' + (-yaw) + 'deg) rotate(' + baseRotation + 'deg)';
+                        }
+                    }
+                } else {
+                    el.style.transform = 'rotate(' + baseRotation + 'deg)';
+                }
 
                 if (elem.type === 'fondo') {
                     el.style.zIndex = 10;
@@ -948,7 +1086,34 @@ function exportStandaloneHTML() {
                     el.style.zIndex = 100 + bottomY;
                 }
 
-                if (elem.isText) {
+                if (isIsometricView && elem.type !== 'fondo' && (billboardMode === 'muro' || billboardMode === 'wall') && !elem.isText) {
+                    const assetDataUrl = assetsData[elem.image] || elem.image;
+                    const W = elem.width;
+                    const D = elem.wallDepth !== undefined ? elem.wallDepth : elem.height;
+                    const H = elem.wallHeight !== undefined ? elem.wallHeight : elem.height;
+                    const createFace = (w, h, transform, filterStr) => {
+                        const face = document.createElement('div');
+                        face.style.cssText = 'position: absolute; left: 0; top: 0; width: ' + w + 'px; height: ' + h + 'px; transform-origin: 0 0; transform: ' + transform + '; transform-style: preserve-3d; backface-visibility: visible; ' + (filterStr ? 'filter: ' + filterStr + ';' : '');
+                        face.innerHTML = '<img src="' + assetDataUrl + '" style="width:100%;height:100%;display:block;pointer-events:none;object-fit:fill;">';
+                        return face;
+                    };
+                    el.appendChild(createFace(W, D, 'translateZ(' + H + 'px)', 'brightness(1.05)'));
+                    el.appendChild(createFace(W, D, 'translateZ(0px)', 'brightness(0.6)'));
+                    el.appendChild(createFace(W, H, 'translateY(' + D + 'px) rotateX(-90deg)', 'brightness(0.95)'));
+                    el.appendChild(createFace(W, H, 'rotateX(-90deg)', 'brightness(0.75)'));
+                    el.appendChild(createFace(D, H, 'rotateY(90deg) rotateZ(90deg)', 'brightness(0.85)'));
+                    el.appendChild(createFace(D, H, 'translateX(' + W + 'px) rotateY(90deg) rotateZ(90deg)', 'brightness(0.9)'));
+                } else if (isIsometricView && elem.type !== 'fondo' && billboardMode === 'cross_x' && !elem.isText) {
+                    const assetDataUrl = assetsData[elem.image] || elem.image;
+                    const plane1 = document.createElement('div');
+                    plane1.style.cssText = 'position: absolute; inset: 0; width: 100%; height: 100%; transform-origin: bottom center; transform: rotateY(0deg); transform-style: preserve-3d;';
+                    plane1.innerHTML = '<img src="' + assetDataUrl + '" style="width:100%;height:100%;display:block;pointer-events:none;object-fit:fill;">';
+                    const plane2 = document.createElement('div');
+                    plane2.style.cssText = 'position: absolute; inset: 0; width: 100%; height: 100%; transform-origin: bottom center; transform: rotateY(90deg); transform-style: preserve-3d;';
+                    plane2.innerHTML = '<img src="' + assetDataUrl + '" style="width:100%;height:100%;display:block;pointer-events:none;object-fit:fill;">';
+                    el.appendChild(plane1);
+                    el.appendChild(plane2);
+                } else if (elem.isText) {
                     el.textContent = elem.textContent || '';
                     el.style.fontSize = (elem.fontSize || 24) + 'px';
                     el.style.fontFamily = elem.fontFamily || 'Arial, sans-serif';
@@ -963,11 +1128,9 @@ function exportStandaloneHTML() {
                     img.src = assetsData[elem.image] || elem.image;
                     el.appendChild(img);
                 }
-
                 if (elem.type === 'entidad' && !elem.isPlayer) el.style.cursor = 'pointer';
                 stage.appendChild(el);
             });
-
             setupExportedPixelClicks();
             movementEngine.init();
             fitStage(instantCamera);
@@ -977,25 +1140,15 @@ function exportStandaloneHTML() {
             const stage = document.getElementById('stage');
             if (!stage || stage.dataset.pixelClickAttached) return;
             stage.dataset.pixelClickAttached = "true";
-
             stage.addEventListener('click', (e) => {
                 if (e.shiftKey) return;
                 if (e.target.closest('#game-ui') || e.target.closest('#inventory-bar') || e.target.closest('#dialog-box')) return;
-
-                const stageRect = stage.getBoundingClientRect();
-                const dim = getStageDimensions();
-                const scaleX = dim.width / stageRect.width;
-                const scaleY = dim.height / stageRect.height;
-                const clickX = (e.clientX - stageRect.left) * scaleX;
-                const clickY = (e.clientY - stageRect.top) * scaleY;
-
+                const { clickX, clickY } = getCanvasWorldCoordinates(e);
                 const scene = projectData.scenes[currentSceneId];
                 if (!scene) return;
-
                 const elementsToCheck = [...scene.elements]
                     .filter(elem => !elem.isPlayer && elem.type === 'entidad' && elem.triggerType !== 'passive' && checkCondition(elem.condition))
                     .sort((a, b) => ((b.y + b.height) - (a.y + a.height)));
-
                 let clickedEntity = null;
                 for (const elem of elementsToCheck) {
                     if (isPixelOpaqueExported(elem, clickX, clickY)) {
@@ -1003,7 +1156,6 @@ function exportStandaloneHTML() {
                         break;
                     }
                 }
-
                 if (clickedEntity) {
                     const trigger = clickedEntity.triggerType || 'click_distance';
                     if (trigger === 'click_distance') {
@@ -1049,10 +1201,8 @@ function exportStandaloneHTML() {
             const localY = (dx * Math.sin(rad) + dy * Math.cos(rad)) + elem.height / 2;
             if (localX < 0 || localX > elem.width || localY < 0 || localY > elem.height) return false;
             if (elem.isText) return true;
-
             const dataUrl = assetsData[elem.image] || elem.image;
             if (!dataUrl) return true;
-
             if (!canvasCache[elem.image]) {
                 const canvas = document.createElement('canvas');
                 const img = new Image();
@@ -1078,15 +1228,12 @@ function exportStandaloneHTML() {
         function handleEntityInteraction(elem) {
             if (!elem || elem._isProcessingInteraction) return;
             elem._isProcessingInteraction = true;
-
             movementEngine.pendingTargetEntity = null;
             movementEngine.path = [];
             movementEngine.isMoving = false;
             movementEngine.currentSpeed = 0;
-
             const dialogBox = document.getElementById('dialog-box');
             const dialogText = document.getElementById('dialog-text');
-
             if (elem.setVariable && elem.setVariable.varId) {
                 const varId = elem.setVariable.varId;
                 const conf = projectData.variablesConfig ? projectData.variablesConfig[varId] : null;
@@ -1100,21 +1247,18 @@ function exportStandaloneHTML() {
                 }
                 gameState.variables[varId] = val;
             }
-
             if (elem.addItem) {
                 const itemsToAdd = Array.isArray(elem.addItem) 
                     ? elem.addItem 
                     : elem.addItem.split(',').map(s => s.trim()).filter(Boolean);
                 itemsToAdd.forEach(id => inventoryManager.addItem(id, 1));
             }
-
             if (elem.removeItem) {
                 const itemsToRemove = Array.isArray(elem.removeItem) 
                     ? elem.removeItem 
                     : elem.removeItem.split(',').map(s => s.trim()).filter(Boolean);
                 itemsToRemove.forEach(id => inventoryManager.removeItem(id, 1));
             }
-
             if (elem.transformAsset) {
                 const savedConfig = projectData.savedElementsConfig || {};
                 if (savedConfig[elem.transformAsset]) {
@@ -1133,7 +1277,6 @@ function exportStandaloneHTML() {
                     elem.image = elem.transformAsset;
                 }
             }
-
             let elementDestroyed = false;
             if (elem.destroyOnInteract) {
                 const currentScene = projectData.scenes[currentSceneId];
@@ -1142,7 +1285,6 @@ function exportStandaloneHTML() {
                     elementDestroyed = true;
                 }
             }
-
             if (elem.dialog) {
                 if (dialogText) dialogText.textContent = elem.dialog;
                 if (dialogBox) {
@@ -1158,13 +1300,10 @@ function exportStandaloneHTML() {
                     }, 10);
                 }
             }
-
             renderStage(true);
-
             if (elem.targetScene && projectData.scenes[elem.targetScene]) {
                 changeSceneWithTransition(elem.targetScene, elem.targetX, elem.targetY);
             }
-
             if (!elementDestroyed) {
                 setTimeout(() => {
                     delete elem._isProcessingInteraction;
@@ -1269,16 +1408,31 @@ function exportStandaloneHTML() {
             cursor: default;
             background: #000;
             overflow: hidden;
+            perspective: 1200px;
+            perspective-origin: 50% 50%;
         }
         #stage {
             background: #ffffff;
             position: absolute;
             overflow: visible;
             transform-origin: 0 0;
+            transform-style: preserve-3d;
+        }
+        #stage.is-mode-7 {
+            transform-style: preserve-3d;
+            background: transparent !important;
+        }
+        .mode7-ground {
+            transform-style: preserve-3d;
+            transform-origin: center center;
+        }
+        .mode7-billboard {
+            transform-origin: bottom center !important;
+            transform-style: preserve-3d;
         }
         .stage-element {
             position: absolute;
-            transform-origin: center center;
+            transform-origin: bottom center;
             will-change: transform, left, top;
         }
         .stage-element.text-element {

@@ -1,4 +1,4 @@
-// movement.js - MOTOR DE MOVIMIENTO CON ACELERACIÓN, DECELERACIÓN Y COMPROBACIÓN OMNIDIRECCIONAL
+// movement.js - MOTOR DE MOVIMIENTO Y SEGUIMIENTO DE CÁMARA
 class MovementEngine {
     constructor() {
         this.player = null;
@@ -35,9 +35,14 @@ class MovementEngine {
         this.entityWaypointDirection.clear();
         this.gridSize = 16;
         this.maxSpeed = 6;
+
         const scene = projectData.scenes[currentSceneId];
         if (!scene) return;
         this.player = scene.elements.find(e => e.isPlayer);
+
+        if (isPlayMode) {
+            fitStage(true);
+        }
         this.startLoop();
     }
 
@@ -79,14 +84,9 @@ class MovementEngine {
     }
 
     processMouseTarget(e) {
-        const stage = document.getElementById('stage');
-        if (!stage) return;
-        const stageRect = stage.getBoundingClientRect();
-        const dim = getStageDimensions();
-        const scaleX = dim.width / stageRect.width;
-        const scaleY = dim.height / stageRect.height;
-        const clickX = (e.clientX - stageRect.left) * scaleX;
-        const clickY = (e.clientY - stageRect.top) * scaleY;
+        const coords = getCanvasWorldCoordinates(e);
+        const clickX = coords.clickX;
+        const clickY = coords.clickY;
 
         if (this.lastTargetX !== null && Math.hypot(clickX - this.lastTargetX, clickY - this.lastTargetY) < 8) {
             return;
@@ -172,6 +172,7 @@ class MovementEngine {
     setTarget(targetX, targetY) {
         if (!this.player) return;
         const startPivot = this.getPlayerPivot();
+
         if (!MovementPathfinding.checkLineCollision(this, startPivot.x, startPivot.y, targetX, targetY, this.player)) {
             const destOrigin = this.pivotToOrigin(targetX, targetY, this.player);
             this.path = [{ x: destOrigin.x, y: destOrigin.y }];
@@ -195,11 +196,9 @@ class MovementEngine {
                     } else {
                         this.syncElementDOM(this.player, false);
                     }
-
                     if (typeof fitStage === 'function') {
                         fitStage();
                     }
-
                     this.checkProximityTriggers();
                     this.checkPassiveTriggers();
                 } else {
@@ -207,8 +206,9 @@ class MovementEngine {
                         fitStage();
                     }
                 }
-
-                MovementEntities.updateEntitiesMovement(this);
+                if (typeof MovementEntities !== 'undefined') {
+                    MovementEntities.updateEntitiesMovement(this);
+                }
             }
             this.animFrameId = requestAnimationFrame(update);
         };
@@ -298,6 +298,7 @@ class MovementEngine {
             if (other.id === elem.id || other.id === ignoreEntityId) return false;
             if (!other.hasCollision) return false;
             if (isPlayMode && !checkCondition(other.condition)) return false;
+
             const otherBox = this.getColliderBox(other);
             return (
                 box.x < otherBox.x + otherBox.w &&
@@ -369,7 +370,6 @@ class MovementEngine {
             const bottomY = Math.round(elem.y + elem.height);
             el.style.zIndex = 100 + bottomY;
 
-            // Lógica exclusiva para la animación de andar estilo South Park (solo para el player)
             if (elem.isPlayer) {
                 if (isMoving) {
                     el.classList.remove('breathing-idle');

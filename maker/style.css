@@ -38,7 +38,6 @@ body {
     flex-direction: column;
 }
 
-/* HEADER Y TOOLBAR */
 #toolbar {
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
@@ -87,7 +86,6 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* NAVEGADOR SUPERIOR DE ESCENAS (ZONAS) */
 #scene-nav-bar {
     background: rgba(255, 255, 255, 0.4);
     backdrop-filter: blur(10px);
@@ -154,7 +152,6 @@ body {
     color: #ff3b30;
 }
 
-/* CONTENEDOR PRINCIPAL */
 #main-container {
     display: flex;
     flex: 1;
@@ -164,7 +161,6 @@ body {
     gap: 12px;
 }
 
-/* SIDEBAR ASSETS */
 #sidebar {
     width: 280px;
     background: var(--glass-bg);
@@ -239,7 +235,6 @@ body {
     display: block;
 }
 
-/* GALERÍA DE SESIÓN DE GENERACIÓN */
 #gen-session-gallery {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -282,7 +277,6 @@ body {
     display: block;
 }
 
-/* MODAL CONFIGURACIÓN GEMINI API */
 #gemini-config-modal {
     display: none;
     position: fixed;
@@ -318,7 +312,6 @@ body {
     line-height: 1;
 }
 
-/* MODAL VISOR DE IMÁGENES (LIGHTBOX) */
 #lightbox-modal {
     display: none;
     position: fixed;
@@ -370,7 +363,6 @@ body {
     line-height: 1;
 }
 
-/* DESPLEGABLE CON CUADRÍCULA PARA ASSETS DE ÍTEM */
 .asset-picker-container {
     position: relative;
     width: 100%;
@@ -439,7 +431,6 @@ body {
     object-fit: contain;
 }
 
-/* CUADRÍCULA DE MULTI-SELECCIÓN EN PANEL DE PROPIEDADES */
 .multi-select-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -527,7 +518,8 @@ body {
     justify-content: center;
     align-items: center;
     overflow: hidden;
-    perspective: 1000px; /* Perspectiva 3D para la proyección 2.5D Mode 7 */
+    perspective: 1200px;
+    perspective-origin: 50% 50%;
 }
 
 #stage {
@@ -541,7 +533,7 @@ body {
     transform-origin: 0 0;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
-    transform-style: preserve-3d; /* Permite transformaciones 3D para Mode 7 */
+    transform-style: preserve-3d;
 }
 
 /* MODO 2.5D / MODE 7 ESTILOS */
@@ -554,11 +546,22 @@ body {
 
 .mode7-ground {
     transform-style: preserve-3d;
+    transform-origin: center center;
 }
 
 .mode7-billboard {
-    transform-origin: center bottom !important;
+    transform-origin: bottom center !important;
     transform-style: preserve-3d;
+}
+
+.mode7-cross-plane {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform-origin: bottom center !important;
+    transform-style: preserve-3d;
+    backface-visibility: visible;
 }
 
 /* ELEMENTOS EN EL ESCENARIO */
@@ -623,7 +626,6 @@ body {
     display: block;
 }
 
-/* PANEL DE PROPIEDADES */
 #properties-panel {
     width: 280px;
     background: var(--glass-bg);
@@ -684,7 +686,6 @@ body {
     box-shadow: 0 4px 12px rgba(255, 59, 48, 0.25);
 }
 
-/* UI MODO JUEGO Y MODO PANTALLA COMPLETA */
 body.play-mode-active #sidebar,
 body.play-mode-active #properties-panel,
 body.play-mode-active #scene-nav-bar {
@@ -706,7 +707,6 @@ body.play-mode-active #stage {
     position: absolute !important;
     border-radius: 0;
     border: none;
-    transform-origin: center center;
 }
 
 #game-ui {
@@ -887,7 +887,6 @@ body.play-mode-active #stage {
     z-index: 2000;
 }
 
-/* Context Menu & Submenus */
 .context-menu {
     position: fixed;
     z-index: 10000;
@@ -972,7 +971,6 @@ body.play-mode-active #stage {
     transform: scale(1.2);
 }
 
-/* Elementos de Texto Renderizados en el Canvas */
 .stage-element.text-element {
     display: flex;
     align-items: center;
@@ -994,7 +992,7 @@ body.play-mode-active #stage {
 
 .crop-handle {
     position: absolute;
-    width: 10px;
+    width: 100px;
     height: 10px;
     background: #0071e3;
     border: 1px solid #ffffff;
@@ -1029,7 +1027,6 @@ body.play-mode-active #stage {
     cursor: pointer;
 }
 
-/* ANIMACIONES DE MOVIMIENTO Y RESPIRACIÓN EN MODO 2D Y Mode 7 */
 .breathing-idle {
     transform-origin: bottom center !important;
     animation: playerBreathing 2.8s ease-in-out infinite;
@@ -1050,14 +1047,13 @@ body.play-mode-active #stage {
 
 @keyframes playerBreathingMode7 {
     0%, 100% {
-        transform: rotateX(-60deg) translateY(-10px) scale(1, 1);
+        transform: rotateX(-90deg) scale(1, 1);
     }
     50% {
-        transform: rotateX(-60deg) translateY(-10px) scale(0.97, 1.03);
+        transform: rotateX(-90deg) scale(0.97, 1.03);
     }
 }
 
-/* CSS para el bamboleo al andar (2D y 2.5D Mode 7) */
 @keyframes southParkWalk {
   0% {
     transform: rotate(0deg) translateY(0px);
@@ -1078,19 +1074,19 @@ body.play-mode-active #stage {
 
 @keyframes southParkWalkMode7 {
   0% {
-    transform: rotateX(-60deg) translateY(-10px) rotate(0deg);
+    transform: rotateX(-90deg) rotate(0deg) translateY(0px);
   }
   25% {
-    transform: rotateX(-60deg) translateY(-13px) rotate(-3.5deg);
+    transform: rotateX(-90deg) rotate(-3.5deg) translateY(-3px);
   }
   50% {
-    transform: rotateX(-60deg) translateY(-10px) rotate(0deg);
+    transform: rotateX(-90deg) rotate(0deg) translateY(0px);
   }
   75% {
-    transform: rotateX(-60deg) translateY(-13px) rotate(3.5deg);
+    transform: rotateX(-90deg) rotate(3.5deg) translateY(-3px);
   }
   100% {
-    transform: rotateX(-60deg) translateY(-10px) rotate(0deg);
+    transform: rotateX(-90deg) rotate(0deg) translateY(0px);
   }
 }
 
@@ -1101,9 +1097,4 @@ body.play-mode-active #stage {
 
 #stage.is-mode-7 .south-park-walk {
   animation: southParkWalkMode7 0.45s ease-in-out infinite !important;
-}
-
-/* Mantenimiento de elevación vertical para todos los objetos Billboard en 2.5D Mode 7 */
-#stage.is-mode-7 .mode7-billboard {
-    transform: rotateX(-60deg) translateY(-10px) !important;
 }

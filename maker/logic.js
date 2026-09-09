@@ -1,4 +1,5 @@
-// logic.js - MANEJO DE NAVEGACI N, PESTA AS LATERALES Y BINDINGS DE UI PRINCIPAL
+// logic.js - MANEJO DE NAVEGACIÓN, PESTAÑAS LATERALES Y BINDINGS DE UI PRINCIPAL
+
 document.addEventListener('DOMContentLoaded', () => {
     const btnSelectDir = document.getElementById('btn-select-dir');
     const btnExportHtml = document.getElementById('btn-export-html');
@@ -10,13 +11,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnToggleView = document.getElementById('btn-toggle-view');
     const btnDeleteElement = document.getElementById('btn-delete-element');
     const selectStartScene = document.getElementById('select-start-scene');
-    const selectAspectRatio = document.getElementById('select-aspect-ratio');
-    
+         
     const propType = document.getElementById('prop-type');
     const propKeepAspect = document.getElementById('prop-keep-aspect');
     const propDialog = document.getElementById('prop-dialog');
     const propTargetScene = document.getElementById('prop-target-scene');
-    
+         
     const btnMenuAssets = document.getElementById('btn-menu-assets');
     const btnMenuElements = document.getElementById('btn-menu-elements');
     const btnMenuInventory = document.getElementById('btn-menu-inventory');
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnMenuAgent = document.getElementById('btn-menu-agent');
     const btnMenuLogic = document.getElementById('btn-menu-logic');
     const btnMenuIO = document.getElementById('btn-menu-io');
-    
+         
     const viewAssets = document.getElementById('view-assets');
     const viewElements = document.getElementById('view-elements');
     const viewInventoryConfig = document.getElementById('view-inventory-config');
@@ -48,11 +48,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- CAMBIO DE PESTA AS EN LA BARRA LATERAL ---
+    // --- CAMBIO DE PESTAÑAS EN LA BARRA LATERAL ---
     function switchSidebarTab(activeBtn, activeView) {
         [btnMenuAssets, btnMenuElements, btnMenuInventory, btnMenuStats, btnMenuGeneration, btnMenuAgent, btnMenuLogic, btnMenuIO].forEach(b => b && b.classList.remove('active'));
         [viewAssets, viewElements, viewInventoryConfig, viewStats, viewGeneration, viewAgent, viewLogic, viewIO].forEach(v => v && (v.style.display = 'none'));
-        
+                 
         if (activeBtn) activeBtn.classList.add('active');
         if (activeView) activeView.style.display = 'flex';
     }
@@ -99,11 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- CONFIGURACI N DE BARRA SUPERIOR Y ABRIR CARPETA DE PROYECTO ---
-    if (selectAspectRatio) {
-        selectAspectRatio.value = projectData.aspectRatio || "horizontal";
-    }
-
+    // --- CONFIGURACIÓN DE BARRA SUPERIOR Y ABRIR CARPETA DE PROYECTO ---
     if (btnSelectDir) {
         btnSelectDir.addEventListener('click', async () => {
             try {
@@ -118,8 +114,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (btnExportHtml) btnExportHtml.addEventListener('click', exportStandaloneHTML);
-
     if (btnLoadFiles) btnLoadFiles.addEventListener('click', () => fileInput.click());
+
     if (fileInput) {
         fileInput.addEventListener('change', async (e) => {
             for (const file of e.target.files) {
@@ -149,7 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
     if (propKeepAspect) {
         propKeepAspect.addEventListener('change', () => {
             const elem = getSelectedElement();
@@ -159,7 +154,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
     if (selectStartScene) {
         selectStartScene.addEventListener('change', () => {
             projectData.startScene = selectStartScene.value;
@@ -191,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateConditionData = () => {
         const elem = getSelectedElement();
         if (!elem) return;
-        
+                 
         const type = propCondType.value;
         if (type === 'none') {
             elem.condition = { type: 'none' };
@@ -223,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateSetVarData = () => {
         const elem = getSelectedElement();
         if (!elem) return;
-        
+                 
         elem.setVariable = {
             varId: propSetVar.value,
             value: propSetVal.value
@@ -248,16 +242,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnAddScene) {
         btnAddScene.addEventListener('click', () => {
-            const id = 'zona_' + Date.now();
-            const name = prompt("Nombre de la nueva zona/mapa:", "Nueva Zona");
-            if (name) {
-                if (!projectData.scenes) projectData.scenes = {};
-                projectData.scenes[id] = { name, elements: [] };
-                if (!projectData.startScene) projectData.startScene = id;
-                currentSceneId = id;
-                renderSceneTabs();
-                renderStage();
-                autoSaveJSON();
+            if (typeof openSceneEditModal === 'function') {
+                openSceneEditModal(null);
             }
         });
     }
@@ -265,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnModeEdit) btnModeEdit.addEventListener('click', () => setMode(false));
     if (btnModePlay) btnModePlay.addEventListener('click', () => setMode(true));
 
-    // INICIALIZAR EL ESCENARIO Y PESTA AS AL CARGAR LA P GINA
+    // INICIALIZAR EL ESCENARIO Y PESTAÑAS AL CARGAR LA PÁGINA
     setMode(false);
     renderSceneTabs();
     renderStage();
@@ -275,17 +261,17 @@ function updateVariablesConfigUI() {
     const list = document.getElementById('registered-variables-list');
     if (!list) return;
     list.innerHTML = '';
-    
+         
     if (!projectData.variablesConfig || Object.keys(projectData.variablesConfig).length === 0) {
         list.innerHTML = '<span style="font-size: 11px; color: var(--text-secondary);">No hay variables configuradas.</span>';
         return;
     }
-    
+         
     Object.keys(projectData.variablesConfig).forEach(varId => {
         const variable = projectData.variablesConfig[varId];
         const card = document.createElement('div');
         card.style.cssText = 'display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.7); border: 1px solid var(--border-subtle); padding: 6px 10px; border-radius: 8px;';
-        
+                 
         card.innerHTML = `
             <div>
                 <strong style="font-size: 11px; display: block; color: var(--text-primary);">${varId}</strong>
@@ -293,14 +279,14 @@ function updateVariablesConfigUI() {
             </div>
             <button class="btn" style="padding: 2px 6px; font-size: 10px; background: #ff3b30; color: white; border: none;">Borrar</button>
         `;
-        
+                 
         card.querySelector('button').onclick = () => {
             delete projectData.variablesConfig[varId];
             autoSaveJSON();
             updateVariablesConfigUI();
             updatePropertiesPanel();
         };
-        
+                 
         list.appendChild(card);
     });
 }
