@@ -1,4 +1,4 @@
-// render.js - RENDERIZADO COMPLETO DEL ESCENARIO
+// render.js - SISTEMA DE RENDERIZADO Y GENERACIÓN DEL ESCENARIO
 function renderStage(instantCamera = false) {
     const stage = document.getElementById('stage');
     const fadeOverlay = document.getElementById('fade-overlay');
@@ -36,285 +36,7 @@ function renderStage(instantCamera = false) {
             return;
         }
 
-        const isIdleBreathing = isPlayMode && elem.isPlayer && !elem.hasSkeletalAnim;
-
-        const el = document.createElement('div');
-        el.className = `stage-element layer-${elem.type} ${elem.isText ? 'text-element' : ''} ${elem.id === selectedElementId && !isPlayMode ? 'selected' : ''} ${isIdleBreathing ? 'breathing-idle' : ''}`;
-        el.id = `stage-el-${elem.id}`;
-        el.style.left = elem.x + 'px';
-        el.style.top = elem.y + 'px';
-        el.style.width = elem.width + 'px';
-        el.style.height = elem.height + 'px';
-
-        const baseRotation = elem.rotation || 0;
-        const billboardMode = elem.billboardMode || 'camera';
-
-        if (is3DView) {
-            if (elem.type === 'fondo') {
-                el.classList.add('mode7-ground');
-                el.style.transform = `rotate(${baseRotation}deg)`;
-            } else {
-                el.classList.add('mode7-billboard');
-                el.style.transformStyle = 'preserve-3d';
-
-                if (billboardMode === 'cross_x' && !elem.isText) {
-                    // Planta en X (Cruz duplicada a 90º para vegetación / farolas)
-                    el.style.transform = `rotateX(-90deg) rotate(${baseRotation}deg)`;
-                } else if (billboardMode === 'fixed') {
-                    // Ángulo Fijo en el mapa (Recto 90º al suelo)
-                    el.style.transform = `rotateX(-90deg) rotate(${baseRotation}deg)`;
-                } else if (billboardMode === 'flat' || billboardMode === 'plano') {
-                    // Pegado al suelo (Agua, lava, caminos, charcos)
-                    el.classList.remove('mode7-billboard');
-                    el.classList.add('mode7-ground');
-                    el.style.transform = `rotate(${baseRotation}deg)`;
-                } else if (billboardMode === 'muro' || billboardMode === 'wall') {
-                    // Muro / Cubo 3D
-                    el.classList.remove('mode7-billboard');
-                    el.style.transform = `rotate(${baseRotation}deg)`;
-                } else {
-                    // Mirando a la cámara (Billboard erguido verticalmente 90º respecto al terreno)
-                    el.style.transform = `rotateX(-90deg) rotateZ(${-yaw}deg) rotate(${baseRotation}deg)`;
-                }
-            }
-        } else {
-            el.style.transform = `rotate(${baseRotation}deg)`;
-        }
-
-        if (elem.type === 'fondo') {
-            el.style.zIndex = 10;
-        } else if (elem.isGroundTexture || elem.billboardMode === 'flat') {
-            // Garantiza que la textura/parche de suelo quede encima del fondo base (10) 
-            // pero siempre por debajo del resto de elementos (100+)
-            el.style.zIndex = 20; 
-        } else {
-            const bottomY = Math.round((elem.y || 0) + (elem.height || 0));
-            el.style.zIndex = 100 + bottomY;
-        }
-
-        if (isPlayMode) {
-            el.style.pointerEvents = 'none';
-        }
-
-        if ((elem.hasCollision || elem.isPlayer) && !isPlayMode) {
-            const colGizmo = document.createElement('div');
-            colGizmo.className = 'collision-box-gizmo';
-
-            const cW = elem.collisionW !== undefined ? elem.collisionW : elem.width;
-            const cH = elem.collisionH !== undefined ? elem.collisionH : elem.height;
-            const cX = elem.collisionX !== undefined ? elem.collisionX : Math.round((elem.width - cW) / 2);
-            const cY = elem.collisionY !== undefined ? elem.collisionY : (elem.height - cH);
-
-            elem.collisionW = cW;
-            elem.collisionH = cH;
-            elem.collisionX = cX;
-            elem.collisionY = cY;
-
-            colGizmo.style.cssText = `
-                position: absolute;
-                left: ${cX}px;
-                top: ${cY}px;
-                width: ${cW}px;
-                height: ${cH}px;
-                border: 2px dashed #ff9500;
-                background: rgba(255, 149, 0, 0.25);
-                box-sizing: border-box;
-                z-index: 10000;
-                pointer-events: auto;
-                cursor: move;
-            `;
-
-            colGizmo.addEventListener('mousedown', (e) => {
-                if (e.button !== 0 || e.target.classList.contains('handle-col-resize')) return;
-                e.stopPropagation();
-                let startX = e.clientX;
-                let startY = e.clientY;
-                let initialColX = elem.collisionX;
-                let initialColY = elem.collisionY;
-                let rafId = null;
-
-                const onMouseMove = (ev) => {
-                    if (rafId) cancelAnimationFrame(rafId);
-                    rafId = requestAnimationFrame(() => {
-                        const { finalScale } = getCanvasWorldCoordinates(ev);
-                        const deltaX = (ev.clientX - startX) / finalScale;
-                        const deltaY = (ev.clientY - startY) / finalScale;
-
-                        elem.collisionX = Math.round(initialColX + deltaX);
-                        elem.collisionY = Math.round(initialColY + deltaY);
-
-                        colGizmo.style.left = elem.collisionX + 'px';
-                        colGizmo.style.top = elem.collisionY + 'px';
-
-                        if (typeof updatePropertiesPanel === 'function') {
-                            updatePropertiesPanel();
-                        }
-                    });
-                };
-
-                const onMouseUp = () => {
-                    if (rafId) cancelAnimationFrame(rafId);
-                    window.removeEventListener('mousemove', onMouseMove);
-                    window.removeEventListener('mouseup', onMouseUp);
-                    autoSaveJSON();
-                    renderStage();
-                };
-
-                window.addEventListener('mousemove', onMouseMove);
-                window.addEventListener('mouseup', onMouseUp);
-            });
-
-            const colResizeHandle = document.createElement('div');
-            colResizeHandle.className = 'handle-col-resize';
-            colResizeHandle.style.cssText = `
-                position: absolute;
-                right: -5px;
-                bottom: -5px;
-                width: 10px;
-                height: 10px;
-                background: #ff9500;
-                border: 1px solid #ffffff;
-                border-radius: 2px;
-                cursor: nwse-resize;
-                z-index: 10001;
-                pointer-events: auto;
-            `;
-            colGizmo.appendChild(colResizeHandle);
-            el.appendChild(colGizmo);
-
-            colResizeHandle.addEventListener('mousedown', (e) => {
-                if (e.button !== 0) return;
-                e.stopPropagation();
-                let startX = e.clientX;
-                let startY = e.clientY;
-                let startW = elem.collisionW;
-                let startH = elem.collisionH;
-                let rafId = null;
-
-                const onMouseMove = (ev) => {
-                    if (rafId) cancelAnimationFrame(rafId);
-                    rafId = requestAnimationFrame(() => {
-                        const { finalScale } = getCanvasWorldCoordinates(ev);
-                        const deltaX = (ev.clientX - startX) / finalScale;
-                        const deltaY = (ev.clientY - startY) / finalScale;
-
-                        let newW = Math.max(4, Math.round(startW + deltaX));
-                        let newH = Math.max(4, Math.round(startH + deltaY));
-
-                        elem.collisionW = newW;
-                        elem.collisionH = newH;
-
-                        colGizmo.style.width = newW + 'px';
-                        colGizmo.style.height = newH + 'px';
-
-                        if (typeof updatePropertiesPanel === 'function') {
-                            updatePropertiesPanel();
-                        }
-                    });
-                };
-
-                const onMouseUp = () => {
-                    if (rafId) cancelAnimationFrame(rafId);
-                    window.removeEventListener('mousemove', onMouseMove);
-                    window.removeEventListener('mouseup', onMouseUp);
-                    autoSaveJSON();
-                    renderStage();
-                };
-
-                window.addEventListener('mousemove', onMouseMove);
-                window.addEventListener('mouseup', onMouseUp);
-            });
-        }
-
-        // Renderizado del contenido visual (Deformación Esquelética, Cruz en X, Muro Cubo 3D, Texto o Imagen)
-        if (elem.hasSkeletalAnim && !elem.isText && typeof skeletalAnimationEngine !== 'undefined') {
-            const asset = assetsMap[elem.image];
-            const rawImg = new Image();
-            rawImg.src = asset ? (asset.dataUrl || asset.url) : elem.image;
-
-            if (rawImg.complete && rawImg.naturalWidth > 0) {
-                const deformedCanvas = skeletalAnimationEngine.renderDeformedImage(
-                    rawImg, elem, elem.skeletalClip || 'humanoid_idle', Date.now()
-                );
-                deformedCanvas.style.width = '100%';
-                deformedCanvas.style.height = '100%';
-                deformedCanvas.style.display = 'block';
-                el.appendChild(deformedCanvas);
-            } else {
-                rawImg.onload = () => renderStage();
-            }
-        } else if (is3DView && elem.type !== 'fondo' && (billboardMode === 'muro' || billboardMode === 'wall') && !elem.isText) {
-            const asset = assetsMap[elem.image];
-            const imgSrc = asset ? asset.url : elem.image;
-            const W = elem.width;
-            const D = elem.wallDepth !== undefined ? elem.wallDepth : elem.height;
-            const H = elem.wallHeight !== undefined ? elem.wallHeight : elem.height;
-
-            const createFace = (w, h, transform, filterStr) => {
-                const face = document.createElement('div');
-                face.className = 'mode7-cross-plane';
-                face.style.cssText = `position: absolute; left: 0; top: 0; width: ${w}px; height: ${h}px; transform-origin: 0 0; transform: ${transform}; transform-style: preserve-3d; backface-visibility: visible; ${filterStr ? `filter: ${filterStr};` : ''}`;
-                face.innerHTML = `<img src="${imgSrc}" style="width:100%;height:100%;display:block;pointer-events:none;object-fit:fill;">`;
-                return face;
-            };
-
-            el.appendChild(createFace(W, D, `translateZ(${H}px)`, 'brightness(1.05)'));
-            el.appendChild(createFace(W, D, `translateZ(0px)`, 'brightness(0.6)'));
-            el.appendChild(createFace(W, H, `translateY(${D}px) rotateX(-90deg)`, 'brightness(0.95)'));
-            el.appendChild(createFace(W, H, `rotateX(-90deg)`, 'brightness(0.75)'));
-            el.appendChild(createFace(D, H, `rotateY(90deg) rotateZ(90deg)`, 'brightness(0.85)'));
-            el.appendChild(createFace(D, H, `translateX(${W}px) rotateY(90deg) rotateZ(90deg)`, 'brightness(0.9)'));
-        } else if (is3DView && elem.type !== 'fondo' && billboardMode === 'cross_x' && !elem.isText) {
-            const asset = assetsMap[elem.image];
-            const imgSrc = asset ? asset.url : elem.image;
-            const plane1 = document.createElement('div');
-            plane1.className = 'mode7-cross-plane';
-            plane1.style.transform = 'rotateY(0deg)';
-            plane1.innerHTML = `<img src="${imgSrc}" style="width:100%;height:100%;display:block;pointer-events:none;object-fit:fill;">`;
-            const plane2 = document.createElement('div');
-            plane2.className = 'mode7-cross-plane';
-            plane2.style.transform = 'rotateY(90deg)';
-            plane2.innerHTML = `<img src="${imgSrc}" style="width:100%;height:100%;display:block;pointer-events:none;object-fit:fill;">`;
-            el.appendChild(plane1);
-            el.appendChild(plane2);
-        } else if (elem.isText) {
-            el.textContent = elem.textContent || '';
-            el.style.fontSize = (elem.fontSize || 24) + 'px';
-            el.style.fontFamily = elem.fontFamily || 'Arial, sans-serif';
-            el.style.color = elem.textColor || '#1d1d1f';
-
-            const outline = elem.textOutline ? `-1px -1px 0 ${elem.textOutlineColor || '#000'}, 1px -1px 0 ${elem.textOutlineColor || '#000'}, -1px 1px 0 ${elem.textOutlineColor || '#000'}, 1px 1px 0 ${elem.textOutlineColor || '#000'}` : '';
-            const shadow = elem.textShadow ? `0px 4px 8px ${elem.textShadowColor || 'rgba(0,0,0,0.5)'}` : '';
-            const glow = elem.textGlow ? `0px 0px 12px ${elem.textGlowColor || '#0071e3'}` : '';
-            const textEffects = [outline, shadow, glow].filter(Boolean).join(', ');
-            el.style.textShadow = textEffects || 'none';
-        } else {
-            const img = document.createElement('img');
-            const asset = assetsMap[elem.image];
-            img.src = asset ? asset.url : elem.image;
-            el.appendChild(img);
-        }
-
-        if (!isPlayMode) {
-            const rotateHandle = document.createElement('div');
-            rotateHandle.className = 'handle-rotate';
-            el.appendChild(rotateHandle);
-
-            const resizeHandle = document.createElement('div');
-            resizeHandle.className = 'handle-resize';
-            el.appendChild(resizeHandle);
-
-            if (typeof setupTransformControls === 'function') {
-                setupTransformControls(el, elem, rotateHandle, resizeHandle);
-            }
-
-            if (activeCropElemId === elem.id && typeof renderCropGizmo === 'function') {
-                renderCropGizmo(el, elem);
-            }
-        } else {
-            if (elem.type === 'entidad' && !elem.isPlayer) el.style.cursor = 'pointer';
-        }
-
+        const el = renderElement(elem, dim, is3DView, yaw);
         stage.appendChild(el);
     });
 
@@ -337,6 +59,338 @@ function renderStage(instantCamera = false) {
     }
 
     fitStage(instantCamera);
+}
+
+function renderElement(elem, dim, is3DView, yaw) {
+    const isIdleBreathing = isPlayMode && elem.isPlayer && !elem.hasSkeletalAnim;
+
+    const el = document.createElement('div');
+    el.className = `stage-element layer-${elem.type} ${elem.isText ? 'text-element' : ''} ${elem.id === selectedElementId && !isPlayMode ? 'selected' : ''} ${isIdleBreathing ? 'breathing-idle' : ''}`;
+    el.id = `stage-el-${elem.id}`;
+    el.style.left = elem.x + 'px';
+    el.style.top = elem.y + 'px';
+    el.style.width = elem.width + 'px';
+    el.style.height = elem.height + 'px';
+
+    let baseRotation = elem.rotation || 0;
+
+    // Si es el jugador en modo juego, aplicamos la orientación calculada por el motor de movimiento
+    if (elem.isPlayer && isPlayMode && typeof movementEngine !== 'undefined' && movementEngine.facingAngle !== undefined) {
+        baseRotation = movementEngine.facingAngle;
+    }
+
+    applyTransformsAndStyles(el, elem, is3DView, baseRotation, yaw);
+    
+    if ((elem.hasCollision || elem.isPlayer) && !isPlayMode) {
+        renderCollisionGizmo(el, elem);
+    }
+
+    renderElementContent(el, elem, is3DView);
+
+    if (!isPlayMode) {
+        renderTransformControls(el, elem);
+    } else {
+        if (elem.type === 'entidad' && !elem.isPlayer) el.style.cursor = 'pointer';
+    }
+
+    return el;
+}
+
+function applyTransformsAndStyles(el, elem, is3DView, baseRotation, yaw) {
+    const billboardMode = elem.billboardMode || 'camera';
+
+    if (is3DView) {
+        if (elem.type === 'fondo') {
+            el.classList.add('mode7-ground');
+            el.style.transform = `rotate(${baseRotation}deg)`;
+        } else {
+            el.classList.add('mode7-billboard');
+            el.style.transformStyle = 'preserve-3d';
+
+            if (billboardMode === 'cross_x' && !elem.isText) {
+                // Planta en X (Cruz duplicada a 90º para vegetación / farolas)
+                el.style.transform = `rotateX(-90deg) rotate(${baseRotation}deg)`;
+            } else if (billboardMode === 'fixed') {
+                // Ángulo Fijo en el mapa (Recto 90º al suelo)
+                el.style.transform = `rotateX(-90deg) rotate(${baseRotation}deg)`;
+            } else if (billboardMode === 'flat' || billboardMode === 'plano') {
+                // Pegado al suelo (Agua, lava, caminos, charcos)
+                el.classList.remove('mode7-billboard');
+                el.classList.add('mode7-ground');
+                el.style.transform = `rotate(${baseRotation}deg)`;
+            } else if (billboardMode === 'muro' || billboardMode === 'wall') {
+    // Muro / Cubo 3D
+    const asset = assetsMap[elem.image];
+    const assetDataUrl = asset ? (asset.dataUrl || asset.url) : elem.image;
+    const W = elem.width;
+    const D = elem.wallDepth !== undefined ? elem.wallDepth : elem.height;
+    const H = elem.wallHeight !== undefined ? elem.wallHeight : elem.height;
+
+    const createFace = (w, h, transform, filterStr) => {
+        const face = document.createElement('div');
+        face.style.cssText = 'position: absolute; left: 0; top: 0; width: ' + w + 'px; height: ' + h + 'px; transform-origin: 0 0; transform: ' + transform + '; transform-style: preserve-3d; backface-visibility: visible; ' + (filterStr ? 'filter: ' + filterStr + ';' : '');
+        face.innerHTML = '<img src="' + assetDataUrl + '" style="width:100%;height:100%;display:block;pointer-events:none;object-fit:fill;">';
+        return face;
+    };
+
+    // 1 CARA ARRIBA (Tapa del cubo en Z = H)
+   // el.appendChild(createFace(W, D, 'translateZ(' + H + 'px)', 'brightness(1.1)'));
+
+    // 4 CARAS LATERALES
+    // Cara Frontal (Sur)
+   // el.appendChild(createFace(W, H, 'translateY(' + D + 'px) rotateX(-90deg)', 'brightness(0.95)'));
+    // Cara Trasera (Norte - CORREGIDA: Se abate hacia el fondo alineada en el eje Z)
+el.appendChild(createFace(W, H, 'translateZ(' + H + 'px) rotateX(-90deg)', 'brightness(0.75)'));    
+// Cara Izquierda (Oeste)
+   el.appendChild(createFace(D, H, 'rotateY(90deg) rotateZ(90deg)', 'brightness(0.85)'));
+    // Cara Derecha (Este)
+    el.appendChild(createFace(D, H, 'translateX(' + W + 'px) rotateY(90deg) rotateZ(90deg)', 'brightness(0.9)'));
+} else {
+                // Mirando a la cámara (Billboard erguido verticalmente 90º respecto al terreno)
+                el.style.transform = `rotateX(-90deg) rotateZ(${-yaw}deg) rotate(${baseRotation}deg)`;
+            }
+        }
+    } else {
+        el.style.transform = `rotate(${baseRotation}deg)`;
+    }
+
+    if (elem.type === 'fondo') {
+        el.style.zIndex = 10;
+    } else if (elem.isGroundTexture || elem.billboardMode === 'flat') {
+        // Garantiza que la textura/parche de suelo quede encima del fondo base (10) 
+        // pero siempre por debajo del resto de elementos (100+)
+        el.style.zIndex = 20; 
+    } else {
+        const bottomY = Math.round((elem.y || 0) + (elem.height || 0));
+        el.style.zIndex = 100 + bottomY;
+    }
+
+    if (isPlayMode) {
+        el.style.pointerEvents = 'none';
+    }
+}
+
+function renderCollisionGizmo(el, elem) {
+    const colGizmo = document.createElement('div');
+    colGizmo.className = 'collision-box-gizmo';
+
+    const cW = elem.collisionW !== undefined ? elem.collisionW : elem.width;
+    const cH = elem.collisionH !== undefined ? elem.collisionH : elem.height;
+    const cX = elem.collisionX !== undefined ? elem.collisionX : Math.round((elem.width - cW) / 2);
+    const cY = elem.collisionY !== undefined ? elem.collisionY : (elem.height - cH);
+
+    elem.collisionW = cW;
+    elem.collisionH = cH;
+    elem.collisionX = cX;
+    elem.collisionY = cY;
+
+    colGizmo.style.cssText = `
+        position: absolute;
+        left: ${cX}px;
+        top: ${cY}px;
+        width: ${cW}px;
+        height: ${cH}px;
+        border: 2px dashed #ff9500;
+        background: rgba(255, 149, 0, 0.25);
+        box-sizing: border-box;
+        z-index: 10000;
+        pointer-events: auto;
+        cursor: move;
+    `;
+
+    colGizmo.addEventListener('mousedown', (e) => {
+        if (e.button !== 0 || e.target.classList.contains('handle-col-resize')) return;
+        e.stopPropagation();
+        let startX = e.clientX;
+        let startY = e.clientY;
+        let initialColX = elem.collisionX;
+        let initialColY = elem.collisionY;
+        let rafId = null;
+
+        const onMouseMove = (ev) => {
+            if (rafId) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(() => {
+                const { finalScale } = getCanvasWorldCoordinates(ev);
+                const deltaX = (ev.clientX - startX) / finalScale;
+                const deltaY = (ev.clientY - startY) / finalScale;
+
+                elem.collisionX = Math.round(initialColX + deltaX);
+                elem.collisionY = Math.round(initialColY + deltaY);
+
+                colGizmo.style.left = elem.collisionX + 'px';
+                colGizmo.style.top = elem.collisionY + 'px';
+
+                if (typeof updatePropertiesPanel === 'function') {
+                    updatePropertiesPanel();
+                }
+            });
+        };
+
+        const onMouseUp = () => {
+            if (rafId) cancelAnimationFrame(rafId);
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+            autoSaveJSON();
+            renderStage();
+        };
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+    });
+
+    const colResizeHandle = document.createElement('div');
+    colResizeHandle.className = 'handle-col-resize';
+    colResizeHandle.style.cssText = `
+        position: absolute;
+        right: -5px;
+        bottom: -5px;
+        width: 10px;
+        height: 10px;
+        background: #ff9500;
+        border: 1px solid #ffffff;
+        border-radius: 2px;
+        cursor: nwse-resize;
+        z-index: 10001;
+        pointer-events: auto;
+    `;
+    colGizmo.appendChild(colResizeHandle);
+    el.appendChild(colGizmo);
+
+    colResizeHandle.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        e.stopPropagation();
+        let startX = e.clientX;
+        let startY = e.clientY;
+        let startW = elem.collisionW;
+        let startH = elem.collisionH;
+        let rafId = null;
+
+        const onMouseMove = (ev) => {
+            if (rafId) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(() => {
+                const { finalScale } = getCanvasWorldCoordinates(ev);
+                const deltaX = (ev.clientX - startX) / finalScale;
+                const deltaY = (ev.clientY - startY) / finalScale;
+
+                let newW = Math.max(4, Math.round(startW + deltaX));
+                let newH = Math.max(4, Math.round(startH + deltaY));
+
+                elem.collisionW = newW;
+                elem.collisionH = newH;
+
+                colGizmo.style.width = newW + 'px';
+                colGizmo.style.height = newH + 'px';
+
+                if (typeof updatePropertiesPanel === 'function') {
+                    updatePropertiesPanel();
+                }
+            });
+        };
+
+        const onMouseUp = () => {
+            if (rafId) cancelAnimationFrame(rafId);
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+            autoSaveJSON();
+            renderStage();
+        };
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+    });
+}
+
+function renderElementContent(el, elem, is3DView) {
+    const billboardMode = elem.billboardMode || 'camera';
+
+    // Renderizado del contenido visual (Deformación Esquelética, Cruz en X, Muro Cubo 3D, Texto o Imagen)
+    if (elem.hasSkeletalAnim && !elem.isText && typeof skeletalAnimationEngine !== 'undefined') {
+        const asset = assetsMap[elem.image];
+        const rawImg = new Image();
+        rawImg.src = asset ? (asset.dataUrl || asset.url) : elem.image;
+
+        if (rawImg.complete && rawImg.naturalWidth > 0) {
+            const deformedCanvas = skeletalAnimationEngine.renderDeformedImage(
+                rawImg, elem, elem.skeletalClip || 'humanoid_idle', Date.now()
+            );
+            deformedCanvas.style.width = '100%';
+            deformedCanvas.style.height = '100%';
+            deformedCanvas.style.display = 'block';
+            el.appendChild(deformedCanvas);
+        } else {
+            rawImg.onload = () => renderStage();
+        }
+    } else if (is3DView && elem.type !== 'fondo' && (billboardMode === 'muro' || billboardMode === 'wall') && !elem.isText) {
+        const asset = assetsMap[elem.image];
+        const imgSrc = asset ? asset.url : elem.image;
+        const W = elem.width;
+        const D = elem.wallDepth !== undefined ? elem.wallDepth : elem.height;
+        const H = elem.wallHeight !== undefined ? elem.wallHeight : elem.height;
+
+        const createFace = (w, h, transform, filterStr) => {
+            const face = document.createElement('div');
+            face.className = 'mode7-cross-plane';
+            face.style.cssText = `position: absolute; left: 0; top: 0; width: ${w}px; height: ${h}px; transform-origin: 0 0; transform: ${transform}; transform-style: preserve-3d; backface-visibility: visible; ${filterStr ? `filter: ${filterStr};` : ''}`;
+            face.innerHTML = `<img src="${imgSrc}" style="width:100%;height:100%;display:block;pointer-events:none;object-fit:fill;">`;
+            return face;
+        };
+
+        el.appendChild(createFace(W, D, `translateZ(${H}px)`, 'brightness(1.05)'));
+         el.appendChild(createFace(W, D, `translateZ(0px)`, 'brightness(0.6)'));
+     //   el.appendChild(createFace(W, H, `translateY(${D}px) rotateX(-90deg)`, 'brightness(0.95)'));
+       el.appendChild(createFace(W, H, `rotateX(-90deg)`, 'brightness(0.75)'));
+    //  el.appendChild(createFace(D, H, `rotateY(90deg) rotateZ(90deg)`, 'brightness(0.85)'));
+      //  el.appendChild(createFace(D, H, `translateX(${W}px) rotateY(90deg) rotateZ(90deg)`, 'brightness(0.9)'));
+
+
+    } else if (is3DView && elem.type !== 'fondo' && billboardMode === 'cross_x' && !elem.isText) {
+        const asset = assetsMap[elem.image];
+        const imgSrc = asset ? asset.url : elem.image;
+        const plane1 = document.createElement('div');
+        plane1.className = 'mode7-cross-plane';
+        plane1.style.transform = 'rotateY(0deg)';
+        plane1.innerHTML = `<img src="${imgSrc}" style="width:100%;height:100%;display:block;pointer-events:none;object-fit:fill;">`;
+        const plane2 = document.createElement('div');
+        plane2.className = 'mode7-cross-plane';
+        plane2.style.transform = 'rotateY(90deg)';
+        plane2.innerHTML = `<img src="${imgSrc}" style="width:100%;height:100%;display:block;pointer-events:none;object-fit:fill;">`;
+        el.appendChild(plane1);
+        el.appendChild(plane2);
+    } else if (elem.isText) {
+        el.textContent = elem.textContent || '';
+        el.style.fontSize = (elem.fontSize || 24) + 'px';
+        el.style.fontFamily = elem.fontFamily || 'Arial, sans-serif';
+        el.style.color = elem.textColor || '#1d1d1f';
+
+        const outline = elem.textOutline ? `-1px -1px 0 ${elem.textOutlineColor || '#000'}, 1px -1px 0 ${elem.textOutlineColor || '#000'}, -1px 1px 0 ${elem.textOutlineColor || '#000'}, 1px 1px 0 ${elem.textOutlineColor || '#000'}` : '';
+        const shadow = elem.textShadow ? `0px 4px 8px ${elem.textShadowColor || 'rgba(0,0,0,0.5)'}` : '';
+        const glow = elem.textGlow ? `0px 0px 12px ${elem.textGlowColor || '#0071e3'}` : '';
+        const textEffects = [outline, shadow, glow].filter(Boolean).join(', ');
+        el.style.textShadow = textEffects || 'none';
+    } else {
+        const img = document.createElement('img');
+        const asset = assetsMap[elem.image];
+        img.src = asset ? asset.url : elem.image;
+        el.appendChild(img);
+    }
+}
+
+function renderTransformControls(el, elem) {
+    const rotateHandle = document.createElement('div');
+    rotateHandle.className = 'handle-rotate';
+    el.appendChild(rotateHandle);
+
+    const resizeHandle = document.createElement('div');
+    resizeHandle.className = 'handle-resize';
+    el.appendChild(resizeHandle);
+
+    if (typeof setupTransformControls === 'function') {
+        setupTransformControls(el, elem, rotateHandle, resizeHandle);
+    }
+
+    if (activeCropElemId === elem.id && typeof renderCropGizmo === 'function') {
+        renderCropGizmo(el, elem);
+    }
 }
 
 function renderWaypointsOverlayOnStage(elem) {
