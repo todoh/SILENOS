@@ -1,4 +1,4 @@
-// logic.js - MANEJO DE NAVEGACIÓN, PESTAÑAS LATERALES Y BINDINGS DE UI PRINCIPAL
+// logic.js - MANEJO DE NAVEGACIÓN, PESTAÑAS LATERALES Y BINDINGS DE UI PRINCIPAL (CONECTOR AGENTE FASE 5)
 
 document.addEventListener('DOMContentLoaded', () => {
     const btnSelectDir = document.getElementById('btn-select-dir');
@@ -11,12 +11,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnToggleView = document.getElementById('btn-toggle-view');
     const btnDeleteElement = document.getElementById('btn-delete-element');
     const selectStartScene = document.getElementById('select-start-scene');
-         
+
     const propType = document.getElementById('prop-type');
     const propKeepAspect = document.getElementById('prop-keep-aspect');
     const propDialog = document.getElementById('prop-dialog');
     const propTargetScene = document.getElementById('prop-target-scene');
-         
+
     const btnMenuAssets = document.getElementById('btn-menu-assets');
     const btnMenuElements = document.getElementById('btn-menu-elements');
     const btnMenuInventory = document.getElementById('btn-menu-inventory');
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnMenuAgent = document.getElementById('btn-menu-agent');
     const btnMenuLogic = document.getElementById('btn-menu-logic');
     const btnMenuIO = document.getElementById('btn-menu-io');
-         
+
     const viewAssets = document.getElementById('view-assets');
     const viewElements = document.getElementById('view-elements');
     const viewInventoryConfig = document.getElementById('view-inventory-config');
@@ -34,9 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewAgent = document.getElementById('view-agent');
     const viewLogic = document.getElementById('view-logic');
     const viewIO = document.getElementById('view-io');
-
-    const btnStartAgent = document.getElementById('btn-start-agent');
-    const btnResumeAgent = document.getElementById('btn-resume-agent');
 
     // BOTÓN DE CAMBIO ENTRE VISTA 2D Y VISTA 2.5D (MODE 7)
     if (btnToggleView) {
@@ -52,18 +49,20 @@ document.addEventListener('DOMContentLoaded', () => {
     function switchSidebarTab(activeBtn, activeView) {
         [btnMenuAssets, btnMenuElements, btnMenuInventory, btnMenuStats, btnMenuGeneration, btnMenuAgent, btnMenuLogic, btnMenuIO].forEach(b => b && b.classList.remove('active'));
         [viewAssets, viewElements, viewInventoryConfig, viewStats, viewGeneration, viewAgent, viewLogic, viewIO].forEach(v => v && (v.style.display = 'none'));
-                 
+
         if (activeBtn) activeBtn.classList.add('active');
         if (activeView) activeView.style.display = 'flex';
     }
 
     if (btnMenuAssets) btnMenuAssets.addEventListener('click', () => switchSidebarTab(btnMenuAssets, viewAssets));
+    
     if (btnMenuElements) {
         btnMenuElements.addEventListener('click', () => {
             switchSidebarTab(btnMenuElements, viewElements);
             if (typeof updateElementsUI === 'function') updateElementsUI();
         });
     }
+
     if (btnMenuInventory) {
         btnMenuInventory.addEventListener('click', () => {
             switchSidebarTab(btnMenuInventory, viewInventoryConfig);
@@ -71,33 +70,34 @@ document.addEventListener('DOMContentLoaded', () => {
             if (typeof renderAssetPickerGrid === 'function') renderAssetPickerGrid();
         });
     }
+
     if (btnMenuStats) {
         btnMenuStats.addEventListener('click', () => {
             switchSidebarTab(btnMenuStats, viewStats);
             if (typeof updateStatsUI === 'function') updateStatsUI();
         });
     }
+
     if (btnMenuGeneration) btnMenuGeneration.addEventListener('click', () => switchSidebarTab(btnMenuGeneration, viewGeneration));
-    if (btnMenuAgent) btnMenuAgent.addEventListener('click', () => switchSidebarTab(btnMenuAgent, viewAgent));
+
+    // CONEXIÓN PESTAÑA AGENTE DE 3 FASES
+    if (btnMenuAgent) {
+        btnMenuAgent.addEventListener('click', () => {
+            switchSidebarTab(btnMenuAgent, viewAgent);
+            if (typeof agentOrchestrator !== 'undefined') {
+                agentOrchestrator.populateStage3SceneSelect();
+            }
+        });
+    }
+
     if (btnMenuLogic) {
         btnMenuLogic.addEventListener('click', () => {
             switchSidebarTab(btnMenuLogic, viewLogic);
             if (typeof updateVariablesConfigUI === 'function') updateVariablesConfigUI();
         });
     }
-    if (btnMenuIO) btnMenuIO.addEventListener('click', () => switchSidebarTab(btnMenuIO, viewIO));
 
-    // Listeners del Agente ODS
-    if (btnStartAgent) {
-        btnStartAgent.addEventListener('click', () => {
-            if (typeof agentOrchestrator !== 'undefined') agentOrchestrator.startPipeline();
-        });
-    }
-    if (btnResumeAgent) {
-        btnResumeAgent.addEventListener('click', () => {
-            if (typeof agentOrchestrator !== 'undefined') agentOrchestrator.resumePipeline();
-        });
-    }
+    if (btnMenuIO) btnMenuIO.addEventListener('click', () => switchSidebarTab(btnMenuIO, viewIO));
 
     // --- CONFIGURACIÓN DE BARRA SUPERIOR Y ABRIR CARPETA DE PROYECTO ---
     if (btnSelectDir) {
@@ -145,6 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
     if (propKeepAspect) {
         propKeepAspect.addEventListener('change', () => {
             const elem = getSelectedElement();
@@ -154,6 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
     if (selectStartScene) {
         selectStartScene.addEventListener('change', () => {
             projectData.startScene = selectStartScene.value;
@@ -185,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateConditionData = () => {
         const elem = getSelectedElement();
         if (!elem) return;
-                 
+
         const type = propCondType.value;
         if (type === 'none') {
             elem.condition = { type: 'none' };
@@ -217,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateSetVarData = () => {
         const elem = getSelectedElement();
         if (!elem) return;
-                 
+
         elem.setVariable = {
             varId: propSetVar.value,
             value: propSetVal.value
@@ -261,17 +263,17 @@ function updateVariablesConfigUI() {
     const list = document.getElementById('registered-variables-list');
     if (!list) return;
     list.innerHTML = '';
-         
+
     if (!projectData.variablesConfig || Object.keys(projectData.variablesConfig).length === 0) {
         list.innerHTML = '<span style="font-size: 11px; color: var(--text-secondary);">No hay variables configuradas.</span>';
         return;
     }
-         
+
     Object.keys(projectData.variablesConfig).forEach(varId => {
         const variable = projectData.variablesConfig[varId];
         const card = document.createElement('div');
         card.style.cssText = 'display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.7); border: 1px solid var(--border-subtle); padding: 6px 10px; border-radius: 8px;';
-                 
+
         card.innerHTML = `
             <div>
                 <strong style="font-size: 11px; display: block; color: var(--text-primary);">${varId}</strong>
@@ -279,14 +281,14 @@ function updateVariablesConfigUI() {
             </div>
             <button class="btn" style="padding: 2px 6px; font-size: 10px; background: #ff3b30; color: white; border: none;">Borrar</button>
         `;
-                 
+
         card.querySelector('button').onclick = () => {
             delete projectData.variablesConfig[varId];
             autoSaveJSON();
             updateVariablesConfigUI();
             updatePropertiesPanel();
         };
-                 
+
         list.appendChild(card);
     });
 }

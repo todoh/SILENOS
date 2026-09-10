@@ -52,7 +52,7 @@ class ElementsManager {
         if (typeof updatePropertiesPanel === 'function') updatePropertiesPanel();
     }
 
-    // Renderiza la lista de elementos en la pestaña lateral
+    // Renderiza la lista de elementos en la pestaña lateral a 3 columnas ajustadas
     renderElementsList() {
         const listContainer = document.getElementById('saved-elements-list');
         if (!listContainer) return;
@@ -62,42 +62,41 @@ class ElementsManager {
         const savedKeys = Object.keys(savedConfig);
 
         if (savedKeys.length === 0) {
-            listContainer.innerHTML = '<span style="font-size: 11px; color: var(--text-secondary); text-align: center; display: block; margin-top: 10px;">No hay elementos guardados.<br>Copia un elemento del canvas y presiona "Guardar Elemento Copiado".</span>';
+            listContainer.innerHTML = '<span style="font-size: 11px; color: var(--text-secondary); text-align: center; display: block; margin-top: 10px; grid-column: span 3;">No hay elementos guardados.<br>Copia un elemento del canvas y presiona "Guardar Elemento Copiado".</span>';
             return;
         }
 
         savedKeys.forEach(key => {
             const elemData = savedConfig[key];
             const isSelected = selectedSavedElementKey === key;
-
             const card = document.createElement('div');
             card.className = `asset-card ${isSelected ? 'selected' : ''}`;
             card.style.cssText = `
                 position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; 
                 background: ${isSelected ? 'rgba(0,113,227,0.12)' : 'rgba(255,255,255,0.85)'}; 
                 border: ${isSelected ? '2px solid #0071e3' : '1px solid var(--border-subtle)'}; 
-                padding: 8px; border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s ease;
+                padding: 4px; border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s ease;
+                min-width: 0; max-width: 100%; box-sizing: border-box; overflow: hidden;
             `;
             card.draggable = true;
 
             // Obtener vista previa visual (Imagen o Texto)
             let previewHTML = '';
             if (elemData.isText) {
-                previewHTML = `<div style="font-size: 14px; font-weight: bold; height: 50px; display: flex; align-items: center; justify-content: center; overflow: hidden; color: ${elemData.textColor || '#000'};">${elemData.textContent || 'Texto'}</div>`;
+                previewHTML = `<div style="font-size: 11px; font-weight: bold; height: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; color: ${elemData.textColor || '#000'}; text-align: center; width: 100%;">${elemData.textContent || 'Texto'}</div>`;
             } else {
                 const asset = typeof assetsMap !== 'undefined' ? assetsMap[elemData.image] : null;
                 const imgSrc = asset ? (asset.dataUrl || asset.url) : elemData.image;
-                previewHTML = `<img src="${imgSrc}" style="width: 100%; height: 50px; object-fit: contain; display: block; margin-bottom: 4px; pointer-events: none;">`;
+                previewHTML = `<img src="${imgSrc}" style="width: 100%; height: 40px; object-fit: contain; display: block; margin-bottom: 2px; pointer-events: none;">`;
             }
 
             card.innerHTML = `
                 ${previewHTML}
-                <strong style="font-size: 10px; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; width: 100%; text-align: center;">${elemData.savedName || 'Elemento'}</strong>
-                <span style="font-size: 8px; color: var(--text-secondary);">${elemData.width || 100}x${elemData.height || 100} px</span>
-                <div style="display: flex; gap: 4px; margin-top: 6px; width: 100%;">
-                    <button class="btn btn-select-elem" style="flex: 1; padding: 2px 4px; font-size: 9px; background: ${isSelected ? '#0071e3' : '#5856d6'}; color: white; border: none;">${isSelected ? 'Editando' : 'Editar'}</button>
-                    <button class="btn btn-duplicate" style="padding: 2px 4px; font-size: 9px; background: var(--accent-light); color: var(--accent-blue); border: none;">Duplicar</button>
-                    <button class="btn btn-delete" style="padding: 2px 4px; font-size: 9px; background: #ff3b30; color: white; border: none;">Borrar</button>
+                <strong style="font-size: 9px; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; width: 100%; text-align: center;">${elemData.savedName || 'Elemento'}</strong>
+                <span style="font-size: 7.5px; color: var(--text-secondary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; width: 100%; text-align: center;">${elemData.width || 100}x${elemData.height || 100} px</span>
+                <div style="display: flex; gap: 2px; margin-top: 4px; width: 100%; min-width: 0;">
+                    <button class="btn btn-duplicate" style="flex: 1; min-width: 0; padding: 2px 1px; font-size: 7.5px; background: var(--accent-light); color: var(--accent-blue); border: none; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Duplicar</button>
+                    <button class="btn btn-delete" style="padding: 2px 2px; min-width: 0; font-size: 7.5px; background: #ff3b30; color: white; border: none; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Borrar</button>
                 </div>
             `;
 
@@ -107,19 +106,8 @@ class ElementsManager {
                 e.dataTransfer.setData('text/plain', 'saved_element');
             });
 
-            // Clic en la tarjeta para seleccionar y editar en la ventana de la derecha
+            // Clic en la tarjeta para seleccionar y editar en el panel derecho directamente
             card.onclick = () => {
-                selectedSavedElementKey = key;
-                selectedElementId = null;
-                if (typeof renderStage === 'function') renderStage();
-                this.renderElementsList();
-                if (typeof updatePropertiesPanel === 'function') updatePropertiesPanel();
-            };
-
-            // Botón Editar
-            const btnEdit = card.querySelector('.btn-select-elem');
-            btnEdit.onclick = (ev) => {
-                ev.stopPropagation();
                 selectedSavedElementKey = key;
                 selectedElementId = null;
                 if (typeof renderStage === 'function') renderStage();

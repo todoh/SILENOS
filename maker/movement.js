@@ -1,6 +1,6 @@
 // movement.js - MÓDULO OPTIMIZADO CON MÁSCARA DE COLISIÓN DE PÍXELES (MÁXIMO RENDIMIENTO)
 
-// Cache global de máscaras en memoria (RAM) para $O(1)$ lookup instantáneo por asset/imagen
+// Cache global de máscaras en memoria (RAM) para O(1) lookup instantáneo por asset/imagen
 const collisionMasksCache = new Map();
 
 /**
@@ -12,12 +12,10 @@ const collisionMasksCache = new Map();
 function getOrCreateCollisionMask(asset) {
     if (!asset || !asset.dataUrl) return null;
     
-    // Si ya existe en caché de RAM, se devuelve inmediatamente (O(1))
     if (collisionMasksCache.has(asset)) {
         return collisionMasksCache.get(asset);
     }
 
-    // Si aún no se ha dibujado el canvas base del asset, lo construimos
     if (!asset.canvas) {
         const img = new Image();
         img.src = asset.dataUrl;
@@ -36,12 +34,10 @@ function getOrCreateCollisionMask(asset) {
     const h = asset.canvas.height;
 
     try {
-        // Extraemos de la GPU a la CPU SOLO UNA VEZ al cargar/inicializar el asset
         const imageData = asset.ctx.getImageData(0, 0, w, h);
         const pixels = imageData.data;
         const mask = new Uint8Array(w * h);
 
-        // Precalculamos los píxeles opacos (Alpha > 10)
         for (let i = 0, j = 3; i < mask.length; i++, j += 4) {
             mask[i] = pixels[j] > 10 ? 1 : 0;
         }
@@ -65,7 +61,6 @@ function getOrCreateCollisionMask(asset) {
 function isPixelOpaque(elem, clickX, clickY) {
     if (!elem || elem.isPlayer) return false;
 
-    // 1. Verificación preliminar por caja Bounding Box (AABB)
     if (elem.hasCollision || elem.collisionW !== undefined) {
         const box = typeof movementEngine !== 'undefined' 
             ? movementEngine.getColliderBox(elem) 
@@ -76,7 +71,6 @@ function isPixelOpaque(elem, clickX, clickY) {
         }
     }
 
-    // 2. Transformación de coordenadas relativas teniendo en cuenta la rotación del elemento
     const rad = -elem.rotation * (Math.PI / 180);
     const centerX = elem.x + elem.width / 2;
     const centerY = elem.y + elem.height / 2;
@@ -91,7 +85,6 @@ function isPixelOpaque(elem, clickX, clickY) {
     const asset = assetsMap[elem.image];
     if (!asset) return true;
 
-    // 3. Consulta rápida en memoria RAM (O(1))
     const maskData = getOrCreateCollisionMask(asset);
     if (!maskData) return true;
 
@@ -127,7 +120,7 @@ class MovementEngine {
         this.lastTargetX = null;
         this.lastTargetY = null;
         this.pendingTargetEntity = null;
-        this.facingAngle = 0; // Ángulo de orientación en grados
+        this.facingAngle = 0;
         this.entityPaths = new Map();
         this.entityTimers = new Map();
         this.entityWaypointIndex = new Map();
@@ -202,7 +195,6 @@ class MovementEngine {
         const clickX = coords.clickX;
         const clickY = coords.clickY;
 
-        // Throttling por umbral de movimiento del cursor para evitar recalcular rutas A* idénticas
         if (this.lastTargetX !== null && Math.hypot(clickX - this.lastTargetX, clickY - this.lastTargetY) < 12) {
             return;
         }
@@ -338,7 +330,6 @@ class MovementEngine {
         const dy = target.y - this.player.y;
         const totalDistance = Math.hypot(dx, dy);
 
-        // Actualiza la orientación vectorial hacia el punto de destino y la persiste
         if (totalDistance > 0.1) {
             const rad = Math.atan2(dy, dx);
             this.facingAngle = rad * (180 / Math.PI);
@@ -467,38 +458,47 @@ class MovementEngine {
     syncElementDOM(elem, isMoving = false) {
         if (!elem) return;
         const el = document.getElementById(`stage-el-${elem.id}`);
-        if (el) {
-            el.style.left = `${elem.x}px`;
-            el.style.top = `${elem.y}px`;
-            const bottomY = Math.round(elem.y + elem.height);
-            el.style.zIndex = 100 + bottomY;
-            if (elem.isPlayer) {
-                const angle = elem.rotation !== undefined ? elem.rotation : this.facingAngle;
-                const yaw = (typeof cameraState !== 'undefined' && cameraState.rotation !== undefined) ? cameraState.rotation : 0;
-                const is3DView = (typeof isIsometricView !== 'undefined' && isIsometricView) ||
-                                  (typeof cameraState !== 'undefined' && ((cameraState.pitch !== undefined && cameraState.pitch !== 0) || (cameraState.rotation !== undefined && cameraState.rotation !== 0)));
-                if (is3DView) {
-                    el.classList.add('mode7-billboard');
-                    el.style.transformStyle = 'preserve-3d';
-                    el.style.transform = `rotateX(-90deg) rotateZ(${-yaw}deg) rotate(${angle}deg)`;
-                } else {
-                    el.style.transform = `rotate(${angle}deg)`;
-                }
-                if (isMoving) {
-                    el.classList.remove('breathing-idle');
-                    el.classList.add('south-park-walk');
-                } else {
-                    el.classList.remove('south-park-walk');
-                    if (typeof isPlayMode !== 'undefined' && isPlayMode) {
-                        el.classList.add('breathing-idle');
-                    } else {
-                        el.classList.remove('breathing-idle');
-                    }
-                }
+        if (!el) return;
+
+        const leftStr = elem.x + 'px';
+        if (el.style.left !== leftStr) el.style.left = leftStr;
+
+        const topStr = elem.y + 'px';
+        if (el.style.top !== topStr) el.style.top = topStr;
+
+        const bottomY = Math.round(elem.y + elem.height);
+        const zIndexStr = String(100 + bottomY);
+        if (el.style.zIndex !== zIndexStr) el.style.zIndex = zIndexStr;
+
+        if (elem.isPlayer) {
+            const angle = elem.rotation !== undefined ? elem.rotation : this.facingAngle;
+            const yaw = (typeof cameraState !== 'undefined' && cameraState.rotation !== undefined) ? cameraState.rotation : 0;
+            const is3DView = (typeof isIsometricView !== 'undefined' && isIsometricView) ||
+                              (typeof cameraState !== 'undefined' && ((cameraState.pitch !== undefined && cameraState.pitch !== 0) || (cameraState.rotation !== undefined && cameraState.rotation !== 0)));
+            let transformStr = '';
+            if (is3DView) {
+                if (!el.classList.contains('mode7-billboard')) el.classList.add('mode7-billboard');
+                if (el.style.transformStyle !== 'preserve-3d') el.style.transformStyle = 'preserve-3d';
+                transformStr = `rotateX(-90deg) rotateZ(${-yaw}deg) rotate(${angle}deg)`;
             } else {
-                el.classList.remove('south-park-walk');
-                el.classList.remove('breathing-idle');
+                transformStr = `rotate(${angle}deg)`;
             }
+            if (el.style.transform !== transformStr) el.style.transform = transformStr;
+
+            if (isMoving) {
+                if (el.classList.contains('breathing-idle')) el.classList.remove('breathing-idle');
+                if (!el.classList.contains('south-park-walk')) el.classList.add('south-park-walk');
+            } else {
+                if (el.classList.contains('south-park-walk')) el.classList.remove('south-park-walk');
+                if (typeof isPlayMode !== 'undefined' && isPlayMode) {
+                    if (!el.classList.contains('breathing-idle')) el.classList.add('breathing-idle');
+                } else {
+                    if (el.classList.contains('breathing-idle')) el.classList.remove('breathing-idle');
+                }
+            }
+        } else {
+            if (el.classList.contains('south-park-walk')) el.classList.remove('south-park-walk');
+            if (el.classList.contains('breathing-idle')) el.classList.remove('breathing-idle');
         }
     }
 }

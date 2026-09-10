@@ -1,29 +1,49 @@
 // render.js - SISTEMA DE RENDERIZADO Y GENERACIÓN DEL ESCENARIO
+let _lastRenderSceneId = null;
+let _lastIsPlayMode = null;
+
 function renderStage(instantCamera = false) {
     const stage = document.getElementById('stage');
     const fadeOverlay = document.getElementById('fade-overlay');
     if (!stage) return;
 
     const dim = getStageDimensions();
-    stage.style.width = dim.width + 'px';
-    stage.style.height = dim.height + 'px';
-    stage.innerHTML = '';
-
-    if (fadeOverlay) stage.appendChild(fadeOverlay);
+    const widthPx = dim.width + 'px';
+    const heightPx = dim.height + 'px';
+    if (stage.style.width !== widthPx) stage.style.width = widthPx;
+    if (stage.style.height !== heightPx) stage.style.height = heightPx;
 
     const is3DView = isIsometricView || (cameraState.pitch !== undefined && cameraState.pitch !== 0) || (cameraState.rotation !== undefined && cameraState.rotation !== 0);
     const pitch = isIsometricView || is3DView ? (cameraState.pitch !== undefined ? cameraState.pitch : 60) : 0;
     const yaw = isIsometricView || is3DView ? (cameraState.rotation !== undefined ? cameraState.rotation : 0) : 0;
 
     if (is3DView) {
-        stage.classList.add('is-mode-7');
+        if (!stage.classList.contains('is-mode-7')) stage.classList.add('is-mode-7');
     } else {
-        stage.classList.remove('is-mode-7');
+        if (stage.classList.contains('is-mode-7')) stage.classList.remove('is-mode-7');
     }
 
     const scene = projectData.scenes[currentSceneId];
     if (!scene) return;
 
+    // Si cambió la escena o el modo de juego/editor, reseteamos el contenedor una sola vez
+    const sceneOrModeChanged = (_lastRenderSceneId !== currentSceneId || _lastIsPlayMode !== isPlayMode);
+    _lastRenderSceneId = currentSceneId;
+    _lastIsPlayMode = isPlayMode;
+
+    if (sceneOrModeChanged) {
+        stage.innerHTML = '';
+        if (fadeOverlay) stage.appendChild(fadeOverlay);
+    } else {
+        if (fadeOverlay && !stage.contains(fadeOverlay)) {
+            stage.appendChild(fadeOverlay);
+        }
+        const oldWp = document.getElementById('stage-waypoints-overlay');
+        if (oldWp) oldWp.remove();
+    }
+
+    // Mapa de elementos válidos a renderizar
+    const activeElemMap = new Map();
     scene.elements.forEach(elem => {
         if (elem.type === 'fondo') {
             elem.x = 0;
@@ -35,9 +55,41 @@ function renderStage(instantCamera = false) {
         if (isPlayMode && !checkCondition(elem.condition)) {
             return;
         }
+        activeElemMap.set(elem.id, elem);
+    });
 
-        const el = renderElement(elem, dim, is3DView, yaw);
-        stage.appendChild(el);
+    // Elimina del DOM únicamente los elementos que ya no existen en la escena
+    const existingNodes = Array.from(stage.querySelectorAll('.stage-element'));
+    existingNodes.forEach(node => {
+        const nodeId = node.id.replace('stage-el-', '');
+        if (!activeElemMap.has(nodeId)) {
+            node.remove();
+        }
+    });
+
+    // Actualiza en sitio o crea los nodos DOM necesarios sin reconstruir la escena entera
+    scene.elements.forEach(elem => {
+        if (!activeElemMap.has(elem.id)) return;
+
+        let baseRotation = elem.rotation || 0;
+        if (elem.isPlayer && isPlayMode && typeof movementEngine !== 'undefined' && movementEngine.facingAngle !== undefined) {
+            baseRotation = movementEngine.facingAngle;
+        }
+
+        const renderSig = `${elem.image}_${elem.textContent}_${elem.textColor}_${elem.fontSize}_${elem.isText}_${elem.type}_${elem.billboardMode}_${elem.hasSkeletalAnim}_${elem.wallHeight}_${elem.wallDepth}_${selectedElementId === elem.id}_${activeCropElemId === elem.id}_${isPlayMode}_${is3DView}`;
+
+        let el = document.getElementById(`stage-el-${elem.id}`);
+        if (el && el.dataset.renderSig === renderSig) {
+            applyTransformsAndStyles(el, elem, is3DView, baseRotation, yaw);
+        } else {
+            const newEl = renderElement(elem, dim, is3DView, yaw);
+            newEl.dataset.renderSig = renderSig;
+            if (el) {
+                stage.replaceChild(newEl, el);
+            } else {
+                stage.appendChild(newEl);
+            }
+        }
     });
 
     if (!isPlayMode) {
@@ -67,14 +119,9 @@ function renderElement(elem, dim, is3DView, yaw) {
     const el = document.createElement('div');
     el.className = `stage-element layer-${elem.type} ${elem.isText ? 'text-element' : ''} ${elem.id === selectedElementId && !isPlayMode ? 'selected' : ''} ${isIdleBreathing ? 'breathing-idle' : ''}`;
     el.id = `stage-el-${elem.id}`;
-    el.style.left = elem.x + 'px';
-    el.style.top = elem.y + 'px';
-    el.style.width = elem.width + 'px';
-    el.style.height = elem.height + 'px';
 
     let baseRotation = elem.rotation || 0;
 
-    // Si es el jugador en modo juego, aplicamos la orientación calculada por el motor de movimiento
     if (elem.isPlayer && isPlayMode && typeof movementEngine !== 'undefined' && movementEngine.facingAngle !== undefined) {
         baseRotation = movementEngine.facingAngle;
     }
@@ -99,74 +146,70 @@ function renderElement(elem, dim, is3DView, yaw) {
 function applyTransformsAndStyles(el, elem, is3DView, baseRotation, yaw) {
     const billboardMode = elem.billboardMode || 'camera';
 
+    let transformStr = '';
     if (is3DView) {
         if (elem.type === 'fondo') {
-            el.classList.add('mode7-ground');
-            el.style.transform = `rotate(${baseRotation}deg)`;
+            if (!el.classList.contains('mode7-ground')) el.classList.add('mode7-ground');
+            transformStr = `rotate(${baseRotation}deg)`;
         } else {
-            el.classList.add('mode7-billboard');
-            el.style.transformStyle = 'preserve-3d';
+            if (!el.classList.contains('mode7-billboard')) el.classList.add('mode7-billboard');
+            if (el.style.transformStyle !== 'preserve-3d') el.style.transformStyle = 'preserve-3d';
 
             if (billboardMode === 'cross_x' && !elem.isText) {
-                // Planta en X (Cruz duplicada a 90º para vegetación / farolas)
-                el.style.transform = `rotateX(-90deg) rotate(${baseRotation}deg)`;
+                transformStr = `rotateX(-90deg) rotate(${baseRotation}deg)`;
             } else if (billboardMode === 'fixed') {
-                // Ángulo Fijo en el mapa (Recto 90º al suelo)
-                el.style.transform = `rotateX(-90deg) rotate(${baseRotation}deg)`;
+                transformStr = `rotateX(-90deg) rotate(${baseRotation}deg)`;
             } else if (billboardMode === 'flat' || billboardMode === 'plano') {
-                // Pegado al suelo (Agua, lava, caminos, charcos)
                 el.classList.remove('mode7-billboard');
-                el.classList.add('mode7-ground');
-                el.style.transform = `rotate(${baseRotation}deg)`;
+                if (!el.classList.contains('mode7-ground')) el.classList.add('mode7-ground');
+                transformStr = `rotate(${baseRotation}deg)`;
             } else if (billboardMode === 'muro' || billboardMode === 'wall') {
-    // Muro / Cubo 3D
-    const asset = assetsMap[elem.image];
-    const assetDataUrl = asset ? (asset.dataUrl || asset.url) : elem.image;
-    const W = elem.width;
-    const D = elem.wallDepth !== undefined ? elem.wallDepth : elem.height;
-    const H = elem.wallHeight !== undefined ? elem.wallHeight : elem.height;
-
-    const createFace = (w, h, transform, filterStr) => {
-        const face = document.createElement('div');
-        face.style.cssText = 'position: absolute; left: 0; top: 0; width: ' + w + 'px; height: ' + h + 'px; transform-origin: 0 0; transform: ' + transform + '; transform-style: preserve-3d; backface-visibility: visible; ' + (filterStr ? 'filter: ' + filterStr + ';' : '');
-        face.innerHTML = '<img src="' + assetDataUrl + '" style="width:100%;height:100%;display:block;pointer-events:none;object-fit:fill;">';
-        return face;
-    };
-
-    // 1 CARA ARRIBA (Tapa del cubo en Z = H)
-   // el.appendChild(createFace(W, D, 'translateZ(' + H + 'px)', 'brightness(1.1)'));
-
-    // 4 CARAS LATERALES
-    // Cara Frontal (Sur)
-   // el.appendChild(createFace(W, H, 'translateY(' + D + 'px) rotateX(-90deg)', 'brightness(0.95)'));
-    // Cara Trasera (Norte - CORREGIDA: Se abate hacia el fondo alineada en el eje Z)
-el.appendChild(createFace(W, H, 'translateZ(' + H + 'px) rotateX(-90deg)', 'brightness(0.75)'));    
-// Cara Izquierda (Oeste)
-   el.appendChild(createFace(D, H, 'rotateY(90deg) rotateZ(90deg)', 'brightness(0.85)'));
-    // Cara Derecha (Este)
-    el.appendChild(createFace(D, H, 'translateX(' + W + 'px) rotateY(90deg) rotateZ(90deg)', 'brightness(0.9)'));
-} else {
-                // Mirando a la cámara (Billboard erguido verticalmente 90º respecto al terreno)
-                el.style.transform = `rotateX(-90deg) rotateZ(${-yaw}deg) rotate(${baseRotation}deg)`;
+                el.classList.remove('mode7-billboard');
+                transformStr = `rotate(${baseRotation}deg)`;
+            } else {
+                transformStr = `rotateX(-90deg) rotateZ(${-yaw}deg) rotate(${baseRotation}deg)`;
             }
         }
     } else {
-        el.style.transform = `rotate(${baseRotation}deg)`;
+        el.classList.remove('mode7-billboard', 'mode7-ground');
+        transformStr = `rotate(${baseRotation}deg)`;
     }
 
+    if (el.style.transform !== transformStr) {
+        el.style.transform = transformStr;
+    }
+
+    let zIdx = 10;
     if (elem.type === 'fondo') {
-        el.style.zIndex = 10;
+        zIdx = 10;
     } else if (elem.isGroundTexture || elem.billboardMode === 'flat') {
-        // Garantiza que la textura/parche de suelo quede encima del fondo base (10) 
-        // pero siempre por debajo del resto de elementos (100+)
-        el.style.zIndex = 20; 
+        zIdx = 20; 
     } else {
         const bottomY = Math.round((elem.y || 0) + (elem.height || 0));
-        el.style.zIndex = 100 + bottomY;
+        zIdx = 100 + bottomY;
     }
 
+    const zIdxStr = String(zIdx);
+    if (el.style.zIndex !== zIdxStr) {
+        el.style.zIndex = zIdxStr;
+    }
+
+    const leftStr = elem.x + 'px';
+    if (el.style.left !== leftStr) el.style.left = leftStr;
+
+    const topStr = elem.y + 'px';
+    if (el.style.top !== topStr) el.style.top = topStr;
+
+    const widthStr = elem.width + 'px';
+    if (el.style.width !== widthStr) el.style.width = widthStr;
+
+    const heightStr = elem.height + 'px';
+    if (el.style.height !== heightStr) el.style.height = heightStr;
+
     if (isPlayMode) {
-        el.style.pointerEvents = 'none';
+        if (el.style.pointerEvents !== 'none') el.style.pointerEvents = 'none';
+    } else {
+        if (el.style.pointerEvents !== '') el.style.pointerEvents = '';
     }
 }
 
@@ -303,7 +346,6 @@ function renderCollisionGizmo(el, elem) {
 function renderElementContent(el, elem, is3DView) {
     const billboardMode = elem.billboardMode || 'camera';
 
-    // Renderizado del contenido visual (Deformación Esquelética, Cruz en X, Muro Cubo 3D, Texto o Imagen)
     if (elem.hasSkeletalAnim && !elem.isText && typeof skeletalAnimationEngine !== 'undefined') {
         const asset = assetsMap[elem.image];
         const rawImg = new Image();
@@ -322,26 +364,24 @@ function renderElementContent(el, elem, is3DView) {
         }
     } else if (is3DView && elem.type !== 'fondo' && (billboardMode === 'muro' || billboardMode === 'wall') && !elem.isText) {
         const asset = assetsMap[elem.image];
-        const imgSrc = asset ? asset.url : elem.image;
+        const imgSrc = asset ? (asset.dataUrl || asset.url) : elem.image;
         const W = elem.width;
-        const D = elem.wallDepth !== undefined ? elem.wallDepth : elem.height;
-        const H = elem.wallHeight !== undefined ? elem.wallHeight : elem.height;
+        const D = elem.height; 
+        const H = elem.wallHeight !== undefined ? elem.wallHeight : 100; 
 
         const createFace = (w, h, transform, filterStr) => {
             const face = document.createElement('div');
-            face.className = 'mode7-cross-plane';
             face.style.cssText = `position: absolute; left: 0; top: 0; width: ${w}px; height: ${h}px; transform-origin: 0 0; transform: ${transform}; transform-style: preserve-3d; backface-visibility: visible; ${filterStr ? `filter: ${filterStr};` : ''}`;
             face.innerHTML = `<img src="${imgSrc}" style="width:100%;height:100%;display:block;pointer-events:none;object-fit:fill;">`;
             return face;
         };
 
         el.appendChild(createFace(W, D, `translateZ(${H}px)`, 'brightness(1.05)'));
-         el.appendChild(createFace(W, D, `translateZ(0px)`, 'brightness(0.6)'));
-     //   el.appendChild(createFace(W, H, `translateY(${D}px) rotateX(-90deg)`, 'brightness(0.95)'));
-       el.appendChild(createFace(W, H, `rotateX(-90deg)`, 'brightness(0.75)'));
-    //  el.appendChild(createFace(D, H, `rotateY(90deg) rotateZ(90deg)`, 'brightness(0.85)'));
-      //  el.appendChild(createFace(D, H, `translateX(${W}px) rotateY(90deg) rotateZ(90deg)`, 'brightness(0.9)'));
-
+        el.appendChild(createFace(W, D, `translateZ(0px)`, 'brightness(0.6)'));
+        el.appendChild(createFace(W, H, `translateY(${D}px) rotateX(90deg)`, 'brightness(0.95)'));
+        el.appendChild(createFace(W, H, `rotateX(90deg)`, 'brightness(0.75)'));
+        el.appendChild(createFace(D, H, `rotateY(90deg) rotateZ(90deg)`, 'brightness(0.85)'));
+        el.appendChild(createFace(D, H, `translateX(${W}px) rotateY(90deg) rotateZ(90deg)`, 'brightness(0.9)'));
 
     } else if (is3DView && elem.type !== 'fondo' && billboardMode === 'cross_x' && !elem.isText) {
         const asset = assetsMap[elem.image];

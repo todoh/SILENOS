@@ -8,26 +8,26 @@
 </head>
 <body>
 <div id="toolbar">
+    <button class="btn" id="btn-open-settings" style="margin-right: 4px; background: #34c759; color: white; border-color: #34c759; font-weight: 600;">⚙️ Ajustes</button>
     <button class="btn" id="btn-select-dir">📁 Abrir Carpeta Proyecto</button>
-    <button class="btn" id="btn-export-html" style="background: #0071e3; color: white; border-color: #0071e3;">🚀 Exportar Juego Autoejecutable (.html)</button>
-             
+    
     <div style="display: flex; gap: 4px; background: rgba(0,0,0,0.05); padding: 3px; border-radius: 8px; margin-left: 8px;">
-        <button class="btn active" id="btn-menu-assets" title="Galería y Assets de la Escena">🎨 Assets</button>
+        <button class="btn active" id="btn-menu-assets" title="Galería y Assets de la Escena">🖼️ Assets</button>
         <button class="btn" id="btn-menu-elements" title="Elementos Reutilizables Guardados">📦 Elementos</button>
         <button class="btn" id="btn-menu-inventory" title="Configurar Ítems e Inventario del Juego">🎒 Inventario</button>
         <button class="btn" id="btn-menu-stats" title="Configurar Estadísticas y Módulos de UI">📊 Stats</button>
-        <button class="btn" id="btn-menu-generation" title="Generación de Assets con ComfyUI / Gemini e IA">🤖 Generación</button>
-        <button class="btn" id="btn-menu-agent" title="Agente Creador de Aventuras SVG">🪄 Agente</button>
-        <button class="btn" id="btn-menu-logic" title="Variables y Lógica Global del Juego">🧠 Lógica</button>
+        <button class="btn" id="btn-menu-generation" title="Generación de Assets con ComfyUI / Gemini e IA">✨ Generación</button>
+        <button class="btn" id="btn-menu-agent" title="Agente Creador de Aventuras SVG">🤖 Agente</button>
+        <button class="btn" id="btn-menu-logic" title="Variables y Lógica Global del Juego">🔀 Lógica</button>
         <button class="btn" id="btn-menu-io" title="Cargar y Guardar Mapas, Zonas y Configuraciones vía JSON">💾 IO</button>
     </div>
-             
+    
     <div style="flex:1"></div>
     <button class="btn" id="btn-toggle-view" title="Cambiar modo de vista 2D / 2.5D Mode 7">Vista: 2D</button>
     <button class="btn active" id="btn-mode-edit">✏️ Editor</button>
     <button class="btn" id="btn-mode-play">▶️ Jugar</button>
-             
-    <button class="btn" id="btn-open-gemini-config" title="Configuración de Gemini API" style="margin-left: 8px; padding: 6px 10px;">
+    
+    <button class="btn" id="btn-open-gemini-config" title="Configuración de Gemini API" style="display: none; margin-left: 8px; padding: 6px 10px;">
         🔑 Config Gemini
     </button>
 </div>
@@ -36,7 +36,7 @@
     <span style="font-size: 10px; color: #666; margin-right: 4px;">ZONAS:</span>
     <div id="scene-tabs-container" style="display: flex; gap: 6px; align-items: center;"></div>
     <button class="btn" id="btn-add-scene" style="padding: 2px 8px; font-size: 10px;">+ Crear Zona</button>
-             
+    
     <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
         <div style="display: flex; align-items: center; gap: 4px;">
             <label for="select-start-scene" style="font-size: 10px; color: #666;">MAPA INICIAL:</label>
@@ -51,18 +51,18 @@
             <div class="sidebar-section">
                 <div class="sidebar-title">Assets / Galería</div>
                 <input type="file" id="file-input" multiple accept="image/*,.svg" style="display:none">
-                <button class="btn" id="btn-load-files" style="width: 100%;">📂 Cargar Imágenes</button>
+                <button class="btn" id="btn-load-files" style="width: 100%;">📥 Cargar Imágenes</button>
             </div>
             <div id="file-list"></div>
         </div>
-                 
+        
         <div id="view-elements" style="display: none; flex-direction: column; height: 100%; padding: 12px; gap: 12px; overflow-y: auto;">
             <div class="sidebar-title">Elementos Guardados</div>
             <button class="btn" id="btn-save-copied-element" style="background: var(--accent-blue); color: white; border-color: var(--accent-blue); font-weight: 600;">💾 Guardar Elemento Copiado</button>
             <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 2px 0;">
-            <div id="saved-elements-list" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; align-content: start;"></div>
+            <div id="saved-elements-list" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; align-content: start; width: 100%; box-sizing: border-box;"></div>
         </div>
-                 
+        
         <div id="view-inventory-config" style="display: none; flex-direction: column; height: 100%; padding: 12px; gap: 12px; overflow-y: auto;">
             <div class="sidebar-title">Configuración de Ítems</div>
             <div class="form-group">
@@ -88,19 +88,19 @@
             <div class="form-group">
                 <label>O Cargar Imagen desde Local:</label>
                 <input type="file" id="inv-item-file-input" accept="image/*,.svg" style="display:none">
-                <button class="btn" id="btn-load-item-image" style="width: 100%;">📂 Cargar Nueva Imagen</button>
+                <button class="btn" id="btn-load-item-image" style="width: 100%;">📥 Cargar Nueva Imagen</button>
             </div>
-            <button class="btn" id="btn-save-inv-item" style="background: var(--accent-blue); color: white; border-color: var(--accent-blue); margin-top: 4px;">➕ Guardar / Crear Ítem</button>
+            <button class="btn" id="btn-save-inv-item" style="background: var(--accent-blue); color: white; border-color: var(--accent-blue); margin-top: 4px;">💾 Guardar / Crear Ítem</button>
             <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 8px 0;">
             <div class="sidebar-title">Ítems Registrados</div>
             <div id="registered-items-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
-                 
+        
         <div id="view-stats" style="display: none; flex-direction: column; height: 100%; padding: 12px; gap: 12px; overflow-y: auto;">
             <div class="sidebar-title">Configuración de Stats e Interfaz</div>
             <div id="registered-stats-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
-                 
+        
         <div id="view-generation" style="display: none; flex-direction: column; height: 100%; padding: 12px; gap: 12px; overflow-y: auto;">
             <div class="sidebar-title">Generación de Assets IA</div>
             <div class="form-group">
@@ -192,28 +192,66 @@
             <div class="sidebar-title">Generaciones de la Sesión</div>
             <div id="gen-session-gallery"></div>
         </div>
-                 
+        
         <div id="view-agent" style="display: none; flex-direction: column; height: 100%; padding: 12px; gap: 12px; overflow-y: auto;">
-            <div class="sidebar-title">🪄 Agente Creador ODS</div>
-            <div class="form-group">
-                <label for="agent-prompt">Premisa / Prompt Maestro:</label>
-                <textarea id="agent-prompt" rows="4" placeholder="Ej: Una aventura espacial cyberpunk donde debes reparar la nave antes de caer en un agujero negro..."></textarea>
-            </div>
-            <div class="form-group">
-                <label for="agent-scenes-count">Número de Zonas/Escenas:</label>
-                <input type="number" id="agent-scenes-count" value="3" min="2" max="8">
+            <div class="sidebar-title">🤖 Agente Creador por Fases</div>
+            <div class="form-group" style="background: rgba(0,113,227,0.08); padding: 8px; border-radius: 8px; border: 1px solid rgba(0,113,227,0.2);">
+                <label for="agent-px-per-meter" style="font-size: 10px; font-weight: 700; color: var(--accent-blue);">RELACIÓN DE ESCALA (Px / METRO):</label>
+                <select id="agent-px-per-meter" style="font-size: 11px; padding: 4px;">
+                    <option value="32">32 px = 1 metro (Baja Resolución)</option>
+                    <option value="64" selected>64 px = 1 metro (Estándar Armonizado)</option>
+                    <option value="128">128 px = 1 metro (Alta Definición)</option>
+                    <option value="256">256 px = 1 metro (Muy Alta Definición)</option>
+                    <option value="512">512 px = 1 metro (Extrema Definición)</option>
+                    <option value="1024">1024 px = 1 metro (Ultra Alta Definición)</option>
+                </select>
             </div>
             <div class="form-group">
                 <label for="agent-style">Estilo Visual SVG:</label>
                 <input type="text" id="agent-style" value="Flat Design minimalista vectorial para videojuego 2D, colores vivos, bordes limpios">
             </div>
-            <div style="display: flex; gap: 8px;">
-                <button class="btn" id="btn-start-agent" style="flex: 1; background: #0071e3; color: white; border-color: #0071e3; font-weight: 600; padding: 10px;">
-                    🚀 Generar Aventura
-                </button>
-                <button class="btn" id="btn-resume-agent" style="display: none; flex: 1; background: #ff9500; color: white; border-color: #ff9500; font-weight: 600; padding: 10px;">
-                    ▶️ Reanudar
-                </button>
+            <div style="display: flex; gap: 4px; background: rgba(0,0,0,0.05); padding: 3px; border-radius: 8px;">
+                <button class="btn active" id="agent-tab-stage1" style="flex:1; font-size: 9px; padding: 6px 2px;">1. Elementos</button>
+                <button class="btn" id="agent-tab-stage2" style="flex:1; font-size: 9px; padding: 6px 2px;">2. Mapas</button>
+                <button class="btn" id="agent-tab-stage3" style="flex:1; font-size: 9px; padding: 6px 2px;">3. Precisión</button>
+            </div>
+            <div id="agent-view-stage1" style="display: flex; flex-direction: column; gap: 10px;">
+                <div class="form-group">
+                    <label for="stage1-prompt">Descripción de Elementos a Generar:</label>
+                    <textarea id="stage1-prompt" rows="4" placeholder="Ej: Un mercader goblin, una mesa de alquimia con pociones, un cofre de bronce sólido y un arbusto de bayas..."></textarea>
+                </div>
+                <button class="btn" id="btn-exec-stage1" style="background: #0071e3; color: white; border: none; font-weight: 600; padding: 10px;">🎨 Elaborar y Guardar en "ELEMENTOS"</button>
+            </div>
+            <div id="agent-view-stage2" style="display: none; flex-direction: column; gap: 10px;">
+                <div class="form-group">
+                    <label for="stage2-prompt">Premisa / Concepto de los Mapas:</label>
+                    <textarea id="stage2-prompt" rows="3" placeholder="Ej: Plaza del mercado exterior con puesto de venta al norte y camino de adoquines hacia el bosque..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="stage2-maps-count">Número de Mapas a Crear:</label>
+                    <input type="number" id="stage2-maps-count" value="1" min="1" max="5">
+                </div>
+                <div class="form-group">
+                    <label for="stage2-map-size">Tamaño del Escenario (Metros):</label>
+                    <select id="stage2-map-size">
+                        <option value="pequeno">Interior / Habitación (15m x 10m)</option>
+                        <option value="mediano" selected>Zona Exterior / Plaza (30m x 20m)</option>
+                        <option value="grande">Pueblo / Bosque (60m x 40m)</option>
+                        <option value="gigante">Región Extensa (120m x 80m)</option>
+                    </select>
+                </div>
+                <button class="btn" id="btn-exec-stage2" style="background: #34c759; color: white; border: none; font-weight: 600; padding: 10px;">🗺️ Elaborar Mapas con "ELEMENTOS"</button>
+            </div>
+            <div id="agent-view-stage3" style="display: none; flex-direction: column; gap: 10px;">
+                <div class="form-group">
+                    <label for="stage3-target-map">Seleccionar Mapa a Editar:</label>
+                    <select id="stage3-target-map"></select>
+                </div>
+                <div class="form-group">
+                    <label for="stage3-instructions">Instrucciones del Director de Nivel:</label>
+                    <textarea id="stage3-instructions" rows="4" placeholder="Ej: Mueve el cofre al lado del mercader, elimina la roca de la entrada y añade la mesa de alquimia en la posición X:300 Y:200..."></textarea>
+                </div>
+                <button class="btn" id="btn-exec-stage3" style="background: #ff9500; color: white; border: none; font-weight: 600; padding: 10px;">🎯 Aplicar Edición de Precisión</button>
             </div>
             <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 4px 0;">
             <div class="sidebar-title">Estado del Pipeline</div>
@@ -221,11 +259,11 @@
                 <div id="agent-progress-fill" style="background: var(--accent-blue); width: 0%; height: 100%; transition: width 0.3s ease;"></div>
             </div>
             <div id="agent-progress-text" style="font-size: 10px; color: var(--text-secondary); text-align: center;">Esperando inicio...</div>
-            <div id="agent-console" style="background: #1e1e1e; color: #00ff66; font-family: monospace; font-size: 10px; padding: 8px; border-radius: 8px; height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
-                <div>> Agente preparado.</div>
+            <div id="agent-console" style="background: #1e1e1e; color: #00ff66; font-family: monospace; font-size: 10px; padding: 8px; border-radius: 8px; height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
+                <div>> Agente en 3 Fases preparado.</div>
             </div>
         </div>
-                 
+        
         <div id="view-logic" style="display: none; flex-direction: column; height: 100%; padding: 12px; gap: 12px; overflow-y: auto;">
             <div class="sidebar-title">Variables del Juego</div>
             <div class="form-group">
@@ -244,14 +282,15 @@
                 <label for="var-val">Valor Inicial:</label>
                 <input type="text" id="var-val" placeholder="Ej: false, 0, inicio">
             </div>
-            <button class="btn" id="btn-save-variable" style="background: var(--accent-blue); color: white; border-color: var(--accent-blue); margin-top: 4px;">➕ Guardar / Crear Variable</button>
+            <button class="btn" id="btn-save-variable" style="background: var(--accent-blue); color: white; border-color: var(--accent-blue); margin-top: 4px;">💾 Guardar / Crear Variable</button>
             <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 8px 0;">
             <div class="sidebar-title">Variables Registradas</div>
             <div id="registered-variables-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
-                 
+        
         <div id="view-io" style="display: none; flex-direction: column; height: 100%; padding: 12px; gap: 12px; overflow-y: auto;">
             <div class="sidebar-title">Entrada / Salida de Proyecto (IO)</div>
+            <button class="btn" id="btn-export-html" style="background: #0071e3; color: white; border-color: #0071e3;">🌐 Exportar Juego Autoejecutable (.html)</button>
             <div class="form-group" style="flex-direction: row; align-items: center; gap: 8px; background: rgba(0,0,0,0.03); padding: 8px; border-radius: 8px; border: 1px solid var(--border-subtle);">
                 <input type="checkbox" id="io-include-base64" style="width: auto; cursor: pointer;">
                 <label for="io-include-base64" style="margin: 0; cursor: pointer; font-size: 11px; font-weight: 600;">Incrustar imágenes en Base64 en el JSON</label>
@@ -276,7 +315,7 @@
             <div id="io-status" style="font-size: 10px; color: var(--text-secondary); text-align: center; margin-top: 4px;"></div>
         </div>
     </div>
-             
+    
     <div id="viewport-container">
         <div id="stage"></div>
         <div id="game-ui">
@@ -287,7 +326,7 @@
         </div>
         <div id="fade-overlay"></div>
     </div>
-             
+    
     <div id="properties-panel">
         <div class="sidebar-title">Propiedades del Objeto</div>
         <div id="props-empty-msg" style="font-size: 11px; color: var(--text-secondary); text-align: center; margin-top: 20px;">
@@ -334,8 +373,8 @@
                 <select id="prop-cond-item"></select>
                 <label for="prop-cond-item-state" style="margin-top: 4px;">Estado del Ítem:</label>
                 <select id="prop-cond-item-state">
-                    <option value="has">Posee el Ítem</option>
-                    <option value="not_has">NO posee el Ítem</option>
+                    <option value="has">Posee el ítem</option>
+                    <option value="not_has">NO posee el ítem</option>
                 </select>
             </div>
             <div id="interactive-props" style="display:none; flex-direction:column; gap:12px; margin-top: 4px;">
@@ -370,7 +409,41 @@
     </div>
 </div>
 
-<!-- MODAL EDICIÓN/CREACIÓN DE MAPA Y TAMANIO -->
+<div id="settings-modal" style="display: none; position: fixed; inset: 0; z-index: 99999; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); align-items: center; justify-content: center;">
+    <div style="background: #ffffff; width: 420px; max-width: 90vw; border-radius: 16px; padding: 20px; box-shadow: 0 25px 50px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+            <strong style="font-size: 13px; color: var(--text-primary);">⚙️ Ajustes de Resolución Base</strong>
+            <button id="settings-modal-close" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+        </div>
+        <div class="form-group">
+            <label for="modal-base-resolution" style="font-size: 10px; font-weight: 600;">Resolución Base de Renderizado:</label>
+            <select id="modal-base-resolution" style="padding: 6px; font-size: 11px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+                <option value="1920x1080">1920 x 1080 (1080p Full HD)</option>
+                <option value="1280x720">1280 x 720 (720p HD)</option>
+                <option value="960x540">960 x 540 (540p QHD)</option>
+                <option value="640x360">640 x 360 (360p SD)</option>
+                <option value="320x240">320 x 240 (240p Retro Pixel)</option>
+                <option value="custom">-- Personalizada (Px) --</option>
+            </select>
+        </div>
+        <div id="modal-base-custom-dim" style="display: none; align-items: center; gap: 8px;">
+            <div class="form-group" style="flex: 1;">
+                <label style="font-size: 9px;">Ancho Base (px):</label>
+                <input type="number" id="modal-base-width" value="1920" style="padding: 4px; font-size: 11px; border-radius: 4px; border: 1px solid var(--border-subtle);">
+            </div>
+            <span style="font-size: 12px; margin-top: 14px;">x</span>
+            <div class="form-group" style="flex: 1;">
+                <label style="font-size: 9px;">Alto Base (px):</label>
+                <input type="number" id="modal-base-height" value="1080" style="padding: 4px; font-size: 11px; border-radius: 4px; border: 1px solid var(--border-subtle);">
+            </div>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <button class="btn" id="btn-save-settings-modal" style="flex: 1; background: var(--accent-blue); color: white; border: none; font-weight: 600; padding: 8px;">Guardar Ajustes Resolución</button>
+            <button class="btn" id="btn-cancel-settings-modal" style="background: #e5e5ea; color: #1d1d1f; border: none; padding: 8px;">Cancelar</button>
+        </div>
+    </div>
+</div>
+
 <div id="scene-edit-modal" style="display: none; position: fixed; inset: 0; z-index: 99999; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); align-items: center; justify-content: center;">
     <div style="background: #ffffff; width: 420px; max-width: 90vw; border-radius: 16px; padding: 20px; box-shadow: 0 25px 50px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 14px;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
@@ -422,9 +495,7 @@
             <input type="password" id="modal-gemini-key" placeholder="AIzaSy..." style="width: 100%;">
             <span style="font-size: 9px; color: var(--text-secondary); margin-top: 2px;">La clave se guardará localmente en el navegador.</span>
         </div>
-        <button class="btn" id="btn-save-gemini-key" style="background: var(--accent-blue); color: white; border-color: var(--accent-blue); width: 100%; margin-top: 12px;">
-            💾 Guardar Configuración
-        </button>
+        <button class="btn" id="btn-save-gemini-key" style="background: var(--accent-blue); color: white; border-color: var(--accent-blue); width: 100%; margin-top: 12px;">💾 Guardar Configuración</button>
     </div>
 </div>
 
@@ -445,7 +516,14 @@
 <script src="render-selection.js"></script>
 <script src="render-transform.js"></script>
 <script src="render-events.js"></script>
-<script src="render-properties.js"></script>
+<script src="render-properties-crop.js"></script>
+<script src="render-properties-helpers.js"></script>
+<script src="render-properties-modal.js"></script>
+<script src="render-properties-scene-tabs.js"></script>
+<script src="render-properties-physics.js"></script>
+<script src="render-properties-text.js"></script>
+<script src="render-properties-interactive.js"></script>
+<script src="render-properties-main.js"></script>
 <script src="render.js"></script>
 <script src="export.js"></script>
 <script src="main.js"></script>
@@ -456,6 +534,10 @@
 <script src="io.js"></script>
 <script src="generation-ai.js"></script>
 <script src="agent-illustrator.js"></script>
+<script src="agent-scale-guide.js"></script>
+<script src="agent-stage1-elements.js"></script>
+<script src="agent-stage2-maps.js"></script>
+<script src="agent-stage3-precision.js"></script>
 <script src="agent-orchestrator.js"></script>
 <script src="logic-picker.js"></script>
 <script src="logic-events.js"></script>
