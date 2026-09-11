@@ -1,28 +1,40 @@
 // --- cronologia/escaleta/ai_writer.js ---
-// GUIONISTA TÉCNICO & DIRECTOR DE ARTE (V6.1 - EXPANSIÓN ATÓMICA DE BEATS DE NOVELA)
-
+// GUIONISTA TÉCNICO & DIRECTOR DE ARTE (V6.2 - SOPORTE DE BIBLIA VISUAL Y LIMPIEZA DE ARROBAS)
 const AiWriter = {
     // Auxiliar para escapar caracteres especiales de RegExp de forma segura
     _escapeRegExp(string) {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     },
 
-    // Compilador Semántico Unificado (Inyección Anatómica desde base de datos Nexus)
+    // Compilador Semántico Unificado (Inyección Anatómica desde CoherenceEngine & Nexus Saga)
     _injectNexusLore(rawPrompt, activeItems) {
         let characterSpecs = [];
         let curatedPrompt = rawPrompt;
 
-        if (!activeItems || activeItems.length === 0) return { prompt: curatedPrompt, specs: characterSpecs };
+        const itemsToProcess = [];
+        if (activeItems && Array.isArray(activeItems) && activeItems.length > 0) {
+            activeItems.forEach(item => {
+                if (item && item.data) itemsToProcess.push(item.data);
+            });
+        }
+        if (window.CoherenceEngine && CoherenceEngine.inventory) {
+            Object.keys(CoherenceEngine.inventory).forEach(key => {
+                const item = CoherenceEngine.inventory[key];
+                if (item && item.originalName) {
+                    itemsToProcess.push({
+                        name: item.originalName,
+                        visualDesc: item.visual
+                    });
+                }
+            });
+        }
 
-        activeItems.forEach(item => {
-            const nameKey = item.data.name || item.data.title;
+        itemsToProcess.forEach(item => {
+            const nameKey = item.name || item.title;
             if (!nameKey) return;
-
             const cleanKey = nameKey.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
-            const descriptionValue = item.data.visualDesc || item.data.desc || "";
-
+            const descriptionValue = item.visualDesc || item.desc || "";
             if (descriptionValue) {
-                // Algoritmo Forense de Compresión Trasera (Limpieza de ruido técnico)
                 let cleanDesc = descriptionValue.replace(/(\r\n|\n|\r)/gm, " ").trim();
                 cleanDesc = cleanDesc.replace(/RGB:\s*\[?[0-9\s,]+\]?/gi, '');
                 cleanDesc = cleanDesc.replace(/biological age \d+,?/gi, '');
@@ -30,15 +42,17 @@ const AiWriter = {
 
                 const tokenStr = `@${cleanKey}`;
                 const escapedName = this._escapeRegExp(nameKey);
+                const rxToken = new RegExp(`@${cleanKey}\\b|@${escapedName.replace(/\s+/g, '')}\\b`, "gi");
                 const rxRawName = new RegExp(`\\b${escapedName}\\b`, "gi");
                 let isPresent = false;
 
-                // Validation e inyección segura por Token o Nombre plano
-                if (curatedPrompt.toLowerCase().includes(tokenStr)) {
+                if (rxToken.test(curatedPrompt)) {
+                    curatedPrompt = curatedPrompt.replace(rxToken, nameKey);
+                    isPresent = true;
+                } else if (curatedPrompt.toLowerCase().includes(tokenStr)) {
                     curatedPrompt = curatedPrompt.replace(new RegExp(this._escapeRegExp(tokenStr), "gi"), nameKey);
                     isPresent = true;
                 } else if (rxRawName.test(curatedPrompt)) {
-                    curatedPrompt = curatedPrompt.replace(rxRawName, nameKey);
                     isPresent = true;
                 }
 
@@ -48,9 +62,8 @@ const AiWriter = {
             }
         });
 
-        // Limpieza de hilos redundantes inline generados por la IA ("X is X")
-        activeItems.forEach(item => {
-            const nameKey = item.data.name || item.data.title;
+        itemsToProcess.forEach(item => {
+            const nameKey = item.name || item.title;
             if (!nameKey) return;
             const escapedName = this._escapeRegExp(nameKey);
             const rxDuplicateCheck = new RegExp(`${escapedName}\\s+is\\s+${escapedName}`, 'gi');
@@ -59,19 +72,20 @@ const AiWriter = {
             }
         });
 
+        // Limpieza de símbolos @ residuales
+        curatedPrompt = curatedPrompt.replace(/@([a-zA-Z0-9_]+)/g, '$1').replace(/@/g, '');
+
         return { prompt: curatedPrompt, specs: characterSpecs };
     },
 
-    // Algoritmo Forense por Alta Densidad y Subpartes Semánticas
     detectChaptersLogic(text) {
         const normalizedText = text.replace(/\r\n/g, '\n');
         const lines = normalizedText.split('\n');
-                
         let chapters = [];
         let currentChapter = { id: 1, title: 'Bloque Inicial', content: '' };
-                
+
         const regexCapitulo = /^(?:[#\*\>\s]*)(cap[i ]tulo|episodio|escena|evento|subparte|bloque|momento|parte|acto|giro|fase)\s+([0-9]+|[IVXLCDMivxlcdm]+|[a-z ]+)?(?:[\.\-\:\s]+)?(.*)/i;
-        const regexNumeroSolo = /^(?:[#\*\>\s]*)([0-9]+|[IVXLCDM]+)\s*[\.\-\:]\s*(.*)/; 
+        const regexNumeroSolo = /^(?:[#\*\>\s]*)([0-9]+|[IVXLCDM]+)\s*[\.\-\:]\s*(.*)/;
         const regexMayusculas = /^[^a-z]{4,60}$/;
 
         for (let i = 0; i < lines.length; i++) {
@@ -85,29 +99,27 @@ const AiWriter = {
                 if (currentChapter.content.trim().length > 0) {
                     chapters.push({...currentChapter});
                 }
-                                
                 let cleanTitle = line.replace(/^[#\*\>\s]+/, '').replace(/[\*]+$/, '').trim();
                 currentChapter = {
                     id: chapters.length + 1,
                     title: cleanTitle.length > 80 ? cleanTitle.substring(0, 80) + "..." : cleanTitle,
-                    content: line + '\n' 
+                    content: line + '\n'
                 };
             } else {
                 currentChapter.content += line + '\n';
             }
         }
-                
+
         if (currentChapter.content.trim().length > 0) {
             chapters.push(currentChapter);
         }
 
-        // Control Crítico de Fragmentación Acelerada Forzada (Átomos semánticos densos)
         if (chapters.length < 25 && text.length > 2000) {
             const paragraphs = text.split(/\n\s*\n/);
             chapters = [];
             let tempContent = "";
             let capId = 1;
-                        
+
             for(let p of paragraphs) {
                 if (!p.trim()) continue;
                 tempContent += p + "\n\n";
@@ -129,7 +141,6 @@ const AiWriter = {
     async generateStructure(manualContext = null) {
         let json = null;
         let sourceMode = "";
-
         if (manualContext && manualContext.trim().length > 0) {
             try {
                 json = JSON.parse(manualContext);
@@ -150,7 +161,7 @@ const AiWriter = {
                 const file = await fileHandle.getFile();
                 json = JSON.parse(await file.text());
                 sourceMode = "JSON";
-            } catch (e) { 
+            } catch (e) {
                 console.warn("Carga de archivo cancelada o errónea:", e);
                 return;
             }
@@ -176,7 +187,6 @@ const AiWriter = {
             const flatCuratedTakes = [];
             let globalIdx = 0;
 
-            // Verificación forense del root handle para extracción local directa
             if (!EscaletaCore.rootHandle) {
                 EscaletaUI.toggleLoading(false);
                 return alert("Por favor, abre primero la carpeta de tu proyecto mediante el botón 'Cargar Proyecto' para sincronizar los archivos de imagen.");
@@ -187,9 +197,7 @@ const AiWriter = {
                 const momentsList = event.moments || event.subpartes || event.subparts || [];
                 const eventTitle = event.description || event.title || `Bloque ${eventIdx + 1}`;
 
-                // Función interna modificada para buscar y enlazar el archivo de imagen de forma nativa en la carpeta
                 const processImage = async (img64, imageFile) => {
-                    // Ruta A: Si viene un archivo nombrado en la cronología (Nuevo Formato)
                     if (imageFile && imageFile.trim().length > 0) {
                         try {
                             const handle = await EscaletaCore.rootHandle.getFileHandle(imageFile.trim());
@@ -201,7 +209,6 @@ const AiWriter = {
                         }
                     }
                     
-                    // Ruta B: Fallback heredado por compatibilidad si viene en base64 nativo
                     if (img64 && img64.trim().length > 0) {
                         try {
                             const base64Data = img64.includes(',') ? img64.split(',')[1] : img64;
@@ -221,29 +228,25 @@ const AiWriter = {
                             return { file: null, url: null };
                         }
                     }
-
                     return { file: null, url: null };
                 };
 
                 const processMoment = async (moment, mIdx, isSingle) => {
                     globalIdx++;
-                    
-                    // Combinar origen de metadatos de imagen priorizando el momento exacto
                     const targetImage64 = moment.image64 || event.image64 || null;
                     const targetImageFile = moment.imageFile || moment.image_file || event.imageFile || event.image_file || null;
                     
-                    // Extraer los datos físicos del File System
                     const imgData = await processImage(targetImage64, targetImageFile);
-                    
-                    // Inyección de Lore
                     let rawPrompt = moment.visualPrompt || moment.visual_prompt || moment.instruction || event.visualPrompt || "Cinematic shot";
                     const injection = this._injectNexusLore(rawPrompt, nexusItems);
-                    
+
+                    const cleanNarration = (moment.text || moment.description || event.text || "...").replace(/@/g, '').trim();
+
                     flatCuratedTakes.push({
                         id: `take-${Date.now()}-${eventIdx}-${mIdx}-${Math.floor(Math.random()*100)}`,
                         sequence_order: globalIdx,
                         visual_prompt: injection.prompt + (injection.specs.length > 0 ? ` --- CHARACTER LOOKS: ${injection.specs.join(", ")}` : ""),
-                        narration_text: moment.text || moment.description || event.text || "...",
+                        narration_text: cleanNarration,
                         duration: 5.0,
                         video_file: null,
                         image_file: imgData.file,
@@ -264,7 +267,6 @@ const AiWriter = {
                 }
             }
 
-            // Continuidad de frases
             flatCuratedTakes.forEach((take, idx) => {
                 if (idx > 0) take.visual_prompt = `[CONTINUITY FROM SCENE CONTEXT: ${flatCuratedTakes[idx-1].frase_salida}] ` + take.visual_prompt;
             });
@@ -289,9 +291,8 @@ const AiWriter = {
         if (!storyContext.trim()) return alert("No hay historia para procesar.");
         
         EscaletaUI.toggleComicModal();
-
         try {
-            EscaletaUI.toggleLoading(true, "FASE 1/2: ANÁLISIS FORENSE (CÓMIC)", "Identificando todos los elements de viñeta...");
+            EscaletaUI.toggleLoading(true, "FASE 1/2: ANÁLISIS FORENSE (CÓMIC)", "Identificando todos los elementos de viñeta...");
             
             const safeContextVFX = storyContext.length > 15000 ? storyContext.substring(0, 15000) + "...(truncado)" : storyContext;
             const extractPrompt = `
@@ -319,13 +320,13 @@ const AiWriter = {
             
             === INSTRUCCIONES DE IDIOMA MANDATORIAS ===
             1. 'visual_prompt' DEBE ESTAR ESCRITO AL 100% EN INGLÉS TÉCNICO, haciendo uso de etiquetas @ para referirse a los elementos estables.
-            2. 'narration_text' DEBE ESTAR ESCRITO AL 100% EN ESPAÑOL (Frase corta y contundente para cartela o voz en off de viñeta).
+            2. 'narration_text' DEBE ESTAR ESCRITO AL 100% EN ESPAÑOL. PROHIBIDO USAR EL SÍMBOLO @ O CUALQUIER ARROBA EN ESTE CAMPO. Escribe los nombres normales sin arroba.
             FORMATO JSON DE SALIDA:
             {
                 "takes": [
                     {
                         "visual_prompt": "Comic book illustration, static cinematic shot completely in ENGLISH integrating labels with @ for the main subject...",
-                        "narration_text": "Frase corta, dramática y contundente en ESPAÑOL para la narración."
+                        "narration_text": "Frase corta, dramática y contundente en ESPAÑOL sin el símbolo @"
                     }
                 ]
             }`;
@@ -339,7 +340,7 @@ const AiWriter = {
             while (attempts < maxAttempts) {
                 try {
                     if (attempts === 0) {
-                        rawComicRes = await ai.callModel(scriptPrompt, "Genera la escaleta de cómic separando el prompt visual en inglés y la narración corta en español.", currentTemperature, null);
+                        rawComicRes = await ai.callModel(scriptPrompt, "Genera la escaleta de cómic separando el prompt visual en inglés y la narración corta en español sin arrobas.", currentTemperature, null);
                     } else {
                         console.warn(`[REINTENTO CÓMIC JSON] Intento ${attempts + 1} de reparación...`);
                         const repairSystem = `Actúa como un depurador JSON de alta fidelidad. Repara el JSON roto provisto equilibrando comillas dobles y corchetes, manteniendo la estructura limpia sin texto exterior.`;
@@ -359,20 +360,20 @@ const AiWriter = {
             const nexusItems = (window.app && window.app.items) ? window.app.items : [];
             const newTakes = json.takes.map((t, idx) => {
                 let rawPrompt = t.visual_prompt || "Comic book style";
-
-                // Inyección anatómica centralizada
                 const injection = this._injectNexusLore(rawPrompt, nexusItems);
-
+                
                 let finalVisualPrompt = `Comic book panel, WIDE VIEW SCENE: ${injection.prompt}`;
                 if (injection.specs.length > 0) {
                     finalVisualPrompt += ` --- CHARACTER DETAILS: ${injection.specs.join(", ")}`;
                 }
 
+                const cleanNarration = (t.narration_text || "").replace(/@/g, '').trim();
+
                 return {
                     id: `comic-${Date.now()}-${idx}`,
                     sequence_order: idx + 1,
                     visual_prompt: finalVisualPrompt, 
-                    narration_text: t.narration_text,
+                    narration_text: cleanNarration,
                     duration: 3.0, 
                     video_file: null,
                     image_file: null,
@@ -389,7 +390,7 @@ const AiWriter = {
             EscaletaUI.renderTakes(EscaletaCore.data.takes);
             EscaletaUI.updateStats();
             EscaletaUI.toggleLoading(false);
-            alert(`Proceso Cómic completado con inyección de Nexus Saga.\n- Viñetas Generadas: ${newTakes.length}`);
+            alert(`Proceso Cómic completado con inyección de la Biblia Visual.\n- Viñetas Generadas: ${newTakes.length}`);
         } catch (e) {
             console.error(e);
             EscaletaUI.toggleLoading(false);
@@ -400,7 +401,6 @@ const AiWriter = {
     robustCleanAndFixJSON(str) {
         if (!str) return "{}";
         let clean = ai.cleanJSON(str).trim();
-        // Limpieza controlada de strings sin machacar escapes estructurales nativos
         clean = clean.replace(/"([^"\\]*(\\.[^"\\]*)*)"/g, function(match, p1) {
             return '"' + p1.replace(/[\r\n]+/g, " ").replace(/\s+/g, " ") + '"';
         });

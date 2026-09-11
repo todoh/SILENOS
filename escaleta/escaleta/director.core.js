@@ -1,10 +1,9 @@
 // --- cronologia/escaleta/director.core.js ---
-// NÚCLEO LÓGICO DE DIRECCIÓN (V6.8 - INYECCIÓN ANATÓMICA Y COMPRESIÓN SELECTIVA DIRECTA DESDE NEXUS SAGA)
-
+// NÚCLEO LÓGICO DE DIRECCIÓN (V6.9 - REEMPLAZO DE TOKENS @ Y CONEXIÓN CON COHERENCE ENGINE)
 const DirectorCore = {
     
     // =========================================================================
-    // FASE 1: PRE-PRODUCCIÓN (CONSOLIDACIÓN EN INGLÉS PASANDO POR ALTO LA CREACIÓN LOCAL)
+    // FASE 1: PRE-PRODUCCIÓN (CONSOLIDACIÓN EN INGLÉS)
     // =========================================================================
     async runPreProduction() {
         if (!ai.apiKey) return alert("Conecta la API Key primero (Botón 'Conectar IA').");
@@ -18,7 +17,6 @@ const DirectorCore = {
         try {
             const allTextSample = data.acts.map(a => a.text.substring(0, 1000)).join('\n');
             const safeContext = allTextSample.substring(0, 15000);
-
             const extractionPrompt = `
             ACTÚA COMO: Director de Casting de Hollywood, Supervisor de Arte Digital e Ingeniero Forense de Prompts.
             BIBLIA MANUAL DEL USUARIO (Prioridad Absoluta):
@@ -29,7 +27,7 @@ const DirectorCore = {
             
             TAREA:
             Consolida una Biblia Audiovisual "TEXT-TO-VIDEO / TEXT-TO-IMAGE OPTIMIZED" donde absolutamente TODO esté redactado en INGLÉS TÉCNICO.
-            - Si el usuario definió algo en la "Biblia Manual", tradúcelo, amplíalo e hiper-detállalo usando la estructura obligatoria de abajo.
+            - Si el usuario definió algo en la "Biblia Manual", tradúcelo, amplíalo e híper-detállalo usando la estructura obligatoria de abajo.
             
             ESTRUCTURA VISUAL OBLIGATORIA PARA PERSONAJES (DEBE ESTAR EN INGLÉS, SIN OMITIR NADA CON EXTREMO MIRAMIENTO POR EL DETALLE FACIAL):
             1. BASE SUBJECT: (e.g., "1man", "1girl") especifica etnia exacta, edad biológica precisa y complexión física (e.g., "mesomorphic build, angular features").
@@ -61,7 +59,6 @@ const DirectorCore = {
             }
             const newAssets = JSON.parse(cleanRes).assets || [];
             
-            // Inyectamos a la biblia local por compatibilidad de visualización del árbol NLE
             await CoherenceEngine.appendToBible(newAssets);
             
             EscaletaUI.toggleLoading(false);
@@ -95,10 +92,26 @@ const DirectorCore = {
                 previousAction = lastTakes[lastTakes.length - 1].video_file ? "Acción de video continua." : "Composición de imagen fija.";
             }
 
-            const availableAssets = (window.app && window.app.items) ? window.app.items.map(i => i.data.name).join(', ') : '';
+            // Recopilar todos los activos disponibles de CoherenceEngine y window.app.items
+            let assetList = [];
+            if (window.CoherenceEngine && CoherenceEngine.detectedKeys) {
+                CoherenceEngine.detectedKeys.forEach(k => {
+                    if (CoherenceEngine.inventory[k] && CoherenceEngine.inventory[k].originalName) {
+                        assetList.push(CoherenceEngine.inventory[k].originalName);
+                    }
+                });
+            }
+            if (window.app && window.app.items) {
+                window.app.items.forEach(i => {
+                    if (i.data && (i.data.name || i.data.title)) {
+                        assetList.push(i.data.name || i.data.title);
+                    }
+                });
+            }
+            const availableAssets = [...new Set(assetList)].join(', ');
+
             const audioGuidance = data.global.audioStyle ? `DIRECTRICES SONORAS GLOBALES: "${data.global.audioStyle}"` : "Ninguna.";
 
-            // Filtro idiomático previo de estilo global
             let translatedGlobalStyle = "cinematic setting";
             if (data.global.globalStyle && data.global.globalStyle.trim().length > 0) {
                 EscaletaUI.toggleLoading(true, "TRADUCIENDO PARÁMETROS", "Traduciendo el estilo visual global al inglés...");
@@ -116,29 +129,30 @@ const DirectorCore = {
             ACTÚA COMO: Un Guionista Técnico y Director de Cine cinematográfico experto en composición y prompts de difusión.
             INTERRUPTOR DE FORMATO MASTER: El usuario ha configurado el sistema en **MODO: ${outputMode.toUpperCase()}**.
             ${outputMode === 'video' ? 
-               `REGLA DE FORMATO (VIDEO): 'visual_prompt' debe plasmar una ESCENA CINEMÁTICA EN MOVIMIENTO CONTINUO. Describe trayectorias de cámara dinámicas, acciones físicas fluidas y transformaciones espaciales en tiempo real.` :
-               `REGLA DE FORMATO (IMAGE): 'visual_prompt' debe plasmar un FOTOGRAMA CLAVE ESTÁTICO (Keyframe Illustration / Graphic Novel Panel). Describe composiciones fijas, posturas corporales congeladas, planos americanos o de cuerpo entero ambientales, y congelación del espacio tridimensional para capturar el instante absoluto.`
+                `REGLA DE FORMATO (VIDEO): 'visual_prompt' debe plasmar una ESCENA CINEMÁTICA EN MOVIMIENTO CONTINUO. Describe trayectorias de cámara dinámicas, acciones físicas fluidas y transformaciones espaciales en tiempo real.` : 
+                `REGLA DE FORMATO (IMAGE): 'visual_prompt' debe plasmar un FOTOGRAMA CLAVE ESTÁTICO (Keyframe Illustration / Graphic Novel Panel). Describe composiciones fijas, posturas corporales congeladas, planos americanos o de cuerpo entero ambientales, y congelación del espacio tridimensional para capturar el instante absoluto.`
             }
+
             MEMORIA INYECTADA: ${contextStr}
-            ACCIÓÓN INMEDIATA ANTERIOR: "${previousAction}"
-            ACTIVOS DISPONIBLES: [${availableAssets}]
+            ACCIÓN INMEDIATA ANTERIOR: "${previousAction}"
+            ACTIVOS DISPONIBLES EN LA BIBLIA VISUAL: [${availableAssets}]
             ${audioGuidance}
             
             SINOPSIS DEL ACTO: "${act.synopsis}"
             GUION BASE: "${act.text.substring(0, 15000)}"
             
             === REGLAS ABSOLUTAS DE IDIOMA Y SINTAXIS JSON ===
-            1. 'visual_prompt' DEBE ESTAR COMPLETAMENTE EN INGLÉS. Prohibida cualquier palabra en español en este campo.
-            2. 'narration_text' DEBE ESTAR COMPLETAMENTE EN ESPAÑOL. Es la prosa fluida de voz en off.
+            1. 'visual_prompt' DEBE ESTAR COMPLETAMENTE EN INGLÉS. Utiliza las etiquetas @nombreidentificador para referirte a los personajes u objetos de la Biblia Visual (Ej: "@manuel walks near @puertodemotril...").
+            2. 'narration_text' DEBE ESTAR COMPLETAMENTE EN ESPAÑOL. QUEDA ESTRICTAMENTE PROHIBIDO USAR EL SÍMBOLO @ O CUALQUIER TOKEN CON ARROBA EN 'narration_text'. Escribe los nombres reales limpios sin arroba (Ej: "Manuel camina hacia el puerto...").
             3. NO INVENTES DIÁLOGOS ni textos literarios abstractos dentro de 'visual_prompt'.
             4. FILTRADO DE REPETICIONES: En 'visual_prompt', si un personaje va a realizar una acción, escribe su acción de forma directa, concisa y fluida sin repetir su identificador ni meter preámbulos.
             
             === REGLAS DE ARQUITECTURA VISUAL (ANTI-RETRATOS) ===
-            - COMPOSTURA DE ESCENA: Redacta la acción o composición de forma directa describiendo el entorno de fondo y la escala de plano amplia (*wide angle*, *medium full shot*, *environmental portrait*). Está estrictamente prohibido crear macros flotantes de rostros. NUNCA escribas nombres sin el tag @.
+            - COMPOSTURA DE ESCENA: Redacta la acción o composición de forma directa describiendo el entorno de fondo y la escala de plano amplia (*wide angle*, *medium full shot*, *environmental portrait*). Está estrictamente prohibido crear macros flotantes de rostros.
             
             INSTRUCCIONES DE DESGLOSE:
             1. Divide la escena en exactamente ${act.targetTakes} tomas secuenciales.
-            2. 'narration_text': Texto de locución fluido en ESPAÑOL.
+            2. 'narration_text': Texto de locución fluido en ESPAÑOL (sin el símbolo @ bajo ninguna circunstancia).
             3. 'visual_prompt': Acción o composición cinematográfica pura en INGLÉS integrando obligatoriamente las etiquetas @ de los activos participantes (Ej: "@manuel walks near the dark dock...").
             4. 'audio_mode': Decide el modo sonoro ('custom' para diálogos hablados, 'diegetic' para efectos puros).
             5. 'audio_custom_prompt': Si es 'custom', escribe el diálogo exacto en ESPAÑOL junto a los efectos clave.
@@ -146,11 +160,12 @@ const DirectorCore = {
             
             IMPORTANTE: RESPONDE SOLO CON EL JSON VÁLIDO. CERO EXPLICACIONES EXTERNAS.
             SALIDA JSON:
-            { "takes": [{ "visual_prompt": "Cinematic composition in ENGLISH with tags like @manuel...", "narration_text": "Texto completo en ESPAÑOL...", "audio_mode": "diegetic", "audio_custom_prompt": "", "audio_voice_lock": null }] }`;
+            { "takes": [{ "visual_prompt": "Cinematic composition in ENGLISH with tags like @manuel...", "narration_text": "Texto completo en ESPAÑOL sin arrobas...", "audio_mode": "diegetic", "audio_custom_prompt": "", "audio_voice_lock": null }] }`;
 
-            const dirRes = await ai.callModel(directorPrompt, "Genera la estructura cinemática o estática adaptada al interruptor de formato.", 0.4, null);
+            const dirRes = await ai.callModel(directorPrompt, "Genera la estructura cinematográfica o estática adaptada al interruptor de formato.", 0.4, null);
             
             EscaletaUI.updateProgressBar(45);
+
             let dirCleanRes = ai.cleanJSON(dirRes);
             const dirLastBrace = dirCleanRes.lastIndexOf('}');
             if (dirLastBrace !== -1) dirCleanRes = dirCleanRes.substring(0, dirLastBrace + 1);
@@ -164,9 +179,9 @@ const DirectorCore = {
             if (!sceneStructure.takes || sceneStructure.takes.length === 0) throw new Error("Estructura JSON no contiene array de tomas.");
 
             // =================================================================================
-            // CROSS-REFERENCING FORENSE COHERENTE CON NEXUS SAGA window.app.items
+            // CROSS-REFERENCING Y COMPILACIÓN UNIFICADA DESDE COHERENCE ENGINE Y NEXUS
             // =================================================================================
-            EscaletaUI.toggleLoading(true, `RODANDO ACTO ${actIndex + 1} (COMPILACIÓN)`, `Inyectando firmas desde window.app.items de Nexus Saga...`);
+            EscaletaUI.toggleLoading(true, `RODANDO ACTO ${actIndex + 1} (COMPILACIÓN)`, `Inyectando firmas visuales desde VISUAL_BIBLE.json...`);
             EscaletaUI.updateProgressBar(50);
             
             const currentTotal = EscaletaCore.data.takes.length;
@@ -178,9 +193,37 @@ const DirectorCore = {
                 globalStyleModifiers = ` --- STYLE: Masterful cinematic keyframe photograph, (${translatedGlobalStyle}:1.1), static crisp composition, environmental portrait view, full body capture, architectural alignment, 8k resolution`;
             }
 
-            const nexusItems = (window.app && window.app.items) ? window.app.items : [];
-            const newTakes = [];
+            // Mapeo exhaustivo de activos de CoherenceEngine + window.app.items
+            const allAssetsMap = new Map();
 
+            if (window.CoherenceEngine && CoherenceEngine.inventory) {
+                Object.keys(CoherenceEngine.inventory).forEach(key => {
+                    const item = CoherenceEngine.inventory[key];
+                    if (item && item.originalName && item.visual) {
+                        const normKey = item.originalName.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        allAssetsMap.set(normKey, {
+                            name: item.originalName,
+                            visualDesc: item.visual
+                        });
+                    }
+                });
+            }
+
+            if (window.app && window.app.items && Array.isArray(window.app.items)) {
+                window.app.items.forEach(item => {
+                    const nameKey = item.data?.name || item.data?.title;
+                    const descriptionValue = item.data?.visualDesc || item.data?.desc || "";
+                    if (nameKey && descriptionValue) {
+                        const normKey = nameKey.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        allAssetsMap.set(normKey, {
+                            name: nameKey,
+                            visualDesc: descriptionValue
+                        });
+                    }
+                });
+            }
+
+            const newTakes = [];
             for (let idx = 0; idx < sceneStructure.takes.length; idx++) {
                 const t = sceneStructure.takes[idx];
                 const isFirstOfAct = idx === 0;
@@ -192,52 +235,48 @@ const DirectorCore = {
                     rawPrompt = (outputMode === 'video' ? "Cinematic wide shot, " : "Cinematic environmental portrait, ") + rawPrompt;
                 }
 
-                // Inyección anatómica trasera unificada cruzando con window.app.items
-                nexusItems.forEach(item => {
-                    const nameKey = item.data.name || item.data.title;
-                    if (!nameKey) return;
+                // Inyección anatómica de la Biblia Visual y reemplazo de tokens @ por el Nombre Real
+                allAssetsMap.forEach((asset, normKey) => {
+                    const nameKey = asset.name;
+                    const descriptionValue = asset.visualDesc;
+                    if (!nameKey || !descriptionValue) return;
 
-                    const cleanKey = nameKey.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
-                    const descriptionValue = item.data.visualDesc || item.data.desc || "";
+                    let cleanDesc = String(descriptionValue).replace(/(\r\n|\n|\r)/gm, " ").trim();
+                    cleanDesc = cleanDesc.replace(/RGB:\s*\[?[0-9\s,]+\]?/gi, '');
+                    cleanDesc = cleanDesc.replace(/biological age \d+,?/gi, '');
+                    cleanDesc = cleanDesc.replace(/exhibiting subtle discoloration and minor abrasions consistent with prolonged exposure to corrosive environments/gi, 'weathered');
+                    cleanDesc = cleanDesc.replace(/micro fine wrinkles concentrated around the orbital and nasocial folds/gi, 'subtle facial wrinkles');
+                    cleanDesc = cleanDesc.replace(/individual strands exhibiting realistic curl and movement under simulated wind conditions/gi, '');
+                    cleanDesc = cleanDesc.replace(/\s+/g, ' ').trim();
 
-                    if (descriptionValue) {
-                        let cleanDesc = String(descriptionValue).replace(/(\r\n|\n|\r)/gm, " ").trim();
-                        
-                        // Compresión forense trasera anti-saturación de tokens redundantes
-                        cleanDesc = cleanDesc.replace(/RGB:\s*\[?[0-9\s,]+\]?/gi, '');
-                        cleanDesc = cleanDesc.replace(/biological age \d+,?/gi, '');
-                        cleanDesc = cleanDesc.replace(/exhibiting subtle discoloration and minor abrasions consistent with prolonged exposure to corrosive environments/gi, 'weathered');
-                        cleanDesc = cleanDesc.replace(/micro fine wrinkles concentrated around the orbital and nasocial folds/gi, 'subtle facial wrinkles');
-                        cleanDesc = cleanDesc.replace(/individual strands exhibiting realistic curl and movement under simulated wind conditions/gi, '');
-                        cleanDesc = cleanDesc.replace(/\s+/g, ' ').trim();
+                    const tokenStr = `@${normKey}`;
+                    const escapedName = nameKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const rxToken = new RegExp(`@${normKey}\\b|@${escapedName.replace(/\s+/g, '')}\\b`, "gi");
+                    const rxRawName = new RegExp(`\\b${escapedName}\\b`, "gi");
 
-                        const tokenStr = `@${cleanKey}`;
-                        const rxRawName = new RegExp(`\\b${nameKey}\\b`, "gi");
-                        let isPresent = false;
+                    let isPresent = false;
 
-                        if (rawPrompt.toLowerCase().includes(tokenStr)) {
-                            rawPrompt = rawPrompt.replace(new RegExp(tokenStr, "gi"), nameKey);
-                            isPresent = true;
-                        } else if (rxRawName.test(rawPrompt)) {
-                            rawPrompt = rawPrompt.replace(rxRawName, nameKey);
-                            isPresent = true;
-                        }
+                    // Reemplazo del token @personaje por el Nombre Real
+                    if (rxToken.test(rawPrompt)) {
+                        rawPrompt = rawPrompt.replace(rxToken, nameKey);
+                        isPresent = true;
+                    } else if (rawPrompt.toLowerCase().includes(tokenStr)) {
+                        rawPrompt = rawPrompt.replace(new RegExp(tokenStr, "gi"), nameKey);
+                        isPresent = true;
+                    } else if (rxRawName.test(rawPrompt)) {
+                        isPresent = true;
+                    }
 
-                        if (isPresent) {
-                            characterSpecs.push(`[${nameKey.toUpperCase()}: ${cleanDesc}]`);
-                        }
+                    if (isPresent) {
+                        characterSpecs.push(`[${nameKey.toUpperCase()}: ${cleanDesc}]`);
                     }
                 });
 
-                // Limpieza de redundancia inline
-                nexusItems.forEach(item => {
-                    const nameKey = item.data.name || item.data.title;
-                    if (!nameKey) return;
-                    const rxDuplicateCheck = new RegExp(`${nameKey}\\s+is\\s+${nameKey}`, 'gi');
-                    if (rxDuplicateCheck.test(rawPrompt)) {
-                        rawPrompt = rawPrompt.replace(rxDuplicateCheck, nameKey);
-                    }
-                });
+                // Eliminar cualquier @ residual en el prompt visual
+                rawPrompt = rawPrompt.replace(/@([a-zA-Z0-9_]+)/g, '$1').replace(/@/g, '');
+
+                // Limpieza de seguridad en la narración para la IA de locución
+                let cleanNarrationText = (t.narration_text || "Narración de escena.").replace(/@/g, '').trim();
 
                 let finalVisualPrompt = `ACTION COMPOSITION: ${rawPrompt}${globalStyleModifiers}`;
                 if (characterSpecs.length > 0) {
@@ -251,15 +290,15 @@ const DirectorCore = {
                     sequence_order: currentTotal + idx + 1,
                     visual_prompt: finalVisualPrompt, 
                     negative_prompt: finalNegativePrompt,
-                    narration_text: t.narration_text || "Narración de escena.", 
+                    narration_text: cleanNarrationText, 
                     duration: 5.0,
                     video_file: null,
                     image_file: null,
                     audio_file: null,
                     act_marker: isFirstOfAct ? `INICIO ACTO ${actIndex + 1}: ${act.title || 'Sin Título'}` : null,
                     audio_mode: t.audio_mode === 'custom' ? 'custom' : 'diegetic',
-                    audio_custom_prompt: t.audio_custom_prompt || '',
-                    audio_voice_lock: t.audio_voice_lock || ''
+                    audio_custom_prompt: (t.audio_custom_prompt || '').replace(/@/g, ''),
+                    audio_voice_lock: (t.audio_voice_lock || '').replace(/@/g, '')
                 });
 
                 const progressPercent = 50 + Math.round((idx + 1) / sceneStructure.takes.length * 50);
@@ -284,11 +323,13 @@ const DirectorCore = {
     async runAllActs() {
         const data = DirectorUI.getFormData();
         if (!confirm(`Se generarán y refinarán los prompts de ${data.acts.length} actos en formato ${data.global.outputMode.toUpperCase()}. ¿Continuar?`)) return;
+        
         for (let i = 0; i < data.acts.length; i++) {
             await this.generateAct(i);
             await new Promise(r => setTimeout(r, 2000));
         }
-        alert("¡Rodaje Automático y Refinado Finalizado con Datos de Nexus Saga!");
+        
+        alert("¡Rodaje Automático y Refinado Finalizado con Datos de la Biblia Visual!");
         DirectorUI.toggleModal(); 
     }
 };
