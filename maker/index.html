@@ -27,7 +27,7 @@
     <button class="btn active" id="btn-mode-edit">✏️ Editor</button>
     <button class="btn" id="btn-mode-play">▶️ Jugar</button>
     
-    <button class="btn" id="btn-open-gemini-config" title="Configuración de Gemini API" style="display: none; margin-left: 8px; padding: 6px 10px;">
+    <button class="btn" id="btn-open-gemini-config" title="Configuración de Gemini API" style=" margin-left: 8px; padding: 6px 10px;">
         🔑 Config Gemini
     </button>
 </div>
@@ -60,7 +60,7 @@
             <div class="sidebar-title">Elementos Guardados</div>
             <button class="btn" id="btn-save-copied-element" style="background: var(--accent-blue); color: white; border-color: var(--accent-blue); font-weight: 600;">💾 Guardar Elemento Copiado</button>
             <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 2px 0;">
-            <div id="saved-elements-list" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; align-content: start; width: 100%; box-sizing: border-box;"></div>
+            <div id="saved-elements-list" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-content: start;"></div>
         </div>
         
         <div id="view-inventory-config" style="display: none; flex-direction: column; height: 100%; padding: 12px; gap: 12px; overflow-y: auto;">
@@ -528,6 +528,7 @@
 <script src="export.js"></script>
 <script src="main.js"></script>
 <script src="inventory.js"></script>
+<script src="item-effects-construction.js"></script>
 <script src="stats.js"></script>
 <script src="elements.js"></script>
 <script src="context-menu.js"></script>

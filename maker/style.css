@@ -573,7 +573,10 @@ body {
     will-change: transform, left, top, width, height;
     transition: border-color 0.2s ease;
 }
-
+ .stage-element {
+    position: absolute;
+    transform-origin: bottom center;
+}
 .stage-element img {
     width: 100%;
     height: 100%;

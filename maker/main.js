@@ -9,18 +9,15 @@ const CAMERA_SETTINGS = {
 
 let playModeBackup = null;
 let cachedViewportDimensions = { width: 0, height: 0 };
-// Variables de caché para optimización del bucle de cámara
 let _lastStageTransform = '';
 let _lastStageWidth = '';
 let _lastStageHeight = '';
 
-// --- CONTADOR DE FPS EN MODO JUGAR ---
 let fpsFrameCount = 0;
 let fpsLastTime = performance.now();
 let currentFPS = 0;
 let fpsElement = null;
 
-// Obtener la resolución base configurada del proyecto
 function getBaseResolution() {
     const baseW = (projectData && projectData.baseWidth) ? parseInt(projectData.baseWidth, 10) : 1920;
     const baseH = (projectData && projectData.baseHeight) ? parseInt(projectData.baseHeight, 10) : 1080;
@@ -54,7 +51,6 @@ function getCanvasWorldCoordinates(e) {
     const vw = cachedViewportDimensions.width || viewport.clientWidth || window.innerWidth;
     const vh = cachedViewportDimensions.height || viewport.clientHeight || window.innerHeight;
     
-    // Referencia fija de encuadre
     const refWidth = 1920;
     const refHeight = 1080;
     const baseScale = Math.min(vw / refWidth, vh / refHeight);
@@ -133,7 +129,7 @@ function updateFPSCounter() {
     const now = performance.now();
     const delta = now - fpsLastTime;
     
-    if (delta >= 500) { // Actualiza cada 500ms
+    if (delta >= 500) {
         currentFPS = Math.round((fpsFrameCount * 1000) / delta);
         if (fpsElement) {
             fpsElement.textContent = `FPS: ${currentFPS}`;
@@ -176,7 +172,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- LÓGICA MODAL AJUSTES DE RESOLUCIÓN BASE ---
     const btnOpenSettings = document.getElementById('btn-open-settings');
     const settingsModal = document.getElementById('settings-modal');
     const settingsModalClose = document.getElementById('settings-modal-close');
@@ -192,7 +187,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const { baseWidth, baseHeight } = getBaseResolution();
             if (inputBaseW) inputBaseW.value = baseWidth;
             if (inputBaseH) inputBaseH.value = baseHeight;
-
             const resStr = `${baseWidth}x${baseHeight}`;
             const matchingOpt = selectBaseRes ? Array.from(selectBaseRes.options).find(o => o.value === resStr) : null;
             if (matchingOpt) {
@@ -245,7 +239,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             projectData.baseWidth = Math.max(100, w);
             projectData.baseHeight = Math.max(100, h);
-
             if (typeof autoSaveJSON === 'function') autoSaveJSON();
             resetCamera();
             fitStage(true);
@@ -316,7 +309,6 @@ function setMode(play) {
         if (btnModePlay) btnModePlay.classList.add('active');
         if (gameUI) gameUI.style.display = 'block';
         
-        // --- INICIALIZAR Y MOSTRAR FPS EN MODO JUGAR ---
         initFPSCounter();
         if (fpsElement) fpsElement.style.display = 'block';
         fpsFrameCount = 0;
@@ -334,7 +326,6 @@ function setMode(play) {
             movementEngine.init();
         }
     } else {
-        // --- OCULTAR FPS EN MODO EDITOR ---
         if (fpsElement) fpsElement.style.display = 'none';
         if (typeof movementEngine !== 'undefined') {
             movementEngine.stop();
@@ -390,6 +381,9 @@ function resetCamera() {
 function fitStage(instantCamera = false) {
     if (isPlayMode) {
         updateFPSCounter();
+        if (inventoryManager.isMenuOpen) {
+            inventoryManager.updateMenuPosition();
+        }
     }
     
     const stage = document.getElementById('stage');
@@ -424,13 +418,10 @@ function fitStage(instantCamera = false) {
     const vw = cachedViewportDimensions.width || window.innerWidth;
     const vh = cachedViewportDimensions.height || window.innerHeight;
     
-    // Mantenemos la referencia fija de encuadre en 1920x1080
-    // para que el campo de visión (FOV) no cambie
     const refWidth = 1920;
     const refHeight = 1080;
     const framingScale = Math.min(vw / refWidth, vh / refHeight);
     
-    // Aplicamos renderizado pixelado según la resolución base elegida
     const { baseWidth, baseHeight } = getBaseResolution();
     const isLowRes = (baseWidth < 1920 || baseHeight < 1080);
     
@@ -565,6 +556,35 @@ function setupCameraControls() {
         const isRightClick = e.button === 2;
         const isMiddleClick = e.button === 1;
         const isShiftLeftClick = e.button === 0 && e.shiftKey;
+
+        if (isPlayMode && isRightClick) {
+            const coords = getCanvasWorldCoordinates(e);
+            const scene = projectData.scenes ? projectData.scenes[currentSceneId] : null;
+            const player = scene && scene.elements ? scene.elements.find(el => el.isPlayer) : null;
+            if (player) {
+                const inBounds = coords.clickX >= player.x && 
+                                 coords.clickX <= player.x + player.width && 
+                                 coords.clickY >= player.y && 
+                                 coords.clickY <= player.y + player.height;
+                
+                let isPlayerClick = inBounds;
+                if (inBounds && typeof isPixelOpaque === 'function') {
+                    try {
+                        const opaque = isPixelOpaque(player, coords.clickX, coords.clickY);
+                        if (opaque !== false) isPlayerClick = true;
+                    } catch (err) {
+                        isPlayerClick = inBounds;
+                    }
+                }
+
+                if (isPlayerClick) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    inventoryManager.togglePlayerMenu();
+                    return;
+                }
+            }
+        }
         
         if (isPlayMode && isRightClick && isIsometricView) {
             isRotatingCamera = true;
@@ -721,7 +741,7 @@ function handleEntityInteraction(elem) {
         }
     }
     
-    renderStage(true);
+    renderStage(false);
     
     if (elem.targetScene && projectData.scenes[elem.targetScene]) {
         changeSceneWithTransition(elem.targetScene, elem.targetX, elem.targetY);

@@ -1,5 +1,4 @@
 // export.js - MÓDULO EXCLUSIVO PARA LA EXPORTACIÓN DEL JUEGO AUTOEJECUTABLE (.HTML)
-
 function exportStandaloneHTML() {
     const usedAssetKeys = new Set();
     
@@ -22,7 +21,6 @@ function exportStandaloneHTML() {
             }
         });
     }
-
     if (projectData.savedElementsConfig) {
         Object.values(projectData.savedElementsConfig).forEach(savedElem => {
             if (!savedElem.isText && savedElem.image) {
@@ -30,7 +28,6 @@ function exportStandaloneHTML() {
             }
         });
     }
-
     if (projectData.itemsConfig) {
         Object.values(projectData.itemsConfig).forEach(item => {
             if (item.imageAsset) {
@@ -38,23 +35,20 @@ function exportStandaloneHTML() {
             }
         });
     }
-
     const assetsData = {};
     usedAssetKeys.forEach(key => {
         if (assetsMap[key] && assetsMap[key].dataUrl) {
             assetsData[key] = assetsMap[key].dataUrl;
         }
     });
-
     const runtimeScript = `
         const CAMERA_SETTINGS = {
             minPitch: 40,
             maxPitch: 88,
             headScreenOffsetPx: 350,
             zoomLerp: 0.12,
-            cameraLerp: 0.15
+            cameraLerp: 0.08
         };
-
         const projectData = ` + JSON.stringify(projectData) + `;
         const assetsData = ` + JSON.stringify(assetsData) + `;
         const canvasCache = {};
@@ -62,7 +56,7 @@ function exportStandaloneHTML() {
         let gameState = { variables: {} };
         let cameraState = { zoom: 1, targetZoom: 1, focusX: 0, focusY: 0, panX: 0, panY: 0, minZoom: 0.5, maxZoom: 3.0 };
         const isPlayMode = true;
-        const isIsometricView = false;
+        let isIsometricView = false;
         let cachedViewportDimensions = { width: 0, height: 0 };
 
         function updateViewportCache() {
@@ -71,6 +65,23 @@ function exportStandaloneHTML() {
                 cachedViewportDimensions.width = viewport.clientWidth;
                 cachedViewportDimensions.height = viewport.clientHeight;
             }
+        }
+
+        function togglePerspectiveMode() {
+            isIsometricView = !isIsometricView;
+            const btn = document.getElementById('view-toggle-btn');
+            if (btn) {
+                btn.textContent = isIsometricView ? 'Modo: 2.5D' : 'Modo: 2D';
+                btn.classList.toggle('active', isIsometricView);
+            }
+            if (isIsometricView) {
+                if (cameraState.pitch === undefined || cameraState.pitch === 0) {
+                    cameraState.pitch = 60;
+                }
+            } else {
+                cameraState.pitch = 0;
+            }
+            renderStage(false);
         }
 
         function getStageDimensions() {
@@ -308,7 +319,7 @@ function exportStandaloneHTML() {
             setupHoldClickListeners() {
                 window.addEventListener('mousedown', (e) => {
                     if (e.button !== 0 || e.shiftKey) return;
-                    if (e.target.closest('#game-ui') || e.target.closest('#inventory-bar') || e.target.closest('#dialog-box')) {
+                    if (e.target.closest('#game-ui') || e.target.closest('#inventory-bar') || e.target.closest('#dialog-box') || e.target.closest('#view-toggle-btn')) {
                         return;
                     }
                     const stage = document.getElementById('stage');
@@ -360,7 +371,7 @@ function exportStandaloneHTML() {
                 const w = elem.collisionW !== undefined ? elem.collisionW : elem.width;
                 const h = elem.collisionH !== undefined ? elem.collisionH : elem.height;
                 const offX = elem.collisionX !== undefined ? elem.collisionX : Math.round((elem.width - w) / 2);
-                const offY = elem.collisionY !== undefined ? elem.collisionY : (elem.height - h);
+                const offY = elem.collisionY !== undefined ? elem.collisionY : (elem.height - offH);
                 return {
                     x: overrideX + offX,
                     y: overrideY + offY,
@@ -565,13 +576,13 @@ function exportStandaloneHTML() {
                             this.updatePosition();
                         }
                         if (typeof fitStage === 'function') {
-                            fitStage();
+                            fitStage(false);
                         }
                         this.checkProximityTriggers();
                         this.checkPassiveTriggers();
                     } else {
                         if (typeof fitStage === 'function') {
-                            fitStage();
+                            fitStage(false);
                         }
                     }
                     this.updateEntitiesMovement();
@@ -799,14 +810,34 @@ function exportStandaloneHTML() {
                     }
                 });
             }
+            
             syncElementDOM(elem) {
                 if (!elem) return;
                 const el = document.getElementById('stage-el-' + elem.id);
-                if (el) {
-                    el.style.left = elem.x + 'px';
-                    el.style.top = elem.y + 'px';
-                    const bottomY = Math.round(elem.y + elem.height);
-                    el.style.zIndex = 100 + bottomY;
+                if (!el) return;
+                const posX = Math.round(elem.x);
+                const posY = Math.round(elem.y);
+                el.style.left = posX + 'px';
+                el.style.top = posY + 'px';
+                const bottomY = Math.round(elem.y + elem.height);
+                el.style.zIndex = 100 + bottomY;
+                const rot = elem.rotation || 0;
+                const yaw = (typeof cameraState !== 'undefined' && cameraState.rotation !== undefined) ? cameraState.rotation : 0;
+                const billboardMode = elem.billboardMode || 'camera';
+                if (isIsometricView) {
+                    if (elem.type === 'fondo' || billboardMode === 'flat' || billboardMode === 'plano' || billboardMode === 'suelo') {
+                        el.style.transform = 'rotate(' + rot + 'deg)';
+                    } else if (billboardMode === 'cross_x') {
+                        el.style.transform = 'rotateX(-90deg) rotate(' + rot + 'deg)';
+                    } else if (billboardMode === 'fixed') {
+                        el.style.transform = 'rotateX(-90deg) rotate(' + rot + 'deg)';
+                    } else if (billboardMode === 'muro' || billboardMode === 'wall') {
+                        el.style.transform = 'rotate(' + rot + 'deg)';
+                    } else {
+                        el.style.transform = 'rotateX(-90deg) rotateZ(' + (-yaw) + 'deg) rotate(' + rot + 'deg)';
+                    }
+                } else {
+                    el.style.transform = 'rotate(' + rot + 'deg)';
                 }
             }
         }
@@ -840,41 +871,31 @@ function exportStandaloneHTML() {
             const fx = cameraState.focusX !== undefined ? cameraState.focusX : (dim.width / 2);
             const fy = cameraState.focusY !== undefined ? cameraState.focusY : (dim.height / 2);
             
-            const is3DView = isIsometricView || (cameraState.pitch !== undefined && cameraState.pitch !== 0) || (cameraState.rotation !== undefined && cameraState.rotation !== 0);
-            const pitch = is3DView ? (cameraState.pitch !== undefined ? cameraState.pitch : (isIsometricView ? 60 : 0)) : 0;
-            const yaw = is3DView ? (cameraState.rotation !== undefined ? cameraState.rotation : 0) : 0;
-
+            const pitch = isIsometricView ? (cameraState.pitch !== undefined ? cameraState.pitch : 60) : 0;
+            const yaw = isIsometricView ? (cameraState.rotation !== undefined ? cameraState.rotation : 0) : 0;
             const screenOffsetY = getScreenOffsetY();
             const dyCenter = mouseY - (vh / 2);
             const perspectiveD = 1200;
-
             let X2, Y2;
-
-            if (is3DView && Math.abs(pitch) > 0.1) {
+            if (isIsometricView && Math.abs(pitch) > 0.1) {
                 const pitchRad = pitch * (Math.PI / 180);
                 const sinPitch = Math.sin(pitchRad);
                 const cosPitch = Math.cos(pitchRad);
-
                 let denomY = perspectiveD * cosPitch + dyCenter * sinPitch;
                 if (Math.abs(denomY) < 0.001) denomY = 0.001 * (denomY < 0 ? -1 : 1);
-
                 Y2 = (perspectiveD * (dyCenter - screenOffsetY)) / (finalScale * denomY);
                 X2 = ((mouseX - (vw / 2)) * (perspectiveD - finalScale * Y2 * sinPitch)) / (perspectiveD * finalScale);
             } else {
                 X2 = (mouseX - (vw / 2)) / finalScale;
                 Y2 = (dyCenter - screenOffsetY) / finalScale;
             }
-
             const yawRad = yaw * (Math.PI / 180);
             const cosYaw = Math.cos(yawRad);
             const sinYaw = Math.sin(yawRad);
-
             const worldDx = X2 * cosYaw + Y2 * sinYaw;
             const worldDy = -X2 * sinYaw + Y2 * cosYaw;
-
             const clickX = Math.round(fx + worldDx);
             const clickY = Math.round(fy + worldDy);
-
             return { clickX, clickY, finalScale };
         }
 
@@ -920,12 +941,14 @@ function exportStandaloneHTML() {
                     const targetPitch = CAMERA_SETTINGS.minPitch + (CAMERA_SETTINGS.maxPitch - CAMERA_SETTINGS.minPitch) * zoomRatio;
                     if (cameraState.pitch === undefined) cameraState.pitch = 60;
                     cameraState.pitch += (targetPitch - cameraState.pitch) * CAMERA_SETTINGS.zoomLerp;
+                } else {
+                    cameraState.pitch = 0;
                 }
                 const targetFocusX = player.x + (player.width / 2);
                 const targetFocusY = player.y + player.height;
                 screenOffsetY = CAMERA_SETTINGS.headScreenOffsetPx * zoomRatio;
                 
-                if (instantCamera || (cameraState.focusX === dim.width / 2 && cameraState.focusY === dim.height / 2)) {
+                if (instantCamera) {
                     cameraState.focusX = targetFocusX;
                     cameraState.focusY = targetFocusY;
                 } else {
@@ -933,7 +956,6 @@ function exportStandaloneHTML() {
                     cameraState.focusY += (targetFocusY - cameraState.focusY) * CAMERA_SETTINGS.cameraLerp;
                 }
             }
-
             const fx = cameraState.focusX;
             const fy = cameraState.focusY;
             const pitch = isIsometricView ? (cameraState.pitch !== undefined ? cameraState.pitch : 60) : 0;
@@ -971,9 +993,10 @@ function exportStandaloneHTML() {
                 const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
                 const currentTarget = cameraState.targetZoom !== undefined ? cameraState.targetZoom : cameraState.zoom;
                 cameraState.targetZoom = Math.max(cameraState.minZoom, Math.min(cameraState.maxZoom, currentTarget * zoomFactor));
-                fitStage();
+                fitStage(false);
             }, { passive: false });
             viewport.addEventListener('mousedown', (e) => {
+                if (e.target.closest('#view-toggle-btn')) return;
                 if (e.button === 1 || (e.button === 0 && e.shiftKey) || e.button === 2) {
                     isPanning = true;
                     startPanX = e.clientX;
@@ -991,7 +1014,7 @@ function exportStandaloneHTML() {
                     const refHeight = 1080;
                     const baseScale = Math.min(vw / refWidth, vh / refHeight);
                     const finalScale = baseScale * cameraState.zoom;
-                    const pitch = cameraState.pitch !== undefined ? cameraState.pitch : 60;
+                    const pitch = isIsometricView ? (cameraState.pitch !== undefined ? cameraState.pitch : 60) : 0;
                     const cosAngle = Math.max(0.1, Math.cos(pitch * Math.PI / 180));
                     const deltaX = (e.clientX - startPanX) / finalScale;
                     const deltaY = (e.clientY - startPanY) / (finalScale * cosAngle);
@@ -999,7 +1022,7 @@ function exportStandaloneHTML() {
                     cameraState.focusY -= deltaY;
                     startPanX = e.clientX;
                     startPanY = e.clientY;
-                    fitStage();
+                    fitStage(false);
                 });
             });
             window.addEventListener('mouseup', () => {
@@ -1022,8 +1045,8 @@ function exportStandaloneHTML() {
             stage.style.height = dim.height + 'px';
             stage.innerHTML = '';
             if (fadeOverlay) stage.appendChild(fadeOverlay);
-            const pitch = cameraState.pitch !== undefined ? cameraState.pitch : 60;
-            const yaw = cameraState.rotation !== undefined ? cameraState.rotation : 0;
+            const pitch = isIsometricView ? (cameraState.pitch !== undefined ? cameraState.pitch : 60) : 0;
+            const yaw = isIsometricView ? (cameraState.rotation !== undefined ? cameraState.rotation : 0) : 0;
             
             if (isIsometricView) {
                 stage.classList.add('is-mode-7');
@@ -1046,10 +1069,14 @@ function exportStandaloneHTML() {
                 const el = document.createElement('div');
                 el.className = 'stage-element layer-' + elem.type + (elem.isText ? ' text-element' : '');
                 el.id = 'stage-el-' + elem.id;
-                el.style.left = elem.x + 'px';
-                el.style.top = elem.y + 'px';
+                
+                const posX = Math.round(elem.x);
+                const posY = Math.round(elem.y);
+                el.style.left = posX + 'px';
+                el.style.top = posY + 'px';
                 el.style.width = elem.width + 'px';
                 el.style.height = elem.height + 'px';
+                
                 const baseRotation = elem.rotation || 0;
                 const billboardMode = elem.billboardMode || 'camera';
                 
@@ -1078,14 +1105,12 @@ function exportStandaloneHTML() {
                 } else {
                     el.style.transform = 'rotate(' + baseRotation + 'deg)';
                 }
-
                 if (elem.type === 'fondo') {
                     el.style.zIndex = 10;
                 } else {
                     const bottomY = Math.round((elem.y || 0) + (elem.height || 0));
                     el.style.zIndex = 100 + bottomY;
                 }
-
                 if (isIsometricView && elem.type !== 'fondo' && (billboardMode === 'muro' || billboardMode === 'wall') && !elem.isText) {
                     const assetDataUrl = assetsData[elem.image] || elem.image;
                     const W = elem.width;
@@ -1142,7 +1167,7 @@ function exportStandaloneHTML() {
             stage.dataset.pixelClickAttached = "true";
             stage.addEventListener('click', (e) => {
                 if (e.shiftKey) return;
-                if (e.target.closest('#game-ui') || e.target.closest('#inventory-bar') || e.target.closest('#dialog-box')) return;
+                if (e.target.closest('#game-ui') || e.target.closest('#inventory-bar') || e.target.closest('#dialog-box') || e.target.closest('#view-toggle-btn')) return;
                 const { clickX, clickY } = getCanvasWorldCoordinates(e);
                 const scene = projectData.scenes[currentSceneId];
                 if (!scene) return;
@@ -1300,7 +1325,7 @@ function exportStandaloneHTML() {
                     }, 10);
                 }
             }
-            renderStage(true);
+            renderStage(false);
             if (elem.targetScene && projectData.scenes[elem.targetScene]) {
                 changeSceneWithTransition(elem.targetScene, elem.targetX, elem.targetY);
             }
@@ -1344,7 +1369,7 @@ function exportStandaloneHTML() {
                 }
                 currentSceneId = targetSceneId;
                 resetCamera();
-                renderStage(true);
+                renderStage(false);
                 setTimeout(() => {
                     if (fadeOverlay) fadeOverlay.style.opacity = '0';
                 }, 50);
@@ -1353,7 +1378,7 @@ function exportStandaloneHTML() {
 
         window.addEventListener('resize', () => {
             updateViewportCache();
-            fitStage();
+            fitStage(false);
         });
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -1364,11 +1389,11 @@ function exportStandaloneHTML() {
             if (viewport && typeof ResizeObserver !== 'undefined') {
                 const ro = new ResizeObserver(() => {
                     updateViewportCache();
-                    fitStage();
+                    fitStage(false);
                 });
                 ro.observe(viewport);
             }
-            renderStage(true);
+            renderStage(false);
             inventoryManager.render();
         });
     `;
@@ -1433,7 +1458,6 @@ function exportStandaloneHTML() {
         .stage-element {
             position: absolute;
             transform-origin: bottom center;
-            will-change: transform, left, top;
         }
         .stage-element.text-element {
             display: flex;
@@ -1456,6 +1480,34 @@ function exportStandaloneHTML() {
             pointer-events: none;
             z-index: 100000;
             display: block;
+        }
+        #view-toggle-btn {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            pointer-events: auto;
+            z-index: 100001;
+            background: rgba(0, 0, 0, 0.75);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease;
+        }
+        #view-toggle-btn:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: scale(1.04);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        #view-toggle-btn.active {
+            background: #0071e3;
+            border-color: rgba(255, 255, 255, 0.4);
         }
         #dialog-box {
             position: absolute;
@@ -1614,6 +1666,7 @@ function exportStandaloneHTML() {
     <div id="viewport-container">
         <div id="stage"></div>
         <div id="game-ui">
+            <button id="view-toggle-btn" onclick="togglePerspectiveMode()">Modo: 2D</button>
             <div id="inventory-bar"></div>
             <div id="dialog-box">
                 <p id="dialog-text"></p>
@@ -1626,7 +1679,6 @@ function exportStandaloneHTML() {
     </script>
 </body>
 </html>`;
-
     const blob = new Blob([htmlTemplate], { type: 'text/html' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);

@@ -10,6 +10,7 @@ class MovementEntities {
             if (elem.isPlayer || elem.type !== 'entidad' || !checkCondition(elem.condition)) {
                 return;
             }
+
             if (elem.movePattern === 'random') {
                 MovementEntities.handleRandomWander(engine, elem, entitySpeed, now);
             } else if (elem.movePattern === 'waypoints') {
@@ -115,6 +116,7 @@ class MovementEntities {
                         currentIndex++;
                     }
                 }
+
                 engine.entityWaypointIndex.set(elem.id, currentIndex);
                 engine.entityWaypointDirection.set(elem.id, direction);
             });
@@ -126,6 +128,11 @@ class MovementEntities {
         const dx = target.x - elem.x;
         const dy = target.y - elem.y;
         const distance = Math.hypot(dx, dy);
+
+        if (distance > 0.1) {
+            const rad = Math.atan2(dy, dx);
+            elem.rotation = Math.round(rad * (180 / Math.PI));
+        }
 
         if (distance <= speed) {
             elem.x = target.x;
