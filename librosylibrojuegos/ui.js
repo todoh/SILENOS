@@ -1,4 +1,5 @@
-// ui.js// Gestión de la interfaz y elementos HTML de las vistas del lector
+// ui.js
+// Gestión de la interfaz y elementos HTML de las vistas del lector
 const gridView = document.getElementById('gridView');
 const newsView = document.getElementById('newsView');
 const favoritesView = document.getElementById('favoritesView');
@@ -35,38 +36,10 @@ const selectIdioma = document.getElementById('selectIdioma');
 let seccionActual = 'catalogo';
 let periodoActualGrafica = 7;
 
-// Lógica de alternancia de tema claro/oscuro minimalista
-function alternarTemaApp() {
-    const root = document.documentElement;
-    const currentBg = root.style.getPropertyValue('--bg-main');
-    if (currentBg === '#ffffff' || currentBg === '') {
-        root.style.setProperty('--bg-main', '#0a0a0a');
-        root.style.setProperty('--text-main', '#ffffff');
-        root.style.setProperty('--bg-dark', '#111111');
-        localStorage.setItem('silenos_theme', 'dark');
-    } else {
-        root.style.setProperty('--bg-main', '#ffffff');
-        root.style.setProperty('--text-main', '#111111');
-        root.style.setProperty('--bg-dark', '#000000');
-        localStorage.setItem('silenos_theme', 'light');
-    }
-}
-
-// Inicializar tema guardado al cargar
-window.addEventListener('DOMContentLoaded', () => {
-    const savedTheme = localStorage.getItem('silenos_theme');
-    if (savedTheme === 'dark') {
-        document.documentElement.style.setProperty('--bg-main', '#0a0a0a');
-        document.documentElement.style.setProperty('--text-main', '#ffffff');
-        document.documentElement.style.setProperty('--bg-dark', '#111111');
-    }
-});
-
 // Evento para conmutar la visibilidad del buscador
 btnBuscarToggle.onclick = () => {
     if (searchContainer.style.display === 'none') {
         searchContainer.style.display = 'block';
-        // Ajustamos la posición superior del contenedor principal para que no se pisen
         document.querySelector('main').style.top = '105px';
         inputBuscar.focus();
     } else {
@@ -110,6 +83,10 @@ function cambiarSeccionPrincipal(seccion) {
         libroActual = null;
         bloquesLectura = [];
     }
+    // Al cambiar de sección principal o salir de leer, mostramos el banner superior de publicidad
+    const headerAd = document.querySelector('.adsense-slot-header');
+    if (headerAd) headerAd.style.display = 'flex';
+
     // Al cambiar de sección principal o entrar a leer, reseteamos el buscador
     cerrarBuscadorLimpio();
     // Ocultamos el modal de índice preventivamente
@@ -117,7 +94,7 @@ function cambiarSeccionPrincipal(seccion) {
     // Ocultamos el modal de desleer por seguridad al cambiar de sección
     cerrarModalDesleer();
     cerrarModalTienda();
-      
+
     // Ocultamos de golpe todas las secciones primarias, noticias y lector
     gridView.style.display = 'none';
     if (newsView) newsView.style.display = 'none';
@@ -125,12 +102,12 @@ function cambiarSeccionPrincipal(seccion) {
     usuarioView.style.display = 'none';
     tiendaView.style.display = 'none';
     readerView.style.display = 'none';
-      
+
     // Mostramos la cabecera estándar y ocultamos botón volver
     uploadContainer.style.display = 'table-cell';
     backContainer.style.display = 'none';
     navView.style.display = 'flex';
-      
+
     // Control dinámico de visibilidad del selector de idioma (Ocultar en TIENDA)
     if (selectIdioma) {
         if (seccion === 'tienda') {
@@ -139,14 +116,14 @@ function cambiarSeccionPrincipal(seccion) {
             selectIdioma.style.display = 'inline-block';
         }
     }
-      
+
     // Desactivamos visualmente todas las pestañas
     document.getElementById('tabCatalogo').classList.remove('is-active');
     if (document.getElementById('tabNews')) document.getElementById('tabNews').classList.remove('is-active');
     document.getElementById('tabFavoritos').classList.remove('is-active');
     document.getElementById('tabUsuario').classList.remove('is-active');
     document.getElementById('tabTienda').classList.remove('is-active');
-      
+
     seccionActual = seccion;
     if (seccion === 'catalogo') {
         document.getElementById('tabCatalogo').classList.add('is-active');
@@ -160,7 +137,6 @@ function cambiarSeccionPrincipal(seccion) {
         renderizarFavoritos();
     } else if (seccion === 'usuario') {
         document.getElementById('tabUsuario').classList.add('is-active');
-        // Ocultamos el botón de la lupa y el select en usuario ya que no aplica búsqueda
         uploadContainer.style.display = 'none';
         usuarioView.style.display = 'block';
         renderizarUsuario();
@@ -175,21 +151,21 @@ function cambiarSeccionPrincipal(seccion) {
 function renderizarUsuario() {
     const completados = obtenerCompletadosGuardados();
     const progresos = obtenerProgresoGuardado();
-      
+
     const containerLeidos = document.getElementById('listaLibrosLeidos');
     const containerEmpezados = document.getElementById('listaLibrosEmpezados');
-      
+
     containerLeidos.innerHTML = '';
     containerEmpezados.innerHTML = '';
-      
+
     let totalLeidos = 0;
     let totalEmpezados = 0;
-      
+
     biblioteca.forEach(libro => {
         const esGamebook = libro.esLibrojuego || libro.secciones;
         const haSidoCompletado = completados.includes(libro.titulo);
         const tieneProgreso = progresos[libro.titulo] !== undefined;
-          
+
         if (haSidoCompletado) {
             totalLeidos++;
             const elemento = document.createElement('div');
@@ -206,9 +182,9 @@ function renderizarUsuario() {
                 const porcentaje = totalBlocks > 1 ? Math.round((bloqueGuardado / (totalBlocks - 1)) * 100) : 0;
                 porcentajeLimpio = isNaN(porcentaje) ? 0 : porcentaje;
             } else {
-                porcentajeLimpio = 50; // Fallback genérico para librojuegos en curso
+                porcentajeLimpio = 50;
             }
-              
+
             const elemento = document.createElement('div');
             elemento.className = 'item-lista-usuario';
             elemento.style.display = 'flex';
@@ -220,18 +196,17 @@ function renderizarUsuario() {
             containerEmpezados.appendChild(elemento);
         }
     });
-      
+
     if (totalLeidos === 0) {
         containerLeidos.innerHTML = '<div class="empty-state-lista">No has terminado ningún manuscrito todavía.</div>';
     }
     if (totalEmpezados === 0) {
         containerEmpezados.innerHTML = '<div class="empty-state-lista">No tienes lecturas activas en este momento.</div>';
     }
-      
+
     dibujarGraficaLectura(periodoActualGrafica);
 }
 
-// Función global para abrir un libro directamente desde su título
 function abrirLibroPorTitulo(titulo) {
     const indexReal = biblioteca.findIndex(b => b.titulo === titulo);
     if (indexReal > -1) {
@@ -239,24 +214,21 @@ function abrirLibroPorTitulo(titulo) {
     }
 }
 
-// Cambiar periodo del filtro de la gráfica
 function cambiarPeriodoGrafica(dias) {
     periodoActualGrafica = dias;
     dibujarGraficaLectura(dias);
 }
 
-// Función encargada del renderizado puro en Canvas de las estadísticas de lectura
 function dibujarGraficaLectura(dias) {
     const canvas = document.getElementById('graficaLectura');
     if (!canvas) return;
-      
+
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
+
     let datos = [];
     let etiquetas = [];
-      
-    // Generación de arrays estables/proporcionales según la temporalidad solicitada
+
     if (dias === 7) {
         datos = [14, 22, 5, 0, 38, 45, 19];
         etiquetas = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
@@ -270,51 +242,47 @@ function dibujarGraficaLectura(dias) {
         datos = [1200, 1450, 900, 1100, 1600, 2100, 1300, 450, 980, 1550, 1340, 1800];
         etiquetas = ['E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
     }
-      
+
     const maxValor = Math.max(...datos, 10);
     const padIzq = 32;
     const padDer = 16;
     const padSup = 20;
     const padInf = 24;
-      
+
     const anchoGrafica = canvas.width - padIzq - padDer;
     const altoGrafica = canvas.height - padSup - padInf;
-      
-    // Renderizado brutalista de líneas de guía horizontales de fondo
+
     ctx.strokeStyle = '#222222';
     ctx.lineWidth = 1;
     ctx.fillStyle = '#666666';
     ctx.font = '7px Roboto, sans-serif';
     ctx.textAlign = 'right';
-      
+
     for (let i = 0; i <= 4; i++) {
         const y = padSup + (altoGrafica / 4) * i;
         ctx.beginPath();
         ctx.moveTo(padIzq, y);
         ctx.lineTo(canvas.width - padDer, y);
         ctx.stroke();
-          
+
         const valorEje = Math.round(maxValor - (maxValor / 4) * i);
         ctx.fillText(valorEje, padIzq - 6, y + 3);
     }
-      
-    // Dibujo de barras con acento cromático rojo estructural
+
     const numBarras = datos.length;
     const separacion = 4;
     const anchoBarra = (anchoGrafica - (separacion * (numBarras - 1))) / numBarras;
-      
+
     ctx.textAlign = 'center';
     datos.forEach((val, idx) => {
         const x = padIzq + idx * (anchoBarra + separacion);
         const ratio = val / maxValor;
         const h = altoGrafica * ratio;
         const y = padSup + altoGrafica - h;
-          
-        // Color rojo para el pico más alto de lectura, monocromático para el resto
+
         ctx.fillStyle = (val === maxValor) ? 'rgb(131, 0, 0)' : '#444444';
         ctx.fillRect(x, y, anchoBarra, h);
-          
-        // Renderizado inteligente y espaciado de etiquetas en el eje X
+
         ctx.fillStyle = '#888888';
         if (dias === 7 || dias === 90 || dias === 365) {
             ctx.fillText(etiquetas[idx], x + anchoBarra / 2, canvas.height - 8);
@@ -329,24 +297,24 @@ function renderizarNews() {
     newsView.style.display = 'flex';
     newsView.style.flexDirection = 'column';
     newsView.style.gap = '0px';
-      
+
     if (noticias.length === 0) {
         newsView.innerHTML = '<div class="empty-state">No se detectaron crónicas ni novedades en el repositorio.</div>';
         return;
     }
-      
+
     let htmlBuffer = '';
     noticias.forEach(noticia => {
         let parrafosRaw = noticia.texto || noticia.contenido || [];
         let parrafos = Array.isArray(parrafosRaw) ? parrafosRaw : [parrafosRaw];
         let htmlParrafos = '';
-          
+
         parrafos.forEach(p => {
             if (typeof p === 'string') {
                 htmlParrafos += `<p style="margin-bottom: 16px; text-align: justify; line-height: 1.75; font-size: 0.95rem;">${p}</p>`;
             }
         });
-          
+
         let htmlImagenes = '';
         if (noticia.imagenes && Array.isArray(noticia.imagenes)) {
             noticia.imagenes.forEach(imgUrl => {
@@ -357,7 +325,7 @@ function renderizarNews() {
                 `;
             });
         }
-          
+
         htmlBuffer += `
             <div style="border-bottom: 1px dashed #333333; padding: 24px 8px; width: 100%; box-sizing: border-box; background-color: var(--bg-main); color: var(--text-main);">
                 <div style="font-size: 0.65rem; font-weight: 700; color: rgb(131, 0, 0); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">

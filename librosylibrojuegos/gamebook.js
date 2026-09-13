@@ -1,32 +1,37 @@
+// gamebook.js
 // Lógica especializada para el parseo y renderizado interactivo de Librojuegos
 let seccionActualId = "inicio";
 
 function abrirLibrojuego(libro) {
     libroActual = libro;
     
+    // Ocultar el banner publicitario superior durante la lectura
+    const headerAd = document.querySelector('.adsense-slot-header');
+    if (headerAd) headerAd.style.display = 'none';
+         
     // Forzar ocultación de elementos de la interfaz clásica
     gridView.style.display = 'none';
     favoritesView.style.display = 'none';
     usuarioView.style.display = 'none';
     navView.style.display = 'none';
-    
+         
     // Activar vista lector y barras específicas
     readerView.style.display = 'block';
     document.getElementById('normalReaderNav').style.display = 'none';
     document.getElementById('gamebookReaderNav').style.display = 'block';
-    
+         
     uploadContainer.style.display = 'none';
     backContainer.style.display = 'table-cell';
-    
+         
     // Recuperar el progreso guardado por ID de sección de librojuego
     const progresos = obtenerProgresoGuardado();
     seccionActualId = progresos[libroActual.titulo];
-    
+         
     // Si no hay progreso (primera vez), se evalúa si tiene portada para mostrarla
     if (!seccionActualId) {
         seccionActualId = libroActual.portada ? "portada" : "inicio";
     }
-    
+         
     // Validar existencia de la sección de arranque por seguridad (solo si no es la pantalla de portada)
     if (seccionActualId !== "portada" && libroActual.secciones && !libroActual.secciones[seccionActualId]) {
         // Fallback al primer nodo disponible del objeto de secciones
@@ -37,10 +42,10 @@ function abrirLibrojuego(libro) {
 
 function renderizarSeccionLibrojuego() {
     if (!libroActual) return;
-    
+         
     const containerContenido = document.getElementById('readerContent');
     const containerOpciones = document.getElementById('gamebookChoicesContainer');
-    
+         
     // Renderizado especial para la pantalla de Portada Inicial
     if (seccionActualId === "portada") {
         let htmlContenido = `
@@ -48,39 +53,39 @@ function renderizarSeccionLibrojuego() {
                 <h3 style="margin: 0; line-height: 1.2;">${libroActual.titulo.toUpperCase()}</h3>
             </div>
         `;
-        
+                 
         if (libroActual.portada) {
             htmlContenido += `<div class="reader-image-container"><img src="${libroActual.portada}" class="reader-inline-image" style="max-height: 65vh; object-fit: contain;" /></div>`;
         }
         containerContenido.innerHTML = htmlContenido;
-        
+                 
         // Determinar cuál es la primera sección real a la que saltará el botón comenzar
         let primerNodo = "inicio";
         if (libroActual.secciones && !libroActual.secciones[primerNodo]) {
             primerNodo = Object.keys(libroActual.secciones)[0] || "inicio";
         }
-        
+                 
         containerOpciones.innerHTML = `
             <button class="gamebook-choice-btn" style="text-align: center; background: var(--bg-dark); color: var(--text-light); border-color: rgb(131, 0, 0);" onclick="saltarASeccionLibrojuego('${primerNodo.toString().replace(/'/g, "\\'")}')">
                 COMENZAR
             </button>
         `;
-        
+                 
         // Persistencia del estado de portada
         guardarProgreso(libroActual.titulo, seccionActualId);
         window.scrollTo({ top: 0, behavior: 'instant' });
         return;
     }
-    
+         
     if (!libroActual.secciones) return;
     const seccion = libroActual.secciones[seccionActualId];
-    
+         
     if (!seccion) {
         containerContenido.innerHTML = `<h3>Error Estructural</h3><p>La sección con identificador <strong>"${seccionActualId}"</strong> no ha sido localizada en el manuscrito.</p>`;
         containerOpciones.innerHTML = `<button class="gamebook-choice-btn" onclick="saltarASeccionLibrojuego('inicio')">Regresar al inicio</button>`;
         return;
     }
-    
+         
     // Renderizado del contenido textual de la sección con el botón de reinicio puro en la esquina superior derecha
     let htmlContenido = `
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; width: 100%;">
@@ -88,10 +93,10 @@ function renderizarSeccionLibrojuego() {
             <button class="btn" style="color: var(--text-muted); font-size: 0.65rem; padding: 0; margin: 0; line-height: 1.2;" onclick="abrirModalReiniciarLibro()">Reiniciar</button>
         </div>
     `;
-    
+         
     let parrafosRaw = seccion.texto || seccion.contenido || [];
     let parrafos = Array.isArray(parrafosRaw) ? parrafosRaw : [parrafosRaw];
-    
+         
     parrafos.forEach(parrafo => {
         if (typeof parrafo === 'string') {
             let textoLimpio = parrafo.trim();
@@ -102,8 +107,7 @@ function renderizarSeccionLibrojuego() {
             }
         }
     });
-
-    // EXTRA_REGLA: Extraer la ilustración en Base64 específica de este pasaje si existe, y colocarla debajo del texto
+    // Extraer la ilustración en Base64 específica de este pasaje si existe, y colocarla debajo del texto
     let imagenPasajeRaw = seccion.imagen || seccion.image;
     if (imagenPasajeRaw) {
         let srcImagen = imagenPasajeRaw;
@@ -114,13 +118,12 @@ function renderizarSeccionLibrojuego() {
         }
         htmlContenido += `<div class="reader-image-container" style="margin-top: 24px;"><img src="${srcImagen}" class="reader-inline-image" style="max-height: 50vh; object-fit: contain;" /></div>`;
     }
-
     containerContenido.innerHTML = htmlContenido;
-    
+         
     // Renderizado dinámico e inferior del panel de elecciones
     let htmlOpciones = '';
     let opciones = seccion.opciones || seccion.elecciones || [];
-    
+         
     if (opciones.length === 0) {
         // Nodo terminal: el libro ha concluido (Victoria o Muerte)
         htmlOpciones += `<button class="gamebook-choice-btn" style="border-color: rgb(131, 0, 0);" onclick="finalizarLibrojuego()">FIN DE LA AVENTURA (MARCAR COMO COMPLETADO)</button>`;
@@ -136,12 +139,12 @@ function renderizarSeccionLibrojuego() {
         });
     }
     containerOpciones.innerHTML = htmlOpciones;
-    
+         
     // Ejecutar renderizador de fórmulas matemáticas si aplica
     if (window.MathJax) {
         MathJax.typesetPromise([containerContenido]).catch((err) => console.log(err.message));
     }
-    
+         
     // Persistencia del estado actual del juego
     guardarProgreso(libroActual.titulo, seccionActualId);
     // Reposicionamiento del scroll al tope
@@ -175,7 +178,6 @@ function cerrarModalReiniciarLibro() {
 function confirmarReiniciarLibro() {
     cerrarModalReiniciarLibro();
     if (libroActual) {
-        // Al reiniciar, volvemos a evaluar si se debe mostrar la portada o saltar directo a inicio
         seccionActualId = libroActual.portada ? "portada" : "inicio";
         if (seccionActualId !== "portada" && libroActual.secciones && !libroActual.secciones[seccionActualId]) {
             seccionActualId = Object.keys(libroActual.secciones)[0] || "inicio";

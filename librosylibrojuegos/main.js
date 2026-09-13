@@ -1,3 +1,4 @@
+// main.js
 // Estado global del ciclo de vida de la aplicación
 let biblioteca = [];
 let noticias = [];
@@ -7,6 +8,10 @@ let bloquesLectura = [];
 let mapaImagenes = {}; // Almacenará las URLs de GitHub indexadas por el nombre del archivo
 let idiomaActual = 'ES'; // Idioma global por defecto para el filtrado de manuscritos
 let filtrarSoloGamebooks = false; // Bandera de control para aislar librojuegos en las vistas
+
+// Control de reintentos para evitar bucles infinitos si la red o el SDK tardan en inicializarse
+let retriesCargaBiblioteca = 0;
+const MAX_RETRIES_FIREBASE = 10;
 
 // Estado específico para la Sección Tienda Remota
 let tiendaLibros = [];
@@ -30,113 +35,196 @@ const NOTICIAS_RAW_BASE_URL = `https://cdn.jsdelivr.net/gh/${GITHUB_USER}/${GITH
 const TIENDA_JSON_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/SILENOS/main/catalogo/inventario.json`;
 const TIENDA_IMAGENES_BASE_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/SILENOS/main/catalogo/`;
 
+// Mapeador de seguridad para la estructura de bloques de lectura convencional
+// Mapeador de seguridad para la estructura de bloques de lectura convencional y avanzada
+function mapearBloquesLibro(libro) {
+    if (!libro) return [];
+    let lista = [];
+
+    // 1. Portada si existe en el objeto raíz
+    if (libro.portada) {
+        lista.push({
+            tipo: 'Portada',
+            subtitulo: libro.titulo || 'Portada',
+            esPortada: true,
+            contenido: [libro.portada]
+        });
+    }
+
+    // 2. Prólogo
+    if (libro.prologo) {
+        lista.push({
+            tipo: 'Prólogo',
+            subtitulo: 'Introducción del Manuscrito',
+            contenido: Array.isArray(libro.prologo) ? libro.prologo : [libro.prologo]
+        });
+    }
+
+    // 3. Estructura organizada por "partes" (como en metatron.json)
+    if (libro.partes && Array.isArray(libro.partes)) {
+        libro.partes.forEach(parte => {
+            if (parte.capitulos && Array.isArray(parte.capitulos)) {
+                parte.capitulos.forEach(cap => {
+                    let fuenteContenido = cap.texto || cap.contenido || [];
+                    let parrafosRaw = Array.isArray(fuenteContenido) ? fuenteContenido : [fuenteContenido];
+                    let parrafosLimpios = parrafosRaw.filter(p => p !== null && p !== undefined);
+                    lista.push({
+                        tipo: parte.nombre || 'Capítulo',
+                        subtitulo: cap.titulo || `Capítulo ${cap.numero || ''}`,
+                        contenido: parrafosLimpios,
+                        imagenIlustracion: cap.imagen || cap.image
+                    });
+                });
+            }
+        });
+    }
+
+    // 4. Estructura con "capitulos" en la raíz (sin partes)
+    if (libro.capitulos && Array.isArray(libro.capitulos)) {
+        libro.capitulos.forEach((cap, idx) => {
+            let fuenteContenido = cap.texto || cap.contenido || [];
+            let parrafosRaw = Array.isArray(fuenteContenido) ? fuenteContenido : [fuenteContenido];
+            let parrafosLimpios = parrafosRaw.filter(p => p !== null && p !== undefined);
+            lista.push({
+                tipo: `Capítulo ${idx + 1}`,
+                subtitulo: cap.titulo || cap.nombre || `CAPÍTULO ${idx + 1}`,
+                contenido: parrafosLimpios,
+                imagenIlustracion: cap.imagen || cap.image
+            });
+        });
+    }
+
+    // 5. Estructura con "bloques"
+    if (libro.bloques && Array.isArray(libro.bloques)) {
+        return libro.bloques;
+    }
+
+    // 6. Estructura con "paginas"
+    if (libro.paginas && Array.isArray(libro.paginas)) {
+        libro.paginas.forEach((pag, idx) => {
+            let fuenteContenido = pag.texto || pag.contenido || [];
+            let parrafosRaw = Array.isArray(fuenteContenido) ? fuenteContenido : [fuenteContenido];
+            let parrafosLimpios = parrafosRaw.filter(p => p !== null && p !== undefined);
+            lista.push({
+                tipo: `Página ${idx + 1}`,
+                subtitulo: pag.titulo || pag.nombre || `PÁGINA ${idx + 1}`,
+                contenido: parrafosLimpios,
+                imagenIlustracion: pag.imagen || pag.image
+            });
+        });
+    }
+
+    // 7. Apéndice
+    if (libro.apendice && (typeof libro.apendice === 'string' ? libro.apendice.trim() !== '' : true)) {
+        lista.push({
+            tipo: 'Apéndice',
+            subtitulo: 'Datos Técnicos Estructurales',
+            contenido: Array.isArray(libro.apendice) ? libro.apendice : [libro.apendice]
+        });
+    }
+
+    // 8. Nota Final
+    if (libro.nota_final && (typeof libro.nota_final === 'string' ? libro.nota_final.trim() !== '' : true)) {
+        lista.push({
+            tipo: 'Nota Final',
+            subtitulo: 'Consideraciones de Clausura',
+            contenido: Array.isArray(libro.nota_final) ? libro.nota_final : [libro.nota_final]
+        });
+    }
+
+    // 9. Fallback para manuscritos en texto plano
+    if (lista.length === 0 || (lista.length === 1 && lista[0].esPortada)) {
+        let textoRaw = libro.contenido || libro.texto || libro.descripcion || [];
+        let lineas = Array.isArray(textoRaw) ? textoRaw : [textoRaw];
+        if (lineas.length > 0 && lineas[0] !== '') {
+            lista.push({
+                tipo: "Lectura",
+                subtitulo: libro.titulo || "Manuscrito",
+                contenido: lineas
+            });
+        }
+    }
+
+    return lista;
+}
+
 async function cargarBibliotecaDesdeGitHub() {
+    if (!window.db || !window.getDocs || !window.collection) {
+        retriesCargaBiblioteca++;
+        if (retriesCargaBiblioteca <= MAX_RETRIES_FIREBASE) {
+            console.warn(`Firestore aún no está inicializado (Intento ${retriesCargaBiblioteca}/${MAX_RETRIES_FIREBASE}). Reintentando...`);
+            setTimeout(cargarBibliotecaDesdeGitHub, 300);
+        } else {
+            console.error("No se pudo inicializar Firestore después de múltiples intentos.");
+            if (typeof gridView !== 'undefined' && gridView) {
+                gridView.innerHTML = `<div class="empty-state">No se pudo conectar con Firebase. Revisa tu conexión a internet o la configuración del SDK.</div>`;
+            }
+        }
+        return;
+    }
+
+    retriesCargaBiblioteca = 0;
+
     try {
-        const respuesta = await fetch(API_URL);
-        if (!respuesta.ok) {
-            throw new Error(`Error del servidor GitHub: ${respuesta.status}`);
-        }
-        
-        const archivos = await respuesta.json();
-        if (!Array.isArray(archivos)) return;
+        const fetchPromise = window.getDocs(window.collection(window.db, "libros"));
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Timeout de conexión al consultar libros en Firestore")), 6000)
+        );
+
+        const querySnapshot = await Promise.race([fetchPromise, timeoutPromise]);
         biblioteca = [];
-        mapaImagenes = {};
         
-        // 1. Mapeamos las imágenes del repositorio con sus respectivas URLs remotas de producción
-        archivos.forEach(archivo => {
-            const nombre = archivo.name;
-            const extension = nombre.substring(nombre.lastIndexOf('.')).toLowerCase();
-            if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'].includes(extension)) {
-                mapaImagenes[nombre] = `${RAW_BASE_URL}${nombre}`;
-            }
-        });
-        
-        // 2. Filtramos los manuscritos structured en formato JSON
-        const archivosJson = archivos.filter(archivo => {
-            const nombre = archivo.name.toLowerCase();
-            return nombre.endsWith('.json') && nombre !== 'package.json';
-        });
-        
-        if (archivosJson.length === 0) {
-            gridView.innerHTML = '<div class="empty-state">Error: No se detectaron archivos .json de manuscritos en el repositorio.</div>';
-            return;
-        }
-        
-        // Extensiones de imagen soportadas ordenadas por prioridad de emparejamiento
-        const extensionesImagen = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg'];
-        
-        // Limpiar el contenedor de carga inicial para prepararlo para la inserción incremental
-        gridView.innerHTML = '';
-
-        // 3. Procesamiento paralelo y renderizado incremental de los JSONs
-        const promesasCarga = archivosJson.map(async (archivo) => {
-            try {
-                const urlJson = `${RAW_BASE_URL}${archivo.name}`;
-                const resJson = await fetch(urlJson);
-                if (!resJson.ok) return;
-                
-                const datos = await resJson.json();
-                const nombreBase = archivo.name.substring(0, archivo.name.lastIndexOf('.'));
-                let portadaEncontrada = null;
-                
-                // Buscamos si existe un archivo de imagen en el repositorio con el mismo nombre base
-                for (const ext of extensionesImagen) {
-                    const nombreArchivoImagen = `${nombreBase}${ext}`;
-                    if (mapaImagenes[nombreArchivoImagen]) {
-                        portadaEncontrada = mapaImagenes[nombreArchivoImagen];
-                        break;
-                    } else {
-                        const coincidenciaCiega = Object.keys(mapaImagenes).find(k => k.toLowerCase() === nombreArchivoImagen.toLowerCase());
-                        if (coincidenciaCiega) {
-                            portadaEncontrada = mapaImagenes[coincidenciaCiega];
-                            break;
-                        }
-                    }
-                }
-                
-                if (portadaEncontrada) {
-                    datos.portada = portadaEncontrada;
+        querySnapshot.forEach((docSnap) => {
+            const datos = docSnap.data();
+            if (datos.titulo) {
+                if (datos.fechaSubida && typeof datos.fechaSubida.toDate === 'function') {
+                    datos.fechaSubida = datos.fechaSubida.toDate();
+                } else if (datos.fechaSubida) {
+                    datos.fechaSubida = new Date(datos.fechaSubida);
                 } else {
-                    datos.portada = null;
+                    datos.fechaSubida = new Date(0);
                 }
-                
-                delete datos.imagen;
-                
-                if (!datos.titulo && datos.metadatos && datos.metadatos.titulo) {
-                    datos.titulo = datos.metadatos.titulo;
-                }
-                if (!datos.autores && datos.metadatos && datos.metadatos.autores) {
-                    datos.autores = datos.metadatos.autores;
-                }
-                
-                if (datos.titulo) {
-                    biblioteca.push(datos);
-                    // Ordenación reactiva e incremental por orden alfabético
-                    biblioteca.sort((a, b) => a.titulo.localeCompare(b.titulo));
-                    // Forzar el renderizado en tiempo real a medida que llega el manuscrito
-                    renderizarGaleria();
-                }
-            } catch (err) {
-                console.error(`Error al procesar el archivo remoto ${archivo.name}: ${err.message}`);
+                biblioteca.push(datos);
             }
         });
-
-        // Esperamos a que terminen todas las peticiones concurrentes en segundo plano
-        await Promise.all(promesasCarga);
-
-        if (biblioteca.length === 0) {
-            gridView.innerHTML = '<div class="empty-state">Error: Ninguno de los archivos .json analizados contenía una estructura válida.</div>';
-        }
+        biblioteca.sort((a, b) => b.fechaSubida - a.fechaSubida);
+        renderizarGaleria();
     } catch (error) {
-        console.error("Error crítico durante la carga remota:", error);
-        gridView.innerHTML = `<div class="empty-state">Error al conectar con GitHub: ${error.message}. Verifica la conexión.</div>`;
+        console.error("Error al cargar manuscritos de Firestore:", error);
+        if (typeof gridView !== 'undefined' && gridView) {
+            gridView.innerHTML = `<div class="empty-state">Error de conexión con Firestore: ${error.message}. Revisa que las Reglas de Seguridad en Firebase permitan la lectura pública de la colección "libros".</div>`;
+        }
     }
 }
 
+async function cargarNoticiasDesdeGitHub() {
+    if (!window.db || !window.getDocs || !window.collection) return;
+    try {
+        const querySnapshot = await window.getDocs(window.collection(window.db, "noticias"));
+        noticias = [];
+        querySnapshot.forEach((docSnap) => {
+            const datos = docSnap.data();
+            if (datos.titulo) noticias.push(datos);
+        });
+        noticias.sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0));
+    } catch (error) {
+        console.error("Error cargando noticias:", error);
+    }
+}
+
+// Escuchar evento directo de inicialización de Firebase
+window.addEventListener('firebase-ready', () => {
+    cargarBibliotecaDesdeGitHub();
+    cargarNoticiasDesdeGitHub();
+});
+
 function abrirLibro(index) {
     libroActual = biblioteca[index];
-    cerrarBuscadorLimpio();
+    if (typeof cerrarBuscadorLimpio === 'function') cerrarBuscadorLimpio();
     
+    // Ocultar banner publicitario superior durante la lectura
+    const headerAd = document.querySelector('.adsense-slot-header');
+    if (headerAd) headerAd.style.display = 'none';
     if (libroActual.esLibrojuego || libroActual.secciones) {
         abrirLibrojuego(libroActual);
         return;
@@ -185,54 +273,6 @@ function irBloqueSiguiente() {
     }
 }
 
-async function cargarNoticiasDesdeGitHub() {
-    try {
-        const respuesta = await fetch(NOTICIAS_API_URL);
-        if (!respuesta.ok) {
-            throw new Error(`Error al conectar con la carpeta de noticias de GitHub: ${respuesta.status}`);
-        }
-        
-        const archivos = await respuesta.json();
-        if (!Array.isArray(archivos)) return;
-        noticias = [];
-        
-        const archivosJson = archivos.filter(archivo => {
-            const nombre = archivo.name.toLowerCase();
-            return nombre.endsWith('.json');
-        });
-        
-        for (const archivo of archivosJson) {
-            try {
-                const urlJson = `${NOTICIAS_RAW_BASE_URL}${archivo.name}`;
-                const resJson = await fetch(urlJson);
-                if (!resJson.ok) continue;
-                
-                const datos = await resJson.json();
-                if (datos.titulo) {
-                    if (datos.imagenes && Array.isArray(datos.imagenes)) {
-                        datos.imagenes = datos.imagenes.map(img => {
-                            if (img.startsWith('http') || img.startsWith('data:')) return img;
-                            return `${NOTICIAS_RAW_BASE_URL}${img}`;
-                        });
-                    }
-                    noticias.push(datos);
-                }
-            } catch (err) {
-                console.error(`Error al procesar la noticia remota ${archivo.name}: ${err.message}`);
-            }
-        }
-        
-        noticias.sort((a, b) => {
-            const fechaA = new Date(a.fecha || 0);
-            const fechaB = new Date(b.fecha || 0);
-            return fechaB - fechaA;
-        });
-    } catch (error) {
-        console.error("Error crítico durante la carga asíncrona de noticias:", error);
-    }
-}
-
-/* LÓGICA EXCLUSIVA DEL MOTOR DE LA TIENDA DE SILENOS */
 async function cargarTiendaDesdeGitHub() {
     const grid = document.getElementById('tiendaBooksGrid');
     if (tiendaLibros.length > 0) {
@@ -253,12 +293,13 @@ async function cargarTiendaDesdeGitHub() {
         renderizarTiendaLibros();
     } catch (err) {
         console.error("Fallo descargando catálogo comercial de la tienda:", err);
-        grid.innerHTML = `<div class="empty-state">Error cargando inventario comercial: ${err.message}</div>`;
+        if (grid) grid.innerHTML = `<div class="empty-state">Error cargando inventario comercial: ${err.message}</div>`;
     }
 }
 
 function renderizarTiendaFiltros() {
     const container = document.getElementById('tiendaCollectionsList');
+    if (!container) return;
     container.innerHTML = '';
     
     let html = `<button class="tienda-chip ${tiendaColeccionSeleccionada === 'all' ? 'is-active' : ''}" onclick="filtrarTiendaColeccion('all')">Todas (${tiendaLibros.length})</button>`;
@@ -278,9 +319,10 @@ function filtrarTiendaColeccion(col) {
 
 function renderizarTiendaLibros() {
     const grid = document.getElementById('tiendaBooksGrid');
+    if (!grid) return;
     grid.innerHTML = '';
     
-    const filtroBuscador = inputBuscar.value.trim().toLowerCase();
+    const filtroBuscador = typeof inputBuscar !== 'undefined' && inputBuscar ? inputBuscar.value.trim().toLowerCase() : '';
     
     let librosFiltrados = tiendaLibros;
     if (tiendaColeccionSeleccionada !== 'all') {
@@ -301,7 +343,7 @@ function renderizarTiendaLibros() {
     }
     
     let htmlBuffer = '';
-    librosFiltrados.forEach((libro, idx) => {
+    librosFiltrados.forEach((libro) => {
         let imgSrc = '';
         if (libro.image) {
             imgSrc = libro.image.startsWith('http') ? libro.image : (libro.image.startsWith('imagenes/') ? `${TIENDA_IMAGENES_BASE_URL}${libro.image}` : `${TIENDA_IMAGENES_BASE_URL}imagenes/${libro.image}`);
@@ -344,7 +386,7 @@ function verDetallesTienda(id) {
         libro.links.forEach(link => {
             htmlBotonCompra += `
                 <button class="gamebook-choice-btn" style="margin-top:12px; border-color:rgb(131,0,0); text-align:center; background:rgb(131,0,0); color:#fff;" onclick="window.open('${link.url}', '_blank')">
-                    ADQUIRIR EN ${link.name.toUpperCase()} 
+                    ADQUIRIR EN ${link.name.toUpperCase()}
                 </button>
             `;
         });
