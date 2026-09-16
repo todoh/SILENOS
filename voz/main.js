@@ -23,7 +23,7 @@ let micProcessor = null;
 let isMicActive = false;
 
 // Modelo exacto solicitado principal
-const MODEL = 'gemini-3.1-flash-live-preview';
+const MODEL = 'gemini-3.8-live';
 
 // ─── ATAJOS DE TECLADO GLOBALES (CTRL+Z y CTRL+Y) ───
 document.addEventListener('keydown', (e) => {
