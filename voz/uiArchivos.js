@@ -49,7 +49,7 @@ async function navegarACarpeta(path) {
     await actualizarUIArchivos();
 }
 
-// Renderizado de Vista Rejilla (Grid de Tarjetas) con Menú Contextual Integrado
+// Renderizado de Vista Rejilla (Grid de Tarjetas) con Menú Contextual e Iconos Diferenciados
 async function renderizarGridContenido(dirHandle) {
     const gridContainer = document.getElementById('gridContainer');
     if (!gridContainer) return;               
@@ -72,7 +72,8 @@ async function renderizarGridContenido(dirHandle) {
     }
     for (const entry of entries) {
         const card = document.createElement('div');
-        card.className = 'file-card';                           
+        card.className = 'file-card';
+        card.style.position = 'relative'; // Garantiza el posicionamiento absoluto del botón flotante                           
         if (entry.kind === 'directory') {
             card.onclick = () => navegarACarpeta(currentPath ? `${currentPath}/${entry.name}` : entry.name);
             card.innerHTML = `
@@ -88,16 +89,36 @@ async function renderizarGridContenido(dirHandle) {
             const file = await entry.getFile();
             const ext = entry.name.split('.').pop().toLowerCase();
             const isMedia = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext);
+            
+            // Iconos diferenciados según el tipo de archivo
             let visualContent = `<span style="font-size: 36px;">📄</span>`;
             if (isMedia) {
                 const blobUrl = URL.createObjectURL(file);
                 visualContent = `<img src="${blobUrl}" alt="${entry.name}">`;
+            } else if (ext === 'html' || ext === 'htm') {
+                visualContent = `<span style="font-size: 38px;" title="Archivo HTML">🌐</span>`;
+            } else if (ext === 'css') {
+                visualContent = `<span style="font-size: 38px;" title="Hoja de Estilos CSS">🎨</span>`;
+            } else if (['js', 'jsx', 'ts', 'tsx', 'mjs'].includes(ext)) {
+                visualContent = `<span style="font-size: 38px;" title="Script JavaScript">⚡</span>`;
             }
+
             const fullFilePath = currentPath ? `${currentPath}/${entry.name}` : entry.name;
             card.onclick = () => abrirArchivoManual(fullFilePath);
             card.oncontextmenu = (e) => mostrarContextMenu(e, fullFilePath);
 
+            // Botón de previsualización directa en la esquina superior derecha para HTML
+            let previewButtonHTML = '';
+            if (ext === 'html' || ext === 'htm') {
+                previewButtonHTML = `
+                    <button class="preview-btn-corner" style="position: absolute; top: 6px; right: 6px; background: #000000; color: #ffffff; border: none; border-radius: 6px; padding: 3px 6px; font-size: 9px; font-weight: 700; cursor: pointer; z-index: 10; box-shadow: 0 2px 6px rgba(0,0,0,0.2); font-family: inherit;" title="Previsualizar directamente" onclick="event.stopPropagation(); previsualizarModalDirecto('${fullFilePath}')">
+                        👁️ 
+                    </button>
+                `;
+            }
+
             card.innerHTML = `
+                ${previewButtonHTML}
                 <div class="file-card-preview">
                     ${visualContent}
                 </div>
@@ -149,40 +170,21 @@ async function previsualizarModalDirecto(nombre) {
         if (!modal || !container) return;
 
         container.innerHTML = '';
-        const url = URL.createObjectURL(file);
 
         if (['html', 'htm'].includes(ext)) {
-            let htmlContent = await file.text();
-            
-            // Inyección automática de dependencias CSS/JS si existen
-            if (typeof explorerLens !== 'undefined' && workspaceHandle) {
-                const cssRegex = /<link[^>]+href=["']([^"']+\.css)["'][^>]*>/gi;
-                let cssMatch;
-                while ((cssMatch = cssRegex.exec(htmlContent)) !== null) {
-                    try {
-                        const cssHandle = await explorerLens.getHandleFromPath(cssMatch[1]);
-                        const cssFile = await cssHandle.getFile();
-                        const cssText = await cssFile.text();
-                        htmlContent = htmlContent.replace(cssMatch[0], `<style>\n${cssText}\n</style>`);
-                    } catch (e) {}
-                }
-                const jsRegex = /<script[^>]+src=["']([^"']+\.js)["'][^>]*><\/script>/gi;
-                let jsMatch;
-                while ((jsMatch = jsRegex.exec(htmlContent)) !== null) {
-                    try {
-                        const jsHandle = await explorerLens.getHandleFromPath(jsMatch[1]);
-                        const jsFile = await jsHandle.getFile();
-                        const jsText = await jsFile.text();
-                        htmlContent = htmlContent.replace(jsMatch[0], `<script>\n${jsText}\n<\/script>`);
-                    } catch (e) {}
-                }
+            let root = (typeof workspaceHandle !== 'undefined' && workspaceHandle) ? workspaceHandle : directoryHandle;
+            let htmlBlobUrl;
+            if (root && typeof InlineBlobProcessor !== 'undefined') {
+                htmlBlobUrl = await InlineBlobProcessor.processWorkspace(root, nombre);
+            } else {
+                const htmlText = await file.text();
+                const blobHtml = new Blob([htmlText], { type: 'text/html;charset=utf-8' });
+                htmlBlobUrl = URL.createObjectURL(blobHtml);
             }
-            
-            const blobHtml = new Blob([htmlContent], { type: 'text/html' });
-            const htmlBlobUrl = URL.createObjectURL(blobHtml);
             container.innerHTML = `<iframe src="${htmlBlobUrl}"></iframe>`;
 
         } else if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'].includes(ext)) {
+            const url = URL.createObjectURL(file);
             container.innerHTML = `<img src="${url}" alt="Previsualización">`;
 
         } else if (ext === 'svg') {
@@ -190,9 +192,11 @@ async function previsualizarModalDirecto(nombre) {
             container.innerHTML = svgText;
 
         } else if (['mp4', 'webm', 'mov', 'ogv'].includes(ext)) {
+            const url = URL.createObjectURL(file);
             container.innerHTML = `<video controls autoplay src="${url}"></video>`;
 
         } else if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) {
+            const url = URL.createObjectURL(file);
             container.innerHTML = `<audio controls autoplay src="${url}"></audio>`;
 
         } else {

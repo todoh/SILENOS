@@ -94,7 +94,18 @@ const ide = {
                 
                 const isDir = entry.kind === 'directory';
                 const isExpanded = this.expandedPaths.has(fullPath);
-                const icon = isDir ? (isExpanded ? '📂' : '📁') : '📄';
+                
+                // Asignación de icono diferenciado según la extensión en el árbol
+                let icon = '📄';
+                if (isDir) {
+                    icon = isExpanded ? '📂' : '📁';
+                } else {
+                    const ext = entry.name.split('.').pop().toLowerCase();
+                    if (ext === 'html' || ext === 'htm') icon = '🌐';
+                    else if (ext === 'css') icon = '🎨';
+                    else if (ext === 'js') icon = '⚡';
+                    else if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext)) icon = '🖼️';
+                }
                 
                 const titleSpan = document.createElement('span');
                 titleSpan.className = 'tree-title';
@@ -103,7 +114,6 @@ const ide = {
                 const actionsDiv = document.createElement('div');
                 actionsDiv.className = 'tree-actions';
                 
-                // Pasamos strings correctamente escapados
                 const safeName = entry.name.replace(/'/g, "\\'");
                 const safePath = fullPath.replace(/'/g, "\\'");
                 
@@ -119,7 +129,6 @@ const ide = {
                 const childrenContainer = document.createElement('div');
                 childrenContainer.style.display = isExpanded ? 'block' : 'none';
 
-                // Renderizado profundo si el estado lo marca como expandido
                 if (isDir && isExpanded) {
                     await this.renderDirectory(entry, childrenContainer, level + 1, fullPath);
                 }
@@ -239,7 +248,6 @@ const ide = {
                 const srcHandle = await this.clipboard.sourceDir.getFileHandle(this.clipboard.name);
                 const file = await srcHandle.getFile();
                 
-                // Procesamiento estricto para nombres de archivo sin extensiones
                 let newName = this.clipboard.name;
                 if (newName.includes('.')) {
                     newName = newName.replace(/(\.[^.]+)$/, '_copia$1');
@@ -346,63 +354,45 @@ const ide = {
         }
         
         const fileName = this.currentFileHandle.name.toLowerCase();
-        const isHTML = fileName.endsWith('.html');
+        const isHTML = fileName.endsWith('.html') || fileName.endsWith('.htm');
         const isSVG = fileName.endsWith('.svg');
         
         if (!isHTML && !isSVG) {
             if (typeof showToast === 'function') showToast('La previsualización solo funciona con archivos .html o .svg', 'error');
             return;
         }
-        
-        let content = document.getElementById('ideEditor').value;
 
-        // Inyectar dependencias locales (CSS y JS) solo si es HTML, para que funcionen dentro del Blob
-        if (isHTML && typeof explorerLens !== 'undefined' && workspaceHandle) {
-            if (typeof showToast === 'function') showToast('Procesando e inyectando dependencias locales...', 'listening');
-            try {
-                // Inyectar CSS local referenciado con <link href="archivo.css">
-                const cssRegex = /<link[^>]+href=["']([^"']+\.css)["'][^>]*>/gi;
-                let cssMatch;
-                while ((cssMatch = cssRegex.exec(content)) !== null) {
-                    const cssPath = cssMatch[1];
-                    if (!cssPath.startsWith('http')) {
-                        try {
-                            const handle = await explorerLens.getHandleFromPath(cssPath);
-                            const file = await handle.getFile();
-                            const cssText = await file.text();
-                            content = content.replace(cssMatch[0], `<style>\n/* Inyectado automáticamente de ${cssPath} */\n${cssText}\n</style>`);
-                        } catch (e) { console.warn(`No se pudo inyectar el CSS local: ${cssPath}`, e); }
-                    }
-                }
+        const editorContent = document.getElementById('ideEditor').value;
 
-                // Inyectar JS local referenciado con <script src="archivo.js">
-                const jsRegex = /<script[^>]+src=["']([^"']+\.js)["'][^>]*><\/script>/gi;
-                let jsMatch;
-                while ((jsMatch = jsRegex.exec(content)) !== null) {
-                    const jsPath = jsMatch[1];
-                    if (!jsPath.startsWith('http')) {
-                        try {
-                            const handle = await explorerLens.getHandleFromPath(jsPath);
-                            const file = await handle.getFile();
-                            const jsText = await file.text();
-                            content = content.replace(jsMatch[0], `<script>\n/* Inyectado automáticamente de ${jsPath} */\n${jsText}\n</script>`);
-                        } catch (e) { console.warn(`No se pudo inyectar el JS local: ${jsPath}`, e); }
-                    }
-                }
-            } catch(e) {
-                console.error("Error inyectando dependencias", e);
+        if (isSVG) {
+            const blob = new Blob([editorContent], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            if (typeof uiWeb !== 'undefined') {
+                uiWeb.open(url);
+                if (typeof showToast === 'function') showToast('Visualizando SVG en Navegador IA', 'success');
+            } else {
+                window.open(url, '_blank');
             }
+            return;
         }
+
+        if (typeof showToast === 'function') showToast('Procesando árbol de dependencias e inyectando Blobs...', 'listening');
         
-        const mimeType = isHTML ? 'text/html' : 'image/svg+xml';
-        const blob = new Blob([content], { type: mimeType });
-        const url = URL.createObjectURL(blob);
-        
-        if (typeof uiWeb !== 'undefined') {
-            uiWeb.open(url);
-            if (typeof showToast === 'function') showToast(`Visualizando ${isHTML ? 'HTML' : 'SVG'} en el Navegador IA`, 'success');
-        } else {
-            window.open(url, '_blank');
+        try {
+            const root = workspaceHandle || this.currentDirHandle;
+            if (!root) throw new Error("No hay carpeta de trabajo conectada.");
+
+            const blobUrl = await InlineBlobProcessor.processWorkspace(root, this.currentFileHandle.name, editorContent);
+            
+            if (typeof uiWeb !== 'undefined') {
+                uiWeb.open(blobUrl);
+                if (typeof showToast === 'function') showToast('Proyecto autónomo cargado en memoria ✓', 'success');
+            } else {
+                window.open(blobUrl, '_blank');
+            }
+        } catch (e) {
+            console.error("Error en InlineBlobProcessor:", e);
+            if (typeof showToast === 'function') showToast(`Error en ensamblado: ${e.message}`, 'error');
         }
     }
 };

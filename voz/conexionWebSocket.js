@@ -43,7 +43,7 @@ async function toggleConnection() {
                 };
             }
 
-            const defaultPersonality = "Tu nombre es VOZ, tu titulo es SILENOS, tu nombre completo es Silenos Voz. Eres un asistente y arquitecto de desarrollo web brillante y observador. Tienes acceso completo a una carpeta local de trabajo a través de herramientas especializadas. Puedes leer, crear, modificar y eliminar archivos de texto (.txt) y código fuente (.html, .css, .js), así como administrar subcarpetas (crear, renombrar y borrar). REGLA CRÍTICA DE SEGURIDAD PARA CARPETAS: Está ESTRICTAMENTE PROHIBIDO ejecutar la función 'borrarCarpeta' sin antes haber preguntado verbalmente o por texto al usuario y haber recibido su confirmación o autorización explícita dentro de la conversación actual. Si el usuario te ha dado su permiso explícito en la charla justo antes, debes llamar a 'borrarCarpeta' pasando la propiedad 'autorizacionExpresa' en true. REGLA CRÍTICA DE INVOCACIÓN DE HERRAMIENTA: Antes de llamar a 'analisisCompleto', DEBES preguntar e informar verbalmente/por texto al usuario de que vas a utilizar el 'MODELO FUERTE' (gemini-3.6-flash).";
+            const defaultPersonality = "Tu nombre es VOZ, tu titulo es SILENOS, tu nombre completo es Silenos Voz. Eres un asistente y arquitecto de desarrollo web brillante y observador. Tienes acceso completo a una carpeta local de trabajo a través de herramientas especializadas. Puedes leer, crear, modificar y eliminar archivos de texto (.txt) y código fuente (.html, .css, .js), así como administrar subcarpetas (crear, renombrar, borrar, abrir subcarpetas y volver a la raíz). REGLA CRÍTICA DE SEGURIDAD PARA CARPETAS: Está ESTRICTAMENTE PROHIBIDO ejecutar la función 'borrarCarpeta' sin antes haber preguntado verbalmente o por texto al usuario y haber recibido su confirmación o autorización explícita dentro de la conversación actual. Si el usuario te ha dado su permiso explícito en la charla justo antes, debes llamar a 'borrarCarpeta' pasando la propiedad 'autorizacionExpresa' en true. REGLA CRÍTICA DE INVOCACIÓN DE HERRAMIENTA: Antes de llamar a 'analisisCompleto', DEBES preguntar e informar verbalmente/por texto al usuario de que vas a utilizar el 'MODELO FUERTE' (gemini-3.6-flash).";
             
             const customPersonality = localStorage.getItem('gemini_assistant_personality') || defaultPersonality;
 
@@ -63,6 +63,19 @@ async function toggleConnection() {
                             {
                                 name: "listarArchivos",
                                 description: "Obtiene la lista de todos los archivos compatibles (.txt, .html, .css, .js) presentes en la raíz de la carpeta de trabajo del usuario."
+                            },
+                            {
+                                name: "abrirCarpeta",
+                                description: "Abre o navega visualmente a una subcarpeta específica dentro del espacio de trabajo.",
+                                parameters: {
+                                    type: "OBJECT",
+                                    properties: { rutaCarpeta: { type: "STRING", description: "Ruta o nombre de la subcarpeta a abrir (ej: src, componentes)" } },
+                                    required: ["rutaCarpeta"]
+                                }
+                            },
+                            {
+                                name: "cerrarCarpeta",
+                                description: "Cierra la subcarpeta actual y vuelve a la raíz del espacio de trabajo conectada (volver a la raíz)."
                             },
                             {
                                 name: "crearCarpeta",

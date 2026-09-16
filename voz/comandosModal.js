@@ -8,6 +8,16 @@ const COMANDOS_VOZ = [
         ejemplo: "«Muestra todos los archivos de la carpeta» o «Listar archivos»"
     },
     {
+        comando: "Abrir carpeta",
+        descripcion: "Navega visualmente a una subcarpeta específica dentro de la raíz del espacio de trabajo.",
+        ejemplo: "«Abre la carpeta src» o «Entra en componentes»"
+    },
+    {
+        comando: "Cerrar carpeta / Volver a la raíz",
+        descripcion: "Cierra la subcarpeta actual y regresa al directorio principal (raíz) del proyecto.",
+        ejemplo: "«Cierra la carpeta», «Vuelve a la raíz» o «Regresa al inicio»"
+    },
+    {
         comando: "Leer archivo",
         descripcion: "Lee y analiza el contenido completo de un archivo específico de la carpeta.",
         ejemplo: "«Lee el archivo index.html» o «Abre notas.txt»"

@@ -21,11 +21,27 @@ async function manejarLlamadasHerramientas(calls) {
                 const archivos = await listarArchivos();
                 resultadoTexto = archivos.length > 0 ? "Archivos encontrados: " + archivos.join(', ') : "La carpeta está vacía o no hay archivos compatibles.";
                              
+            } else if (call.name === 'abrirCarpeta') {
+                const rutaCarpeta = args.rutaCarpeta || args.path || args.nombre || "";
+                if (typeof navegarACarpeta === 'function') {
+                    await navegarACarpeta(rutaCarpeta);
+                    resultadoTexto = `Carpeta '${rutaCarpeta}' abierta correctamente en la interfaz.`;
+                } else {
+                    resultadoTexto = "Error: La función de navegación no está disponible.";
+                }
+
+            } else if (call.name === 'cerrarCarpeta') {
+                if (typeof navegarACarpeta === 'function') {
+                    await navegarACarpeta('');
+                    resultadoTexto = "Se ha cerrado la carpeta actual y regresado exitosamente a la raíz del espacio de trabajo.";
+                } else {
+                    resultadoTexto = "Error: La función de navegación no está disponible.";
+                }
+
             } else if (call.name === 'crearCarpeta') {
                 const rutaCarpeta = args.rutaCarpeta || args.path || "";
                 resultadoTexto = await crearCarpeta(rutaCarpeta);
-                if (typeof renderizarArbolDirectorio === 'function') {
-                    // Actualizar UI localmente sin emitir avisos de navegación por WebSocket que causen bucles
+                if (typeof renderizarGridContenido === 'function') {
                     await renderizarGridContenido(directoryHandle);
                 }
             } else if (call.name === 'renombrarCarpeta') {
