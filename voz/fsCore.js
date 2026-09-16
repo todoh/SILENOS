@@ -1,9 +1,7 @@
 // SILENOS 5 VOZ/fsCore.js
-
-// ─── GESTOR DE ARCHIVOS LOCALES (FILE SYSTEM ACCESS API) ───
+// GESTOR DE ARCHIVOS LOCALES (FILE SYSTEM ACCESS API)
 let directoryHandle = null;
 let memoriaDirHandle = null;
-
 // Historial unificado para deshacer y rehacer (archivos y carpetas)
 let historialDeshacer = [];
 let historialRehacer = [];
@@ -14,14 +12,13 @@ async function abrirCarpeta() {
         directoryHandle = await window.showDirectoryPicker({
             mode: 'readwrite'
         });
-        document.getElementById('folderStatus').innerText = "📁 " + directoryHandle.name;
+        document.getElementById('folderStatus').innerText = "  " + directoryHandle.name;
         
         memoriaDirHandle = await directoryHandle.getDirectoryHandle('Memoria', { create: true });
         
         if (typeof iniciarAnalisisCognitivo === 'function') {
             iniciarAnalisisCognitivo();
         }
-
         await actualizarUIArchivos();
         
         document.getElementById('newFileBtn').style.display = 'block';
@@ -37,7 +34,7 @@ async function abrirCarpeta() {
     }
 }
 
-// ─── LECTURA Y ESCRITURA EXCLUSIVA PARA CARPETA "Memoria" ───
+// LECTURA Y ESCRITURA EXCLUSIVA PARA CARPETA "Memoria"
 async function escribirMemoria(nombre, contenido) {
     if (!memoriaDirHandle) return;
     if (!nombre.toLowerCase().endsWith('.txt')) nombre += '.txt';
@@ -63,7 +60,7 @@ async function leerMemoria(nombre) {
     }
 }
 
-// ─── HELPER DE RESOLUCIÓN DE RUTAS EN SUBCARPETAS ───
+// HELPER DE RESOLUCIÓN DE RUTAS EN SUBCARPETAS
 async function obtenerFileHandlePorRuta(ruta, crear = false) {
     if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
@@ -92,7 +89,7 @@ async function obtenerDirHandlePorRuta(ruta, crear = false) {
     return actualHandle;
 }
 
-// Helper para respaldar carpetas completas antes de eliminarlas (necesario para deshacer)
+// Helper para respaldar carpetas completas antes de eliminarlas
 async function capturarEstructuraDirectorio(dirHandle, rutaBase = '') {
     const estructura = [];
     for await (const entry of dirHandle.values()) {
@@ -110,8 +107,7 @@ async function capturarEstructuraDirectorio(dirHandle, rutaBase = '') {
     return estructura;
 }
 
-// ─── GESTIÓN DE CARPETAS ───
-
+// GESTIÓN DE CARPETAS
 async function crearCarpeta(rutaCarpeta) {
     if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: No puedes ejecutar esta acción porque el usuario no ha conectado la carpeta.");
     
@@ -122,7 +118,6 @@ async function crearCarpeta(rutaCarpeta) {
         });
         historialRehacer = [];
     }
-
     await obtenerDirHandlePorRuta(rutaCarpeta, true);
     await actualizarUIArchivos();
     return `Carpeta '${rutaCarpeta}' creada correctamente.`;
@@ -171,18 +166,14 @@ async function borrarCarpeta(rutaCarpeta, autorizacionExpresa = false) {
     if (carpetasProtegidas.includes(rutaCarpeta)) {
         throw new Error(`ACCESO DENEGADO: La carpeta '${rutaCarpeta}' está protegida por el sistema y no puede ser eliminada.`);
     }
-
     let partes = rutaCarpeta.replace(/\\/g, '/').split('/').filter(p => p.length > 0);
     if (partes.length === 0) throw new Error("No puedes eliminar la carpeta raíz.");
-
     let padreHandle = directoryHandle;
     for (let i = 0; i < partes.length - 1; i++) {
         padreHandle = await padreHandle.getDirectoryHandle(partes[i]);
     }
-
     const carpetaTargetHandle = await padreHandle.getDirectoryHandle(partes[partes.length - 1]);
     
-    // Si no proviene de una ejecución de deshacer/rehacer, hacemos respaldo completo
     if (!ejecutandoHistorial) {
         const respaldoContenido = await capturarEstructuraDirectorio(carpetaTargetHandle);
         historialDeshacer.push({
@@ -198,8 +189,7 @@ async function borrarCarpeta(rutaCarpeta, autorizacionExpresa = false) {
     return `Carpeta '${rutaCarpeta}' y todo su contenido han sido eliminados de forma permanente tras confirmación expresada.`;
 }
 
-// ─── OPERACIONES DE ARCHIVO Y NÚCLEO DESHACER/REHACER ───
-
+// OPERACIONES DE ARCHIVO Y NÚCLEO DESHACER/REHACER
 async function deshacerAccionSistema() {
     if (!directoryHandle) throw new Error("Carpeta no conectada.");
     if (historialDeshacer.length === 0) return "No hay ninguna acción en el historial para deshacer.";
@@ -267,14 +257,11 @@ async function listarArchivos(dirHandle = directoryHandle, rutaRelativa = '') {
     if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
     const archivos = [];
-    const extensionesPermitidas = ['.txt', '.html', '.css', '.js', '.json'];
+    const extensionesPermitidas = ['.txt', '.html', '.css', '.js', '.json', '.svg'];
     const carpetasIgnoradas = ['Memoria', 'analisis_masivo', '.git', 'node_modules', 'dist', 'build', '.next', 'vendor'];
-
     for await (const entry of dirHandle.values()) {
         if (carpetasIgnoradas.includes(entry.name)) continue;
-
         const pathActual = rutaRelativa ? `${rutaRelativa}/${entry.name}` : entry.name;
-
         if (entry.kind === 'file') {
             const nombreMinuscula = entry.name.toLowerCase();
             if (extensionesPermitidas.some(ext => nombreMinuscula.endsWith(ext))) {
@@ -300,8 +287,35 @@ async function leerArchivo(nombre) {
     }
 }
 
+// LIMPIADOR DE SVG PARA EVITAR BARRAS INVERTIDAS Y ATRIBUTOS CORRUPTOS
+function limpiarSVG(svgCodigo) {
+    let limpio = String(svgCodigo || "").trim();
+    const startIdx = limpio.indexOf('<svg');
+    const endIdx = limpio.lastIndexOf('</svg>');
+    if (startIdx !== -1 && endIdx !== -1) {
+        limpio = limpio.substring(startIdx, endIdx + 6);
+    }
+    // Eliminar barras invertidas residuales que corrompen atributos (\")
+    limpio = limpio.replace(/\\/g, '');
+    // Corregir comillas duplicadas mal formateadas
+    limpio = limpio.replace(/=""+/g, '="').replace(/""+/g, '"');
+    return limpio.trim();
+}
+
 async function escribirArchivo(nombre, contenido) {
     if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
+    
+    let contenidoLimpio = String(contenido || "");
+    if (nombre.toLowerCase().endsWith('.svg') || contenidoLimpio.includes('<svg')) {
+        contenidoLimpio = limpiarSVG(contenidoLimpio);
+    } else {
+        if (contenidoLimpio.includes('\\"')) {
+            contenidoLimpio = contenidoLimpio.replace(/\\"/g, '"');
+        }
+        if (contenidoLimpio.includes("\\'")) {
+            contenidoLimpio = contenidoLimpio.replace(/\\'/g, "'");
+        }
+    }
     
     if (!ejecutandoHistorial) {
         let contenidoAnterior = null;
@@ -315,14 +329,13 @@ async function escribirArchivo(nombre, contenido) {
             accion: 'escribir',
             nombre: nombre,
             contenidoAnterior: contenidoAnterior,
-            contenidoNuevo: contenido
+            contenidoNuevo: contenidoLimpio
         });
         historialRehacer = [];
     }
-
     const fileHandle = await obtenerFileHandlePorRuta(nombre, true);
     const writable = await fileHandle.createWritable();
-    await writable.write(contenido);
+    await writable.write(contenidoLimpio);
     await writable.close();
     await actualizarUIArchivos();
 }
@@ -343,9 +356,8 @@ async function borrarArchivo(nombre) {
             nombre: nombre,
             contenidoAnterior: contenidoAnterior
         });
-        historialRehacer = []; 
+        historialRehacer = [];
     }
-
     let partes = nombre.replace(/\\/g, '/').split('/').filter(p => p.length > 0);
     let dirHandle = directoryHandle;
     for (let i = 0; i < partes.length - 1; i++) {
@@ -362,7 +374,6 @@ async function reemplazarTextoArchivo(nombre, textoBuscado, textoNuevo) {
     if (!contenidoActual.includes(textoBuscado)) {
         throw new Error(`El texto exacto a buscar no se encontró en el archivo ${nombre}.`);
     }
-
     const nuevoContenido = contenidoActual.replace(textoBuscado, textoNuevo);
     await escribirArchivo(nombre, nuevoContenido);
     return nuevoContenido;
@@ -450,9 +461,7 @@ async function analizarContenido(tipoAnalisis, objetivo, instrucciones, nombreRe
     
     const apiKey = localStorage.getItem('gemini_api_key_standalone');
     if (!apiKey) throw new Error("No hay API Key configurada.");
-
     let datosAEnviar = "";
-
     if (tipoAnalisis === 'archivo' || tipoAnalisis === 'carpeta_completa') {
         const archivosALeer = [];
         if (tipoAnalisis === 'carpeta_completa') {
@@ -462,9 +471,7 @@ async function analizarContenido(tipoAnalisis, objetivo, instrucciones, nombreRe
             const lista = objetivo.split(',').map(s => s.trim());
             archivosALeer.push(...lista);
         }
-
         if (archivosALeer.length === 0) return "Error: No se especificaron archivos válidos para el análisis.";
-
         for (const arch of archivosALeer) {
             try {
                 const contenido = await leerArchivo(arch);
@@ -476,14 +483,8 @@ async function analizarContenido(tipoAnalisis, objetivo, instrucciones, nombreRe
     } else if (tipoAnalisis === 'concepto') {
         datosAEnviar = `[CONCEPTO / CONTEXTO A PLANIFICAR O ANALIZAR]:\n${objetivo}`;
     }
-
-    const promptFinal = `Actúa como un ingeniero de software experto de alta precisión. Procesa el siguiente contexto y genera el código o análisis strictly limpio, libre de explicaciones innecesarias o markdown invasivo fuera del formato solicitado.\n\nDIRECTRICES:\n"${instrucciones}"\n\n${datosAEnviar}\n\nResultado completo:`;
-
+    const promptFinal = `Actúa como un ingeniero de software experto de alta precisión. Procesa el siguiente contexto y genera el código o análisis estrictamente limpio, libre de explicaciones innecesarias o markdown invasivo fuera del formato solicitado.\n\nDIRECTRICES:\n"${instrucciones}"\n\n${datosAEnviar}\n\nResultado completo:`;
     let modeloId = "gemini-3.5-flash-lite";
-    if (modelo === 'gemini-3.5-flash') {
-        modeloId = "gemini-3.5-flash";
-    }
-
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modeloId}:generateContent?key=${apiKey}`;
     
     const response = await fetch(url, {
@@ -493,16 +494,13 @@ async function analizarContenido(tipoAnalisis, objetivo, instrucciones, nombreRe
             contents: [{ parts: [{ text: promptFinal }] }]
         })
     });
-
     if (!response.ok) {
         throw new Error(`Error en la llamada paralela de ${modeloId}: ${response.statusText}`);
     }
-
     const data = await response.json();
     if (!data.candidates || data.candidates.length === 0) {
         throw new Error("No se obtuvo respuesta del modelo de análisis.");
     }
-
     let resultadoAnalisis = data.candidates[0].content.parts[0].text;
     
     if (resultadoAnalisis.startsWith("```")) {
@@ -511,22 +509,218 @@ async function analizarContenido(tipoAnalisis, objetivo, instrucciones, nombreRe
         if (lineas[lineas.length - 1].startsWith("```")) lineas.pop();
         resultadoAnalisis = lineas.join("\n");
     }
-
     let nombreArchivoFinal = nombreResultado || "resultado_desarrollo.html";
     await escribirArchivo(nombreArchivoFinal, resultadoAnalisis);
     
     return `Generación y análisis finalizado utilizando ${modeloId}. Los datos estructurados han sido guardados con éxito en "${nombreArchivoFinal}".`;
 }
 
-async function ejecutarAnalisisCompletoModeloFuerte(objetivo, instrucciones) {
-    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta de trabajo.");
+ 
+// GENERACIÓN PARALELA DE SVG CON GEMINI 3.5 FLASH-LITE
+async function generarImagenesSVG(prompts, nombresArchivos) {
+    if (!directoryHandle) {
+        throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
+    }
 
     const apiKey = localStorage.getItem('gemini_api_key_standalone');
-    if (!apiKey) throw new Error("No hay API Key configurada.");
 
+    if (!apiKey) {
+        throw new Error("No hay API Key configurada.");
+    }
+
+    if (
+        !Array.isArray(prompts) ||
+        !Array.isArray(nombresArchivos) ||
+        prompts.length !== nombresArchivos.length
+    ) {
+        throw new Error(
+            "Los prompts y nombres de archivo deben ser arreglos de la misma longitud."
+        );
+    }
+
+    const modeloId = "gemini-3.5-flash-lite";
+
+    const tareas = prompts.map(async (promptVisual, index) => {
+
+        let nombreArchivo =
+            nombresArchivos[index] || `imagen_${index + 1}.svg`;
+
+        if (!nombreArchivo.toLowerCase().endsWith('.svg')) {
+            nombreArchivo += '.svg';
+        }
+
+        const promptFinal = `
+Actúa como un diseñador gráfico vectorial experto en SVG.
+
+Genera una ilustración SVG completa para:
+
+"${promptVisual}"
+
+REQUISITOS OBLIGATORIOS:
+
+1. Devuelve ÚNICAMENTE código SVG.
+2. La respuesta debe comenzar con <svg y terminar con </svg>.
+3. No utilices Markdown.
+4. No escribas explicaciones.
+5. No incluyas <html>, <body> ni código JavaScript.
+6. El SVG debe ser válido y autocontenido.
+7. Incluye:
+   - xmlns="http://www.w3.org/2000/svg"
+   - viewBox
+   - width
+   - height
+8. Utiliza formas vectoriales SVG reales:
+   path, circle, ellipse, rect, polygon, polyline, line, etc.
+9. No utilices imágenes externas, URLs externas ni recursos externos.
+10. El resultado debe poder guardarse directamente como archivo .svg.
+`;
+
+        // Endpoint REST oficial de Gemini GenerateContent
+        const url =
+            `https://generativelanguage.googleapis.com/v1beta/models/${modeloId}:generateContent`;
+
+        let response;
+
+        try {
+            response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': apiKey
+                },
+                body: JSON.stringify({
+                    contents: [
+                        {
+                            role: "user",
+                            parts: [
+                                {
+                                    text: promptFinal
+                                }
+                            ]
+                        }
+                    ]
+                })
+            });
+        } catch (error) {
+            throw new Error(
+                `Error de conexión con Gemini para '${nombreArchivo}': ${error.message}`
+            );
+        }
+
+        // Leer siempre el cuerpo para obtener el error real de Google
+        const respuestaTexto = await response.text();
+
+        if (!response.ok) {
+            let detalle = respuestaTexto;
+
+            try {
+                const errorJson = JSON.parse(respuestaTexto);
+
+                if (errorJson.error) {
+                    detalle =
+                        errorJson.error.message ||
+                        JSON.stringify(errorJson.error);
+                }
+            } catch (e) {
+                // El servidor no devolvió JSON
+            }
+
+            throw new Error(
+                `Error Gemini ${response.status} para '${nombreArchivo}': ${detalle}`
+            );
+        }
+
+        let data;
+
+        try {
+            data = JSON.parse(respuestaTexto);
+        } catch (e) {
+            throw new Error(
+                `Gemini devolvió una respuesta que no es JSON para '${nombreArchivo}'.`
+            );
+        }
+
+        if (
+            !data.candidates ||
+            !data.candidates.length ||
+            !data.candidates[0].content ||
+            !data.candidates[0].content.parts
+        ) {
+            throw new Error(
+                `No se obtuvo una respuesta válida de ${modeloId} para '${nombreArchivo}'.`
+            );
+        }
+
+        let svgCodigo = "";
+
+        for (const part of data.candidates[0].content.parts) {
+            if (part.text) {
+                svgCodigo += part.text;
+            }
+        }
+
+        svgCodigo = svgCodigo.trim();
+
+        if (!svgCodigo) {
+            throw new Error(
+                `Gemini devolvió contenido vacío para '${nombreArchivo}'.`
+            );
+        }
+
+        // Limpiar posibles ```svg ... ```
+        if (svgCodigo.startsWith("```")) {
+            svgCodigo = svgCodigo
+                .replace(/^```(?:svg|xml)?\s*/i, "")
+                .replace(/\s*```$/i, "")
+                .trim();
+        }
+
+        // Extraer exclusivamente el SVG
+        const inicioSVG = svgCodigo.indexOf("<svg");
+        const finalSVG = svgCodigo.lastIndexOf("</svg>");
+
+        if (inicioSVG === -1 || finalSVG === -1) {
+            throw new Error(
+                `Gemini no generó un SVG válido para '${nombreArchivo}'. Respuesta recibida:\n${svgCodigo.substring(0, 500)}`
+            );
+        }
+
+        svgCodigo = svgCodigo.substring(
+            inicioSVG,
+            finalSVG + "</svg>".length
+        );
+
+        // Limpieza final
+        svgCodigo = limpiarSVG(svgCodigo);
+
+        if (!svgCodigo.includes("<svg") || !svgCodigo.includes("</svg>")) {
+            throw new Error(
+                `El SVG generado para '${nombreArchivo}' no supera la validación básica.`
+            );
+        }
+
+        await escribirArchivo(nombreArchivo, svgCodigo);
+
+        return nombreArchivo;
+    });
+
+    const archivosGenerados = await Promise.all(tareas);
+
+    return (
+        `Generación paralela de SVG completada exitosamente ` +
+        `utilizando ${modeloId}. ` +
+        `Archivos guardados: ${archivosGenerados.join(', ')}.`
+    );
+}
+
+
+
+async function ejecutarAnalisisCompletoModeloFuerte(objetivo, instrucciones) {
+    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta de trabajo.");
+    const apiKey = localStorage.getItem('gemini_api_key_standalone');
+    if (!apiKey) throw new Error("No hay API Key configurada.");
     let compiladoArchivos = "";
     const todosLosArchivos = await listarArchivos();
-
     if (!objetivo || objetivo.toUpperCase() === 'PROYECTO_COMPLETO') {
         for (const arch of todosLosArchivos) {
             try {
@@ -547,15 +741,11 @@ async function ejecutarAnalisisCompletoModeloFuerte(objetivo, instrucciones) {
             }
         }
     }
-
     if (!compiladoArchivos.trim()) {
         compiladoArchivos = `[Aviso: No se encontraron archivos bajo el objetivo indicado: "${objetivo}"]`;
     }
-
-    const promptFinal = `[ANALISIS COMPLETO - MODELO FUERTE]\n\nINSTRUCCIONES DE ANÁLISIS:\n${instrucciones}\n\nCONTENIDO Y ESTRUCTURA RECOPILADA:\n${compiladoArchivos}\n\nProporciona un análisis exhaustivo, técnico y completo:`;
-
-    const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=$){apiKey}`;
-
+    const promptFinal = `[ANALISIS COMPLETO - MODELO FUERTE]\n\nINSTRUCCIONES DE ANALISIS:\n${instrucciones}\n\nCONTENIDO Y ESTRUCTURA RECOPILADA:\n${compiladoArchivos}\n\nProporciona un análisis exhaustivo, técnico y completo:`;
+    const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=$){apiKey}`;
     const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -563,15 +753,12 @@ async function ejecutarAnalisisCompletoModeloFuerte(objetivo, instrucciones) {
             contents: [{ parts: [{ text: promptFinal }] }]
         })
     });
-
     if (!response.ok) {
         throw new Error(`Error en llamada al modelo fuerte (${response.status}): ${response.statusText}`);
     }
-
     const data = await response.json();
     if (!data.candidates || data.candidates.length === 0) {
         throw new Error("El modelo de análisis no devolvió una respuesta válida.");
     }
-
     return data.candidates[0].content.parts[0].text;
 }

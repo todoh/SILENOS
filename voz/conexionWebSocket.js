@@ -247,6 +247,26 @@ async function toggleConnection() {
                                 }
                             },
                             {
+                                name: "generarImagenesSVG",
+                                description: "Genera una o múltiples imágenes o ilustraciones en código SVG vectorial haciendo llamadas paralelas al modelo exacto gemini-3.5-flash-lite y las guarda en archivos .svg.",
+                                parameters: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        prompts: {
+                                            type: "ARRAY",
+                                            items: { type: "STRING" },
+                                            description: "Lista de descripciones visuales para cada imagen o gráfico SVG a generar."
+                                        },
+                                        nombresArchivos: {
+                                            type: "ARRAY",
+                                            items: { type: "STRING" },
+                                            description: "Nombres de los archivos destino con extensión .svg (ej: ['icono1.svg', 'ilustracion2.svg'])."
+                                        }
+                                    },
+                                    required: ["prompts", "nombresArchivos"]
+                                }
+                            },
+                            {
                                 name: "analisisCompleto",
                                 description: "Realiza un ANÁLISIS COMPLETO enviando los contenidos recopilados al MODELO FUERTE (gemini-3.6-flash) en una única llamada directa. OBLIGATORIO: Debes avisar e informar siempre al usuario verbalmente antes de invocar esta función.",
                                 parameters: {
