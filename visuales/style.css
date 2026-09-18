@@ -96,6 +96,24 @@ input[type="text"] {
     outline: none;
 }
 
+textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--text-color);
+    background-color: transparent;
+    color: var(--text-color);
+    font-size: 13px;
+    font-family: inherit;
+    border-radius: 0px;
+    outline: none;
+    resize: vertical;
+    min-height: 90px;
+}
+
+textarea:focus {
+    background-color: var(--hover-bg);
+}
+
 .actions-bar {
     display: flex;
     gap: 12px;
@@ -144,6 +162,17 @@ button.agentic {
 button.agentic:hover {
     background-color: var(--bg-color);
     color: var(--success-color);
+}
+
+button.resume {
+    background-color: #d97706;
+    border-color: #d97706;
+    color: #ffffff;
+}
+
+button.resume:hover {
+    background-color: var(--bg-color);
+    color: #d97706;
 }
 
 button:disabled {

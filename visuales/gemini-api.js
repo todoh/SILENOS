@@ -1,4 +1,4 @@
-const MODELO_computacional = "gemini-3.1-flash-lite";
+const MODELO_computacional = "gemini-3.5-flash-lite";
 
 /**
  * Realiza una llamada directa a la API de Gemini.
@@ -27,7 +27,9 @@ async function llamarGemini(prompt, systemInstruction = "", apiKey) {
 
     if (!response.ok) {
         const errText = await response.text();
-        throw new Error(`Error API (${response.status}): ${errText}`);
+        const err = new Error(`Error API (${response.status}): ${errText}`);
+        err.status = response.status;
+        throw err;
     }
 
     const data = await response.json();

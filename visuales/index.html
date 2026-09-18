@@ -42,13 +42,20 @@
                 <input type="text" id="doc-titulo" value="" readonly style="opacity: 0.7; cursor: not-allowed;">
             </div>
 
+            <div class="section-title">Especificaciones y Referencias Visuales Manuales</div>
+            <div class="field">
+                <label for="datos-visuales-manuales">Pautas Visuales y Atributos Explícitos (Evita Invenciones de la IA)</label>
+                <textarea id="datos-visuales-manuales" placeholder="Escribe aquí especificaciones estéticas o detalles visuales clave de personajes, escenarios u objetos. La IA aplicará strictly estos datos a la obra sin extrapolaciones."></textarea>
+            </div>
+
             <div style="background: #f9fafb; padding: 16px; margin-bottom: 20px; border-left: 3px solid #000;">
                 <label style="margin-bottom: 2px;">Monitor de Estado del Pipeline</label>
                 <div id="current-step-text" style="font-size: 13px; font-weight: bold; color: #059669;">Esperando Entrada de Datos...</div>
             </div>
 
             <div class="actions-bar">
-                <button id="btn-run-agent" class="agentic" disabled>Iniciar Bucle de Análisis (9 Llamadas)</button>
+                <button id="btn-run-agent" class="agentic" disabled>Iniciar Bucle de Análisis (13 Llamadas)</button>
+                <button id="btn-continuar" class="resume hidden">Continuar Desde Fase Interrumpida</button>
                 <button id="btn-exportar-bbdd" class="secondary">Guardar BBDD Artística Completa</button>
                 <button id="btn-abortar" class="secondary hidden" style="border-color:#ef4444; color:#ef4444;">Interrumpir Secuencia</button>
             </div>

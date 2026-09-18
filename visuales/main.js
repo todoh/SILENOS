@@ -1,7 +1,7 @@
 // main.js
 let libroDataOriginal = null;
 let baseDatosArtistica = {
-    meta: { titulo: "", fecha_analisis: "" },
+    meta: { titulo: "", fecha_analisis: "", datos_visuales_manuales: "" },
     macro: {
         direccion_artistica: "",
         detalles_artisticos: null,
@@ -10,19 +10,25 @@ let baseDatosArtistica = {
     listas_extraccion: {
         personajes: [], lugares: [], objetos: [], vehiculos: [], edificios: [], fx: []
     },
+    evidencias_visuales: {
+        personajes: {}, lugares: {}, objetos: {}, vehiculos: {}, edificios: {}, fx: {}
+    },
     diseno_visual: {
         personajes: {}, lugares: {}, objetos: {}, vehiculos: {}, edificios: {}, fx: []
     }
 };
 let agenteActivo = false;
+let faseActualGlobal = 1;
 
 // Elementos DOM
 const apiKeyInput = document.getElementById('api-key');
+const datosVisualesManualesInput = document.getElementById('datos-visuales-manuales');
 const logConsole = document.getElementById('log-console');
 const importFileInput = document.getElementById('import-file');
 const btnPegarJSON = document.getElementById('btn-pegar-json');
 const btnExportarBBDD = document.getElementById('btn-exportar-bbdd');
 const btnRunAgent = document.getElementById('btn-run-agent');
+const btnContinuar = document.getElementById('btn-continuar');
 const btnAbortar = document.getElementById('btn-abortar');
 const agentBadge = document.getElementById('agent-status-badge');
 const docTitulo = document.getElementById('doc-titulo');
@@ -50,6 +56,13 @@ function actualizarVistaPreviaBBDD() {
     let html = `<div style="padding: 10px; background: #f3f4f6; margin-bottom: 16px;">
         <strong>Dirección Artística General:</strong> <p style="font-size:12px; margin-top:4px;">${baseDatosArtistica.macro.direccion_artistica}</p>
     </div>`;
+
+    if (baseDatosArtistica.meta.datos_visuales_manuales) {
+        html += `<div style="padding: 8px 10px; background: #eef2ff; border-left: 3px solid #6366f1; margin-bottom: 16px; font-size: 11px;">
+            <strong>Especificaciones Manuales Aplicadas:</strong> <br/>
+            <span style="color:#374151;">${baseDatosArtistica.meta.datos_visuales_manuales}</span>
+        </div>`;
+    }
 
     if (baseDatosArtistica.macro.detalles_artisticos) {
         const det = baseDatosArtistica.macro.detalles_artisticos;
@@ -91,9 +104,11 @@ function inicializarLibroJuego(objetoJSON) {
         docTitulo.value = libroDataOriginal.titulo || "Matriz Interactiva Anonimizada";
         baseDatosArtistica.meta.titulo = libroDataOriginal.titulo || "Matriz Interactiva Anonimizada";
         baseDatosArtistica.meta.fecha_analisis = new Date().toISOString();
+        faseActualGlobal = 1;
         
         log(`[SISTEMA] Matriz cargada con éxito. Listo para ejecutar cascada analítica conceptual.`);
         btnRunAgent.disabled = false;
+        btnContinuar.classList.add('hidden');
         actualizarVistaPreviaBBDD();
     } catch (err) {
         log(`Error al procesar archivo: ${err.message}`);
@@ -101,24 +116,30 @@ function inicializarLibroJuego(objetoJSON) {
     }
 }
 
-async function ejecutarCascadaArtistica() {
+async function ejecutarCascadaArtistica(faseInicial = 1) {
     if (!libroDataOriginal) return;
 
+    faseActualGlobal = faseInicial;
     agenteActivo = true;
     btnRunAgent.disabled = true;
+    btnContinuar.classList.add('hidden');
     btnAbortar.classList.remove('hidden');
     agentBadge.classList.remove('hidden');
     agentBadge.classList.add('agent-active');
 
     const apiKey = apiKeyInput.value.trim();
+    const datosVisualesManuales = datosVisualesManualesInput ? datosVisualesManualesInput.value.trim() : "";
+    baseDatosArtistica.meta.datos_visuales_manuales = datosVisualesManuales;
+
     const systemPrompt = GeminiPrompts.obtenerSystemPromptBBDD();
+    const categorias = ['personajes', 'lugares', 'objetos', 'vehiculos', 'edificios', 'fx'];
 
     try {
-        // --- LLAMADA 1: CONFIGURACIÓN MACRO COMPLETA (DIRECCIÓN, DETALLES Y PÚBLICO) ---
-        if (agenteActivo) {
-            currentStepText.innerText = "Fase 1/9: Generando Dirección Artística, Detalles y Público Objetivo...";
-            log("[FASE 1] Solicitando Núcleo Estético Completo (Dirección, Detalles y Audiencia)...");
-            const prompt1 = GeminiPrompts.obtenerPromptMacroCompleto(libroDataOriginal);
+        // --- LLAMADA 1: CONFIGURACIÓN MACRO COMPLETA CON DATOS VISUALES MANUALES ---
+        if (agenteActivo && faseActualGlobal === 1) {
+            currentStepText.innerText = "Fase 1/13: Generando Dirección Artística Macro con Datos Visuales Manuales...";
+            log("[FASE 1] Solicitando Núcleo Estético Completo incorporando especificaciones visuales...");
+            const prompt1 = GeminiPrompts.obtenerPromptMacroCompleto(libroDataOriginal, datosVisualesManuales);
             const res1 = await llamarGemini(prompt1, systemPrompt, apiKey);
             const dataMacro = JSON.parse(limpiarMarkdown(res1));
             
@@ -128,81 +149,104 @@ async function ejecutarCascadaArtistica() {
             
             log("[ÉXITO FASE 1] Estructura marco de producción unificada.");
             actualizarVistaPreviaBBDD();
+            faseActualGlobal = 2;
         }
 
-        // --- LLAMADA 2: EXTRACCIÓN DE PERSONAJES ---
-        if (agenteActivo) {
-            currentStepText.innerText = "Fase 2/9: Extrayendo Inventario Global de PERSONAJES...";
-            log("[FASE 2] Analizando manuscrito para aislar el reparto de personajes...");
-            const prompt2 = GeminiPrompts.obtenerPromptPersonajes(libroDataOriginal);
-            const res2 = await llamarGemini(prompt2, systemPrompt, apiKey);
-            const dataPjs = JSON.parse(limpiarMarkdown(res2));
-            
-            baseDatosArtistica.listas_extraccion.personajes = dataPjs.personajes || [];
-            log(`[ÉXITO FASE 2] Catalogados ${baseDatosArtistica.listas_extraccion.personajes.length} personajes.`);
-            actualizarVistaPreviaBBDD();
-        }
-
-        // --- LLAMADA 3: EXTRACCIÓN DE RESTO DE ELEMENTOS (LUGARES, OBJETOS, FX, VEHÍCULOS, EDIFICIOS) ---
-        if (agenteActivo) {
-            currentStepText.innerText = "Fase 3/9: Indexando Entorno (Lugares, Objetos, FX, Vehículos y Edificios)...";
-            log("[FASE 3] Realizando barrido consolidado de activos contextuales...");
-            const prompt3 = GeminiPrompts.obtenerPromptRestoElementos(libroDataOriginal);
-            const res3 = await llamarGemini(prompt3, systemPrompt, apiKey);
-            const dataElementos = JSON.parse(limpiarMarkdown(res3));
-            
-            baseDatosArtistica.listas_extraccion.lugares = dataElementos.lugares || [];
-            baseDatosArtistica.listas_extraccion.objetos = dataElementos.objetos || [];
-            baseDatosArtistica.listas_extraccion.fx = dataElementos.fx || [];
-            baseDatosArtistica.listas_extraccion.vehiculos = dataElementos.vehiculos || [];
-            baseDatosArtistica.listas_extraccion.edificios = dataElementos.edificios || [];
-            
-            log("[ÉXITO FASE 3] Inventarios ambientales unificados e indexados.");
-            actualizarVistaPreviaBBDD();
-        }
-
-        // --- LLAMADAS 4 A 9: DISEÑO CONCEPTUAL VISUAL CONTEXTUAL (1 POR CATEGORÍA, SIN EL LIBRO) ---
-        const categorias = ['personajes', 'lugares', 'objetos', 'vehiculos', 'edificios', 'fx'];
-        let faseActual = 4;
-
-        for (const cat of categorias) {
+        // --- LLAMADAS 2 A 7: EXTRACCIÓN Y EVIDENCIAS VISUALES INDEPENDIENTES POR CATEGORÍA ---
+        for (let i = 0; i < categorias.length; i++) {
+            const numFase = 2 + i;
             if (!agenteActivo) return;
-            currentStepText.innerText = `Fase ${faseActual}/9: Diseñando Visualmente Atributos de ${cat.toUpperCase()}...`;
-            
-            const listaElementos = baseDatosArtistica.listas_extraccion[cat];
-            if (listaElementos.length === 0) {
-                log(`[FASE ${faseActual}] Saltando diseño de ${cat} por lista vacía.`);
-                baseDatosArtistica.diseno_visual[cat] = {};
-                faseActual++;
-                continue;
+
+            if (faseActualGlobal === numFase) {
+                const cat = categorias[i];
+                currentStepText.innerText = `Fase ${numFase}/13: Extrayendo Inventario y Evidencias Visuales de ${cat.toUpperCase()}...`;
+                log(`[FASE ${numFase}] Analizando manuscrito y pautas manuales para aislar ${cat.toUpperCase()} y sus datos estéticos...`);
+                
+                const promptExtraccion = GeminiPrompts.obtenerPromptExtraccionCategoria(libroDataOriginal, cat, datosVisualesManuales);
+                const resExtraccion = await llamarGemini(promptExtraccion, systemPrompt, apiKey);
+                const dataExtraccion = JSON.parse(limpiarMarkdown(resExtraccion));
+
+                const rawList = dataExtraccion[cat] || [];
+                const nombres = [];
+                const evidencias = {};
+
+                rawList.forEach(item => {
+                    if (typeof item === 'string') {
+                        nombres.push(item);
+                        evidencias[item] = "Sin mención explícita en texto";
+                    } else if (item && typeof item === 'object') {
+                        const nom = item.nombre || item.elemento || "Elemento";
+                        nombres.push(nom);
+                        evidencias[nom] = item.evidencia_visual || item.descripcion_visual || "Sin mención explícita";
+                    }
+                });
+
+                baseDatosArtistica.listas_extraccion[cat] = nombres;
+                baseDatosArtistica.evidencias_visuales[cat] = evidencias;
+
+                log(`[ÉXITO FASE ${numFase}] Catalogados ${nombres.length} elementos en ${cat.toUpperCase()} con sus evidencias estéticas.`);
+                actualizarVistaPreviaBBDD();
+                faseActualGlobal = numFase + 1;
             }
-
-            log(`[FASE ${faseActual}] Generando fichas visuales para ${cat} utilizando el bloque de dirección como contexto...`);
-            const promptDiseno = GeminiPrompts.obtenerPromptDisenoVisual(
-                listaElementos,
-                cat,
-                baseDatosArtistica.macro.direccion_artistica,
-                baseDatosArtistica.macro.detalles_artisticos,
-                baseDatosArtistica.macro.enfoque_y_publico
-            );
-
-            const resDiseno = await llamarGemini(promptDiseno, systemPrompt, apiKey);
-            const parsedDiseno = JSON.parse(limpiarMarkdown(resDiseno));
-            
-            baseDatosArtistica.diseno_visual[cat] = parsedDiseno[`${cat}_disenados`] || parsedDiseno;
-            log(`[ÉXITO FASE ${faseActual}] Fichas estéticas de ${cat} consolidadas.`);
-            actualizarVistaPreviaBBDD();
-            faseActual++;
         }
 
-        if (agenteActivo) {
-            currentStepText.innerText = "Proceso Concluido con Éxito";
-            log("[SISTEMA AGÉNTICO COMPLETE] Se ha consolidado la Base de Datos en un Pipeline optimizado de 9 llamadas.");
+        // --- LLAMADAS 8 A 13: DISEÑO CONCEPTUAL VISUAL GROUNDED (1 POR CATEGORÍA) ---
+        for (let i = 0; i < categorias.length; i++) {
+            const numFase = 8 + i;
+            if (!agenteActivo) return;
+
+            if (faseActualGlobal === numFase) {
+                const cat = categorias[i];
+                currentStepText.innerText = `Fase ${numFase}/13: Diseñando Fichas Visuales de ${cat.toUpperCase()}...`;
+                
+                const listaElementos = baseDatosArtistica.listas_extraccion[cat] || [];
+                const evidenciasCat = baseDatosArtistica.evidencias_visuales[cat] || {};
+
+                if (listaElementos.length === 0) {
+                    log(`[FASE ${numFase}] Saltando diseño de ${cat} por lista vacía.`);
+                    baseDatosArtistica.diseno_visual[cat] = {};
+                    faseActualGlobal = numFase + 1;
+                    continue;
+                }
+
+                log(`[FASE ${numFase}] Generando fichas de producción visual para ${cat} aplicando evidencias extraídas y pautas manuales...`);
+                const promptDiseno = GeminiPrompts.obtenerPromptDisenoVisual(
+                    listaElementos,
+                    evidenciasCat,
+                    cat,
+                    baseDatosArtistica.macro.direccion_artistica,
+                    baseDatosArtistica.macro.detalles_artisticos,
+                    baseDatosArtistica.macro.enfoque_y_publico,
+                    datosVisualesManuales
+                );
+
+                const resDiseno = await llamarGemini(promptDiseno, systemPrompt, apiKey);
+                const parsedDiseno = JSON.parse(limpiarMarkdown(resDiseno));
+                
+                baseDatosArtistica.diseno_visual[cat] = parsedDiseno[`${cat}_disenados`] || parsedDiseno;
+                log(`[ÉXITO FASE ${numFase}] Fichas estéticas de ${cat} consolidadas.`);
+                actualizarVistaPreviaBBDD();
+                faseActualGlobal = numFase + 1;
+            }
+        }
+
+        if (agenteActivo && faseActualGlobal > 13) {
+            currentStepText.innerText = "Proceso Concluido con Éxito (13 Llamadas)";
+            log("[SISTEMA AGÉNTICO COMPLETE] Se ha consolidado la Base de Datos Visual en un Pipeline optimizado de 13 llamadas sin extrapolaciones.");
+            btnContinuar.classList.add('hidden');
         }
 
     } catch (err) {
-        log(`[FALLO CRÍTICO EN CASCADA] ${err.message}`);
-        currentStepText.innerText = "Error en la ejecución";
+        log(`[INTERRUPCIÓN / ERROR EN FASE ${faseActualGlobal}] ${err.message}`);
+        
+        if (err.status === 429 || err.message.includes("429")) {
+            currentStepText.innerText = `Pausado en Fase ${faseActualGlobal}/13 por Límite de Cuota (Error 429).`;
+            log(`[SISTEMA PAUSADO] Espera unos segundos a que se reasigne la cuota y pulsa "CONTINUAR DESDE FASE INTERRUMPIDA".`);
+        } else {
+            currentStepText.innerText = `Pausado por error en Fase ${faseActualGlobal}/13.`;
+        }
+
+        btnContinuar.classList.remove('hidden');
     } finally {
         desactivarAgenteUI();
     }
@@ -216,12 +260,18 @@ function desactivarAgenteUI() {
     agentBadge.classList.remove('agent-active');
 }
 
-btnRunAgent.addEventListener('click', ejecutarCascadaArtistica);
+btnRunAgent.addEventListener('click', () => ejecutarCascadaArtistica(1));
+
+btnContinuar.addEventListener('click', () => {
+    log(`[REANUDACIÓN] Continuando la secuencia agéntica desde la Fase ${faseActualGlobal}/13...`);
+    ejecutarCascadaArtistica(faseActualGlobal);
+});
 
 btnAbortar.addEventListener('click', () => {
     log("[OPERACIÓN] Cancelado por el usuario.");
     desactivarAgenteUI();
-    currentStepText.innerText = "Interrumpido";
+    currentStepText.innerText = `Interrumpido en Fase ${faseActualGlobal}/13. Puedes reanudar cuando desees.`;
+    btnContinuar.classList.remove('hidden');
 });
 
 importFileInput.addEventListener('change', (e) => {
