@@ -307,4 +307,56 @@ function renderInteractivePropertiesSection(propsContent, elem, isSavedElement, 
             renderItemMultiSelectGrid('grid-remove-items', elem, 'removeItem');
         }
     }
+
+    // Vinculación y persistencia de scripts de ciclo de vida (customScript: init, update, interact, destroy)
+    bindScriptPropertiesListeners(elem);
+}
+
+// Handler de eventos e integración bidireccional inmediata para evitar pérdida de código al desenfocar el campo
+function bindScriptPropertiesListeners(elem) {
+    const scene = projectData.scenes ? projectData.scenes[currentSceneId] : null;
+    const targetElem = elem || (scene && selectedElementId ? scene.elements.find(e => e.id === selectedElementId) : null);
+    
+    if (!targetElem) return;
+
+    if (!targetElem.customScript) {
+        targetElem.customScript = {
+            init: targetElem.scriptInit || '',
+            update: targetElem.scriptUpdate || '',
+            interact: targetElem.scriptInteract || '',
+            destroy: targetElem.scriptDestroy || ''
+        };
+    }
+
+    const scriptInputs = [
+        { id: 'prop-script-init', key: 'init', legacyKey: 'scriptInit' },
+        { id: 'prop-script-update', key: 'update', legacyKey: 'scriptUpdate' },
+        { id: 'prop-script-interact', key: 'interact', legacyKey: 'scriptInteract' },
+        { id: 'prop-script-destroy', key: 'destroy', legacyKey: 'scriptDestroy' }
+    ];
+
+    scriptInputs.forEach(item => {
+        const inputEl = document.getElementById(item.id);
+        if (inputEl) {
+            inputEl.value = targetElem.customScript[item.key] || targetElem[item.legacyKey] || '';
+
+            const saveHandler = (e) => {
+                const val = e.target.value;
+                targetElem.customScript[item.key] = val;
+                targetElem[item.legacyKey] = val;
+
+                if (typeof elementScriptRuntime !== 'undefined') {
+                    elementScriptRuntime.compileElementScripts(targetElem);
+                }
+
+                if (typeof autoSaveJSON === 'function') {
+                    autoSaveJSON();
+                }
+            };
+
+            inputEl.oninput = saveHandler;
+            inputEl.onchange = saveHandler;
+            inputEl.onblur = saveHandler;
+        }
+    });
 }

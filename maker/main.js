@@ -1,4 +1,4 @@
-// main.js - LOGICA PRINCIPAL Y CONTROL DE CÁMARA
+// main.js - LOGICA PRINCIPAL Y CONTROL DE CÁMARA Y ESTADOS
 const CAMERA_SETTINGS = {
     minPitch: 40,            // Ángulo en Zoom Out
     maxPitch: 88,            // Ángulo en Zoom In (prácticamente frontal)
@@ -294,6 +294,11 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('API Key de Gemini guardada correctamente.');
         });
     }
+
+    const btnModeEdit = document.getElementById('btn-mode-edit');
+    const btnModePlay = document.getElementById('btn-mode-play');
+    if (btnModeEdit) btnModeEdit.addEventListener('click', () => setMode(false));
+    if (btnModePlay) btnModePlay.addEventListener('click', () => setMode(true));
 });
 
 function setMode(play) {
@@ -316,11 +321,16 @@ function setMode(play) {
         
         selectedElementId = null;
         currentSceneId = projectData.startScene || Object.keys(projectData.scenes)[0];
-        initRuntimeVariables();
-        inventoryManager.clear();
+
+        if (typeof elementScriptRuntime !== 'undefined') {
+            elementScriptRuntime.compileAllSceneScripts();
+        }
+
+        if (typeof initRuntimeVariables === 'function') initRuntimeVariables();
+        if (typeof inventoryManager !== 'undefined' && inventoryManager.clear) inventoryManager.clear();
         resetCamera();
         renderStage(true);
-        renderInventory();
+        if (typeof renderInventory === 'function') renderInventory();
         
         if (typeof movementEngine !== 'undefined') {
             movementEngine.init();
@@ -339,13 +349,13 @@ function setMode(play) {
         if (btnModePlay) btnModePlay.classList.remove('active');
         if (gameUI) gameUI.style.display = 'none';
         
-        inventoryManager.clear();
+        if (typeof inventoryManager !== 'undefined' && inventoryManager.clear) inventoryManager.clear();
         if (typeof updatePropertiesPanel === 'function') {
             updatePropertiesPanel();
         }
         resetCamera();
         renderStage(true);
-        renderInventory();
+        if (typeof renderInventory === 'function') renderInventory();
     }
 }
 
@@ -381,7 +391,7 @@ function resetCamera() {
 function fitStage(instantCamera = false) {
     if (isPlayMode) {
         updateFPSCounter();
-        if (inventoryManager.isMenuOpen) {
+        if (typeof inventoryManager !== 'undefined' && inventoryManager.isMenuOpen) {
             inventoryManager.updateMenuPosition();
         }
     }
@@ -577,7 +587,7 @@ function setupCameraControls() {
                     }
                 }
 
-                if (isPlayerClick) {
+                if (isPlayerClick && typeof inventoryManager !== 'undefined' && inventoryManager.togglePlayerMenu) {
                     e.preventDefault();
                     e.stopPropagation();
                     inventoryManager.togglePlayerMenu();
@@ -658,6 +668,12 @@ window.addEventListener('resize', () => {
 function handleEntityInteraction(elem) {
     if (!elem || elem._isProcessingInteraction) return;
     elem._isProcessingInteraction = true;
+
+    if (typeof elementScriptRuntime !== 'undefined') {
+        const scene = projectData.scenes ? projectData.scenes[currentSceneId] : null;
+        const player = scene && scene.elements ? scene.elements.find(e => e.isPlayer) : null;
+        elementScriptRuntime.runInteract(elem, player);
+    }
     
     if (typeof movementEngine !== 'undefined') {
         movementEngine.pendingTargetEntity = null;
@@ -680,17 +696,20 @@ function handleEntityInteraction(elem) {
                 val = Number(val) || 0;
             }
         }
-        gameState.variables[varId] = val;
+        if (typeof gameState !== 'undefined') {
+            if (!gameState.variables) gameState.variables = {};
+            gameState.variables[varId] = val;
+        }
     }
     
-    if (elem.addItem) {
+    if (elem.addItem && typeof inventoryManager !== 'undefined') {
         const itemsToAdd = Array.isArray(elem.addItem) 
             ? elem.addItem 
             : elem.addItem.split(',').map(s => s.trim()).filter(Boolean);
         itemsToAdd.forEach(itemId => inventoryManager.addItem(itemId, 1));
     }
     
-    if (elem.removeItem) {
+    if (elem.removeItem && typeof inventoryManager !== 'undefined') {
         const itemsToRemove = Array.isArray(elem.removeItem) 
             ? elem.removeItem 
             : elem.removeItem.split(',').map(s => s.trim()).filter(Boolean);
@@ -718,6 +737,9 @@ function handleEntityInteraction(elem) {
     
     let elementDestroyed = false;
     if (elem.destroyOnInteract) {
+        if (typeof elementScriptRuntime !== 'undefined') {
+            elementScriptRuntime.runDestroy(elem);
+        }
         const currentScene = projectData.scenes[currentSceneId];
         if (currentScene && currentScene.elements) {
             currentScene.elements = currentScene.elements.filter(e => e.id !== elem.id);

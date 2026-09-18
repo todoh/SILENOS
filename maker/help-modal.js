@@ -1,5 +1,4 @@
 // help-modal.js - MÓDULO DE AYUDA Y DOCUMENTACIÓN A PANTALLA COMPLETA CON 3 PESTAÑAS
-
 (function () {
     // -------------------------------------------------------------------------
     // PLANO DE COMFYUI EMBEBIDO PARA DESCARGA DIRECTA
@@ -166,6 +165,57 @@
         },
         "version": 0.4
     };
+
+    // -------------------------------------------------------------------------
+    // PROMPT DE INSTRUCCIONES AVANZADAS PARA CUALQUIER IA EXTERNA
+    // -------------------------------------------------------------------------
+    const EXTERNAL_AI_PROMPT_INSTRUCTIONS = `Eres un diseñador de videojuegos 2D/2.5D y generador de objetos técnico para el motor Silenos Maker.
+Tu objetivo es transformar la solicitud o descripción del usuario en una especificación en formato JSON estricto que pueda ser importada mediante un pegado directo desde el portapapeles.
+
+REGLAS DE ESCALA, PLANOS Y PROPIEDADES (RELACIÓN DE ESCALA: 64 PÍXELES = 1 METRO):
+1. Dimensiones en Píxeles (width, height):
+   - Personajes / NPCs / Criaturas: ~1.5m a 1.8m de alto (96px a 115px).
+   - Muebles / Artefactos: ~0.5m a 1.5m (32px a 96px).
+   - Árboles / Farolas / Estructuras: ~2.0m a 5.0m (128px a 320px).
+   - Ítems pequeños de inventario: ~0.4m (26px a 64px).
+
+2. Configuración del Plano Visual ("billboardMode"):
+   - "fixed": OBLIGATORIO para personajes, NPCs, muebles, cofres, puertas y estructuras alineadas a ángulo recto (90°).
+   - "cross_x": OBLIGATORIO para árboles, plantas, farolas, postes o cualquier objeto vertical/redondo para proyecciones en cruz 3D.
+   - "flat": Para alfombras, caminos, charcos o elementos pegados al suelo.
+   - "muro": Para bloques, paredes o cubos tridimensionales con volumen.
+   - "camera": Sprites orientados continuamente hacia la cámara.
+
+3. Formato y Soporte del Campo "image":
+   - Opción A (SVG Vectorial Directo Incrustado): Puedes incluir todo el código código <svg>...</svg> directamente en la propiedad "image" como una cadena de texto (escapando las comillas si es necesario) o Data URI ("data:image/svg+xml;utf8,..."). El gráfico SVG debe ser limpio, autocontenido y sin rectángulos de fondo.
+   - Opción B (Nombre de archivo): Nombre de un asset existente registrado (ej: "cofre.png" o "personaje.svg").
+   - Opción C (Base64 raster): Cadena Data URI ("data:image/png;base64,...").
+
+4. Tipos de Capa ("type"):
+   - "entidad": Objeto interactivo con diálogo, objetos, físicas o acciones.
+   - "decoracion": Elemento pasivo de escenario.
+   - "fondo": Textura base de suelo.
+
+5. Formato de Salida (Responde ÚNICAMENTE con el objeto JSON o lista de objetos dentro de un bloque de código sin comentarios adicionales):
+
+[
+  {
+    "savedName": "Gema Mágica de Cristal SVG",
+    "image": "<svg xmlns=\\"http://www.w3.org/2000/svg\\" viewBox=\\"0 0 100 100\\"><polygon points=\\"50,5 90,35 75,95 25,95 10,35\\" fill=\\"#00d2ff\\" stroke=\\"#ffffff\\" stroke-width=\\"3\\"/><polygon points=\\"50,5 50,95 75,95 90,35\\" fill=\\"#0071e3\\"/></svg>",
+    "width": 80,
+    "height": 80,
+    "type": "entidad",
+    "billboardMode": "fixed",
+    "hasCollision": true,
+    "dialog": "¡Brilla con una intensa luz mágica azul!",
+    "targetScene": "",
+    "addItem": ["gema_azul"],
+    "removeItem": [],
+    "transformAsset": "",
+    "condition": { "type": "none" },
+    "setVariable": { "varId": "", "value": "" }
+  }
+]`;
 
     // -------------------------------------------------------------------------
     // INYECCIÓN DE ESTILOS CSS DEL MODAL DE AYUDA
@@ -365,28 +415,26 @@
 
         modal = document.createElement('div');
         modal.id = 'help-full-modal';
-
         modal.innerHTML = `
             <div class="help-modal-header">
                 <div class="help-modal-title">
-                    <span>❓ Centro de Ayuda & Documentación</span>
+                    <span> Centro de Ayuda & Documentación</span>
                     <span class="help-badge">Silenos Maker v0.9</span>
                 </div>
                 <div class="help-nav-tabs">
-                    <button class="help-tab-btn active" data-tab="help-tab-silenos">🎨 Silenos Maker</button>
-                    <button class="help-tab-btn" data-tab="help-tab-comfy">⚡ ComfyUI Local</button>
-                    <button class="help-tab-btn" data-tab="help-tab-gemini">✨ Gemini API</button>
+                    <button class="help-tab-btn active" data-tab="help-tab-silenos"> Silenos Maker</button>
+                    <button class="help-tab-btn" data-tab="help-tab-comfy"> ComfyUI Local</button>
+                    <button class="help-tab-btn" data-tab="help-tab-gemini"> Gemini API</button>
                 </div>
                 <button class="help-close-btn" id="btn-close-help-modal" title="Cerrar Ayuda">&times;</button>
             </div>
-
             <div class="help-modal-body">
                 <!-- ========================================================= -->
                 <!-- PESTAÑA 1: SILENOS MAKER (EXPLICACIÓN EXTENSA DE SECCIONES) -->
                 <!-- ========================================================= -->
                 <div id="help-tab-silenos" class="help-tab-content active">
                     <div class="help-section-card">
-                        <div class="help-section-title">🗺️ Visión General de Silenos Maker</div>
+                        <div class="help-section-title"> Visión General de Silenos Maker</div>
                         <p class="help-p">
                             Silenos Maker es un motor de desarrollo visual e interactivo diseñado para la creación de aventuras y videojuegos 2D y 2.5D (Mode 7).
                             Permite construir escenarios, definir físicas, programar lógica distribuida con variables y condiciones, integrar generación por IA y exportar el proyecto final como un ejecutable HTML autónomo.
@@ -394,7 +442,7 @@
                     </div>
 
                     <div class="help-section-card">
-                        <div class="help-section-title">📂 Secciones del Menú Lateral</div>
+                        <div class="help-section-title"> Secciones del Menú Lateral</div>
                         
                         <div class="help-sub-title">1. Assets / Galería</div>
                         <p class="help-p">Gestión de recursos gráficos locales (imágenes PNG, JPG, WebP o código SVG). Permite registrar imágenes en memoria o vincular directamente el directorio local mediante la File System Access API.</p>
@@ -433,10 +481,67 @@
                         <p class="help-p">Exportación e importación de mapas completos en formato JSON. Incluye opciones para incrustar todas las imágenes en código Base64 para facilitar el intercambio de proyectos en un único archivo.</p>
                     </div>
 
+                    <!-- ========================================================= -->
+                    <!-- SECCIÓN: COPIAR Y CREAR JSON DE ELEMENTOS CON IA          -->
+                    <!-- ========================================================= -->
                     <div class="help-section-card">
-                        <div class="help-section-title">🎥 Modos de Vista: 2D Ortogonal vs 2.5D (Mode 7)</div>
-                        <p class="help-p">Silenos Maker cuenta con dos motores de renderizado conmutables en tiempo real mediante el botón <strong>"Vista"</strong> de la barra superior:</p>
+                        <div class="help-section-title"> Copiar JSON de Elementos y Creación con IAs Externas (con Soporte SVG)</div>
+                        <p class="help-p">
+                            Silenos Maker soporta la creación e importación directa de elementos con <strong>código SVG incrustado</strong> o imágenes rasterizadas mediante Inteligencias Artificiales externas (ChatGPT, Claude, Gemini, DeepSeek, Midjourney, etc.).
+                        </p>
+
+                        <div class="help-sub-title">1. Copiar Instrucciones Avanzadas para la IA</div>
+                        <p class="help-p">
+                            Haz clic en el siguiente botón para copiar las **instrucciones avanzadas de sistema** a tu portapapeles. Pégaselas a tu IA de texto favorita para instruirla sobre las dimensiones, físicas y el formato SVG/JSON exacto que requiere el motor:
+                        </p>
                         
+                        <button id="btn-copy-ai-prompt" class="help-btn-action help-btn-blue">
+                             Copiar Instrucciones Avanzadas para IA
+                        </button>
+
+                        <div class="help-sub-title" style="margin-top: 20px;">2. Estructura JSON Estándar con Imagen / SVG Incrustado</div>
+                        <p class="help-p">
+                            En la propiedad <code>"image"</code> del JSON puedes incrustar directamente el código <code>&lt;svg&gt;...&lt;/svg&gt;</code> vectorial completo, una cadena Data URI (Base64) o el nombre del archivo registrado:
+                        </p>
+                        <div class="help-code-block">
+[
+  {
+    "savedName": "Gema de Cristal SVG",
+    "image": "&lt;svg xmlns=\\"http://www.w3.org/2000/svg\\" viewBox=\\"0 0 100 100\\"&gt;&lt;polygon points=\\"50,5 90,35 75,95 25,95 10,35\\" fill=\\"#00d2ff\\" stroke=\\"#ffffff\\" stroke-width=\\"3\\"/&gt;&lt;/svg&gt;",
+    "width": 80,
+    "height": 80,
+    "type": "entidad",
+    "billboardMode": "fixed",
+    "hasCollision": true,
+    "dialog": "¡Brilla con una intensa luz mágica azul!",
+    "targetScene": "",
+    "addItem": ["gema_azul"],
+    "removeItem": [],
+    "transformAsset": "",
+    "condition": { "type": "none" },
+    "setVariable": { "varId": "", "value": "" }
+  }
+]
+                        </div>
+
+                        <div class="help-sub-title">3. Flujo Completo: Crear Elementos con IAs Externas al Proyecto</div>
+                        <ol class="help-list" style="margin-left: 20px;">
+                            <li>
+                                <strong>Paso 1: Copiar Prompt de Sistema:</strong> Pulsa el botón azul de arriba para obtener las reglas de escala y JSON.
+                            </li>
+                            <li>
+                                <strong>Paso 2: Generar con IA (Texto / SVG / Imagen):</strong> Pega las instrucciones en ChatGPT, Claude o Gemini e indícale qué elemento deseas crear (ej: <em>"Crea una poción mágica roja vectorial SVG con diálogo e ítem asociado"</em>).
+                            </li>
+                            <li>
+                                <strong>Paso 3: Importar con Pegado Directo:</strong> Copia la respuesta JSON producida por la IA, dirígete a la pestaña <strong>Elementos</strong> en Silenos Maker y pulsa el botón verde <strong>"Pegar desde Portapapeles (JSON)"</strong>. El elemento (con su SVG o imagen) aparecerá instantáneamente registrado en tu catálogo.
+                            </li>
+                        </ol>
+                    </div>
+
+                    <div class="help-section-card">
+                        <div class="help-section-title"> Modos de Vista: 2D Ortogonal vs 2.5D (Mode 7)</div>
+                        <p class="help-p">Silenos Maker cuenta con dos motores de renderizado conmutables en tiempo real mediante el botón <strong>"Vista"</strong> de la barra superior:</p>
+
                         <div class="help-sub-title">Modo 2D Ortogonal (Vista Cenital / Top-Down)</div>
                         <p class="help-p">Renderizado clásico bidimensional. La posición de los elementos sigue un ordenamiento en profundidad basado en su coordenada Y. Las colisiones se verifican mediante cajas AABB o selección de píxel opaco exacto.</p>
 
@@ -451,7 +556,7 @@
                     </div>
 
                     <div class="help-section-card">
-                        <div class="help-section-title">🦴 Animación Esquelética, IK y Deformación 2D</div>
+                        <div class="help-section-title"> Animación Esquelética, IK y Deformación 2D</div>
                         <p class="help-p">El motor integra un editor de esqueletos visual con las siguientes características avanzadas:</p>
                         <ul class="help-list">
                             <li><strong>Skinning Suave (Smooth Dual-Bone):</strong> Deformación de mallas regulares de triángulos mediante pesos de suavizado Gaussiano.</li>
@@ -461,7 +566,7 @@
                     </div>
 
                     <div class="help-section-card">
-                        <div class="help-section-title">🚀 Exportación a Juego Autoejecutable (.HTML)</div>
+                        <div class="help-section-title"> Exportación a Juego Autoejecutable (.HTML)</div>
                         <p class="help-p">Al hacer clic en <strong>"Exportar Juego Autoejecutable (.html)"</strong>, el motor empaqueta absolutamente todo el proyecto (código fuente JS, motor de cámara, pathfinding A*, inventario, lógica de variables e imágenes en Base64) en un único archivo HTML autocontenido. El archivo resultante funciona inmediatamente en cualquier navegador moderno sin necesidad de instalar servidores web ni dependencias.</p>
                     </div>
                 </div>
@@ -471,28 +576,28 @@
                 <!-- ========================================================= -->
                 <div id="help-tab-comfy" class="help-tab-content">
                     <div class="help-section-card">
-                        <div class="help-section-title">⚡ ¿Qué es ComfyUI y por qué usarlo?</div>
+                        <div class="help-section-title"> ¿Qué es ComfyUI y por qué usarlo?</div>
                         <p class="help-p">
                             ComfyUI es una interfaz modular basada en nodos para ejecutar modelos de difusión (Stable Diffusion, FLUX, SDXL) de forma local en tu propia tarjeta gráfica.
                             Usar ComfyUI con Silenos Maker te permite generar cientos de assets e ilustraciones totalmente gratis, sin cuotas de la nube y con tiempos de generación ultra-rápidos.
                         </p>
                         <a href="https://comfy.org/" target="_blank" class="help-btn-action help-btn-blue">
-                            🌐 Visitar la Web Oficial de ComfyUI (comfy.org)
+                             Visitar la Web Oficial de ComfyUI (comfy.org)
                         </a>
                     </div>
 
                     <div class="help-section-card">
-                        <div class="help-section-title">📄 Descargar el Plano / Workflow Optimizado</div>
+                        <div class="help-section-title"> Descargar el Plano / Workflow Optimizado</div>
                         <p class="help-p">
                             Hemos diseñado un plano de nodos (Workflow JSON) específico para ComfyUI que incluye carga optimizada mediante <strong>UnetGGUF FLUX Klein</strong> y codificación de texto ligera para integrarse con Silenos Maker a través de WebSocket en el puerto <code>http://127.0.0.1:8188</code>.
                         </p>
                         <button id="btn-download-comfy-json" class="help-btn-action">
-                            ⬇️ Descargar Plano ComfyUI (plano confyui silenos maker.json)
+                             Descargar Plano ComfyUI (plano confyui silenos maker.json)
                         </button>
                     </div>
 
                     <div class="help-section-card">
-                        <div class="help-section-title">🛠️ Guía Paso a Paso para Configurar ComfyUI</div>
+                        <div class="help-section-title"> Guía Paso a Paso para Configurar ComfyUI</div>
                         <ol class="help-list" style="margin-left: 20px;">
                             <li>Descarga e instala <strong>ComfyUI</strong> desde la web oficial <a href="https://comfy.org/" target="_blank" style="color: #389fff;">comfy.org</a>.</li>
                             <li>Ejecuta ComfyUI en tu ordenador. Por defecto se abrirá en tu navegador en <span class="help-badge">http://127.0.0.1:8188</span>.</li>
@@ -514,9 +619,9 @@
                 <!-- ========================================================= -->
                 <div id="help-tab-gemini" class="help-tab-content">
                     <div class="help-section-card">
-                        <div class="help-section-title">✨ Google Gemini API en Silenos Maker</div>
+                        <div class="help-section-title"> Google Gemini API en Silenos Maker</div>
                         <p class="help-p">
-                            Google Gemini es la suite de modelos de Inteligencia Artificial de última generación de Google. 
+                            Google Gemini es la suite de modelos de Inteligencia Artificial de última generación de Google.
                             En Silenos Maker, la API Key de Gemini se utiliza para:
                         </p>
                         <ul class="help-list">
@@ -526,12 +631,12 @@
                             <li><strong>Traducción Automática:</strong> Traducir tus prompts del español al inglés para mejorar la precisión de generación.</li>
                         </ul>
                         <a href="https://aistudio.google.com/app/api-keys" target="_blank" class="help-btn-action help-btn-blue">
-                            🔑 Obtener API Key en Google AI Studio (aistudio.google.com)
+                             Obtener API Key en Google AI Studio (aistudio.google.com)
                         </a>
                     </div>
 
                     <div class="help-section-card">
-                        <div class="help-section-title">🔑 ¿Cómo crear tu API Key Paso a Paso?</div>
+                        <div class="help-section-title"> ¿Cómo crear tu API Key Paso a Paso?</div>
                         <ol class="help-list" style="margin-left: 20px;">
                             <li>Entra en la web de Google AI Studio: <a href="https://aistudio.google.com/app/api-keys" target="_blank" style="color: #389fff;">https://aistudio.google.com/app/api-keys</a>.</li>
                             <li>Inicia sesión con tu cuenta de Google.</li>
@@ -542,17 +647,18 @@
                     </div>
 
                     <div class="help-section-card">
-                        <div class="help-section-title">🎁 Llamadas Gratuitas y Cuota del Tier Gratuito (Free Tier)</div>
+                        <div class="help-section-title"> Llamadas Gratuitas y Cuota del Tier Gratuito (Free Tier)</div>
                         <p class="help-p">
                             Google ofrece un <strong>Tier Gratuito (Free Tier)</strong> extremadamente generoso diseñado para desarrolladores, permitiendo usar sus modelos más potentes a <strong>coste 0€</strong>:
                         </p>
                         <div class="help-code-block">
-• Modelo Gemini 3.5 Flash / Lite:
+Modelo Gemini 3.5 Flash / Lite:
   - 15 Peticiones por Minuto (RPM - Requests Per Minute)
   - 1.000.000 de Tokens por Minuto (TPM)
-  - 1.500 Peticiones al Día (RPD - Requests Per Day) ¡Totalmente Gratis!
+  - 1.500 Peticiones al Día (RPD - Requests Per Day)
+ Totalmente Gratis!
 
-• Modelo Imagen 3.0 Generate:
+Modelo Imagen 3.0 Generate:
   - Cuota gratuita para pruebas y creación de assets gráficos sin tarjeta de crédito.
                         </div>
                         <p class="help-p">
@@ -561,7 +667,7 @@
                     </div>
 
                     <div class="help-section-card">
-                        <div class="help-section-title">⚙️ ¿Cómo configurar tu API Key en el Programa?</div>
+                        <div class="help-section-title"> ¿Cómo configurar tu API Key en el Programa?</div>
                         <p class="help-p">
                             Para configurar tu clave en Silenos Maker:
                         </p>
@@ -571,13 +677,12 @@
                             <li>Haz clic en <strong>"Guardar Configuración"</strong>.</li>
                         </ol>
                         <p class="help-p" style="font-size: 11px; color: #a0a0b0; margin-top: 8px;">
-                            🔒 <em>Nota de Seguridad: Tu API Key se almacena localmente de forma segura en el <code>localStorage</code> de tu propio navegador. Nunca se envía a ningún servidor externo salvo a las APIs oficiales de Google.</em>
+                            <em>Nota de Seguridad: Tu API Key se almacena localmente de forma segura en el <code>localStorage</code> de tu propio navegador. Nunca se envía a ningún servidor externo salvo a las APIs oficiales de Google.</em>
                         </p>
                     </div>
                 </div>
             </div>
         `;
-
         document.body.appendChild(modal);
         setupHelpModalEvents(modal);
         return modal;
@@ -602,7 +707,6 @@
         tabBtns.forEach(btn => {
             btn.onclick = () => {
                 const targetTabId = btn.getAttribute('data-tab');
-
                 tabBtns.forEach(b => b.classList.remove('active'));
                 tabContents.forEach(c => c.classList.remove('active'));
 
@@ -611,6 +715,26 @@
                 if (targetContent) targetContent.classList.add('active');
             };
         });
+
+        // Botón para copiar las Instrucciones Avanzadas para la IA (Soporta SVG / Raster)
+        const btnCopyAiPrompt = modal.querySelector('#btn-copy-ai-prompt');
+        if (btnCopyAiPrompt) {
+            btnCopyAiPrompt.onclick = async () => {
+                try {
+                    await navigator.clipboard.writeText(EXTERNAL_AI_PROMPT_INSTRUCTIONS);
+                    const originalText = btnCopyAiPrompt.innerHTML;
+                    btnCopyAiPrompt.innerHTML = ' ¡Instrucciones Copiadas al Portapapeles!';
+                    btnCopyAiPrompt.style.background = '#34c759';
+                    setTimeout(() => {
+                        btnCopyAiPrompt.innerHTML = originalText;
+                        btnCopyAiPrompt.style.background = '#0071e3';
+                    }, 2500);
+                } catch (err) {
+                    console.error("Error al copiar al portapapeles:", err);
+                    alert("No se pudo acceder al portapapeles. Asegúrate de conceder permisos al navegador.");
+                }
+            };
+        }
 
         // Botón de Descarga del JSON de ComfyUI
         const btnDownloadComfy = modal.querySelector('#btn-download-comfy-json');
@@ -638,7 +762,6 @@
 
         // Buscar el Toolbar o colocar el botón flotante en la esquina superior derecha
         const toolbar = document.getElementById('toolbar');
-
         const helpBtn = document.createElement('button');
         helpBtn.id = 'btn-open-help-modal';
         helpBtn.className = 'btn';
@@ -655,8 +778,7 @@
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(88, 86, 214, 0.3);
         `;
-        helpBtn.innerHTML = '❓ Ayuda';
-
+        helpBtn.innerHTML = ' Ayuda';
         helpBtn.onclick = () => {
             modal.style.display = 'flex';
         };

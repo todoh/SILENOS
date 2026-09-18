@@ -15,10 +15,106 @@ class ElementsManager {
                     this.saveCurrentCopiedElement();
                 });
             }
+
+            const btnPasteJson = document.getElementById('btn-paste-json-element');
+            if (btnPasteJson) {
+                btnPasteJson.addEventListener('click', () => {
+                    this.pasteJsonFromClipboard();
+                });
+            }
         });
     }
 
-    // Guarda el elemento que se encuentra actualmente copiado en el buffer (copiedElementData)
+    async pasteJsonFromClipboard() {
+        try {
+            const text = await navigator.clipboard.readText();
+            if (!text || !text.trim()) {
+                alert('El portapapeles está vacío.');
+                return;
+            }
+
+            let parsed;
+            try {
+                parsed = JSON.parse(text);
+            } catch (e) {
+                alert('El contenido del portapapeles no es un código JSON válido.');
+                return;
+            }
+
+            if (!projectData.savedElementsConfig) {
+                projectData.savedElementsConfig = {};
+            }
+
+            let itemsToAdd = [];
+            if (Array.isArray(parsed)) {
+                itemsToAdd = parsed;
+            } else if (typeof parsed === 'object' && parsed !== null) {
+                if (Array.isArray(parsed.elements)) {
+                    itemsToAdd = parsed.elements;
+                } else if (parsed.savedElementsConfig && typeof parsed.savedElementsConfig === 'object') {
+                    itemsToAdd = Object.values(parsed.savedElementsConfig);
+                } else if (parsed.savedName || parsed.image || parsed.width || parsed.type || parsed.id || parsed.textContent) {
+                    itemsToAdd.push(parsed);
+                } else {
+                    itemsToAdd = Object.values(parsed);
+                }
+            }
+
+            if (itemsToAdd.length === 0) {
+                alert('No se encontraron elementos válidos en el JSON.');
+                return;
+            }
+
+            let addedCount = 0;
+            let lastAddedKey = null;
+
+            itemsToAdd.forEach((item) => {
+                if (typeof item === 'object' && item !== null) {
+                    const uniqueSuffix = Math.random().toString(36).substring(2, 6);
+                    const elemId = 'saved_' + Date.now() + '_' + uniqueSuffix;
+                    const elementToSave = JSON.parse(JSON.stringify(item));
+
+                    if (!elementToSave.savedName) {
+                        elementToSave.savedName = item.name || item.textContent || item.id || `Elemento ${addedCount + 1}`;
+                    }
+
+                    // Preservar scripts personalizados explícitamente
+                    if (item.customScript) {
+                        elementToSave.customScript = JSON.parse(JSON.stringify(item.customScript));
+                    } else if (item.scriptInit || item.scriptUpdate || item.scriptInteract || item.scriptDestroy) {
+                        elementToSave.customScript = {
+                            init: item.scriptInit || '',
+                            update: item.scriptUpdate || '',
+                            interact: item.scriptInteract || '',
+                            destroy: item.scriptDestroy || ''
+                        };
+                    }
+
+                    projectData.savedElementsConfig[elemId] = elementToSave;
+                    lastAddedKey = elemId;
+                    addedCount++;
+                }
+            });
+
+            if (addedCount > 0) {
+                if (lastAddedKey) {
+                    selectedSavedElementKey = lastAddedKey;
+                    selectedElementId = null;
+                }
+                if (typeof autoSaveJSON === 'function') autoSaveJSON();
+                if (typeof renderStage === 'function') renderStage();
+                this.renderElementsList();
+                if (typeof updatePropertiesPanel === 'function') updatePropertiesPanel();
+                alert(`¡Se han agregado ${addedCount} elemento(s) a ELEMENTOS correctamente!`);
+            } else {
+                alert('No se pudo procesar ningún elemento válido del JSON.');
+            }
+        } catch (err) {
+            console.error('Error al acceder al portapapeles:', err);
+            alert('No se pudo acceder al portapapeles. Asegúrate de conceder permisos de lectura al navegador.');
+        }
+    }
+
     saveCurrentCopiedElement() {
         if (!copiedElementData) {
             alert('No hay ningún elemento copiado en la memoria. Copia un elemento del canvas (Ctrl+C o Clic Derecho -> Copiar) antes de guardarlo.');
@@ -29,22 +125,30 @@ class ElementsManager {
         if (!namePrompt) return;
 
         const elemId = 'saved_' + Date.now();
-        
-        // Clona el objeto reteniendo dimensiones, colisión, física, acciones e interacción
         const elementToSave = JSON.parse(JSON.stringify(copiedElementData));
         elementToSave.savedName = namePrompt.trim();
+
+        // Preservar scripts durante el guardado
+        if (copiedElementData.customScript) {
+            elementToSave.customScript = JSON.parse(JSON.stringify(copiedElementData.customScript));
+        } else if (copiedElementData.scriptInit || copiedElementData.scriptUpdate || copiedElementData.scriptInteract || copiedElementData.scriptDestroy) {
+            elementToSave.customScript = {
+                init: copiedElementData.scriptInit || '',
+                update: copiedElementData.scriptUpdate || '',
+                interact: copiedElementData.scriptInteract || '',
+                destroy: copiedElementData.scriptDestroy || ''
+            };
+        }
 
         if (!projectData.savedElementsConfig) {
             projectData.savedElementsConfig = {};
         }
 
         projectData.savedElementsConfig[elemId] = elementToSave;
-        
+
         if (typeof autoSaveJSON === 'function') {
             autoSaveJSON();
         }
-
-        // Seleccionar automáticamente el elemento guardado para editarlo en el panel derecho
         selectedSavedElementKey = elemId;
         selectedElementId = null;
         if (typeof renderStage === 'function') renderStage();
@@ -52,17 +156,16 @@ class ElementsManager {
         if (typeof updatePropertiesPanel === 'function') updatePropertiesPanel();
     }
 
-    // Renderiza la lista de elementos en la pestaña lateral a 3 columnas ajustadas
     renderElementsList() {
         const listContainer = document.getElementById('saved-elements-list');
         if (!listContainer) return;
-
         listContainer.innerHTML = '';
+
         const savedConfig = projectData.savedElementsConfig || {};
         const savedKeys = Object.keys(savedConfig);
 
         if (savedKeys.length === 0) {
-            listContainer.innerHTML = '<span style="font-size: 11px; color: var(--text-secondary); text-align: center; display: block; margin-top: 10px; grid-column: span 3;">No hay elementos guardados.<br>Copia un elemento del canvas y presiona "Guardar Elemento Copiado".</span>';
+            listContainer.innerHTML = '<span style="font-size: 11px; color: var(--text-secondary); text-align: center; display: block; margin-top: 10px; grid-column: span 3;">No hay elementos guardados.<br>Copia un elemento del canvas y presiona "Guardar Elemento Copiado" o pega un JSON.</span>';
             return;
         }
 
@@ -72,15 +175,14 @@ class ElementsManager {
             const card = document.createElement('div');
             card.className = `asset-card ${isSelected ? 'selected' : ''}`;
             card.style.cssText = `
-                position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; 
-                background: ${isSelected ? 'rgba(0,113,227,0.12)' : 'rgba(255,255,255,0.85)'}; 
-                border: ${isSelected ? '2px solid #0071e3' : '1px solid var(--border-subtle)'}; 
+                position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+                background: ${isSelected ? 'rgba(0,113,227,0.12)' : 'rgba(255,255,255,0.85)'};
+                border: ${isSelected ? '2px solid #0071e3' : '1px solid var(--border-subtle)'};
                 padding: 4px; border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s ease;
                 min-width: 0; max-width: 100%; box-sizing: border-box; overflow: hidden;
             `;
             card.draggable = true;
 
-            // Obtener vista previa visual (Imagen o Texto)
             let previewHTML = '';
             if (elemData.isText) {
                 previewHTML = `<div style="font-size: 11px; font-weight: bold; height: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; color: ${elemData.textColor || '#000'}; text-align: center; width: 100%;">${elemData.textContent || 'Texto'}</div>`;
@@ -100,13 +202,11 @@ class ElementsManager {
                 </div>
             `;
 
-            // Drag and Drop hacia el Canvas pasando los datos completos del elemento serializados
             card.addEventListener('dragstart', (e) => {
                 e.dataTransfer.setData('application/json', JSON.stringify(elemData));
                 e.dataTransfer.setData('text/plain', 'saved_element');
             });
 
-            // Clic en la tarjeta para seleccionar y editar en el panel derecho directamente
             card.onclick = () => {
                 selectedSavedElementKey = key;
                 selectedElementId = null;
@@ -115,7 +215,6 @@ class ElementsManager {
                 if (typeof updatePropertiesPanel === 'function') updatePropertiesPanel();
             };
 
-            // Botón Duplicar
             card.querySelector('.btn-duplicate').onclick = (ev) => {
                 ev.stopPropagation();
                 const dupId = 'saved_' + Date.now();
@@ -126,7 +225,6 @@ class ElementsManager {
                 this.renderElementsList();
             };
 
-            // Botón Borrar
             card.querySelector('.btn-delete').onclick = (ev) => {
                 ev.stopPropagation();
                 if (confirm(`¿Borrar el elemento guardado "${elemData.savedName || key}"?`)) {
