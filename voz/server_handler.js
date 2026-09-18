@@ -1,4 +1,4 @@
-// live gemini/server_handler.js
+// server_handler.js
 // ─── SERVER MESSAGES ────────────────────────────────────────────────
 
 let finishedGeminiText = ''; // Texto ya confirmado de este turno
@@ -496,6 +496,10 @@ async function handleServerMessage(data) {
                   } else if (call.name === "advanced_search") {
                       asyncResult = await doPollinationsSearch(call.args.query, 'openai');
                   } else if (call.name === "browse_web") {
+                      // Desplegar automáticamente el modal en la esquina inferior izquierda al iniciar navegación
+                      if (typeof uiWeb !== 'undefined') {
+                        uiWeb.open(call.args.url);
+                      }
                       asyncResult = await webBrowser.browse(call.args.url, call.args.use_nova);
                   } else if (call.name === "ask_external_ai") {
                       asyncResult = await askExternalAI(call.args.prompt, call.args.model);

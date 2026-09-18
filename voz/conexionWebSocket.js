@@ -1,18 +1,15 @@
-// SILENOS 5 VOZ/conexionWebSocket.js
-
+// SILENOS 5 VOZ / conexionWebSocket.js
 // Estado global para controlar el modo de funcionamiento
-let isTranslationMode = false; 
+let isTranslationMode = false;
 
-// ─── CONEXIÓN WEBSOCKET BIDI ───
+// CONEXIÓN WEBSOCKET BIDI
 async function toggleConnection() {
     if (isConnected) {
         disconnect();
         return;
     }
-
     const apiKey = document.getElementById('apiKey').value.trim();
     if (!apiKey) return alert("Pega tu API Key primero.");
-
     localStorage.setItem('gemini_api_key_standalone', apiKey);
 
     // Guardar la personalidad configurada si el elemento está disponible
@@ -20,35 +17,29 @@ async function toggleConnection() {
     if (personalityInput && personalityInput.value.trim()) {
         localStorage.setItem('gemini_assistant_personality', personalityInput.value.trim());
     }
+    document.getElementById('statusText').innerText = "  CONECTANDO...";
 
-    document.getElementById('statusText').innerText = "🟡 CONECTANDO...";
-    
     try {
         const wsUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${apiKey}`;
         ws = new WebSocket(wsUrl);
-
         ws.onopen = async () => {
             const selectElement = document.getElementById('languageSelect');
             const targetLang = selectElement ? selectElement.value : 'es';
-
             const generationConfig = {
                 response_modalities: ['AUDIO'],
                 speech_config: { voice_config: { prebuilt_voice_config: { voice_name: 'Aoede' } } }
             };
-
             if (isTranslationMode) {
                 generationConfig.translation_config = {
                     target_language_code: targetLang,
                     echo_target_language: true
                 };
             }
+            const defaultPersonality = "Tu nombre es VOZ, tu titulo es SILENOS, tu nombre completo es Silenos Voz. Eres un asistente y arquitecto de desarrollo web brillante y observador. Tienes acceso completo a una carpeta local de trabajo a través de herramientas especializadas. Puedes leer, crear, modificar y eliminar archivos de texto (.txt) y código fuente (.html, .css, .js), así como administrar subcarpetas. NAVEGACIÓN Y BÚSQUEDA WEB: Tienes disponible la herramienta 'browse_web'. Cuando el usuario te pida abrir el navegador, buscar en Google o visitar una página web en internet, construye la URL correspondiente (ejemplo: https://www.google.com/search?q=termino) e invoca inmediatamente 'browse_web' dentro del modal de navegación del cliente. REGLA CRÍTICA DE SEGURIDAD PARA CARPETAS: Está ESTRICTAMENTE PROHIBIDO ejecutar la función 'borrarCarpeta' sin antes haber preguntado verbalmente o por texto al usuario y haber recibido su me confirmación o autorización explícita dentro de la conversación actual. Si el usuario te ha dado su permiso explícito en la charla justo antes, debes llamar a 'borrarCarpeta' pasando la propiedad 'autorizacionExpresa' en true. REGLA CRÍTICA DE INVOCACIÓN DE HERRAMIENTA: Antes de llamar a 'analisisCompleto', DEBES preguntar e informar verbalmente/por texto al usuario de que vas a utilizar el 'MODELO FUERTE' (gemini-3.6-flash).";
 
-            const defaultPersonality = "Tu nombre es VOZ, tu titulo es SILENOS, tu nombre completo es Silenos Voz. Eres un asistente y arquitecto de desarrollo web brillante y observador. Tienes acceso completo a una carpeta local de trabajo a través de herramientas especializadas. Puedes leer, crear, modificar y eliminar archivos de texto (.txt) y código fuente (.html, .css, .js), así como administrar subcarpetas (crear, renombrar, borrar, abrir subcarpetas y volver a la raíz). REGLA CRÍTICA DE SEGURIDAD PARA CARPETAS: Está ESTRICTAMENTE PROHIBIDO ejecutar la función 'borrarCarpeta' sin antes haber preguntado verbalmente o por texto al usuario y haber recibido su confirmación o autorización explícita dentro de la conversación actual. Si el usuario te ha dado su permiso explícito en la charla justo antes, debes llamar a 'borrarCarpeta' pasando la propiedad 'autorizacionExpresa' en true. REGLA CRÍTICA DE INVOCACIÓN DE HERRAMIENTA: Antes de llamar a 'analisisCompleto', DEBES preguntar e informar verbalmente/por texto al usuario de que vas a utilizar el 'MODELO FUERTE' (gemini-3.6-flash).";
-            
             const customPersonality = localStorage.getItem('gemini_assistant_personality') || defaultPersonality;
-
             const systemText = isTranslationMode 
-                ? `Actúa strictly como un motor de doblaje y traducción en vivo de alta fidelidad. Escucha la voz del usuario e interpreta su contenido, traduciéndolo inmediatamente al idioma destino configurado bajo el código ISO "${targetLang}". Traduce con fluidez natural, preservando el tono emocional, las pausas y los énfasis de forma transparente y conversacional, doblando la voz sin añadir comentarios adicionales propios.`
+                ? `Actúa estrictamente como un motor de doblaje y traducción en vivo de alta fidelidad. Escucha la voz del usuario e interpreta su contenido, traduciéndolo inmediatamente al idioma destino configurado bajo el código ISO "${targetLang}". Traduce con fluidez natural, preservando el tono emocional, las pausas y los énfasis de forma transparente y conversacional, doblando la voz sin añadir comentarios adicionales propios.`
                 : customPersonality;
 
             const setup = {
@@ -162,7 +153,7 @@ async function toggleConnection() {
                                 description: "Busca un componente o fragmento de código exacto y lo sustituye por una versión nueva o corregida.",
                                 parameters: {
                                     type: "OBJECT",
-                                    properties: {
+                                    properties: { 
                                         nombre: { type: "STRING", description: "Nombre del archivo" },
                                         textoBuscado: { type: "STRING", description: "Código o texto exacto actual" },
                                         textoNuevo: { type: "STRING", description: "Código o texto nuevo de sustitución" }
@@ -175,7 +166,7 @@ async function toggleConnection() {
                                 description: "Añade texto o funciones de código directamente al final de un archivo sin modificar lo anterior.",
                                 parameters: {
                                     type: "OBJECT",
-                                    properties: {
+                                    properties: { 
                                         nombre: { type: "STRING", description: "Nombre del archivo" },
                                         textoAgregar: { type: "STRING", description: "El fragmento de código o texto a añadir" }
                                     },
@@ -283,6 +274,24 @@ async function toggleConnection() {
                                     },
                                     required: ["objetivo", "instrucciones"]
                                 }
+                            },
+                            {
+                                name: "browse_web",
+                                description: "Abre una página web o realiza una búsqueda en Google DENTRO del modal/navegador de la interfaz visual del usuario.",
+                                parameters: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        url: { 
+                                            type: "STRING", 
+                                            description: "La URL completa a visitar (ej: https://www.google.com/search?q=consulta o https://wikipedia.org)." 
+                                        },
+                                        use_nova: { 
+                                            type: "BOOLEAN", 
+                                            description: "Establece en false para solo mostrar la web al usuario o true si quieres analizar el texto con Nova-Fast." 
+                                        }
+                                    },
+                                    required: ["url"]
+                                }
                             }
                         ]
                     }],
@@ -291,32 +300,30 @@ async function toggleConnection() {
                 }
             };
             ws.send(JSON.stringify(setup));
-            
+
             isConnected = true;
-            document.getElementById('statusText').innerText = isTranslationMode ? "🟢 MODO TRADUCTOR" : "🟢 CONECTADO";
+            document.getElementById('statusText').innerText = isTranslationMode ? "  MODO TRADUCTOR" : "  CONECTADO";
             document.getElementById('connectBtn').innerText = "DESCONECTAR";
             document.getElementById('connectBtn').classList.add('danger');
-            
+
             document.getElementById('micBtn').disabled = false;
             document.getElementById('textInput').disabled = false;
             document.getElementById('sendBtn').disabled = false;
-
             audioContext = new AudioContext({ sampleRate: 24000 });
-            
+
             voiceFilter = audioContext.createBiquadFilter();
             voiceFilter.type = "lowpass";
             voiceFilter.frequency.setValueAtTime(8500, audioContext.currentTime);
-            
+
             voiceCompressor = audioContext.createDynamicsCompressor();
             voiceCompressor.threshold.setValueAtTime(-24, audioContext.currentTime);
             voiceCompressor.knee.setValueAtTime(30, audioContext.currentTime);
             voiceCompressor.ratio.setValueAtTime(12, audioContext.currentTime);
             voiceCompressor.attack.setValueAtTime(0.003, audioContext.currentTime);
             voiceCompressor.release.setValueAtTime(0.25, audioContext.currentTime);
-            
+
             masterGain = audioContext.createGain();
             masterGain.gain.setValueAtTime(1.1, audioContext.currentTime);
-
             voiceFilter.connect(voiceCompressor);
             voiceCompressor.connect(masterGain);
             masterGain.connect(audioContext.destination);
@@ -334,7 +341,6 @@ async function toggleConnection() {
                             contextoCognitivo = `\n\n[MEMORIA COGNITIVA RECUPERADA]\n- Corto Plazo: ${analCorto}\n- Medio Plazo: ${analMedio}\n- Largo Plazo: ${analLargo}`;
                         }
                     }
-
                     const msg = `(AVISO DEL SISTEMA: Acabas de conectarte. La carpeta del usuario está vinculada y contiene estos archivos actualmente: ${archivos.length > 0 ? archivos.join(', ') : 'ninguno'}.${contextoCognitivo})`;
                     ws.send(JSON.stringify({
                         clientContent: {
@@ -345,27 +351,23 @@ async function toggleConnection() {
                 } catch(e) { console.error("Error al inyectar memoria inicial:", e); }
             }
         };
-
         ws.onmessage = async (evt) => {
             let textData = evt.data;
             if (textData instanceof Blob) textData = await textData.text();
-            
-            const data = JSON.parse(textData);
 
+            const data = JSON.parse(textData);
             if (data.toolCall && data.toolCall.functionCalls) {
                 if (typeof manejarLlamadasHerramientas === 'function') {
                     manejarLlamadasHerramientas(data.toolCall.functionCalls);
                 }
             }
-            
+
             if (data.serverContent && data.serverContent.interrupted) {
                 if (typeof interruptAudio === 'function') interruptAudio();
             }
-
             if (data.serverContent && data.serverContent.modelTurn) {
                 let textTurn = "";
                 let hasAudio = false;
-
                 for (const part of data.serverContent.modelTurn.parts) {
                     if (part.inlineData && part.inlineData.mimeType.startsWith('audio/')) {
                         const pcm = base64ToFloat32(part.inlineData.data);
@@ -376,22 +378,18 @@ async function toggleConnection() {
                         textTurn += part.text;
                     }
                 }
-
                 if (textTurn && typeof addMessage === 'function') {
                     addMessage('gemini', textTurn, hasAudio);
                 }
             }
         };
-
         ws.onerror = (e) => {
             console.error("WebSocket Error:", e);
             disconnect();
         };
-
         ws.onclose = () => {
             disconnect();
         };
-
     } catch (err) {
         alert("Error de conexión: " + err.message);
         disconnect();
@@ -407,10 +405,10 @@ function toggleMode() {
     const btnMode = document.getElementById('modeToggleBtn');
     if (btnMode) {
         if (isTranslationMode) {
-            btnMode.innerText = "🔄 TRADUCTOR";
+            btnMode.innerText = "  TRADUCTOR";
             btnMode.style.background = "#007acc";
         } else {
-            btnMode.innerText = "💬 ASISTENTE";
+            btnMode.innerText = "  ASISTENTE";
             btnMode.style.background = "var(--primary)";
         }
     }
@@ -420,26 +418,24 @@ function disconnect() {
     if (ws) ws.close();
     ws = null;
     isConnected = false;
-    
+
     if (typeof stopMic === 'function') stopMic();
     audioQueue = [];
     isPlayingAudio = false;
-    
+
     if (currentActiveSource) {
         try { currentActiveSource.stop(); } catch(e) {}
         currentActiveSource = null;
     }
-
     if (voiceFilter) {
         voiceFilter.disconnect();
         voiceCompressor.disconnect();
         masterGain.disconnect();
     }
-
-    document.getElementById('statusText').innerText = "🔴 DESCONECTADO";
+    document.getElementById('statusText').innerText = "  DESCONECTADO";
     document.getElementById('connectBtn').innerText = "CONECTAR";
     document.getElementById('connectBtn').classList.remove('danger');
-    
+
     document.getElementById('micBtn').disabled = true;
     document.getElementById('textInput').disabled = true;
     document.getElementById('sendBtn').disabled = true;

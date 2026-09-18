@@ -1,3 +1,4 @@
+// chat_tools.js
 // ─── CHAT & TOOLS ───────────────────────────────────────────────────
 
 // Función para obtener el informe de sesiones anteriores y el mapa global automáticamente
@@ -106,6 +107,12 @@ function handleKeyDown(e) {
 
 // ─── SEARCH TOOLS (Pollinations) ──────────────────────────────────────
 async function doPollinationsSearch(query, model) {
+  // Desplegar o actualizar el modal en la esquina inferior izquierda
+  const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+  if (typeof uiWeb !== 'undefined') {
+    uiWeb.open(searchUrl);
+  }
+
   if (!pollinationsKey) {
     return "Error: La IA de Pollinations no está conectada. Pide al usuario que conecte la IA desde el botón superior de la interfaz.";
   }
@@ -204,11 +211,8 @@ const webBrowser = {
 
         // Abrir en el modal
         if (typeof uiWeb !== 'undefined') {
-          const m = document.getElementById('webModal');
-          m.classList.remove('hidden', 'minimized');
-          if (!uiWeb.isMaximized) m.classList.remove('maximized');
+          uiWeb.open(blobUrl);
           document.getElementById('webModalUrl').value = `local://${cleanPath}`;
-          document.getElementById('webIframe').src = blobUrl;
         }
 
         if (useNova) {
