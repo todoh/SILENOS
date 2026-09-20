@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - SILENOS Browser Control</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --surface: #f8fafc;
+            --accent: #0284c7;
+            --radius: 12px;
+            --max-width: 800px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 2rem 1rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        main {
+            width: 100%;
+            max-width: var(--max-width);
+        }
+
+        header {
+            margin-bottom: 2.5rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: clamp(1.8rem, 4vw, 2.4rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+        }
+
+        .meta-info {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .lang-nav {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 1.25rem;
+        }
+
+        .lang-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.4rem 0.8rem;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .lang-btn:hover, .lang-btn.active {
+            background: var(--text);
+            color: var(--bg);
+            border-color: var(--text);
+        }
+
+        section.lang-block {
+            display: none;
+            margin-bottom: 3rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        section.lang-block.active {
+            display: block;
+        }
+
+        /* RTL Specifics for Arabic */
+        section[dir="rtl"] {
+            text-align: right;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        h2 {
+            font-size: 1.35rem;
+            font-weight: 600;
+            margin-top: 1.8rem;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.01em;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            color: #334155;
+            font-size: 1rem;
+        }
+
+        ul {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+            color: #334155;
+        }
+
+        section[dir="rtl"] ul {
+            padding-left: 0;
+            padding-right: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.4rem;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            margin: 1.5rem 0;
+        }
+
+        footer {
+            margin-top: 4rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<main>
+    <header>
+        <h1>SILENOS Browser Control</h1>
+        <p class="meta-info">Privacy Policy / Política de Privacidad / سياسة الخصوصية / 隐私政策</p>
+        
+        <nav class="lang-nav">
+            <button class="lang-btn active" onclick="switchLang('es')">Español</button>
+            <button class="lang-btn" onclick="switchLang('en')">English</button>
+            <button class="lang-btn" onclick="switchLang('ar')">العربية</button>
+            <button class="lang-btn" onclick="switchLang('zh')">中文</button>
+        </nav>
+    </header>
+
+    <!-- ESPAÑOL -->
+    <section id="lang-es" class="lang-block active" dir="ltr">
+        <p class="meta-info">Última actualización: Septiembre de 2026</p>
+
+        <h2>1. Resumen General</h2>
+        <p>En <strong>SILENOS Browser Control</strong> nos tomamos la privacidad muy en serio. Esta extensión está diseñada para operar como un asistente de navegación web accionado por voz y visión. Toda la configuración clave se gestiona de forma local en tu dispositivo.</p>
+
+        <h2>2. Datos Recopilados y Procesados</h2>
+        <p>SILENOS no vende, no alquila ni rastrea la actividad del usuario fuera de las acciones estrictamente necesarias para el funcionamiento de la extensión:</p>
+        <ul>
+            <li><strong>Clave de API de Gemini (API Key):</strong> Se almacena exclusivamente en el almacenamiento local de tu navegador (<code>chrome.storage.local</code>). Nunca se transmite a servidores propios ni a terceros que no sean los endpoints oficiales de Google Gemini API.</li>
+            <li><strong>Capturas de pantalla (Viewport) y Contenido de Páginas:</strong> Cuando utilizas comandos de voz o funciones analíticas, la extensión captura temporalmente el área visible del navegador o analiza el DOM para permitir al modelo de IA identificar elementos interactivos. Estos datos se procesan en tiempo real vía WebSocket hacia la API de Google Gemini y no se almacenan permanentemente.</li>
+            <li><strong>Audio del Micrófono:</strong> Las señales de audio capturadas durante el uso activo del micrófono se transmiten en formato PCM a la API de Gemini para el reconocimiento e interpretación de comandos por voz.</li>
+        </ul>
+
+        <h2>3. Uso de Permisos del Navegador</h2>
+        <div class="card">
+            <ul>
+                <li><code>storage</code>: Guardar tu API Key en tu dispositivo.</li>
+                <li><code>activeTab</code> / <code>tabs</code>: Interactuar con la pestaña actual que estás consultando.</li>
+                <li><code>scripting</code>: Insertar etiquetas de identificación visual en elementos clicables para permitir un control de precisión por voz.</li>
+                <li><code>sidePanel</code>: Desplegar la interfaz del asistente sin interrumpir tu navegación principal.</li>
+            </ul>
+        </div>
+
+        <h2>4. Transferencia a Terceros</h2>
+        <p>No compartimos ni comercializamos datos personales ni de navegación con ninguna empresa publicitaria ni de analítica. El único intercambio de datos técnico ocurre de forma directa entre tu navegador y los servidores de Google Gemini API utilizando la API Key que tú proporcionas.</p>
+
+        <h2>5. Contacto</h2>
+        <p>Si tienes preguntas sobre esta Política de Privacidad, puedes ponerte en contacto a través de nuestro canal de soporte o repositorio oficial.</p>
+    </section>
+
+    <!-- ENGLISH -->
+    <section id="lang-en" class="lang-block" dir="ltr">
+        <p class="meta-info">Last updated: September 2026</p>
+
+        <h2>1. Overview</h2>
+        <p>At <strong>SILENOS Browser Control</strong>, we prioritize your privacy. This extension is built as a voice and vision-driven web navigation assistant. All key configurations and settings are strictly managed locally on your device.</p>
+
+        <h2>2. Data Collection and Processing</h2>
+        <p>SILENOS does not sell, rent, or track user activity outside of the immediate functional requirements of the extension:</p>
+        <ul>
+            <li><strong>Gemini API Key:</strong> Stored exclusively in your browser local storage (<code>chrome.storage.local</code>). It is never sent to any external servers other than official Google Gemini API endpoints.</li>
+            <li><strong>Viewport Captures & Web Content:</strong> When voice or visual features are activated, the extension temporarily captures the visible browser area or DOM structure to allow the AI model to identify interactive elements. This data is transmitted in real-time via WebSocket directly to Google Gemini API and is not retained permanently.</li>
+            <li><strong>Microphone Audio:</strong> Audio streams captured while the microphone is enabled are converted to PCM format and transmitted to Google Gemini API for real-time voice command processing.</li>
+        </ul>
+
+        <h2>3. Extension Permissions</h2>
+        <div class="card">
+            <ul>
+                <li><code>storage</code>: Saves your API Key locally on your device.</li>
+                <li><code>activeTab</code> / <code>tabs</code>: Interacts with the active browser tab you are currently viewing.</li>
+                <li><code>scripting</code>: Injects visual tag markers over interactive elements for precision voice control.</li>
+                <li><code>sidePanel</code>: Displays the assistant interface smoothly alongside your active browser tab.</li>
+            </ul>
+        </div>
+
+        <h2>4. Third-Party Sharing</h2>
+        <p>We do not sell, transfer, or share any personal or browsing data with ad networks, data brokers, or analytics partners. All data exchanges occur strictly between your browser and Google Gemini API using your provided API Key.</p>
+
+        <h2>5. Contact</h2>
+        <p>For any questions or inquiries regarding this Privacy Policy, please contact us via our official support channel or repository.</p>
+    </section>
+
+    <!-- ARABIC -->
+    <section id="lang-ar" class="lang-block" dir="rtl">
+        <p class="meta-info">آخر تحديث: سبتمبر 2026</p>
+
+        <h2>1. نظرة عامة</h2>
+        <p>في <strong>SILENOS Browser Control</strong>، نضع خصوصيتك في مقدمة أولوياتنا. تم تصميم هذا الملحق ليعمل كمساعد للملاحة عبر الويب يعتمد على الصوت والرؤية. يتم إدارة جميع الإعدادات والمفاتيح الأساسية محليًا على جهازك.</p>
+
+        <h2>2. البيانات التي يتم جمعها ومعالجتها</h2>
+        <p>لا يقوم SILENOS ببيع أو تأجير أو تتبع نشاط المستخدم خارج نطاق الوظائف المباشرة للملحق:</p>
+        <ul>
+            <li><strong>مفتاح Gemini API:</strong> يتم تخزينه حصريًا في وحدة التخزين المحلية لمتصفحك (<code>chrome.storage.local</code>). لا يتم إرساله مطلقًا إلى أي خوادم خارجية باستثناء نقاط نهاية Google Gemini API الرسمية.</li>
+            <li><strong>لقطات الشاشة ومحتوى الصفحة:</strong> عند استخدام الميزات الصوتية أو البصرية، يتلقط الملحق مؤقتًا المنطقة المرئية من المتصفح لتمكين نموذج الذكاء الاصطناعي من التعرف على العناصر التفاعلية. يتم نقل هذه البيانات فورًا عبر WebSocket إلى Google Gemini API ولا يتم الاحتفاظ بها دائمًا.</li>
+            <li><strong>الصوت من الميكروفون:</strong> يتم تحويل الإشارات الصوتية المسجلة أثناء استخدام الميكروفون إلى صيغة PCM وإرسالها إلى Google Gemini API للتعرف على الأوامر الصوتية.</li>
+        </ul>
+
+        <h2>3. أذونات المتصفح المستخدمة</h2>
+        <div class="card">
+            <ul>
+                <li><code>storage</code>: لحفظ مفتاح API محليًا على جهازك.</li>
+                <li><code>activeTab</code> / <code>tabs</code>: للتفاعل مع علامة التبويب النشطة التي تعرضها حاليًا.</li>
+                <li><code>scripting</code>: لإدراج علامات رقمية مرئية فوق العناصر التفاعلية للتحكم الصوتي الدقيق.</li>
+                <li><code>sidePanel</code>: لعرض واجهة المساعد في اللوحة الجانبية دون تعطيل التصفح.</li>
+            </ul>
+        </div>
+
+        <h2>4. المشاركة مع أطراف ثالثة</h2>
+        <p>نحن لا نبيع أو ننقل أي بيانات شخصية أو بيانات تصفح إلى شبكات الإعلانات أو شركات التحليلات. يتم التبادل الفني للبيانات حصريًا بين متصفحك وخدمة Google Gemini API باستخدام مفتاح API الخاص بك.</p>
+
+        <h2>5. التواصل</h2>
+        <p>إذا كانت لديك أي أسئلة حول سياسة الخصوصية هذه، يمكنك التواصل معنا عبر قناة الدعم الرسمية.</p>
+    </section>
+
+    <!-- CHINESE -->
+    <section id="lang-zh" class="lang-block" dir="ltr">
+        <p class="meta-info">最后更新时间：2026年9月</p>
+
+        <h2>1. 概述</h2>
+        <p>在 <strong>SILENOS Browser Control</strong>，我们高度重视您的个人隐私。本扩展是一款基于语音与视觉驱动的网页浏览助手。所有核心配置与密钥均严格保存在您的本地设备中。</p>
+
+        <h2>2. 数据收集与处理</h2>
+        <p>SILENOS 不会出售、出租或跟踪用户在扩展核心功能之外的任何浏览活动：</p>
+        <ul>
+            <li><strong>Gemini API 密钥：</strong> 仅存储在您浏览器的本地存储中（<code>chrome.storage.local</code>）。绝不会发送至除 Google Gemini API 官方端点以外的任何第三方服务器。</li>
+            <li><strong>屏幕截图与网页内容：</strong> 当您激活语音或视觉分析功能时，扩展会临时捕获浏览器的当前可见区域或分析网页结构，以便 AI 模型识别可交互元素。此数据通过 WebSocket 实时传输至 Google Gemini API，不会进行永久存储。</li>
+            <li><strong>麦克风音频：</strong> 在开启麦克风期间采集的音频信号会转换为 PCM 格式并发送至 Google Gemini API，用于实时语音指令识别。</li>
+        </ul>
+
+        <h2>3. 扩展权限说明</h2>
+        <div class="card">
+            <ul>
+                <li><code>storage</code>：用于在本地安全保存您的 API 密钥。</li>
+                <li><code>activeTab</code> / <code>tabs</code>：用于与您当前正在浏览的标签页进行交互。</li>
+                <li><code>scripting</code>：用于在网页可点击元素上添加视觉编号标记，以实现高精度的语音控制。</li>
+                <li><code>sidePanel</code>：用于在侧边栏平滑展示助手界面，不干扰主网页浏览。</li>
+            </ul>
+        </div>
+
+        <h2>4. 第三方共享</h2>
+        <p>我们绝不会将任何用户数据或浏览记录出售或共享给广告网络或数据分析公司。所有技术数据交换仅在您的浏览器与 Google Gemini API 之间直接进行。</p>
+
+        <h2>5. 联系方式</h2>
+        <p>如果您对本隐私政策有任何疑问，请通过官方支持渠道或代码仓库与我们联系。</p>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 SILENOS Browser Control. All rights reserved.</p>
+    </footer>
+</main>
+
+<script>
+    function switchLang(lang) {
+        // Toggle buttons
+        document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+
+        // Toggle content blocks
+        document.querySelectorAll('.lang-block').forEach(block => block.classList.remove('active'));
+        const targetBlock = document.getElementById(`lang-${lang}`);
+        if (targetBlock) {
+            targetBlock.classList.add('active');
+        }
+    }
+</script>
+
+</body>
+</html>
