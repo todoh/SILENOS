@@ -27,30 +27,91 @@
       font-family: 'Plus Jakarta Sans', sans-serif;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
     }
     .serif-title {
       font-family: 'Cormorant Garamond', serif;
     }
     ::-webkit-scrollbar {
-      width: 3px;
-      height: 3px;
+      width: 4px;
+      height: 0px;
+    }
+    ::-webkit-scrollbar:horizontal {
+      display: none !important;
+      height: 0 !important;
     }
     ::-webkit-scrollbar-track {
-      background: #ffffff;
+      background: transparent;
     }
     ::-webkit-scrollbar-thumb {
-      background: #f0f0f0;
+      background: #e5e5e5;
       border-radius: 99px;
     }
     ::-webkit-scrollbar-thumb:hover {
       background: #d4d4d4;
     }
+
+    .apple-book-cover {
+      position: relative;
+      border-radius: 3px 8px 8px 3px;
+      box-shadow: 
+        1px 2px 8px rgba(0, 0, 0, 0.12),
+        4px 10px 24px rgba(0, 0, 0, 0.18),
+        0 0 1px rgba(0, 0, 0, 0.2);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+
+    .book-card:hover .apple-book-cover {
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 
+        2px 6px 14px rgba(0, 0, 0, 0.15),
+        8px 18px 36px rgba(0, 0, 0, 0.24),
+        0 0 1px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Lomo y sombreado 3D izquierdo */
+    .apple-book-cover::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 7%;
+      min-width: 6px;
+      max-width: 14px;
+      background: linear-gradient(
+        to right,
+        rgba(255, 255, 255, 0.45) 0%,
+        rgba(255, 255, 255, 0.12) 18%,
+        rgba(0, 0, 0, 0.25) 40%,
+        rgba(0, 0, 0, 0.4) 55%,
+        rgba(255, 255, 255, 0.25) 75%,
+        rgba(0, 0, 0, 0.18) 100%
+      );
+      z-index: 20;
+      pointer-events: none;
+      mix-blend-mode: overlay;
+    }
+
+    /* Hendidura/pliegue de encuadernación */
+    .apple-book-cover::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 7%;
+      bottom: 0;
+      width: 1px;
+      background: rgba(0, 0, 0, 0.18);
+      box-shadow: 1px 0 2px rgba(255, 255, 255, 0.3);
+      z-index: 21;
+      pointer-events: none;
+    }
+
     .book-card {
       transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .book-card:hover {
-      transform: translateY(-4px);
-    }
+
     html.tema-oscuro {
       filter: invert(1) hue-rotate(180deg);
       background-color: #050505;
@@ -63,12 +124,12 @@
   </style>
 </head>
 
-<body class="h-full flex flex-col overflow-hidden bg-white text-neutral-900">
+<body class="h-full flex flex-col overflow-x-hidden overflow-y-hidden bg-white text-neutral-900">
 
   <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
     
     <!-- Sidebar / Menú Lateral Minimalista -->
-    <aside class="w-full md:w-72 bg-white flex flex-col flex-none p-6 md:pr-8 space-y-8 overflow-y-auto">
+    <aside class="w-full md:w-72 bg-white flex flex-col flex-none p-6 md:pr-8 space-y-8 overflow-y-auto overflow-x-hidden">
       
       <!-- Título de Marca / Header Sidebar -->
       <div class="flex items-center justify-between">
@@ -125,14 +186,14 @@
       </section>
 
       <!-- Rejilla de Libros -->
-      <div class="flex-1 overflow-y-auto pt-8 pb-12">
+      <div class="flex-1 overflow-y-auto overflow-x-hidden pt-8 pb-12">
         <div id="books-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-6 gap-y-10"></div>
         
         <!-- Estado Vacío -->
         <div id="empty-state" class="hidden flex flex-col items-center justify-center py-24 text-center">
           <i data-lucide="book-open" class="w-8 h-8 text-neutral-300 mb-3"></i>
           <h3 class="text-xs font-semibold text-neutral-800 uppercase tracking-wider">Sin Resultados</h3>
-          <p class="text-xs text-neutral-400 mt-1 max-w-xs font-light">No encontramos títulos que coincidan con la búsqueda actual.</p>
+          <p class="text-xs text-neutral-400 mt-1 max-w-xs font-light">No encontramos títulos que coincidan con la búsqueda o selección actual.</p>
           <button onclick="clearAllFilters()" class="mt-4 text-xs font-medium text-neutral-900 underline hover:text-neutral-500">Restablecer filtros</button>
         </div>
       </div>
@@ -149,11 +210,11 @@
         </button>
       </div>
 
-      <div class="flex-1 overflow-y-auto pr-1 space-y-6">
+      <div class="flex-1 overflow-y-auto pr-1 space-y-6 overflow-x-hidden">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
           
           <div class="md:col-span-1">
-            <div class="aspect-[2/3] bg-neutral-50 rounded-2xl overflow-hidden relative shadow-sm">
+            <div class="aspect-[2/3] bg-neutral-50 apple-book-cover overflow-hidden relative shadow-sm">
               <img id="detail-book-cover" class="w-full h-full object-cover" src="" alt="Portada" loading="lazy">
               <div id="detail-cover-fallback" class="absolute inset-0 flex flex-col justify-between p-4 text-center hidden">
                 <span class="text-[8px] uppercase font-bold tracking-widest text-neutral-400" id="detail-fallback-col"></span>
@@ -194,6 +255,7 @@
     const state = {
       collections: [],
       books: [],
+      favorites: JSON.parse(localStorage.getItem('silenos_favorites') || '[]'),
       currentCollection: "all",
       activeTagFilter: null,
       searchQuery: ""
@@ -216,7 +278,11 @@
         })
         .then(data => {
           state.collections = data.collections || [];
-          state.books = data.books || [];
+          // Asignación de un identificador único determinista por libro (_uid)
+          state.books = (data.books || []).map((b, idx) => ({
+            ...b,
+            _uid: `${b.collection || 'col'}::${b.title || 'titulo'}::${b.id !== undefined ? b.id : idx}`
+          }));
           if (window.lucide) lucide.createIcons();
           renderCollections();
           renderBooks();
@@ -226,6 +292,35 @@
           document.getElementById('current-view-count').innerText = "Error cargando inventario.";
         });
     };
+
+    function saveFavorites() {
+      try {
+        localStorage.setItem('silenos_favorites', JSON.stringify(state.favorites));
+      } catch (e) {
+        console.error('Error guardando favoritos', e);
+      }
+    }
+
+    function getBookId(book) {
+      if (book._uid) return book._uid;
+      return `${book.collection || 'col'}::${book.title || 'titulo'}`;
+    }
+
+    function toggleFavorite(event, bookIndex) {
+      if (event) event.stopPropagation();
+      const book = state.books[bookIndex];
+      if (!book) return;
+      const id = getBookId(book);
+      const idx = state.favorites.indexOf(id);
+      if (idx > -1) {
+        state.favorites.splice(idx, 1);
+      } else {
+        state.favorites.push(id);
+      }
+      saveFavorites();
+      renderCollections();
+      renderBooks();
+    }
 
     function getBookCoverSrc(book) {
       if (book.image) {
@@ -246,6 +341,7 @@
       const container = document.getElementById('collections-list');
       container.innerHTML = '';
       
+      // Opción: Todas
       const allActive = state.currentCollection === 'all';
       const allBtn = document.createElement('button');
       allBtn.onclick = () => selectCollection('all');
@@ -253,6 +349,16 @@
       allBtn.innerHTML = `<span>Todas</span><span class="text-[10px] opacity-60">${state.books.length}</span>`;
       container.appendChild(allBtn);
 
+      // Opción: Favoritos
+      const favActive = state.currentCollection === 'favorites';
+      const favCount = state.books.filter(b => state.favorites.includes(getBookId(b))).length;
+      const favBtn = document.createElement('button');
+      favBtn.onclick = () => selectCollection('favorites');
+      favBtn.className = `flex-none md:w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${favActive ? 'bg-neutral-900 text-white' : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'}`;
+      favBtn.innerHTML = `<span class="flex items-center gap-1.5"><i data-lucide="star" class="w-3.5 h-3.5 ${favCount > 0 ? 'fill-current text-amber-400' : ''}"></i>Favoritos</span><span class="text-[10px] opacity-60">${favCount}</span>`;
+      container.appendChild(favBtn);
+
+      // Colecciones individuales
       state.collections.forEach(col => {
         const isActive = state.currentCollection === col;
         const count = state.books.filter(b => b.collection === col).length;
@@ -262,6 +368,8 @@
         colBtn.innerHTML = `<span class="truncate">${col}</span><span class="text-[10px] opacity-60">${count}</span>`;
         container.appendChild(colBtn);
       });
+
+      if (window.lucide) window.lucide.createIcons();
     }
 
     function selectCollection(col) {
@@ -272,17 +380,24 @@
       renderBooks();
     }
 
-    // CARGA SERIAL Y PROGRESIVA DE IMÁGENES
     function renderBooks() {
       const grid = document.getElementById('books-grid');
       const emptyState = document.getElementById('empty-state');
       grid.innerHTML = '';
 
-      document.getElementById('current-view-title').innerText = state.currentCollection === 'all' ? "Todas las Obras" : state.currentCollection;
+      if (state.currentCollection === 'all') {
+        document.getElementById('current-view-title').innerText = "Todas las Obras";
+      } else if (state.currentCollection === 'favorites') {
+        document.getElementById('current-view-title').innerText = "Favoritos";
+      } else {
+        document.getElementById('current-view-title').innerText = state.currentCollection;
+      }
 
       let filtered = state.books;
 
-      if (state.currentCollection !== 'all') {
+      if (state.currentCollection === 'favorites') {
+        filtered = filtered.filter(b => state.favorites.includes(getBookId(b)));
+      } else if (state.currentCollection !== 'all') {
         filtered = filtered.filter(b => b.collection === state.currentCollection);
       }
 
@@ -324,12 +439,21 @@
         const authorsArr = book.authors || ["Silenos"];
         const coverData = getBookCoverSrc(book);
 
-        // Estrategia de carga serial y priorización de imágenes:
-        // - Los primeros 6 elementos (visibles al inicio) tienen prioridad alta y carga inmediata.
-        // - Los siguientes usan loading="lazy" nativo y decodificación asíncrona.
         const isInitialViewport = index < 6;
         const fetchPriorityAttr = isInitialViewport ? 'fetchpriority="high"' : 'fetchpriority="low"';
         const loadingAttr = isInitialViewport ? 'eager' : 'lazy';
+
+        const originalIndex = state.books.indexOf(book);
+        const isFav = state.favorites.includes(getBookId(book));
+
+        const favButtonHtml = `
+          <button onclick="toggleFavorite(event, ${originalIndex})" 
+                  class="absolute bottom-2 right-2 z-30 p-1.5 rounded-full bg-neutral-950/40 hover:bg-neutral-950/70 backdrop-blur-md text-white transition-all duration-200 ${isFav ? 'opacity-100 scale-100' : 'opacity-0 group-hover:opacity-100 hover:scale-110'}" 
+                  title="${isFav ? 'Quitar de favoritos' : 'Añadir a favoritos'}"
+                  aria-label="${isFav ? 'Quitar de favoritos' : 'Añadir a favoritos'}">
+            <i data-lucide="star" class="w-4 h-4 ${isFav ? 'fill-white text-white' : 'text-white/90'}"></i>
+          </button>
+        `;
 
         let coverHtml = coverData.type === 'url' ? `
           <div class="w-full h-full bg-gradient-to-tr ${GORGEOUS_GRADIENTS[index % GORGEOUS_GRADIENTS.length]} flex flex-col justify-between p-4 text-center">
@@ -337,23 +461,25 @@
             <span class="serif-title text-base font-normal leading-snug text-neutral-800 line-clamp-3">${book.title}</span>
             <span class="text-[8px] uppercase tracking-widest font-bold text-neutral-400">Silenos</span>
           </div>
-          <img class="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-500 group-hover:scale-105" 
+          <img class="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-500" 
                src="${coverData.src}" 
                alt="${book.title}" 
                loading="${loadingAttr}" 
                decoding="async" 
                ${fetchPriorityAttr}
                onload="this.classList.remove('opacity-0')">
+          ${favButtonHtml}
         ` : `
           <div class="w-full h-full bg-gradient-to-tr ${coverData.gradient} flex flex-col justify-between p-4 text-center">
             <span class="text-[8px] uppercase tracking-widest font-bold text-neutral-400">${book.collection}</span>
             <span class="serif-title text-base font-normal leading-snug text-neutral-800 line-clamp-3">${book.title}</span>
             <span class="text-[8px] uppercase tracking-widest font-bold text-neutral-400">Silenos</span>
           </div>
+          ${favButtonHtml}
         `;
 
         card.innerHTML = `
-          <div class="aspect-[2/3] rounded-2xl overflow-hidden shadow-sm relative bg-neutral-50">
+          <div class="aspect-[2/3] apple-book-cover relative bg-neutral-50">
             ${coverHtml}
           </div>
           <div class="space-y-1">
@@ -474,6 +600,7 @@
     window.closeBookModal = closeBookModal;
     window.closeBookModalOnOutsideClick = closeBookModalOnOutsideClick;
     window.toggleTheme = toggleTheme;
+    window.toggleFavorite = toggleFavorite;
   </script>
 </body>
 </html>
