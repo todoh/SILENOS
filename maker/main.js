@@ -1,4 +1,4 @@
-// main.js - LOGICA PRINCIPAL Y CONTROL DE CÁMARA Y ESTADOS
+// main.js - LOGICA PRINCIPAL, NAVEGACIÓN Y CONTROL DE CÁMARA Y ESTADOS
 const CAMERA_SETTINGS = {
     minPitch: 40,            // Ángulo en Zoom Out
     maxPitch: 88,            // Ángulo en Zoom In (prácticamente frontal)
@@ -148,6 +148,54 @@ function updateViewportCache() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // -------------------------------------------------------------
+    // NAVEGACIÓN DE PESTAÑAS DEL MENÚ LATERAL (INCLUYE MULTIJUGADOR)
+    // -------------------------------------------------------------
+    const btnAssets = document.getElementById('btn-menu-assets');
+    const btnElements = document.getElementById('btn-menu-elements');
+    const btnInventory = document.getElementById('btn-menu-inventory');
+    const btnStats = document.getElementById('btn-menu-stats');
+    const btnMultiplayer = document.getElementById('btn-menu-multiplayer');
+    const btnGeneration = document.getElementById('btn-menu-generation');
+    const btnAgent = document.getElementById('btn-menu-agent');
+    const btnLogic = document.getElementById('btn-menu-logic');
+    const btnIO = document.getElementById('btn-menu-io');
+
+    const viewAssets = document.getElementById('view-assets');
+    const viewElements = document.getElementById('view-elements');
+    const viewInventory = document.getElementById('view-inventory-config');
+    const viewStats = document.getElementById('view-stats');
+    const viewMultiplayer = document.getElementById('view-multiplayer');
+    const viewGeneration = document.getElementById('view-generation');
+    const viewAgent = document.getElementById('view-agent');
+    const viewLogic = document.getElementById('view-logic');
+    const viewIO = document.getElementById('view-io');
+
+    const switchMenu = (activeBtn, activeView) => {
+        [btnAssets, btnElements, btnInventory, btnStats, btnMultiplayer, btnGeneration, btnAgent, btnLogic, btnIO].forEach(b => b && b.classList.remove('active'));
+        [viewAssets, viewElements, viewInventory, viewStats, viewMultiplayer, viewGeneration, viewAgent, viewLogic, viewIO].forEach(v => v && (v.style.display = 'none'));
+
+        if (activeBtn) activeBtn.classList.add('active');
+        if (activeView) activeView.style.display = 'flex';
+
+        if (activeView === viewMultiplayer && typeof updateMultiplayerUI === 'function') {
+            updateMultiplayerUI();
+        }
+    };
+
+    if (btnAssets) btnAssets.addEventListener('click', () => switchMenu(btnAssets, viewAssets));
+    if (btnElements) btnElements.addEventListener('click', () => switchMenu(btnElements, viewElements));
+    if (btnInventory) btnInventory.addEventListener('click', () => switchMenu(btnInventory, viewInventory));
+    if (btnStats) btnStats.addEventListener('click', () => switchMenu(btnStats, viewStats));
+    if (btnMultiplayer) btnMultiplayer.addEventListener('click', () => switchMenu(btnMultiplayer, viewMultiplayer));
+    if (btnGeneration) btnGeneration.addEventListener('click', () => switchMenu(btnGeneration, viewGeneration));
+    if (btnAgent) btnAgent.addEventListener('click', () => switchMenu(btnAgent, viewAgent));
+    if (btnLogic) btnLogic.addEventListener('click', () => switchMenu(btnLogic, viewLogic));
+    if (btnIO) btnIO.addEventListener('click', () => switchMenu(btnIO, viewIO));
+
+    // -------------------------------------------------------------
+    // CONFIGURACIÓN DE VIEWPORT Y CÁMARA
+    // -------------------------------------------------------------
     const viewport = document.getElementById('viewport-container');
     if (viewport && typeof ResizeObserver !== 'undefined') {
         const ro = new ResizeObserver(() => {
