@@ -11,33 +11,36 @@ async function toggleConnection() {
     const apiKey = document.getElementById('apiKey').value.trim();
     if (!apiKey) return alert("Pega tu API Key primero.");
     localStorage.setItem('gemini_api_key_standalone', apiKey);
-
+    
     // Guardar la personalidad configurada si el elemento está disponible
     const personalityInput = document.getElementById('personalityInstruction');
     if (personalityInput && personalityInput.value.trim()) {
         localStorage.setItem('gemini_assistant_personality', personalityInput.value.trim());
     }
-    document.getElementById('statusText').innerText = "  CONECTANDO...";
 
+    document.getElementById('statusText').innerText = "  CONECTANDO...";
     try {
         const wsUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${apiKey}`;
         ws = new WebSocket(wsUrl);
         ws.onopen = async () => {
             const selectElement = document.getElementById('languageSelect');
             const targetLang = selectElement ? selectElement.value : 'es';
+
             const generationConfig = {
                 response_modalities: ['AUDIO'],
                 speech_config: { voice_config: { prebuilt_voice_config: { voice_name: 'Aoede' } } }
             };
+
             if (isTranslationMode) {
                 generationConfig.translation_config = {
                     target_language_code: targetLang,
                     echo_target_language: true
                 };
             }
-            const defaultPersonality = "Tu nombre es VOZ, tu titulo es SILENOS, tu nombre completo es Silenos Voz. Eres un asistente y arquitecto de desarrollo web brillante y observador. Tienes acceso completo a una carpeta local de trabajo a través de herramientas especializadas. Puedes leer, crear, modificar y eliminar archivos de texto (.txt) y código fuente (.html, .css, .js), así como administrar subcarpetas. NAVEGACIÓN Y BÚSQUEDA WEB: Tienes disponible la herramienta 'browse_web'. Cuando el usuario te pida abrir el navegador, buscar en Google o visitar una página web en internet, construye la URL correspondiente (ejemplo: https://www.google.com/search?q=termino) e invoca inmediatamente 'browse_web' dentro del modal de navegación del cliente. REGLA CRÍTICA DE SEGURIDAD PARA CARPETAS: Está ESTRICTAMENTE PROHIBIDO ejecutar la función 'borrarCarpeta' sin antes haber preguntado verbalmente o por texto al usuario y haber recibido su me confirmación o autorización explícita dentro de la conversación actual. Si el usuario te ha dado su permiso explícito en la charla justo antes, debes llamar a 'borrarCarpeta' pasando la propiedad 'autorizacionExpresa' en true. REGLA CRÍTICA DE INVOCACIÓN DE HERRAMIENTA: Antes de llamar a 'analisisCompleto', DEBES preguntar e informar verbalmente/por texto al usuario de que vas a utilizar el 'MODELO FUERTE' (gemini-3.6-flash).";
 
+            const defaultPersonality = "Tu nombre es VOZ, tu titulo es SILENOS, tu nombre completo es Silenos Voz. Eres un asistente y arquitecto de desarrollo web brillante y observador. Tienes acceso completo a una carpeta local de trabajo a través de herramientas especializadas. Puedes leer, crear, modificar y eliminar archivos de texto (.txt) y código fuente (.html, .css, .js), así como administrar subcarpetas. Tienes acceso a consultas meteorológicas (OpenMeteo), mercado cripto (CoinGecko y CoinPaprika), comisiones Bitcoin (Mempool.space), conversión de divisas (Frankfurter), datos geográficos (RestCountries) y enciclopedia (Wikipedia) de forma nativa sin API Key.";
             const customPersonality = localStorage.getItem('gemini_assistant_personality') || defaultPersonality;
+
             const systemText = isTranslationMode 
                 ? `Actúa estrictamente como un motor de doblaje y traducción en vivo de alta fidelidad. Escucha la voz del usuario e interpreta su contenido, traduciéndolo inmediatamente al idioma destino configurado bajo el código ISO "${targetLang}". Traduce con fluidez natural, preservando el tono emocional, las pausas y los énfasis de forma transparente y conversacional, doblando la voz sin añadir comentarios adicionales propios.`
                 : customPersonality;
@@ -292,6 +295,79 @@ async function toggleConnection() {
                                     },
                                     required: ["url"]
                                 }
+                            },
+                            {
+                                name: "obtenerClima",
+                                description: "Consulta el clima actual y meteorología de unas coordenadas mediante OpenMeteo.",
+                                parameters: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        latitud: { type: "NUMBER", description: "Latitud geográfica" },
+                                        longitud: { type: "NUMBER", description: "Longitud geográfica" }
+                                    },
+                                    required: ["latitud", "longitud"]
+                                }
+                            },
+                            {
+                                name: "obtenerPrecioCripto",
+                                description: "Consulta precios de criptomonedas en CoinGecko.",
+                                parameters: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        ids: { type: "STRING", description: "IDs de criptomonedas separadas por comas (ej: bitcoin,ethereum)" },
+                                        divisas: { type: "STRING", description: "Monedas de destino separadas por comas (ej: usd,eur)" }
+                                    }
+                                }
+                            },
+                            {
+                                name: "obtenerDatosCoinPaprika",
+                                description: "Consulta histórico y mercado cripto sin API Key en CoinPaprika.",
+                                parameters: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        coinId: { type: "STRING", description: "ID del token en CoinPaprika (ej: btc-bitcoin, eth-ethereum)" }
+                                    }
+                                }
+                            },
+                            {
+                                name: "obtenerEstadoMempool",
+                                description: "Consulta las comisiones recomendadas de la red Bitcoin (sat/vB) y estado de bloques."
+                            },
+                            {
+                                name: "convertirDivisa",
+                                description: "Convierte montos entre divisas utilizando Frankfurter.app.",
+                                parameters: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        cantidad: { type: "NUMBER", description: "Monto a convertir" },
+                                        desde: { type: "STRING", description: "Código ISO de origen (ej: USD)" },
+                                        hacia: { type: "STRING", description: "Código ISO de destino (ej: EUR)" }
+                                    },
+                                    required: ["cantidad"]
+                                }
+                            },
+                            {
+                                name: "obtenerDatosPais",
+                                description: "Consulta información geográfica, capital, población y moneda de un país en RestCountries.",
+                                parameters: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        nombrePais: { type: "STRING", description: "Nombre del país" }
+                                    },
+                                    required: ["nombrePais"]
+                                }
+                            },
+                            {
+                                name: "consultarWikipedia",
+                                description: "Consulta un resumen o biografía de un término en Wikipedia REST API.",
+                                parameters: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        termino: { type: "STRING", description: "Término a buscar" },
+                                        idioma: { type: "STRING", description: "Código de idioma (ej: es, en)" }
+                                    },
+                                    required: ["termino"]
+                                }
                             }
                         ]
                     }],
@@ -300,17 +376,15 @@ async function toggleConnection() {
                 }
             };
             ws.send(JSON.stringify(setup));
-
             isConnected = true;
             document.getElementById('statusText').innerText = isTranslationMode ? "  MODO TRADUCTOR" : "  CONECTADO";
             document.getElementById('connectBtn').innerText = "DESCONECTAR";
             document.getElementById('connectBtn').classList.add('danger');
-
             document.getElementById('micBtn').disabled = false;
             document.getElementById('textInput').disabled = false;
             document.getElementById('sendBtn').disabled = false;
-            audioContext = new AudioContext({ sampleRate: 24000 });
 
+            audioContext = new AudioContext({ sampleRate: 24000 });
             voiceFilter = audioContext.createBiquadFilter();
             voiceFilter.type = "lowpass";
             voiceFilter.frequency.setValueAtTime(8500, audioContext.currentTime);
@@ -324,6 +398,7 @@ async function toggleConnection() {
 
             masterGain = audioContext.createGain();
             masterGain.gain.setValueAtTime(1.1, audioContext.currentTime);
+
             voiceFilter.connect(voiceCompressor);
             voiceCompressor.connect(masterGain);
             masterGain.connect(audioContext.destination);
@@ -351,11 +426,12 @@ async function toggleConnection() {
                 } catch(e) { console.error("Error al inyectar memoria inicial:", e); }
             }
         };
+
         ws.onmessage = async (evt) => {
             let textData = evt.data;
             if (textData instanceof Blob) textData = await textData.text();
-
             const data = JSON.parse(textData);
+
             if (data.toolCall && data.toolCall.functionCalls) {
                 if (typeof manejarLlamadasHerramientas === 'function') {
                     manejarLlamadasHerramientas(data.toolCall.functionCalls);
@@ -365,6 +441,7 @@ async function toggleConnection() {
             if (data.serverContent && data.serverContent.interrupted) {
                 if (typeof interruptAudio === 'function') interruptAudio();
             }
+
             if (data.serverContent && data.serverContent.modelTurn) {
                 let textTurn = "";
                 let hasAudio = false;
@@ -383,13 +460,16 @@ async function toggleConnection() {
                 }
             }
         };
+
         ws.onerror = (e) => {
             console.error("WebSocket Error:", e);
             disconnect();
         };
+
         ws.onclose = () => {
             disconnect();
         };
+
     } catch (err) {
         alert("Error de conexión: " + err.message);
         disconnect();
@@ -432,10 +512,10 @@ function disconnect() {
         voiceCompressor.disconnect();
         masterGain.disconnect();
     }
+
     document.getElementById('statusText').innerText = "  DESCONECTADO";
     document.getElementById('connectBtn').innerText = "CONECTAR";
     document.getElementById('connectBtn').classList.remove('danger');
-
     document.getElementById('micBtn').disabled = true;
     document.getElementById('textInput').disabled = true;
     document.getElementById('sendBtn').disabled = true;

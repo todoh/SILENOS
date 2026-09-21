@@ -1,4 +1,4 @@
-// SILENOS 5 VOZ/fsCore.js
+// SILENOS 5 VOZ / fsCore.js
 // GESTOR DE ARCHIVOS LOCALES (FILE SYSTEM ACCESS API)
 let directoryHandle = null;
 let memoriaDirHandle = null;
@@ -12,6 +12,12 @@ async function abrirCarpeta() {
         directoryHandle = await window.showDirectoryPicker({
             mode: 'readwrite'
         });
+        
+        // Sincronización de handles global
+        if (typeof workspaceHandle !== 'undefined') {
+            workspaceHandle = directoryHandle;
+        }
+
         document.getElementById('folderStatus').innerText = "  " + directoryHandle.name;
         
         memoriaDirHandle = await directoryHandle.getDirectoryHandle('Memoria', { create: true });
@@ -62,6 +68,9 @@ async function leerMemoria(nombre) {
 
 // HELPER DE RESOLUCIÓN DE RUTAS EN SUBCARPETAS
 async function obtenerFileHandlePorRuta(ruta, crear = false) {
+    if (!directoryHandle && typeof workspaceHandle !== 'undefined' && workspaceHandle) {
+        directoryHandle = workspaceHandle;
+    }
     if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
     let partes = ruta.replace(/\\/g, '/').split('/').filter(p => p.length > 0 && p !== '.');
@@ -77,6 +86,9 @@ async function obtenerFileHandlePorRuta(ruta, crear = false) {
 }
 
 async function obtenerDirHandlePorRuta(ruta, crear = false) {
+    if (!directoryHandle && typeof workspaceHandle !== 'undefined' && workspaceHandle) {
+        directoryHandle = workspaceHandle;
+    }
     if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
     let partes = ruta.replace(/\\/g, '/').split('/').filter(p => p.length > 0 && p !== '.');
@@ -109,6 +121,9 @@ async function capturarEstructuraDirectorio(dirHandle, rutaBase = '') {
 
 // GESTIÓN DE CARPETAS
 async function crearCarpeta(rutaCarpeta) {
+    if (!directoryHandle && typeof workspaceHandle !== 'undefined' && workspaceHandle) {
+        directoryHandle = workspaceHandle;
+    }
     if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: No puedes ejecutar esta acción porque el usuario no ha conectado la carpeta.");
     
     if (!ejecutandoHistorial) {
@@ -139,6 +154,9 @@ async function copiarDirectorioRecursivo(origenHandle, destinoHandle) {
 }
 
 async function renombrarCarpeta(rutaAntigua, rutaNueva) {
+    if (!directoryHandle && typeof workspaceHandle !== 'undefined' && workspaceHandle) {
+        directoryHandle = workspaceHandle;
+    }
     if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: No puedes ejecutar esta acción porque el usuario no ha conectado la carpeta.");
     
     const origenHandle = await obtenerDirHandlePorRuta(rutaAntigua, false);
@@ -157,6 +175,9 @@ async function renombrarCarpeta(rutaAntigua, rutaNueva) {
 }
 
 async function borrarCarpeta(rutaCarpeta, autorizacionExpresa = false) {
+    if (!directoryHandle && typeof workspaceHandle !== 'undefined' && workspaceHandle) {
+        directoryHandle = workspaceHandle;
+    }
     if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: No puedes ejecutar esta acción porque el usuario no ha conectado la carpeta.");
     if (!autorizacionExpresa) {
         throw new Error("ACCESO DENEGADO: Se requiere confirmación y respuesta explícita del usuario en la charla.");
@@ -191,6 +212,9 @@ async function borrarCarpeta(rutaCarpeta, autorizacionExpresa = false) {
 
 // OPERACIONES DE ARCHIVO Y NÚCLEO DESHACER/REHACER
 async function deshacerAccionSistema() {
+    if (!directoryHandle && typeof workspaceHandle !== 'undefined' && workspaceHandle) {
+        directoryHandle = workspaceHandle;
+    }
     if (!directoryHandle) throw new Error("Carpeta no conectada.");
     if (historialDeshacer.length === 0) return "No hay ninguna acción en el historial para deshacer.";
     
@@ -228,6 +252,9 @@ async function deshacerAccionSistema() {
 }
 
 async function rehacerAccionSistema() {
+    if (!directoryHandle && typeof workspaceHandle !== 'undefined' && workspaceHandle) {
+        directoryHandle = workspaceHandle;
+    }
     if (!directoryHandle) throw new Error("Carpeta no conectada.");
     if (historialRehacer.length === 0) return "No hay ninguna acción en el historial para rehacer.";
     
@@ -254,7 +281,11 @@ async function rehacerAccionSistema() {
 
 // Lista recursivamente todos los archivos válidos
 async function listarArchivos(dirHandle = directoryHandle, rutaRelativa = '') {
-    if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
+    if (!dirHandle && typeof workspaceHandle !== 'undefined' && workspaceHandle) {
+        directoryHandle = workspaceHandle;
+        dirHandle = workspaceHandle;
+    }
+    if (!dirHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
     const archivos = [];
     const extensionesPermitidas = ['.txt', '.html', '.css', '.js', '.json', '.svg'];
@@ -276,6 +307,9 @@ async function listarArchivos(dirHandle = directoryHandle, rutaRelativa = '') {
 }
 
 async function leerArchivo(nombre) {
+    if (!directoryHandle && typeof workspaceHandle !== 'undefined' && workspaceHandle) {
+        directoryHandle = workspaceHandle;
+    }
     if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
     try {
@@ -295,14 +329,15 @@ function limpiarSVG(svgCodigo) {
     if (startIdx !== -1 && endIdx !== -1) {
         limpio = limpio.substring(startIdx, endIdx + 6);
     }
-    // Eliminar barras invertidas residuales que corrompen atributos (\")
     limpio = limpio.replace(/\\/g, '');
-    // Corregir comillas duplicadas mal formateadas
     limpio = limpio.replace(/=""+/g, '="').replace(/""+/g, '"');
     return limpio.trim();
 }
 
 async function escribirArchivo(nombre, contenido) {
+    if (!directoryHandle && typeof workspaceHandle !== 'undefined' && workspaceHandle) {
+        directoryHandle = workspaceHandle;
+    }
     if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
     let contenidoLimpio = String(contenido || "");
@@ -341,6 +376,9 @@ async function escribirArchivo(nombre, contenido) {
 }
 
 async function borrarArchivo(nombre) {
+    if (!directoryHandle && typeof workspaceHandle !== 'undefined' && workspaceHandle) {
+        directoryHandle = workspaceHandle;
+    }
     if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
     if (!ejecutandoHistorial) {
@@ -368,6 +406,9 @@ async function borrarArchivo(nombre) {
 }
 
 async function reemplazarTextoArchivo(nombre, textoBuscado, textoNuevo) {
+    if (!directoryHandle && typeof workspaceHandle !== 'undefined' && workspaceHandle) {
+        directoryHandle = workspaceHandle;
+    }
     if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
     const contenidoActual = await leerArchivo(nombre);
@@ -380,6 +421,9 @@ async function reemplazarTextoArchivo(nombre, textoBuscado, textoNuevo) {
 }
 
 async function agregarAlFinalArchivo(nombre, textoAgregar) {
+    if (!directoryHandle && typeof workspaceHandle !== 'undefined' && workspaceHandle) {
+        directoryHandle = workspaceHandle;
+    }
     if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
     const contenidoActual = await leerArchivo(nombre);
@@ -391,6 +435,9 @@ async function agregarAlFinalArchivo(nombre, textoAgregar) {
 }
 
 async function leerLineas(nombre, lineaInicio, lineaFin) {
+    if (!directoryHandle && typeof workspaceHandle !== 'undefined' && workspaceHandle) {
+        directoryHandle = workspaceHandle;
+    }
     if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
     const contenido = await leerArchivo(nombre);
@@ -406,6 +453,9 @@ async function leerLineas(nombre, lineaInicio, lineaFin) {
 }
 
 async function buscarEnArchivos(textoBuscado) {
+    if (!directoryHandle && typeof workspaceHandle !== 'undefined' && workspaceHandle) {
+        directoryHandle = workspaceHandle;
+    }
     if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
     const archivos = await listarArchivos();
@@ -425,6 +475,9 @@ async function buscarEnArchivos(textoBuscado) {
 }
 
 async function renombrarArchivoLocal(nombreAntiguo, nombreNuevo) {
+    if (!directoryHandle && typeof workspaceHandle !== 'undefined' && workspaceHandle) {
+        directoryHandle = workspaceHandle;
+    }
     if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
     const contenido = await leerArchivo(nombreAntiguo);
@@ -436,6 +489,9 @@ async function renombrarArchivoLocal(nombreAntiguo, nombreNuevo) {
 }
 
 async function leerTodosLosArchivos() {
+    if (!directoryHandle && typeof workspaceHandle !== 'undefined' && workspaceHandle) {
+        directoryHandle = workspaceHandle;
+    }
     if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
     const archivos = await listarArchivos();
@@ -457,6 +513,9 @@ async function leerTodosLosArchivos() {
 }
 
 async function analizarContenido(tipoAnalisis, objetivo, instrucciones, nombreResultado, modelo) {
+    if (!directoryHandle && typeof workspaceHandle !== 'undefined' && workspaceHandle) {
+        directoryHandle = workspaceHandle;
+    }
     if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     
     const apiKey = localStorage.getItem('gemini_api_key_standalone');
@@ -515,9 +574,10 @@ async function analizarContenido(tipoAnalisis, objetivo, instrucciones, nombreRe
     return `Generación y análisis finalizado utilizando ${modeloId}. Los datos estructurados han sido guardados con éxito en "${nombreArchivoFinal}".`;
 }
 
- 
-// GENERACIÓN PARALELA DE SVG CON GEMINI 3.5 FLASH-LITE
 async function generarImagenesSVG(prompts, nombresArchivos) {
+    if (!directoryHandle && typeof workspaceHandle !== 'undefined' && workspaceHandle) {
+        directoryHandle = workspaceHandle;
+    }
     if (!directoryHandle) {
         throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta.");
     }
@@ -565,7 +625,7 @@ REQUISITOS OBLIGATORIOS:
 5. No incluyas <html>, <body> ni código JavaScript.
 6. El SVG debe ser válido y autocontenido.
 7. Incluye:
-   - xmlns="http://www.w3.org/2000/svg"
+   - xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)"
    - viewBox
    - width
    - height
@@ -575,9 +635,8 @@ REQUISITOS OBLIGATORIOS:
 10. El resultado debe poder guardarse directamente como archivo .svg.
 `;
 
-        // Endpoint REST oficial de Gemini GenerateContent
         const url =
-            `https://generativelanguage.googleapis.com/v1beta/models/${modeloId}:generateContent`;
+            `[https://generativelanguage.googleapis.com/v1beta/models/$](https://generativelanguage.googleapis.com/v1beta/models/$){modeloId}:generateContent`;
 
         let response;
 
@@ -607,7 +666,6 @@ REQUISITOS OBLIGATORIOS:
             );
         }
 
-        // Leer siempre el cuerpo para obtener el error real de Google
         const respuestaTexto = await response.text();
 
         if (!response.ok) {
@@ -622,7 +680,6 @@ REQUISITOS OBLIGATORIOS:
                         JSON.stringify(errorJson.error);
                 }
             } catch (e) {
-                // El servidor no devolvió JSON
             }
 
             throw new Error(
@@ -667,7 +724,6 @@ REQUISITOS OBLIGATORIOS:
             );
         }
 
-        // Limpiar posibles ```svg ... ```
         if (svgCodigo.startsWith("```")) {
             svgCodigo = svgCodigo
                 .replace(/^```(?:svg|xml)?\s*/i, "")
@@ -675,7 +731,6 @@ REQUISITOS OBLIGATORIOS:
                 .trim();
         }
 
-        // Extraer exclusivamente el SVG
         const inicioSVG = svgCodigo.indexOf("<svg");
         const finalSVG = svgCodigo.lastIndexOf("</svg>");
 
@@ -690,7 +745,6 @@ REQUISITOS OBLIGATORIOS:
             finalSVG + "</svg>".length
         );
 
-        // Limpieza final
         svgCodigo = limpiarSVG(svgCodigo);
 
         if (!svgCodigo.includes("<svg") || !svgCodigo.includes("</svg>")) {
@@ -713,9 +767,10 @@ REQUISITOS OBLIGATORIOS:
     );
 }
 
-
-
 async function ejecutarAnalisisCompletoModeloFuerte(objetivo, instrucciones) {
+    if (!directoryHandle && typeof workspaceHandle !== 'undefined' && workspaceHandle) {
+        directoryHandle = workspaceHandle;
+    }
     if (!directoryHandle) throw new Error("AVISO DEL SISTEMA PARA LA IA: El usuario no ha conectado la carpeta de trabajo.");
     const apiKey = localStorage.getItem('gemini_api_key_standalone');
     if (!apiKey) throw new Error("No hay API Key configurada.");
@@ -745,7 +800,7 @@ async function ejecutarAnalisisCompletoModeloFuerte(objetivo, instrucciones) {
         compiladoArchivos = `[Aviso: No se encontraron archivos bajo el objetivo indicado: "${objetivo}"]`;
     }
     const promptFinal = `[ANALISIS COMPLETO - MODELO FUERTE]\n\nINSTRUCCIONES DE ANALISIS:\n${instrucciones}\n\nCONTENIDO Y ESTRUCTURA RECOPILADA:\n${compiladoArchivos}\n\nProporciona un análisis exhaustivo, técnico y completo:`;
-    const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=$){apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
     const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
