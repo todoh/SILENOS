@@ -35,8 +35,9 @@
     <main class="pt-28 px-6 lg:px-16 max-w-7xl mx-auto space-y-32 pb-24">
 
         <!-- Hero Section -->
-        <section class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center min-h-[80vh]">
-            <div class="lg:col-span-7 space-y-6">
+        <section class="relative min-h-[88vh] flex items-center overflow-hidden">
+            <!-- Bloque de Texto -->
+            <div class="w-full lg:w-3/5 space-y-6 z-10 py-12">
                 <span class="text-xs font-mono uppercase tracking-[0.3em] text-neutral-500 block">
                     Siglo XXXI — Maddna City
                 </span>
@@ -52,9 +53,16 @@
                     </a>
                 </div>
             </div>
-           <div class="lg:col-span-5 flex justify-center items-center">
-    <img src="arandelacolocada.png" alt="Arandela Colocada" class="w-full max-w-lg lg:max-w-xl max-h-[600px] lg:max-h-[750px] object-contain drop-shadow-[0_0_35px_rgba(255,255,255,0.05)]">
-</div>
+
+            <!-- Imagen Gigante Acreditada al Fondo e Inferior -->
+            <div class="hidden lg:flex absolute bottom-0 -right-8 h-[92vh] max-h-[900px] pointer-events-none items-end justify-end z-0">
+                <img src="arandelacolocada.png" alt="Arandela Colocada" class="h-full w-auto object-contain object-bottom drop-shadow-[0_0_45px_rgba(255,255,255,0.08)]">
+            </div>
+
+            <!-- Imagen para dispositivos móviles/tablets -->
+            <div class="lg:hidden w-full flex justify-center mt-8">
+                <img src="arandelacolocada.png" alt="Arandela Colocada" class="h-[60vh] w-auto object-contain drop-shadow-[0_0_35px_rgba(255,255,255,0.05)]">
+            </div>
         </section>
 
         <!-- Bananonave BlacJ Section -->
@@ -241,9 +249,7 @@
                 </h2>
             </div>
 
-         
-
-            <!-- Miniserie Completa (5 Capítulos en tamaño grande en rejilla de 2 columnas / 3 columnas en desktop) -->
+            <!-- Miniserie Completa -->
             <div class="space-y-8 pt-6">
                 <div>
                     <span class="text-xs font-mono uppercase tracking-[0.3em] text-neutral-500 block mb-1">
@@ -330,21 +336,17 @@
                         </div>
                     </div>
 
-
-   <div class="bg-neutral-950 p-5 rounded-2xl space-y-4">
-                    <div class="aspect-video w-full overflow-hidden rounded-xl bg-black">
-                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/uemOg5wW0ls" title="Vídeo Destacado 1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                    <div class="bg-neutral-950 p-5 rounded-2xl space-y-4">
+                        <div class="aspect-video w-full overflow-hidden rounded-xl bg-black">
+                            <iframe class="w-full h-full" src="https://www.youtube.com/embed/uemOg5wW0ls" title="Vídeo Destacado 1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                        </div>
                     </div>
-                </div>
 
-                <div class="bg-neutral-950 p-5 rounded-2xl space-y-4">
-                    <div class="aspect-video w-full overflow-hidden rounded-xl bg-black">
-                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/gRdP0H9JsIc" title="Vídeo Destacado 2" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                    <div class="bg-neutral-950 p-5 rounded-2xl space-y-4">
+                        <div class="aspect-video w-full overflow-hidden rounded-xl bg-black">
+                            <iframe class="w-full h-full" src="https://www.youtube.com/embed/gRdP0H9JsIc" title="Vídeo Destacado 2" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                        </div>
                     </div>
-                </div>
-
-
-
                 </div>
             </div>
         </section>
