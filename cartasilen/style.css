@@ -1,0 +1,131 @@
+/* -------------------------------------------------------------------------- */
+/*            PURE MINIMALIST SWEDISH ENGINE (BORDERLESS EDITION)            */
+/* -------------------------------------------------------------------------- */
+
+* {
+    border: 0 !important;
+    border-radius: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+    touch-action: manipulation;
+}
+
+html, body {
+    background-color: #ffffff;
+    color: #000000;
+    font-family: 'Space Grotesk', 'Outfit', sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Paneles sin bordes con fondos neutros suavemente diferenciados */
+.swiss-panel {
+    background: #f4f4f5;
+    color: #000000;
+}
+
+.swiss-panel-subtle {
+    background: #fafafa;
+    color: #000000;
+}
+
+/* Cartas y Tarjetas sin contorno */
+.swiss-card {
+    background: #f4f4f5;
+    transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.swiss-card:hover {
+    background: #e4e4e7;
+}
+
+/* Botones Sólidos Brutalistas / Minimalistas */
+.btn-brutalist {
+    background-color: #000000;
+    color: #ffffff;
+    font-family: 'Space Grotesk', monospace;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: background-color 0.15s ease;
+}
+
+.btn-brutalist:hover:not(:disabled) {
+    background-color: #262626;
+}
+
+.btn-brutalist-outline {
+    background-color: #e4e4e7;
+    color: #000000;
+    font-family: 'Space Grotesk', monospace;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-brutalist-outline:hover:not(:disabled) {
+    background-color: #000000;
+    color: #ffffff;
+}
+
+/* Cartas jugables en la arena */
+.card-playable {
+    background: #ffffff;
+    transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.card-playable:hover {
+    transform: translateY(-6px);
+    background: #f4f4f5;
+}
+
+/* Formato de Imágenes Estrictamente Cuadradas */
+.card-image-square {
+    width: 100%;
+    aspect-ratio: 1 / 1 !important;
+    object-fit: cover;
+    display: block;
+}
+
+/* Estilos específicos para Entidades en el Campo */
+.board-entity-card {
+    background: #ffffff;
+    transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.board-entity-card:active {
+    transform: scale(0.97);
+}
+
+/* Animación de números de combate */
+@keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-30px); }
+}
+
+.float-text {
+    animation: floatUp 0.8s cubic-bezier(0, 0, 0.2, 1) forwards;
+    pointer-events: none;
+}
+
+/* Scrollbar plano */
+::-webkit-scrollbar {
+    height: 4px;
+    width: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f4f4f5;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #a1a1aa;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #000000;
+}

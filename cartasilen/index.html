@@ -1,1190 +1,416 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full">
+<html lang="es" class="h-full overflow-hidden">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DUEL ELEMENTAL — Online Fluid Glass Multiplayer</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Cartas SILEN</title>
+    
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Outfit', 'Plus Jakarta Sans', 'sans-serif'],
+                        sans: ['Space Grotesk', 'Outfit', 'sans-serif'],
                         mono: ['Space Grotesk', 'monospace']
-                    },
-                    colors: {
-                        glass: {
-                            50: 'rgba(255, 255, 255, 0.45)',
-                            100: 'rgba(255, 255, 255, 0.65)',
-                            200: 'rgba(255, 255, 255, 0.85)',
-                            300: 'rgba(255, 255, 255, 0.95)',
-                            border: 'rgba(255, 255, 255, 0.85)'
-                        }
                     }
                 }
             }
         }
     </script>
-
-    <style>
-        body {
-            background: #f8fafc;
-            background-image: 
-                radial-gradient(at 10% 10%, rgba(224, 242, 254, 0.85) 0px, transparent 55%),
-                radial-gradient(at 90% 15%, rgba(243, 232, 255, 0.8) 0px, transparent 50%),
-                radial-gradient(at 50% 95%, rgba(254, 242, 242, 0.85) 0px, transparent 50%),
-                radial-gradient(at 95% 90%, rgba(236, 253, 245, 0.7) 0px, transparent 50%);
-            background-attachment: fixed;
-            color: #0f172a;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: manipulation;
-        }
-
-        /* Fluid Glassmorphism Design System */
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.72);
-            backdrop-filter: blur(28px);
-            -webkit-backdrop-filter: blur(28px);
-            border: 1px solid rgba(255, 255, 255, 0.95);
-            box-shadow: 0 20px 45px -15px rgba(15, 23, 42, 0.05), 0 0 20px rgba(255, 255, 255, 0.8) inset;
-        }
-
-        .glass-pill {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.95);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.03);
-        }
-
-        .glass-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.65));
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.95);
-            box-shadow: 0 15px 35px -10px rgba(15, 23, 42, 0.05), 0 0 15px rgba(255, 255, 255, 0.7) inset;
-        }
-
-        .glass-button {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 1);
-            box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.04);
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .glass-button:hover:not(:disabled) {
-            background: rgba(255, 255, 255, 1);
-            transform: translateY(-2px);
-            box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.08);
-        }
-
-        .glass-button:active:not(:disabled) {
-            transform: translateY(0) scale(0.98);
-        }
-
-        /* Interactive Animations */
-        .card-playable {
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .card-playable:hover {
-            transform: translateY(-12px) scale(1.04);
-            background: rgba(255, 255, 255, 0.98);
-            box-shadow: 0 25px 40px -12px rgba(99, 102, 241, 0.14), 0 0 20px rgba(255, 255, 255, 0.9) inset;
-        }
-
-        /* Floating Animation Numbers */
-        @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0) scale(0.85); }
-            50% { opacity: 1; transform: translateY(-30px) scale(1.15); }
-            100% { opacity: 0; transform: translateY(-55px) scale(1); }
-        }
-
-        .float-text {
-            animation: floatUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            pointer-events: none;
-        }
-
-        /* Scrollbars */
-        ::-webkit-scrollbar {
-            height: 5px;
-            width: 5px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(148, 163, 184, 0.35);
-            border-radius: 99px;
-        }
-    </style>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="h-full flex flex-col justify-between overflow-hidden font-sans antialiased text-slate-800">
+<body class="h-full w-full flex flex-col justify-between overflow-hidden font-sans antialiased bg-white text-black selection:bg-black selection:text-white select-none">
+    <!-- Canvas de Efectos -->
+    <canvas id="fx-canvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
 
-    <!-- Particle Background Canvas -->
-    <canvas id="fx-canvas" class="fixed inset-0 pointer-events-none z-10"></canvas>
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-3 right-3 z-50 bg-black text-white px-4 py-2.5 flex items-center gap-2 transition-all transform translate-y-[-150%] opacity-0 font-mono text-xs uppercase tracking-wider shadow-lg">
+        <span id="toast-icon"></span>
+        <span id="toast-msg" class="font-bold">Notificación</span>
+    </div>
 
-    <!-- TOP HEADER -->
-    <header class="relative z-20 w-full px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-2xl glass-pill flex items-center justify-center font-mono font-bold text-slate-800 text-sm tracking-tighter shadow-sm">
-                ✦
+    <!-- BANNER DE MODO SELECCIÓN DE OBJETIVO -->
+    <div id="targeting-banner" class="hidden fixed top-2 left-1/2 transform -translate-x-1/2 z-40 bg-amber-400 text-black px-4 py-2 font-mono text-xs font-black uppercase tracking-wider shadow-2xl flex items-center gap-3 border-2 border-black">
+        <span id="targeting-banner-text">MODO SELECCIÓN DE OBJETIVO</span>
+        <button onclick="cancelTargeting()" class="bg-black text-white px-2 py-0.5 text-[10px] uppercase font-bold hover:bg-neutral-800">
+            Cancelar
+        </button>
+    </div>
+
+    <!-- =================================================================== -->
+    <!--                       SCREEN 1: HOME SCREEN                         -->
+    <!-- =================================================================== -->
+    <section id="screen-home" class="relative z-10 h-full min-h-screen flex flex-col justify-between p-4 sm:p-8 max-w-6xl mx-auto w-full overflow-y-auto">
+        <!-- Header Superior -->
+        <header class="flex items-center justify-between w-full py-3 bg-neutral-100 px-5">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-black text-white flex items-center justify-center font-mono font-bold text-base">
+                    CS
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-sm sm:text-base tracking-widest uppercase font-mono">CARTAS SILEN</h1>
+                    <p class="text-[9px] sm:text-[10px] text-neutral-500 font-mono uppercase tracking-wider">SILENOS MINIMALIST EDITION • v1.0.0</p>
+                </div>
             </div>
-            <div>
-                <h1 class="font-extrabold text-sm tracking-wider uppercase text-slate-800 font-mono">DUEL ELEMENTAL</h1>
-                <p id="room-tag" class="text-[11px] text-slate-500 font-mono flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span id="room-tag-text">Lobby Online en Tiempo Real</span>
+            <div class="px-3 py-1 bg-white text-xs font-mono font-bold text-black flex items-center gap-2">
+                <span class="w-2 h-2 bg-emerald-500"></span>
+                <span class="uppercase tracking-wider">SISTEMA LISTO</span>
+            </div>
+        </header>
+
+        <!-- Hero Principal -->
+        <main class="my-auto py-6 flex flex-col lg:flex-row items-stretch justify-between gap-6 lg:gap-12">
+            <!-- Columna Izquierda -->
+            <div class="flex-1 space-y-5 text-left flex flex-col justify-center">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-neutral-100 w-fit text-xs font-mono font-bold uppercase tracking-wider">
+                    <span>ESTRATEGIA ELEMENTAL POR TURNOS</span>
+                </div>
+                <h2 class="text-3xl sm:text-6xl font-black tracking-tighter text-black uppercase leading-none">
+                    GEOMETRÍA Y <br/>
+                    <span class="bg-black text-white px-2">FUERZA ELEMENTAL</span>
+                </h2>
+                <p class="text-xs sm:text-base text-neutral-600 font-normal leading-relaxed max-w-xl">
+                    Construye tu mazo estratégico combinando elementos primordiales y entidades en el campo. Desafía a la IA táctica en enfrentamientos sin distracciones visuales.
                 </p>
-            </div>
-        </div>
 
-        <!-- TURN STATUS BADGE -->
-        <div id="turn-badge" class="glass-pill px-4 sm:px-5 py-2 rounded-full flex items-center gap-2.5 sm:gap-3 text-xs font-bold border border-white">
-            <span id="turn-dot-p1" class="w-2.5 h-2.5 rounded-full bg-indigo-500 transition-all"></span>
-            <span id="turn-text" class="text-slate-700 font-semibold">Esperando rival...</span>
-            <span id="turn-dot-p2" class="w-2.5 h-2.5 rounded-full bg-slate-300 transition-all opacity-30"></span>
-        </div>
-
-        <div class="flex items-center gap-2">
-            <button id="btn-open-lobby" class="glass-button px-3.5 py-2 rounded-2xl text-xs font-bold text-indigo-600 border-indigo-100 flex items-center gap-1.5">
-                <span>🌐 LOBBY</span>
-                <span id="header-online-count" class="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full font-mono text-[10px]">0</span>
-            </button>
-        </div>
-    </header>
-
-    <!-- MAIN BATTLEFIELD AREA -->
-    <main class="relative z-0 flex-1 w-full max-w-5xl mx-auto px-4 py-2 flex flex-col justify-between items-center">
-        
-        <!-- PLAYER 2 / OPPONENT AREA -->
-        <div id="p2-board" class="w-full glass-card rounded-3xl p-4 sm:p-5 transition-all duration-300">
-            <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center gap-3">
-                    <div id="p2-avatar" class="w-10 h-10 rounded-2xl bg-slate-100 border border-white flex items-center justify-center text-lg shadow-sm">
-                        🌸
-                    </div>
-                    <div>
-                        <h2 id="p2-name" class="font-bold text-sm text-slate-800">Esperando Oponente...</h2>
-                        <span id="p2-role-badge" class="text-[10px] text-slate-400 font-mono">Oponente</span>
+                <!-- Dificultad -->
+                <div class="pt-1">
+                    <label class="block text-[10px] sm:text-xs font-mono uppercase tracking-widest mb-1.5 font-bold text-neutral-400">Dificultad de IA</label>
+                    <div class="inline-flex p-1 bg-neutral-100 gap-1">
+                        <button id="diff-easy" onclick="setDifficulty('easy')" class="px-3 py-1.5 text-xs font-mono font-bold uppercase tracking-wider text-black">Fácil</button>
+                        <button id="diff-normal" onclick="setDifficulty('normal')" class="px-3 py-1.5 text-xs font-mono font-bold uppercase tracking-wider bg-black text-white">Normal</button>
+                        <button id="diff-hard" onclick="setDifficulty('hard')" class="px-3 py-1.5 text-xs font-mono font-bold uppercase tracking-wider text-black">Difícil</button>
                     </div>
                 </div>
 
-                <!-- HP Bar -->
-                <div class="flex flex-col items-end gap-1 min-w-[140px] sm:min-w-[200px]">
-                    <div class="flex items-baseline gap-2">
-                        <span id="p2-shield-text" class="text-xs text-indigo-600 font-mono font-bold hidden">🛡️ 0</span>
-                        <span id="p2-hp-text" class="text-sm font-mono font-bold text-slate-800">100 / 100</span>
-                    </div>
-                    <div class="w-full h-2.5 bg-slate-200/50 rounded-full overflow-hidden p-0.5 border border-white/60">
-                        <div id="p2-hp-bar" class="h-full bg-rose-400 rounded-full transition-all duration-500" style="width: 100%;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Energy & Active Status -->
-            <div class="flex items-center justify-between text-xs font-mono pt-1">
-                <div id="p2-energy-dots" class="flex items-center gap-1.5">
-                    <!-- Dynamic Mana Dots -->
-                </div>
-                <div id="p2-buffs" class="flex gap-1">
-                    <!-- Active Statuses -->
-                </div>
-            </div>
-        </div>
-
-        <!-- CENTER FIELD / COMBAT LOG -->
-        <div class="relative my-2 w-full flex flex-col items-center justify-center min-h-[55px]">
-            <div id="combat-log" class="glass-pill px-6 py-2 rounded-full text-xs font-medium text-slate-700 shadow-sm border border-white text-center transition-all opacity-95">
-                Selecciona un jugador conectado en el Lobby para enviarle un reto.
-            </div>
-        </div>
-
-        <!-- PLAYER 1 / LOCAL PLAYER AREA -->
-        <div id="p1-board" class="w-full glass-card rounded-3xl p-4 sm:p-5 transition-all duration-300">
-            <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center gap-3">
-                    <div id="p1-avatar" class="w-10 h-10 rounded-2xl bg-indigo-50 border border-white flex items-center justify-center text-lg shadow-sm">
-                        🌿
-                    </div>
-                    <div>
-                        <h2 id="p1-name" class="font-bold text-sm text-slate-800">Tú</h2>
-                        <span id="p1-role-badge" class="text-[10px] text-indigo-500 font-mono">Jugador Local</span>
-                    </div>
-                </div>
-
-                <!-- HP Bar -->
-                <div class="flex flex-col items-end gap-1 min-w-[140px] sm:min-w-[200px]">
-                    <div class="flex items-baseline gap-2">
-                        <span id="p1-shield-text" class="text-xs text-indigo-600 font-mono font-bold hidden">🛡️ 0</span>
-                        <span id="p1-hp-text" class="text-sm font-mono font-bold text-slate-800">100 / 100</span>
-                    </div>
-                    <div class="w-full h-2.5 bg-slate-200/50 rounded-full overflow-hidden p-0.5 border border-white/60">
-                        <div id="p1-hp-bar" class="h-full bg-emerald-400 rounded-full transition-all duration-500" style="width: 100%;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Energy & Active Status -->
-            <div class="flex items-center justify-between text-xs font-mono pt-1">
-                <div id="p1-energy-dots" class="flex items-center gap-1.5">
-                    <!-- Dynamic Mana Dots -->
-                </div>
-                <div id="p1-buffs" class="flex gap-1">
-                    <!-- Active Statuses -->
-                </div>
-            </div>
-        </div>
-
-    </main>
-
-    <!-- CARDS DOCK FOOTER -->
-    <footer class="relative z-20 w-full max-w-5xl mx-auto px-4 pb-6 pt-1">
-        <div class="flex items-center justify-between mb-2 px-2">
-            <span class="text-xs font-mono text-slate-500 uppercase tracking-wider font-semibold">Tus Cartas Elementales</span>
-            <button id="btn-end-turn" class="glass-button px-5 py-2 rounded-2xl text-xs font-extrabold text-slate-800 flex items-center gap-2 border-emerald-200/50">
-                <span>Finalizar Turno</span>
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7-7 7M3 12h18"/></svg>
-            </button>
-        </div>
-
-        <div id="hand-container" class="flex items-center justify-center gap-3 sm:gap-4 w-full overflow-x-auto py-2 px-1 min-h-[160px]">
-            <!-- Dynamic Hand Cards -->
-        </div>
-    </footer>
-
-    <!-- MODAL: USERNAME SETUP -->
-    <div id="modal-user-setup" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-md p-4">
-        <div class="max-w-sm w-full glass-card rounded-3xl p-7 border border-white shadow-2xl space-y-5 text-center">
-            <div class="w-14 h-14 rounded-3xl bg-gradient-to-tr from-indigo-50 to-purple-50 mx-auto flex items-center justify-center text-2xl shadow-sm border border-white">
-                👤
-            </div>
-            <div>
-                <h3 class="text-xl font-bold text-slate-800">Identidad de Jugador</h3>
-                <p class="text-xs text-slate-500 mt-1">Ingresa tu apodo para conectarte al Lobby en tiempo real y retar a otros usuarios.</p>
-            </div>
-            <div class="space-y-3">
-                <input id="input-username" type="text" placeholder="Tu Apodo / Username" maxlength="15" class="w-full bg-white/90 border border-white rounded-2xl px-4 py-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-400 text-slate-800 placeholder-slate-400 shadow-inner text-center">
-                <button id="btn-save-username" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-2xl shadow-md transition active:scale-98">
-                    Conectarse al Lobby
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: ONLINE LOBBY WITH LIVE PLAYERS LIST -->
-    <div id="modal-lobby" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-md p-4 transition-all duration-300">
-        <div class="max-w-md w-full glass-card rounded-3xl p-6 sm:p-7 border border-white shadow-2xl space-y-5 text-center flex flex-col max-h-[90vh]">
-            
-            <div class="space-y-2 flex-shrink-0">
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-white to-indigo-50 mx-auto flex items-center justify-center text-xl shadow-sm border border-white">
-                    🌐
-                </div>
-                <h2 class="text-xl font-bold tracking-tight text-slate-800">LOBBY MULTIJUGADOR</h2>
-                <div class="flex items-center justify-center gap-2">
-                    <span class="text-xs text-slate-500">Conectado como:</span>
-                    <button id="btn-change-username" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100 hover:bg-indigo-100 transition flex items-center gap-1">
-                        <span id="display-user-name">Jugador</span>
-                        <span>✏️</span>
+                <!-- Botones CTA -->
+                <div class="flex flex-col sm:flex-row items-center justify-start gap-3 pt-2">
+                    <button onclick="startBattleFromHome()" class="w-full sm:w-auto px-8 py-3.5 btn-brutalist text-xs font-bold flex items-center justify-center gap-3">
+                        <span>INICIAR BATALLA</span>
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                    </button>
+                    <button onclick="showScreen('deck')" class="w-full sm:w-auto px-7 py-3.5 btn-brutalist-outline text-xs font-bold flex items-center justify-center gap-2">
+                        <span>GESTOR DE BARAJA</span>
+                        <span id="home-deck-count-badge" class="px-2 py-0.5 bg-black text-white font-mono text-xs">8/8</span>
                     </button>
                 </div>
             </div>
 
-            <!-- ONLINE PLAYERS REAL-TIME LIST CONTAINER -->
-            <div class="flex-1 flex flex-col min-h-0 bg-white/60 rounded-2xl p-3 border border-white/80 shadow-inner">
-                <div class="flex items-center justify-between pb-2 border-b border-slate-200/60 mb-2">
-                    <span class="text-xs font-mono font-bold text-slate-600 flex items-center gap-1.5">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        JUGADORES CONECTADOS
-                    </span>
-                    <span id="lobby-online-count" class="text-xs font-mono font-extrabold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">0 en línea</span>
+            <!-- Columna Derecha: Vista Previa Mazo Activo -->
+            <div class="w-full lg:w-96 swiss-panel p-5 space-y-4">
+                <div class="flex items-center justify-between pb-2 bg-neutral-200 p-2.5">
+                    <h3 class="font-extrabold text-xs uppercase tracking-widest font-mono text-black">MAZO ACTIVO</h3>
+                    <button onclick="showScreen('deck')" class="text-xs font-mono font-bold uppercase underline hover:bg-black hover:text-white px-1">Editar</button>
                 </div>
-
-                <div id="online-players-list" class="flex-1 overflow-y-auto space-y-2 pr-1 text-left">
-                    <!-- Dynamic List of Active Connected Users -->
-                </div>
-            </div>
-
-            <!-- SECONDARY OPTIONS -->
-            <div class="space-y-2 flex-shrink-0 pt-1">
-                <div class="grid grid-cols-2 gap-2">
-                    <button id="btn-create-custom-room" class="glass-button py-2.5 px-3 rounded-xl text-xs font-bold text-slate-800 flex items-center justify-center gap-1">
-                        <span>✨ Crear Sala Privada</span>
-                    </button>
-                    <button id="btn-mode-local" class="glass-button py-2.5 px-3 rounded-xl text-xs font-bold text-slate-800 flex items-center justify-center gap-1">
-                        <span>👥 Modo Local (2P)</span>
-                    </button>
-                </div>
-
-                <div class="flex gap-2">
-                    <input id="input-room-code" type="text" placeholder="CÓDIGO DE SALA" maxlength="6" class="uppercase font-mono bg-white/90 border border-white rounded-xl px-3 py-2 text-xs w-full focus:outline-none focus:ring-2 focus:ring-indigo-300 text-slate-800 placeholder-slate-400 shadow-inner text-center">
-                    <button id="btn-join-room" class="glass-button px-4 py-2 rounded-xl text-xs font-bold text-slate-800 whitespace-nowrap">Unirse</button>
-                </div>
-            </div>
-
-            <button id="btn-close-lobby" class="text-xs text-slate-400 hover:text-slate-600 underline font-mono flex-shrink-0">
-                Cerrar Ventana del Lobby
-            </button>
-        </div>
-    </div>
-
-    <!-- MODAL: INCOMING CHALLENGE NOTIFICATION -->
-    <div id="modal-invite-received" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 backdrop-blur-md p-4">
-        <div class="max-w-sm w-full glass-card rounded-3xl p-6 border border-white shadow-2xl text-center space-y-4 animate-bounce-short">
-            <div class="w-14 h-14 rounded-3xl bg-indigo-50 mx-auto flex items-center justify-center text-3xl border border-white">
-                ⚔️
-            </div>
-            <div>
-                <h3 class="text-lg font-bold text-slate-800">¡Reto de Duelo Recibido!</h3>
-                <p id="invite-from-text" class="text-xs text-slate-600 mt-1 font-semibold">
-                    <span id="inviter-name" class="text-indigo-600 font-bold">Jugador</span> te ha desafiado a una partida.
-                </p>
-            </div>
-            <div class="grid grid-cols-2 gap-2 pt-2">
-                <button id="btn-reject-invite" class="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs transition">
-                    Rechazar
-                </button>
-                <button id="btn-accept-invite" class="py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition active:scale-98">
-                    ¡Aceptar Reto!
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: WAITING FOR INVITATION ACCEPTANCE -->
-    <div id="modal-waiting" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-md p-4">
-        <div class="max-w-md w-full glass-card rounded-3xl p-7 border border-white shadow-2xl space-y-5 text-center">
-            <div class="w-12 h-12 rounded-2xl bg-indigo-50 mx-auto flex items-center justify-center text-xl border border-white">
-                ⏳
-            </div>
-            <div>
-                <h3 class="text-xl font-bold text-slate-800">Esperando Confirmación...</h3>
-                <p id="waiting-status-msg" class="text-xs text-slate-500 mt-1">Invitación enviada. Esperando a que el jugador acepte.</p>
-            </div>
-
-            <div class="p-3 bg-white/80 rounded-2xl border border-white flex items-center justify-between font-mono">
-                <span class="text-xs text-slate-400 font-bold">SALA:</span>
-                <span id="display-room-code" class="text-base font-extrabold text-indigo-600 tracking-widest">------</span>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
-                <button id="btn-copy-link" class="glass-button py-2.5 px-3 rounded-xl text-xs font-bold text-slate-800 flex items-center justify-center gap-1.5 border-white">
-                    <span>📋 Copiar Enlace</span>
-                </button>
-                <button id="btn-whatsapp-share" class="py-2.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition">
-                    <span>💬 WhatsApp</span>
-                </button>
-            </div>
-
-            <button id="btn-cancel-waiting" class="text-xs text-slate-400 hover:text-slate-600 underline font-mono">
-                Cancelar e ir al menú
-            </button>
-        </div>
-    </div>
-
-    <!-- MODAL: GAME OVER -->
-    <div id="modal-gameover" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-md p-4">
-        <div class="max-w-sm w-full glass-card rounded-3xl p-7 border border-white text-center space-y-5 shadow-2xl">
-            <div id="gameover-icon" class="text-4xl">👑</div>
-            <div>
-                <h3 id="gameover-title" class="text-xl font-bold text-slate-800">¡VICTORIA!</h3>
-                <p id="gameover-subtitle" class="text-xs text-slate-500 mt-1">Ha demostrado su superioridad en el duelo elemental.</p>
-            </div>
-            <button id="btn-restart" class="w-full glass-button py-3 text-xs font-bold text-slate-800 rounded-2xl border-white">
-                Volver al Lobby
-            </button>
-        </div>
-    </div>
-
-    <!-- FIREBASE REALTIME MULTIPLAYER ENGINE -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update, get, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBxlmzjYjOEAwc_DVtFpt9DnN7XnuRkbKw",
-            authDomain: "silenos-fc5e5.firebaseapp.com",
-            databaseURL: "https://silenos-fc5e5-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "silenos-fc5e5"
-        };
-
-        let app, db;
-        try {
-            app = initializeApp(firebaseConfig);
-            db = getDatabase(app);
-        } catch (e) {
-            console.log("Servidor multijugador activo.");
-        }
-
-        /* -------------------------------------------------------------------------- */
-        /*                           ELEMENTAL CARDS DATABASE                         */
-        /* -------------------------------------------------------------------------- */
-        const CARDS_DATABASE = [
-            { id: 'fire_ball', name: 'Ráfaga de Fuego', cost: 1, type: 'ATTACK', val: 15, icon: '🔥', desc: 'Infringe 15 de daño directo.', bg: 'from-orange-500/10 to-red-500/10' },
-            { id: 'water_heal', name: 'Marea Curativa', cost: 2, type: 'HEAL', val: 24, icon: '🌊', desc: 'Restaura 24 HP al invocador.', bg: 'from-blue-500/10 to-cyan-500/10' },
-            { id: 'earth_shield', name: 'Escudo de Piedra', cost: 1, type: 'DEFENSE', val: 18, icon: '🗿', desc: 'Concede 18 de escudo protector.', bg: 'from-amber-600/10 to-stone-600/10' },
-            { id: 'air_strike', name: 'Tornados Gemelos', cost: 2, type: 'ATTACK', val: 28, icon: '🌪️', desc: 'Ataque huracanado de 28 de daño.', bg: 'from-teal-500/10 to-emerald-500/10' },
-            { id: 'shadow_drain', name: 'Drenaje Sombrío', cost: 2, type: 'DRAIN', val: 14, icon: '🌙', desc: 'Roba 14 HP al oponente.', bg: 'from-purple-500/10 to-indigo-500/10' },
-            { id: 'light_boost', name: 'Resplandor Solar', cost: 1, type: 'BOOST', val: 1.5, icon: '☀️', desc: '+50% daño extra en tu siguiente ataque.', bg: 'from-yellow-500/10 to-amber-500/10' }
-        ];
-
-        const AVATARS = ['🌿', '🌸', '⚡', '🔥', '❄️', '🌙', '🦊', '🐉'];
-
-        const MAX_HP = 100;
-        const MAX_ENERGY = 3;
-        const HAND_SIZE = 3;
-
-        /* -------------------------------------------------------------------------- */
-        /*                                 GAME STATE                                 */
-        /* -------------------------------------------------------------------------- */
-        let myPlayerId = localStorage.getItem('duel_elemental_uid') || 'u_' + Math.random().toString(36).substring(2, 9);
-        localStorage.setItem('duel_elemental_uid', myPlayerId);
-
-        let currentUsername = localStorage.getItem('duel_elemental_username') || '';
-        let myAvatar = localStorage.getItem('duel_elemental_avatar') || AVATARS[Math.floor(Math.random() * AVATARS.length)];
-        localStorage.setItem('duel_elemental_avatar', myAvatar);
-
-        let state = {
-            mode: 'ONLINE', // 'LOCAL' or 'ONLINE'
-            roomCode: null,
-            myRole: 'p1', // 'p1' or 'p2' (Local Role)
-            turn: 'p1',
-            status: 'WAITING', // 'WAITING' or 'PLAYING'
-            lastActionLog: 'Bienvenido al Duelo Elemental.',
-            players: {
-                p1: { name: 'Jugador 1', avatar: '🌿', hp: MAX_HP, energy: MAX_ENERGY, shield: 0, boost: 1, hand: [] },
-                p2: { name: 'Jugador 2', avatar: '🌸', hp: MAX_HP, energy: MAX_ENERGY, shield: 0, boost: 1, hand: [] }
-            }
-        };
-
-        let currentIncomingInvite = null;
-
-        /* -------------------------------------------------------------------------- */
-        /*                           PARTICLE EFFECTS ENGINE                          */
-        /* -------------------------------------------------------------------------- */
-        const canvas = document.getElementById('fx-canvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        function spawnParticles(x, y, color) {
-            for (let i = 0; i < 20; i++) {
-                particles.push({
-                    x, y,
-                    vx: (Math.random() - 0.5) * 6,
-                    vy: (Math.random() - 0.5) * 6,
-                    size: Math.random() * 5 + 2,
-                    color,
-                    alpha: 1
-                });
-            }
-        }
-
-        function renderParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach((p, idx) => {
-                p.x += p.vx;
-                p.y += p.vy;
-                p.alpha -= 0.025;
-
-                ctx.save();
-                ctx.globalAlpha = Math.max(0, p.alpha);
-                ctx.fillStyle = p.color;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-
-                if (p.alpha <= 0) particles.splice(idx, 1);
-            });
-            requestAnimationFrame(renderParticles);
-        }
-        renderParticles();
-
-        /* -------------------------------------------------------------------------- */
-        /*                  GLOBAL PRESENCE & ONLINE LOBBY SYSTEM                     */
-        /* -------------------------------------------------------------------------- */
-        function initPresenceSystem() {
-            if (!db || !currentUsername) return;
-
-            const myPresenceRef = ref(db, `online_players/${myPlayerId}`);
-            const connectedRef = ref(db, '.info/connected');
-
-            onValue(connectedRef, (snap) => {
-                if (snap.val() === true) {
-                    set(myPresenceRef, {
-                        uid: myPlayerId,
-                        name: currentUsername,
-                        avatar: myAvatar,
-                        status: 'LOBBY',
-                        lastSeen: Date.now()
-                    });
-
-                    onDisconnect(myPresenceRef).remove();
-                }
-            });
-
-            const allPlayersRef = ref(db, 'online_players');
-            onValue(allPlayersRef, (snap) => {
-                const playersData = snap.val() || {};
-                renderOnlineLobby(playersData);
-            });
-
-            const myInvitesRef = ref(db, `invitations/${myPlayerId}`);
-            onValue(myInvitesRef, (snap) => {
-                const invite = snap.val();
-                if (invite && invite.status === 'PENDING') {
-                    currentIncomingInvite = invite;
-                    document.getElementById('inviter-name').textContent = invite.fromName;
-                    document.getElementById('modal-invite-received').classList.remove('hidden');
-                } else {
-                    document.getElementById('modal-invite-received').classList.add('hidden');
-                }
-            });
-        }
-
-        function updateMyPresenceStatus(status) {
-            if (!db) return;
-            const myPresenceRef = ref(db, `online_players/${myPlayerId}/status`);
-            set(myPresenceRef, status);
-        }
-
-        function renderOnlineLobby(playersMap) {
-            const listEl = document.getElementById('online-players-list');
-            listEl.innerHTML = '';
-
-            const playerKeys = Object.keys(playersMap).filter(id => id !== myPlayerId);
-            
-            document.getElementById('lobby-online-count').textContent = `${playerKeys.length + 1} en línea`;
-            document.getElementById('header-online-count').textContent = playerKeys.length + 1;
-
-            if (playerKeys.length === 0) {
-                listEl.innerHTML = `
-                    <div class="py-8 text-center text-slate-400">
-                        <p class="text-xs">No hay otros jugadores en línea ahora mismo.</p>
-                        <p class="text-[10px] mt-1 font-mono text-slate-400">Abre esta página en otra pestaña para probar.</p>
+                <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+                    <div class="p-2.5 bg-white">
+                        <span class="text-neutral-400 block text-[9px] uppercase tracking-wider">TOTAL CARTAS</span>
+                        <span id="home-stat-cards" class="text-base font-black text-black">8</span>
                     </div>
-                `;
-                return;
-            }
+                    <div class="p-2.5 bg-white">
+                        <span class="text-neutral-400 block text-[9px] uppercase tracking-wider">COSTE MEDIO</span>
+                        <span id="home-stat-cost" class="text-base font-black text-black">1.8</span>
+                    </div>
+                </div>
+                <div>
+                    <span class="text-[9px] font-mono font-bold text-neutral-400 block uppercase tracking-wider mb-1.5">Composición Elemental</span>
+                    <div id="home-element-pills" class="flex flex-wrap gap-1"></div>
+                </div>
+                <div class="pt-1">
+                    <span class="text-[9px] font-mono font-bold text-neutral-400 block uppercase tracking-wider mb-1.5">Muestra de Cartas</span>
+                    <div id="home-deck-preview-grid" class="grid grid-cols-4 gap-1.5"></div>
+                </div>
+            </div>
+        </main>
 
-            playerKeys.forEach(uid => {
-                const player = playersMap[uid];
-                const isAvailable = player.status === 'LOBBY';
+        <footer class="text-center py-3 text-[9px] font-mono text-neutral-400 uppercase tracking-widest">
+            Cartas SILEN © 2026 • SILENOS MINIMALIST EDITION • v1.0.0
+        </footer>
+    </section>
 
-                const item = document.createElement('div');
-                item.className = 'glass-card p-2.5 rounded-xl border border-white flex items-center justify-between shadow-xs';
-                item.innerHTML = `
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-sm border border-white">
-                            ${player.avatar || '⚔️'}
-                        </div>
+    <!-- =================================================================== -->
+    <!--                     SCREEN 2: DECK MANAGER                          -->
+    <!-- =================================================================== -->
+    <section id="screen-deck" class="hidden relative z-10 h-full min-h-screen flex flex-col p-4 sm:p-6 max-w-6xl mx-auto w-full space-y-4 overflow-y-auto">
+        <header class="flex items-center justify-between swiss-panel p-3">
+            <div class="flex items-center gap-3">
+                <button onclick="showScreen('home')" class="btn-brutalist p-2 text-white flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                <div>
+                    <h2 class="font-extrabold text-sm sm:text-base uppercase font-mono">Gestor de Baraja</h2>
+                    <p class="text-[10px] text-neutral-500 font-mono">Selecciona entre 6 y 12 cartas para tu mazo</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="px-3 py-1.5 text-xs font-mono font-bold bg-white">
+                    <span id="deck-counter" class="text-black">8</span> / <span class="text-neutral-400">12</span>
+                </div>
+                <button onclick="saveAndReturnHome()" class="btn-brutalist px-4 py-2 text-xs">
+                    Guardar
+                </button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
+            <div class="lg:col-span-2 space-y-3 flex flex-col min-h-0">
+                <div class="flex flex-wrap items-center justify-between gap-2 swiss-panel p-2.5">
+                    <div class="flex flex-wrap items-center gap-1" id="element-filters">
+                        <button onclick="filterCards('ALL')" class="filter-btn px-2.5 py-1 text-xs font-mono font-bold bg-black text-white">TODOS</button>
+                        <button onclick="filterCards('ENTITY')" class="filter-btn px-2.5 py-1 text-xs font-mono font-bold bg-white text-black hover:bg-black hover:text-white">ENTIDADES</button>
+                        <button onclick="filterCards('FIRE')" class="filter-btn px-2.5 py-1 text-xs font-mono font-bold bg-white text-black hover:bg-black hover:text-white">FUEGO</button>
+                        <button onclick="filterCards('WATER')" class="filter-btn px-2.5 py-1 text-xs font-mono font-bold bg-white text-black hover:bg-black hover:text-white">AGUA</button>
+                        <button onclick="filterCards('EARTH')" class="filter-btn px-2.5 py-1 text-xs font-mono font-bold bg-white text-black hover:bg-black hover:text-white">TIERRA</button>
+                        <button onclick="filterCards('AIR')" class="filter-btn px-2.5 py-1 text-xs font-mono font-bold bg-white text-black hover:bg-black hover:text-white">AIRE</button>
+                        <button onclick="filterCards('SHADOW')" class="filter-btn px-2.5 py-1 text-xs font-mono font-bold bg-white text-black hover:bg-black hover:text-white">SOMBRA</button>
+                        <button onclick="filterCards('LIGHT')" class="filter-btn px-2.5 py-1 text-xs font-mono font-bold bg-white text-black hover:bg-black hover:text-white">LUZ</button>
+                        <button onclick="filterCards('POISON')" class="filter-btn px-2.5 py-1 text-xs font-mono font-bold bg-white text-black hover:bg-black hover:text-white">VENENO</button>
+                        <button onclick="filterCards('ICE')" class="filter-btn px-2.5 py-1 text-xs font-mono font-bold bg-white text-black hover:bg-black hover:text-white">HIELO</button>
+                        <button onclick="filterCards('CURSE')" class="filter-btn px-2.5 py-1 text-xs font-mono font-bold bg-white text-black hover:bg-black hover:text-white">MALDICIÓN</button>
+                        <button onclick="filterCards('PLANT')" class="filter-btn px-2.5 py-1 text-xs font-mono font-bold bg-white text-black hover:bg-black hover:text-white">PLANTA</button>
+                        <button onclick="filterCards('PSYCHIC')" class="filter-btn px-2.5 py-1 text-xs font-mono font-bold bg-white text-black hover:bg-black hover:text-white">PSÍQUICO</button>
+                        <button onclick="filterCards('RADIATION')" class="filter-btn px-2.5 py-1 text-xs font-mono font-bold bg-white text-black hover:bg-black hover:text-white">RADIACIÓN</button>
+                    </div>
+                    <div class="text-[10px] font-mono text-neutral-500">
+                        <span id="gallery-count">24</span> DISPONIBLES
+                    </div>
+                </div>
+                <div id="deck-gallery-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto pr-1 flex-1 min-h-0"></div>
+            </div>
+
+            <div class="swiss-panel p-4 flex flex-col justify-between space-y-3 min-h-0">
+                <div class="flex flex-col min-h-0 flex-1">
+                    <div class="flex items-center justify-between pb-2 mb-2 bg-neutral-200 p-2">
+                        <h3 class="font-extrabold text-xs font-mono uppercase tracking-wider text-black">TU BARAJA ACTIVA</h3>
+                        <button onclick="clearDeck()" class="text-[10px] font-mono text-black hover:bg-black hover:text-white px-1 uppercase font-bold underline">Vaciar</button>
+                    </div>
+                    <p id="deck-status-msg" class="text-[10px] text-neutral-500 font-mono mb-2">Haz clic para añadir/quitar.</p>
+                    <div id="active-deck-list" class="space-y-1.5 overflow-y-auto pr-1 flex-1 min-h-0"></div>
+                </div>
+                <div class="pt-2 space-y-1.5 border-t border-neutral-200">
+                    <span class="text-[9px] font-mono font-bold text-neutral-400 block uppercase">Preajustes Rápidos</span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="loadPreset('balanced')" class="btn-brutalist-outline py-1.5 text-xs">Equilibrado</button>
+                        <button onclick="loadPreset('aggressive')" class="btn-brutalist-outline py-1.5 text-xs">Ofensivo</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!--                     SCREEN 3: BATTLE ARENA                          -->
+    <!-- =================================================================== -->
+    <section id="screen-battle" class="hidden fixed inset-0 z-10 h-full w-full flex flex-col justify-between p-2 sm:p-4 max-w-6xl mx-auto overflow-hidden bg-white text-black">
+        <!-- HEADER -->
+        <header class="w-full flex items-center justify-between bg-neutral-100 p-2.5 shrink-0">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-black text-white flex items-center justify-center font-mono font-bold text-xs">
+                    DE
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xs sm:text-sm tracking-wider uppercase font-mono leading-none">DUELO ELEMENTAL</h1>
+                    <p id="battle-diff-tag" class="text-[9px] text-neutral-500 font-mono uppercase tracking-wider leading-none mt-0.5">
+                        NORMAL
+                    </p>
+                </div>
+            </div>
+            <div id="turn-badge" class="px-3 py-1 flex items-center gap-2 text-xs font-mono font-bold bg-white border border-neutral-200">
+                <span id="turn-dot-p1" class="w-2 h-2 bg-black"></span>
+                <span id="turn-text" class="text-black uppercase text-[10px] sm:text-xs">TU TURNO</span>
+                <span id="turn-dot-p2" class="w-2 h-2 bg-neutral-300"></span>
+            </div>
+            <button onclick="togglePauseModal()" class="btn-brutalist-outline px-3 py-1 text-xs font-bold">
+                PAUSA
+            </button>
+        </header>
+
+        <!-- MAIN ARENA AREA -->
+        <main class="w-full flex-1 flex flex-col justify-between items-stretch py-2 gap-2 min-h-0 overflow-hidden">
+            <!-- CPU BOARD -->
+            <div id="p2-board" class="w-full flex-1 swiss-panel p-3 sm:p-4 flex flex-col justify-between min-h-0 transition-all overflow-y-auto">
+                <div id="p2-avatar-box" class="flex items-center justify-between p-1">
+                    <div class="flex items-center gap-3">
+                        <div id="p2-avatar" class="w-9 h-9 bg-white flex items-center justify-center text-xl border border-neutral-200 shrink-0">🤖</div>
                         <div>
-                            <h4 class="font-bold text-xs text-slate-800 leading-tight">${player.name}</h4>
-                            <span class="text-[10px] font-mono ${isAvailable ? 'text-emerald-600' : 'text-amber-600'} flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full ${isAvailable ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
-                                ${isAvailable ? 'Disponible' : 'En Duelo'}
-                            </span>
+                            <h2 id="p2-name" class="font-extrabold text-xs sm:text-sm uppercase font-mono leading-none">IA RIVAL</h2>
+                            <span id="p2-role-badge" class="text-[8px] sm:text-[9px] text-neutral-500 font-mono uppercase font-bold">Oponente IA</span>
                         </div>
                     </div>
-                    <button class="btn-invite-player px-3 py-1.5 rounded-xl text-xs font-bold ${
-                        isAvailable 
-                        ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs' 
-                        : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                    } transition" ${!isAvailable ? 'disabled' : ''}>
-                        ⚔️ Retar
-                    </button>
-                `;
 
-                if (isAvailable) {
-                    item.querySelector('.btn-invite-player').addEventListener('click', () => sendDirectInvite(player));
-                }
 
-                listEl.appendChild(item);
-            });
-        }
 
-        /* -------------------------------------------------------------------------- */
-        /*                           DIRECT INVITATIONS LOGIC                         */
-        /* -------------------------------------------------------------------------- */
-        function sendDirectInvite(targetPlayer) {
-            const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-            
-            state.mode = 'ONLINE';
-            state.roomCode = roomCode;
-            state.myRole = 'p1';
-            state.status = 'WAITING';
-            state.turn = 'p1';
-            state.lastActionLog = `Esperando a ${targetPlayer.name}...`;
+<div class="flex items-center justify-between text-[10px] font-mono pt-1">
+                    <div id="p2-energy-dots" class="flex items-center gap-1"></div>
+                    <div id="p2-buffs" class="flex flex-wrap gap-1"></div>
+                </div>
 
-            state.players.p1 = { name: currentUsername, avatar: myAvatar, hp: MAX_HP, energy: MAX_ENERGY, shield: 0, boost: 1, hand: [] };
-            state.players.p2 = { name: targetPlayer.name, avatar: targetPlayer.avatar, hp: MAX_HP, energy: MAX_ENERGY, shield: 0, boost: 1, hand: [] };
 
-            refillHand('p1');
-            refillHand('p2');
 
-            syncToFirebase();
-            subscribeToRoom(roomCode);
-            updateMyPresenceStatus('IN_GAME');
 
-            const targetInviteRef = ref(db, `invitations/${targetPlayer.uid}`);
-            set(targetInviteRef, {
-                fromUid: myPlayerId,
-                fromName: currentUsername,
-                fromAvatar: myAvatar,
-                roomCode: roomCode,
-                status: 'PENDING',
-                timestamp: Date.now()
-            });
-
-            document.getElementById('display-room-code').textContent = roomCode;
-            document.getElementById('waiting-status-msg').textContent = `Reto enviado a ${targetPlayer.name}. Esperando a que acepte...`;
-            document.getElementById('modal-lobby').classList.add('hidden');
-            document.getElementById('modal-waiting').classList.remove('hidden');
-
-            updateUI();
-        }
-
-        async function acceptIncomingInvite() {
-            if (!currentIncomingInvite) return;
-
-            const invite = currentIncomingInvite;
-            const roomCode = invite.roomCode;
-
-            remove(ref(db, `invitations/${myPlayerId}`));
-
-            const roomRef = ref(db, `duel_rooms/${roomCode}`);
-            const snapshot = await get(roomRef);
-
-            if (snapshot.exists()) {
-                const fetchedState = snapshot.val();
-                state = fetchedState;
-                state.mode = 'ONLINE';
-                state.roomCode = roomCode;
-                state.myRole = 'p2';
-                state.status = 'PLAYING';
-                state.players.p2.name = currentUsername;
-                state.players.p2.avatar = myAvatar;
-                state.lastActionLog = `¡${currentUsername} ha aceptado el duelo!`;
-
-                document.getElementById('modal-invite-received').classList.add('hidden');
-                document.getElementById('modal-lobby').classList.add('hidden');
-                document.getElementById('room-tag-text').textContent = `Duelo vs ${state.players.p1.name}`;
-
-                updateMyPresenceStatus('IN_GAME');
-                syncToFirebase();
-                subscribeToRoom(roomCode);
-                updateUI();
-            }
-        }
-
-        function rejectIncomingInvite() {
-            if (!currentIncomingInvite) return;
-            remove(ref(db, `invitations/${myPlayerId}`));
-            document.getElementById('modal-invite-received').classList.add('hidden');
-        }
-
-        /* -------------------------------------------------------------------------- */
-        /*                            USER IDENTITY LOGIC                             */
-        /* -------------------------------------------------------------------------- */
-        function checkUserIdentity() {
-            if (!currentUsername) {
-                document.getElementById('modal-user-setup').classList.remove('hidden');
-            } else {
-                document.getElementById('modal-user-setup').classList.add('hidden');
-                document.getElementById('display-user-name').textContent = currentUsername;
-                initPresenceSystem();
-
-                const urlParams = new URLSearchParams(window.location.search);
-                const inviteRoom = urlParams.get('room');
-                if (inviteRoom) {
-                    joinOnlineRoom(inviteRoom.toUpperCase());
-                } else {
-                    document.getElementById('modal-lobby').classList.remove('hidden');
-                }
-            }
-        }
-
-        document.getElementById('btn-save-username').addEventListener('click', () => {
-            const val = document.getElementById('input-username').value.trim();
-            if (val) {
-                currentUsername = val;
-                localStorage.setItem('duel_elemental_username', val);
-                checkUserIdentity();
-            }
-        });
-
-        document.getElementById('btn-change-username').addEventListener('click', () => {
-            document.getElementById('modal-user-setup').classList.remove('hidden');
-            document.getElementById('modal-lobby').classList.add('hidden');
-        });
-
-        /* -------------------------------------------------------------------------- */
-        /*                             CARD GAME LOGIC                                */
-        /* -------------------------------------------------------------------------- */
-        function drawCard() {
-            const template = CARDS_DATABASE[Math.floor(Math.random() * CARDS_DATABASE.length)];
-            return { ...template, uid: 'c_' + Math.random().toString(36).substring(2, 9) };
-        }
-
-        function refillHand(playerKey) {
-            const p = state.players[playerKey];
-            while (p.hand.length < HAND_SIZE) {
-                p.hand.push(drawCard());
-            }
-        }
-
-        function playCard(cardUid) {
-            const isMyTurn = (state.mode === 'ONLINE') ? (state.turn === state.myRole) : true;
-            if (!isMyTurn || state.status === 'WAITING') return;
-
-            const activeKey = state.turn;
-            const enemyKey = activeKey === 'p1' ? 'p2' : 'p1';
-            const actor = state.players[activeKey];
-            const target = state.players[enemyKey];
-
-            const cardIndex = actor.hand.findIndex(c => c.uid === cardUid);
-            if (cardIndex === -1) return;
-
-            const card = actor.hand[cardIndex];
-            if (actor.energy < card.cost) return;
-
-            actor.energy -= card.cost;
-            actor.hand.splice(cardIndex, 1);
-
-            let logMsg = '';
-
-            if (card.type === 'ATTACK') {
-                let damage = Math.round(card.val * actor.boost);
-                actor.boost = 1;
-
-                if (target.shield > 0) {
-                    if (target.shield >= damage) {
-                        target.shield -= damage;
-                        damage = 0;
-                    } else {
-                        damage -= target.shield;
-                        target.shield = 0;
-                    }
-                }
-
-                target.hp = Math.max(0, target.hp - damage);
-                logMsg = `${actor.name} usó ${card.name} (-${damage} HP).`;
-                createFloatingText(enemyKey, `-${damage} HP`, '#f43f5e');
-                triggerParticlesAt(enemyKey, '#f43f5e');
-
-            } else if (card.type === 'DEFENSE') {
-                actor.shield += card.val;
-                logMsg = `${actor.name} activó ${card.name} (+${card.val} Escudo).`;
-                createFloatingText(activeKey, `+${card.val} Escudo`, '#6366f1');
-                triggerParticlesAt(activeKey, '#6366f1');
-
-            } else if (card.type === 'HEAL') {
-                actor.hp = Math.min(MAX_HP, actor.hp + card.val);
-                logMsg = `${actor.name} invocó ${card.name} (+${card.val} HP).`;
-                createFloatingText(activeKey, `+${card.val} HP`, '#10b981');
-                triggerParticlesAt(activeKey, '#10b981');
-
-            } else if (card.type === 'DRAIN') {
-                let drainAmt = card.val;
-                target.hp = Math.max(0, target.hp - drainAmt);
-                actor.hp = Math.min(MAX_HP, actor.hp + drainAmt);
-                logMsg = `${actor.name} drenó ${drainAmt} HP a ${target.name}.`;
-                createFloatingText(enemyKey, `-${drainAmt} HP`, '#a855f7');
-                createFloatingText(activeKey, `+${drainAmt} HP`, '#10b981');
-                triggerParticlesAt(activeKey, '#a855f7');
-
-            } else if (card.type === 'BOOST') {
-                actor.boost = card.val;
-                logMsg = `${actor.name} potenció su próximo ataque.`;
-                createFloatingText(activeKey, '¡Ataque X1.5!', '#f59e0b');
-                triggerParticlesAt(activeKey, '#f59e0b');
-            }
-
-            state.lastActionLog = logMsg;
-
-            if (actor.hand.length === 0) {
-                refillHand(activeKey);
-            }
-
-            updateUI();
-            checkGameOver();
-
-            if (state.mode === 'ONLINE' && db && state.roomCode) {
-                syncToFirebase();
-            }
-        }
-
-        function endTurn() {
-            const isMyTurn = (state.mode === 'ONLINE') ? (state.turn === state.myRole) : true;
-            if (!isMyTurn || state.status === 'WAITING') return;
-
-            state.turn = state.turn === 'p1' ? 'p2' : 'p1';
-            const nextPlayer = state.players[state.turn];
-
-            nextPlayer.energy = MAX_ENERGY;
-            refillHand(state.turn);
-
-            state.lastActionLog = `Turno de ${nextPlayer.name}`;
-
-            updateUI();
-
-            if (state.mode === 'ONLINE' && db && state.roomCode) {
-                syncToFirebase();
-            }
-        }
-
-        /* -------------------------------------------------------------------------- */
-        /*                              UI RENDERER                                   */
-        /* -------------------------------------------------------------------------- */
-        function updateUI() {
-            const isOnline = state.mode === 'ONLINE';
-            const meKey = isOnline ? state.myRole : 'p1';
-            const opponentKey = isOnline ? (state.myRole === 'p1' ? 'p2' : 'p1') : 'p2';
-
-            const me = state.players[meKey];
-            const opponent = state.players[opponentKey];
-
-            // Bottom Panel (Always Local Player)
-            document.getElementById('p1-name').textContent = me.name;
-            document.getElementById('p1-avatar').textContent = me.avatar || '🌿';
-            document.getElementById('p1-hp-text').textContent = `${me.hp} / ${MAX_HP}`;
-            document.getElementById('p1-hp-bar').style.width = `${(me.hp / MAX_HP) * 100}%`;
-            document.getElementById('p1-role-badge').textContent = `Jugador Local (${meKey.toUpperCase()})`;
-            
-            const p1Shield = document.getElementById('p1-shield-text');
-            if (me.shield > 0) {
-                p1Shield.textContent = `🛡️ ${me.shield}`;
-                p1Shield.classList.remove('hidden');
-            } else {
-                p1Shield.classList.add('hidden');
-            }
-
-            // Top Panel (Always Opponent)
-            document.getElementById('p2-name').textContent = opponent.name;
-            document.getElementById('p2-avatar').textContent = opponent.avatar || '🌸';
-            document.getElementById('p2-hp-text').textContent = `${opponent.hp} / ${MAX_HP}`;
-            document.getElementById('p2-hp-bar').style.width = `${(opponent.hp / MAX_HP) * 100}%`;
-            document.getElementById('p2-role-badge').textContent = `Oponente (${opponentKey.toUpperCase()})`;
-
-            const p2Shield = document.getElementById('p2-shield-text');
-            if (opponent.shield > 0) {
-                p2Shield.textContent = `🛡️ ${opponent.shield}`;
-                p2Shield.classList.remove('hidden');
-            } else {
-                p2Shield.classList.add('hidden');
-            }
-
-            // Mana / Energy Dots
-            renderEnergyDots('p1-energy-dots', me.energy);
-            renderEnergyDots('p2-energy-dots', opponent.energy);
-
-            // Buffs
-            renderBuffs('p1-buffs', me);
-            renderBuffs('p2-buffs', opponent);
-
-            // Turn Badge Indicators
-            const turnText = document.getElementById('turn-text');
-            const dotP1 = document.getElementById('turn-dot-p1');
-            const dotP2 = document.getElementById('turn-dot-p2');
-
-            if (state.status === 'WAITING') {
-                turnText.textContent = 'Esperando rival...';
-            } else {
-                const isMyTurn = state.turn === meKey;
-                turnText.textContent = isMyTurn ? 'Tu Turno' : `Turno de ${state.players[state.turn].name}`;
-            }
-
-            if (state.turn === 'p1') {
-                dotP1.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm opacity-100';
-                dotP2.className = 'w-2.5 h-2.5 rounded-full bg-slate-300 opacity-30';
-            } else {
-                dotP1.className = 'w-2.5 h-2.5 rounded-full bg-slate-300 opacity-30';
-                dotP2.className = 'w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm opacity-100';
-            }
-
-            // Combat Log Message
-            document.getElementById('combat-log').textContent = state.lastActionLog;
-
-            // Render Hand Cards for Local Player
-            renderHandCards(me, state.turn === meKey && state.status === 'PLAYING');
-        }
-
-        function renderEnergyDots(containerId, count) {
-            const el = document.getElementById(containerId);
-            el.innerHTML = '<span class="text-[10px] text-slate-400 mr-1 font-semibold">ENERGÍA</span>';
-            for (let i = 0; i < MAX_ENERGY; i++) {
-                const dot = document.createElement('div');
-                dot.className = `w-2.5 h-2.5 rounded-full transition-all ${
-                    i < count ? 'bg-amber-400 shadow-sm' : 'bg-slate-200/60'
-                }`;
-                el.appendChild(dot);
-            }
-        }
-
-        function renderBuffs(containerId, player) {
-            const el = document.getElementById(containerId);
-            el.innerHTML = '';
-            if (player.boost > 1) {
-                const b = document.createElement('span');
-                b.className = 'text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full border border-amber-200 font-bold';
-                b.textContent = '⚡ X1.5 Daño';
-                el.appendChild(b);
-            }
-        }
-
-        function renderHandCards(player, isMyTurn) {
-            const handContainer = document.getElementById('hand-container');
-            handContainer.innerHTML = '';
-
-            player.hand.forEach((card) => {
-                const canAfford = player.energy >= card.cost && isMyTurn;
-                const cardEl = document.createElement('div');
-
-                cardEl.className = `card-playable relative flex-shrink-0 w-32 sm:w-36 p-3.5 rounded-2xl glass-card flex flex-col justify-between border border-white ${
-                    canAfford ? 'cursor-pointer opacity-100' : 'opacity-40 cursor-not-allowed'
-                }`;
-
-                cardEl.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <span class="text-base">${card.icon}</span>
-                        <span class="font-mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-900 text-white shadow-xs">
-                            ${card.cost}⚡
-                        </span>
+                    <div class="flex flex-col items-end gap-1 min-w-[130px] sm:min-w-[200px]">
+                        <div class="flex items-baseline gap-2">
+                            <span id="p2-shield-text" class="text-[10px] sm:text-xs font-mono font-bold text-black hidden">🛡️ 0</span>
+                            <span id="p2-hp-text" class="text-[10px] sm:text-xs font-mono font-extrabold text-black">100 / 100</span>
+                        </div>
+                        <div class="w-full h-3 bg-neutral-200 p-0.5">
+                            <div id="p2-hp-bar" class="h-full bg-black transition-all duration-500" style="width: 100%;"></div>
+                        </div>
                     </div>
-                    <div class="my-2">
-                        <h4 class="font-bold text-xs text-slate-800 leading-tight">${card.name}</h4>
-                        <p class="text-[10px] text-slate-500 mt-1 leading-normal">${card.desc}</p>
-                    </div>
-                    <div class="w-full h-1 rounded-full bg-gradient-to-r ${card.bg}"></div>
-                `;
-
-                if (canAfford) {
-                    cardEl.addEventListener('click', () => playCard(card.uid));
-                }
-
-                handContainer.appendChild(cardEl);
-            });
-        }
-
-        function createFloatingText(targetPlayerKey, text, color) {
-            const isOnline = state.mode === 'ONLINE';
-            const myKey = isOnline ? state.myRole : 'p1';
-            const targetBoardId = (targetPlayerKey === myKey) ? 'p1-board' : 'p2-board';
-
-            const board = document.getElementById(targetBoardId);
-            if (!board) return;
-
-            const rect = board.getBoundingClientRect();
-            const floatEl = document.createElement('div');
-            floatEl.className = 'float-text fixed font-mono font-extrabold text-sm sm:text-base z-50';
-            floatEl.style.left = `${rect.left + rect.width / 2 - 20}px`;
-            floatEl.style.top = `${rect.top + 20}px`;
-            floatEl.style.color = color;
-            floatEl.textContent = text;
-
-            document.body.appendChild(floatEl);
-            setTimeout(() => floatEl.remove(), 1200);
-        }
-
-        function triggerParticlesAt(targetPlayerKey, color) {
-            const isOnline = state.mode === 'ONLINE';
-            const myKey = isOnline ? state.myRole : 'p1';
-            const targetBoardId = (targetPlayerKey === myKey) ? 'p1-board' : 'p2-board';
-
-            const board = document.getElementById(targetBoardId);
-            if (board) {
-                const rect = board.getBoundingClientRect();
-                spawnParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, color);
-            }
-        }
-
-        /* -------------------------------------------------------------------------- */
-        /*                           GAME OVER CHECK                                  */
-        /* -------------------------------------------------------------------------- */
-        function checkGameOver() {
-            if (state.players.p1.hp <= 0 || state.players.p2.hp <= 0) {
-                const winner = state.players.p1.hp > 0 ? state.players.p1.name : state.players.p2.name;
+                </div>
                 
-                document.getElementById('gameover-title').textContent = `¡VICTORIA DE ${winner.toUpperCase()}!`;
-                document.getElementById('gameover-subtitle').textContent = 'Ha demostrado su dominio elemental.';
-                document.getElementById('modal-gameover').classList.remove('hidden');
+                <!-- ENTIDADES CPU EN CAMPO -->
+                <div class="mt-2 pt-1 border-t border-neutral-300/60">
+                    
+                    <div id="p2-entities" class="flex items-center justify-center gap-2.5 min-h-[65px] overflow-x-auto pb-0.5"></div>
+                </div>
+            </div>
 
-                updateMyPresenceStatus('LOBBY');
-            }
-        }
+            <!-- COMBAT LOG CENTRAL -->
+            <div class="w-full flex items-center justify-center shrink-0 my-0.5">
+                <div id="combat-log" class="w-full bg-black text-white px-4 py-2 text-xs sm:text-sm font-mono font-bold text-center uppercase tracking-wider truncate">
+                    ⚔️ ¡QUE COMIENCE EL DUELO! SELECCIONA UNA CARTA.
+                </div>
+            </div>
 
-        /* -------------------------------------------------------------------------- */
-        /*                         ONLINE SYNC MANAGEMENT                             */
-        /* -------------------------------------------------------------------------- */
-        function syncToFirebase() {
-            if (!db || !state.roomCode) return;
-            const roomRef = ref(db, `duel_rooms/${state.roomCode}`);
-            set(roomRef, state);
-        }
+            <!-- PLAYER BOARD -->
+            <div id="p1-board" class="w-full swiss-panel p-3 sm:p-4 flex flex-col justify-between transition-all overflow-y-auto">
+                <!-- ENTIDADES JUGADOR EN CAMPO -->
+                <div class="mb-2 pb-1 border-b border-neutral-300/60">
+                  
+                    <div id="p1-entities" class="flex items-center justify-start gap-2.5 min-h-[140px] overflow-x-auto pb-0.5"></div>
+                </div>
+                
+                
+            </div>
+        </main>
 
-        function subscribeToRoom(roomCode) {
-            if (!db) return;
-            const roomRef = ref(db, `duel_rooms/${roomCode}`);
-            onValue(roomRef, (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    const localRole = state.myRole;
-                    state = data;
-                    state.myRole = localRole;
+        <!-- CARDS HAND DOCK -->
+        <footer class="w-full shrink-0 pt-2 pb-2 px-3 bg-neutral-100 mt-1 border-t border-neutral-200">
+          
+            
+            <!-- Contenedor para cartas -->
+            <div id="hand-container" class="flex items-center justify-center gap-3 sm:gap-4 w-full overflow-x-auto py-2 px-1 min-h-[240px]"></div>
 
-                    if (state.status === 'PLAYING') {
-                        document.getElementById('modal-waiting').classList.add('hidden');
-                        document.getElementById('room-tag-text').textContent = `Duelo en Curso`;
-                    }
 
-                    updateUI();
-                }
-            });
-        }
+<div class="flex items-center justify-between text-[10px] font-mono pt-1">
+                    <div id="p1-energy-dots" class="flex items-center gap-1"></div>
+                    <div id="p1-buffs" class="flex flex-wrap gap-1"></div>
+                </div>
+<div id="p1-avatar-box" class="flex items-center justify-between p-1">
+                    <div class="flex items-center gap-3">
 
-        function createCustomRoom() {
-            const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-            state.mode = 'ONLINE';
-            state.roomCode = roomCode;
-            state.myRole = 'p1';
-            state.status = 'WAITING';
-            state.turn = 'p1';
-            state.lastActionLog = 'Esperando a un contrincante...';
 
-            state.players.p1 = { name: currentUsername, avatar: myAvatar, hp: MAX_HP, energy: MAX_ENERGY, shield: 0, boost: 1, hand: [] };
-            state.players.p2 = { name: 'Esperando...', avatar: '🌸', hp: MAX_HP, energy: MAX_ENERGY, shield: 0, boost: 1, hand: [] };
 
-            refillHand('p1');
-            refillHand('p2');
 
-            document.getElementById('display-room-code').textContent = roomCode;
-            document.getElementById('waiting-status-msg').textContent = `Comparte el enlace o el código de sala para jugar.`;
-            document.getElementById('modal-lobby').classList.add('hidden');
-            document.getElementById('modal-waiting').classList.remove('hidden');
 
-            updateMyPresenceStatus('IN_GAME');
-            syncToFirebase();
-            subscribeToRoom(roomCode);
-            updateUI();
-        }
+                        
+                        <div id="p1-avatar" class="w-9 h-9 bg-black text-white flex items-center justify-center text-xl shrink-0">🧙‍♂️</div>
+                        <div>
+                            <h2 id="p1-name" class="font-extrabold text-xs sm:text-sm uppercase font-mono leading-none">Tú</h2>
+                            <span id="p1-role-badge" class="text-[8px] sm:text-[9px] text-neutral-500 font-mono uppercase font-bold">Invocador Elemental</span>
+                        </div>
 
-        async function joinOnlineRoom(roomCode) {
-            if (!db) return;
-            const roomRef = ref(db, `duel_rooms/${roomCode}`);
-            const snapshot = await get(roomRef);
 
-            if (snapshot.exists()) {
-                state = snapshot.val();
-                state.mode = 'ONLINE';
-                state.roomCode = roomCode;
-                state.myRole = 'p2';
-                state.status = 'PLAYING';
-                state.players.p2.name = currentUsername;
-                state.players.p2.avatar = myAvatar;
-                state.lastActionLog = `¡${currentUsername} ha entrado al duelo!`;
 
-                document.getElementById('modal-lobby').classList.add('hidden');
-                document.getElementById('modal-waiting').classList.add('hidden');
-                document.getElementById('room-tag-text').textContent = `Sala: ${roomCode}`;
 
-                updateMyPresenceStatus('IN_GAME');
-                syncToFirebase();
-                subscribeToRoom(roomCode);
-                updateUI();
-            } else {
-                alert('La sala no existe o el duelo ya finalizó.');
-            }
-        }
 
-        function startLocalGame() {
-            state.mode = 'LOCAL';
-            state.roomCode = null;
-            state.myRole = 'p1';
-            state.status = 'PLAYING';
-            state.turn = 'p1';
-            state.lastActionLog = '¡Duelo local (Pase y Juega) iniciado!';
+                    </div>
+  <div class="flex items-center justify-between mb-2 px-1">
+                <div class="flex items-center gap-3">
+                 
+                    <span style="display: none;" id="deck-remaining-tag" class="text-[10px] sm:text-xs font-mono font-bold text-neutral-500 uppercase">Mazo: 8 rest.</span>
+                </div>
+                <button id="btn-end-turn" onclick="endTurn()" class="btn-brutalist px-5 py-2 text-xs sm:text-sm font-bold">
+                    FINALIZAR TURNO
+                </button>
+            </div>
+            
+                    <div class="flex flex-col items-end gap-1 min-w-[130px] sm:min-w-[200px]">
+                        <div class="flex items-baseline gap-2">
+                            <span id="p1-shield-text" class="text-[10px] sm:text-xs font-mono font-bold text-black hidden">🛡️ 0</span>
+                            <span id="p1-hp-text" class="text-[10px] sm:text-xs font-mono font-extrabold text-black">100 / 100</span>
+                        </div>
+                        <div class="w-full h-3 bg-neutral-200 p-0.5">
+                            <div id="p1-hp-bar" class="h-full bg-black transition-all duration-500" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
 
-            state.players.p1 = { name: currentUsername || 'Jugador 1', avatar: '🌿', hp: MAX_HP, energy: MAX_ENERGY, shield: 0, boost: 1, hand: [] };
-            state.players.p2 = { name: 'Jugador 2', avatar: '🌸', hp: MAX_HP, energy: MAX_ENERGY, shield: 0, boost: 1, hand: [] };
 
-            refillHand('p1');
-            refillHand('p2');
+        </footer>
+    </section>
 
-            document.getElementById('modal-lobby').classList.add('hidden');
-            document.getElementById('modal-waiting').classList.add('hidden');
-            document.getElementById('room-tag-text').textContent = 'Modo Multijugador Local';
+    <!-- MODAL DETALLE DE CARTA / ENTIDAD -->
+    <div id="modal-card-info" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+        <div class="max-w-xs w-full bg-white p-5 text-center space-y-3 shadow-2xl border border-neutral-300">
+            <div class="flex items-center justify-between border-b border-neutral-200 pb-2">
+                <span id="info-card-elem" class="text-[10px] font-mono font-bold px-2 py-0.5 bg-black text-white uppercase">ELEMENTO</span>
+                <span id="info-card-cost" class="text-[10px] font-mono font-bold px-2 py-0.5 bg-neutral-100 border border-neutral-300 text-black">COSTE</span>
+            </div>
+            <div class="w-24 h-24 aspect-square mx-auto bg-neutral-100 overflow-hidden relative border border-neutral-200">
+                <img id="info-card-img" src="" alt="Carta" class="w-full h-full object-cover">
+            </div>
+            <div>
+                <h3 id="info-card-title" class="text-sm font-black font-mono uppercase text-black">NOMBRE DE CARTA</h3>
+                <p id="info-card-type" class="text-[10px] font-mono font-bold text-neutral-400 uppercase mt-0.5"></p>
+            </div>
+            <p id="info-card-desc" class="text-xs font-mono text-neutral-600 bg-neutral-50 p-2 border border-neutral-200/60 leading-relaxed"></p>
+            <button onclick="closeCardInfoModal()" class="w-full btn-brutalist py-2 text-xs font-mono font-bold mt-2">
+                ENTENDIDO
+            </button>
+        </div>
+    </div>
 
-            updateUI();
-        }
+    <!-- MODAL GAME OVER -->
+    <div id="modal-gameover" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div class="max-w-sm w-full bg-white p-6 text-center space-y-4 shadow-xl">
+            <div id="gameover-icon" class="text-4xl">🏆</div>
+            <div>
+                <h3 id="gameover-title" class="text-xl font-black font-mono uppercase text-black">VICTORIA</h3>
+                <p id="gameover-subtitle" class="text-xs font-mono text-neutral-500 mt-1">Has demostrado tu maestría sobre los elementos.</p>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-left bg-neutral-100 p-3 text-xs font-mono">
+                <div>
+                    <span class="text-neutral-400 block text-[9px] uppercase">TURNO FINAL</span>
+                    <span id="stat-final-turn" class="font-bold text-black">Turno 6</span>
+                </div>
+                <div>
+                    <span class="text-neutral-400 block text-[9px] uppercase">HP RESTANTE</span>
+                    <span id="stat-final-hp" class="font-bold text-black">45 HP</span>
+                </div>
+            </div>
+            <div class="space-y-2 pt-1">
+                <button onclick="restartMatch()" class="w-full btn-brutalist py-2.5 text-xs">JUGAR DE NUEVO</button>
+                <button onclick="showScreen('home')" class="w-full btn-brutalist-outline py-2.5 text-xs">MENÚ PRINCIPAL</button>
+            </div>
+        </div>
+    </div>
 
-        function copyInviteLink() {
-            const link = `${window.location.origin}${window.location.pathname}?room=${state.roomCode}`;
-            navigator.clipboard.writeText(link).then(() => {
-                const btn = document.getElementById('btn-copy-link');
-                btn.innerHTML = '<span>✅ ¡Copiado!</span>';
-                setTimeout(() => btn.innerHTML = '<span>📋 Copiar Enlace</span>', 2000);
-            });
-        }
+    <!-- MODAL PAUSE -->
+    <div id="modal-pause" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div class="max-w-xs w-full bg-white p-6 text-center space-y-3 shadow-xl">
+            <h3 class="text-sm font-black font-mono uppercase">Partida en Pausa</h3>
+            <div class="space-y-2 pt-2">
+                <button onclick="togglePauseModal()" class="w-full btn-brutalist py-2 text-xs">REANUDAR</button>
+                <button onclick="restartMatch(); togglePauseModal();" class="w-full btn-brutalist-outline py-2 text-xs">REINICIAR BATALLA</button>
+                <button onclick="showScreen('home'); togglePauseModal();" class="w-full btn-brutalist-outline py-2 text-xs text-rose-600 hover:bg-rose-600 hover:text-white">SALIR AL MENÚ</button>
+            </div>
+        </div>
+    </div>
 
-        function shareWhatsApp() {
-            const link = `${window.location.origin}${window.location.pathname}?room=${state.roomCode}`;
-            const text = encodeURIComponent(`⚔️ ¡Acepta mi reto en Duelo Elemental! Entra aquí: ${link}`);
-            window.open(`https://wa.me/?text=${text}`, '_blank');
-        }
-
-        /* -------------------------------------------------------------------------- */
-        /*                             EVENT LISTENERS                                */
-        /* -------------------------------------------------------------------------- */
-        document.getElementById('btn-end-turn').addEventListener('click', endTurn);
-        document.getElementById('btn-open-lobby').addEventListener('click', () => {
-            document.getElementById('modal-lobby').classList.remove('hidden');
-        });
-        document.getElementById('btn-close-lobby').addEventListener('click', () => {
-            document.getElementById('modal-lobby').classList.add('hidden');
-        });
-
-        document.getElementById('btn-restart').addEventListener('click', () => {
-            document.getElementById('modal-gameover').classList.add('hidden');
-            document.getElementById('modal-lobby').classList.remove('hidden');
-            updateMyPresenceStatus('LOBBY');
-        });
-
-        document.getElementById('btn-mode-local').addEventListener('click', startLocalGame);
-        document.getElementById('btn-create-custom-room').addEventListener('click', createCustomRoom);
-
-        document.getElementById('btn-join-room').addEventListener('click', () => {
-            const input = document.getElementById('input-room-code').value.trim().toUpperCase();
-            if (input.length === 6) joinOnlineRoom(input);
-        });
-
-        document.getElementById('btn-accept-invite').addEventListener('click', acceptIncomingInvite);
-        document.getElementById('btn-reject-invite').addEventListener('click', rejectIncomingInvite);
-
-        document.getElementById('btn-copy-link').addEventListener('click', copyInviteLink);
-        document.getElementById('btn-whatsapp-share').addEventListener('click', shareWhatsApp);
-
-        document.getElementById('btn-cancel-waiting').addEventListener('click', () => {
-            document.getElementById('modal-waiting').classList.add('hidden');
-            document.getElementById('modal-lobby').classList.remove('hidden');
-            updateMyPresenceStatus('LOBBY');
-        });
-
-        // Initialize User Identification Flow
-        checkUserIdentity();
-    </script>
+    <!-- Application Modules -->
+    <script src="logic.js"></script>
+    <script src="ai.js"></script>
+    <script src="ui.js"></script>
+    <script src="main.js"></script>
 </body>
 </html>
