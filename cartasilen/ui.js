@@ -1,6 +1,7 @@
 /* -------------------------------------------------------------------------- */
 /*                          1. CANVAS PARTICLE SYSTEM                         */
 /* -------------------------------------------------------------------------- */
+
 let canvas, ctx;
 let particles = [];
 
@@ -9,7 +10,7 @@ function initCanvas() {
     if (!canvas) return;
     ctx = canvas.getContext('2d');
     resizeCanvas();
-    
+        
     particles = [];
     for (let i = 0; i < 15; i++) {
         particles.push({
@@ -37,7 +38,7 @@ function spawnParticlesAt(x, y, color, count = 12) {
             vx: (Math.random() - 0.5) * 5,
             vy: (Math.random() - 0.5) * 5,
             size: Math.random() * 3 + 2,
-            color: '#000000',
+            color: color || '#000000',
             alpha: 1,
             burst: true
         });
@@ -47,7 +48,7 @@ function spawnParticlesAt(x, y, color, count = 12) {
 function renderParticles() {
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+        
     particles.forEach((p, idx) => {
         p.x += p.vx;
         p.y += p.vy;
@@ -72,25 +73,31 @@ function renderParticles() {
 /* -------------------------------------------------------------------------- */
 /*                       2. ROUTER Y DIFICULTAD                               */
 /* -------------------------------------------------------------------------- */
+
 function showScreen(screenId) {
     state.activeScreen = screenId;
     document.getElementById('screen-home').classList.add('hidden');
     document.getElementById('screen-deck').classList.add('hidden');
     document.getElementById('screen-battle').classList.add('hidden');
-    
+    const lobbyEl = document.getElementById('screen-lobby');
+    if (lobbyEl) lobbyEl.classList.add('hidden');
+        
     if (screenId === 'home') {
         renderHomeScreen();
         document.getElementById('screen-home').classList.remove('hidden');
     } else if (screenId === 'deck') {
         renderDeckManager();
         document.getElementById('screen-deck').classList.remove('hidden');
+    } else if (screenId === 'lobby') {
+        if (lobbyEl) lobbyEl.classList.remove('hidden');
     } else if (screenId === 'battle') {
         document.getElementById('screen-battle').classList.remove('hidden');
     }
 }
 
-function showToast(msg, icon = 'ℹ️') {
+function showToast(msg, icon = ' ') {
     const toast = document.getElementById('toast');
+    if (!toast) return;
     document.getElementById('toast-msg').textContent = msg;
     document.getElementById('toast-icon').textContent = icon;
     toast.classList.remove('translate-y-[-150%]', 'opacity-0');
@@ -116,27 +123,46 @@ function setDifficulty(diff) {
 /* -------------------------------------------------------------------------- */
 /*                         3. HOME SCREEN RENDERER                            */
 /* -------------------------------------------------------------------------- */
+
 function renderHomeScreen() {
+    const activeDeck = getActiveDeck();
     const activeCards = state.activeDeckCardIds.map(id => CARDS_DATABASE.find(c => c.id === id)).filter(Boolean);
-    
-    document.getElementById('home-deck-count-badge').textContent = `${activeCards.length}/12`;
+        
+    document.getElementById('home-deck-count-badge').textContent = `${activeCards.length}/20`;
     document.getElementById('home-stat-cards').textContent = activeCards.length;
     const avgCost = (activeCards.reduce((acc, c) => acc + c.cost, 0) / (activeCards.length || 1)).toFixed(1);
     document.getElementById('home-stat-cost').textContent = avgCost;
-    
+        
+    const activeNameEl = document.getElementById('home-active-deck-name');
+    if (activeNameEl) {
+        activeNameEl.textContent = activeDeck.name;
+    }
+        
+    const homeSelect = document.getElementById('home-deck-select');
+    if (homeSelect) {
+        homeSelect.innerHTML = '';
+        state.decks.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.id;
+            opt.textContent = `${d.name} (${d.cardIds.length} cartas)`;
+            if (d.id === state.activeDeckId) opt.selected = true;
+            homeSelect.appendChild(opt);
+        });
+    }
+        
     const elemCounts = {};
     activeCards.forEach(c => elemCounts[c.element] = (elemCounts[c.element] || 0) + 1);
     const pillsContainer = document.getElementById('home-element-pills');
     pillsContainer.innerHTML = '';
-    
+        
     Object.keys(elemCounts).forEach(elem => {
-        const info = ELEMENT_INFO[elem] || { name: elem, emoji: '⚡' };
+        const info = ELEMENT_INFO[elem] || { name: elem, emoji: ' ' };
         const badge = document.createElement('span');
         badge.className = 'px-2 py-0.5 bg-white text-[9px] font-mono font-bold text-black uppercase border border-neutral-200';
         badge.textContent = `${info.emoji} ${info.name}: ${elemCounts[elem]}`;
         pillsContainer.appendChild(badge);
     });
-
+        
     const miniGrid = document.getElementById('home-deck-preview-grid');
     miniGrid.innerHTML = '';
     activeCards.slice(0, 8).forEach(card => {
@@ -152,33 +178,222 @@ function renderHomeScreen() {
     });
 }
 
+function handleHomeSelectDeck(deckId) {
+    selectActiveDeck(deckId);
+    renderHomeScreen();
+    showToast('Baraja activa cambiada', ' ');
+}
+
 /* -------------------------------------------------------------------------- */
 /*                       4. DECK MANAGER BUILDER LOGIC                        */
 /* -------------------------------------------------------------------------- */
+
+let deckModalMode = 'create';
+
+function toggleAll64TypesPanel() {
+    state.show64Panel = !state.show64Panel;
+    renderDeckManager();
+}
+
 function filterCards(elem) {
     state.deckFilter = elem;
-    document.querySelectorAll('#element-filters button').forEach(btn => {
-        btn.className = 'filter-btn px-2.5 py-1 text-xs font-mono font-bold bg-white text-black hover:bg-black hover:text-white';
-    });
-    if (window.event && window.event.target) {
-        window.event.target.className = 'filter-btn px-2.5 py-1 text-xs font-mono font-bold bg-black text-white';
-    }
     renderDeckManager();
+}
+
+function renderElementFilterButtons() {
+    const container = document.getElementById('element-filters');
+    if (!container) return;
+        
+    let html = `
+        <div class="w-full flex flex-col space-y-2">
+            <div class="flex flex-wrap items-center gap-1">
+                <button onclick="filterCards('ALL')" class="filter-btn px-2.5 py-1 text-xs font-mono font-bold ${state.deckFilter === 'ALL' ? 'bg-black text-white' : 'bg-white text-black hover:bg-black hover:text-white'}">TODOS (${CARDS_DATABASE.length})</button>
+                <button onclick="filterCards('ENTITY')" class="filter-btn px-2.5 py-1 text-xs font-mono font-bold ${state.deckFilter === 'ENTITY' ? 'bg-black text-white' : 'bg-white text-black hover:bg-black hover:text-white'}">ENTIDADES</button>
+                <button onclick="toggleAll64TypesPanel()" class="filter-btn px-2.5 py-1 text-xs font-mono font-bold ${state.show64Panel ? 'bg-amber-400 text-black' : 'bg-neutral-200 text-black'} hover:bg-amber-300">
+                    ${state.show64Panel ? '  OCULTAR 64 TIPOS' : '  VER LOS 64 TIPOS'}
+                </button>
+            </div>
+            <div class="flex flex-wrap items-center gap-1 pt-1.5 border-t border-neutral-300/60">
+    `;
+        
+    if (typeof ELEMENT_CATEGORIES !== 'undefined') {
+        Object.keys(ELEMENT_CATEGORIES).forEach(catKey => {
+            const cat = ELEMENT_CATEGORIES[catKey];
+            const isSelected = state.deckFilter === `CAT:${catKey}`;
+            const countInCat = CARDS_DATABASE.filter(c => ELEMENT_INFO[c.element] && ELEMENT_INFO[c.element].category === catKey).length;
+            html += `
+                <button onclick="filterCards('CAT:${catKey}')" class="filter-btn px-2 py-0.5 text-[10px] font-mono font-bold border ${isSelected ? 'bg-black text-white border-black' : 'bg-white text-black border-neutral-200 hover:bg-neutral-200'}">
+                    ${cat.emoji} ${catKey} (${countInCat})
+                </button>
+            `;
+        });
+    }
+        
+    html += `</div>`;
+        
+    if (state.show64Panel && typeof ELEMENT_CATEGORIES !== 'undefined' && typeof ELEMENT_INFO !== 'undefined') {
+        html += `<div class="mt-2 p-2 bg-neutral-100 border border-neutral-300 space-y-3 max-h-72 overflow-y-auto">`;
+        Object.keys(ELEMENT_CATEGORIES).forEach(catKey => {
+            const cat = ELEMENT_CATEGORIES[catKey];
+            html += `
+                <div>
+                    <div class="flex items-center justify-between border-b border-neutral-300 pb-0.5 mb-1">
+                        <span class="text-[10px] font-mono font-black text-black uppercase">
+                            ${cat.name}
+                        </span>
+                        <button onclick="filterCards('CAT:${catKey}')" class="text-[8px] font-mono font-bold underline hover:bg-black hover:text-white px-1">Filtrar Familia</button>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-1">
+            `;
+            Object.keys(ELEMENT_INFO).forEach(elemKey => {
+                const info = ELEMENT_INFO[elemKey];
+                if (info.category === catKey) {
+                    const isSelected = state.deckFilter === elemKey;
+                    const cardCount = CARDS_DATABASE.filter(c => c.element === elemKey).length;
+                    html += `
+                        <button onclick="filterCards('${elemKey}')" class="flex items-center justify-between px-1.5 py-1 text-[9px] font-mono font-bold border transition-colors ${
+                            isSelected ? 'bg-black text-white border-black' : 'bg-white text-black border-neutral-200 hover:bg-neutral-200'
+                        }">
+                            <span class="truncate">${info.emoji} ${info.name}</span>
+                            <span class="text-[8px] ${isSelected ? 'text-amber-300' : 'text-neutral-400'} ml-1">(${cardCount})</span>
+                        </button>
+                    `;
+                }
+            });
+            html += `</div></div>`;
+        });
+        html += `</div>`;
+    }
+        
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
+function renderDeckManagementBar() {
+    const container = document.getElementById('deck-management-bar');
+    if (!container) return;
+        
+    getActiveDeck();
+        
+    let optionsHtml = state.decks.map(d => 
+        `<option value="${d.id}" ${d.id === state.activeDeckId ? 'selected' : ''}>${d.name} (${d.cardIds.length} cartas)</option>`
+    ).join('');
+
+    container.innerHTML = `
+        <div class="flex flex-col gap-1.5 font-mono text-xs">
+            <label class="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Gesti n de Barajas Guardadas:</label>
+            <div class="flex items-center gap-1">
+                <select onchange="handleSelectDeck(this.value)" class="flex-1 bg-neutral-100 border border-neutral-300 p-1.5 text-xs font-bold font-mono text-black focus:outline-none">
+                    ${optionsHtml}
+                </select>
+                <button onclick="handleCreateDeck()" title="Crear nueva baraja" class="btn-brutalist px-2.5 py-1.5 text-xs font-bold">+ Nueva</button>
+            </div>
+            <div class="flex items-center gap-1 pt-1 border-t border-neutral-200">
+                <button onclick="handleRenameDeck()" class="btn-brutalist-outline px-2 py-1 text-[10px] flex-1">  Renombrar</button>
+                <button onclick="handleDeleteDeck()" class="btn-brutalist-outline px-2 py-1 text-[10px] text-rose-600 hover:bg-rose-600 hover:text-white flex-1">  Borrar</button>
+            </div>
+        </div>
+    `;
+}
+
+function handleSelectDeck(deckId) {
+    selectActiveDeck(deckId);
+    renderDeckManager();
+    showToast('Baraja seleccionada', ' ');
+}
+
+function handleCreateDeck() {
+    deckModalMode = 'create';
+    const modal = document.getElementById('modal-deck-name');
+    const titleEl = document.getElementById('modal-deck-title');
+    const inputEl = document.getElementById('deck-name-input');
+    if (!modal || !inputEl) return;
+        
+    if (titleEl) titleEl.textContent = 'NUEVA BARAJA';
+    inputEl.value = `Baraja ${state.decks.length + 1}`;
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        inputEl.focus();
+        inputEl.select();
+    }, 50);
+}
+
+function handleRenameDeck() {
+    deckModalMode = 'rename';
+    const current = getActiveDeck();
+    const modal = document.getElementById('modal-deck-name');
+    const titleEl = document.getElementById('modal-deck-title');
+    const inputEl = document.getElementById('deck-name-input');
+    if (!modal || !inputEl) return;
+        
+    if (titleEl) titleEl.textContent = 'RENOMBRAR BARAJA';
+    inputEl.value = current.name;
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        inputEl.focus();
+        inputEl.select();
+    }, 50);
+}
+
+function closeDeckNameModal() {
+    const modal = document.getElementById('modal-deck-name');
+    if (modal) modal.classList.add('hidden');
+}
+
+function confirmDeckNameModal() {
+    const inputEl = document.getElementById('deck-name-input');
+    if (!inputEl) return;
+    const nameVal = inputEl.value.trim();
+        
+    if (deckModalMode === 'create') {
+        createNewDeck(nameVal || null);
+        showToast('Nueva baraja creada', ' ');
+    } else if (deckModalMode === 'rename') {
+        if (nameVal) {
+            renameActiveDeck(nameVal);
+            showToast('Nombre de baraja actualizado', ' ');
+        }
+    }
+    closeDeckNameModal();
+    renderDeckManager();
+}
+
+function handleDeleteDeck() {
+    const current = getActiveDeck();
+    if (confirm(` s seguro de que quieres borrar la baraja "${current.name}"?`)) {
+        if (deleteActiveDeck()) {
+            renderDeckManager();
+            showToast('Baraja eliminada', ' ');
+        }
+    }
 }
 
 function renderDeckManager() {
     document.getElementById('deck-counter').textContent = state.activeDeckCardIds.length;
-    
+        
+    renderElementFilterButtons();
+    renderDeckManagementBar();
+        
     const galleryGrid = document.getElementById('deck-gallery-grid');
     galleryGrid.innerHTML = '';
-    const filtered = CARDS_DATABASE.filter(c => state.deckFilter === 'ALL' || c.element === state.deckFilter || c.type === state.deckFilter);
+        
+    let filtered = CARDS_DATABASE;
+    if (state.deckFilter === 'ENTITY') {
+        filtered = CARDS_DATABASE.filter(c => c.type === 'ENTITY');
+    } else if (state.deckFilter.startsWith('CAT:')) {
+        const categoryKey = state.deckFilter.replace('CAT:', '');
+        filtered = CARDS_DATABASE.filter(c => ELEMENT_INFO[c.element] && ELEMENT_INFO[c.element].category === categoryKey);
+    } else if (state.deckFilter !== 'ALL') {
+        filtered = CARDS_DATABASE.filter(c => c.element === state.deckFilter || c.type === state.deckFilter);
+    }
+        
     document.getElementById('gallery-count').textContent = filtered.length;
-    
+        
     filtered.forEach(card => {
         const countInDeck = state.activeDeckCardIds.filter(id => id === card.id).length;
-        const typeData = CARD_TYPES[card.type] || { name: card.type, emoji: '📌' };
-        const elemData = ELEMENT_INFO[card.element] || { name: card.element, emoji: '⚡' };
-        
+        const typeData = CARD_TYPES[card.type] || { name: card.type, emoji: ' ' };
+        const elemData = ELEMENT_INFO[card.element] || { name: card.element, emoji: ' ' };
+                
         const cardEl = document.createElement('div');
         cardEl.className = `p-2.5 swiss-card flex flex-col justify-between relative transition-all h-[380px] ${
             countInDeck > 0 ? 'bg-neutral-200' : 'bg-neutral-100'
@@ -202,25 +417,25 @@ function renderDeckManager() {
                 <h4 class="font-bold text-xs font-mono uppercase text-black truncate mb-0.5 flex-shrink-0">${card.name}</h4>
                 <p class="text-[9px] text-neutral-500 leading-tight overflow-y-auto flex-1">${card.desc}</p>
             </div>
-            
+                        
             <div class="flex items-center justify-end pt-1.5 mt-1.5 border-t border-neutral-300/40 flex-shrink-0">
                 <button onclick="addCardToDeck('${card.id}')" class="btn-brutalist w-full py-1 text-[10px] text-center">
-                    + Añadir ${countInDeck > 0 ? `(${countInDeck})` : ''}
+                    + A adir ${countInDeck > 0 ? `(${countInDeck})` : ''}
                 </button>
             </div>
         `;
         galleryGrid.appendChild(cardEl);
     });
-
+        
     const activeList = document.getElementById('active-deck-list');
     activeList.innerHTML = '';
     if (state.activeDeckCardIds.length === 0) {
-        activeList.innerHTML = `<div class="p-3 text-center text-xs text-neutral-400 font-mono uppercase">El mazo está vacío.</div>`;
+        activeList.innerHTML = `<div class="p-3 text-center text-xs text-neutral-400 font-mono uppercase">El mazo est  vac o.</div>`;
     } else {
         state.activeDeckCardIds.forEach((cardId, index) => {
             const card = CARDS_DATABASE.find(c => c.id === cardId);
             if (!card) return;
-            const typeData = CARD_TYPES[card.type] || { name: card.type, emoji: '📌' };
+            const typeData = CARD_TYPES[card.type] || { name: card.type, emoji: ' ' };
             const item = document.createElement('div');
             item.className = 'flex items-center justify-between p-1.5 bg-white border border-neutral-200';
             item.innerHTML = `
@@ -231,7 +446,7 @@ function renderDeckManager() {
                         <span class="text-[8px] font-mono text-neutral-400 uppercase block">${card.cost} EN | ${typeData.name}</span>
                     </div>
                 </div>
-                <button onclick="removeCardFromDeck(${index})" class="p-1 font-mono text-xs font-bold hover:bg-black hover:text-white flex-shrink-0">✕</button>
+                <button onclick="removeCardFromDeck(${index})" class="p-1 font-mono text-xs font-bold hover:bg-black hover:text-white flex-shrink-0"> </button>
             `;
             activeList.appendChild(item);
         });
@@ -239,21 +454,24 @@ function renderDeckManager() {
 }
 
 function addCardToDeck(cardId) {
-    if (state.activeDeckCardIds.length >= 12) {
-        showToast('Límite máximo alcanzado (12 cartas)', '⚠️');
+    if (state.activeDeckCardIds.length >= 20) {
+        showToast('L mite m ximo alcanzado (20 cartas)', ' ');
         return;
     }
     state.activeDeckCardIds.push(cardId);
+    saveDeckState();
     renderDeckManager();
 }
 
 function removeCardFromDeck(index) {
     state.activeDeckCardIds.splice(index, 1);
+    saveDeckState();
     renderDeckManager();
 }
 
 function clearDeck() {
     state.activeDeckCardIds = [];
+    saveDeckState();
     renderDeckManager();
 }
 
@@ -263,23 +481,24 @@ function loadPreset(presetName) {
     } else if (presetName === 'aggressive') {
         state.activeDeckCardIds = [...PRESET_AGGRESSIVE];
     }
-    showToast(`Preajuste ${presetName.toUpperCase()} cargado`, '✨');
+    saveDeckState();
+    showToast(`Preajuste ${presetName.toUpperCase()} cargado`, ' ');
     renderDeckManager();
 }
 
 function saveAndReturnHome() {
-    if (state.activeDeckCardIds.length < 6) {
-        showToast('Tu mazo necesita al menos 6 cartas', '⚠️');
+    if (state.activeDeckCardIds.length < 10) {
+        showToast('Tu mazo necesita al menos 10 cartas', ' ');
         return;
     }
     saveDeckState();
-    showToast('Baraja guardada con éxito', '💾');
+    showToast('Baraja guardada con  xito', ' ');
     showScreen('home');
 }
 
 function startBattleFromHome() {
-    if (state.activeDeckCardIds.length < 6) {
-        showToast('Tu baraja debe tener al menos 6 cartas para luchar', '⚠️');
+    if (state.activeDeckCardIds.length < 10) {
+        showToast('Tu baraja debe tener al menos 10 cartas para luchar', ' ');
         showScreen('deck');
         return;
     }
@@ -288,16 +507,26 @@ function startBattleFromHome() {
 }
 
 function endTurn() {
+    if (state.isMultiplayer) {
+        endTurnMP();
+        return;
+    }
+        
     if (state.battle.turn !== 'p1' || state.battleStatus !== 'PLAYING') return;
     state.pendingTarget = null;
     state.battle.turn = 'p2';
     state.battleStatus = 'CPU_TURN';
+        
     const cpu = state.battle.p2;
-    cpu.energy = MAX_ENERGY;
-    cpu.entities.forEach(e => e.usedThisTurn = false);
+    cpu.energy = cpu.maxEnergy || 1;
+    if (cpu.entities) {
+        cpu.entities.forEach(e => e.usedThisTurn = false);
+    }
     processTurnStartStatuses('p2');
     checkMatchOver();
+        
     if (state.battleStatus !== 'PLAYING' && state.battleStatus !== 'CPU_TURN') return;
+        
     drawCardsForPlayer('p2', 1);
     state.battle.lastLog = `TURNO DE LA ${cpu.name.toUpperCase()}...`;
     updateBattleUI();
@@ -307,118 +536,167 @@ function endTurn() {
 /* -------------------------------------------------------------------------- */
 /*                         5. BATTLE UI RENDER ENGINE                         */
 /* -------------------------------------------------------------------------- */
+
 function updateBattleUI() {
-    const p1 = state.battle.p1;
-    const p2 = state.battle.p2;
+    if (!state.battle) return;
+    const myKey = state.isMultiplayer ? mpState.role : 'p1';
+    const opponentKey = myKey === 'p1' ? 'p2' : 'p1';
+        
+    const localPlayer = state.battle[myKey] || { name: 'Jugador', hp: 0, maxHp: 1, energy: 0, hand: [], entities: [], shield: 0 };
+    const opponentPlayer = state.battle[opponentKey] || { name: 'Oponente', hp: 0, maxHp: 1, energy: 0, hand: [], entities: [], shield: 0 };
+    
+    localPlayer.entities = localPlayer.entities || [];
+    localPlayer.hand = localPlayer.hand || [];
+    localPlayer.statuses = localPlayer.statuses || [];
+
+    opponentPlayer.entities = opponentPlayer.entities || [];
+    opponentPlayer.hand = opponentPlayer.hand || [];
+    opponentPlayer.statuses = opponentPlayer.statuses || [];
+
     const isTargeting = state.pendingTarget !== null;
+        
     const targetingBanner = document.getElementById('targeting-banner');
     if (targetingBanner) {
         if (isTargeting) {
             targetingBanner.classList.remove('hidden');
             document.getElementById('targeting-banner-text').textContent = 
-                `MODO SELECCIÓN DE OBJETIVO (${state.pendingTarget.targetScope}) - Haz clic en una entidad o Invocador válido.`;
+                `MODO SELECCI N DE OBJETIVO (${state.pendingTarget.targetScope}) - Haz clic en una entidad o Invocador v lido.`;
         } else {
             targetingBanner.classList.add('hidden');
         }
     }
-
+        
+    // UI Jugador Local (p1-*)
     const p1AvatarBox = document.getElementById('p1-avatar-box');
-    document.getElementById('p1-name').textContent = p1.name;
-    document.getElementById('p1-hp-text').textContent = `${p1.hp} / ${p1.maxHp}`;
-    document.getElementById('p1-hp-bar').style.width = `${Math.max(0, (p1.hp / p1.maxHp) * 100)}%`;
+    const p1NameEl = document.getElementById('p1-name');
+    const p1HpTextEl = document.getElementById('p1-hp-text');
+    const p1HpBarEl = document.getElementById('p1-hp-bar');
+    if (p1NameEl) p1NameEl.textContent = localPlayer.name || 'Jugador 1';
+    if (p1HpTextEl) p1HpTextEl.textContent = `${localPlayer.hp || 0} / ${localPlayer.maxHp || 1}`;
+    if (p1HpBarEl) p1HpBarEl.style.width = `${Math.max(0, ((localPlayer.hp || 0) / (localPlayer.maxHp || 1)) * 100)}%`;
+        
     const p1Shield = document.getElementById('p1-shield-text');
-    if (p1.shield > 0) {
-        p1Shield.textContent = `🛡️ ${p1.shield}`;
-        p1Shield.classList.remove('hidden');
-    } else p1Shield.classList.add('hidden');
-
+    if (p1Shield) {
+        if (localPlayer.shield > 0) {
+            p1Shield.textContent = `  ${localPlayer.shield}`;
+            p1Shield.classList.remove('hidden');
+        } else {
+            p1Shield.classList.add('hidden');
+        }
+    }
+        
     if (p1AvatarBox) {
-        const canTargetP1 = isTargeting && isValidTarget('p1', 'HERO', null, state.pendingTarget.targetScope);
+        const canTargetP1 = isTargeting && isValidTarget(myKey, 'HERO', null, state.pendingTarget.targetScope);
         p1AvatarBox.className = `flex items-center justify-between transition-all p-1 ${
             canTargetP1 ? 'ring-4 ring-amber-400 bg-amber-50 cursor-pointer animate-pulse' : ''
         }`;
-        p1AvatarBox.onclick = canTargetP1 ? () => selectTarget('p1', 'HERO') : null;
+        p1AvatarBox.onclick = canTargetP1 ? () => selectTarget(myKey, 'HERO') : null;
     }
-
+        
+    // UI Oponente (p2-*)
     const p2AvatarBox = document.getElementById('p2-avatar-box');
-    document.getElementById('p2-name').textContent = p2.name;
-    document.getElementById('p2-hp-text').textContent = `${p2.hp} / ${p2.maxHp}`;
-    document.getElementById('p2-hp-bar').style.width = `${Math.max(0, (p2.hp / p2.maxHp) * 100)}%`;
+    const p2NameEl = document.getElementById('p2-name');
+    const p2HpTextEl = document.getElementById('p2-hp-text');
+    const p2HpBarEl = document.getElementById('p2-hp-bar');
+    if (p2NameEl) p2NameEl.textContent = opponentPlayer.name || 'Oponente';
+    if (p2HpTextEl) p2HpTextEl.textContent = `${opponentPlayer.hp || 0} / ${opponentPlayer.maxHp || 1}`;
+    if (p2HpBarEl) p2HpBarEl.style.width = `${Math.max(0, ((opponentPlayer.hp || 0) / (opponentPlayer.maxHp || 1)) * 100)}%`;
+        
     const p2Shield = document.getElementById('p2-shield-text');
-    if (p2.shield > 0) {
-        p2Shield.textContent = `🛡️ ${p2.shield}`;
-        p2Shield.classList.remove('hidden');
-    } else p2Shield.classList.add('hidden');
-
+    if (p2Shield) {
+        if (opponentPlayer.shield > 0) {
+            p2Shield.textContent = `  ${opponentPlayer.shield}`;
+            p2Shield.classList.remove('hidden');
+        } else {
+            p2Shield.classList.add('hidden');
+        }
+    }
+        
     if (p2AvatarBox) {
-        const canTargetP2 = isTargeting && isValidTarget('p2', 'HERO', null, state.pendingTarget.targetScope);
+        const canTargetP2 = isTargeting && isValidTarget(opponentKey, 'HERO', null, state.pendingTarget.targetScope);
         p2AvatarBox.className = `flex items-center justify-between transition-all p-1 ${
             canTargetP2 ? 'ring-4 ring-amber-400 bg-amber-50 cursor-pointer animate-pulse' : ''
         }`;
-        p2AvatarBox.onclick = canTargetP2 ? () => selectTarget('p2', 'HERO') : null;
+        p2AvatarBox.onclick = canTargetP2 ? () => selectTarget(opponentKey, 'HERO') : null;
     }
-
-    renderEnergyDots('p1-energy-dots', p1.energy);
-    renderEnergyDots('p2-energy-dots', p2.energy);
-    renderBuffs('p1-buffs', p1);
-    renderBuffs('p2-buffs', p2);
-
+        
+    renderEnergyDots('p1-energy-dots', localPlayer.energy || 0, localPlayer.maxEnergy || 1);
+    renderEnergyDots('p2-energy-dots', opponentPlayer.energy || 0, opponentPlayer.maxEnergy || 1);
+    renderBuffs('p1-buffs', localPlayer);
+    renderBuffs('p2-buffs', opponentPlayer);
+        
     const turnText = document.getElementById('turn-text');
     const dotP1 = document.getElementById('turn-dot-p1');
     const dotP2 = document.getElementById('turn-dot-p2');
-    if (state.battle.turn === 'p1') {
-        turnText.textContent = 'TU TURNO';
-        dotP1.className = 'w-2 h-2 bg-black';
-        dotP2.className = 'w-2 h-2 bg-neutral-300';
-        document.getElementById('btn-end-turn').disabled = false;
-    } else {
-        turnText.textContent = 'TURNO IA';
-        dotP1.className = 'w-2 h-2 bg-neutral-300';
-        dotP2.className = 'w-2 h-2 bg-black';
-        document.getElementById('btn-end-turn').disabled = true;
+        
+    const isMyTurn = state.battle.turn === myKey;
+        
+    if (turnText) {
+        if (isMyTurn) {
+            turnText.textContent = 'TU TURNO';
+            if (dotP1) dotP1.className = 'w-2 h-2 bg-black';
+            if (dotP2) dotP2.className = 'w-2 h-2 bg-neutral-300';
+            const btnEnd = document.getElementById('btn-end-turn');
+            if (btnEnd) btnEnd.disabled = false;
+        } else {
+            turnText.textContent = state.isMultiplayer ? 'TURNO OPONENTE' : 'TURNO IA';
+            if (dotP1) dotP1.className = 'w-2 h-2 bg-neutral-300';
+            if (dotP2) dotP2.className = 'w-2 h-2 bg-black';
+            const btnEnd = document.getElementById('btn-end-turn');
+            if (btnEnd) btnEnd.disabled = true;
+        }
     }
-
-    document.getElementById('combat-log').textContent = state.battle.lastLog;
-    document.getElementById('deck-remaining-tag').textContent = `Mazo: ${p1.deck.length} rest.`;
-
-    renderBoardEntities('p1-entities', 'p1');
-    renderBoardEntities('p2-entities', 'p2');
-    renderHandCards(p1, state.battle.turn === 'p1' && state.battleStatus === 'PLAYING');
+        
+    const logEl = document.getElementById('combat-log');
+    if (logEl) logEl.textContent = state.battle.lastLog || '';
+        
+    const deckTag = document.getElementById('deck-remaining-tag');
+    if (deckTag) deckTag.textContent = `Mazo: ${localPlayer.deck ? localPlayer.deck.length : 0} rest.`;
+        
+    renderBoardEntities('p1-entities', myKey);
+    renderBoardEntities('p2-entities', opponentKey);
+    renderHandCards(localPlayer, isMyTurn && state.battleStatus === 'PLAYING');
 }
 
 function renderBoardEntities(containerId, playerKey) {
     const container = document.getElementById(containerId);
     if (!container) return;
     container.innerHTML = '';
+        
+    if (!state.battle) return;
     const player = state.battle[playerKey];
-    
-    if (!player.entities || player.entities.length === 0) {
+    if (!player || !player.entities || player.entities.length === 0) {
         container.innerHTML = `<span class="text-[9px] font-mono text-neutral-400 italic py-1">Sin entidades invocadas</span>`;
         return;
     }
-
-    const isMyTurn = state.battle.turn === playerKey && state.battleStatus === 'PLAYING';
-    const isTargeting = state.pendingTarget !== null;
-
-    player.entities.forEach((entity, index) => {
-        const canAct = isMyTurn && !entity.usedThisTurn && !isTargeting;
-        const canBeTargeted = isTargeting && isValidTarget(playerKey, 'ENTITY', entity.instanceId, state.pendingTarget.targetScope);
         
+    const myKey = state.isMultiplayer ? mpState.role : 'p1';
+    const isMyTurn = state.battle.turn === myKey && state.battleStatus === 'PLAYING';
+    const isTargeting = state.pendingTarget !== null;
+        
+    player.entities.forEach((entity, index) => {
+        const canAct = isMyTurn && playerKey === myKey && !entity.usedThisTurn && !isTargeting;
+        const canBeTargeted = isTargeting && isValidTarget(playerKey, 'ENTITY', entity.instanceId, state.pendingTarget.targetScope);
+                
+        const auraBonusTag = (entity.auraBonusAtk || entity.auraBonusShield) 
+            ? `<span class="text-[7px] font-bold bg-amber-400 text-black px-1 py-0.2 uppercase" title="Bono de Aura por Posici n">+AURA</span>` 
+            : '';
+                    
         const cardBox = document.createElement('div');
         cardBox.className = `flex flex-col items-center justify-between bg-white border border-neutral-300 p-1.5 w-28 sm:w-32 shrink-0 transition-all relative select-none ${
             entity.usedThisTurn ? 'opacity-60 grayscale' : ''
-        } ${playerKey === 'p1' && !isTargeting ? 'cursor-grab active:cursor-grabbing' : ''} ${
+        } ${playerKey === myKey && !isTargeting ? 'cursor-grab active:cursor-grabbing' : ''} ${
             canBeTargeted ? 'ring-4 ring-amber-400 bg-amber-50 cursor-pointer animate-pulse' : ''
         }`;
-        
+                
         if (canBeTargeted) {
             cardBox.onclick = (e) => {
                 e.stopPropagation();
                 selectTarget(playerKey, 'ENTITY', entity.instanceId);
             };
         }
-
-        if (playerKey === 'p1' && !isTargeting) {
+                
+        if (playerKey === myKey && !isTargeting && !state.isMultiplayer) {
             cardBox.draggable = true;
             cardBox.ondragstart = (e) => {
                 e.dataTransfer.setData('text/plain', index.toString());
@@ -441,34 +719,34 @@ function renderBoardEntities(containerId, playerKey) {
                 cardBox.classList.remove('bg-neutral-100');
                 const fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
                 if (!isNaN(fromIndex) && fromIndex !== index) {
-                    reorderEntityToPosition('p1', fromIndex, index);
+                    reorderEntityToPosition(myKey, fromIndex, index);
                 }
             };
         }
-
-        const modeBadge = entity.mode === 'DEFEND' 
+                
+        const modeBadge = entity.mode === 'DEFEND'
             ? '<span class="text-[7px] font-bold bg-blue-600 text-white px-1 py-0.2 uppercase">DEFENDIENDO</span>'
             : entity.mode === 'ATTACK'
             ? '<span class="text-[7px] font-bold bg-rose-600 text-white px-1 py-0.2 uppercase">ATACANDO</span>'
             : '<span class="text-[7px] font-bold bg-neutral-200 text-black px-1 py-0.2 uppercase">NEUTRO</span>';
-
+                    
         const statusBadges = (entity.statuses && entity.statuses.length > 0)
             ? `<div class="flex flex-wrap justify-center gap-0.5 my-0.5">
                 ${entity.statuses.map(s => {
-                    const sInfo = STATUS_EFFECTS_INFO[s.id] || { desc: s.name };
+                    const sInfo = (typeof STATUS_EFFECTS_INFO !== 'undefined' && STATUS_EFFECTS_INFO[s.id]) || { desc: s.name };
                     return `<span class="text-[7px] bg-purple-800 text-white px-1 font-bold cursor-pointer hover:bg-purple-600" title="${s.name} (${s.duration}t): ${sInfo.desc}" onclick="event.stopPropagation(); showToast('${s.name}: ${sInfo.desc}', '${s.emoji}')">${s.emoji}${s.duration}t</span>`;
                 }).join('')}
                </div>`
             : '';
-
-        const onInfoClick = canBeTargeted 
+                    
+        const onInfoClick = canBeTargeted
             ? `event.stopPropagation(); selectTarget('${playerKey}', 'ENTITY', '${entity.instanceId}')`
             : `event.stopPropagation(); showCardInfoModalByInstance('${playerKey}', '${entity.instanceId}')`;
-
+                    
         cardBox.innerHTML = `
             <div class="mb-1 flex items-center justify-between w-full">
                 ${modeBadge}
-                ${playerKey === 'p1' ? '<span class="text-[8px] text-neutral-400 font-mono" title="Arrastra para mover">⋮⋮</span>' : ''}
+                ${auraBonusTag}
             </div>
             <div onclick="${onInfoClick}" class="w-full flex flex-col items-center cursor-pointer group">
                 <div class="w-12 h-12 sm:w-14 sm:h-14 aspect-square relative bg-neutral-100 overflow-hidden mb-1 border border-neutral-200">
@@ -476,17 +754,17 @@ function renderBoardEntities(containerId, playerKey) {
                 </div>
                 <span class="text-[8px] sm:text-[9px] font-bold font-mono text-black truncate w-full text-center uppercase leading-tight">${entity.name}</span>
                 <div class="flex items-center gap-1.5 text-[8px] font-mono font-extrabold text-neutral-700 my-0.5">
-                    <span>❤️ ${entity.hp}/${entity.maxHp}</span>
-                    <span>⚔️ ${entity.atk}</span>
+                    <span>  ${entity.hp}/${entity.maxHp}</span>
+                    <span>  ${entity.atk}</span>
                 </div>
                 ${statusBadges}
             </div>
-            
+                        
             <div class="w-full mt-1">
-                ${playerKey === 'p1' ? `
+                ${playerKey === myKey ? `
                     <div class="grid grid-cols-3 gap-0.5 w-full">
                         <button 
-                            onclick="event.stopPropagation(); executeEntityAction('p1', '${entity.instanceId}', 'ATTACK')"
+                            onclick="event.stopPropagation(); executeEntityAction('${myKey}', '${entity.instanceId}', 'ATTACK')"
                             ${!canAct ? 'disabled' : ''}
                             class="py-0.5 text-[7px] font-mono font-bold uppercase transition-all ${
                                 canAct ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
@@ -494,7 +772,7 @@ function renderBoardEntities(containerId, playerKey) {
                             ATK
                         </button>
                         <button 
-                            onclick="event.stopPropagation(); executeEntityAction('p1', '${entity.instanceId}', 'DEFEND')"
+                            onclick="event.stopPropagation(); executeEntityAction('${myKey}', '${entity.instanceId}', 'DEFEND')"
                             ${!isMyTurn || isTargeting ? 'disabled' : ''}
                             class="py-0.5 text-[7px] font-mono font-bold uppercase transition-all ${
                                 isMyTurn && !isTargeting ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
@@ -502,7 +780,7 @@ function renderBoardEntities(containerId, playerKey) {
                             DEF
                         </button>
                         <button 
-                            onclick="event.stopPropagation(); executeEntityAction('p1', '${entity.instanceId}', 'USE')"
+                            onclick="event.stopPropagation(); executeEntityAction('${myKey}', '${entity.instanceId}', 'USE')"
                             ${!canAct ? 'disabled' : ''}
                             class="py-0.5 text-[7px] font-mono font-bold uppercase transition-all ${
                                 canAct ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
@@ -524,8 +802,9 @@ function renderBoardEntities(containerId, playerKey) {
 }
 
 function showCardInfoModalByInstance(playerKey, instanceId) {
+    if (!state.battle) return;
     const player = state.battle[playerKey];
-    if (!player) return;
+    if (!player || !player.entities) return;
     const entity = player.entities.find(e => e.instanceId === instanceId);
     if (entity) {
         showCardInfoModal(entity);
@@ -535,28 +814,28 @@ function showCardInfoModalByInstance(playerKey, instanceId) {
 function showCardInfoModal(cardData) {
     const modal = document.getElementById('modal-card-info');
     if (!modal) return;
-    
-    const elemInfo = ELEMENT_INFO[cardData.element] || { name: cardData.element, emoji: '⚡' };
-    const typeInfo = CARD_TYPES[cardData.type] || { name: cardData.type, emoji: '📌' };
-    
+        
+    const elemInfo = ELEMENT_INFO[cardData.element] || { name: cardData.element, emoji: ' ' };
+    const typeInfo = CARD_TYPES[cardData.type] || { name: cardData.type, emoji: ' ' };
+        
     document.getElementById('info-card-elem').textContent = `${elemInfo.emoji} ${elemInfo.name}`;
-    document.getElementById('info-card-cost').textContent = `${cardData.cost} ENERGÍA`;
+    document.getElementById('info-card-cost').textContent = `${cardData.cost || 0} ENERG A`;
     document.getElementById('info-card-img').src = cardData.image;
     document.getElementById('info-card-title').textContent = cardData.name;
     document.getElementById('info-card-type').textContent = `TIPO: ${typeInfo.name}`;
-    
-    let descText = cardData.desc || 'Sin descripción disponible.';
+        
+    let descText = cardData.desc || 'Sin descripci n disponible.';
     if (cardData.statuses && cardData.statuses.length > 0) {
         descText += '\n\nEstados Alterados Actuales:';
         cardData.statuses.forEach(s => {
-            const statusInfo = STATUS_EFFECTS_INFO[s.id] || { name: s.name, desc: '' };
-            descText += `\n • ${s.emoji} ${statusInfo.name || s.name} (${s.duration} turnos): ${statusInfo.desc}`;
+            const statusInfo = (typeof STATUS_EFFECTS_INFO !== 'undefined' && STATUS_EFFECTS_INFO[s.id]) || { name: s.name, desc: '' };
+            descText += `\n- ${s.emoji} ${statusInfo.name || s.name} (${s.duration} turnos): ${statusInfo.desc}`;
         });
     }
     const descEl = document.getElementById('info-card-desc');
     descEl.style.whiteSpace = 'pre-line';
     descEl.textContent = descText;
-    
+        
     modal.classList.remove('hidden');
 }
 
@@ -565,10 +844,11 @@ function closeCardInfoModal() {
     if (modal) modal.classList.add('hidden');
 }
 
-function renderEnergyDots(containerId, count) {
+function renderEnergyDots(containerId, count, maxCount = 10) {
     const el = document.getElementById(containerId);
-    el.innerHTML = '<span class="text-[9px] text-neutral-400 font-mono font-bold mr-0.5 uppercase">ENERGÍA</span>';
-    for (let i = 0; i < MAX_ENERGY; i++) {
+    if (!el) return;
+    el.innerHTML = `<span class="text-[9px] text-neutral-400 font-mono font-bold mr-0.5 uppercase">ENERG A (${count}/${maxCount})</span>`;
+    for (let i = 0; i < maxCount; i++) {
         const dot = document.createElement('div');
         dot.className = `w-2.5 h-2.5 ${i < count ? 'bg-black' : 'bg-neutral-200'}`;
         el.appendChild(dot);
@@ -579,15 +859,17 @@ function renderBuffs(containerId, player) {
     const container = document.getElementById(containerId);
     if (!container) return;
     container.innerHTML = '';
+    if (!player) return;
+        
     if (player.boost > 1) {
         const b = document.createElement('span');
         b.className = 'text-[8px] bg-black text-white px-1.5 py-0.5 font-mono font-bold uppercase';
-        b.textContent = '⚡ X1.5 DAÑO';
+        b.textContent = '  X1.5 DA O';
         container.appendChild(b);
     }
     if (player.statuses && player.statuses.length > 0) {
         player.statuses.forEach(s => {
-            const sInfo = STATUS_EFFECTS_INFO[s.id] || { desc: s.name };
+            const sInfo = (typeof STATUS_EFFECTS_INFO !== 'undefined' && STATUS_EFFECTS_INFO[s.id]) || { desc: s.name };
             const badge = document.createElement('span');
             badge.className = 'text-[8px] bg-purple-900 text-white px-1.5 py-0.5 font-mono font-bold uppercase tracking-wider shadow-sm flex items-center gap-1 cursor-pointer hover:bg-purple-700 transition-colors';
             badge.innerHTML = `${s.emoji} ${s.name} (${s.duration}t)`;
@@ -602,19 +884,25 @@ function renderBuffs(containerId, player) {
 
 function renderHandCards(player, isMyTurn) {
     const handContainer = document.getElementById('hand-container');
+    if (!handContainer) return;
     handContainer.innerHTML = '';
     const isTargeting = state.pendingTarget !== null;
-    
+    const myKey = state.isMultiplayer ? mpState.role : 'p1';
+        
+    if (!player || !player.hand) return;
     player.hand.forEach((card) => {
         const canAfford = player.energy >= card.cost && isMyTurn && !isTargeting;
-        const typeData = CARD_TYPES[card.type] || { name: card.type, emoji: '📌' };
-        const elemData = ELEMENT_INFO[card.element] || { name: card.element, emoji: '⚡' };
-        
+        const typeData = CARD_TYPES[card.type] || { name: card.type, emoji: ' ' };
+        const elemData = ELEMENT_INFO[card.element] || { name: card.element, emoji: ' ' };
+                
+        const synergyVal = typeof calculateCardSynergyValue === 'function' ? calculateCardSynergyValue(card, myKey) : (card.val || 0);
+        const hasSynergyBonus = synergyVal > (card.val || 0);
+                
         const cardEl = document.createElement('div');
         cardEl.className = `card-playable relative flex-shrink-0 w-32 sm:w-36 h-[260px] p-2 flex flex-col justify-between border border-neutral-300 shadow-sm ${
             canAfford ? 'cursor-pointer opacity-100 bg-white hover:bg-neutral-100 hover:-translate-y-2' : 'opacity-40 cursor-not-allowed bg-neutral-100 filter grayscale'
         }`;
-        
+                
         cardEl.innerHTML = `
             <div class="flex items-center justify-between mb-1 flex-shrink-0">
                 <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 bg-black text-white uppercase">
@@ -624,7 +912,7 @@ function renderHandCards(player, isMyTurn) {
                     ${card.cost} EN
                 </span>
             </div>
-            
+                        
             <div class="relative w-full aspect-square overflow-hidden my-1 bg-neutral-200 border border-neutral-200 flex-shrink-0">
                 <img src="${card.image}" alt="${card.name}" class="w-full h-full object-cover card-image-square" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\' fill=\\'%23e4e4e7\\'><rect width=\\'100\\' height=\\'100\\'/></svg>';">
             </div>
@@ -636,9 +924,10 @@ function renderHandCards(player, isMyTurn) {
                 <span class="text-[8px] font-mono font-bold uppercase tracking-wider text-neutral-500">
                     ${typeData.emoji} ${typeData.name}
                 </span>
+                ${hasSynergyBonus ? `<span class="text-[8px] font-mono font-black text-amber-600 uppercase bg-amber-50 px-1" title="Valor potenciado por sinergia de tipo">VAL: ${synergyVal}</span>` : ''}
             </div>
         `;
-        
+                
         if (canAfford) {
             cardEl.onclick = () => playCard(card.uid);
         }
@@ -647,10 +936,11 @@ function renderHandCards(player, isMyTurn) {
 }
 
 function createFloatingText(targetPlayerKey, text, color) {
-    const boardId = targetPlayerKey === 'p1' ? 'p1-board' : 'p2-board';
+    const myKey = state.isMultiplayer ? mpState.role : 'p1';
+    const boardId = targetPlayerKey === myKey ? 'p1-board' : 'p2-board';
     const board = document.getElementById(boardId);
     if (!board) return;
-    
+        
     const rect = board.getBoundingClientRect();
     const floatEl = document.createElement('div');
     floatEl.className = 'float-text fixed font-mono font-black text-xs sm:text-sm z-50 bg-black text-white px-2 py-1 shadow-lg';
@@ -662,7 +952,8 @@ function createFloatingText(targetPlayerKey, text, color) {
 }
 
 function triggerParticlesAtPlayer(targetPlayerKey, color) {
-    const boardId = targetPlayerKey === 'p1' ? 'p1-board' : 'p2-board';
+    const myKey = state.isMultiplayer ? mpState.role : 'p1';
+    const boardId = targetPlayerKey === myKey ? 'p1-board' : 'p2-board';
     const board = document.getElementById(boardId);
     if (board) {
         const rect = board.getBoundingClientRect();
@@ -677,5 +968,9 @@ function togglePauseModal() {
 
 function restartMatch() {
     document.getElementById('modal-gameover').classList.add('hidden');
-    initBattle();
+    if (state.isMultiplayer) {
+        leaveMultiplayerMatch();
+    } else {
+        initBattle();
+    }
 }

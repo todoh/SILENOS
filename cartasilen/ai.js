@@ -1,11 +1,13 @@
 /* -------------------------------------------------------------------------- */
 /*                          CPU AI DECISION MATRIX                            */
 /* -------------------------------------------------------------------------- */
+
 function playCpuTurnAI() {
     if (state.battleStatus !== 'CPU_TURN') return;
+    
     const cpu = state.battle.p2;
     const p1 = state.battle.p1;
-
+    
     function selectCpuTarget(scope) {
         if (scope === 'ANY_SELF' || scope === 'SELF_HERO') {
             return { targetPlayerKey: 'p2', targetKind: 'HERO', instanceId: null };
@@ -18,8 +20,8 @@ function playCpuTurnAI() {
         
         return { targetPlayerKey: 'p1', targetKind: 'HERO', instanceId: null };
     }
-
-    // 1. PRIORIDAD: Gestión táctica de Entidades en el Campo
+    
+    // 1. PRIORIDAD: Gestión Táctica de Entidades en el Campo
     const unusedEntity = cpu.entities.find(e => !e.usedThisTurn);
     if (unusedEntity) {
         if (unusedEntity.statuses && unusedEntity.statuses.some(s => s.id === 'FREEZE')) {
@@ -30,22 +32,22 @@ function playCpuTurnAI() {
                 return;
             }
         }
-
+        
         let action = 'ATTACK';
         if (unusedEntity.id === 'entity_golem') {
-            if (cpu.shield < 12 || cpu.hp < 50) {
+            if (cpu.shield < 120 || cpu.hp < 500) {
                 action = 'USE';
             } else {
                 action = 'ATTACK';
             }
         } else if (unusedEntity.id === 'entity_fairy') {
-            if (cpu.hp <= cpu.maxHp - 10) {
+            if (cpu.hp <= cpu.maxHp - 100) {
                 action = 'USE';
             } else {
                 action = 'ATTACK';
             }
         } else if (unusedEntity.id === 'entity_demon') {
-            if (cpu.hp <= cpu.maxHp - 8) {
+            if (cpu.hp <= cpu.maxHp - 80) {
                 action = 'USE';
             } else {
                 action = 'ATTACK';
@@ -53,20 +55,20 @@ function playCpuTurnAI() {
         } else if (unusedEntity.id === 'entity_phoenix') {
             action = 'ATTACK';
         } else {
-            if (cpu.hp < 25 && unusedEntity.mode !== 'DEFEND') {
+            if (cpu.hp < 250 && unusedEntity.mode !== 'DEFEND') {
                 action = 'DEFEND';
             } else {
                 action = 'ATTACK';
             }
         }
-
+        
         if (action === 'DEFEND') {
             unusedEntity.usedThisTurn = true;
             executeEntityAction('p2', unusedEntity.instanceId, 'DEFEND');
         } else if (action === 'ATTACK') {
             unusedEntity.usedThisTurn = true;
             unusedEntity.mode = 'ATTACK';
-            let damage = Math.round((unusedEntity.atk || 10) * cpu.boost);
+            let damage = Math.round((unusedEntity.atk || 100) * cpu.boost);
             cpu.boost = 1;
             const target = selectCpuTarget('ANY_ENEMY');
             resolveAttackWithTarget('p2', target.targetPlayerKey, target.targetKind, target.instanceId, damage, `${unusedEntity.name} (Ataque)`);
@@ -80,39 +82,41 @@ function playCpuTurnAI() {
                 unusedEntity.usedThisTurn = true;
             }
         }
-
+        
         if (state.battle.p1.hp > 0 && state.battleStatus === 'CPU_TURN') {
             setTimeout(playCpuTurnAI, 700);
             return;
         }
     }
-
+    
     // 2. SELECCIÓN Y EVALUACIÓN DE CARTAS EN LA MANO
     const playable = cpu.hand.filter(c => c.cost <= cpu.energy);
     if (playable.length > 0 && cpu.energy > 0) {
         let chosenCard = null;
+        
         if (state.difficulty === 'easy') {
             chosenCard = playable[Math.floor(Math.random() * playable.length)];
         } else if (state.difficulty === 'normal') {
             const hasAttackInHand = playable.some(c => c.type === 'ATTACK' || c.type === 'DRAIN' || c.type === 'STATUS');
             const lethalCard = playable.find(c => (c.type === 'ATTACK' || c.type === 'DRAIN') && Math.round((c.val || 0) * cpu.boost) >= p1.hp);
+            
             if (lethalCard) {
                 chosenCard = lethalCard;
             } else if (cpu.entities.length < 3 && playable.some(c => c.type === 'ENTITY')) {
                 chosenCard = playable.find(c => c.type === 'ENTITY');
-            } else if (cpu.hp < 40 && playable.some(c => c.type === 'HEAL' || c.type === 'DRAIN' || c.type === 'DEFENSE')) {
+            } else if (cpu.hp < 400 && playable.some(c => c.type === 'HEAL' || c.type === 'DRAIN' || c.type === 'DEFENSE')) {
                 chosenCard = playable.find(c => c.type === 'HEAL' || c.type === 'DRAIN' || c.type === 'DEFENSE');
             } else if (cpu.boost === 1 && hasAttackInHand && playable.some(c => c.type === 'BOOST') && (!cpu.statuses || !cpu.statuses.some(s => s.id === 'AMNESIA'))) {
                 chosenCard = playable.find(c => c.type === 'BOOST');
-            } else if (p1.hp < 30 && playable.some(c => c.type === 'ATTACK' || c.type === 'DRAIN')) {
+            } else if (p1.hp < 300 && playable.some(c => c.type === 'ATTACK' || c.type === 'DRAIN')) {
                 chosenCard = playable.find(c => c.type === 'ATTACK' || c.type === 'DRAIN');
             } else {
                 chosenCard = playable[0];
             }
         } else if (state.difficulty === 'hard') {
             playable.sort((a, b) => {
-                let valA = a.val || (a.atk ? a.atk + a.hp : 10);
-                let valB = b.val || (b.atk ? b.atk + b.hp : 10);
+                let valA = a.val || (a.atk ? a.atk + a.hp : 100);
+                let valB = b.val || (b.atk ? b.atk + b.hp : 100);
                 let scoreA = valA / a.cost;
                 let scoreB = valB / b.cost;
                 scoreA += (Math.random() * 0.4 - 0.2);
@@ -120,14 +124,13 @@ function playCpuTurnAI() {
                 
                 if (a.statusEffect) scoreA += 5;
                 if (b.statusEffect) scoreB += 5;
-
                 if (a.type === 'ENTITY' && cpu.entities.length < 5) scoreA += (5 - cpu.entities.length) * 4;
                 if (b.type === 'ENTITY' && cpu.entities.length < 5) scoreB += (5 - cpu.entities.length) * 4;
-                if (cpu.hp < 50) {
+                if (cpu.hp < 500) {
                     if (a.type === 'HEAL' || a.type === 'DRAIN') scoreA += 10;
                     if (b.type === 'HEAL' || b.type === 'DRAIN') scoreB += 10;
-                    if (a.type === 'DEFENSE' && cpu.shield < 10) scoreA += 8;
-                    if (b.type === 'DEFENSE' && cpu.shield < 10) scoreB += 8;
+                    if (a.type === 'DEFENSE' && cpu.shield < 100) scoreA += 8;
+                    if (b.type === 'DEFENSE' && cpu.shield < 100) scoreB += 8;
                 }
                 const hasAttackInHand = cpu.hand.some(c => c.type === 'ATTACK' || c.type === 'DRAIN' || c.type === 'STATUS');
                 const hasAttackingEntity = cpu.entities.some(e => !e.usedThisTurn);
@@ -136,18 +139,18 @@ function playCpuTurnAI() {
                 if (a.type === 'ATTACK' || a.type === 'DRAIN') {
                     let dmgA = Math.round((a.val || 0) * cpu.boost);
                     if (p1.hp <= dmgA) scoreA += 50;
-                    if (p1.hp < 30) scoreA += 6;
+                    if (p1.hp < 300) scoreA += 6;
                 }
                 if (b.type === 'ATTACK' || b.type === 'DRAIN') {
                     let dmgB = Math.round((b.val || 0) * cpu.boost);
                     if (p1.hp <= dmgB) scoreB += 50;
-                    if (p1.hp < 30) scoreB += 6;
+                    if (p1.hp < 300) scoreB += 6;
                 }
                 return scoreB - scoreA;
             });
             chosenCard = playable[0];
         }
-
+        
         if (chosenCard) {
             const cardIndex = cpu.hand.findIndex(c => c.uid === chosenCard.uid);
             if (cardIndex !== -1) {
@@ -155,8 +158,8 @@ function playCpuTurnAI() {
                 cpu.hand.splice(cardIndex, 1);
                 
                 if (chosenCard.type === 'ENTITY') {
-                    const baseHp = chosenCard.hp || 20;
-                    const baseAtk = chosenCard.atk || 10;
+                    const baseHp = chosenCard.hp || 200;
+                    const baseAtk = chosenCard.atk || 100;
                     cpu.entities.push({
                         ...chosenCard,
                         instanceId: 'ent_' + Math.random().toString(36).substring(2, 9),
@@ -196,15 +199,13 @@ function playCpuTurnAI() {
                     } else if (chosenCard.type === 'DEFENSE') {
                         resolveShieldWithTarget('p2', target.targetPlayerKey, target.targetKind, target.instanceId, chosenCard.val, chosenCard.name);
                     }
-
+                    
                     if (chosenCard.statusEffect) {
                         applyStatusEffect(target.targetPlayerKey, target.targetKind, target.instanceId, chosenCard.statusEffect, chosenCard.statusVal || 1, chosenCard.statusDuration || 2);
                     }
                 }
-
                 updateBattleUI();
                 checkMatchOver();
-
                 const remainingPlayable = cpu.hand.filter(c => c.cost <= cpu.energy);
                 const hasUnusedEntity = cpu.entities.some(e => !e.usedThisTurn);
                 if ((cpu.energy > 0 && remainingPlayable.length > 0) || hasUnusedEntity) {
@@ -216,23 +217,27 @@ function playCpuTurnAI() {
             }
         }
     }
-
+    
     // 3. FINALIZAR TURNO CPU
     setTimeout(() => {
         if (state.battleStatus !== 'CPU_TURN') return;
         state.turnCount++;
         state.battle.turn = 'p1';
         state.battleStatus = 'PLAYING';
+        
         const p1 = state.battle.p1;
-        p1.energy = MAX_ENERGY;
+        const p2 = state.battle.p2;
+        
+        p1.maxEnergy = Math.min(10, (p1.maxEnergy || 1) + 1);
+        p2.maxEnergy = Math.min(10, (p2.maxEnergy || 1) + 1);
+        
+        p1.energy = p1.maxEnergy;
         p1.entities.forEach(e => e.usedThisTurn = false);
-
         processTurnStartStatuses('p1');
         checkMatchOver();
         if (state.battleStatus !== 'PLAYING') return;
-
         drawCardsForPlayer('p1', 1);
-        state.battle.lastLog = 'Tu Turno. Selecciona una carta o activa tus entidades.';
+        state.battle.lastLog = `Tu Turno (${state.turnCount}). Energía: ${p1.energy}/${p1.maxEnergy}. Selecciona una carta o activa tus entidades.`;
         updateBattleUI();
     }, 600);
 }
