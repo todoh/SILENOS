@@ -1,7 +1,6 @@
 /* -------------------------------------------------------------------------- */
 /*                          GLOBAL ENGINE STATE & CONFIG                      */
 /* -------------------------------------------------------------------------- */
-
 const MAX_HP = 1000;
 const INITIAL_ENERGY = 1;
 const MAX_ENERGY_CAP = 10;
@@ -23,9 +22,9 @@ let state = {
     pendingTarget: null,
     battle: {
         turn: 'p1',
-        lastLog: '⚔️ ¡Comienza el combate!',
+        lastLog: '¡Comienza el combate!',
         lastCardPlayed: null,
-        p1: { name: 'TÚ', avatar: '👤', hp: MAX_HP, maxHp: MAX_HP, energy: INITIAL_ENERGY, maxEnergy: INITIAL_ENERGY, shield: 0, boost: 1, statuses: [], deck: [], hand: [], discard: [], entities: [] },
+        p1: { name: 'Tú', avatar: '🧙‍♂️', hp: MAX_HP, maxHp: MAX_HP, energy: INITIAL_ENERGY, maxEnergy: INITIAL_ENERGY, shield: 0, boost: 1, statuses: [], deck: [], hand: [], discard: [], entities: [] },
         p2: { name: 'IA Rival', avatar: '🤖', hp: MAX_HP, maxHp: MAX_HP, energy: INITIAL_ENERGY, maxEnergy: INITIAL_ENERGY, shield: 0, boost: 1, statuses: [], deck: [], hand: [], discard: [], entities: [] }
     }
 };
@@ -163,9 +162,9 @@ function initBattle() {
     
     state.battle = {
         turn: 'p1',
-        lastLog: `⚔️ Batalla iniciada en Dificultad ${state.difficulty.toUpperCase()}! Es tu turno.`,
+        lastLog: `⚔️ ¡Batalla iniciada en Dificultad ${state.difficulty.toUpperCase()}! Es tu turno.`,
         lastCardPlayed: null,
-        p1: { name: 'TÚ', avatar: '👤', hp: MAX_HP, maxHp: MAX_HP, energy: INITIAL_ENERGY, maxEnergy: INITIAL_ENERGY, shield: 0, boost: 1, statuses: [], deck: p1DeckCards, hand: [], discard: [], entities: [] },
+        p1: { name: 'Tú', avatar: '🧙‍♂️', hp: MAX_HP, maxHp: MAX_HP, energy: INITIAL_ENERGY, maxEnergy: INITIAL_ENERGY, shield: 0, boost: 1, statuses: [], deck: p1DeckCards, hand: [], discard: [], entities: [] },
         p2: { name: 'IA Rival', avatar: '🤖', hp: enemyHp, maxHp: enemyHp, energy: INITIAL_ENERGY, maxEnergy: INITIAL_ENERGY, shield: 0, boost: 1, statuses: [], deck: p2DeckCards, hand: [], discard: [], entities: [] }
     };
     
@@ -253,7 +252,7 @@ function executeTargetedAction(pending, targetPlayerKey, targetKind, targetInsta
         if (actor.energy < card.cost) return;
         
         if (card.type === 'BOOST' && actor.statuses && actor.statuses.some(s => s.id === 'AMNESIA')) {
-            showToast('Sufres Amnesia: No puedes usar potenciadores', '⚠️');
+            showToast('Sufres Amnesia: No puedes usar potenciadores', '🚫');
             return;
         }
         
@@ -322,7 +321,7 @@ function playCard(cardUid) {
     if (!card) return;
     
     if (actor.energy < card.cost) {
-        showToast('Energía insuficiente', '⚠️');
+        showToast('Energía insuficiente', '⚡');
         return;
     }
     
@@ -365,7 +364,7 @@ function playCard(cardUid) {
     
     if (card.type === 'BOOST') {
         if (actor.statuses && actor.statuses.some(s => s.id === 'AMNESIA')) {
-            showToast('Sufres Amnesia: No puedes usar potenciadores', '⚠️');
+            showToast('Sufres Amnesia: No puedes usar potenciadores', '🚫');
             return;
         }
         actor.energy -= card.cost;
@@ -376,7 +375,7 @@ function playCard(cardUid) {
         actor.boost = card.val;
         
         state.battle.lastLog = `${actor.name} usó ${card.name} (+50% Daño Siguiente).`;
-        createFloatingText(myKey, '⚡ Potenciado X1.5!', '#f59e0b');
+        createFloatingText(myKey, '🔥 Potenciado X1.5!', '#f59e0b');
         triggerParticlesAtPlayer(myKey, '#f59e0b');
         updateBattleUI();
         
@@ -429,7 +428,7 @@ function executeEntityAction(actorKey, instanceId, actionType) {
         });
     } else if (actionType === 'USE') {
         if (entity.statuses && entity.statuses.some(s => s.id === 'AMNESIA')) {
-            showToast(`${entity.name} sufre Amnesia`, '⚠️');
+            showToast(`${entity.name} sufre Amnesia`, '🚫');
             return;
         }
         const abilityScope = entity.abilityScope || 'ANY_SELF';
@@ -452,8 +451,8 @@ function resolveAttackWithTarget(attackerKey, targetPlayerKey, targetKind, targe
     
     if (actor.statuses && actor.statuses.some(s => s.id === 'DELIRIUM')) {
         if (Math.random() < 0.5) {
-            createFloatingText(attackerKey, '💥 Ataque Fallado! (Delirio)', '#a855f7');
-            state.battle.lastLog = `🌀 El ataque de ${sourceName} falló debido al Delirio!`;
+            createFloatingText(attackerKey, '💥 ¡Ataque Fallado! (Delirio)', '#a855f7');
+            state.battle.lastLog = `😵 ¡El ataque de ${sourceName} falló debido al Delirio!`;
             updateBattleUI();
             return;
         }
@@ -464,7 +463,7 @@ function resolveAttackWithTarget(attackerKey, targetPlayerKey, targetKind, targe
     
     if (targetObj && targetObj.statuses && targetObj.statuses.some(s => s.id === 'CURSE')) {
         finalDamage = Math.round(incomingDamage * 1.5);
-        createFloatingText(targetPlayerKey, '💀 Maldición (+50% Daño)!', '#9333ea');
+        createFloatingText(targetPlayerKey, '☠️ ¡Maldición (+50% Daño)!', '#9333ea');
     }
     
     let remainingDamage = finalDamage;
@@ -479,7 +478,7 @@ function resolveAttackWithTarget(attackerKey, targetPlayerKey, targetKind, targe
                 break;
             } else {
                 remainingDamage -= defender.hp;
-                createFloatingText(targetPlayerKey, `💥 ${defender.name} Derrotada!`, '#ef4444');
+                createFloatingText(targetPlayerKey, `💀 ${defender.name} Derrotada!`, '#ef4444');
                 defender.hp = 0;
             }
         }
@@ -516,7 +515,7 @@ function resolveAttackWithTarget(attackerKey, targetPlayerKey, targetKind, targe
                 createFloatingText(targetPlayerKey, `-${remainingDamage} HP (${targetEntity.name})`, '#f43f5e');
                 state.battle.lastLog = `${actor.name} atacó a ${targetEntity.name} con ${sourceName} (-${remainingDamage} HP).`;
             } else {
-                createFloatingText(targetPlayerKey, `💥 ${targetEntity.name} Destruida!`, '#ef4444');
+                createFloatingText(targetPlayerKey, `💀 ${targetEntity.name} Destruida!`, '#ef4444');
                 targetEntity.hp = 0;
                 state.battle.lastLog = `${actor.name} destruyó a ${targetEntity.name} con ${sourceName}.`;
             }
@@ -570,7 +569,7 @@ function resolveShieldWithTarget(actorKey, targetPlayerKey, targetKind, targetIn
     const targetObj = targetKind === 'HERO' ? targetPlayer : targetPlayer.entities.find(e => e.instanceId === targetInstanceId);
     
     if (targetObj && targetObj.statuses && targetObj.statuses.some(s => s.id === 'TRAUMA')) {
-        showToast(`${targetObj.name} sufre Trauma y no puede recibir escudo`, '⚠️');
+        showToast(`${targetObj.name} sufre Trauma y no puede recibir escudo`, '🚫');
         return;
     }
     
@@ -606,6 +605,21 @@ function useEntityAbilityWithTarget(actorKey, instanceId, targetPlayerKey, targe
         let drain = Math.round(80 * actor.boost);
         actor.boost = 1;
         resolveDrainWithTarget(actorKey, targetPlayerKey, targetKind, targetInstanceId, drain, `${entity.name} (Drena Alma)`);
+    } else if (entity.id === 'entity_arandela') {
+        resolveShieldWithTarget(actorKey, targetPlayerKey, targetKind, targetInstanceId, 150, entity.name);
+    } else if (entity.id === 'entity_mao') {
+        let drain = Math.round(120 * actor.boost);
+        actor.boost = 1;
+        resolveDrainWithTarget(actorKey, targetPlayerKey, targetKind, targetInstanceId, drain, `${entity.name} (Amnesia)`);
+        applyStatusEffect(targetPlayerKey, targetKind, targetInstanceId, 'AMNESIA', 1, 2);
+    } else if (entity.id === 'entity_lazarillo') {
+        resolveHealWithTarget(actorKey, targetPlayerKey, targetKind, targetInstanceId, 140, entity.name);
+        applyStatusEffect(targetPlayerKey, targetKind, targetInstanceId, 'REGEN', 60, 2);
+    } else if (entity.id === 'entity_chupitopo') {
+        let dmg = Math.round(110 * actor.boost);
+        actor.boost = 1;
+        resolveAttackWithTarget(actorKey, targetPlayerKey, targetKind, targetInstanceId, dmg, `${entity.name} (Trago Delirante)`);
+        applyStatusEffect(targetPlayerKey, targetKind, targetInstanceId, 'DELIRIUM', 1, 2);
     } else {
         resolveShieldWithTarget(actorKey, targetPlayerKey, targetKind, targetInstanceId, 80, entity.name);
     }
@@ -624,7 +638,7 @@ function checkMatchOver() {
         document.getElementById('gameover-icon').textContent = p1Won ? '🏆' : '💀';
         document.getElementById('gameover-title').textContent = p1Won ? '¡VICTORIA!' : '¡DERROTA!';
         document.getElementById('gameover-subtitle').textContent = p1Won 
-            ? 'Has demostrado tu maestría sobre los elementos.'
+            ? 'Has demostrado tu maestría sobre los elementos.' 
             : 'La IA te ha superado. Revisa tu baraja e inténtalo de nuevo.';
         document.getElementById('stat-final-turn').textContent = `Turno ${state.turnCount}`;
         document.getElementById('stat-final-hp').textContent = `${p1.hp} HP`;

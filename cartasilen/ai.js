@@ -52,6 +52,22 @@ function playCpuTurnAI() {
             } else {
                 action = 'ATTACK';
             }
+        } else if (unusedEntity.id === 'entity_arandela') {
+            if (cpu.shield < 120 || cpu.hp < 500) {
+                action = 'USE';
+            } else {
+                action = 'ATTACK';
+            }
+        } else if (unusedEntity.id === 'entity_mao') {
+            action = 'USE';
+        } else if (unusedEntity.id === 'entity_lazarillo') {
+            if (cpu.hp <= cpu.maxHp - 100) {
+                action = 'USE';
+            } else {
+                action = 'ATTACK';
+            }
+        } else if (unusedEntity.id === 'entity_chupitopo') {
+            action = 'USE';
         } else if (unusedEntity.id === 'entity_phoenix') {
             action = 'ATTACK';
         } else {
@@ -177,7 +193,7 @@ function playCpuTurnAI() {
                         cpu.discard.push(chosenCard);
                         cpu.boost = chosenCard.val;
                         state.battle.lastLog = `${cpu.name} usó ${chosenCard.name} (+50% Daño).`;
-                        createFloatingText('p2', '⚡ Potenciado X1.5!', '#f59e0b');
+                        createFloatingText('p2', '🔥 Potenciado X1.5!', '#f59e0b');
                     }
                 } else {
                     cpu.discard.push(chosenCard);

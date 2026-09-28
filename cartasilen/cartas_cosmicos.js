@@ -10,5 +10,5 @@ const CARDS_COSMICOS = [
     { id: 'cosmic_singularity', name: 'Punto de Colapso', element: 'SINGULARIDAD', cost: 6, type: 'ATTACK', val: 420, targetScope: 'ANY_ENEMY', image: 'cartas/singularidad.png', desc: 'Densidad infinita que causa 420 de daño.' },
     { id: 'cosmic_darkmatter', name: 'Impacto Invisible', element: 'MATERIA_OSCURA', cost: 4, type: 'ATTACK', val: 240, targetScope: 'ANY_ENEMY', image: 'cartas/materiaoscura.png', desc: 'Sustancia cósmica invisible de 240 de daño.' },
     { id: 'cosmic_plasma', name: 'Gas Ionizado', element: 'PLASMA', cost: 4, type: 'ATTACK', val: 270, targetScope: 'ANY_ENEMY', image: 'cartas/ion.png', desc: 'Fuego ionizado a ultra alta temperatura (270 daño).' },
-    { id: 'cosmic_dust', name: 'Erosión Cósmica', element: 'POLVO', cost: 1, type: 'ATTACK', val: 120, targetScope: 'ANY_ENEMY', image: 'cartas/radiacion.png', desc: 'Partículas en suspensión: 120 de daño.' }
+    { id: 'cosmic_dust', name: 'Erosión Cósmica', element: 'POLVO', cost: 1, type: 'ATTACK', val: 120, targetScope: 'ANY_ENEMY', image: 'cartas/erosioncosmica.png', desc: 'Partículas en suspensión: 120 de daño.' }
 ];
