@@ -4,7 +4,7 @@ const EscaletaUI = {
     init() {
         setInterval(() => this.softRefresh(), 3000);
     },
-         
+    
     // --- ACTUALIZACIÓN DINÁMICA ---
     softRefresh() {
         if (!window.EscaletaCore || !EscaletaCore.data || !EscaletaCore.data.takes) return;
@@ -59,12 +59,11 @@ const EscaletaUI = {
             }
         }
     },
-
     // --- COMPATIBILIDAD CON ENGINE STATUS ---
     updateAuthUI(isConnected) {
         const text = document.getElementById('auth-status-text');
         const indicator = document.getElementById('auth-indicator');
-                 
+        
         if (ai.aiProvider === 'ollama') {
             if(text) text.innerText = "LOCAL (OLLAMA)";
             if(indicator) indicator.className = "w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]";
@@ -88,7 +87,7 @@ const EscaletaUI = {
             if(indicator) indicator.className = "w-2 h-2 rounded-full bg-gray-300";
         }
     },
-         
+    
     // --- MODALES & LOADING ---
     toggleConfigModal() {
         const modal = document.getElementById('system-config-modal');
@@ -100,19 +99,14 @@ const EscaletaUI = {
                 
                 const inputGoogleKey = document.getElementById('cfg-google-key');
                 if(inputGoogleKey) inputGoogleKey.value = savedGoogleKey;
-
                 const inputGeminiKey = document.getElementById('cfg-gemini-key');
                 if(inputGeminiKey) inputGeminiKey.value = savedGeminiKey;
-
                 const providerSelect = document.getElementById('cfg-ai-provider');
                 if(providerSelect) providerSelect.value = ai.aiProvider || 'gemini';
-
                 const geminiModelSelect = document.getElementById('cfg-gemini-model-select');
                 if(geminiModelSelect) geminiModelSelect.value = ai.geminiModel || 'gemini-3.5-flash-lite';
-
                 const pollinationsModelSelect = document.getElementById('cfg-pollinations-model-select');
                 if(pollinationsModelSelect) pollinationsModelSelect.value = ai.pollinationsModel;
-
                 const ollamaUrlInp = document.getElementById('cfg-ollama-url');
                 if(ollamaUrlInp) ollamaUrlInp.value = ai.ollamaUrl;
                 
@@ -130,7 +124,6 @@ const EscaletaUI = {
             }
         }
     },
-
     updateProviderFieldsVisibility(provider) {
         const gemBlock = document.getElementById('cfg-gemini-block');
         const polBlock = document.getElementById('cfg-pollinations-block');
@@ -154,18 +147,17 @@ const EscaletaUI = {
             if(ollBlock) ollBlock.classList.remove('hidden');
         }
     },
-
     async fetchOllamaModels() {
         const select = document.getElementById('cfg-ollama-model-select');
         if (!select) return;
         const baseUrl = localStorage.getItem('escaleta_ollama_url') || 'http://127.0.0.1:11434/api';
-                 
+        
         try {
             const cleanUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
             const res = await fetch(`${cleanUrl}/tags`);
             if (!res.ok) throw new Error();
             const data = await res.json();
-                         
+            
             select.innerHTML = '';
             if (data.models && data.models.length > 0) {
                 const savedSelected = localStorage.getItem('escaleta_selected_ollama_model') || '';
@@ -183,7 +175,6 @@ const EscaletaUI = {
             select.innerHTML = '<option value="">OLLAMA DISCONNECTED / OFFLINE</option>';
         }
     },
-
     saveSystemConfig() {
         const provider = document.getElementById('cfg-ai-provider').value;
         const geminiModel = document.getElementById('cfg-gemini-model-select') ? document.getElementById('cfg-gemini-model-select').value : 'gemini-3.5-flash-lite';
@@ -191,12 +182,10 @@ const EscaletaUI = {
         const pollinationsModel = document.getElementById('cfg-pollinations-model-select') ? document.getElementById('cfg-pollinations-model-select').value : 'nova-fast';
         const urlOllama = document.getElementById('cfg-ollama-url') ? document.getElementById('cfg-ollama-url').value.trim() : 'http://127.0.0.1:11434/api';
         const modelOllama = document.getElementById('cfg-ollama-model-select') ? document.getElementById('cfg-ollama-model-select').value : '';
-
         ai.aiProvider = provider;
         ai.geminiModel = geminiModel;
         ai.pollinationsModel = pollinationsModel;
         ai.ollamaUrl = urlOllama;
-
         if (geminiKey) {
             ai.apiKey = geminiKey;
             localStorage.setItem('gemini_api_key', geminiKey);
@@ -204,13 +193,11 @@ const EscaletaUI = {
                 localStorage.setItem('googlecloud_api_key', geminiKey);
             }
         }
-
         localStorage.setItem('escaleta_ai_provider', provider);
         localStorage.setItem('escaleta_gemini_model', geminiModel);
         localStorage.setItem('escaleta_pollinations_model', pollinationsModel);
         localStorage.setItem('escaleta_ollama_url', urlOllama);
         if(modelOllama) localStorage.setItem('escaleta_selected_ollama_model', modelOllama);
-
         if (document.getElementById('cfg-comfy-model')) {
             localStorage.setItem('comfy_model', document.getElementById('cfg-comfy-model').value);
             localStorage.setItem('comfy_width', document.getElementById('cfg-comfy-width').value);
@@ -224,7 +211,6 @@ const EscaletaUI = {
         alert("Configuración de Motores de Inteligencia Artificial guardada.");
         this.toggleConfigModal();
     },
-
     saveGoogleKeyFromModal() {
         const inputKey = document.getElementById('cfg-google-key');
         if(inputKey) {
@@ -242,7 +228,6 @@ const EscaletaUI = {
             }
         }
     },
-
     async selectProjectFolderNative() {
         try {
             if (!window.showDirectoryPicker) {
@@ -258,7 +243,6 @@ const EscaletaUI = {
             console.warn("Selección de directorio cancelada o fallida:", e);
         }
     },
-
     toggleScriptModal() {
         const modal = document.getElementById('script-input-modal');
         if (modal) {
@@ -268,7 +252,6 @@ const EscaletaUI = {
             }
         }
     },
-
     toggleComicModal() {
         const modal = document.getElementById('comic-input-modal');
         if (modal) {
@@ -278,68 +261,149 @@ const EscaletaUI = {
             }
         }
     },
-
     toggleExportModal() {
         const modal = document.getElementById('export-modal');
-        if(modal) modal.classList.toggle('hidden');
+        if(modal) {
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) {
+                this.populateExportActs();
+            }
+        }
     },
-         
+
+    // --- GESTIÓN Y POBLADO DE ACTOS PARA EXPORTAR ---
+    getActGroups() {
+        const takes = (window.EscaletaCore && EscaletaCore.data && EscaletaCore.data.takes) ? EscaletaCore.data.takes : [];
+        const acts = [];
+        let currentAct = null;
+
+        takes.forEach(t => {
+            if (t.act_marker) {
+                if (currentAct && currentAct.takeIds.length > 0) {
+                    acts.push(currentAct);
+                }
+                currentAct = {
+                    id: t.id,
+                    title: t.act_marker.trim(),
+                    takeIds: [t.id]
+                };
+            } else {
+                if (!currentAct) {
+                    currentAct = {
+                        id: 'act_initial',
+                        title: 'Inicio / Prólogo',
+                        takeIds: []
+                    };
+                }
+                currentAct.takeIds.push(t.id);
+            }
+        });
+        if (currentAct && currentAct.takeIds.length > 0) {
+            acts.push(currentAct);
+        }
+        return acts;
+    },
+
+    populateExportActs() {
+        const container = document.getElementById('export-acts-container');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        const acts = this.getActGroups();
+        if (acts.length === 0) {
+            container.innerHTML = '<div class="text-[10px] text-gray-400 italic text-center p-2">Sin actos ni tomas disponibles.</div>';
+            return;
+        }
+
+        acts.forEach((act) => {
+            const label = document.createElement('label');
+            label.className = "flex items-center gap-2 cursor-pointer select-none text-xs text-gray-700 hover:text-indigo-600 py-0.5";
+            label.innerHTML = `
+                <input type="checkbox" class="export-act-chk w-3.5 h-3.5 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300 accent-indigo-600" value="${act.id}" data-take-ids="${act.takeIds.join(',')}" checked>
+                <span class="truncate font-medium">${act.title} <span class="text-[10px] text-gray-400">(${act.takeIds.length} tomas)</span></span>
+            `;
+            container.appendChild(label);
+        });
+    },
+
+    toggleAllExportActs(select = true) {
+        const checkboxes = document.querySelectorAll('.export-act-chk');
+        checkboxes.forEach(chk => chk.checked = select);
+    },
+
+    getSelectedExportTakes() {
+        const checkboxes = document.querySelectorAll('.export-act-chk:checked');
+        if (!checkboxes || checkboxes.length === 0) {
+            return [];
+        }
+        
+        const selectedTakeIds = new Set();
+        checkboxes.forEach(chk => {
+            const ids = chk.dataset.takeIds ? chk.dataset.takeIds.split(',') : [];
+            ids.forEach(id => {
+                if (id) selectedTakeIds.add(id);
+            });
+        });
+        
+        const takes = (window.EscaletaCore && EscaletaCore.data && EscaletaCore.data.takes) ? EscaletaCore.data.takes : [];
+        return takes.filter(t => selectedTakeIds.has(t.id));
+    },
+
     toggleLoading(show, title, sub) {
         const el = document.getElementById('loading-overlay');
         const bar = document.getElementById('progress-container');
-                 
+        
         if (show) {
             el.classList.remove('hidden');
             document.getElementById('loading-title').innerText = title || "PROCESANDO";
             document.getElementById('loading-subtitle').innerText = sub || "";
-            bar.classList.remove('hidden'); 
+            bar.classList.remove('hidden');
             this.updateProgressBar(0);
         } else {
             el.classList.add('hidden');
         }
     },
-         
+    
     updateProgressBar(percent) {
         document.getElementById('progress-bar').style.width = `${percent}%`;
     },
-         
+    
     updateProjectName(name) {
         document.getElementById('project-name-display').innerText = name;
     },
-         
+    
     updateStats() {
         const count = EscaletaCore.data.takes.length;
-        const duration = count * 4; 
+        const duration = count * 4;
         const mins = Math.floor(duration / 60);
         const secs = duration % 60;
         document.getElementById('timeline-stats').innerText = `${count} TOMAS | ${mins}:${secs.toString().padStart(2,'0')} TOTAL (EST)`;
     },
-
     // --- NAVEGADOR DE ACTOS ---
     jumpToAct(takeId) {
         if (!takeId) return;
-                 
+        
         let target = document.getElementById(`act-header-${takeId}`);
         if (!target) {
             target = document.getElementById(`card-${takeId}`);
         }
-                 
+        
         if (target) {
             const container = document.getElementById('takes-list');
             target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
-                 
+        
         setTimeout(() => {
             const actNav = document.getElementById('act-navigator');
             if (actNav) actNav.value = "";
         }, 500);
     },
-         
+    
     // --- RENDER DE LISTA DE TOMAS ---
     renderTakes(takes) {
         const container = document.getElementById('takes-list');
         container.innerHTML = '';
-             
+        
         const actNav = document.getElementById('act-navigator');
         if (actNav) actNav.innerHTML = '<option value="">Navegar a Acto...</option>';
         if (!takes || takes.length === 0) {
@@ -357,10 +421,10 @@ const EscaletaUI = {
                         <i class="fa-solid fa-bookmark"></i>
                     </div>
                     <input type="text" class="bg-transparent text-sm font-bold text-indigo-900 uppercase tracking-widest outline-none border-b border-transparent focus:border-indigo-300 transition-colors w-64" value="${take.act_marker}" onchange="EscaletaCore.updateTake('${take.id}', 'act_marker', this.value); EscaletaUI.renderTakes(EscaletaCore.data.takes)" placeholder="NOMBRE DEL ACTO">
-                                     
+                    
                     <button onclick="EscaletaCore.copyActPrompts('${take.id}')" class="text-blue-500 hover:text-blue-700 transition-colors text-xs px-2 font-bold" title="Copiar Prompts del Acto"><i class="fa-solid fa-copy mr-1"></i> Copiar Prompts</button>
                     <button onclick="EscaletaCore.toggleActMarker('${take.id}')" class="text-gray-400 hover:text-orange-500 transition-colors text-xs px-2" title="Quitar Marcador (Mantiene tomas)"><i class="fa-solid fa-times"></i></button>
-                                     
+                    
                     <button onclick="EscaletaCore.deleteActAndTakes('${take.id}')" class="text-red-400 hover:text-red-600 transition-colors text-xs px-2 bg-red-50 hover:bg-red-100 border border-red-100 rounded py-1 px-2 ml-2 font-bold" title="Borrar Acto Completo y sus Tomas"><i class="fa-solid fa-trash mr-1"></i> Borrar Acto Completo</button>
                     <div class="flex-1 h-px bg-indigo-100"></div>
                 `;
@@ -372,26 +436,24 @@ const EscaletaUI = {
                     actNav.appendChild(opt);
                 }
             }
-
             const card = document.createElement('div');
             card.id = `card-${take.id}`;
             card.className = "take-card flex p-4 gap-4 items-start";
-                     
+            
             let visualStatusClass = 'pending';
             let visualStatusText = 'PENDIENTE';
-                     
+            
             if (take.video_file || take.image_file || take.image64) {
                 visualStatusClass = 'success';
                 visualStatusText = take.video_file ? 'VIDEO LISTO' : 'IMAGEN LISTA';
             }
-                     
+            
             const audStatusClass = take.audio_file ? 'success' : 'pending';
             const audStatusText = take.audio_file ? 'LISTO' : 'PENDIENTE';
-
             let mediaHtml = `<div class="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-300">
-                                <i class="fa-solid fa-film text-xl"></i> 
-                             </div>`;
-                     
+                                <i class="fa-solid fa-film text-xl"></i>
+                              </div>`;
+            
             if (take.videoBlobUrl) {
                 mediaHtml = `<video src="${take.videoBlobUrl}" class="take-video-preview w-full h-full object-cover" muted onmouseover="this.play()" onmouseout="this.pause()"></video>`;
             } else if (take.image64) {
@@ -399,27 +461,27 @@ const EscaletaUI = {
             } else if (take.imageBlobUrl) {
                 mediaHtml = `<img src="${take.imageBlobUrl}" class="take-image-preview w-full h-full object-cover">`;
             }
-                     
+            
             const btnBookmarkColor = take.act_marker ? 'text-indigo-600' : 'text-gray-300';
             const btnBookmarkTitle = take.act_marker ? 'Quitar Marcador de Acto' : 'Añadir Marcador de Acto';
             card.innerHTML = `
                 <div class="flex flex-col items-center gap-2 pt-1 h-full pb-1">
                     <span class="text-xs font-bold text-gray-400 font-mono">#${take.sequence_order.toString().padStart(2,'0')}</span>
                     <button onclick="Inspector.selectTake('${take.id}')" class="text-indigo-500 hover:text-indigo-700 mt-1" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
-                                     
+                    
                     <div class="h-px w-6 bg-gray-100 my-1"></div>
-                                     
+                    
                     <button onclick="EscaletaCore.toggleActMarker('${take.id}')" class="${btnBookmarkColor} hover:text-indigo-500 text-xs mb-1 transition-colors" title="${btnBookmarkTitle}"><i class="fa-solid fa-bookmark"></i></button>
                     <button onclick="EscaletaCore.addTake('${take.id}', 'before')" class="text-emerald-500 hover:text-emerald-700 text-xs flex flex-col items-center" title="Añadir toma antes">
                         <i class="fa-solid fa-plus"></i><i class="fa-solid fa-angle-up text-[9px] -mt-1"></i>
                     </button>
-                                     
+                    
                     <button onclick="EscaletaCore.addTake('${take.id}', 'after')" class="text-emerald-500 hover:text-emerald-700 text-xs flex flex-col items-center mt-1" title="Añadir toma después">
                         <i class="fa-solid fa-angle-down text-[9px] -mb-1"></i><i class="fa-solid fa-plus"></i>
                     </button>
-                                     
+                    
                     <div class="h-px w-6 bg-gray-100 my-1"></div>
-                                     
+                    
                     <button onclick="EscaletaCore.deleteTake('${take.id}')" class="text-red-400 hover:text-red-600 text-xs" title="Eliminar toma"><i class="fa-solid fa-trash"></i></button>
                 </div>
                 <div class="w-32 aspect-video bg-black rounded overflow-hidden shrink-0 border border-gray-200 cursor-pointer" onclick="Inspector.selectTake('${take.id}')">
@@ -453,11 +515,9 @@ const EscaletaUI = {
                     </button>
                 </div>
             `;
-                     
             container.appendChild(card);
         });
     },
-
     clearAll() {
         if(confirm("¿Borrar toda la lista de tomas? (Los archivos generados permanecerán en la carpeta, pero se perderá la referencia)")) {
             EscaletaCore.data.takes = [];

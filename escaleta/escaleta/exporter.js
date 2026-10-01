@@ -1,14 +1,11 @@
 // --- cronologia/escaleta/exporter.js ---
 // MOTOR DE EXPORTACIÓN (CANVAS + WEBCODECS) + MEZCLADOR DE AUDIO DUAL
-
 const Exporter = {
     canvas: null,
     ctx: null,
-
     width: 1920,
     height: 1080,
     fps: 30,
-
     async renderFullMovie(exportMode = 'full_mix', showSubtitles = true, outputFormat = 'landscape') {
         
         if (outputFormat === 'portrait') {
@@ -21,38 +18,37 @@ const Exporter = {
             this.width = 1920;
             this.height = 1080;
         }
-
         const includeVideo = (exportMode !== 'audio_only');
         const includeTTS = (exportMode === 'voice_only' || exportMode === 'full_mix' || exportMode === 'audio_only');
         const includeAmbience = (exportMode === 'ambience_only' || exportMode === 'full_mix' || exportMode === 'audio_only');
         
-        const takes = EscaletaCore.data.takes.filter(t => t.video_file || t.image_file);
-        if (takes.length === 0) return alert("No hay tomas visuales para renderizar.");
+        // FILTRADO POR ACTOS SELECCIONADOS EN EL MODAL DE EXPORTACIÓN
+        let selectedTakes = window.EscaletaUI && typeof window.EscaletaUI.getSelectedExportTakes === 'function' ? window.EscaletaUI.getSelectedExportTakes() : EscaletaCore.data.takes;
+        if (!selectedTakes || selectedTakes.length === 0) {
+            selectedTakes = EscaletaCore.data.takes;
+        }
 
+        const takes = selectedTakes.filter(t => t.video_file || t.image_file);
+        if (takes.length === 0) return alert("No hay tomas visuales para renderizar en los actos seleccionados.");
+        
         EscaletaUI.toggleLoading(true, "PRODUCCIÓN FINAL", `Modo: ${exportMode.toUpperCase()} | Formato: ${outputFormat.toUpperCase()}`);
-
         this.canvas = document.createElement('canvas');
         this.canvas.width = this.width;
         this.canvas.height = this.height;
         this.ctx = this.canvas.getContext('2d', { alpha: false });
-
         try {
             const assets = await this.preloadAssets(takes, includeTTS, includeAmbience);
             
             const muxerOptions = {
                 target: new WebMMuxer.ArrayBufferTarget(),
             };
-
             if (includeVideo) {
                 muxerOptions.video = { codec: 'V_VP9', width: this.width, height: this.height, frameRate: this.fps };
             }
-
             if (includeTTS || includeAmbience) {
                 muxerOptions.audio = { codec: 'A_OPUS', sampleRate: 48000, numberOfChannels: 2 };
             }
-
             const muxer = new WebMMuxer.Muxer(muxerOptions);
-
             let videoEncoder = null;
             if (includeVideo) {
                 videoEncoder = new VideoEncoder({
@@ -66,11 +62,9 @@ const Exporter = {
                     bitrate: 6e6
                 });
             }
-
             let audioEncoder = null;
             let mixedAudioBuffer = null;
             const hasAudioToMix = includeTTS || includeAmbience;
-
             if (hasAudioToMix) {
                 audioEncoder = new AudioEncoder({
                     output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
@@ -82,10 +76,10 @@ const Exporter = {
                     numberOfChannels: 2,
                     bitrate: 128000
                 });
-
                 const audioContext = new AudioContext({ sampleRate: 48000 });
-                const totalDuration = assets.reduce((acc, curr) => acc + curr.duration, 0); 
-                const offlineCtx = new OfflineAudioContext(2, Math.ceil(totalDuration * 48000) + 48000, 48000); 
+                const totalDuration = assets.reduce((acc, curr) => acc + curr.duration, 0);
+                
+                const offlineCtx = new OfflineAudioContext(2, Math.ceil(totalDuration * 48000) + 48000, 48000);
                 
                 let currentTime = 0;
                 
@@ -108,7 +102,6 @@ const Exporter = {
                             }
                         } catch(e) { }
                     }
-
                     if (includeTTS && asset.ttsAudioBuffer) {
                         try {
                             const sourceTTS = offlineCtx.createBufferSource();
@@ -117,11 +110,9 @@ const Exporter = {
                             sourceTTS.start(currentTime);
                         } catch(e) { }
                     }
-
                     asset.startTime = currentTime;
                     currentTime += asset.duration;
                 });
-
                 mixedAudioBuffer = await offlineCtx.startRendering();
                 audioContext.close();
             } else {
@@ -155,9 +146,7 @@ const Exporter = {
                                 const y = (this.height - h) / 2;
                                 this.ctx.drawImage(asset.imageElement, x, y, w, h);
                             }
-
                             if (showSubtitles) this.drawSubtitles(asset.text, this.ctx);
-
                             const timestamp = Math.round(globalTime * 1_000_000);
                             const frame = new VideoFrame(this.canvas, { timestamp });
                             const isKeyFrame = (f % (this.fps * 2) === 0);
@@ -165,7 +154,6 @@ const Exporter = {
                             if (videoEncoder.encodeQueueSize > 10) await new Promise(r => setTimeout(r, 10));
                             videoEncoder.encode(frame, { keyFrame: isKeyFrame });
                             frame.close();
-
                             globalTime += frameDuration;
                         }
                     } else {
@@ -173,7 +161,7 @@ const Exporter = {
                         videoElement.currentTime = 0;
                         
                         for (let f = 0; f < frameCount; f++) {
-                            const videoTime = (f * frameDuration) % (videoElement.duration || 5.0); 
+                            const videoTime = (f * frameDuration) % (videoElement.duration || 5.0);
                             videoElement.currentTime = videoTime;
                             
                             await new Promise(r => {
@@ -181,7 +169,6 @@ const Exporter = {
                                 videoElement.addEventListener('seeked', onSeek);
                                 if(videoElement.readyState >= 2) r();
                             });
-
                             this.ctx.fillStyle = 'black';
                             this.ctx.fillRect(0,0, this.width, this.height);
                             
@@ -193,9 +180,7 @@ const Exporter = {
                                 const y = (this.height - h) / 2;
                                 this.ctx.drawImage(videoElement, x, y, w, h);
                             }
-
                             if (showSubtitles) this.drawSubtitles(asset.text, this.ctx);
-
                             const timestamp = Math.round(globalTime * 1_000_000);
                             const frame = new VideoFrame(this.canvas, { timestamp });
                             const isKeyFrame = (f % (this.fps * 2) === 0);
@@ -203,7 +188,6 @@ const Exporter = {
                             if (videoEncoder.encodeQueueSize > 10) await new Promise(r => setTimeout(r, 10));
                             videoEncoder.encode(frame, { keyFrame: isKeyFrame });
                             frame.close();
-
                             globalTime += frameDuration;
                         }
                     }
@@ -213,16 +197,13 @@ const Exporter = {
             } else {
                 EscaletaUI.toggleLoading(false);
             }
-
             if (hasAudioToMix && mixedAudioBuffer) {
                 EscaletaUI.toggleLoading(true, "MEZCLANDO SONIDO", "Masterizando audio final...");
                 await this.encodeAudio(audioEncoder, mixedAudioBuffer);
                 await audioEncoder.flush();
             }
-
             if (includeVideo) await videoEncoder.flush();
             muxer.finalize();
-
             const buffer = muxer.target.buffer;
             let suffix = "_MUDO";
             if (exportMode === 'ambience_only') suffix = "_AMBIENTE";
@@ -237,27 +218,23 @@ const Exporter = {
             } else {
                 suffix += '_HORIZONTAL';
             }
-
             this.download(new Blob([buffer], { type: includeVideo ? 'video/webm' : 'audio/webm' }), suffix);
-
             EscaletaUI.toggleLoading(false);
-
         } catch (e) {
             console.error(e);
             EscaletaUI.toggleLoading(false);
             alert("Error crítico en renderizado: " + e.message);
         }
     },
-
     async preloadAssets(takes, loadTTS, loadAmbience) {
         const assets = [];
-        const audioCtx = new AudioContext(); 
-
+        const audioCtx = new AudioContext();
+        
         for (const take of takes) {
             let vid = null;
             let img = null;
-            let duration = 5.0; 
-
+            let duration = 5.0;
+            
             let durationBuffer = null;
             let audioBlobToUse = take.audioBlob;
             if (!audioBlobToUse && take.audioBlobUrl) {
@@ -266,16 +243,13 @@ const Exporter = {
                     audioBlobToUse = await res.blob();
                 } catch(e){}
             }
-
             if (audioBlobToUse) {
                 try {
                     const arrayBuffer = await audioBlobToUse.arrayBuffer();
                     durationBuffer = await audioCtx.decodeAudioData(arrayBuffer);
                 } catch(e) { }
             }
-
             let ttsBuffer = loadTTS ? durationBuffer : null;
-
             let videoBuffer = null;
             if (loadAmbience && take.videoBlobUrl) {
                 try {
@@ -285,11 +259,10 @@ const Exporter = {
                     videoBuffer = await audioCtx.decodeAudioData(arrayBuffer);
                 } catch(e) { }
             }
-
             if (take.videoBlobUrl) {
                 vid = document.createElement('video');
                 vid.src = take.videoBlobUrl;
-                vid.muted = true; 
+                vid.muted = true;
                 vid.playsInline = true;
                 vid.crossOrigin = "anonymous";
                 
@@ -316,7 +289,6 @@ const Exporter = {
                 
                 duration = (durationBuffer && durationBuffer.duration > 0) ? durationBuffer.duration : 4.0;
             }
-
             assets.push({
                 isImage: !!img,
                 imageElement: img,
@@ -331,11 +303,10 @@ const Exporter = {
         if(audioCtx) audioCtx.close();
         return assets;
     },
-
     drawSubtitles(text, ctx) {
         if (!text) return;
         
-        const fontSize = this.width < 1000 ? 40 : 50; 
+        const fontSize = this.width < 1000 ? 40 : 50;
         
         ctx.font = `bold ${fontSize}px Arial`;
         ctx.fillStyle = "white";
@@ -358,7 +329,6 @@ const Exporter = {
             }
         }
         lines.push(line);
-
         const bottomMargin = this.height * 0.15;
         
         lines.reverse().forEach((l, idx) => {
@@ -367,7 +337,6 @@ const Exporter = {
             ctx.fillText(l, this.width / 2, y);
         });
     },
-
     async encodeAudio(encoder, buffer) {
         const channels = buffer.numberOfChannels;
         const sampleRate = buffer.sampleRate;
@@ -375,17 +344,14 @@ const Exporter = {
         const dataL = buffer.getChannelData(0);
         const dataR = channels > 1 ? buffer.getChannelData(1) : dataL;
         
-        const chunkSize = 48000; 
+        const chunkSize = 48000;
         let offset = 0;
-
         while (offset < length) {
             const size = Math.min(chunkSize, length - offset);
             const timestamp = Math.round((offset / sampleRate) * 1_000_000);
-
             const planarData = new Float32Array(size * 2);
             planarData.set(dataL.subarray(offset, offset + size), 0);
             planarData.set(dataR.subarray(offset, offset + size), size);
-
             const data = new AudioData({
                 format: 'f32-planar',
                 sampleRate: sampleRate,
@@ -394,15 +360,12 @@ const Exporter = {
                 timestamp: timestamp,
                 data: planarData
             });
-
             if (encoder.encodeQueueSize > 10) await new Promise(r => setTimeout(r, 10));
             encoder.encode(data);
             data.close();
-
             offset += size;
         }
     },
-
     download(blob, suffix) {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -420,3 +383,5 @@ const Exporter = {
         }, 100);
     }
 };
+
+window.Exporter = Exporter;
