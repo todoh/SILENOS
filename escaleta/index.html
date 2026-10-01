@@ -8,12 +8,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/webm-muxer@5.0.2/build/webm-muxer.min.js"></script>
-
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="escaleta/styles.css">
 </head>
 <body class="bg-slate-50 text-slate-900 h-screen flex flex-col overflow-hidden font-sans">
-
     <div id="loading-overlay" class="fixed inset-0 z-[300] bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center hidden">
         <div class="relative w-16 h-16 mb-6">
             <div class="absolute inset-0 border-4 border-gray-100 rounded-full"></div>
@@ -25,12 +23,11 @@
             <div id="progress-bar" class="h-full bg-indigo-600 w-0 transition-all duration-300"></div>
         </div>
     </div>
-
     <div id="export-modal" class="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-4 hidden">
         <div class="bg-white w-full max-w-md border border-gray-200 shadow-2xl rounded-sm overflow-hidden animate-fade-in">
             <div class="p-6 bg-slate-50 border-b border-gray-100 text-center">
                 <h2 class="text-xs font-bold tracking-[0.2em] text-indigo-600 uppercase mb-1">Renderizar Película</h2>
-                <p class="text-[10px] text-gray-400">Selecciona formato y opciones</p>
+                <p class="text-[10px] text-gray-400">Selecciona formato, actos y opciones</p>
             </div>
             
             <div class="px-6 py-4 bg-white border-b border-gray-100 flex flex-col gap-3">
@@ -46,8 +43,22 @@
                     <input type="checkbox" id="chk-render-subs" class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300" checked>
                     <span class="text-xs font-medium text-gray-600 group-hover:text-indigo-600 transition-colors">Incrustar Subtítulos</span>
                 </label>
-            </div>
 
+                <!-- SELECCIÓN MODULAR DE ACTOS -->
+                <div class="border-t border-gray-100 pt-3 flex flex-col gap-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-gray-500 uppercase">Actos a Exportar</span>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="EscaletaUI.toggleAllExportActs(true)" class="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 uppercase">Todos</button>
+                            <span class="text-gray-300 text-xs">|</span>
+                            <button type="button" onclick="EscaletaUI.toggleAllExportActs(false)" class="text-[10px] font-bold text-gray-400 hover:text-gray-600 uppercase">Ninguno</button>
+                        </div>
+                    </div>
+                    <div id="export-acts-container" class="max-h-36 overflow-y-auto border border-gray-200 rounded p-2 bg-gray-50 flex flex-col gap-1">
+                        <!-- Se puebla dinámicamente -->
+                    </div>
+                </div>
+            </div>
             <div class="p-6 flex flex-col gap-3 max-h-[50vh] overflow-y-auto">
                 <button onclick="Exporter.renderFullMovie('video_only', document.getElementById('chk-render-subs').checked, document.getElementById('export-format-select').value); EscaletaUI.toggleExportModal()" class="group flex items-center gap-4 p-4 border border-gray-100 hover:border-indigo-500 hover:bg-indigo-50 transition-all rounded text-left">
                     <div class="w-10 h-10 rounded bg-gray-100 group-hover:bg-indigo-100 flex items-center justify-center text-gray-400 group-hover:text-indigo-600 shrink-0 transition-colors"><i class="fa-solid fa-video-slash"></i></div>
@@ -73,7 +84,6 @@
             <div class="p-4 bg-gray-50 border-t border-gray-100 text-center"><button onclick="EscaletaUI.toggleExportModal()" class="text-[10px] font-bold text-gray-400 hover:text-gray-600 uppercase tracking-wide">Cancelar</button></div>
         </div>
     </div>
-
     <div id="script-input-modal" class="fixed inset-0 z-[110] flex items-center justify-center bg-white/98 p-4 hidden">
         <div class="bg-white w-full max-w-3xl border border-gray-200 shadow-2xl flex flex-col h-[80vh]">
             <div class="h-14 border-b border-gray-100 flex items-center justify-center relative px-6 bg-gray-50 shrink-0">
@@ -88,7 +98,6 @@
                 </div>
                 <textarea id="manual-script-text" class="flex-1 config-input border border-gray-200 p-4 rounded bg-gray-50 focus:bg-white text-sm leading-relaxed resize-none font-mono" placeholder="EXT. BOSQUE - DÍA&#10;&#10;El protagonista camina entre los árboles..."></textarea>
             </div>
-
             <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-4">
                 <button onclick="EscaletaUI.toggleScriptModal()" class="text-xs font-bold text-gray-400 hover:text-gray-600 px-4">CANCELAR</button>
                 <button onclick="AiWriter.generateStructure(document.getElementById('manual-script-text').value)" class="btn-primary bg-indigo-600 hover:bg-indigo-700 py-3 px-8 shadow-lg">
@@ -97,7 +106,6 @@
             </div>
         </div>
     </div>
-
     <div id="comic-input-modal" class="fixed inset-0 z-[110] flex items-center justify-center bg-white/98 p-4 hidden">
         <div class="bg-white w-full max-w-3xl border border-gray-200 shadow-2xl flex flex-col h-[80vh]">
             <div class="h-14 border-b border-gray-100 flex items-center justify-center relative px-6 bg-gray-50 shrink-0">
@@ -112,7 +120,6 @@
                 </div>
                 <textarea id="manual-comic-text" class="flex-1 config-input border border-gray-200 p-4 rounded bg-gray-50 focus:bg-white text-sm leading-relaxed resize-none font-mono" placeholder="EXT. CALLEJÓN OSCURO - NOCHE&#10;&#10;Un disparo resuena en la oscuridad..."></textarea>
             </div>
-
             <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-4">
                 <button onclick="EscaletaUI.toggleComicModal()" class="text-xs font-bold text-gray-400 hover:text-gray-600 px-4">CANCELAR</button>
                 <button onclick="AiWriter.generateComicStructure(document.getElementById('manual-comic-text').value)" class="btn-primary bg-orange-600 hover:bg-orange-700 py-3 px-8 shadow-lg">
@@ -121,8 +128,7 @@
             </div>
         </div>
     </div>
-
-   <div id="director-modal" class="fixed inset-0 z-[115] flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4 hidden">
+    <div id="director-modal" class="fixed inset-0 z-[115] flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4 hidden">
         <div class="bg-white w-full max-w-6xl h-[95vh] border border-gray-200 shadow-2xl rounded flex flex-col overflow-hidden animate-fade-in">
             <div class="h-14 border-b border-gray-100 flex items-center justify-between px-6 bg-slate-900 text-white shrink-0">
                 <h2 class="font-bold text-sm tracking-[0.2em] uppercase"><i class="fa-solid fa-clapperboard mr-2 text-indigo-400"></i>Modo Director: Película Modular</h2>
@@ -168,7 +174,6 @@
                                 <label class="label-text">Premisa Central (Brújula Narrativa)</label>
                                 <textarea id="dir-premise" class="config-input bg-gray-50 px-3 py-2 rounded h-16 w-full resize-none" placeholder="Resumen de 2 líneas de toda la película para que la IA no pierda el norte..."></textarea>
                             </div>
-
                             <div class="grid grid-cols-2 gap-4 border-t border-gray-100 pt-4 mt-2">
                                 <div>
                                     <label class="label-text text-indigo-500"><i class="fa-solid fa-palette mr-1"></i> Estilo Visual Global</label>
@@ -181,7 +186,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div class="p-6 border-b border-gray-200 bg-white">
                         <div class="flex justify-between items-end mb-4 border-b border-indigo-100 pb-2">
                             <h3 class="text-xs font-bold text-indigo-600 uppercase tracking-widest"><i class="fa-solid fa-palette mr-2"></i>2. Departamento de Arte</h3>
@@ -189,7 +193,6 @@
                         </div>
                         <textarea id="dir-bible-manual" class="config-input bg-gray-50 px-3 py-2 rounded h-24 w-full resize-none font-mono text-xs" placeholder="- JOHN (Personaje): Hombre de 40 años, pelo canoso, gabardina marrón desgastada, cicatriz en el ojo.&#10;- BAR LA PERLA (Lugar): Taberna oscura, luces de neón rosa, humo de tabaco, mesas de madera rota..."></textarea>
                     </div>
-
                     <div class="p-6 bg-slate-50 flex-1">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-xs font-bold text-indigo-600 uppercase tracking-widest"><i class="fa-solid fa-layer-group mr-2"></i>3. Estructura Narrativa (Actos)</h3>
@@ -200,13 +203,11 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="w-1/3 flex flex-col bg-white">
                     <div class="p-6 border-b border-gray-100 bg-gray-50 shrink-0">
                         <h3 class="text-xs font-bold text-slate-800 uppercase tracking-widest mb-1"><i class="fa-solid fa-bolt mr-2 text-yellow-500"></i>Panel de Producción</h3>
                         <p class="text-[9px] text-gray-500 leading-tight">Ejecuta el proceso en orden para garantizar la coherencia de la película.</p>
                     </div>
-
                     <div class="p-6 flex-1 overflow-y-auto space-y-6">
                         
                         <div class="border border-indigo-100 rounded-sm overflow-hidden shadow-sm">
@@ -215,13 +216,12 @@
                                 <i id="status-prepro" class="fa-solid fa-circle-xmark text-gray-300"></i>
                             </div>
                             <div class="p-4 bg-white">
-                                <p class="text-[9px] text-gray-500 mb-3 leading-tight">Analiza toda la historia y la bible manual para unificar el estilo visual de los personajes in la base de datos (Coherencia).</p>
+                                <p class="text-[9px] text-gray-500 mb-3 leading-tight">Analiza toda la historia y la bible manual para unificar el estilo visual de los personajes en la base de datos (Coherencia).</p>
                                 <button onclick="DirectorCore.runPreProduction()" id="btn-run-prepro" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold uppercase rounded transition-colors shadow-md">
                                     <i class="fa-solid fa-microchip mr-2"></i> Procesar Diseño de Arte
                                 </button>
                             </div>
                         </div>
-
                         <div class="border border-emerald-100 rounded-sm overflow-hidden shadow-sm transition-opacity" id="panel-rodaje">
                             <div class="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
                                 <span class="text-[10px] font-bold text-emerald-800 uppercase">Fase 2: Rodaje Modular</span>
@@ -231,7 +231,6 @@
                                 
                                 <div id="dir-execution-acts" class="space-y-2 mb-4">
                                 </div>
-
                                 <div class="border-t border-gray-100 pt-4">
                                     <button onclick="DirectorCore.runAllActs()" class="w-full py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold uppercase rounded transition-colors shadow-md">
                                         <i class="fa-solid fa-film mr-2"></i> Renderizar Todo de Golpe
@@ -239,7 +238,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="border border-slate-200 rounded-sm overflow-hidden shadow-sm">
                             <div class="bg-slate-900 px-4 py-2 text-white text-[10px] font-bold uppercase flex justify-between items-center">
                                 <span><i class="fa-solid fa-code text-indigo-400 mr-1"></i> Caja de Transferencia JSON</span>
@@ -249,13 +247,11 @@
                                 <textarea id="dir-json-transfer-box" class="w-full h-40 bg-white border border-gray-200 p-2 font-mono text-[10px] text-gray-700 rounded resize-none outline-none focus:border-indigo-500" placeholder='{\n  "_isDirectorPlanteamiento": true,\n  "global": { ... },\n  "acts": [ ... ]\n}'></textarea>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
     <div id="bible-editor-modal" class="fixed inset-0 z-[250] flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4 hidden">
         <div class="bg-white w-full max-w-5xl border border-gray-200 shadow-2xl rounded flex flex-col h-[85vh] animate-fade-in">
             <div class="h-14 border-b border-gray-100 flex items-center justify-between px-6 bg-slate-900 text-white shrink-0">
@@ -269,7 +265,6 @@
             </div>
         </div>
     </div>
-
     <div id="nle-editor-modal" class="fixed inset-0 z-[200] bg-gray-950 flex flex-col hidden overflow-hidden">
         
         <div class="h-12 border-b border-gray-800 flex items-center justify-between px-6 bg-gray-900 shrink-0">
@@ -282,7 +277,6 @@
                 <button onclick="NLE_UI.closeEditor()" class="text-gray-400 hover:text-white transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
         </div>
-
         <div class="h-[40vh] flex shrink-0 border-b border-gray-800 z-10 relative">
             <div id="nle-canvas-container" class="flex-1 bg-black flex flex-col relative items-center justify-center overflow-hidden p-4 group">
                 <button onclick="NLE_UI.toggleFullscreen()" class="absolute top-4 right-4 text-white bg-gray-900/80 hover:bg-gray-700 p-2 rounded text-lg transition-colors z-50 shadow-lg opacity-0 group-hover:opacity-100" title="Pantalla Completa"><i class="fa-solid fa-expand"></i></button>
@@ -293,7 +287,6 @@
                     <span id="nle-time-display" class="text-xs font-mono text-gray-300 w-16 text-center">0.00s</span>
                 </div>
             </div>
-
             <div class="w-80 bg-gray-900 border-l border-gray-800 flex flex-col shrink-0">
                 <div class="p-4 border-b border-gray-800 bg-gray-950 flex justify-between items-center">
                     <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Ajustes de Capa</span>
@@ -304,7 +297,6 @@
                 </div>
             </div>
         </div>
-
         <div class="flex-1 bg-gray-950 flex flex-col min-h-0 relative z-0">
             <div class="h-10 bg-gray-900 border-b border-gray-800 flex items-center px-4 justify-between shrink-0">
                 <div class="flex items-center gap-4">
@@ -334,12 +326,10 @@
                             <i class="fa-solid fa-grip-lines-vertical text-[10px] text-white/80"></i>
                         </div>
                     </div>
-                    
                 </div>
             </div>
         </div>
     </div>
-
     <div id="system-config-modal" class="fixed inset-0 z-[260] flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4 hidden">
         <div class="bg-white w-full max-w-md border border-gray-200 shadow-2xl rounded flex flex-col overflow-hidden animate-fade-in">
             <div class="h-14 border-b border-gray-100 flex items-center justify-between px-6 bg-slate-900 text-white shrink-0">
@@ -356,7 +346,6 @@
                         <option value="ollama">OLLAMA ENGINE (Local Engine)</option>
                     </select>
                 </div>
-
                 <div id="cfg-gemini-block" class="p-4 bg-slate-50 border border-gray-100 rounded space-y-3">
                     <span class="label-text text-purple-600 font-bold"><i class="fa-solid fa-microchip mr-1"></i> Modelo de Gemini</span>
                     <select id="cfg-gemini-model-select" class="config-input bg-white px-2 rounded font-mono text-xs border border-gray-200">
@@ -370,7 +359,6 @@
                         <input type="password" id="cfg-gemini-key" class="config-input bg-white px-2 rounded tracking-widest font-mono text-xs border border-gray-200" placeholder="AIzaSy...">
                     </div>
                 </div>
-
                 <div id="cfg-pollinations-model-block" class="p-4 bg-slate-50 border border-gray-100 rounded space-y-3 hidden">
                     <span class="label-text text-purple-600 font-bold"><i class="fa-solid fa-robot mr-1"></i> Modelo LLM de Pollinations</span>
                     <select id="cfg-pollinations-model-select" class="config-input bg-white px-2 rounded font-mono text-xs border border-gray-200">
@@ -499,7 +487,6 @@
                         <option value="sharktide/inferenceport.ai-gpt-5-chat-latest">OpenAI GPT-5 Chat Latest (sharktide/inferenceport.ai-gpt-5-chat-latest)</option>
                     </select>
                 </div>
-
                 <div id="cfg-pollinations-block" class="p-4 bg-slate-50 border border-gray-100 rounded space-y-3 hidden">
                     <span class="label-text text-indigo-600 font-bold"><i class="fa-solid fa-network-wired mr-1"></i> Autenticación de Pollinations</span>
                     <p class="text-[10px] text-gray-500 leading-tight">Autentícate de forma nativa mediante la ventana segura de Pollinations para habilitar las peticiones.</p>
@@ -507,7 +494,6 @@
                         <i class="fa-solid fa-right-to-bracket mr-1"></i> Conectar con Pollinations
                     </button>
                 </div>
-
                 <div id="cfg-ollama-block" class="p-4 bg-slate-50 border border-gray-100 rounded space-y-3 hidden">
                     <span class="label-text text-blue-600 font-bold"><i class="fa-solid fa-server mr-1"></i> Configuración de Ollama Local</span>
                     <div>
@@ -521,7 +507,6 @@
                         </select>
                     </div>
                 </div>
-
                 <!-- CONTROL DE DURACIÓN EN AJUSTES DEL SISTEMA (MODAL) -->
                 <div class="p-4 bg-slate-50 border border-gray-100 rounded space-y-3">
                     <span class="label-text text-indigo-600 font-bold"><i class="fa-solid fa-stopwatch mr-1"></i> Duración de Video Preferida</span>
@@ -531,7 +516,6 @@
                         <input type="number" id="video-duration-input" class="config-input bg-white px-2 rounded font-mono text-xs border border-gray-200" value="5" min="1" max="60">
                     </div>
                 </div>
-
                 <div class="p-4 bg-slate-50 border border-gray-100 rounded space-y-3">
                     <span class="label-text text-orange-600 font-bold"><i class="fa-solid fa-palette mr-1"></i> Configuración de ComfyUI Local</span>
                     <div>
@@ -567,7 +551,6 @@
                         <textarea id="cfg-comfy-neg" class="config-input bg-white px-2 rounded text-xs border border-gray-200 h-12 resize-none">bad anatomy, blurry, watermark, worst quality</textarea>
                     </div>
                 </div>
-
                 <div class="p-4 bg-slate-50 border border-gray-100 rounded space-y-3">
                     <span class="label-text text-blue-600 font-bold"><i class="fa-solid fa-cloud mr-1"></i> Motor de Voz (Google Cloud TTS)</span>
                     <p class="text-[10px] text-gray-500 leading-tight">Introduce tu API Key de Google Cloud para inicializar de forma segura las voces neuronales de alta fidelidad.</p>
@@ -579,7 +562,6 @@
                         <i class="fa-solid fa-floppy-disk mr-1"></i> Guardar Configuración de Voz
                     </button>
                 </div>
-
                 <button onclick="EscaletaUI.saveSystemConfig()" class="btn-primary bg-emerald-600 hover:bg-emerald-700 py-3 shadow-lg w-full font-bold">
                     <i class="fa-solid fa-floppy-disk mr-1"></i> APLICAR TODA LA CONFIGURACIÓN
                 </button>
@@ -589,7 +571,6 @@
             </div>
         </div>
     </div>
-
     <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-20 shadow-sm">
         <div class="flex items-center gap-4">
             <div class="w-10 h-10 bg-indigo-600 flex items-center justify-center text-white rounded-sm shadow-md">
@@ -605,11 +586,9 @@
             <button onclick="EscaletaUI.toggleConfigModal()" class="btn-nordic justify-center bg-gray-100 border-gray-300 hover:bg-gray-200 font-bold" title="Configuración del Sistema">
                 <i class="fa-solid fa-sliders text-slate-700 mr-1"></i> [CFG]
             </button>
-
             <button onclick="NLE_UI.openEditor()" class="btn-nordic justify-center bg-purple-900 text-white border-purple-900 hover:bg-purple-800 shadow-md">
                 <i class="fa-solid fa-scissors text-purple-300 mr-2"></i> EDITOR AVANZADO
             </button>
-
             <div class="relative group">
                 <button class="btn-nordic justify-center bg-slate-900 text-white border-slate-900 hover:bg-slate-800 shadow-md tracking-widest font-bold">
                     <i class="fa-solid fa-bars-staggered text-indigo-300 mr-2"></i> ACCIONES <i class="fa-solid fa-angle-down text-[8px] ml-1 opacity-60"></i>
@@ -629,9 +608,7 @@
                     </button>
                 </div>
             </div>
-
             <div class="h-8 w-px bg-gray-100 mx-1"></div>
-
             <button onclick="EscaletaUI.selectProjectFolderNative()" id="btn-project-folder" class="btn-nordic text-slate-600 border-slate-200 hover:border-indigo-500 hover:text-indigo-600">
                 <i class="fa-solid fa-folder-open"></i> <span id="project-name-display">Cargar Proyecto</span>
             </button>
@@ -646,7 +623,6 @@
             </div>
         </div>
     </header>
-
     <main class="main-layout flex-1 flex overflow-hidden">
         <aside class="w-80 bg-white border-r border-gray-200 flex flex-col z-10 shrink-0">
             <div class="p-6 border-b border-gray-100">
@@ -660,7 +636,6 @@
                             <button id="tab-voice-google" onclick="Generators.setVoiceProvider('google')" class="px-2 py-1 text-gray-400 hover:text-gray-600 transition-colors">Google</button>
                         </div>
                     </div>
-
                     <div id="voice-container-openai" class="grid grid-cols-3 gap-2 mt-2">
                         <button onclick="Generators.setVoice('alloy')" class="voice-btn active" data-voice="alloy">Alloy</button>
                         <button onclick="Generators.setVoice('echo')" class="voice-btn" data-voice="echo">Echo</button>
@@ -669,13 +644,12 @@
                         <button onclick="Generators.setVoice('nova')" class="voice-btn" data-voice="nova">Nova</button>
                         <button onclick="Generators.setVoice('shimmer')" class="voice-btn" data-voice="shimmer">Shimmer</button>
                     </div>
-
                     <div id="voice-container-google" class="hidden space-y-2 mt-2 p-2 bg-gray-50 border border-gray-100 rounded">
                         <select id="google-lang-select" class="config-input cursor-pointer" onchange="Generators.filterGoogleVoices()">
                             <option value="es-ES">🇪🇸 Español (España)</option>
-                            <option value="es-US">🇺🇸 Español (Latino/US)</option>
+                            <option value="es-US">🇲🇽 Español (Latino/US)</option>
                             <option value="en-US">🇺🇸 Inglés (US)</option>
-                            <option value="all">🌍 Todos</option>
+                            <option value="all">🌐 Todos</option>
                         </select>
                         <select id="google-voice-select" class="config-input cursor-pointer font-mono text-[10px]" onchange="Generators.setGoogleVoice()">
                             <option disabled selected>Esperando API Key...</option>
@@ -685,7 +659,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="mb-6">
                     <label class="label-text">Modelo de Video</label>
                     <select id="video-model-select" class="config-input mt-1 bg-white">
@@ -699,7 +672,6 @@
                         <option value="haiper">Haiper (Fast)</option>
                     </select>
                 </div>
-
                 <!-- CONTROL DIRECTO DE SEGUNDOS EN PANEL CONTROL LATERAL IZQUIERDO -->
                 <div class="mb-6 p-3 bg-slate-50 border border-slate-100 rounded">
                     <label class="label-text text-indigo-600 font-bold flex items-center justify-between">
@@ -711,7 +683,6 @@
                         <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Segs</span>
                     </div>
                 </div>
-
                 <div class="mb-6">
                     <label class="label-text">Proveedor de Imagen</label>
                     <select id="image-provider-select" class="config-input mt-1 bg-white font-bold text-orange-600" onchange="localStorage.setItem('escaleta_image_provider', this.value)">
@@ -719,7 +690,6 @@
                         <option value="comfyui">COMFYUI ENGINE (Local)</option>
                     </select>
                 </div>
-
                 <div class="mb-6">
                     <label class="label-text">Modelo / Checkpoint Imagen</label>
                     <select id="image-model-select" class="config-input mt-1 bg-white">
@@ -731,7 +701,6 @@
                         <option value="gptimage">GPT Imagen 1</option>
                     </select>
                 </div>
-
                 <div class="mb-6 p-3 bg-gray-50 border border-gray-100 rounded space-y-3">
                     <div class="flex items-center justify-between">
                         <div>
@@ -743,7 +712,6 @@
                             <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
                         </label>
                     </div>
-
                     <div id="airforce-key-container" class="hidden animate-fade-in border-t border-gray-200 pt-2 mt-1 space-y-2">
                         <div class="flex items-center justify-between bg-white p-2 border border-gray-100 rounded shadow-sm">
                             <div>
@@ -767,14 +735,12 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="p-2 bg-indigo-50 rounded border border-indigo-100 flex items-center gap-2">
                             <i class="fa-solid fa-key text-indigo-400 text-xs"></i>
                             <p class="text-[9px] text-indigo-800 leading-tight">AIRFORCE: La API Key se gestiona desde la <strong>Configuración del Sistema [CFG]</strong>.</p>
                         </div>
                     </div>
                 </div>
-
                 <div class="mb-6">
                     <label class="label-text">Formato de Generación</label>
                     <select id="video-aspect-select" class="config-input mt-1 bg-white text-indigo-700 font-bold">
@@ -783,7 +749,6 @@
                         <option value="square">Cuadrado (1:1)</option>
                     </select>
                 </div>
-
                 <div class="space-y-2">
                     <button onclick="Generators.generateAllImages()" class="btn-nordic w-full justify-center border-orange-100 text-orange-700 hover:bg-orange-50">
                         <i class="fa-solid fa-images"></i> Generar Todas las Imágenes
@@ -796,7 +761,6 @@
                     </button>
                 </div>
             </div>
-
             <div class="flex-1 flex flex-col overflow-y-auto p-6 bg-slate-50/50 relative border-t border-gray-100">
                 <div class="flex justify-between items-center mb-3 sticky top-0 bg-slate-50/90 backdrop-blur-sm z-10 pb-2">
                     <h2 class="label-text text-slate-400 mb-0"><i class="fa-solid fa-fingerprint mr-1"></i> Coherencia Visual</h2>
@@ -807,7 +771,6 @@
                 </div>
             </div>
         </aside>
-
         <section class="flex-1 bg-slate-100/50 flex flex-col relative overflow-hidden">
             <div class="h-10 border-b border-gray-200 bg-white px-4 flex items-center justify-between shrink-0">
                 <div class="flex items-center gap-4">
@@ -827,7 +790,6 @@
                     <button onclick="EscaletaUI.clearAll()" class="text-[10px] text-red-400 hover:text-red-600 uppercase font-bold px-2">Limpiar Todo</button>
                 </div>
             </div>
-
             <div id="empty-state" class="absolute inset-0 top-10 flex flex-col items-center justify-center z-0 hidden">
                 <i class="fa-solid fa-layer-group text-6xl text-gray-300 mb-4"></i>
                 <p class="text-sm text-gray-500 font-light">No hay tomas generadas.</p>
@@ -836,10 +798,8 @@
                     <i class="fa-solid fa-plus mr-2"></i> CREAR PRIMERA TOMA MANUAL
                 </button>
             </div>
-
             <div id="takes-list" class="flex-1 overflow-y-auto p-8 space-y-4 pb-32 z-10 relative"></div>
         </section>
-
         <aside class="w-96 bg-white border-l border-gray-200 flex flex-col z-10 shrink-0 shadow-xl">
             <div class="aspect-video bg-black relative group">
                 <video id="inspector-video" class="w-full h-full object-contain hidden" loop playsinline></video>
@@ -860,7 +820,6 @@
             </div>
         </aside>
     </main>
-
     <div id="seq-player-modal" class="fixed inset-0 z-[150] bg-black/95 flex flex-col hidden backdrop-blur-md transition-opacity">
         <div class="h-14 border-b border-gray-800 flex justify-between items-center px-6 text-white shrink-0">
             <h2 class="text-xs font-bold tracking-[0.2em] text-indigo-400 uppercase"><i class="fa-solid fa-film mr-2"></i>Reproductor de Secuencia</h2>
@@ -873,14 +832,12 @@
             <audio id="seq-audio" class="hidden"></audio>
             <div id="seq-subtitles" class="absolute bottom-12 w-full px-12 text-center text-white font-bold text-2xl md:text-3xl lg:text-4xl drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]"></div>
         </div>
-
         <div class="h-24 bg-gray-900 border-t border-gray-800 flex flex-col px-6 justify-center shrink-0">
             <div class="flex items-center gap-4 mb-3">
                 <span id="seq-time-current" class="text-[10px] text-gray-400 font-mono w-8 text-right">00:00</span>
                 <input type="range" id="seq-progress" value="0" min="0" max="100" step="0.01" class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400 transition-all" oninput="SequencePlayer.onSeek(this.value)">
                 <span id="seq-time-total" class="text-[10px] text-gray-400 font-mono w-8">00:00</span>
             </div>
-
             <div class="flex justify-between items-center">
                 <div class="flex items-center gap-6">
                     <button onclick="SequencePlayer.togglePlay()" id="seq-btn-play" class="text-white hover:text-indigo-400 text-2xl w-8 flex justify-center transition-colors"><i class="fa-solid fa-play"></i></button>
@@ -898,7 +855,6 @@
                         <span class="text-[10px] font-bold tracking-wider text-gray-400 group-hover:text-white uppercase transition-colors">Subtítulos</span>
                     </label>
                 </div>
-
                 <div class="flex items-center gap-3">
                     <i class="fa-solid fa-volume-low text-gray-400 text-xs"></i>
                     <input type="range" id="seq-volume" value="100" min="0" max="100" class="w-24 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400 transition-all" oninput="SequencePlayer.onVolume(this.value)">
@@ -907,7 +863,6 @@
             </div>
         </div>
     </div>
-
     <script src="ai.js"></script>
     <script src="ai2.js"></script>
     <script src="escaleta/airforce.js"></script>
@@ -925,14 +880,12 @@
     <script src="escaleta/player.js"></script>
     <script src="escaleta/director.ui.js"></script>
     <script src="escaleta/director.core.js"></script>
- 
-
     <script>
         window.onload = () => {
             EscaletaCore.init();
             EscaletaUI.init();
             DirectorUI.init();
-            if (window.NLE_UI) NLE_UI.init(); 
+            if (window.NLE_UI) NLE_UI.init();
             const savedKey = localStorage.getItem('airforce_key');
             if (savedKey) { window.apikeyairforce = savedKey; }
             
@@ -940,7 +893,6 @@
             const savedImageProvider = localStorage.getItem('escaleta_image_provider') || 'pollinations';
             const imgProvSelect = document.getElementById('image-provider-select');
             if (imgProvSelect) imgProvSelect.value = savedImageProvider;
-
             // HIDRATAR VALOR DE SEGUNDOS DESDE LOCAL STORAGE
             const savedDuration = localStorage.getItem('escaleta_video_duration') || "5";
             const durationInput = document.getElementById('video-duration-input');
