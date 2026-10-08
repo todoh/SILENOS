@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAGA Comic Builder - Crystal Fluid Edition (Flux 2 Klein)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- BARRA SUPERIOR FIJA -->
+    <header id="topbar" class="crystal-glass">
+        <div class="topbar-left">
+            <button id="sidebar-toggle-btn" class="btn-icon" onclick="toggleSidebar()" title="Alternar panel de parámetros">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+                <span>Configuración</span>
+            </button>
+                         
+            <div class="brand-badge">
+                <span class="brand-title">SAGA BUILDER</span>
+                <span class="brand-sub">Crystal Fluid Flux.2</span>
+            </div>
+            <div class="topbar-divider"></div>
+            <div class="folder-compact-box">
+                <button class="btn-secondary compact" onclick="ComicPipeline.selectProjectFolder()">
+                      Cargar Carpeta
+                </button>
+                <button class="btn-danger-icon" onclick="ComicPipeline.resetSession()" title="Desconectar carpeta">
+                                     
+                </button>
+                <div id="folder-status" class="folder-badge">Sin carpeta seleccionada</div>
+            </div>
+        </div>
+        <div class="topbar-center">
+            <div class="progress-container">
+                <div class="progress-info">
+                    <span id="progress-step-text">Paso 0: Preparado</span>
+                    <span id="progress-percent-text">0%</span>
+                </div>
+                <div class="progress-track">
+                    <div id="progress-fill" class="progress-fill" style="width: 0%;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="topbar-right">
+            <div class="export-actions-group">
+                <button class="btn-secondary compact" onclick="ComicPipeline.exportProjectJSON()" title="Guardar estado en JSON">
+                      JSON
+                </button>
+                <button id="btn-export-png" class="btn-secondary compact" onclick="ComicPipeline.exportPagesToPNG()" title="Exportar imágenes PNG">
+                      Exportar PNG
+                </button>
+                <button id="btn-export-docx" class="btn-secondary compact" onclick="ComicPipeline.exportComicToDocxA5()" title="Exportar DOCX DinA5 para Amazon KDP">
+                      DOCX A5 (KDP)
+                </button>
+                <button class="btn-secondary compact" onclick="ComicPipeline.printComic()" title="Imprimir / PDF">
+                      PDF
+                </button>
+            </div>
+            <div class="topbar-divider"></div>
+            <div class="view-mode-selector">
+                <button id="btn-mode-editor" class="btn-toggle active" onclick="setViewMode('editor')">
+                      Gestor
+                </button>
+                <button id="btn-mode-viewer" class="btn-toggle" onclick="setViewMode('viewer')">
+                      Modo Ver
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <div id="app-layout">
+        <aside id="sidebar" class="sidebar-drawer closed crystal-glass">
+            <div class="sidebar-header">
+                <h2>PARÁMETROS DEL CÓMIC</h2>
+                <button class="btn-close-sidebar" onclick="toggleSidebar()">✕</button>
+            </div>
+            <div class="sidebar-scroll-content">
+                <div class="section-box">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="comic-auto-save" checked onchange="ComicPipeline.autoSave()">
+                        Auto-guardar en carpeta de proyecto
+                    </label>
+                </div>
+                <div class="section-box">
+                    <h3>Conexiones API</h3>
+                    <label>API Key Gemini</label>
+                    <input type="password" id="gemini-api-key" placeholder="AIzaSy..." onchange="saveSettings()">
+                    <label style="margin-top: 6px;">URL Servidor ComfyUI</label>
+                    <input type="text" id="comfy-url" value="http://127.0.0.1:8188" onchange="saveSettings()">
+                </div>
+                <div class="section-box">
+                    <h3>1. Título y Premisa</h3>
+                    <label>Título de la Obra (Portada)</label>
+                    <input type="text" id="comic-cover-title" placeholder="Ej: NEQUIEM" onchange="saveSettings()">
+                                         
+                    <label style="margin-top: 6px;">Trama y Premisa (Guión)</label>
+                    <textarea id="comic-title" placeholder="Ej: Un detective cibernético encuentra un artefacto alienígena..." onchange="saveSettings()"></textarea>
+                </div>
+                <div class="section-box">
+                    <h3>2. Estructura y Formato</h3>
+                    <div class="row-group">
+                        <div>
+                            <label>Páginas Interiores</label>
+                            <input type="number" id="comic-pages" value="2" min="1" max="30" onchange="saveSettings()">
+                        </div>
+                        <div>
+                            <label>Idioma</label>
+                            <select id="comic-lang" onchange="saveSettings()">
+                                <option value="Español" selected>Español</option>
+                                <option value="English">English</option>
+                            </select>
+                        </div>
+                    </div>
+                                         
+                    <label class="checkbox-label" style="margin-top: 8px;">
+                        <input type="checkbox" id="comic-include-cover" checked onchange="saveSettings()">
+                        Incluir Página de Portada
+                    </label>
+                    <label style="margin-top: 8px;">Formato de Página</label>
+                    <select id="comic-page-format" onchange="saveSettings()">
+                        <option value="vertical" selected>Vertical (Retrato / Manga)</option>
+                        <option value="horizontal">Horizontal (Apaisado)</option>
+                        <option value="cuadrado">Cuadrado (Instagram)</option>
+                    </select>
+                </div>
+                <div class="section-box">
+                    <h3>3. Estilo Visual General</h3>
+                    <input type="text" id="comic-style" value="Manga Cyberpunk, tinta negra detallada, alto contraste, trama mecanica" onchange="saveSettings()">
+                </div>
+                <div class="section-box">
+                    <h3>4. Biblia Visual & Coherencia</h3>
+                    <button class="btn-secondary" onclick="ComicPipeline.generateAutoBible()">  Auto-Generar Biblia Visual Base</button>
+                    <textarea id="comic-bible" style="height: 90px;" placeholder="Pega aquí notas o descripciones..." onchange="saveSettings()"></textarea>
+                </div>
+                <div class="section-box">
+                    <h3>5. Renderizado ComfyUI</h3>
+                    <label>Pasos de Generación</label>
+                    <input type="number" id="comfy-steps" value="4" min="1" max="50" onchange="saveSettings()">
+                    <label style="margin-top: 8px;">Escala Imagen (Resolución)</label>
+                    <select id="comfy-image-scale" onchange="ComicPipeline.updateAllPanelDimensions(this.value); saveSettings();">
+                        <option value="2.0">x2 (Súper Resolución / 200%)</option>
+                        <option value="1.0" selected>x1 (Tamaño Real HQ)</option>
+                        <option value="0.5">x0.5 (Borrador / 50%)</option>
+                        <option value="0.25">x0.25 (Prototipado / 25%)</option>
+                    </select>
+                </div>
+                                 
+                <div class="section-box">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>6. Ingredientes Visuales</h3>
+                        <button class="btn-secondary compact" onclick="ComicPipeline.addIngredientSlot()">+ Añadir</button>
+                    </div>
+                    <div id="ingredients-container" class="ingredients-grid" style="margin-top: 8px;"></div>
+                </div>
+                <div class="pipeline-actions-box">
+                    <button class="btn-primary" onclick="ComicPipeline.startPipeline(false)">  EJECUTAR PIPELINE DESDE CERO</button>
+                    <button id="btn-resume-pipeline" class="btn-secondary" onclick="ComicPipeline.resumePipeline()">  RETOMAR PIPELINE</button>
+                </div>
+            </div>
+        </aside>
+        <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
+        <main id="main-content">
+            <div class="stepper-bar" style="display: none;">
+                <div class="step-item" id="step-tag-0">1. Plan Argumento</div>
+                <div class="step-item" id="step-tag-1">2. Biblia v2</div>
+                <div class="step-item" id="step-tag-2">3. Guión Base</div>
+                <div class="step-item" id="step-tag-3">4. Guión Técnico</div>
+                <div class="step-item" id="step-tag-4">5. Prompts</div>
+                <div class="step-item" id="step-tag-5">6. Render & Cómic</div>
+            </div>
+            <div id="comic-preview-area" class="crystal-glass preview-canvas">
+                <div class="empty-canvas-message">
+                    <div class="crystal-icon">❖</div>
+                    <h3>Lienzo Principal del Cómic</h3>
+                    <p>Despliega el menú izquierdo para configurar la historia o pulsa en Ejecutar Pipeline para comenzar.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+    <div id="pipeline-modal" class="modal-overlay hidden">
+        <div class="modal-content crystal-glass">
+            <h2 id="modal-title">Paso de Inspección</h2>
+            <div class="modal-body">
+                <p id="modal-description"></p>
+                <textarea id="modal-editor"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="ComicPipeline.closeModal(false)">Cancelar</button>
+                <button class="btn-primary" onclick="ComicPipeline.closeModal(true)">Aprobar y Continuar</button>
+            </div>
+        </div>
+    </div>
+    <script src="gemini.js"></script>
+    <script src="confyui.js"></script>
+    <script src="ui.js"></script>
+    <script src="ui-storage.js"></script>
+    <script src="ui-layout.js"></script>
+    <script src="ui-render.js"></script>
+    <script src="image-compressor.js"></script>
+    <script src="export-docx.js"></script>
+    <script src="lettering.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
