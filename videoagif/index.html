@@ -1,0 +1,1886 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChromaFrame Studio Pro - Extractor Multi-Chroma & GIF Transparente</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- JSZip CDN for ZIP File Exports -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <!-- Motor Autónomo GIF89a LZW Integrado (Sin dependencia de CDN externo) -->
+    <script>
+        (function(root) {
+            function GifWriter(buf, width, height, gopts) {
+                gopts = gopts || {};
+                var loop = gopts.loop !== undefined ? gopts.loop : 0;
+                var global_palette = gopts.palette !== undefined ? gopts.palette : null;
+
+                var p = 0;
+                buf[p++] = 0x47; buf[p++] = 0x49; buf[p++] = 0x46; // GIF
+                buf[p++] = 0x38; buf[p++] = 0x39; buf[p++] = 0x61; // 89a
+
+                buf[p++] = width & 0xff;
+                buf[p++] = (width >> 8) & 0xff;
+                buf[p++] = height & 0xff;
+                buf[p++] = (height >> 8) & 0xff;
+
+                var gp_num_colors = global_palette !== null ? global_palette.length : 0;
+                var gp_log_num_colors = 0;
+                if (gp_num_colors > 0) {
+                    gp_log_num_colors = 1;
+                    while ((1 << gp_log_num_colors) < gp_num_colors) gp_log_num_colors++;
+                    if (gp_log_num_colors < 1) gp_log_num_colors = 1;
+                    if (gp_log_num_colors > 8) gp_log_num_colors = 8;
+                }
+
+                var packed = 0;
+                if (gp_num_colors > 0) {
+                    packed |= 0x80;
+                    packed |= ((gp_log_num_colors - 1) & 0x07) << 4;
+                    packed |= (gp_log_num_colors - 1) & 0x07;
+                }
+                buf[p++] = packed;
+                buf[p++] = gopts.background !== undefined ? gopts.background : 0;
+                buf[p++] = 0;
+
+                if (global_palette !== null) {
+                    var gp_size = 1 << gp_log_num_colors;
+                    for (var i = 0; i < gp_size; i++) {
+                        var rgb = i < gp_num_colors ? global_palette[i] : 0;
+                        buf[p++] = (rgb >> 16) & 0xff;
+                        buf[p++] = (rgb >> 8) & 0xff;
+                        buf[p++] = rgb & 0xff;
+                    }
+                }
+
+                if (loop !== null) {
+                    buf[p++] = 0x21; buf[p++] = 0xff; buf[p++] = 0x0b;
+                    var app = "NETSCAPE2.0";
+                    for (var j = 0; j < 11; j++) buf[p++] = app.charCodeAt(j);
+                    buf[p++] = 0x03; buf[p++] = 0x01;
+                    buf[p++] = loop & 0xff; buf[p++] = (loop >> 8) & 0xff;
+                    buf[p++] = 0x00;
+                }
+
+                this.buf = buf;
+                this.p = p;
+                this.width = width;
+                this.height = height;
+            }
+
+            GifWriter.prototype.ensureCapacity = function(needed) {
+                if (this.p + needed >= this.buf.length) {
+                    var newBuf = new Uint8Array(Math.max(this.buf.length * 2, this.p + needed + 2000000));
+                    newBuf.set(this.buf);
+                    this.buf = newBuf;
+                }
+            };
+
+            GifWriter.prototype.writeByte = function(b) {
+                this.ensureCapacity(1);
+                this.buf[this.p++] = b;
+            };
+
+            GifWriter.prototype.addFrame = function(x, y, w, h, indexedPixels, opts) {
+                opts = opts || {};
+                var delay = opts.delay !== undefined ? opts.delay : 0;
+                var disposal = opts.disposal !== undefined ? opts.disposal : 2; // Restore to background
+                var transparent = opts.transparent !== undefined ? opts.transparent : null;
+                var palette = opts.palette !== undefined ? opts.palette : null;
+
+                var num_colors = palette !== null ? palette.length : 0;
+                var log_num_colors = 1;
+                if (num_colors > 0) {
+                    while ((1 << log_num_colors) < num_colors) log_num_colors++;
+                    if (log_num_colors < 1) log_num_colors = 1;
+                    if (log_num_colors > 8) log_num_colors = 8;
+                }
+
+                this.ensureCapacity(30 + (palette ? (1 << log_num_colors) * 3 : 0) + indexedPixels.length * 2);
+
+                // Graphic Control Extension
+                if (delay !== 0 || disposal !== 0 || transparent !== null) {
+                    this.writeByte(0x21);
+                    this.writeByte(0xf9);
+                    this.writeByte(0x04);
+                    var packedGCE = (disposal & 0x07) << 2;
+                    if (transparent !== null) packedGCE |= 0x01;
+                    this.writeByte(packedGCE);
+                    this.writeByte(delay & 0xff);
+                    this.writeByte((delay >> 8) & 0xff);
+                    this.writeByte(transparent !== null ? (transparent & 0xff) : 0);
+                    this.writeByte(0x00);
+                }
+
+                // Image Descriptor
+                this.writeByte(0x2c);
+                this.writeByte(x & 0xff);
+                this.writeByte((x >> 8) & 0xff);
+                this.writeByte(y & 0xff);
+                this.writeByte((y >> 8) & 0xff);
+                this.writeByte(w & 0xff);
+                this.writeByte((w >> 8) & 0xff);
+                this.writeByte(h & 0xff);
+                this.writeByte((h >> 8) & 0xff);
+
+                var packedID = 0;
+                if (num_colors > 0) {
+                    packedID |= 0x80;
+                    packedID |= (log_num_colors - 1) & 0x07;
+                }
+                this.writeByte(packedID);
+
+                if (palette !== null) {
+                    var palette_size = 1 << log_num_colors;
+                    for (var i = 0; i < palette_size; i++) {
+                        var rgb = i < num_colors ? palette[i] : 0;
+                        this.writeByte((rgb >> 16) & 0xff);
+                        this.writeByte((rgb >> 8) & 0xff);
+                        this.writeByte(rgb & 0xff);
+                    }
+                }
+
+                var min_code_size = log_num_colors > 1 ? log_num_colors : 2;
+                this.writeByte(min_code_size);
+
+                gifCompress(this, min_code_size, indexedPixels);
+
+                this.writeByte(0x00);
+                return this.p;
+            };
+
+            GifWriter.prototype.end = function() {
+                this.writeByte(0x3b);
+                return this.p;
+            };
+
+            function gifCompress(writer, min_code_size, indexedPixels) {
+                var clear_code = 1 << min_code_size;
+                var eof_code = clear_code + 1;
+                var code_size = min_code_size + 1;
+                var max_code = 1 << code_size;
+
+                var hash_table = new Int32Array(4096 * 256);
+                hash_table.fill(-1);
+
+                var cur_byte = 0;
+                var cur_bits = 0;
+                var sub_len = 0;
+                var sub_buf = new Uint8Array(256);
+
+                function output_code(code) {
+                    cur_byte |= (code << cur_bits);
+                    cur_bits += code_size;
+                    while (cur_bits >= 8) {
+                        sub_buf[sub_len++] = cur_byte & 0xff;
+                        cur_byte >>= 8;
+                        cur_bits -= 8;
+                        if (sub_len === 255) {
+                            writer.writeByte(255);
+                            for (var i = 0; i < 255; i++) writer.writeByte(sub_buf[i]);
+                            sub_len = 0;
+                        }
+                    }
+                }
+
+                function flush_bits() {
+                    if (cur_bits > 0) {
+                        sub_buf[sub_len++] = cur_byte & 0xff;
+                        cur_byte = 0;
+                        cur_bits = 0;
+                    }
+                    if (sub_len > 0) {
+                        writer.writeByte(sub_len);
+                        for (var i = 0; i < sub_len; i++) writer.writeByte(sub_buf[i]);
+                        sub_len = 0;
+                    }
+                }
+
+                function reset_trie() {
+                    hash_table.fill(-1);
+                    code_size = min_code_size + 1;
+                    max_code = 1 << code_size;
+                }
+
+                output_code(clear_code);
+                var free_code = eof_code + 1;
+                var prefix = indexedPixels[0];
+
+                for (var i = 1; i < indexedPixels.length; i++) {
+                    var k = indexedPixels[i];
+                    var idx = (prefix << 8) | k;
+                    var match = hash_table[idx];
+
+                    if (match !== -1) {
+                        prefix = match;
+                    } else {
+                        output_code(prefix);
+                        if (free_code < 4096) {
+                            hash_table[idx] = free_code++;
+                            if (free_code > max_code && code_size < 12) {
+                                code_size++;
+                                max_code = 1 << code_size;
+                            }
+                        } else {
+                            output_code(clear_code);
+                            reset_trie();
+                            free_code = eof_code + 1;
+                        }
+                        prefix = k;
+                    }
+                }
+                output_code(prefix);
+                output_code(eof_code);
+                flush_bits();
+            }
+
+            var lib = { GifWriter: GifWriter };
+            root.omggif = lib;
+            root.OmgGif = lib;
+        })(typeof window !== 'undefined' ? window : this);
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #080c14;
+            color: #f1f5f9;
+        }
+
+        .bg-checkerboard {
+            background-color: #121824;
+            background-image: 
+                linear-gradient(45deg, #1e293b 25%, transparent 25%),
+                linear-gradient(-45deg, #1e293b 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #1e293b 75%),
+                linear-gradient(-45deg, transparent 75%, #1e293b 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a3447;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b4861;
+        }
+
+        input[type=range] {
+            accent-color: #6366f1;
+        }
+
+        .cursor-pipette {
+            cursor: crosshair !important;
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .slot-active-glow {
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.35);
+        }
+
+        .tab-active {
+            background-color: #4f46e5 !important;
+            color: #ffffff !important;
+            border-color: #6366f1 !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-brand-500 selection:text-white">
+
+    <header class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50 px-4 lg:px-8 py-3.5">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-brand-500/20">
+                    <i data-lucide="scissors" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-wide flex items-center gap-2">
+                        ChromaFrame <span class="bg-gradient-to-r from-brand-500 via-indigo-400 to-emerald-400 bg-clip-text text-transparent">Studio Pro</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Extractor de Fotogramas PNG & Creador de GIFs Animados Transparentes</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 text-xs">
+                <span id="fsApiBadge" class="px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 flex items-center gap-2 shadow-sm">
+                    <i data-lucide="folder-tree" class="w-3.5 h-3.5 text-emerald-400"></i>
+                    <span id="fsApiText">Comprobando Sistema de Archivos...</span>
+                </span>
+                <span class="px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 hidden md:inline-flex items-center gap-1.5">
+                    <i data-lucide="film" class="w-3.5 h-3.5 text-amber-400"></i> GIF Engine Activo
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto w-full px-4 lg:px-8 py-6 flex-1">
+        
+        <div id="uploadContainer" class="border-2 border-dashed border-slate-800 hover:border-brand-500 transition-all rounded-3xl p-10 lg:p-20 text-center bg-slate-900/30 hover:bg-slate-900/60 flex flex-col items-center justify-center cursor-pointer shadow-2xl group my-8">
+            <input type="file" id="videoFileInput" accept="video/mp4,video/webm,video/mov,video/mkv,video/avi" class="hidden">
+            <div class="w-20 h-20 rounded-2xl bg-slate-800/80 group-hover:bg-brand-600/20 group-hover:scale-110 transition-all flex items-center justify-center mb-5 border border-slate-700/60 group-hover:border-brand-500/50 shadow-inner">
+                <i data-lucide="upload-cloud" class="w-10 h-10 text-brand-400 group-hover:text-brand-300 transition-colors"></i>
+            </div>
+            <h2 class="text-xl font-bold mb-2 text-slate-100">Arrastra tu archivo de vídeo aquí</h2>
+            <p class="text-xs text-slate-400 max-w-md mb-6 leading-relaxed">Soporta MP4, WEBM, MOV y MKV. Extrae secuencias PNG sin fondo o exporta GIFs animados transparentes directamente.</p>
+            <button onclick="document.getElementById('videoFileInput').click()" class="px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-500 font-semibold text-xs text-white shadow-lg shadow-brand-600/30 transition-all flex items-center gap-2">
+                <i data-lucide="file-video" class="w-4 h-4"></i> Cargar Vídeo Local
+            </button>
+        </div>
+
+        <div id="workspace" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <div class="lg:col-span-7 flex flex-col gap-6">
+                
+                <div class="glass-card rounded-2xl p-4 shadow-2xl">
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                            <i data-lucide="video" class="w-4 h-4 text-brand-400"></i> Fuente de Vídeo Original
+                        </span>
+                        <button id="changeVideoBtn" class="text-xs text-slate-400 hover:text-white px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700/50 transition-all flex items-center gap-1.5">
+                            <i data-lucide="folder-open" class="w-3.5 h-3.5"></i> Cambiar Vídeo
+                        </button>
+                    </div>
+
+                    <video id="videoElement" class="hidden" playsinline crossorigin="anonymous"></video>
+
+                    <div class="relative rounded-xl overflow-hidden bg-black flex items-center justify-center border border-slate-800/80 aspect-video group">
+                        <canvas id="rawVideoCanvas" class="max-w-full max-h-[360px] object-contain block"></canvas>
+                        
+                        <div id="videoLoadingSpinner" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex flex-col items-center justify-center text-xs text-slate-300 gap-3">
+                            <i data-lucide="loader-2" class="w-8 h-8 text-brand-500 animate-spin"></i>
+                            <span>Cargando metadatos del vídeo...</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 space-y-3">
+                        <div class="flex items-center gap-3">
+                            <span id="currentTimeDisplay" class="font-mono text-xs text-slate-300 min-w-[65px]">00:00.00</span>
+                            <input type="range" id="videoScrubber" min="0" max="100" value="0" step="0.01" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                            <span id="durationDisplay" class="font-mono text-xs text-slate-400 min-w-[65px] text-right">00:00.00</span>
+                        </div>
+
+                        <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                            <div class="flex items-center gap-1.5">
+                                <button id="playPauseBtn" class="w-9 h-9 rounded-xl bg-brand-600 hover:bg-brand-500 flex items-center justify-center text-white text-sm transition-all shadow-md shadow-brand-600/30">
+                                    <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+                                </button>
+                                <button id="stepBackBtn" title="Fotograma Anterior (-1f)" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700/80 flex items-center justify-center text-slate-300 transition-all border border-slate-700/50">
+                                    <i data-lucide="skip-back" class="w-4 h-4"></i>
+                                </button>
+                                <button id="stepForwardBtn" title="Fotograma Siguiente (+1f)" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700/80 flex items-center justify-center text-slate-300 transition-all border border-slate-700/50">
+                                    <i data-lucide="skip-forward" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+
+                            <div class="flex items-center gap-2 text-xs font-mono text-slate-400 bg-slate-950/80 px-3 py-1.5 rounded-xl border border-slate-800">
+                                <span id="resBadge" class="flex items-center gap-1"><i data-lucide="maximize" class="w-3 h-3 text-slate-500"></i> 0x0</span>
+                                <span class="text-slate-700">|</span>
+                                <span id="frameBadge">Frame: 0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-5 shadow-2xl space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                                <i data-lucide="palette" class="w-4 h-4 text-emerald-400"></i> Motor Multi-Chroma Key (3 Ranuras)
+                            </h3>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Activa hasta 3 ranuras con tolerancia y suavizado individual para eliminar tonos irregulares.</p>
+                        </div>
+                        <button id="resetChromaBtn" class="text-xs text-slate-400 hover:text-white flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800/60 border border-slate-700/50 transition-all">
+                            <i data-lucide="rotate-ccw" class="w-3 h-3"></i> Restablecer
+                        </button>
+                    </div>
+
+                    <div class="space-y-3.5">
+                        
+                        <!-- SLOT 1 -->
+                        <div id="slotCard1" class="p-3.5 rounded-xl bg-slate-950/70 border border-brand-500/40 space-y-3 transition-all slot-active-glow">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-brand-500"></span>
+                                    <span class="text-xs font-semibold text-slate-200">Ranura 1 (Color Principal)</span>
+                                    <span class="px-2 py-0.5 text-[10px] rounded-full bg-brand-900/60 text-brand-300 border border-brand-500/30">Activa</span>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                                <div class="sm:col-span-5 flex items-center gap-2.5">
+                                    <div class="relative flex-shrink-0">
+                                        <input type="color" id="keyColorPicker1" value="#00FF00" class="opacity-0 absolute inset-0 w-full h-full cursor-pointer">
+                                        <div id="keyColorSwatch1" class="w-10 h-10 rounded-lg border-2 border-slate-600 shadow-inner flex items-center justify-center cursor-pointer" style="background-color: #00FF00;"></div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <input type="text" id="keyColorHex1" value="#00FF00" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 font-mono text-xs uppercase text-slate-200 focus:outline-none focus:border-brand-500">
+                                    </div>
+                                </div>
+
+                                <div class="sm:col-span-7 flex items-center gap-2">
+                                    <button id="eyedropperBtn1" class="flex-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-brand-600/30 border border-slate-700 hover:border-brand-500/50 text-xs text-slate-200 font-medium transition-all flex items-center justify-center gap-1.5">
+                                        <i data-lucide="pipette" class="w-3.5 h-3.5 text-brand-400"></i>
+                                        <span id="eyedropperLabel1">Muestrear R1</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                                <div>
+                                    <div class="flex justify-between text-[11px] mb-1">
+                                        <span class="text-slate-400">Tolerancia R1</span>
+                                        <span id="toleranceValue1" class="font-mono text-brand-400 font-semibold">35%</span>
+                                    </div>
+                                    <input type="range" id="toleranceSlider1" min="0" max="100" value="35" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-[11px] mb-1">
+                                        <span class="text-slate-400">Suavizado R1</span>
+                                        <span id="featherValue1" class="font-mono text-brand-400 font-semibold">10%</span>
+                                    </div>
+                                    <input type="range" id="featherSlider1" min="0" max="50" value="10" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SLOT 2 -->
+                        <div id="slotCard2" class="p-3.5 rounded-xl bg-slate-950/40 border border-slate-800 space-y-3 transition-all">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span id="slotDot2" class="w-2 h-2 rounded-full bg-slate-600"></span>
+                                    <span class="text-xs font-semibold text-slate-300">Ranura 2 (Sombras / Variaciones)</span>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="slotToggle2" class="sr-only peer">
+                                    <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600"></div>
+                                </label>
+                            </div>
+
+                            <div id="slotContent2" class="opacity-50 pointer-events-none transition-all space-y-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                                    <div class="sm:col-span-5 flex items-center gap-2.5">
+                                        <div class="relative flex-shrink-0">
+                                            <input type="color" id="keyColorPicker2" value="#00C832" class="opacity-0 absolute inset-0 w-full h-full cursor-pointer">
+                                            <div id="keyColorSwatch2" class="w-10 h-10 rounded-lg border-2 border-slate-600 shadow-inner flex items-center justify-center cursor-pointer" style="background-color: #00C832;"></div>
+                                        </div>
+                                        <div class="flex-1">
+                                            <input type="text" id="keyColorHex2" value="#00C832" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 font-mono text-xs uppercase text-slate-200 focus:outline-none focus:border-brand-500">
+                                        </div>
+                                    </div>
+
+                                    <div class="sm:col-span-7 flex items-center gap-2">
+                                        <button id="eyedropperBtn2" class="flex-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-brand-600/30 border border-slate-700 hover:border-brand-500/50 text-xs text-slate-200 font-medium transition-all flex items-center justify-center gap-1.5">
+                                            <i data-lucide="pipette" class="w-3.5 h-3.5 text-brand-400"></i>
+                                            <span id="eyedropperLabel2">Muestrear R2</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                                    <div>
+                                        <div class="flex justify-between text-[11px] mb-1">
+                                            <span class="text-slate-400">Tolerancia R2</span>
+                                            <span id="toleranceValue2" class="font-mono text-brand-400 font-semibold">30%</span>
+                                        </div>
+                                        <input type="range" id="toleranceSlider2" min="0" max="100" value="30" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between text-[11px] mb-1">
+                                            <span class="text-slate-400">Suavizado R2</span>
+                                            <span id="featherValue2" class="font-mono text-brand-400 font-semibold">10%</span>
+                                        </div>
+                                        <input type="range" id="featherSlider2" min="0" max="50" value="10" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SLOT 3 -->
+                        <div id="slotCard3" class="p-3.5 rounded-xl bg-slate-950/40 border border-slate-800 space-y-3 transition-all">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span id="slotDot3" class="w-2 h-2 rounded-full bg-slate-600"></span>
+                                    <span class="text-xs font-semibold text-slate-300">Ranura 3 (Luces / Bordes Secundarios)</span>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="slotToggle3" class="sr-only peer">
+                                    <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600"></div>
+                                </label>
+                            </div>
+
+                            <div id="slotContent3" class="opacity-50 pointer-events-none transition-all space-y-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                                    <div class="sm:col-span-5 flex items-center gap-2.5">
+                                        <div class="relative flex-shrink-0">
+                                            <input type="color" id="keyColorPicker3" value="#32FF64" class="opacity-0 absolute inset-0 w-full h-full cursor-pointer">
+                                            <div id="keyColorSwatch3" class="w-10 h-10 rounded-lg border-2 border-slate-600 shadow-inner flex items-center justify-center cursor-pointer" style="background-color: #32FF64;"></div>
+                                        </div>
+                                        <div class="flex-1">
+                                            <input type="text" id="keyColorHex3" value="#32FF64" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 font-mono text-xs uppercase text-slate-200 focus:outline-none focus:border-brand-500">
+                                        </div>
+                                    </div>
+
+                                    <div class="sm:col-span-7 flex items-center gap-2">
+                                        <button id="eyedropperBtn3" class="flex-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-brand-600/30 border border-slate-700 hover:border-brand-500/50 text-xs text-slate-200 font-medium transition-all flex items-center justify-center gap-1.5">
+                                            <i data-lucide="pipette" class="w-3.5 h-3.5 text-brand-400"></i>
+                                            <span id="eyedropperLabel3">Muestrear R3</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                                    <div>
+                                        <div class="flex justify-between text-[11px] mb-1">
+                                            <span class="text-slate-400">Tolerancia R3</span>
+                                            <span id="toleranceValue3" class="font-mono text-brand-400 font-semibold">25%</span>
+                                        </div>
+                                        <input type="range" id="toleranceSlider3" min="0" max="100" value="25" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between text-[11px] mb-1">
+                                            <span class="text-slate-400">Suavizado R3</span>
+                                            <span id="featherValue3" class="font-mono text-brand-400 font-semibold">10%</span>
+                                        </div>
+                                        <input type="range" id="featherSlider3" min="0" max="50" value="10" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-5 shadow-2xl space-y-4">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                        <i data-lucide="sliders" class="w-4 h-4 text-brand-400"></i> Refinamiento y Recorte
+                    </h3>
+
+                    <div class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+                        <div class="flex justify-between text-xs mb-1">
+                            <label for="spillSlider" class="text-slate-300 font-medium">Supresión de Reflejos Verdes/Azules (Spill)</label>
+                            <span id="spillValue" class="font-mono text-brand-400 font-semibold">40%</span>
+                        </div>
+                        <input type="range" id="spillSlider" min="0" max="100" value="40" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-slate-300 font-medium mb-1.5">Fotogramas por Segundo (FPS)</label>
+                            <select id="fpsSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500">
+                                <option value="5">5 fps (Secuencia Ligera)</option>
+                                <option value="10">10 fps (Standard GIF)</option>
+                                <option value="12">12 fps (Animación Tradicional)</option>
+                                <option value="15" selected>15 fps (Recomendado GIF/PNG)</option>
+                                <option value="24">24 fps (Cinematográfico)</option>
+                                <option value="30">30 fps (Fluidez Vídeo)</option>
+                                <option value="custom_step">Intervalo Personalizado...</option>
+                            </select>
+                        </div>
+
+                        <div id="customStepContainer" class="hidden">
+                            <label class="block text-xs text-slate-300 font-medium mb-1.5">Intervalo en Segundos</label>
+                            <input type="number" id="customStepInput" value="0.5" step="0.1" min="0.05" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-brand-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-slate-300 font-medium mb-1.5">Prefijo de Archivo</label>
+                            <input type="text" id="prefixInput" value="frame_transparent_" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-brand-500">
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 space-y-3">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="font-medium text-slate-300">Rango de Recorte Temporal</span>
+                            <span id="estimatedFramesText" class="font-mono text-brand-400 font-bold">Estimación: 0 fotogramas</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="text-[11px] text-slate-400">Inicio (seg)</label>
+                                    <button id="setStartBtn" class="text-[10px] text-brand-400 hover:underline">Tiempo Actual</button>
+                                </div>
+                                <input type="number" id="startTimeInput" value="0" step="0.1" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-brand-500">
+                            </div>
+
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="text-[11px] text-slate-400">Fin (seg)</label>
+                                    <button id="setEndBtn" class="text-[10px] text-brand-400 hover:underline">Tiempo Actual</button>
+                                </div>
+                                <input type="number" id="endTimeInput" value="0" step="0.1" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-brand-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="lg:col-span-5 flex flex-col gap-6">
+                
+                <div class="glass-card rounded-2xl p-4 shadow-2xl flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3 px-1">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                                <i data-lucide="eye" class="w-4 h-4 text-indigo-400"></i> Vista Previa Procesada
+                            </span>
+
+                            <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+                                <button class="bg-mode-btn p-1.5 rounded text-xs transition-colors bg-brand-600 text-white" data-mode="checkerboard" title="Transparente (Ajedrez)">
+                                    <i data-lucide="grid-2x2" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button class="bg-mode-btn p-1.5 rounded text-xs transition-colors text-slate-400 hover:text-white" data-mode="dark" title="Fondo Negro">
+                                    <i data-lucide="square" class="w-3.5 h-3.5 text-black fill-current"></i>
+                                </button>
+                                <button class="bg-mode-btn p-1.5 rounded text-xs transition-colors text-slate-400 hover:text-white" data-mode="light" title="Fondo Blanco">
+                                    <i data-lucide="square" class="w-3.5 h-3.5 text-white fill-current"></i>
+                                </button>
+                                <button class="bg-mode-btn p-1.5 rounded text-xs transition-colors text-slate-400 hover:text-white" data-mode="green" title="Fondo Verde">
+                                    <i data-lucide="square" class="w-3.5 h-3.5 text-emerald-500 fill-current"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="chromaCanvasBgContainer" class="relative rounded-xl overflow-hidden bg-checkerboard border border-slate-800 flex items-center justify-center min-h-[260px] aspect-video">
+                            <canvas id="chromaCanvas" class="max-w-full max-h-[320px] object-contain block"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 pt-4 border-t border-slate-800/80 space-y-4">
+                        <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800">
+                            <button id="tabExportPng" class="py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all tab-active">
+                                <i data-lucide="images" class="w-4 h-4"></i> Secuencia PNG
+                            </button>
+                            <button id="tabExportGif" class="py-2 px-3 rounded-lg text-xs font-semibold text-slate-400 hover:text-white flex items-center justify-center gap-2 transition-all">
+                                <i data-lucide="film" class="w-4 h-4 text-amber-400"></i> GIF Transparente
+                            </button>
+                        </div>
+
+                        <div id="pngExportControls" class="space-y-3">
+                            <div class="flex items-center gap-2">
+                                <button id="selectFolderBtn" class="flex-1 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-xs font-semibold text-slate-200 transition-all flex items-center justify-center gap-2 shadow-sm">
+                                    <i data-lucide="folder-plus" class="w-4 h-4 text-amber-400"></i>
+                                    <span id="selectedFolderText">Seleccionar Carpeta Destino</span>
+                                </button>
+                                <button id="exportZipModeBtn" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-xs text-slate-400 hover:text-white transition-all" title="Modo ZIP Paquete">
+                                    <i data-lucide="archive" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+
+                            <button id="startPngProcessBtn" class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-brand-600 via-indigo-600 to-emerald-500 hover:from-brand-500 hover:to-emerald-400 font-bold text-sm text-white shadow-xl shadow-brand-600/30 transition-all transform active:scale-[0.99] flex items-center justify-center gap-2">
+                                <i data-lucide="folder-down" class="w-5 h-5"></i>
+                                <span>Extraer PNGs sin Fondo</span>
+                            </button>
+                        </div>
+
+                        <div id="gifExportControls" class="hidden space-y-3 bg-slate-950/70 p-4 rounded-xl border border-slate-800">
+                            <div class="grid grid-cols-2 gap-3 text-xs">
+                                <div>
+                                    <label class="block text-slate-300 font-medium mb-1">Escala de Resolución GIF</label>
+                                    <select id="gifScaleSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-brand-500">
+                                        <option value="1">100% (Resolución Original)</option>
+                                        <option value="0.75">75% (Alta)</option>
+                                        <option value="0.5" selected>50% (Equilibrada / Rápida)</option>
+                                        <option value="0.25">25% (Compacta)</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-slate-300 font-medium mb-1">Umbral de Alpha GIF</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="range" id="gifAlphaThreshold" min="1" max="254" value="128" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                                        <span id="gifAlphaVal" class="font-mono text-[11px] text-amber-400">128</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button id="startGifProcessBtn" class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-amber-500 via-indigo-600 to-brand-600 hover:from-amber-400 hover:to-brand-500 font-bold text-sm text-white shadow-xl shadow-amber-500/20 transition-all transform active:scale-[0.99] flex items-center justify-center gap-2">
+                                <i data-lucide="sparkles" class="w-5 h-5 text-amber-200"></i>
+                                <span>Generar GIF Animado Transparente</span>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div id="progressCard" class="hidden glass-card border-brand-500/50 rounded-2xl p-5 shadow-2xl space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span id="progressTitleText" class="text-xs font-bold text-brand-400 uppercase tracking-wider flex items-center gap-2">
+                            <i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Procesando...
+                        </span>
+                        <div class="flex items-center gap-2">
+                            <button id="pauseProcessBtn" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 flex items-center gap-1 border border-slate-700">
+                                <i data-lucide="pause" class="w-3 h-3"></i> <span id="pauseBtnText">Pausar</span>
+                            </button>
+                            <button id="cancelProcessBtn" class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-xs text-rose-300 border border-rose-500/30 flex items-center gap-1">
+                                <i data-lucide="x" class="w-3 h-3"></i> Cancelar
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <div class="w-full bg-slate-950 h-3 rounded-full overflow-hidden p-0.5 border border-slate-800">
+                            <div id="progressBarFill" class="bg-gradient-to-r from-brand-500 via-indigo-500 to-emerald-400 h-full rounded-full transition-all duration-200" style="width: 0%;"></div>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-400 font-mono">
+                            <span id="progressCountText">0 / 0 fotogramas</span>
+                            <span id="progressPercentText">0%</span>
+                        </div>
+                    </div>
+
+                    <p id="etaText" class="text-[11px] text-slate-400 text-center font-mono">Estimando tiempo...</p>
+                </div>
+
+                <div id="gifResultCard" class="hidden glass-card rounded-2xl p-4 shadow-2xl space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                            <i data-lucide="film" class="w-4 h-4"></i> GIF Animado Generado
+                        </span>
+                        <span id="gifMetaBadge" class="text-[10px] bg-amber-950/80 text-amber-300 px-2 py-0.5 rounded-full border border-amber-800/60 font-mono">0 KB</span>
+                    </div>
+
+                    <div class="rounded-xl overflow-hidden bg-checkerboard border border-slate-800 p-2 flex items-center justify-center min-h-[180px]">
+                        <img id="renderedGifImg" src="" alt="GIF Transparente Resultante" class="max-h-[260px] object-contain rounded-lg">
+                    </div>
+
+                    <a id="downloadGifLink" href="#" download="chroma_animation.gif" class="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 font-bold text-xs text-slate-950 shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="download" class="w-4 h-4"></i> Descargar GIF Animado Transparente
+                    </a>
+                </div>
+
+                <div class="glass-card rounded-2xl p-4 shadow-2xl flex flex-col flex-1 min-h-[280px]">
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                                <i data-lucide="images" class="w-4 h-4 text-emerald-400"></i> Fotogramas Extraídos
+                            </span>
+                            <span id="galleryCountBadge" class="text-[10px] bg-brand-900/60 text-brand-300 px-2 py-0.5 rounded-full border border-brand-500/30 font-mono">0 imágenes</span>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button id="downloadZipBtn" class="hidden text-xs text-emerald-400 hover:text-emerald-300 px-2.5 py-1 rounded-lg bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-800/60 transition-all flex items-center gap-1">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i> Descargar ZIP
+                            </button>
+                            <button id="clearGalleryBtn" class="text-xs text-slate-500 hover:text-slate-300 p-1.5 transition-all" title="Limpiar Galería">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="galleryGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto max-h-[360px] p-1 flex-1 bg-slate-950/40 rounded-xl border border-slate-800/80">
+                        <div id="galleryEmptyState" class="col-span-full py-12 text-center text-slate-500 flex flex-col items-center justify-center">
+                            <i data-lucide="image-off" class="w-8 h-8 mb-2 text-slate-600"></i>
+                            <p class="text-xs font-medium">Aún no se han generado fotogramas.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <div id="toastModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-xl bg-brand-600/20 border border-brand-500/40 flex items-center justify-center text-brand-400 flex-shrink-0">
+                    <i data-lucide="info" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 id="toastTitle" class="text-base font-bold text-slate-100">Notificación</h3>
+                    <p id="toastMessage" class="text-xs text-slate-300 mt-1 leading-relaxed">Mensaje informativo.</p>
+                </div>
+            </div>
+            <div class="flex justify-end pt-2">
+                <button id="toastCloseBtn" class="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-xs font-semibold text-white shadow-md">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="border-t border-slate-800/80 bg-slate-950 py-4 px-4 text-center text-xs text-slate-500">
+        <p>ChromaFrame Studio Pro &copy; Procesamiento local interactivo con soporte de exportación PNG y GIF animado transparente.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+
+            const uploadContainer = document.getElementById('uploadContainer');
+            const videoFileInput = document.getElementById('videoFileInput');
+            const workspace = document.getElementById('workspace');
+            const videoElement = document.getElementById('videoElement');
+            const rawVideoCanvas = document.getElementById('rawVideoCanvas');
+            const chromaCanvas = document.getElementById('chromaCanvas');
+            const chromaCanvasBgContainer = document.getElementById('chromaCanvasBgContainer');
+            const videoLoadingSpinner = document.getElementById('videoLoadingSpinner');
+
+            const videoScrubber = document.getElementById('videoScrubber');
+            const currentTimeDisplay = document.getElementById('currentTimeDisplay');
+            const durationDisplay = document.getElementById('durationDisplay');
+            const playPauseBtn = document.getElementById('playPauseBtn');
+            const stepBackBtn = document.getElementById('stepBackBtn');
+            const stepForwardBtn = document.getElementById('stepForwardBtn');
+            const resBadge = document.getElementById('resBadge');
+            const frameBadge = document.getElementById('frameBadge');
+            const changeVideoBtn = document.getElementById('changeVideoBtn');
+
+            const spillSlider = document.getElementById('spillSlider');
+            const spillValue = document.getElementById('spillValue');
+            const resetChromaBtn = document.getElementById('resetChromaBtn');
+
+            const fpsSelect = document.getElementById('fpsSelect');
+            const customStepContainer = document.getElementById('customStepContainer');
+            const customStepInput = document.getElementById('customStepInput');
+            const prefixInput = document.getElementById('prefixInput');
+            const startTimeInput = document.getElementById('startTimeInput');
+            const endTimeInput = document.getElementById('endTimeInput');
+            const setStartBtn = document.getElementById('setStartBtn');
+            const setEndBtn = document.getElementById('setEndBtn');
+            const estimatedFramesText = document.getElementById('estimatedFramesText');
+
+            const tabExportPng = document.getElementById('tabExportPng');
+            const tabExportGif = document.getElementById('tabExportGif');
+            const pngExportControls = document.getElementById('pngExportControls');
+            const gifExportControls = document.getElementById('gifExportControls');
+            const gifScaleSelect = document.getElementById('gifScaleSelect');
+            const gifAlphaThreshold = document.getElementById('gifAlphaThreshold');
+            const gifAlphaVal = document.getElementById('gifAlphaVal');
+
+            const selectFolderBtn = document.getElementById('selectFolderBtn');
+            const selectedFolderText = document.getElementById('selectedFolderText');
+            const exportZipModeBtn = document.getElementById('exportZipModeBtn');
+            const startPngProcessBtn = document.getElementById('startPngProcessBtn');
+            const startGifProcessBtn = document.getElementById('startGifProcessBtn');
+
+            const fsApiBadge = document.getElementById('fsApiBadge');
+            const fsApiText = document.getElementById('fsApiText');
+
+            const progressCard = document.getElementById('progressCard');
+            const progressTitleText = document.getElementById('progressTitleText');
+            const progressBarFill = document.getElementById('progressBarFill');
+            const progressCountText = document.getElementById('progressCountText');
+            const progressPercentText = document.getElementById('progressPercentText');
+            const etaText = document.getElementById('etaText');
+            const pauseProcessBtn = document.getElementById('pauseProcessBtn');
+            const pauseBtnText = document.getElementById('pauseBtnText');
+            const cancelProcessBtn = document.getElementById('cancelProcessBtn');
+
+            const gifResultCard = document.getElementById('gifResultCard');
+            const renderedGifImg = document.getElementById('renderedGifImg');
+            const downloadGifLink = document.getElementById('downloadGifLink');
+            const gifMetaBadge = document.getElementById('gifMetaBadge');
+
+            const galleryGrid = document.getElementById('galleryGrid');
+            const galleryEmptyState = document.getElementById('galleryEmptyState');
+            const galleryCountBadge = document.getElementById('galleryCountBadge');
+            const downloadZipBtn = document.getElementById('downloadZipBtn');
+            const clearGalleryBtn = document.getElementById('clearGalleryBtn');
+
+            const toastModal = document.getElementById('toastModal');
+            const toastTitle = document.getElementById('toastTitle');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastCloseBtn = document.getElementById('toastCloseBtn');
+
+            const rawCtx = rawVideoCanvas.getContext('2d', { willReadFrequently: true });
+            const chromaCtx = chromaCanvas.getContext('2d', { willReadFrequently: true });
+
+            let isVideoLoaded = false;
+            let currentDirectoryHandle = null;
+            let activeEyedropperSlot = null;
+            let isProcessing = false;
+            let isPaused = false;
+            let shouldCancel = false;
+            let pngExportMode = 'folder';
+            let activeTab = 'png';
+            let extractedFramesList = [];
+
+            const slots = [
+                {
+                    id: 1,
+                    enabled: true,
+                    color: { r: 0, g: 255, b: 0 },
+                    hex: '#00FF00',
+                    tolerance: 35,
+                    feather: 10,
+                    elements: {
+                        card: document.getElementById('slotCard1'),
+                        swatch: document.getElementById('keyColorSwatch1'),
+                        picker: document.getElementById('keyColorPicker1'),
+                        hexInput: document.getElementById('keyColorHex1'),
+                        eyedropperBtn: document.getElementById('eyedropperBtn1'),
+                        eyedropperLabel: document.getElementById('eyedropperLabel1'),
+                        toleranceSlider: document.getElementById('toleranceSlider1'),
+                        toleranceVal: document.getElementById('toleranceValue1'),
+                        featherSlider: document.getElementById('featherSlider1'),
+                        featherVal: document.getElementById('featherValue1')
+                    }
+                },
+                {
+                    id: 2,
+                    enabled: false,
+                    color: { r: 0, g: 200, b: 50 },
+                    hex: '#00C832',
+                    tolerance: 30,
+                    feather: 10,
+                    elements: {
+                        card: document.getElementById('slotCard2'),
+                        toggle: document.getElementById('slotToggle2'),
+                        content: document.getElementById('slotContent2'),
+                        dot: document.getElementById('slotDot2'),
+                        swatch: document.getElementById('keyColorSwatch2'),
+                        picker: document.getElementById('keyColorPicker2'),
+                        hexInput: document.getElementById('keyColorHex2'),
+                        eyedropperBtn: document.getElementById('eyedropperBtn2'),
+                        eyedropperLabel: document.getElementById('eyedropperLabel2'),
+                        toleranceSlider: document.getElementById('toleranceSlider2'),
+                        toleranceVal: document.getElementById('toleranceValue2'),
+                        featherSlider: document.getElementById('featherSlider2'),
+                        featherVal: document.getElementById('featherValue2')
+                    }
+                },
+                {
+                    id: 3,
+                    enabled: false,
+                    color: { r: 50, g: 255, b: 100 },
+                    hex: '#32FF64',
+                    tolerance: 25,
+                    feather: 10,
+                    elements: {
+                        card: document.getElementById('slotCard3'),
+                        toggle: document.getElementById('slotToggle3'),
+                        content: document.getElementById('slotContent3'),
+                        dot: document.getElementById('slotDot3'),
+                        swatch: document.getElementById('keyColorSwatch3'),
+                        picker: document.getElementById('keyColorPicker3'),
+                        hexInput: document.getElementById('keyColorHex3'),
+                        eyedropperBtn: document.getElementById('eyedropperBtn3'),
+                        eyedropperLabel: document.getElementById('eyedropperLabel3'),
+                        toleranceSlider: document.getElementById('toleranceSlider3'),
+                        toleranceVal: document.getElementById('toleranceValue3'),
+                        featherSlider: document.getElementById('featherSlider3'),
+                        featherVal: document.getElementById('featherValue3')
+                    }
+                }
+            ];
+
+            let globalConfig = { spill: 40 };
+
+            if ('showDirectoryPicker' in window) {
+                fsApiBadge.classList.replace('bg-slate-900', 'bg-emerald-950/60');
+                fsApiBadge.classList.add('border-emerald-800/60');
+                fsApiText.textContent = 'Carpeta Directa Activa';
+                pngExportMode = 'folder';
+            } else {
+                fsApiBadge.classList.replace('bg-slate-900', 'bg-amber-950/60');
+                fsApiBadge.classList.add('border-amber-800/60');
+                fsApiText.textContent = 'Modo Paquete ZIP (Sin API)';
+                selectedFolderText.textContent = 'Exportar como ZIP';
+                pngExportMode = 'zip';
+            }
+
+            function showToast(title, message) {
+                toastTitle.textContent = title;
+                toastMessage.textContent = message;
+                toastModal.classList.remove('hidden');
+            }
+
+            toastCloseBtn.addEventListener('click', () => {
+                toastModal.classList.add('hidden');
+            });
+
+            uploadContainer.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadContainer.classList.add('border-brand-500', 'bg-slate-900/80');
+            });
+
+            uploadContainer.addEventListener('dragleave', () => {
+                uploadContainer.classList.remove('border-brand-500', 'bg-slate-900/80');
+            });
+
+            uploadContainer.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadContainer.classList.remove('border-brand-500', 'bg-slate-900/80');
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    loadVideoFile(e.dataTransfer.files[0]);
+                }
+            });
+
+            videoFileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    loadVideoFile(e.target.files[0]);
+                }
+            });
+
+            changeVideoBtn.addEventListener('click', () => {
+                videoFileInput.click();
+            });
+
+            function loadVideoFile(file) {
+                if (!file.type.startsWith('video/')) {
+                    showToast('Archivo Inválido', 'Por favor selecciona un archivo de vídeo (.mp4, .webm, .mov).');
+                    return;
+                }
+
+                const fileUrl = URL.createObjectURL(file);
+                videoElement.src = fileUrl;
+                videoElement.load();
+
+                uploadContainer.classList.add('hidden');
+                workspace.classList.remove('hidden');
+                videoLoadingSpinner.classList.remove('hidden');
+
+                videoElement.onloadedmetadata = () => {
+                    isVideoLoaded = true;
+                    videoLoadingSpinner.classList.add('hidden');
+
+                    rawVideoCanvas.width = videoElement.videoWidth;
+                    rawVideoCanvas.height = videoElement.videoHeight;
+                    chromaCanvas.width = videoElement.videoWidth;
+                    chromaCanvas.height = videoElement.videoHeight;
+
+                    resBadge.innerHTML = `<i data-lucide="maximize" class="w-3 h-3 text-slate-500"></i> ${videoElement.videoWidth}x${videoElement.videoHeight}`;
+                    durationDisplay.textContent = formatTime(videoElement.duration);
+                    videoScrubber.max = videoElement.duration;
+                    startTimeInput.value = 0;
+                    endTimeInput.value = Math.floor(videoElement.duration * 10) / 10;
+
+                    lucide.createIcons();
+                    updateFrameEstimate();
+                    renderCurrentFrame();
+                };
+            }
+
+            function formatTime(seconds) {
+                if (isNaN(seconds)) return '00:00.00';
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                const ms = Math.floor((seconds % 1) * 100);
+                return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(ms).padStart(2, '0')}`;
+            }
+
+            function renderCurrentFrame() {
+                if (!isVideoLoaded) return;
+
+                rawCtx.drawImage(videoElement, 0, 0, rawVideoCanvas.width, rawVideoCanvas.height);
+                chromaCtx.drawImage(videoElement, 0, 0, chromaCanvas.width, chromaCanvas.height);
+                
+                applyMultiChromaKey(chromaCtx, chromaCanvas.width, chromaCanvas.height);
+
+                videoScrubber.value = videoElement.currentTime;
+                currentTimeDisplay.textContent = formatTime(videoElement.currentTime);
+
+                const currentFrameNum = Math.floor(videoElement.currentTime * 30);
+                frameBadge.textContent = `Frame: ${currentFrameNum}`;
+            }
+
+            playPauseBtn.addEventListener('click', () => {
+                if (!isVideoLoaded) return;
+                if (videoElement.paused) {
+                    videoElement.play();
+                    playPauseBtn.innerHTML = '<i data-lucide="pause" class="w-4 h-4 fill-current"></i>';
+                    lucide.createIcons();
+                    requestAnimationFrame(updatePlaybackLoop);
+                } else {
+                    videoElement.pause();
+                    playPauseBtn.innerHTML = '<i data-lucide="play" class="w-4 h-4 fill-current"></i>';
+                    lucide.createIcons();
+                }
+            });
+
+            function updatePlaybackLoop() {
+                if (!videoElement.paused && !videoElement.ended) {
+                    renderCurrentFrame();
+                    requestAnimationFrame(updatePlaybackLoop);
+                } else if (videoElement.ended) {
+                    playPauseBtn.innerHTML = '<i data-lucide="play" class="w-4 h-4 fill-current"></i>';
+                    lucide.createIcons();
+                }
+            }
+
+            videoScrubber.addEventListener('input', (e) => {
+                videoElement.currentTime = parseFloat(e.target.value);
+                renderCurrentFrame();
+            });
+
+            stepBackBtn.addEventListener('click', () => {
+                videoElement.currentTime = Math.max(0, videoElement.currentTime - (1 / 30));
+                renderCurrentFrame();
+            });
+
+            stepForwardBtn.addEventListener('click', () => {
+                videoElement.currentTime = Math.min(videoElement.duration, videoElement.currentTime + (1 / 30));
+                renderCurrentFrame();
+            });
+
+            function applyMultiChromaKey(ctx, width, height) {
+                const imgData = ctx.getImageData(0, 0, width, height);
+                const data = imgData.data;
+                const len = data.length;
+
+                const activeSlots = slots.filter(s => s.enabled);
+                if (activeSlots.length === 0) {
+                    ctx.putImageData(imgData, 0, 0);
+                    return;
+                }
+
+                const maxDist = 255 * 1.7320508075688772;
+                const spillFactor = globalConfig.spill / 100;
+
+                const slotParams = activeSlots.map(s => ({
+                    r: s.color.r,
+                    g: s.color.g,
+                    b: s.color.b,
+                    tolNorm: s.tolerance / 100,
+                    featherNorm: (s.feather / 100) + 0.0001,
+                    isGreenDominant: (s.color.g >= s.color.r && s.color.g >= s.color.b),
+                    isBlueDominant: (s.color.b >= s.color.r && s.color.b >= s.color.g)
+                }));
+
+                for (let i = 0; i < len; i += 4) {
+                    const r = data[i];
+                    const g = data[i + 1];
+                    const b = data[i + 2];
+
+                    let minAlpha = 1.0;
+                    let greenSpillTarget = false;
+                    let blueSpillTarget = false;
+
+                    for (let k = 0; k < slotParams.length; k++) {
+                        const sp = slotParams[k];
+                        const dr = r - sp.r;
+                        const dg = g - sp.g;
+                        const db = b - sp.b;
+                        const dist = Math.sqrt(dr * dr + dg * dg + db * db) / maxDist;
+
+                        let alpha_k = 1.0;
+                        if (dist < sp.tolNorm) {
+                            alpha_k = 0;
+                        } else if (dist < sp.tolNorm + sp.featherNorm) {
+                            alpha_k = (dist - sp.tolNorm) / sp.featherNorm;
+                        }
+
+                        if (alpha_k < minAlpha) {
+                            minAlpha = alpha_k;
+                        }
+
+                        if (sp.isGreenDominant) greenSpillTarget = true;
+                        if (sp.isBlueDominant) blueSpillTarget = true;
+                    }
+
+                    data[i + 3] = Math.floor(minAlpha * 255);
+
+                    if (spillFactor > 0 && minAlpha > 0) {
+                        if (greenSpillTarget && g > Math.max(r, b)) {
+                            const maxOther = Math.max(r, b);
+                            data[i + 1] = Math.floor(g - (g - maxOther) * spillFactor * (1 - minAlpha * 0.5));
+                        } else if (blueSpillTarget && b > Math.max(r, g)) {
+                            const maxOther = Math.max(r, g);
+                            data[i + 2] = Math.floor(b - (b - maxOther) * spillFactor * (1 - minAlpha * 0.5));
+                        }
+                    }
+                }
+
+                ctx.putImageData(imgData, 0, 0);
+            }
+
+            slots.forEach((slot) => {
+                if (slot.elements.toggle) {
+                    slot.elements.toggle.addEventListener('change', (e) => {
+                        slot.enabled = e.target.checked;
+                        if (slot.enabled) {
+                            slot.elements.content.classList.remove('opacity-50', 'pointer-events-none');
+                            slot.elements.dot.classList.replace('bg-slate-600', 'bg-brand-500');
+                            slot.elements.card.classList.add('border-brand-500/40', 'slot-active-glow');
+                        } else {
+                            slot.elements.content.classList.add('opacity-50', 'pointer-events-none');
+                            slot.elements.dot.classList.replace('bg-brand-500', 'bg-slate-600');
+                            slot.elements.card.classList.remove('border-brand-500/40', 'slot-active-glow');
+                        }
+                        renderCurrentFrame();
+                    });
+                }
+
+                slot.elements.picker.addEventListener('input', (e) => {
+                    updateSlotColor(slot, e.target.value);
+                });
+
+                slot.elements.hexInput.addEventListener('input', (e) => {
+                    const hex = e.target.value;
+                    if (/^#[0-9A-F]{6}$/i.test(hex)) {
+                        updateSlotColor(slot, hex);
+                    }
+                });
+
+                slot.elements.eyedropperBtn.addEventListener('click', () => {
+                    if (activeEyedropperSlot === slot.id) {
+                        deactivateEyedropper();
+                    } else {
+                        activateEyedropper(slot.id);
+                    }
+                });
+
+                slot.elements.toleranceSlider.addEventListener('input', (e) => {
+                    slot.tolerance = parseInt(e.target.value);
+                    slot.elements.toleranceVal.textContent = `${slot.tolerance}%`;
+                    renderCurrentFrame();
+                });
+
+                slot.elements.featherSlider.addEventListener('input', (e) => {
+                    slot.feather = parseInt(e.target.value);
+                    slot.elements.featherVal.textContent = `${slot.feather}%`;
+                    renderCurrentFrame();
+                });
+            });
+
+            function updateSlotColor(slot, hex) {
+                slot.hex = hex.toUpperCase();
+                slot.elements.hexInput.value = slot.hex;
+                slot.elements.picker.value = hex;
+                slot.elements.swatch.style.backgroundColor = hex;
+                slot.color = hexToRgb(hex);
+                renderCurrentFrame();
+            }
+
+            function activateEyedropper(slotId) {
+                activeEyedropperSlot = slotId;
+                rawVideoCanvas.classList.add('cursor-pipette', 'ring-2', 'ring-brand-500');
+                
+                slots.forEach(s => {
+                    if (s.id === slotId) {
+                        s.elements.eyedropperBtn.classList.replace('bg-slate-800', 'bg-brand-600');
+                        s.elements.eyedropperLabel.textContent = 'Muestreando...';
+                    } else {
+                        s.elements.eyedropperBtn.classList.replace('bg-brand-600', 'bg-slate-800');
+                        s.elements.eyedropperLabel.textContent = `Muestrear R${s.id}`;
+                    }
+                });
+            }
+
+            function deactivateEyedropper() {
+                activeEyedropperSlot = null;
+                rawVideoCanvas.classList.remove('cursor-pipette', 'ring-2', 'ring-brand-500');
+                slots.forEach(s => {
+                    s.elements.eyedropperBtn.classList.replace('bg-brand-600', 'bg-slate-800');
+                    s.elements.eyedropperLabel.textContent = `Muestrear R${s.id}`;
+                });
+            }
+
+            rawVideoCanvas.addEventListener('click', (e) => {
+                if (!activeEyedropperSlot || !isVideoLoaded) return;
+
+                const rect = rawVideoCanvas.getBoundingClientRect();
+                const scaleX = rawVideoCanvas.width / rect.width;
+                const scaleY = rawVideoCanvas.height / rect.height;
+
+                const x = Math.floor((e.clientX - rect.left) * scaleX);
+                const y = Math.floor((e.clientY - rect.top) * scaleY);
+
+                const pixel = rawCtx.getImageData(x, y, 1, 1).data;
+                const hexColor = rgbToHex(pixel[0], pixel[1], pixel[2]);
+
+                const targetSlot = slots.find(s => s.id === activeEyedropperSlot);
+                if (targetSlot) {
+                    updateSlotColor(targetSlot, hexColor);
+                }
+
+                deactivateEyedropper();
+            });
+
+            spillSlider.addEventListener('input', (e) => {
+                globalConfig.spill = parseInt(e.target.value);
+                spillValue.textContent = `${globalConfig.spill}%`;
+                renderCurrentFrame();
+            });
+
+            resetChromaBtn.addEventListener('click', () => {
+                spillSlider.value = 40;
+                globalConfig.spill = 40;
+                spillValue.textContent = '40%';
+
+                updateSlotColor(slots[0], '#00FF00');
+                slots[0].tolerance = 35;
+                slots[0].feather = 10;
+                slots[0].elements.toleranceSlider.value = 35;
+                slots[0].elements.featherSlider.value = 10;
+                slots[0].elements.toleranceVal.textContent = '35%';
+                slots[0].elements.featherVal.textContent = '10%';
+
+                if (slots[1].elements.toggle.checked) slots[1].elements.toggle.click();
+                if (slots[2].elements.toggle.checked) slots[2].elements.toggle.click();
+            });
+
+            const bgModeBtns = document.querySelectorAll('.bg-mode-btn');
+            bgModeBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    bgModeBtns.forEach(b => {
+                        b.classList.remove('bg-brand-600', 'text-white');
+                        b.classList.add('text-slate-400');
+                    });
+                    btn.classList.add('bg-brand-600', 'text-white');
+                    btn.classList.remove('text-slate-400');
+
+                    const mode = btn.getAttribute('data-mode');
+                    chromaCanvasBgContainer.className = 'relative rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center min-h-[260px] aspect-video ';
+                    
+                    if (mode === 'checkerboard') chromaCanvasBgContainer.classList.add('bg-checkerboard');
+                    else if (mode === 'dark') chromaCanvasBgContainer.classList.add('bg-black');
+                    else if (mode === 'light') chromaCanvasBgContainer.classList.add('bg-white');
+                    else if (mode === 'green') chromaCanvasBgContainer.classList.add('bg-emerald-500');
+                });
+            });
+
+            function hexToRgb(hex) {
+                const bigint = parseInt(hex.replace('#', ''), 16);
+                return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
+            }
+
+            function rgbToHex(r, g, b) {
+                return '#' + [r, g, b].map(x => {
+                    const hex = x.toString(16);
+                    return hex.length === 1 ? '0' + hex : hex;
+                }).join('');
+            }
+
+            tabExportPng.addEventListener('click', () => {
+                activeTab = 'png';
+                tabExportPng.classList.add('tab-active');
+                tabExportGif.classList.remove('tab-active');
+                pngExportControls.classList.remove('hidden');
+                gifExportControls.classList.add('hidden');
+            });
+
+            tabExportGif.addEventListener('click', () => {
+                activeTab = 'gif';
+                tabExportGif.classList.add('tab-active');
+                tabExportPng.classList.remove('tab-active');
+                gifExportControls.classList.remove('hidden');
+                pngExportControls.classList.add('hidden');
+            });
+
+            gifAlphaThreshold.addEventListener('input', (e) => {
+                gifAlphaVal.textContent = e.target.value;
+            });
+
+            fpsSelect.addEventListener('change', () => {
+                if (fpsSelect.value === 'custom_step') customStepContainer.classList.remove('hidden');
+                else customStepContainer.classList.add('hidden');
+                updateFrameEstimate();
+            });
+
+            customStepInput.addEventListener('input', updateFrameEstimate);
+            startTimeInput.addEventListener('input', updateFrameEstimate);
+            endTimeInput.addEventListener('input', updateFrameEstimate);
+
+            setStartBtn.addEventListener('click', () => {
+                startTimeInput.value = Math.floor(videoElement.currentTime * 100) / 100;
+                updateFrameEstimate();
+            });
+
+            setEndBtn.addEventListener('click', () => {
+                endTimeInput.value = Math.floor(videoElement.currentTime * 100) / 100;
+                updateFrameEstimate();
+            });
+
+            function getStepInterval() {
+                if (fpsSelect.value === 'custom_step') {
+                    return Math.max(0.05, parseFloat(customStepInput.value) || 0.5);
+                }
+                const fps = parseFloat(fpsSelect.value);
+                return 1 / fps;
+            }
+
+            function updateFrameEstimate() {
+                if (!isVideoLoaded) return;
+                const start = parseFloat(startTimeInput.value) || 0;
+                const end = parseFloat(endTimeInput.value) || videoElement.duration;
+                const duration = Math.max(0, end - start);
+                const step = getStepInterval();
+
+                const totalFrames = Math.floor(duration / step) + 1;
+                estimatedFramesText.textContent = `Estimación: ${totalFrames} fotogramas`;
+            }
+
+            selectFolderBtn.addEventListener('click', async () => {
+                if ('showDirectoryPicker' in window) {
+                    try {
+                        currentDirectoryHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                        selectedFolderText.textContent = `Carpeta: ${currentDirectoryHandle.name}`;
+                        selectFolderBtn.classList.replace('bg-slate-800', 'bg-emerald-950/80');
+                        selectFolderBtn.classList.add('border-emerald-700');
+                        pngExportMode = 'folder';
+                    } catch (err) {
+                        if (err.name !== 'AbortError') {
+                            showToast('Error de Carpeta', 'No se pudo acceder a la carpeta seleccionada.');
+                        }
+                    }
+                } else {
+                    showToast('API no Disponible', 'Tu navegador exportará como archivo ZIP.');
+                    pngExportMode = 'zip';
+                }
+            });
+
+            exportZipModeBtn.addEventListener('click', () => {
+                pngExportMode = 'zip';
+                currentDirectoryHandle = null;
+                selectedFolderText.textContent = 'Modo Paquete ZIP Activado';
+                selectFolderBtn.classList.replace('bg-emerald-950/80', 'bg-slate-800');
+                selectFolderBtn.classList.remove('border-emerald-700');
+                showToast('Modo ZIP Activado', 'Los fotogramas PNG se comprimirán en un paquete ZIP.');
+            });
+
+            startPngProcessBtn.addEventListener('click', async () => {
+                if (!isVideoLoaded) {
+                    showToast('Sin Vídeo Cargado', 'Primero carga un vídeo.');
+                    return;
+                }
+
+                const start = parseFloat(startTimeInput.value) || 0;
+                const end = parseFloat(endTimeInput.value) || videoElement.duration;
+
+                if (start >= end) {
+                    showToast('Rango Inválido', 'El inicio debe ser menor al fin.');
+                    return;
+                }
+
+                if (pngExportMode === 'folder' && !currentDirectoryHandle) {
+                    try {
+                        currentDirectoryHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                        selectedFolderText.textContent = `Carpeta: ${currentDirectoryHandle.name}`;
+                    } catch (e) {
+                        showToast('Carpeta Requerida', 'Selecciona una carpeta o conmuta a modo ZIP.');
+                        return;
+                    }
+                }
+
+                isProcessing = true;
+                isPaused = false;
+                shouldCancel = false;
+
+                progressTitleText.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Extrayendo PNGs...';
+                progressCard.classList.remove('hidden');
+                startPngProcessBtn.disabled = true;
+                startPngProcessBtn.classList.add('opacity-50');
+
+                const step = getStepInterval();
+                const totalFrames = Math.floor((end - start) / step) + 1;
+                const prefix = prefixInput.value || 'frame_transparent_';
+
+                let processedCount = 0;
+                const startTimeStamp = Date.now();
+                const zipInstance = (pngExportMode === 'zip') ? new JSZip() : null;
+
+                const batchCanvas = document.createElement('canvas');
+                batchCanvas.width = videoElement.videoWidth;
+                batchCanvas.height = videoElement.videoHeight;
+                const batchCtx = batchCanvas.getContext('2d', { willReadFrequently: true });
+
+                for (let t = start; t <= end; t += step) {
+                    if (shouldCancel) break;
+
+                    while (isPaused) {
+                        await new Promise(r => setTimeout(r, 200));
+                        if (shouldCancel) break;
+                    }
+
+                    if (shouldCancel) break;
+
+                    videoElement.currentTime = t;
+                    await new Promise(resolve => {
+                        const onSeeked = () => {
+                            videoElement.removeEventListener('seeked', onSeeked);
+                            resolve();
+                        };
+                        videoElement.addEventListener('seeked', onSeeked);
+                    });
+
+                    batchCtx.drawImage(videoElement, 0, 0, batchCanvas.width, batchCanvas.height);
+                    applyMultiChromaKey(batchCtx, batchCanvas.width, batchCanvas.height);
+
+                    const blob = await new Promise(resolve => batchCanvas.toBlob(resolve, 'image/png'));
+                    const frameNumStr = String(processedCount + 1).padStart(4, '0');
+                    const filename = `${prefix}${frameNumStr}.png`;
+
+                    if (pngExportMode === 'folder' && currentDirectoryHandle) {
+                        try {
+                            const fileHandle = await currentDirectoryHandle.getFileHandle(filename, { create: true });
+                            const writable = await fileHandle.createWritable();
+                            await writable.write(blob);
+                            await writable.close();
+                        } catch (err) {
+                            console.error('Error al guardar archivo PNG:', err);
+                        }
+                    } else if (zipInstance) {
+                        zipInstance.file(filename, blob);
+                    }
+
+                    const objectUrl = URL.createObjectURL(blob);
+                    extractedFramesList.push({ filename, blob, url: objectUrl, timestamp: t });
+                    addFrameToGallery(filename, objectUrl);
+
+                    processedCount++;
+
+                    const percent = Math.min(100, Math.round((processedCount / totalFrames) * 100));
+                    progressBarFill.style.width = `${percent}%`;
+                    progressCountText.textContent = `${processedCount} / ${totalFrames} fotogramas`;
+                    progressPercentText.textContent = `${percent}%`;
+
+                    const elapsedSecs = (Date.now() - startTimeStamp) / 1000;
+                    const framesPerSec = processedCount / elapsedSecs;
+                    const remainingFrames = totalFrames - processedCount;
+                    const etaSecs = framesPerSec > 0 ? Math.ceil(remainingFrames / framesPerSec) : 0;
+                    etaText.textContent = `Tiempo restante estimado: ~${etaSecs} seg`;
+                }
+
+                isProcessing = false;
+                progressCard.classList.add('hidden');
+                startPngProcessBtn.disabled = false;
+                startPngProcessBtn.classList.remove('opacity-50');
+
+                if (shouldCancel) {
+                    showToast('Proceso Cancelado', `Se extrajeron ${processedCount} fotogramas PNG.`);
+                } else {
+                    if (pngExportMode === 'zip' && zipInstance && processedCount > 0) {
+                        etaText.textContent = 'Comprimiendo ZIP...';
+                        const zipBlob = await zipInstance.generateAsync({ type: 'blob' });
+                        const zipUrl = URL.createObjectURL(zipBlob);
+                        
+                        downloadZipBtn.onclick = () => {
+                            const a = document.createElement('a');
+                            a.href = zipUrl;
+                            a.download = `${prefix}chroma_frames.zip`;
+                            a.click();
+                        };
+                        downloadZipBtn.classList.remove('hidden');
+
+                        const a = document.createElement('a');
+                        a.href = zipUrl;
+                        a.download = `${prefix}chroma_frames.zip`;
+                        a.click();
+                        
+                        showToast('Extracción Completa', `ZIP generado con ${processedCount} fotogramas PNG sin fondo.`);
+                    } else {
+                        showToast('Extracción Exitosa', `Se guardaron ${processedCount} fotogramas en la carpeta elegida.`);
+                    }
+                }
+            });
+
+            startGifProcessBtn.addEventListener('click', async () => {
+                if (!isVideoLoaded) {
+                    showToast('Sin Vídeo Cargado', 'Primero carga un vídeo.');
+                    return;
+                }
+
+                const GifLib = window.OmgGif || window.omggif;
+                if (!GifLib || !GifLib.GifWriter) {
+                    showToast('Error de Librería', 'No se pudo inicializar el motor de codificación GIF.');
+                    return;
+                }
+
+                const start = parseFloat(startTimeInput.value) || 0;
+                const end = parseFloat(endTimeInput.value) || videoElement.duration;
+
+                if (start >= end) {
+                    showToast('Rango Inválido', 'El inicio debe ser menor al fin.');
+                    return;
+                }
+
+                isProcessing = true;
+                isPaused = false;
+                shouldCancel = false;
+
+                progressTitleText.innerHTML = '<i data-lucide="sparkles" class="w-4 h-4 animate-spin text-amber-400"></i> Generando GIF Transparente...';
+                progressCard.classList.remove('hidden');
+                startGifProcessBtn.disabled = true;
+                startGifProcessBtn.classList.add('opacity-50');
+
+                const step = getStepInterval();
+                const totalFrames = Math.floor((end - start) / step) + 1;
+                const scale = parseFloat(gifScaleSelect.value) || 0.5;
+                const alphaThresh = parseInt(gifAlphaThreshold.value) || 128;
+
+                const gifWidth = Math.round(videoElement.videoWidth * scale);
+                const gifHeight = Math.round(videoElement.videoHeight * scale);
+
+                const delayCentiseconds = Math.max(2, Math.round(step * 100));
+
+                const scaledCanvas = document.createElement('canvas');
+                scaledCanvas.width = gifWidth;
+                scaledCanvas.height = gifHeight;
+                const scaledCtx = scaledCanvas.getContext('2d', { willReadFrequently: true });
+
+                const rawScaleCanvas = document.createElement('canvas');
+                rawScaleCanvas.width = videoElement.videoWidth;
+                rawScaleCanvas.height = videoElement.videoHeight;
+                const rawScaleCtx = rawScaleCanvas.getContext('2d', { willReadFrequently: true });
+
+                const bufferSize = gifWidth * gifHeight * totalFrames * 2 + 2000000;
+                const gifBuffer = new Uint8Array(bufferSize);
+                const gifWriter = new GifLib.GifWriter(gifBuffer, gifWidth, gifHeight, { loop: 0 });
+
+                let processedCount = 0;
+                const startTimeStamp = Date.now();
+
+                for (let t = start; t <= end; t += step) {
+                    if (shouldCancel) break;
+
+                    while (isPaused) {
+                        await new Promise(r => setTimeout(r, 200));
+                        if (shouldCancel) break;
+                    }
+
+                    if (shouldCancel) break;
+
+                    videoElement.currentTime = t;
+                    await new Promise(resolve => {
+                        const onSeeked = () => {
+                            videoElement.removeEventListener('seeked', onSeeked);
+                            resolve();
+                        };
+                        videoElement.addEventListener('seeked', onSeeked);
+                    });
+
+                    rawScaleCtx.drawImage(videoElement, 0, 0, rawScaleCanvas.width, rawScaleCanvas.height);
+                    applyMultiChromaKey(rawScaleCtx, rawScaleCanvas.width, rawScaleCanvas.height);
+
+                    scaledCtx.clearRect(0, 0, gifWidth, gifHeight);
+                    scaledCtx.drawImage(rawScaleCanvas, 0, 0, gifWidth, gifHeight);
+
+                    const { indexedPixels, palette } = quantizeFrameToGifIndexed(scaledCtx, gifWidth, gifHeight, alphaThresh);
+
+                    gifWriter.addFrame(0, 0, gifWidth, gifHeight, indexedPixels, {
+                        palette: palette,
+                        delay: delayCentiseconds,
+                        transparent: 0,
+                        disposal: 2
+                    });
+
+                    processedCount++;
+
+                    const percent = Math.min(100, Math.round((processedCount / totalFrames) * 100));
+                    progressBarFill.style.width = `${percent}%`;
+                    progressCountText.textContent = `${processedCount} / ${totalFrames} fotogramas GIF`;
+                    progressPercentText.textContent = `${percent}%`;
+
+                    const elapsedSecs = (Date.now() - startTimeStamp) / 1000;
+                    const framesPerSec = processedCount / elapsedSecs;
+                    const remainingFrames = totalFrames - processedCount;
+                    const etaSecs = framesPerSec > 0 ? Math.ceil(remainingFrames / framesPerSec) : 0;
+                    etaText.textContent = `Tiempo restante estimado: ~${etaSecs} seg`;
+                }
+
+                isProcessing = false;
+                progressCard.classList.add('hidden');
+                startGifProcessBtn.disabled = false;
+                startGifProcessBtn.classList.remove('opacity-50');
+
+                if (shouldCancel) {
+                    showToast('Proceso Cancelado', 'Generación de GIF cancelada.');
+                } else if (processedCount > 0) {
+                    const endPos = gifWriter.end();
+                    const gifSubArray = gifWriter.buf.subarray(0, endPos);
+                    const gifBlob = new Blob([gifSubArray], { type: 'image/gif' });
+                    const gifUrl = URL.createObjectURL(gifBlob);
+
+                    renderedGifImg.src = gifUrl;
+                    downloadGifLink.href = gifUrl;
+                    
+                    const kbSize = (gifBlob.size / 1024).toFixed(1);
+                    const mbSize = (gifBlob.size / (1024 * 1024)).toFixed(2);
+                    gifMetaBadge.textContent = `${gifBlob.size > 1048576 ? mbSize + ' MB' : kbSize + ' KB'} | ${gifWidth}x${gifHeight}`;
+
+                    gifResultCard.classList.remove('hidden');
+                    gifResultCard.scrollIntoView({ behavior: 'smooth' });
+
+                    showToast('GIF Generado con Éxito', `Tu GIF Animado Transparente está listo (${gifMetaBadge.textContent}).`);
+                }
+            });
+
+            function quantizeFrameToGifIndexed(ctx, width, height, alphaThreshold) {
+                const imgData = ctx.getImageData(0, 0, width, height);
+                const data = imgData.data;
+                const pixelCount = width * height;
+                const indexedPixels = new Uint8Array(pixelCount);
+
+                const colorCounts = new Map();
+                let opaqueCount = 0;
+
+                for (let i = 0; i < pixelCount; i++) {
+                    const offset = i * 4;
+                    const a = data[offset + 3];
+
+                    if (a < alphaThreshold) {
+                        indexedPixels[i] = 0;
+                    } else {
+                        opaqueCount++;
+                        const r = data[offset];
+                        const g = data[offset + 1];
+                        const b = data[offset + 2];
+                        const key = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
+                        colorCounts.set(key, (colorCounts.get(key) || 0) + 1);
+                    }
+                }
+
+                const palette = [0x000000];
+                const colorMap = new Map();
+
+                if (opaqueCount > 0) {
+                    const sortedColors = Array.from(colorCounts.entries()).sort((a, b) => b[1] - a[1]);
+                    const maxOpaqueColors = 255;
+                    const selected = sortedColors.slice(0, maxOpaqueColors);
+
+                    selected.forEach(([key], idx) => {
+                        const r = ((key >> 10) & 0x1F) << 3;
+                        const g = ((key >> 5) & 0x1F) << 3;
+                        const b = (key & 0x1F) << 3;
+                        const rgbInt = (r << 16) | (g << 8) | b;
+                        const palIdx = idx + 1;
+                        palette.push(rgbInt);
+                        colorMap.set(key, palIdx);
+                    });
+
+                    for (let i = 0; i < pixelCount; i++) {
+                        const offset = i * 4;
+                        const a = data[offset + 3];
+
+                        if (a >= alphaThreshold) {
+                            const r = data[offset];
+                            const g = data[offset + 1];
+                            const b = data[offset + 2];
+                            const key = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
+
+                            if (colorMap.has(key)) {
+                                indexedPixels[i] = colorMap.get(key);
+                            } else {
+                                let bestDist = Infinity;
+                                let bestIndex = 1;
+                                for (let p = 1; p < palette.length; p++) {
+                                    const pr = (palette[p] >> 16) & 0xFF;
+                                    const pg = (palette[p] >> 8) & 0xFF;
+                                    const pb = palette[p] & 0xFF;
+                                    const dist = (r - pr)*(r - pr) + (g - pg)*(g - pg) + (b - pb)*(b - pb);
+                                    if (dist < bestDist) {
+                                        bestDist = dist;
+                                        bestIndex = p;
+                                    }
+                                }
+                                indexedPixels[i] = bestIndex;
+                            }
+                        }
+                    }
+                }
+
+                while (palette.length < 2) {
+                    palette.push(0x000000);
+                }
+
+                return { indexedPixels, palette };
+            }
+
+            pauseProcessBtn.addEventListener('click', () => {
+                isPaused = !isPaused;
+                pauseBtnText.textContent = isPaused ? 'Reanudar' : 'Pausar';
+            });
+
+            cancelProcessBtn.addEventListener('click', () => {
+                shouldCancel = true;
+            });
+
+            function addFrameToGallery(filename, url) {
+                if (galleryEmptyState) {
+                    galleryEmptyState.classList.add('hidden');
+                }
+
+                const card = document.createElement('div');
+                card.className = 'group relative rounded-xl overflow-hidden bg-checkerboard border border-slate-800/80 flex flex-col items-center justify-center p-2 text-center aspect-square shadow-md transition-all hover:border-brand-500/50';
+
+                card.innerHTML = `
+                    <img src="${url}" alt="${filename}" class="max-h-24 max-w-full object-contain mb-1 drop-shadow-md">
+                    <span class="text-[10px] font-mono text-slate-300 truncate w-full px-1">${filename}</span>
+                    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <a href="${url}" download="${filename}" class="w-8 h-8 rounded-lg bg-brand-600 hover:bg-brand-500 text-white flex items-center justify-center text-xs shadow" title="Descargar">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                        </a>
+                        <button class="delete-frame-btn w-8 h-8 rounded-lg bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center text-xs shadow" title="Eliminar">
+                            <i data-lucide="trash" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                `;
+
+                card.querySelector('.delete-frame-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    card.remove();
+                    extractedFramesList = extractedFramesList.filter(item => item.filename !== filename);
+                    updateGalleryBadge();
+                });
+
+                galleryGrid.appendChild(card);
+                lucide.createIcons();
+                updateGalleryBadge();
+            }
+
+            function updateGalleryBadge() {
+                const count = galleryGrid.querySelectorAll('.group').length;
+                galleryCountBadge.textContent = `${count} imágenes`;
+                if (count === 0 && galleryEmptyState) {
+                    galleryEmptyState.classList.remove('hidden');
+                }
+            }
+
+            clearGalleryBtn.addEventListener('click', () => {
+                const cards = galleryGrid.querySelectorAll('.group');
+                cards.forEach(c => c.remove());
+                extractedFramesList = [];
+                downloadZipBtn.classList.add('hidden');
+                updateGalleryBadge();
+            });
+        });
+    </script>
+</body>
+</html>

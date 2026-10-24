@@ -1,0 +1,170 @@
+/* Escaleta 2/styles.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+body { 
+    font-family: 'Inter', sans-serif; 
+    background: #ffffff; 
+    color: #1a1a1a; 
+    height: 100vh; 
+    overflow: hidden; 
+    display: flex; 
+    flex-direction: column; 
+    font-weight: 300; 
+}
+
+/* Scrollbars Minimalistas */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #cccccc; }
+
+.loading-bar { 
+    position: fixed; top: 0; left: 0; height: 2px; background: #1a1a1a; 
+    transition: width 0.4s ease; z-index: 1000; 
+}
+
+.font-mono { font-family: 'JetBrains Mono', monospace; letter-spacing: -0.02em; }
+
+/* Inputs Estilo Nordic / Brutalista Lineal */
+.config-input {
+    background: transparent; border-bottom: 1px solid #e5e5e5; color: #1a1a1a;
+    padding: 6px 0; border-radius: 0; font-size: 0.8rem; outline: none;
+    transition: border-color 0.3s; width: 100%;
+}
+.config-input:focus { border-bottom: 1px solid #1a1a1a; outline: none; }
+textarea.config-input { resize: none; line-height: 1.5; }
+
+/* Botones de Alta Fidelidad Estilística */
+.btn-nordic { 
+    background: #ffffff; color: #1a1a1a; text-transform: uppercase; 
+    font-size: 10px; letter-spacing: 0.1em; font-weight: 500;
+    border: 1px solid #e5e5e5; padding: 8px 16px; transition: all 0.2s ease;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+    border-radius: 2px;
+}
+.btn-nordic:hover { border-color: #1a1a1a; background: #fbfbfb; }
+
+.btn-icon {
+    width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid #e5e5e5; color: #1a1a1a; border-radius: 2px; transition: all 0.2s;
+    background: #ffffff;
+}
+.btn-icon:hover { border-color: #1a1a1a; background: #fff; }
+
+.btn-primary {
+    background: #1a1a1a; color: #ffffff; border: none;
+    font-family: 'Inter', sans-serif; text-transform: uppercase;
+    font-size: 10px; letter-spacing: 0.15em; padding: 12px;
+    transition: background-color 0.2s; width: 100%; cursor: pointer;
+    border-radius: 2px;
+    font-weight: 500;
+}
+.btn-primary:hover { background-color: #333333; }
+
+.label-text {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 0.2em;
+    color: #9ca3af; font-weight: 600; margin-bottom: 6px; display: block;
+}
+
+/* --- CANVAS TIMELINE --- */
+.timeline-container {
+    position: relative; overflow: hidden; background: #ffffff; cursor: grab;
+    background-image: 
+        linear-gradient(90deg, #f3f4f6 1px, transparent 1px),
+        linear-gradient(#f3f4f6 1px, transparent 1px);
+    background-size: 100px 100px;
+}
+.timeline-container:active { cursor: grabbing; }
+
+.viewport-layer { position: absolute; top: 0; left: 0; bottom: 0; right: 0; pointer-events: none; will-change: transform; }
+
+.track-axis {
+    position: absolute; top: 80px; left: 0; height: 2px; background: #e5e5e5;
+    transform: translateY(-50%); pointer-events: none;
+}
+
+/* Eventos */
+.evt-group {
+    position: absolute; top: 80px; transform: translateY(-50%);
+    display: flex; flex-direction: column; align-items: center; 
+    z-index: 10; cursor: pointer; pointer-events: auto;
+    transition: opacity 0.2s;
+}
+.evt-group:hover { z-index: 50; }
+.evt-group.dragging { opacity: 0.7; cursor: grabbing; z-index: 100; }
+
+.evt-dot {
+    width: 10px; height: 10px; background: white; border: 2px solid #1a1a1a;
+    border-radius: 50%; z-index: 20; transition: transform 0.2s;
+}
+.evt-group:hover .evt-dot { transform: scale(1.2); }
+.evt-group.selected .evt-dot { background: #1a1a1a; border-color: #1a1a1a; }
+
+.evt-stem { width: 1px; background: #e5e5e5; position: absolute; left: 50%; }
+
+.evt-card {
+    position: absolute; width: 220px; 
+    background: white; border: 1px solid #e5e5e5;
+    padding: 12px; display: flex; flex-direction: column; gap: 4px;
+    box-shadow: none;
+    transition: border-color 0.2s;
+    border-radius: 2px;
+}
+.evt-card:hover { border-color: #1a1a1a; }
+.evt-group.selected .evt-card { border-color: #1a1a1a; border-width: 1.5px; }
+
+.evt-time { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #1a1a1a; font-weight: 700; background: #f5f5f5; padding: 2px 6px; align-self: flex-start; }
+.evt-title { font-size: 11px; font-weight: 600; color: #1a1a1a; line-height: 1.3; }
+
+/* Regla */
+.ruler-container {
+    position: absolute; top: 0; left: 0; right: 0; height: 30px;
+    background: rgba(255,255,255,0.95); border-bottom: 1px solid #e5e5e5;
+    overflow: hidden; pointer-events: none; z-index: 40;
+}
+.ruler-ticks { position: absolute; top: 0; left: 0; height: 100%; will-change: transform; }
+.tick { position: absolute; bottom: 0; width: 1px; background: #e5e5e5; height: 6px; }
+.tick.major { height: 100%; background: #e5e5e5; }
+.tick-label { 
+    position: absolute; top: 8px; transform: translateX(-50%);
+    font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #a3a3a3;
+}
+
+.asset-tag { font-size: 9px; padding: 2px 6px; border-radius: 2px; border: 1px solid #e5e5e5; color: #555; background: white; }
+
+/* Minimapa Integrado */
+.timeline-minimap {
+    position: absolute; bottom: 7%; left: 5%; right: 10%; height: 36px;
+    background: #ffffff; border: 1px solid #e5e5e5; padding: 1%;
+    z-index: 50; cursor: pointer; overflow: hidden;
+}
+.minimap-nodes { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+.minimap-node {
+    position: absolute; top: 50%; transform: translate(-50%, -50%);
+    width: 6px; height: 6px; background: #e5e5e5; border-radius: 50%;
+    transition: background 0.2s, transform 0.2s;
+}
+.minimap-node.selected { 
+    background: #1a1a1a; 
+    transform: translate(-50%, -50%) scale(1.3);
+    z-index: 10;
+}
+.minimap-viewport {
+    position: absolute; top: 0; height: 100%;
+    background: rgba(26, 26, 26, 0.05); border: 1px solid rgba(26, 26, 26, 0.3);
+    pointer-events: none;
+}
+
+/* Relevo de Subtítulos del Previsualizador */
+#seq-subtitles {
+    text-shadow: none !important;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 8px 16px;
+    border-radius: 2px;
+    display: inline-block;
+    max-width: 80%;
+    margin: 0 auto;
+    font-size: 1.25rem !important;
+    font-weight: 400 !important;
+    letter-spacing: -0.01em;
+}

@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-white text-neutral-800">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SILENOS • Catálogo Literario</title>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JWBXH62V2"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6JWBXH62V2');
+  </script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+    .serif-title {
+      font-family: 'Cormorant Garamond', serif;
+    }
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 0px;
+    }
+    ::-webkit-scrollbar:horizontal {
+      display: none !important;
+      height: 0 !important;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #e5e5e5;
+      border-radius: 99px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #d4d4d4;
+    }
+
+    .apple-book-cover {
+      position: relative;
+      border-radius: 3px 8px 8px 3px;
+      box-shadow: 
+        1px 2px 8px rgba(0, 0, 0, 0.12),
+        4px 10px 24px rgba(0, 0, 0, 0.18),
+        0 0 1px rgba(0, 0, 0, 0.2);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+
+    .book-card:hover .apple-book-cover {
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 
+        2px 6px 14px rgba(0, 0, 0, 0.15),
+        8px 18px 36px rgba(0, 0, 0, 0.24),
+        0 0 1px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Lomo y sombreado 3D izquierdo */
+    .apple-book-cover::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 7%;
+      min-width: 6px;
+      max-width: 14px;
+      background: linear-gradient(
+        to right,
+        rgba(255, 255, 255, 0.45) 0%,
+        rgba(255, 255, 255, 0.12) 18%,
+        rgba(0, 0, 0, 0.25) 40%,
+        rgba(0, 0, 0, 0.4) 55%,
+        rgba(255, 255, 255, 0.25) 75%,
+        rgba(0, 0, 0, 0.18) 100%
+      );
+      z-index: 20;
+      pointer-events: none;
+      mix-blend-mode: overlay;
+    }
+
+    /* Hendidura/pliegue de encuadernación */
+    .apple-book-cover::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 7%;
+      bottom: 0;
+      width: 1px;
+      background: rgba(0, 0, 0, 0.18);
+      box-shadow: 1px 0 2px rgba(255, 255, 255, 0.3);
+      z-index: 21;
+      pointer-events: none;
+    }
+
+    .book-card {
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    html.tema-oscuro {
+      filter: invert(1) hue-rotate(180deg);
+      background-color: #050505;
+    }
+    html.tema-oscuro img,
+    html.tema-oscuro video,
+    html.tema-oscuro canvas {
+      filter: invert(1) hue-rotate(180deg);
+    }
+  </style>
+</head>
+
+<body class="h-full flex flex-col overflow-x-hidden overflow-y-hidden bg-white text-neutral-900">
+
+  <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+    
+    <!-- Sidebar / Menú Lateral Minimalista -->
+    <aside class="w-full md:w-72 bg-white flex flex-col flex-none p-6 md:pr-8 space-y-8 overflow-y-auto overflow-x-hidden">
+      
+      <!-- Título de Marca / Header Sidebar -->
+      <div class="flex items-center justify-between">
+        <h1 class="serif-title text-2xl font-normal tracking-tight text-neutral-900">SILENOS</h1>
+        <button id="theme-toggle-btn" onclick="toggleTheme()" class="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 hover:text-neutral-900 transition-colors">
+          Modo Oscuro
+        </button>
+      </div>
+
+      <!-- Buscador -->
+      <div class="relative">
+        <label class="block text-[9px] font-bold text-neutral-400 uppercase tracking-widest mb-2">Búsqueda</label>
+        <div class="relative">
+          <input type="text" id="search-input" oninput="handleSearchInput()" placeholder="Título, autor o palabra clave..." class="w-full bg-neutral-50 rounded-xl pl-9 pr-8 py-2 text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none focus:bg-neutral-100/80 transition-all font-normal">
+          <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-neutral-400"></i>
+          <button id="btn-clear-search" onclick="clearSearch()" class="hidden absolute right-3 top-2.5 text-neutral-400 hover:text-neutral-900">
+            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+        <div id="search-suggestions" class="absolute left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-neutral-100 z-50 max-h-60 overflow-y-auto hidden"></div>
+      </div>
+
+      <!-- Navegación por Colecciones -->
+      <div class="space-y-3">
+        <span class="text-[9px] font-bold text-neutral-400 uppercase tracking-widest block">Colecciones</span>
+        <nav id="collections-list" class="flex md:flex-col overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 gap-1"></nav>
+      </div>
+
+      <!-- Información Corta -->
+      <div class="pt-4 border-t border-neutral-100/60">
+        <p class="text-[11px] text-neutral-400 font-light leading-relaxed">
+          Catálogo literario y universos interactivos. Haz clic en una obra para explorar su sinopsis y enlaces de adquisición.
+        </p>
+      </div>
+    </aside>
+
+    <!-- Main View Content -->
+    <main class="flex-1 bg-white flex flex-col overflow-hidden px-6 sm:px-12 py-6">
+      
+      <!-- Control Bar Principal -->
+      <section class="flex-none flex items-baseline justify-between pb-6 border-b border-neutral-100/60">
+        <div>
+          <h2 id="current-view-title" class="serif-title text-3xl font-light text-neutral-900">Todas las Obras</h2>
+          <p id="current-view-count" class="text-xs text-neutral-400 font-light mt-1">Cargando catálogo...</p>
+        </div>
+
+        <!-- Filtro activo (Chip) -->
+        <div id="active-tag-filter" class="hidden items-center space-x-2 bg-neutral-100 text-neutral-800 text-[10px] font-medium tracking-wide px-3 py-1 rounded-full">
+          <span id="active-tag-text"></span>
+          <button onclick="clearTagFilter()" class="hover:text-neutral-500">
+            <i data-lucide="x" class="w-3 h-3"></i>
+          </button>
+        </div>
+      </section>
+
+      <!-- Rejilla de Libros -->
+      <div class="flex-1 overflow-y-auto overflow-x-hidden pt-8 pb-12">
+        <div id="books-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-6 gap-y-10"></div>
+        
+        <!-- Estado Vacío -->
+        <div id="empty-state" class="hidden flex flex-col items-center justify-center py-24 text-center">
+          <i data-lucide="book-open" class="w-8 h-8 text-neutral-300 mb-3"></i>
+          <h3 class="text-xs font-semibold text-neutral-800 uppercase tracking-wider">Sin Resultados</h3>
+          <p class="text-xs text-neutral-400 mt-1 max-w-xs font-light">No encontramos títulos que coincidan con la búsqueda o selección actual.</p>
+          <button onclick="clearAllFilters()" class="mt-4 text-xs font-medium text-neutral-900 underline hover:text-neutral-500">Restablecer filtros</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal Detalle del Libro -->
+  <div id="modal-view-book" class="fixed inset-0 bg-neutral-950/20 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden" onclick="closeBookModalOnOutsideClick(event)">
+    <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-10 shadow-2xl transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh] overflow-hidden" onclick="event.stopPropagation()">
+      
+      <div class="flex justify-end pb-2 flex-none">
+        <button onclick="closeBookModal()" class="text-neutral-400 hover:text-neutral-900 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto pr-1 space-y-6 overflow-x-hidden">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          
+          <div class="md:col-span-1">
+            <div class="aspect-[2/3] bg-neutral-50 apple-book-cover overflow-hidden relative shadow-sm">
+              <img id="detail-book-cover" class="w-full h-full object-cover" src="" alt="Portada" loading="lazy">
+              <div id="detail-cover-fallback" class="absolute inset-0 flex flex-col justify-between p-4 text-center hidden">
+                <span class="text-[8px] uppercase font-bold tracking-widest text-neutral-400" id="detail-fallback-col"></span>
+                <span class="serif-title text-base font-medium leading-snug" id="detail-fallback-title"></span>
+                <span class="text-[8px] uppercase tracking-widest text-neutral-400">Silenos</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="md:col-span-2 space-y-4">
+            <div>
+              <span id="detail-book-collection" class="text-[9px] font-bold uppercase tracking-widest text-neutral-400 bg-neutral-100 px-2 py-1 rounded-md"></span>
+              <h3 id="detail-book-title" class="serif-title text-3xl font-light text-neutral-900 mt-3 leading-tight"></h3>
+              <p class="text-xs text-neutral-400 mt-1">
+                de <span id="detail-book-authors" class="font-medium text-neutral-700"></span>
+              </p>
+            </div>
+
+            <div id="detail-countries-box" class="flex flex-wrap gap-1.5"></div>
+
+            <div id="detail-links-box" class="flex flex-wrap gap-2 pt-2"></div>
+
+            <div class="pt-4 border-t border-neutral-100">
+              <p id="detail-book-description" class="text-xs text-neutral-500 font-light leading-relaxed whitespace-pre-line"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    function initCanvasContext() {
+      console.log("Silenos workspace context active.");
+    }
+    initCanvasContext();
+
+    const state = {
+      collections: [],
+      books: [],
+      favorites: JSON.parse(localStorage.getItem('silenos_favorites') || '[]'),
+      currentCollection: "all",
+      activeTagFilter: null,
+      searchQuery: ""
+    };
+
+    const GORGEOUS_GRADIENTS = [
+      "from-[#ece9e6] to-[#eef2f3]",
+      "from-[#e6e9f0] to-[#eef1f5]",
+      "from-[#f3e7e9] to-[#e3eeff]",
+      "from-[#faf0e6] to-[#f4ebe1]",
+      "from-[#e1eec3] to-[#f0f4c3]",
+      "from-[#e8f5e9] to-[#c8e6c9]"
+    ];
+
+    window.onload = function() {
+      fetch('inventario.json')
+        .then(res => {
+          if (!res.ok) throw new Error('Error al cargar inventario.json');
+          return res.json();
+        })
+        .then(data => {
+          state.collections = data.collections || [];
+          // Asignación de un identificador único determinista por libro (_uid)
+          state.books = (data.books || []).map((b, idx) => ({
+            ...b,
+            _uid: `${b.collection || 'col'}::${b.title || 'titulo'}::${b.id !== undefined ? b.id : idx}`
+          }));
+          if (window.lucide) lucide.createIcons();
+          renderCollections();
+          renderBooks();
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('current-view-count').innerText = "Error cargando inventario.";
+        });
+    };
+
+    function saveFavorites() {
+      try {
+        localStorage.setItem('silenos_favorites', JSON.stringify(state.favorites));
+      } catch (e) {
+        console.error('Error guardando favoritos', e);
+      }
+    }
+
+    function getBookId(book) {
+      if (book._uid) return book._uid;
+      return `${book.collection || 'col'}::${book.title || 'titulo'}`;
+    }
+
+    function toggleFavorite(event, bookIndex) {
+      if (event) event.stopPropagation();
+      const book = state.books[bookIndex];
+      if (!book) return;
+      const id = getBookId(book);
+      const idx = state.favorites.indexOf(id);
+      if (idx > -1) {
+        state.favorites.splice(idx, 1);
+      } else {
+        state.favorites.push(id);
+      }
+      saveFavorites();
+      renderCollections();
+      renderBooks();
+    }
+
+    function getBookCoverSrc(book) {
+      if (book.image) {
+        if (book.image.startsWith('http://') || book.image.startsWith('https://') || book.image.startsWith('data:image')) {
+          return { type: 'url', src: book.image };
+        }
+        if (book.image.startsWith('imagenes/')) {
+          return { type: 'url', src: book.image };
+        }
+        return { type: 'url', src: `imagenes/${book.image}` };
+      }
+      const hash = book.title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const gradientClass = GORGEOUS_GRADIENTS[hash % GORGEOUS_GRADIENTS.length];
+      return { type: 'fallback', gradient: gradientClass };
+    }
+
+    function renderCollections() {
+      const container = document.getElementById('collections-list');
+      container.innerHTML = '';
+      
+      // Opción: Todas
+      const allActive = state.currentCollection === 'all';
+      const allBtn = document.createElement('button');
+      allBtn.onclick = () => selectCollection('all');
+      allBtn.className = `flex-none md:w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${allActive ? 'bg-neutral-900 text-white' : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'}`;
+      allBtn.innerHTML = `<span>Todas</span><span class="text-[10px] opacity-60">${state.books.length}</span>`;
+      container.appendChild(allBtn);
+
+      // Opción: Favoritos
+      const favActive = state.currentCollection === 'favorites';
+      const favCount = state.books.filter(b => state.favorites.includes(getBookId(b))).length;
+      const favBtn = document.createElement('button');
+      favBtn.onclick = () => selectCollection('favorites');
+      favBtn.className = `flex-none md:w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${favActive ? 'bg-neutral-900 text-white' : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'}`;
+      favBtn.innerHTML = `<span class="flex items-center gap-1.5"><i data-lucide="star" class="w-3.5 h-3.5 ${favCount > 0 ? 'fill-current text-amber-400' : ''}"></i>Favoritos</span><span class="text-[10px] opacity-60">${favCount}</span>`;
+      container.appendChild(favBtn);
+
+      // Colecciones individuales
+      state.collections.forEach(col => {
+        const isActive = state.currentCollection === col;
+        const count = state.books.filter(b => b.collection === col).length;
+        const colBtn = document.createElement('button');
+        colBtn.onclick = () => selectCollection(col);
+        colBtn.className = `flex-none md:w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${isActive ? 'bg-neutral-900 text-white' : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50'}`;
+        colBtn.innerHTML = `<span class="truncate">${col}</span><span class="text-[10px] opacity-60">${count}</span>`;
+        container.appendChild(colBtn);
+      });
+
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    function selectCollection(col) {
+      state.currentCollection = col;
+      state.activeTagFilter = null;
+      document.getElementById('active-tag-filter').classList.add('hidden');
+      renderCollections();
+      renderBooks();
+    }
+
+    function renderBooks() {
+      const grid = document.getElementById('books-grid');
+      const emptyState = document.getElementById('empty-state');
+      grid.innerHTML = '';
+
+      if (state.currentCollection === 'all') {
+        document.getElementById('current-view-title').innerText = "Todas las Obras";
+      } else if (state.currentCollection === 'favorites') {
+        document.getElementById('current-view-title').innerText = "Favoritos";
+      } else {
+        document.getElementById('current-view-title').innerText = state.currentCollection;
+      }
+
+      let filtered = state.books;
+
+      if (state.currentCollection === 'favorites') {
+        filtered = filtered.filter(b => state.favorites.includes(getBookId(b)));
+      } else if (state.currentCollection !== 'all') {
+        filtered = filtered.filter(b => b.collection === state.currentCollection);
+      }
+
+      if (state.activeTagFilter) {
+        const { type, value } = state.activeTagFilter;
+        if (type === 'character') filtered = filtered.filter(b => b.characters && b.characters.includes(value));
+        else if (type === 'region') filtered = filtered.filter(b => b.regions && b.regions.includes(value));
+        else if (type === 'keyword') filtered = filtered.filter(b => b.keywords && b.keywords.includes(value));
+        else if (type === 'country') filtered = filtered.filter(b => b.countries && b.countries.includes(value));
+        else if (type === 'author') filtered = filtered.filter(b => b.authors && b.authors.includes(value));
+      }
+
+      if (state.searchQuery) {
+        const q = state.searchQuery.trim().toLowerCase();
+        filtered = filtered.filter(b => 
+          b.title.toLowerCase().includes(q) ||
+          b.collection.toLowerCase().includes(q) ||
+          (b.description && b.description.toLowerCase().includes(q)) ||
+          (b.authors && b.authors.some(a => a.toLowerCase().includes(q)))
+        );
+      }
+
+      document.getElementById('current-view-count').innerText = `${filtered.length} volúmenes disponibles`;
+
+      if (filtered.length === 0) {
+        grid.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      grid.classList.remove('hidden');
+      emptyState.classList.add('hidden');
+
+      filtered.forEach((book, index) => {
+        const card = document.createElement('div');
+        card.className = "group cursor-pointer book-card flex flex-col space-y-3";
+        card.onclick = () => viewBookDetails(book);
+        
+        const authorsArr = book.authors || ["Silenos"];
+        const coverData = getBookCoverSrc(book);
+
+        const isInitialViewport = index < 6;
+        const fetchPriorityAttr = isInitialViewport ? 'fetchpriority="high"' : 'fetchpriority="low"';
+        const loadingAttr = isInitialViewport ? 'eager' : 'lazy';
+
+        const originalIndex = state.books.indexOf(book);
+        const isFav = state.favorites.includes(getBookId(book));
+
+        const favButtonHtml = `
+          <button onclick="toggleFavorite(event, ${originalIndex})" 
+                  class="absolute bottom-2 right-2 z-30 p-1.5 rounded-full bg-neutral-950/40 hover:bg-neutral-950/70 backdrop-blur-md text-white transition-all duration-200 ${isFav ? 'opacity-100 scale-100' : 'opacity-0 group-hover:opacity-100 hover:scale-110'}" 
+                  title="${isFav ? 'Quitar de favoritos' : 'Añadir a favoritos'}"
+                  aria-label="${isFav ? 'Quitar de favoritos' : 'Añadir a favoritos'}">
+            <i data-lucide="star" class="w-4 h-4 ${isFav ? 'fill-white text-white' : 'text-white/90'}"></i>
+          </button>
+        `;
+
+        let coverHtml = coverData.type === 'url' ? `
+          <div class="w-full h-full bg-gradient-to-tr ${GORGEOUS_GRADIENTS[index % GORGEOUS_GRADIENTS.length]} flex flex-col justify-between p-4 text-center">
+            <span class="text-[8px] uppercase tracking-widest font-bold text-neutral-400">${book.collection}</span>
+            <span class="serif-title text-base font-normal leading-snug text-neutral-800 line-clamp-3">${book.title}</span>
+            <span class="text-[8px] uppercase tracking-widest font-bold text-neutral-400">Silenos</span>
+          </div>
+          <img class="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-500" 
+               src="${coverData.src}" 
+               alt="${book.title}" 
+               loading="${loadingAttr}" 
+               decoding="async" 
+               ${fetchPriorityAttr}
+               onload="this.classList.remove('opacity-0')">
+          ${favButtonHtml}
+        ` : `
+          <div class="w-full h-full bg-gradient-to-tr ${coverData.gradient} flex flex-col justify-between p-4 text-center">
+            <span class="text-[8px] uppercase tracking-widest font-bold text-neutral-400">${book.collection}</span>
+            <span class="serif-title text-base font-normal leading-snug text-neutral-800 line-clamp-3">${book.title}</span>
+            <span class="text-[8px] uppercase tracking-widest font-bold text-neutral-400">Silenos</span>
+          </div>
+          ${favButtonHtml}
+        `;
+
+        card.innerHTML = `
+          <div class="aspect-[2/3] apple-book-cover relative bg-neutral-50">
+            ${coverHtml}
+          </div>
+          <div class="space-y-1">
+            <h4 class="serif-title text-base font-normal text-neutral-900 leading-snug line-clamp-1 group-hover:text-neutral-500 transition-colors">${book.title}</h4>
+            <p class="text-[11px] text-neutral-400 font-light truncate">${authorsArr.join(', ')}</p>
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    function handleSearchInput() {
+      const query = document.getElementById('search-input').value.trim().toLowerCase();
+      state.searchQuery = query;
+      document.getElementById('btn-clear-search').classList.toggle('hidden', !query);
+      renderBooks();
+    }
+
+    function clearSearch() {
+      document.getElementById('search-input').value = '';
+      document.getElementById('btn-clear-search').classList.add('hidden');
+      state.searchQuery = '';
+      renderBooks();
+    }
+
+    function applyTagFilter(type, value) {
+      state.activeTagFilter = { type, value };
+      document.getElementById('active-tag-text').innerText = `${value}`;
+      document.getElementById('active-tag-filter').classList.remove('hidden');
+      document.getElementById('active-tag-filter').classList.add('flex');
+      renderBooks();
+    }
+
+    function clearTagFilter() {
+      state.activeTagFilter = null;
+      document.getElementById('active-tag-filter').classList.add('hidden');
+      renderBooks();
+    }
+
+    function clearAllFilters() {
+      state.currentCollection = "all";
+      state.activeTagFilter = null;
+      state.searchQuery = "";
+      document.getElementById('search-input').value = '';
+      document.getElementById('btn-clear-search').classList.add('hidden');
+      document.getElementById('active-tag-filter').classList.add('hidden');
+      renderCollections();
+      renderBooks();
+    }
+
+    function viewBookDetails(book) {
+      const modal = document.getElementById('modal-view-book');
+      const cover = document.getElementById('detail-book-cover');
+      const fallback = document.getElementById('detail-cover-fallback');
+      
+      document.getElementById('detail-book-title').innerText = book.title;
+      document.getElementById('detail-book-collection').innerText = book.collection;
+      document.getElementById('detail-book-authors').innerText = (book.authors || []).join(', ');
+      document.getElementById('detail-book-description').innerText = book.description || "Obra sin descripción pública disponible.";
+
+      const coverData = getBookCoverSrc(book);
+      if (coverData.type === 'url') {
+        cover.src = coverData.src;
+        cover.classList.remove('hidden');
+        fallback.classList.add('hidden');
+      } else {
+        cover.classList.add('hidden');
+        fallback.className = `absolute inset-0 bg-gradient-to-tr ${coverData.gradient} flex flex-col justify-between p-6 text-center`;
+        document.getElementById('detail-fallback-col').innerText = book.collection;
+        document.getElementById('detail-fallback-title').innerText = book.title;
+        fallback.classList.remove('hidden');
+      }
+
+      const linksBox = document.getElementById('detail-links-box');
+      linksBox.innerHTML = '';
+      (book.links || []).forEach(link => {
+        const a = document.createElement('a');
+        a.href = link.url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.className = "inline-flex items-center space-x-2 px-4 py-2 bg-neutral-900 text-white rounded-xl text-xs font-medium hover:bg-neutral-800 transition-all";
+        a.innerHTML = `<span>Adquirir en ${link.name}</span>`;
+        linksBox.appendChild(a);
+      });
+
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.firstElementChild.classList.remove('scale-95');
+        modal.firstElementChild.classList.add('scale-100');
+      }, 10);
+    }
+
+    function closeBookModal() {
+      const modal = document.getElementById('modal-view-book');
+      modal.firstElementChild.classList.remove('scale-100');
+      modal.firstElementChild.classList.add('scale-95');
+      setTimeout(() => modal.classList.add('hidden'), 150);
+    }
+
+    function closeBookModalOnOutsideClick(e) {
+      closeBookModal();
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('tema-oscuro');
+      document.getElementById('theme-toggle-btn').innerText = isDark ? 'Modo Claro' : 'Modo Oscuro';
+    }
+
+    window.selectCollection = selectCollection;
+    window.handleSearchInput = handleSearchInput;
+    window.clearSearch = clearSearch;
+    window.applyTagFilter = applyTagFilter;
+    window.clearTagFilter = clearTagFilter;
+    window.clearAllFilters = clearAllFilters;
+    window.closeBookModal = closeBookModal;
+    window.closeBookModalOnOutsideClick = closeBookModalOnOutsideClick;
+    window.toggleTheme = toggleTheme;
+    window.toggleFavorite = toggleFavorite;
+  </script>
+</body>
+</html>

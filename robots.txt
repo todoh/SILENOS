@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /biblioteca/
+Sitemap: https://www.silenos.es/sitemap.xml

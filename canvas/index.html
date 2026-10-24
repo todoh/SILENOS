@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CANVAS SAGA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="select-none text-slate-800" oncontextmenu="return false;">
+    <header class="fixed top-8 left-4 right-4 z-40 flex items-center justify-between google-panel p-2 rounded-2xl">
+        <div class="flex items-center gap-3">
+            <button id="btn-open-folder" onclick="window.app.openFolder()" class="px-3.5 py-1.5 google-button text-xs font-semibold rounded-lg flex items-center gap-2">
+                <i class="fa-solid fa-folder-open text-blue-600"></i> <span id="folder-label">CARGAR CARPETA</span>
+            </button>
+            <div class="h-4 w-[1px] bg-gray-300"></div>
+            <div class="flex items-center gap-1">
+                <button id="btn-undo" onclick="window.app.undo()" class="p-1.5 google-button text-xs font-semibold rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed" title="Deshacer (Ctrl+Z)">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
+                <button id="btn-redo" onclick="window.app.redo()" class="p-1.5 google-button text-xs font-semibold rounded-lg text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed" title="Rehacer (Ctrl+Y / Ctrl+Shift+Z)">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+            </div>
+            <div class="h-4 w-[1px] bg-gray-300"></div>
+            <input type="password" id="gemini-key" placeholder="Gemini API Key..." class="google-input text-xs px-3 py-1.5 rounded-lg w-44 outline-none placeholder-gray-500" oninput="localStorage.setItem('koreh_gemini_book_api_key', this.value)">
+            
+            <button id="btn-hdr-generar" onclick="window.app.openRightDrawer('generate')" class="px-3.5 py-1.5 google-button-primary text-xs font-semibold rounded-lg flex items-center gap-1.5">
+             GEN
+            </button>
+            <button id="btn-hdr-lore" onclick="window.app.openRightDrawer('lore')" class="px-3.5 py-1.5 google-button text-xs font-semibold rounded-lg flex items-center gap-1.5 border-purple-300 text-purple-700 hover:bg-purple-50">
+                 LORE
+            </button>
+            <button id="btn-hdr-chat" onclick="window.app.openRightDrawer('chat')" class="px-3.5 py-1.5 google-button text-xs font-semibold rounded-lg flex items-center gap-1.5 border-teal-300 text-teal-700 hover:bg-teal-50">
+              CHAT
+            </button>
+            <div>
+                <input type="number" id="cfg-render-steps" min="1" max="50" value="6" class="w-full google-input px-3 py-1.5 rounded-lg outline-none">
+            </div>
+            <div>
+                <select id="cfg-render-preset" onchange="window.app.handleRenderPresetChange(this.value)" class="w-full google-input px-3 py-2 rounded-lg outline-none">
+                    <optgroup label="1024 (Estándar)">
+                        <option value="1024x1024">1:1 (1024 x 1024) </option>
+                        <option value="1280x720">16:9 (1280 x 720) </option>
+                        <option value="720x1280">9:16 (720 x 1280) </option>
+                        <option value="1152x864">4:3 (1152 x 864) </option>
+                        <option value="1248x832">3:2 (1248 x 832) </option>
+                    </optgroup>
+                    <optgroup label="1280 (Alta Calidad)">
+                        <option value="1280x1280">1:1 (1280 x 1280) </option>
+                        <option value="1536x864">16:9 (1536 x 864) </option>
+                        <option value="864x1536">9:16 (864 x 1536) </option>
+                        <option value="1680x720">21:9 (1680 x 720) </option>
+                    </optgroup>
+                    <optgroup label="1536 (Ultra Detail)">
+                        <option value="1536x1536">1:1 (1536 x 1536) </option>
+                        <option value="2048x1152">16:9 (2048 x 1152) </option>
+                        <option value="1152x2048">9:16 (1152 x 2048) </option>
+                    </optgroup>
+                </select>
+            </div>
+            <button onclick="window.app.saveRenderSettings()" class="px-4 py-1.5 google-button-primary text-xs font-semibold rounded-lg">Guardar</button>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="window.app.exportFullProjectJSON()" class="px-3 py-1.5 google-button text-xs font-semibold rounded-lg flex items-center gap-2 text-amber-700 border-amber-300 hover:bg-amber-50" title="Exportar Lore y Todos los Datos en JSON">
+                <i class="fa-solid fa-file-export text-amber-600"></i> Exportar JSON
+            </button>
+            <button onclick="window.app.exportCanvas4K()" class="px-3 py-1.5 google-button text-xs font-semibold rounded-lg flex items-center gap-2 text-emerald-700 border-emerald-300 hover:bg-emerald-50" title="Exportar Canvas en Imagen 4K">
+                <i class="fa-solid fa-file-image text-emerald-600"></i> Exportar 8K
+            </button>
+            <button onclick="window.app.openRenderSettingsModal()" class="px-3 py-1.5 google-button text-xs font-semibold rounded-lg flex items-center gap-2" title="Configuración de Render ComfyUI">
+                <i class="fa-solid fa-sliders text-indigo-600"></i> CONFIG RENDER
+            </button>
+        </div>
+    </header>
+    <canvas id="saga-canvas"></canvas>
+    <div id="ctx-menu" class="hidden fixed z-50 google-panel rounded-xl p-1.5 w-56 text-xs">
+        <button onclick="window.app.openCreateDataDrawer()" class="w-full text-left px-3 py-2 hover:bg-gray-100 rounded-lg flex items-center gap-2 text-gray-800 font-medium transition">
+            <i class="fa-solid fa-cube text-blue-600"></i> CREAR NUEVO DATO
+        </button>
+        <button onclick="window.app.createRegionPrompt()" class="w-full text-left px-3 py-2 hover:bg-gray-100 rounded-lg flex items-center gap-2 text-gray-800 font-medium transition mt-1 border-t border-gray-200">
+            <i class="fa-solid fa-vector-square text-green-600"></i> CREAR NUEVA ZONA
+        </button>
+        
+        <div class="my-1 border-t border-gray-200"></div>
+        <div class="px-3 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Organizar Nodos</div>
+        
+        <button onclick="window.app.sortByName()" class="w-full text-left px-3 py-1.5 hover:bg-gray-100 rounded-lg flex items-center gap-2 text-gray-700 font-medium transition">
+            <i class="fa-solid fa-arrow-down-a-z text-amber-600"></i> Ordenar por Nombre
+        </button>
+        <button onclick="window.app.sortByTag()" class="w-full text-left px-3 py-1.5 hover:bg-gray-100 rounded-lg flex items-center gap-2 text-gray-700 font-medium transition">
+            <i class="fa-solid fa-tags text-purple-600"></i> Ordenar por Etiqueta
+        </button>
+        <button onclick="window.app.sortByAI()" class="w-full text-left px-3 py-1.5 hover:bg-gray-100 rounded-lg flex items-center gap-2 text-gray-700 font-medium transition">
+            <i class="fa-solid fa-brain text-indigo-600"></i> Ordenar con IA
+        </button>
+    </div>
+    
+    <!-- Menú Contextual para Nodos -->
+    <div id="ctx-menu-node" class="hidden fixed z-50 google-panel rounded-xl p-1.5 w-52 text-xs">
+        <button onclick="window.app.placeNodeFromCtx()" class="w-full text-left px-3 py-2 hover:bg-blue-50 rounded-lg flex items-center gap-2 text-blue-700 font-medium transition">
+            <i class="fa-solid fa-location-crosshairs text-blue-600"></i> Colocar en Canvas (IA)
+        </button>
+        <div class="my-1 border-t border-gray-200"></div>
+        <button onclick="window.app.editNodeFromCtx()" class="w-full text-left px-3 py-2 hover:bg-gray-100 rounded-lg flex items-center gap-2 text-gray-800 font-medium transition">
+            <i class="fa-solid fa-pen text-blue-600"></i> Editar Dato
+        </button>
+        <button onclick="window.app.duplicateNodeFromCtx()" class="w-full text-left px-3 py-2 hover:bg-gray-100 rounded-lg flex items-center gap-2 text-gray-800 font-medium transition">
+            <i class="fa-solid fa-copy text-amber-600"></i> Duplicar Dato
+        </button>
+        <div class="my-1 border-t border-gray-200"></div>
+        <button onclick="window.app.deleteNodeFromCtx()" class="w-full text-left px-3 py-2 hover:bg-red-50 rounded-lg flex items-center gap-2 text-red-600 font-medium transition">
+            <i class="fa-solid fa-trash text-red-600"></i> Borrar Dato
+        </button>
+    </div>
+
+    <!-- Menú Contextual para Zonas -->
+    <div id="ctx-menu-zone" class="hidden fixed z-50 google-panel rounded-xl p-1.5 w-52 text-xs">
+        <button onclick="window.app.editZoneFromCtx()" class="w-full text-left px-3 py-2 hover:bg-gray-100 rounded-lg flex items-center gap-2 text-gray-800 font-medium transition">
+            <i class="fa-solid fa-pen text-green-600"></i> Editar Zona
+        </button>
+        <div class="my-1 border-t border-gray-200"></div>
+        <button onclick="window.app.deleteZoneFromCtx()" class="w-full text-left px-3 py-2 hover:bg-red-50 rounded-lg flex items-center gap-2 text-red-600 font-medium transition">
+            <i class="fa-solid fa-trash text-red-600"></i> BORRAR ZONA
+        </button>
+    </div>
+
+    <aside id="side-drawer" class="fixed top-0 right-0 h-full w-[520px] max-w-[90vw] z-50 google-panel p-6 shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col justify-between overflow-y-auto rounded-l-2xl">
+        <div id="form-drawer-generate" class="space-y-4 hidden">
+            <div class="flex items-center justify-between border-b border-gray-200 pb-3">
+                <h3 class="text-xs font-bold tracking-wider text-blue-600 uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> GENERACIÓN DE DATOS
+                </h3>
+                <button type="button" onclick="window.app.closeDrawer()" class="text-gray-400 hover:text-gray-700"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-gray-600 font-semibold mb-1">Premisa Creativa</label>
+                    <textarea id="gen-inp-premise" rows="3" placeholder="Premisa o idea para generar..." class="w-full google-input px-3 py-1.5 rounded-lg outline-none"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-gray-600 font-semibold mb-1">Categoría</label>
+                        <input type="text" id="gen-inp-category" value="Dato" class="w-full google-input px-3 py-1.5 rounded-lg outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-gray-600 font-semibold mb-1">Cantidad (1 a varios)</label>
+                        <input type="number" id="gen-inp-count" min="1" max="20" value="1" class="w-full google-input px-3 py-1.5 rounded-lg outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-gray-600 font-semibold mb-1">Modo de Generación</label>
+                    <select id="gen-inp-mode" class="w-full google-input px-3 py-1.5 rounded-lg outline-none">
+                        <option value="FREE">Libre</option>
+                        <option value="CREATIVE">Creativo</option>
+                        <option value="FAITHFUL">Fiel a la realidad</option>
+                        <option value="CONTEXTUAL">Con Contexto Canvas</option>
+                        <option value="LORE">Con Lore Global</option>
+                    </select>
+                </div>
+                <div class="space-y-1.5 pt-1">
+                    <label class="flex items-center gap-2 font-medium text-gray-700 cursor-pointer">
+                        <input type="checkbox" id="gen-chk-canvas" class="rounded text-blue-600"> Con contexto del Canvas
+                    </label>
+                    <label class="flex items-center gap-2 font-medium text-gray-700 cursor-pointer">
+                        <input type="checkbox" id="gen-chk-lore" class="rounded text-purple-600"> Con el Lore como contexto
+                    </label>
+                </div>
+                <button onclick="window.app.executeStandardGeneration()" id="btn-exec-gen" class="w-full py-2 google-button-primary font-bold rounded-lg flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-play"></i> GENERAR DATOS
+                </button>
+                <div class="border-t border-gray-200 pt-3 space-y-2">
+                    <label class="block font-bold text-purple-700 uppercase tracking-wider text-[11px]">Agentes de Base de Datos</label>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <button onclick="window.app.executeDatabaseAgent('create')" class="py-1.5 google-button font-semibold text-[10px] rounded-lg text-purple-700 hover:bg-purple-50">CREAR BASE</button>
+                        <button onclick="window.app.executeDatabaseAgent('start')" class="py-1.5 google-button font-semibold text-[10px] rounded-lg text-purple-700 hover:bg-purple-50">INICIO BASE</button>
+                        <button onclick="window.app.executeDatabaseAgent('append')" class="py-1.5 google-button font-semibold text-[10px] rounded-lg text-purple-700 hover:bg-purple-50">AÑADIR DATOS</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="form-drawer-lore" class="space-y-4 hidden">
+            <div class="flex items-center justify-between border-b border-gray-200 pb-3">
+                <h3 class="text-xs font-bold tracking-wider text-purple-600 uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-book"></i> GESTIÓN DE LORE GLOBAL
+                </h3>
+                <button type="button" onclick="window.app.closeDrawer()" class="text-gray-400 hover:text-gray-700"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <label class="block font-bold text-gray-600 uppercase tracking-wider text-[10px]">Acciones del Agente de Lore</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="window.app.executeLoreAgent('zero')" class="py-1.5 google-button font-semibold rounded-lg text-purple-800 hover:bg-purple-50">GENERAR DE CERO</button>
+                    <button onclick="window.app.executeLoreAgent('rebuild')" class="py-1.5 google-button font-semibold rounded-lg text-purple-800 hover:bg-purple-50">GENERAR TODO DE NUEVO</button>
+                    <button onclick="window.app.executeLoreAgent('append')" class="py-1.5 google-button font-semibold rounded-lg text-purple-800 hover:bg-purple-50">COMPLEMENTAR</button>
+                    <button onclick="window.app.executeLoreAgent('review')" class="py-1.5 google-button font-semibold rounded-lg text-purple-800 hover:bg-purple-50">AÑADIR REPASO</button>
+                </div>
+                <div class="space-y-2 pt-2 border-t border-gray-200">
+                    <div>
+                        <label class="block text-gray-500 font-semibold mb-1">1. Resumen General</label>
+                        <textarea id="lore-field-resumenGeneral" rows="3" readonly class="w-full google-input px-3 py-1.5 rounded-lg outline-none bg-gray-50"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-gray-500 font-semibold mb-1">2. Facciones y Personajes</label>
+                        <textarea id="lore-field-faccionesYPersonajes" rows="3" readonly class="w-full google-input px-3 py-1.5 rounded-lg outline-none bg-gray-50"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-gray-500 font-semibold mb-1">3. Tecnología y Magia</label>
+                        <textarea id="lore-field-tecnologiaYMagia" rows="3" readonly class="w-full google-input px-3 py-1.5 rounded-lg outline-none bg-gray-50"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-gray-500 font-semibold mb-1">4. Cronología</label>
+                        <textarea id="lore-field-cronologia" rows="3" readonly class="w-full google-input px-3 py-1.5 rounded-lg outline-none bg-gray-50"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-gray-500 font-semibold mb-1">5. Conflictos y Tramas</label>
+                        <textarea id="lore-field-conflictos" rows="3" readonly class="w-full google-input px-3 py-1.5 rounded-lg outline-none bg-gray-50"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-gray-500 font-semibold mb-1">6. Geografía y Asentamientos</label>
+                        <textarea id="lore-field-geografiaYAsentamientos" rows="3" readonly class="w-full google-input px-3 py-1.5 rounded-lg outline-none bg-gray-50"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-gray-500 font-semibold mb-1">7. Misterios y Leyendas</label>
+                        <textarea id="lore-field-misteriosYLeyendas" rows="3" readonly class="w-full google-input px-3 py-1.5 rounded-lg outline-none bg-gray-50"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-gray-500 font-semibold mb-1">8. Glosario y Terminología</label>
+                        <textarea id="lore-field-glosarioYTerminologia" rows="3" readonly class="w-full google-input px-3 py-1.5 rounded-lg outline-none bg-gray-50"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="form-drawer-chat" class="space-y-3 hidden h-full flex flex-col justify-between select-text" oncontextmenu="event.stopPropagation()">
+            <div class="flex items-center justify-between border-b border-gray-200 pb-3 flex-shrink-0">
+                <h3 class="text-xs font-bold tracking-wider text-teal-600 uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-comments"></i> CHAT CON IA
+                </h3>
+                <button type="button" onclick="window.app.closeDrawer()" class="text-gray-400 hover:text-gray-700"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="space-y-1.5 text-xs flex-shrink-0 border-b border-gray-200 pb-2">
+                <div class="font-bold text-gray-500 text-[10px] uppercase tracking-wider">Contexto adjunto</div>
+                <label class="flex items-center gap-2 font-medium text-gray-700 cursor-pointer">
+                    <input type="checkbox" id="chat-chk-canvas" checked class="rounded text-teal-600"> Incluir Canvas entero
+                </label>
+                <label class="flex items-center gap-2 font-medium text-gray-700 cursor-pointer">
+                    <input type="checkbox" id="chat-chk-lore" checked class="rounded text-purple-600"> Incluir Lore Global
+                </label>
+            </div>
+            <div id="chat-history-container" class="flex-1 overflow-y-auto space-y-3 text-xs p-2 bg-gray-50 rounded-xl border border-gray-200 my-2">
+                <div class="text-gray-400 text-center text-[11px] py-4">Inicia la conversación preguntando cualquier duda sobre tu mundo.</div>
+            </div>
+            <div class="space-y-2 flex-shrink-0 pt-1 border-t border-gray-200">
+                <textarea id="chat-input-message" rows="3" placeholder="Escribe tu mensaje aquí..." class="w-full google-input px-3 py-1.5 rounded-lg outline-none text-xs" onkeydown="if(event.key === 'Enter' && !event.shiftKey){ event.preventDefault(); window.app.sendChatMessage(); }"></textarea>
+                <div class="flex justify-between items-center gap-2">
+                    <button onclick="window.app.clearChatHistory()" class="px-2.5 py-1.5 google-button text-[11px] font-semibold rounded-lg text-gray-500 hover:bg-gray-100" title="Limpiar Conversación">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                    <button id="btn-send-chat" onclick="window.app.sendChatMessage()" class="flex-1 py-1.5 google-button-primary font-bold rounded-lg text-xs flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700">
+                        <i class="fa-solid fa-paper-plane"></i> ENVIAR MENSAJE
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="form-drawer-data" class="space-y-4 font-normal">
+            <div class="flex items-center justify-between border-b border-gray-200 pb-3">
+                <h3 id="drawer-data-title" class="text-xs font-bold tracking-wider text-blue-600 uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-database"></i> EDITAR DATO
+                </h3>
+                <button type="button" onclick="window.app.closeDrawer()" class="text-gray-400 hover:text-gray-700"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-gray-600 font-semibold mb-1">Imagen</label>
+                    <div id="drawer-img-container" class="relative group w-full h-48 rounded-lg bg-gray-100 border border-gray-300 overflow-hidden flex items-center justify-center">
+                        <img id="drawer-data-img" src="" class="w-full h-full object-contain hidden cursor-pointer transition-transform duration-200 hover:scale-105" onclick="window.app.openLightbox(this.src)" title="Clic para ampliar">
+                        <div id="drawer-data-img-placeholder" class="text-gray-400 flex flex-col items-center gap-1">
+                            <i class="fa-regular fa-image text-2xl"></i>
+                            <span class="text-[10px]">Sin imagen asignada</span>
+                        </div>
+                    </div>
+                    <input type="file" id="inp-drawer-file" accept="image/*" class="hidden" onchange="window.app.handleLocalImageUpload(event)">
+                    <div class="flex gap-2 mt-2">
+                        <button type="button" id="btn-drawer-ai-paint" onclick="window.app.paintDrawerNode()" class="flex-1 google-button-emerald py-1.5 text-[11px] font-semibold rounded-lg flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> GENERAR CON IA
+                        </button>
+                        <button type="button" onclick="document.getElementById('inp-drawer-file').click()" class="flex-1 google-button py-1.5 text-[11px] font-semibold rounded-lg flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-upload"></i> SUBIR LOCAL
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-gray-600 font-semibold mb-1">Nombre</label>
+                    <input type="text" id="d-data-name" oninput="window.app.autoSaveDataDrawer()" class="w-full google-input px-3 py-1.5 rounded-lg outline-none">
+                </div>
+                
+                <div>
+                    <label class="block text-gray-600 font-semibold mb-1">Tipo / Categoría</label>
+                    <input type="text" id="d-data-type" placeholder="Ej: Personaje, Hechizo, Tecno-artefacto..." oninput="window.app.autoSaveDataDrawer()" class="w-full google-input px-3 py-1.5 rounded-lg outline-none">
+                </div>
+                <div>
+                    <label class="block text-gray-600 font-semibold mb-1">Etiquetas (separadas por coma)</label>
+                    <input type="text" id="d-data-tags" placeholder="cyberpunk, clave" oninput="window.app.autoSaveDataDrawer()" class="w-full google-input px-3 py-1.5 rounded-lg outline-none">
+                </div>
+                <div>
+                    <label class="block text-gray-600 font-semibold mb-1">Visual Prompt (Inglés)</label>
+                    <textarea id="d-data-visual" rows="4" oninput="window.app.autoSaveDataDrawer()" class="w-full google-input px-3 py-1.5 rounded-lg outline-none font-mono text-[11px]" placeholder="Detailed image generation prompt..."></textarea>
+                    <button type="button" id="btn-translate-visual" onclick="window.app.translateVisualPrompt()" class="w-full mt-1.5 py-1.5 google-button font-semibold text-[11px] rounded-lg flex items-center justify-center gap-1 text-blue-600 hover:bg-blue-50">
+                        <i class="fa-solid fa-language"></i> TRADUCIR A INGLÉS
+                    </button>
+                </div>
+                <div>
+                    <label class="block text-gray-600 font-semibold mb-1">Descripción / Lore</label>
+                    <textarea id="d-data-desc" rows="6" oninput="window.app.autoSaveDataDrawer()" class="w-full google-input px-3 py-1.5 rounded-lg outline-none" placeholder="Descripción enciclopédica..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div id="form-drawer-zone" class="space-y-4 hidden">
+            <div class="flex items-center justify-between border-b border-gray-200 pb-3">
+                <h3 class="text-xs font-bold tracking-wider text-green-600 uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-vector-square"></i> EDITAR ZONA
+                </h3>
+                <button type="button" onclick="window.app.closeDrawer()" class="text-gray-400 hover:text-gray-700"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-gray-600 font-semibold mb-1">Nombre de la Zona</label>
+                    <input type="text" id="d-zone-name" oninput="window.app.autoSaveZoneDrawer()" class="w-full google-input px-3 py-1.5 rounded-lg outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-gray-600 font-semibold mb-1">Ancho (px)</label>
+                        <input type="number" id="d-zone-w" min="100" step="10" oninput="window.app.autoSaveZoneDrawer()" class="w-full google-input px-3 py-1.5 rounded-lg outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-gray-600 font-semibold mb-1">Alto (px)</label>
+                        <input type="number" id="d-zone-h" min="100" step="10" oninput="window.app.autoSaveZoneDrawer()" class="w-full google-input px-3 py-1.5 rounded-lg outline-none">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <div id="render-settings-modal" class="hidden fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="google-panel rounded-2xl p-6 w-full max-w-xl space-y-4 text-xs shadow-2xl" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between border-b border-gray-200 pb-3">
+                <h3 class="text-sm font-bold text-indigo-600 uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-sliders"></i> Ajustes de Generación (ComfyUI)
+                </h3>
+                <button onclick="window.app.closeRenderSettingsModal()" class="text-gray-400 hover:text-gray-700">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-3 pt-2">
+                    <div>
+                        <label class="block text-gray-600 font-semibold mb-1">Ancho Personalizado (px)</label>
+                        <input type="number" id="cfg-render-width" min="256" step="8" value="1024" class="w-full google-input px-3 py-1.5 rounded-lg outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-gray-600 font-semibold mb-1">Alto Personalizado (px)</label>
+                        <input type="number" id="cfg-render-height" min="256" step="8" value="1024" class="w-full google-input px-3 py-1.5 rounded-lg outline-none">
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-4 border-t border-gray-200">
+                <button onclick="window.app.closeRenderSettingsModal()" class="px-4 py-1.5 google-button text-xs font-semibold rounded-lg">CANCELAR</button>
+                <button onclick="window.app.saveRenderSettings()" class="px-4 py-1.5 google-button-primary text-xs font-semibold rounded-lg">GUARDAR CONFIGURACIÓN</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="image-lightbox" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onclick="window.app.closeLightbox()">
+        <div class="relative max-w-4xl max-h-[90vh] flex flex-col items-center" onclick="event.stopPropagation()">
+            <img id="lightbox-img" src="" class="max-w-full max-h-[85vh] rounded-lg shadow-2xl object-contain border border-white/20">
+            <button onclick="window.app.closeLightbox()" class="absolute -top-10 right-0 text-white text-xl hover:text-gray-300">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    </div>
+
+    <script src="saga.core.js"></script>
+    <script src="saga.canvas.js"></script>
+    <script src="saga.canvas.layout.js"></script>
+    <script src="saga.canvas.render.js"></script>
+    <script src="saga.gemini.js"></script>
+    <script src="saga.comfy.js"></script>
+    <script src="saga.lore.js"></script>
+    <script src="saga.generation.js"></script>
+    <script src="saga.agents.js"></script>
+    <script src="saga.chat.js"></script>
+    <script src="saga.app.js"></script>
+</body>
+</html>

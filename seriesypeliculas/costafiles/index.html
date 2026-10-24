@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COSTA FILES - Base de Datos Clandestina</title>
+    <style>
+        /* CSS COMPLETAMENTE ESTILIZADO PARA CYBERPUNK / COSTA FILES */
+        :root {
+            --neon-cyan: #00f3ff;
+            --neon-magenta: #ff003c;
+            --dark-bg: #050505;
+            --grid-color: rgba(0, 243, 255, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: #e0e0e0;
+            font-family: 'Courier New', Courier, monospace;
+            overflow-x: hidden;
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Efecto de líneas de escaneo (Scanlines) CRT */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.1);
+            opacity: 0.7;
+            pointer-events: none;
+            z-index: 9999;
+            background-image: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 243, 255, 0.03) 3px,
+                rgba(0, 243, 255, 0.03) 4px
+            );
+        }
+
+        header {
+            text-align: center;
+            padding: 3rem 1rem 2rem 1rem;
+            border-bottom: 2px solid var(--neon-cyan);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
+            position: relative;
+            background: rgba(5, 5, 5, 0.85);
+        }
+
+        h1 {
+            font-size: 4rem;
+            text-transform: uppercase;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 5px var(--neon-cyan), 0 0 10px var(--neon-cyan);
+            margin-bottom: 0.5rem;
+            letter-spacing: 6px;
+            position: relative;
+            display: inline-block;
+        }
+
+        /* Efecto Glitch para el Título */
+        h1::before, h1::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--dark-bg);
+        }
+
+        h1::before {
+            left: 3px;
+            text-shadow: -2px 0 var(--neon-magenta);
+            animation: glitch-anim 2s infinite linear alternate-reverse;
+        }
+
+        h1::after {
+            left: -3px;
+            text-shadow: -2px 0 var(--neon-cyan);
+            animation: glitch-anim2 3s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim {
+            0% { clip: rect(24px, 9999px, 91px, 0); }
+            20% { clip: rect(85px, 9999px, 14px, 0); }
+            40% { clip: rect(46px, 9999px, 53px, 0); }
+            60% { clip: rect(11px, 9999px, 86px, 0); }
+            80% { clip: rect(65px, 9999px, 2px, 0); }
+            100% { clip: rect(32px, 9999px, 77px, 0); }
+        }
+
+        @keyframes glitch-anim2 {
+            0% { clip: rect(65px, 9999px, 100px, 0); }
+            20% { clip: rect(10px, 9999px, 50px, 0); }
+            40% { clip: rect(80px, 9999px, 20px, 0); }
+            60% { clip: rect(30px, 9999px, 80px, 0); }
+            80% { clip: rect(90px, 9999px, 10px, 0); }
+            100% { clip: rect(45px, 9999px, 70px, 0); }
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--neon-magenta);
+            text-shadow: 0 0 5px var(--neon-magenta);
+            letter-spacing: 2px;
+        }
+
+        .terminal-container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--neon-cyan);
+            border-radius: 4px;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.15);
+            position: relative;
+            z-index: 10;
+        }
+
+        .terminal-header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed var(--neon-cyan);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            color: var(--neon-cyan);
+            font-weight: bold;
+        }
+
+        .typing-text {
+            min-height: 80px;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+            font-size: 1.1rem;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1.2em;
+            background-color: var(--neon-cyan);
+            vertical-align: text-bottom;
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 3rem;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        .video-card {
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        /* Borde luminoso interactivo */
+        .video-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .video-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.3);
+            border-color: var(--neon-cyan);
+        }
+
+        .video-card:hover::before {
+            border-color: var(--neon-cyan);
+        }
+
+        /* Estilo alternativo para el episodio central (Magenta) */
+        .video-card:nth-child(2):hover {
+            box-shadow: 0 0 30px rgba(255, 0, 60, 0.3);
+            border-color: var(--neon-magenta);
+        }
+        .video-card:nth-child(2):hover::before { 
+            border-color: var(--neon-magenta); 
+        }
+
+        .video-title {
+            padding: 1.5rem 1rem;
+            font-size: 1.2rem;
+            text-align: center;
+            background: #050505;
+            border-top: 1px solid #333;
+            color: #fff;
+            font-weight: bold;
+            letter-spacing: 1px;
+            transition: color 0.3s ease;
+        }
+
+        .video-card:hover .video-title {
+            color: var(--neon-cyan);
+            text-shadow: 0 0 5px var(--neon-cyan);
+        }
+        .video-card:nth-child(2):hover .video-title {
+            color: var(--neon-magenta);
+            text-shadow: 0 0 5px var(--neon-magenta);
+        }
+
+        /* Contenedor adaptado para SHORTS (Vertical 9:16) */
+        .iframe-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 177.77%; /* Proporción exacta para videos verticales */
+            height: 0;
+            background-color: #000;
+        }
+
+        .iframe-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            border-top: 1px solid #333;
+            margin-top: 4rem;
+            background: rgba(5, 5, 5, 0.9);
+            color: #777;
+            font-size: 0.9rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        footer span {
+            color: var(--neon-cyan);
+        }
+        
+        .sys-log {
+            color: #666;
+            font-size: 0.85rem;
+            margin-top: 15px;
+            border-top: 1px dashed #333;
+            padding-top: 10px;
+        }
+        .sys-log span {
+            color: var(--neon-magenta);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 data-text="COSTA FILES">COSTA FILES</h1>
+        <p class="subtitle">>>> ARCHIVOS CLANDESTINOS_ MOTRIL.SYS // ACCESO AUTORIZADO</p>
+    </header>
+
+    <div class="terminal-container">
+        <div class="terminal-header">
+            <span>root@motril-underground:~# ./leer_archivos.sh</span>
+            <span>ESTADO: [ ENCRIPTACIÓN CUÁNTICA ]</span>
+        </div>
+        <div class="typing-text" id="typing-text"></div>
+        <div class="sys-log">
+            [+] Localizando IP en Puerto de Motril... OK<br>
+            [+] Hackeando drones policiales... <span>BYPASS SUPERADO</span><br>
+            [+] Inyectando virus en terminales de la Antigua Azucarera...
+        </div>
+    </div>
+
+    <main class="video-grid">
+        <!-- CAPITULO 1: Ajuste de Cuentas -->
+        <article class="video-card">
+            <div class="iframe-container">
+                <iframe src="https://www.youtube.com/embed/fKSTJj64A4k" title="Capitulo 1: Ajuste de Cuentas" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+            </div>
+            <div class="video-title">> CAPÍTULO 01:<br>AJUSTE DE CUENTAS</div>
+        </article>
+
+        <!-- CAPITULO 2: Policía Cuántica -->
+        <article class="video-card">
+            <div class="iframe-container">
+                <iframe src="https://www.youtube.com/embed/f0CSIa5s2Eg" title="Capitulo 2: Policia Cuantica" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+            </div>
+            <div class="video-title">> CAPÍTULO 02:<br>POLICÍA CUÁNTICA</div>
+        </article>
+
+        <!-- CAPITULO 3: Contraataque Digital -->
+        <article class="video-card">
+            <div class="iframe-container">
+                <iframe src="https://www.youtube.com/embed/nQBMkMI6w1E" title="Capitulo 3: Contraataque Digital" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+            </div>
+            <div class="video-title">> CAPÍTULO 03:<br>CONTRAATAQUE DIGITAL</div>
+        </article>
+    </main>
+
+    <footer>
+        <p>CONEXIÓN SEGURA ESTABLECIDA // PROTOCOLO DE RESISTENCIA INICIADO</p>
+        <p>COSTA TROPICAL <span>© 2026</span> - El Nail y Bajo Surcos unidos contra el sistema.</p>
+    </footer>
+
+    <script>
+        /* CÓDIGO JS COMPLETO PARA EFECTO DE MÁQUINA DE ESCRIBIR EN LA TERMINAL */
+        const textToType = "ADVERTENCIA: Estás accediendo a la red clandestina de Motril. La guerra por los cargamentos de código puro entre 'El Nail' y 'Bajo Surcos' ha cambiado las reglas. La Policía Cuántica patrulla las calles y el cielo se oscurece sobre la antigua azucarera. Descifra los archivos, conoce la alianza y prepárate para el golpe final. La resistencia ha comenzado...";
+        const typingContainer = document.getElementById('typing-text');
+        
+        let index = 0;
+        
+        function typeText() {
+            if (index < textToType.length) {
+                // Se inyecta la letra actual más el cursor
+                typingContainer.innerHTML = textToType.substring(0, index + 1) + '<span class="cursor"></span>';
+                index++;
+                
+                // Velocidad aleatoria para simular la cadencia irregular de un humano tecleando (entre 10ms y 60ms)
+                let typingSpeed = Math.floor(Math.random() * (60 - 10 + 1)) + 10;
+                setTimeout(typeText, typingSpeed);
+            } else {
+                // Al finalizar la cadena, dejamos el texto completo y el cursor parpadeando
+                typingContainer.innerHTML = textToType + '<span class="cursor"></span>';
+            }
+        }
+
+        // Se lanza el evento al cargar la ventana
+        window.onload = () => {
+            setTimeout(typeText, 600); // Pequeño delay de arranque para mayor inmersión
+        };
+    </script>
+</body>
+</html>

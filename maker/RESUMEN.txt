@@ -1,0 +1,397 @@
+Aquí tienes el **mapa conceptual y técnico extenso** del sistema completo de tu aplicación (**Silenos Maker v0.9**).
+
+---
+
+# 🗺️ MAPA GENERAL DEL SISTEMA Y ARQUITECTURA TÉCNICA
+
+```
+                               ┌────────────────────────────────────────┐
+                               │       MOTOR EDITORIAL / EDITOR 2D      │
+                               │        (index.html & main.js)          │
+                               └──────────────────┬─────────────────────┘
+                                                  │
+ ┌───────────────────────┬────────────────────────┼────────────────────────┬────────────────────────┐
+ │                       │                        │                        │                        │
+ ▼                       ▼                        ▼                        ▼                        ▼
+┌─────────────────┐ ┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
+│ ARQUITECTURA DE │ │ MOTOR DE RENDER  │ │ SISTEMA DE       │ │ MOTOR DE IA &    │ │ MÓDULOS DE GAME  │
+│ ESTADO E INFRA  │ │ & PERSPECTIVA    │ │ FÍSICAS, RIG & IK│ │ AGENTE ODS       │ │ LOGIC & EXPORT   │
+└────────┬────────┘ └────────┬─────────┘ └────────┬─────────┘ └────────┬─────────┘ └────────┬─────────┘
+         │                   │                    │                    │                    │
+         ├─ state.js         ├─ render.js         ├─ animation-        ├─ agent-            ├─ inventory.js
+         ├─ io.js            ├─ render-*.js       │  skeletal.js       │  orchestrator.js   ├─ item-effects-
+         └─ help-modal.js    └─ context-menu.js   ├─ movement.js       ├─ agent-stage1/2/3  │  construction.js
+                                                  └─ movement-*.js     ├─ agent-scale-guide ├─ logic.js / logic-*.js
+                                                                       ├─ agent-illustrator ├─ element-script-runtime
+                                                                       └─ generation-ai.js  └─ export.js / export-*.js
+
+```
+
+---
+
+## 1. 🏗️ ARQUITECTURA DE ESTADO E INFRAESTRUCTURA DE DATOS
+
+*Controlladores base encargados de la memoria activa, sincronización local y la interfaz de documentación embebida.*
+
+```
+                       ┌───────────────────────────────┐
+                       │     state.js (projectData)    │
+                       └───────────────┬───────────────┘
+                                       │
+            ┌──────────────────────────┼──────────────────────────┐
+            ▼                          ▼                          ▼
+ ┌──────────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
+ │       scenes         │   │  savedElementsConfig │   │     itemsConfig      │
+ │ (Escenarios/Zonas)   │   │(Catálogo reutilizable│   │(Inventario y Efectos)│
+ └──────────────────────┘   └──────────────────────┘   └──────────────────────┘
+            │                          │                          │
+            ▼                          ▼                          ▼
+ ┌──────────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
+ │   variablesConfig    │   │      assetsMap       │   │    CAMERA_SETTINGS   │
+ │ (Lógica Global/Flags)│   │ (Blobs & DataURIs)   │   │  (Zoom/Pitch Mode7)  │
+ └──────────────────────┘   └──────────────────────┘   └──────────────────────┘
+
+```
+
+### 🧠 `state.js` — Núcleo de Estado Global
+
+* **Propósito**: Define la estructura de datos orientada a JSON que sostiene la totalidad de la sesión actual del proyecto.
+* **Componentes clave**:
+* **`projectData`**: Almacena de forma jerárquica:
+* `scenes`: Escenarios o niveles creados (`id`, `name`, `aspectRatio`, `elements[]`).
+* `savedElementsConfig`: Biblioteca interna de elementos reutilizables creados manualmente o importados.
+* `itemsConfig`: Definición de todos los ítems de inventario registrados (`id`, `name`, `imageAsset`, `effects`, `isConstructible`).
+* `variablesConfig`: Variables del juego (Booleano, Número, Texto) para controlar flags y eventos.
+* `startScene`: Escena activa inicial al iniciar una nueva partida.
+
+
+* **`assetsMap`**: Diccionario en memoria que asocia rutas de archivos local o identificadores a sus representaciones en Blob / DataURI.
+
+
+
+### 💾 `io.js` — Motor de Entrada / Salida (IO)
+
+* **Propósito**: Gestiona la importación y exportación de proyectos completos en formato `.json` así como la serialización de assets en Base64.
+* **Funcionalidades Extensas**:
+* **Exportación Full-Base64**: Si se marca la casilla `Incrustar imágenes en Base64`, recorre el mapa de assets (`assetsMap`) y serializa cada imagen rasterizada o código SVG al archivo JSON para garantizar portabilidad sin dependencias locales.
+* **Modos de Importación**:
+* **Reemplazar Proyecto**: Sobrescribe por completo la sesión.
+* **Anexar (Merge)**: Fusiona nuevas escenas, ítems y variables renombrando duplicados para evitar colisiones de IDs mediante marcas temporales (`Date.now()`).
+
+
+
+
+
+### 📘 `help-modal.js` — Centro de Ayuda & Documentación Integrado
+
+* **Propósito**: Sistema modal a pantalla completa sin dependencias externas que provee guías interactivas, descarga de blueprints para ComfyUI y generadores de prompts estructurados.
+* **Estructura Interna**:
+* **Pestaña Silenos Maker**: Explicación de los menús, modos de visualización (2D vs Mode 7) y exportación a HTML.
+* **Pestaña ComfyUI Local**: Incluye el archivo JSON completo del workflow optimizado con FLUX Klein para su descarga e instrucción de configuración en el puerto local (`8188`).
+* **Pestaña Gemini API**: Documentación de clave de API, llamadas de cuota gratuita (Tier Gratuito) y reglas de escalado de imágenes.
+* **Generador de Prompts para IAs Externas**: Copia al portapapeles reglas analíticas para que ChatGPT/Claude/Gemini devuelvan elementos listos para pegar en la aplicación.
+
+
+
+---
+
+## 2. 🎨 MOTOR DE RENDERIZADO 2D / 2.5D (MODE 7) & GESTIÓN DE CANVAS
+
+*Encargado de proyectar la geometría del mundo en el viewport, aplicar transformaciones matriciales 3D y gestionar eventos de ratón.*
+
+```
+                 ┌─────────────────────────────────────────┐
+                 │       render.js / render-main.js        │
+                 └────────────────────┬────────────────────┘
+                                      │
+       ┌──────────────────────────────┼──────────────────────────────┐
+       ▼                              ▼                              ▼
+┌────────────────────────┐ ┌────────────────────────┐ ┌────────────────────────┐
+│  Modo 2D Ortogonal     │ │  Modo 2.5D Mode 7      │ │  Raycasting & Opacity  │
+│  (Top-Down clásico)    │ │  (rotateX, rotateZ)    │ │  (Acceso pixel exacto) │
+└────────────────────────┘ └────────────────────────┘ └────────────────────────┘
+       │                              │                              │
+       └──────────────────────────────┼──────────────────────────────┘
+                                      │
+                                      ▼
+                      ┌───────────────────────────────┐
+                      │       context-menu.js         │
+                      │  (Copiar, Pegar, Textos, UI)  │
+                      └───────────────────────────────┘
+
+```
+
+### 🖼️ `render.js` (y submódulos `render-*.js`) — Motor Visual Gráfico
+
+* **Propósito**: Proyecta la estructura de elementos en el espacio CSS3D/HTML, gestionando transformaciones, ordenamiento de profundidad (Z-Index por coordenada Y) y la cámara inteligente.
+* **Técnicas de Proyección**:
+* **Modo 2D**: Posicionamiento ortogonal básico. Ordena las capas (`zIndex`) automáticamente basándose en el borde inferior (`y + height`) de cada objeto.
+* **Modo 2.5D (Mode 7)**: Aplica matrices 3D en la propiedad `transform` del contenedor del escenario:
+* `rotateX(pitch)` y `rotateZ(yaw)`.
+* **Billboard Mode (`camera`)**: Modifica los elementos verticales para que miren siempre al plano de cámara rotando en sentido opuesto a la rotación del escenario (`-yaw`).
+* **Plano X (`cross_x`)**: Renderiza dos planos entrecruzados a 90° formando una "X" tridimensional (ideal para árboles, plantas y vegetación en perspectiva de vuelo).
+* **Muro 3D (`muro` / `wall`)**: Construye un prisma tridimensional dinámico generando 6 caras rectangulares en HTML con sombreados independientes por brillo CSS.
+
+
+
+
+
+### 🖱️ `context-menu.js` — Menú Contextual y Raycasting de Selección
+
+* **Propósito**: Captura el clic derecho sobre el Viewport, efectúa detección por píxel transparente y abre el menú flotante para copiar, pegar, crear texto o insertar emojis.
+* **Capacidades**:
+* **Raycasting por Opacidad de Píxel**: Inspecciona la capa Alfa de las imágenes mediante un Canvas auxiliar para no seleccionar zonas transparentes alrededor del sprite.
+* **Pegado en Cursor**: Permite duplicar entidades exactas insertándolas directamente en las coordenadas de mundo donde se encuentra el puntero.
+
+
+
+---
+
+## 3. 🦴 MOTOR DE ANIMACIÓN ESQUELÉTICA 2D, IK, SKINNING SUAVE & FÍSICAS
+
+*Componentes a cargo de la deformación por malla geométrica, Cinemática Inversa (IK) y dinámicas pasivas por muelles.*
+
+```
+                   ┌──────────────────────────────────────┐
+                   │    SkeletalAnimationEngine           │
+                   │    (animation-skeletal.js)           │
+                   └──────────────────┬───────────────────┘
+                                      │
+      ┌───────────────────────────────┼───────────────────────────────┐
+      ▼                               ▼                               ▼
+┌───────────────────────────┐ ┌───────────────────────────┐ ┌───────────────────────────┐
+│     Mesh Grid (Triang)    │ │    Kinematics & Skinning  │ │ Spring & Jiggle Physics   │
+│ (Subdivisión de cuadrícula│ │(Soft Skinning Gaussiano + │ │(Inercia y oscilación para │
+│      8x8 sobre sprite)    │ │   Analytical 2-Bone IK)   │ │  colas, pelo o ropaje)    │
+└───────────────────────────┘ └───────────────────────────┘ └───────────────────────────┘
+
+```
+
+### 🦿 `animation-skeletal.js` — Motor de Rigging Avanzado
+
+* **Propósito**: Sistema avanzado de animación 2D procedural y por rigging óseo con deformación en malla viva.
+* **Componentes Algorítmicos**:
+1. **Generador de Malla (Grid Mesh)**: Subdivide el sprite 2D en una retícula regular de triángulos UV (por defecto 8 columnas x 8 filas).
+2. **Skinning Suave Multihueso (Smooth Dual-Bone Skinning)**:
+* Calcula la influencia de cada articulación sobre cada vértice usando una función de caída Gaussiana basada en la distancia:
+
+$$\text{Weight} = \exp\left(-\left(\frac{\text{dist}}{\text{maxDist}}\right)^2\right)$$
+
+
+* Normaliza los pesos para evitar deformaciones destructivas en articulaciones complejas.
+
+
+3. **Cinemática Inversa (2-Bone IK Solver)**:
+* Resuelve matemáticamente la posición de codos y rodillas al mover un efector final (manos/pies) utilizando la Ley de los Cosenos sobre la cadena cinemática de 2 huesos.
+
+
+4. **Físicas Secundarias (Spring / Jiggle Physics)**:
+* Simula movimiento inercial y masa pasiva en nodos configurados como muelles (colas, orejas, cabello) utilizando una ecuación armónica simple de amortiguamiento y rigidez:
+
+$$\text{Force} = (\text{targetRot} - \text{state.rot}) \times \text{stiffness}$$
+
+
+$$\text{Velocity} = (\text{Velocity} + \text{Force}) \times \text{damping}$$
+
+
+
+
+5. **Modal Visual de Rigging**: Editor GUI interactivo dentro de la aplicación para crear, arrastrar y ajustar huesos sobre la marcha.
+
+
+
+---
+
+## 4. 🤖 MOTOR DE IA, AGENTE AUTÓNOMO ODS & INTEGRACIÓN COMFYUI / GEMINI
+
+*Infraestructura dedicada al procesamiento con Inteligencia Artificial tanto de forma local (GPU) como en la nube de Google.*
+
+```
+                 ┌──────────────────────────────────────────────┐
+                 │          AgentOrchestrator                   │
+                 │         (agent-orchestrator.js)              │
+                 └──────────────────────┬───────────────────────┘
+                                        │
+         ┌──────────────────────────────┼──────────────────────────────┐
+         ▼                              ▼                              ▼
+┌─────────────────┐            ┌─────────────────┐            ┌─────────────────┐
+│ Fase 1: Elements│            │  Fase 2: Maps   │            │ Fase 3: Precision│
+│(Catálogo Vector)│            │(Layout & Ground)│            │(Edición Delta)  │
+└────────┬────────┘            └────────┬────────┘            └────────┬────────┘
+         │                              │                              │
+         └──────────────────────────────┼──────────────────────────────┘
+                                        │
+                                        ▼
+                      ┌────────────────────────────────────┐
+                      │ AgentScaleGuide / AgentIllustrator │
+                      │ (Armonización Metro-Px & SVG Generator)│
+                      └─────────────────┬──────────────────┘
+                                        │
+                                        ▼
+                      ┌────────────────────────────────────┐
+                      │         generation-ai.js           │
+                      │  (ComfyUI WebSocket / Gemini API)  │
+                      └────────────────────────────────────┘
+
+```
+
+### 🧠 `agent-orchestrator.js` — Orquestador del Agente Creador
+
+* **Propósito**: Gestiona el flujo de trabajo en 3 Fases del Agente IA que construye aventuras completas a partir de prompts textuales.
+
+### 📐 `agent-scale-guide.js` — Guía de Proporción y Armonización (Metros a Píxeles)
+
+* **Propósito**: Mantiene la coherencia física y visual entre todos los elementos generados por IA en el juego.
+* **Escala Base**: Configurable dinámicamente (por defecto: $64\text{ px} = 1\text{ metro}$).
+* **Categorías de Escala**:
+* `npc`: $1.5\text{m} - 1.9\text{m}$ ($96\text{px} - 121\text{px}$). Proporción humana de 7-8 cabezas (Prohibido estilo chibi).
+* `mueble`: $0.6\text{m} - 2.0\text{m}$ ($38\text{px} - 128\text{px}$).
+* `planta`: $0.8\text{m} - 6.0\text{m}$ ($51\text{px} - 384\text{px}$).
+* `vehiculo`: $2.5\text{m} - 8.0\text{m}$ ($160\text{px} - 512\text{px}$).
+
+
+
+### 📦 `agent-stage1-elements.js` — Fase 1: Elaboración de Elementos y Objetos
+
+* **Propósito**: Analiza las instrucciones del usuario, genera la lógica JSON de cada entidad, calcula sus cajas de colisión en la base y llama a Gemini en paralelo para renderizar gráficos SVG vectoriales.
+* **Cálculo de Colisión Base Automatizado**: Las colisiones no ocupan toda la imagen; se ajustan automáticamente al 15%-30% inferior dependiendo de si el elemento es un árbol, personaje o mueble.
+
+### 🗺️ `agent-stage2-maps.js` — Fase 2: Elaboración de Mapas y Entorno
+
+* **Propósito**: Construye escenas completas asociando el suelo/pavimento adecuado y maquetando los objetos creados en la Fase 1 en coordenadas $(X, Y)$ lógicas sin superposiciones inválidas.
+
+### 🎯 `agent-stage3-precision.js` — Fase 3: Edición de Precisión (Director AI)
+
+* **Propósito**: Recibe instrucciones quirúrgicas de modificación sobre un mapa existente y aplica comandos de mutación "Delta" sin destruir el mapa:
+* Comandos admitidos: `INSERT`, `MOVE`, `REMOVE`, `UPDATE_PROPERTIES`.
+
+
+
+### ✏️ `agent-illustrator.js` & `generation-ai.js` — Generación de Assets y Conectores de IA
+
+* **Propósito**: Conexión con los endpoints de Inteligencia Artificial (Google Gemini API e interfaz ComfyUI Local).
+* **Funciones Integradas**:
+* **ComfyUI WebSocket Client**: Se conecta mediante sockets al puerto local `8188`, envía flujos KSampler con FLUX/Stable Diffusion y descarga el resultado.
+* **Gemini SVG Vectorial Generator**: Genera código SVG puro sanitizado, ejecutando una rutina automática de recortado (`cropSVG`) que remueve capas de trasfondo y reajusta la caja de vista (`viewBox`).
+* **Filtro Chroma Key de Borde**: Algoritmo en Canvas para la remoción automática de fondos verde/azul/blanco con tolerancia y suavizado gradual de bordes (*Feathering*).
+
+
+
+---
+
+## 5. 🏃 MOTOR DE FÍSICAS, PATHFINDING Y EJECUCIÓN DE SCRIPTS EN TIEMPO REAL
+
+*Núcleo encargado del movimiento, colisiones, lógica de interacción y ejecución del sandbox JS en los elementos.*
+
+```
+                 ┌──────────────────────────────────────────────┐
+                 │            MovementEngine                    │
+                 │     (movement.js & movement-*.js)            │
+                 └──────────────────────┬───────────────────────┘
+                                        │
+        ┌───────────────────────────────┼───────────────────────────────┐
+        ▼                               ▼                               ▼
+┌─────────────────────────┐ ┌─────────────────────────┐ ┌─────────────────────────┐
+│     Pathfinding A*      │ │ Path Smoothing Algorithm│ │ Passive & Proximity Trig│
+│(Rejilla dinámica 16px + │ │ (Optimización por vista │ │(Interacción automática y│
+│ heurística Euclidiana)  │ │ de línea recta directa) │ │ diólogos por cercanía)  │
+└─────────────────────────┘ └─────────────────────────┘ └─────────────────────────┘
+                                        │
+                                        ▼
+                     ┌─────────────────────────────────────┐
+                     │        ElementScriptRuntime         │
+                     │    (element-script-runtime.js)      │
+                     │  (Sandbox JS, Lifecycle & Sync DOM) │
+                     └─────────────────────────────────────┘
+
+```
+
+### 🚶 `movement.js` (y submódulos `movement-*.js`) — Motor de Movimiento y Pathfinding A*
+
+* **Propósito**: Dirige la locomoción del personaje jugador y de los NPCs en el entorno.
+* **Componentes**:
+* **Pathfinding A* (A-Estrella)**: Mapea la escena en una rejilla de navegación (Grid Size 16px). Evalúa costes $f(n) = g(n) + h(n)$ evitando zonas de colisión.
+* **Suavizado de Trayectoria (Path Smoothing)**: Reduce la cantidad de nodos recorridos mediante comprobación de colisión por raycast en línea recta entre puntos distantes.
+* **Patrones de Patrulla NPC**: Soporta dinámicas de merodeo aleatorio (`random`) y patrullado por puntos de control (`waypoints`) con comportamientos `loop`, `pingpong` y `once`.
+
+
+
+### ⚡ `element-script-runtime.js` — Motor de Ejecución de Scripts Sandbox
+
+* **Propósito**: Permite adjuntar código JavaScript personalizado a cualquier objeto del escenario, ejecutándolo en tiempo real sin romper el hilo principal.
+* **Ciclos de Vida (Lifecycle Hooks)**:
+* `init(self, scene, variables, input, audio, interface)`: Ejecutado al cargar el objeto.
+* `update(self, scene, variables, input, audio, interface, dt)`: Ejecutado cada frame.
+* `interact(self, scene, variables, input, audio, interface, player)`: Al interactuar/clicar.
+* `destroy(self, scene, variables, input, audio, interface)`: Al eliminar el objeto.
+
+
+* **Seguridad y Persistencia**: Valida la sintaxis en un sandbox encapsulado (`new Function(...)`) y fuerza la sincronización inmediata del DOM tras cada fotograma.
+
+---
+
+## 6. 🎒 SISTEMA DE INVENTARIO, EFECTOS Y LÓGICA DE JUEGO
+
+*Garantiza las dinámicas clásicas RPG: ítems, consumo, equipo del personaje y condicionales globales.*
+
+```
+                 ┌─────────────────────────────────────────────┐
+                 │       InventoryManager (inventory.js)       │
+                 │  (UI de Cristal Neumórfico Gaussiano + HUD) │
+                 └──────────────────────┬──────────────────────┘
+                                        │
+        ┌───────────────────────────────┴───────────────────────────────┐
+        ▼                                                               ▼
+┌──────────────────────────────────────────┐        ┌──────────────────────────────────────────┐
+│   ItemEffectsConstructionManager         │        │               Logic & Flags              │
+│  (item-effects-construction.js)          │        │      (logic.js / logic-picker.js)        │
+│(Consumibles HP/Hambre/Sed + Construcción)│        │  (Evalúa condiciones en tiempo real)     │
+└──────────────────────────────────────────┘        └──────────────────────────────────────────┘
+
+```
+
+### 🛍️ `inventory.js` — Gestor de Inventario y Menú de Jugador
+
+* **Propósito**: Maneja el almacenamiento de objetos, apilamiento (Stacks hasta 99) y la interfaz estética flotante durante el juego.
+* **Diseño UI**: Implementa paneles flotantes estilo "Glassmorphism" ultra-transparente con desenfoque Gaussiano (`backdrop-filter: blur(40px)`). Separa lateralmente el panel de **Equipo** (Izquierda) y el de **Objetos** (Derecha) respecto a la posición central del sprite del jugador.
+
+### 🧪 `item-effects-construction.js` — Efectos de Consumo y Sistema de Construcción
+
+* **Propósito**: Dota a los ítems de funciones prácticas durante la partida:
+* **Consumibles**: Modifican parámetros de salud (`hp`), nivel de hambre, sed o atributos personalizados.
+* **Construcción en Escenario**: Permite arrastrar o usar un ítem del inventario para instanciar en el mapa un elemento del catálogo guardado en la coordenada objetivo.
+
+
+
+### 🔀 `logic.js` (y submódulos `logic-*.js`) — Evaluador de Lógica y Requisitos
+
+* **Propósito**: Controla la visibilidad y comportamiento de objetos analizando reglas lógicas (Ej: *Aparecer solo si `tiene_llave == true*` o *si se posee el ítem "espada"*).
+
+---
+
+## 7. 📤 SUBSISTEMA DE EXPORTACIÓN AUTOEJECUTABLE (.HTML STANDALONE)
+
+*Módulo encargado de empaquetar todo el proyecto en un ejecutable monolítico sin dependencias web.*
+
+```
+                            ┌─────────────────────────────────┐
+                            │      exportStandaloneHTML       │
+                            │           (export.js)           │
+                            └────────────────┬────────────────┘
+                                             │
+      ┌───────────────────────┬──────────────┴──────────────┬───────────────────────┐
+      ▼                       ▼                             ▼                       ▼
+┌──────────────────┐  ┌─────────────────┐         ┌──────────────────┐    ┌───────────────────┐
+│ export-assets.js │  │export-runtime-  │         │export-runtime-   │    │export-template.js │
+│(Recopila imágenes│  │core.js          │         │movement/script/ui│    │(Plantilla HTML5 & │
+│ y Base64 URIs)   │  │(Camera & State) │         │(Motores embebidos│    │  CSS3 embebido)   │
+└──────────────────┘  └─────────────────┘         └──────────────────┘    └───────────────────┘
+
+```
+
+### 📦 Módulos de Exportación (`export-*.js`)
+
+* **`export-assets.js`**: Recorre los elementos utilizados en todas las escenas, ítems y configuraciones guardadas para extraer únicamente los assets requeridos y empaquetarlos de forma ligera.
+* **`export-runtime-core.js`**: Provee la versión de producción optimizada del motor de cámara, carga de partidas y sistema de escenas para el archivo exportado.
+* **`export-runtime-movement.js` & `export-runtime-script.js**`: Incrusta el motor completo de Pathfinding A* y el Runtime de JavaScript para que el código personalizado de cada elemento se ejecute exactamente igual en el ejecutable resultante.
+* **`export-template.js`**: Genera el documento HTML5 definitivo encapsulando todo el Javascript, estilos visuales y la inicialización automática del proyecto.

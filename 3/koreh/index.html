@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>KOREH - VISIÓN TOTAL DE MATERIA</title>
+    <style>
+        :root { --bg: #e0e5ec; --accent: #6366f1; --shadow: #b8b9be; --light: #ffffff; --code-bg: #1e1e1e; --block-bg: #2d2d2d; }
+        body { background: var(--bg); font-family: 'Segoe UI', monospace; margin: 0; overflow: hidden; color: #475569; }
+        
+        #desktop { position: absolute; width: 100vw; height: 100vh; z-index: 1; }
+        
+        /* O: CONJUNTO - Layout Principal */
+        #main-ui {
+            position: relative; z-index: 10; padding: 20px;
+            display: grid; grid-template-columns: 350px 1fr; gap: 20px;
+            height: 98vh; width: 98vw;
+        }
+
+        .panel {
+            background: var(--bg); border-radius: 24px; padding: 20px;
+            box-shadow: 10px 10px 20px var(--shadow), -10px -10px 20px var(--light);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        .scroll-area { overflow-y: auto; flex-grow: 1; padding-right: 10px; }
+
+        h2 { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; border-bottom: 2px solid rgba(0,0,0,0.05); padding-bottom: 8px; margin-bottom: 15px; color: var(--accent); }
+
+        .status-grid { display: grid; grid-template-columns: 1fr auto; gap: 5px; font-size: 0.65rem; margin-bottom: 15px; }
+        .on { color: #10b981; font-weight: 900; }
+        .off { color: #ef4444; }
+
+        /* Tarjetas de Materia (M) */
+        .file-card {
+            padding: 15px; margin-bottom: 15px; border-radius: 18px;
+            background: var(--bg);
+            box-shadow: 5px 5px 10px var(--shadow), -5px -5px 10px var(--light);
+            cursor: pointer; border: 2px solid transparent; transition: 0.2s;
+        }
+        .file-card:hover { border-color: var(--accent); transform: translateX(5px); }
+        .file-card.active { box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px var(--light); border-color: var(--accent); }
+
+        .file-name { font-weight: 900; font-size: 0.8rem; display: block; }
+
+        /* BLOQUES DE ACCIÓN (A) */
+        .block-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
+        .action-block {
+            background: var(--block-bg); color: #d4d4d4; padding: 15px; border-radius: 15px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.3); border-left: 4px solid var(--accent);
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .action-block .label { font-size: 0.55rem; color: var(--accent); font-weight: 800; margin-bottom: 5px; opacity: 0.8; }
+        .action-block .name { font-weight: 900; font-size: 0.85rem; letter-spacing: 1px; color: #fff; }
+
+        /* Botones (A) */
+        .btn {
+            border: none; border-radius: 10px; padding: 10px; background: var(--bg);
+            box-shadow: 3px 3px 6px var(--shadow), -3px -3px 6px var(--light);
+            color: var(--accent); font-weight: 900; font-size: 0.65rem; cursor: pointer;
+            text-transform: uppercase; margin-top: 5px;
+        }
+        .btn:active { box-shadow: inset 2px 2px 4px var(--shadow); }
+        .btn-add { background: var(--accent); color: white; margin-top: 10px; width: 100%; }
+        .btn-sm { padding: 4px 8px; font-size: 0.5rem; background: rgba(255,255,255,0.05); color: #888; box-shadow: none; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-sm:hover { color: #fff; background: var(--accent); }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: var(--shadow); border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="desktop"></div>
+
+    <div id="main-ui">
+        <div class="panel">
+            <h2>SISTEMA KOREH</h2>
+            <div id="lib-status" class="status-grid"></div>
+            
+            <h2>MATERIA DISPONIBLE</h2>
+            <div id="file-explorer" class="scroll-area"></div>
+            
+            <button class="btn btn-add" onclick="KorehHub.createNewFile()">+ NUEVA MATERIA</button>
+            <button class="btn" onclick="location.reload()">RESONAR SISTEMA</button>
+        </div>
+
+        <div class="panel">
+            <h2 id="viewer-title">VISIÓN DE BLOQUES: SELECCIONA MATERIA</h2>
+            <div id="block-viewer" class="scroll-area block-grid"></div>
+            <div id="viewer-actions" style="display:flex; gap:10px; margin-top:15px;">
+                <button class="btn" onclick="KorehHub.injectFunction()">NUEVA ACCIÓN (A)</button>
+                <button class="btn" onclick="KorehHub.copyToClipboard()">COPIAR MATERIA</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="koreh-funcionaciones.js"></script>
+    <script src="koreh-funcionaciones2.js"></script>
+    <script src="koreh-funcionaciones3.js"></script>
+    <script src="koreh-funcionaciones4.js"></script>
+    <script src="koreh-funcionaciones5.js"></script>
+    <script src="koreh-poly.synth.js"></script>
+
+    <script>
+        /**
+         * --- INICIALIZACIÓN DE VISIÓN (B) ---
+         * Se abre la función del canvas para establecer la resonancia de fondo.
+         */
+        function initVision() {
+            if (window.Koreh3 && window.Koreh3.UI) {
+                // Genera el efecto de partículas de fondo en el escritorio
+                Koreh3.UI.createResonanceCanvas('desktop'); 
+            }
+        }
+
+        window.KorehHub = {
+            currentFile: null,
+
+            init() {
+                this.ensureFileSystem();
+                initVision();
+                this.checkLibraries();
+                this.renderFiles();
+            },
+
+            // Sincroniza la Materia cargada con el Explorador Visual
+            ensureFileSystem() {
+                // Si el sistema no existe o está en modo emergencia básico, lo poblamos con los 6 archivos
+                if (typeof window.FileSystem === 'undefined' || !window.FileSystem.data || window.FileSystem.data.length <= 2) {
+                    console.log("H -> Sincronizando Materia con el explorador...");
+                    window.FileSystem = {
+                        data: [
+                            { name: 'koreh-funcionaciones.js', content: 'window.Koreh = {\n    createForm() {},\n    createLoop() {},\n    confirm() {},\n    downloadJSON() {},\n    createWindow() {},\n    makeDraggable() {},\n    createButton() {},\n    walkFileSystem() {},\n    createDropZone() {}\n};', type: 'javascript' },
+                            { name: 'koreh-funcionaciones2.js', content: 'window.MisFunciones = {\n    analizarEscritorio() {},\n    caosCreativo() {},\n    registrarNodoExtra() {}\n};', type: 'javascript' },
+                            { name: 'koreh-funcionaciones3.js', content: 'window.Koreh3 = {\n    playPulse() {},\n    tokenize() {},\n    showToast() {},\n    createResonanceCanvas() {},\n    registrarNodos3() {}\n};', type: 'javascript' },
+                            { name: 'koreh-funcionaciones4.js', content: 'window.KorehAudio = {\n    initializeAudioContext() {},\n    startMasterClock() {},\n    createMainBus() {},\n    createFilter() {},\n    createSaturation() {},\n    findNearestZeroCrossing() {}\n};', type: 'javascript' },
+                            { name: 'koreh-funcionaciones5.js', content: 'window.KorehAudio = {\n    createOscillator() {},\n    applyADSR() {},\n    createMixerChannel() {},\n    addRegion() {},\n    initializeCanvasBridge() {}\n};', type: 'javascript' },
+                            { name: 'koreh-poly.synth.js', content: 'window.KorehAudio = {\n    initGlobalResonance() {},\n    updateFilter() {},\n    noteOn() {},\n    noteOff() {}\n};', type: 'javascript' }
+                        ],
+                        save: () => { 
+                            console.log("💾 Materia guardada en la memoria local."); 
+                            if(window.Koreh3) window.Koreh3.UI.showToast("Materia Sincronizada", "success");
+                        }
+                    };
+                }
+            },
+
+            checkLibraries() {
+                const libs = {
+                    'Koreh Base': !!window.Koreh,
+                    'MisFunciones': !!window.MisFunciones,
+                    'Koreh3 (UI)': !!window.Koreh3,
+                    'AudioEngine': !!window.KorehAudio
+                };
+                const container = document.getElementById('lib-status');
+                container.innerHTML = Object.entries(libs).map(([n, a]) => `
+                    <span>${n}</span><span class="${a?'on':'off'}">${a?'ONLINE':'OFFLINE'}</span>
+                `).join('');
+            },
+
+            renderFiles() {
+                const explorer = document.getElementById('file-explorer');
+                explorer.innerHTML = '';
+                window.FileSystem.data.forEach(file => {
+                    const card = document.createElement('div');
+                    card.className = 'file-card' + (this.currentFile?.name === file.name ? ' active' : '');
+                    card.innerHTML = `
+                        <span class="file-name">${file.name.toUpperCase()}</span>
+                        <span style="font-size:0.55rem; opacity:0.6;">${file.content.length} BYTES | JS</span>
+                    `;
+                    card.onclick = () => this.selectFile(file);
+                    explorer.appendChild(card);
+                });
+            },
+
+            selectFile(file) {
+                this.currentFile = file;
+                document.getElementById('viewer-title').innerText = `BLOQUES: ${file.name}`;
+                this.renderBlocks();
+                this.renderFiles();
+            },
+
+            renderBlocks() {
+                const container = document.getElementById('block-viewer');
+                container.innerHTML = '';
+                if (!this.currentFile) return;
+
+                const funcRegex = /([a-zA-Z0-9_]+)\s*\([^)]*\)\s*\{/g;
+                let match;
+                const functions = [];
+                while ((match = funcRegex.exec(this.currentFile.content)) !== null) {
+                    functions.push(match[1]);
+                }
+
+                if (functions.length === 0) {
+                    container.innerHTML = '<div style="grid-column:1/-1; opacity:0.4; text-align:center; padding:50px;">ARCHIVO SIN BLOQUES DETECTADOS</div>';
+                    return;
+                }
+
+                functions.forEach(name => {
+                    const block = document.createElement('div');
+                    block.className = 'action-block';
+                    block.innerHTML = `
+                        <div>
+                            <div class="label">ACCIÓN (A)</div>
+                            <div class="name">${name.toUpperCase()}</div>
+                        </div>
+                        <div style="margin-top:15px; display:flex; gap:8px;">
+                            <button class="btn btn-sm" onclick="KorehHub.renameBlock('${name}')">RENOMBRAR</button>
+                            <button class="btn btn-sm" style="border-color:#ef444444;" onclick="KorehHub.deleteBlock('${name}')">BORRAR</button>
+                        </div>
+                    `;
+                    container.appendChild(block);
+                });
+            },
+
+            renameBlock(oldName) {
+                const newName = prompt(`Renombrar bloque "${oldName}" a:`, oldName);
+                if (newName && newName !== oldName) {
+                    this.currentFile.content = this.currentFile.content.replace(`${oldName}(`, `${newName}(`);
+                    window.FileSystem.save();
+                    this.renderBlocks();
+                }
+            },
+
+            deleteBlock(name) {
+                if (confirm(`¿Destruir el bloque "${name}"?`)) {
+                    const regex = new RegExp(`${name}\\s*\\([^)]*\\)\\s*\\{[^}]*\\},?`, 'g');
+                    this.currentFile.content = this.currentFile.content.replace(regex, '');
+                    window.FileSystem.save();
+                    this.renderBlocks();
+                }
+            },
+
+            injectFunction() {
+                if (!this.currentFile) return;
+                const name = prompt("Nombre de la nueva acción:");
+                if (!name) return;
+                const lastBrace = this.currentFile.content.lastIndexOf('};');
+                if (lastBrace !== -1) {
+                    const newFunc = `\n    ${name}() {\n        console.log("Ejecutando ${name}");\n    },`;
+                    this.currentFile.content = this.currentFile.content.slice(0, lastBrace) + newFunc + this.currentFile.content.slice(lastBrace);
+                    window.FileSystem.save();
+                    this.renderBlocks();
+                }
+            },
+
+            createNewFile() {
+                const name = prompt("Nombre del archivo:");
+                if (name) {
+                    const fileName = name.endsWith('.js') ? name : name + '.js';
+                    const newFile = {
+                        name: fileName,
+                        content: `window.Modulo = {\n    // BLOQUES\n};`,
+                        type: 'javascript'
+                    };
+                    window.FileSystem.data.push(newFile);
+                    window.FileSystem.save();
+                    this.renderFiles();
+                    this.selectFile(newFile);
+                }
+            },
+
+            copyToClipboard() {
+                if (!this.currentFile) return;
+                navigator.clipboard.writeText(this.currentFile.content);
+                if(window.Koreh3) window.Koreh3.UI.showToast("Materia Copiada", "ai");
+            }
+        };
+
+        window.addEventListener('load', () => KorehHub.init());
+    </script>
+</body>
+</html>

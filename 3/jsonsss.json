@@ -1,0 +1,89 @@
+{
+  "id": "program-extractor-4d-pro",
+  "type": "executable",
+  "title": "🧠 Extractor 4D: M-F",
+  "parentId": "folder-1766530794088863",
+  "content": {
+    "nodes": [
+      {
+        "id": "node-start",
+        "type": "start",
+        "x": -100,
+        "y": 150,
+        "inputs": [],
+        "outputs": ["out"],
+        "values": {},
+        "uiFlags": {}
+      },
+      {
+        "id": "node-ui-materia",
+        "type": "custom-materia-collector-ui",
+        "x": 150,
+        "y": 80,
+        "inputs": ["open"],
+        "outputs": ["materia_unificada"],
+        "values": {
+          "titulo": "COLECTOR DE MATERIA (M)"
+        },
+        "uiFlags": {}
+      },
+      {
+        "id": "node-ai-4d",
+        "type": "custom-ai-4-dimensions-extractor",
+        "x": 550,
+        "y": 80,
+        "inputs": ["materia"],
+        "outputs": ["fin"],
+        "values": {
+          "MODELO": "gemma-3-27b-it"
+        },
+        "uiFlags": {}
+      }
+    ],
+    "connections": [
+      {
+        "fromNode": "node-start",
+        "fromPort": "out",
+        "toNode": "node-ui-materia",
+        "toPort": "open"
+      },
+      {
+        "fromNode": "node-ui-materia",
+        "fromPort": "materia_unificada",
+        "toNode": "node-ai-4d",
+        "toPort": "materia"
+      }
+    ],
+    "panX": 0,
+    "panY": 0,
+    "scale": 1,
+    "embeddedModules": [
+      {
+        "id": "custom-materia-collector-ui",
+        "title": "Colector de Materia (D)",
+        "color": "#f59e0b",
+        "inputs": ["open"],
+        "outputs": ["materia_unificada"],
+        "fields": [
+          { "name": "titulo", "type": "text", "value": "Selector de Materia" }
+        ],
+        "code": "if (ctx.port !== 'open') return null;\n\nif (typeof AIWorker !== 'undefined') AIWorker.clearContext();\n\nreturn new Promise((resolve) => {\n    const winId = 'materia-collector-win';\n    const win = document.createElement('div');\n    win.id = winId;\n    win.className = 'window neumorph-out pop-in pointer-events-auto';\n    win.style.cssText = `position:absolute; top:80px; left:150px; width:400px; height:auto; z-index:9999; background:#e0e5ec; border-radius:28px; box-shadow:15px 15px 30px #b8b9be; overflow:hidden; font-family:sans-serif;`;\n\n    const header = document.createElement('div');\n    header.style.cssText = `padding:18px 25px; display:flex; justify-content:space-between; align-items:center; cursor:grab; border-bottom:1px solid rgba(0,0,0,0.05);`;\n    header.innerHTML = `<span style=\"font-weight:900; color:#f59e0b; font-size:0.75rem; text-transform:uppercase;\">📂 ${ctx.fields.titulo}</span><button id=\"close-${winId}\" style=\"border:none; background:transparent; cursor:pointer; font-size:1.4rem; color:#888;\">✕</button>`;\n\n    const body = document.createElement('div');\n    body.style.cssText = `padding:25px; display:flex; flex-direction:column; gap:18px;`;\n\n    const dropZone = document.createElement('div');\n    dropZone.style.cssText = `height:120px; border:2px dashed #f59e0b; border-radius:22px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; background:rgba(245, 158, 11, 0.03); transition:all 0.3s;`;\n    dropZone.innerHTML = `<div style=\"text-align:center; font-weight:bold; color:#f59e0b; font-size:0.7rem;\">ARRASTRA MATERIA (ARCHIVOS/CARPETAS)</div>`;\n\n    const btn = document.createElement('button');\n    btn.innerText = \"ESPERANDO MATERIA...\";\n    btn.disabled = true;\n    btn.style.cssText = `padding:15px; background:#a3b1c6; color:white; border:none; border-radius:16px; font-weight:bold; cursor:not-allowed; transition:0.3s;`;\n\n    body.append(dropZone, btn);\n    win.append(header, body);\n    document.body.appendChild(win);\n\n    const check = setInterval(() => {\n        if (!document.getElementById(winId)) { clearInterval(check); return; }\n        const count = AIWorker.activeContextFiles.size;\n        if (count > 0) {\n            dropZone.style.borderColor = '#22c55e';\n            dropZone.innerHTML = `<div style=\"text-align:center; color:#166534; font-size:0.7rem;\"><b>${count} OBJETO(S) DETECTADOS</b></div>`;\n            btn.innerText = \"INICIAR EXTRACCIÓN 4D\";\n            btn.disabled = false;\n            btn.style.background = '#22c55e';\n            btn.style.cursor = 'pointer';\n        }\n    }, 500);\n\n    btn.onclick = () => {\n        let text = \"\";\n        const walk = (id) => {\n            const it = FileSystem.getItem(id);\n            if (!it) return;\n            if (it.type === 'folder') FileSystem.getItems(id).forEach(c => walk(c.id));\n            else text += `\\n--- SOURCE: ${it.title} ---\\n${it.content.text || it.content.code || \"\"}\\n`;\n        };\n        Array.from(AIWorker.activeContextFiles).forEach(id => walk(id));\n        \n        ctx.log(\"✅ Materia unificada. Transmitiendo...\");\n        resolve({ materia_unificada: text });\n        win.remove();\n        clearInterval(check);\n    };\n\n    document.getElementById(`close-${winId}`).onclick = () => { clearInterval(check); win.remove(); resolve(null); };\n});"
+      },
+      {
+        "id": "custom-ai-4-dimensions-extractor",
+        "title": "Extractor IA 4D (F)",
+        "color": "#7c3aed",
+        "inputs": ["materia"],
+        "outputs": ["fin"],
+        "fields": [
+          { "name": "MODELO", "type": "text", "value": "gemma-3-27b-it" }
+        ],
+        "code": "return (async () => {\n  const key = AIService.getApiKey();\n  const inputs = ctx.runtime.nodeStates[ctx.nodeId] || [];\n  const materia = String(inputs[0] || \"\");\n  if (!materia || !key) return null;\n\n  const modelo = ctx.fields.MODELO || \"gemini-2.0-flash\";\n  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${key}`;\n\n  async function callAI(sys, user) {\n    const res = await fetch(url, { method: \"POST\", headers: { \"Content-Type\": \"application/json\" }, \n      body: JSON.stringify({ contents: [{ role: \"user\", parts: [{ text: sys + \"\\n\\n\" + user }] }] }) });\n    const data = await res.json();\n    return data.candidates[0].content.parts[0].text;\n  }\n\n  ctx.log(\"🚀 Iniciando Extracción 4D...\");\n\n  try {\n    // Generar un título base para los archivos\n    let aiTitle = await callAI(\"Eres un sintetizador.\", `Genera un título de 2 palabras para este tema: ${materia.substring(0, 500)}`);\n    aiTitle = aiTitle.replace(/[^a-zA-Z0-9]/g, \"\").trim();\n\n    const dimensiones = [\n        { id: \"PERSONAJES\", prompt: \"Extrae una lista detallada de todos los personajes, sus rasgos y motivaciones.\" },\n        { id: \"UBICACIONES\", prompt: \"Extrae una lista de lugares, entornos y escenarios mencionados con sus descripciones.\" },\n        { id: \"EVENTOS\", prompt: \"Extrae una cronología o lista de hechos clave, hitos y acciones importantes.\" },\n        { id: \"CONCEPTOS\", prompt: \"Extrae las ideas abstractas, sistemas, reglas o terminología técnica fundamental.\" }\n    ];\n\n    for (const dim of dimensiones) {\n      ctx.log(`> Generando Dimensión: ${dim.id}...`);\n      const content = await callAI(\"Eres un analista experto en extracción de datos.\", \n        `MATERIA: ${materia}\\n\\nTAREA ESPECÍFICA: ${dim.prompt}\\n\\nResponde con claridad y estructura.`);\n      \n      const file = FileSystem.createNarrative(`${dim.id}_${aiTitle}`, 'desktop');\n      file.content = { tag: dim.id, text: content };\n      FileSystem.save();\n    }\n\n    ctx.log(\"🎉 ¡Éxito! 4 Dimensiones creadas en el escritorio.\");\n    if (typeof refreshSystemViews === 'function') refreshSystemViews();\n    return { fin: \"OK\" };\n  } catch (e) { ctx.log(\"❌ Error en la Confluencia: \" + e.message); }\n})();"
+      }
+    ]
+  },
+  "x": 0,
+  "y": 0,
+  "icon": "zap",
+  "color": "text-yellow-500"
+}

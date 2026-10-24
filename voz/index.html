@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VOZ Gemini</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        glass: 'rgba(255, 255, 255, 0.65)',
+                        glassBorder: 'rgba(255, 255, 255, 0.8)',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="flex h-screen p-4 gap-4 box-border overflow-hidden">
+    <!-- Workspace Principal (Modo Cristal Ultra-Minimalista) -->
+    <main class="flex flex-1 gap-4 overflow-hidden main-container">
+                 
+        <!-- File System Section -->
+        <section class="file-section glass-panel flex-1 flex flex-col rounded-2xl overflow-hidden">
+            <!-- Header de Navegación -->
+            <header class="file-header flex items-center justify-between px-6 h-16 shrink-0 border-b border-white/60">
+                <div class="flex items-center gap-3">
+                    <button id="folderBtn" onclick="abrirCarpeta()" class="bg-white/80 hover:bg-white text-slate-800 px-4 py-2 rounded-full text-xs font-semibold shadow-sm border border-white transition-all flex items-center gap-2">
+                        <span>ABRIR CARPETA</span>
+                    </button>
+                    <div id="folderStatus" class="text-xs text-slate-500 font-medium">Ninguna carpeta abierta</div>
+                </div>
+                                 
+                <!-- Botones de Navegación, Comandos de Voz y Ajustes -->
+                <div class="flex items-center gap-2">
+                    <button onclick="deshacerAccionSistema()" title="Echar atrás" class="p-2 bg-white/60 hover:bg-white rounded-full shadow-sm transition-all flex items-center justify-center">
+                        <i data-lucide="arrow-left" class="w-4 h-4 text-slate-700"></i>
+                    </button>
+                    <button onclick="rehacerAccionSistema()" title="Echar adelante" class="p-2 bg-white/60 hover:bg-white rounded-full shadow-sm transition-all flex items-center justify-center">
+                        <i data-lucide="arrow-right" class="w-4 h-4 text-slate-700"></i>
+                    </button>
+                    <button onclick="abrirModalComandos()" title="Comandos de voz" class="p-2 bg-white/60 hover:bg-white rounded-full shadow-sm transition-all flex items-center justify-center">
+                        <i data-lucide="help-circle" class="w-4 h-4 text-slate-700"></i>
+                    </button>
+                    <button onclick="abrirModalConfig()" title="Ajustes" class="p-2 bg-white/60 hover:bg-white rounded-full shadow-sm transition-all flex items-center justify-center">
+                        <i data-lucide="settings" class="w-4 h-4 text-slate-700"></i>
+                    </button>
+                </div>
+            </header>
+            <!-- Workspace de Exploración -->
+            <div class="file-workspace flex flex-1 overflow-hidden">
+                <!-- Sidebar Explorador -->
+                <aside class="file-sidebar w-64 flex flex-col border-r border-white/60 p-3">
+                    <button id="newFileBtn" onclick="nuevoArchivoManual()" style="display: none;" class="mb-3 bg-white/80 hover:bg-white text-slate-800 py-2 px-3 rounded-xl text-xs font-semibold shadow-sm border border-white transition-all flex items-center gap-2 justify-center">
+                        <i data-lucide="file-plus" class="w-4 h-4"></i>
+                        <span>NUEVO TXT</span>
+                    </button>
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">Explorador</div>
+                    <div id="fileList" class="flex-1 overflow-y-auto"></div>
+                </aside>
+                <!-- Grid Visual Estilo Clara / Rejilla de Archivos -->
+                <div class="flex-1 flex flex-col overflow-hidden">
+                    <div id="gridContainer" class="grid-container flex-1">
+                        <div class="flex flex-col items-center justify-center h-full text-slate-400 gap-2 opacity-60">
+                            <i data-lucide="hard-drive" class="w-10 h-10"></i>
+                            <p class="text-xs font-medium">Selecciona una carpeta para navegar por tus archivos</p>
+                        </div>
+                    </div>
+                    <!-- Panel Editor Integrado (Oculto por defecto) -->
+                    <div id="editorPanel" style="display: none;">
+                        <input type="text" id="editorFilename" placeholder="nombre_archivo.txt">
+                        <textarea id="editorContent" placeholder="Contenido del archivo..."></textarea>
+                        <div class="flex gap-2">
+                            <button onclick="guardarManual()" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-slate-800 transition-all">GUARDAR</button>
+                            <button onclick="borrarManual()" class="bg-red-500 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-red-600 transition-all">BORRAR</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Panel de Asistente de Voz SILENOS (VOZ 2) -->
+        <aside class="chat-section glass-panel w-96 rounded-2xl flex flex-col p-4 shrink-0">
+            <div class="chat-header flex items-center justify-between pb-3 border-b border-white/60">
+                <button id="connectBtn" onclick="toggleConnection()" class="bg-slate-900 text-white px-4 py-2 rounded-full text-xs font-semibold shadow-sm transition-all">CONECTAR</button>
+                <button id="modeToggleBtn" onclick="toggleMode()" style="background: var(--primary);" class="bg-slate-900 text-white px-3 py-1.5 rounded-full text-[11px] font-semibold">MODO: ASISTENTE</button>
+                <span id="statusText" class="text-xs text-slate-400 font-mono">DESCONECTADO</span>
+            </div>
+            <div style="margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px;">
+                <label for="languageSelect" style="font-size: 11px; font-weight: 600; color: var(--text-dim); font-family: monospace;">TRADUCCIÓN EN VIVO / IDIOMA:</label>
+                <select id="languageSelect" style="padding: 8px; border: 1px solid var(--border); background: var(--bg); border-radius: var(--radius-sm); font-size: 13px; font-family: inherit; outline: none; width: 100%;">
+                    <option value="es" selected>Español (es)</option>
+                    <option value="en">Inglés (en)</option>
+                    <option value="fr">Francés (fr)</option>
+                    <option value="de">Alemán (de)</option>
+                    <option value="it">Italiano (it)</option>
+                    <option value="pt">Portugués (pt)</option>
+                    <option value="ja">Japonés (ja)</option>
+                    <option value="zh">Chino (zh)</option>
+                    <option value="ko">Coreano (ko)</option>
+                    <option value="ru">Ruso (ru)</option>
+                    <option value="ar">Árabe (ar)</option>
+                    <option value="hi">Hindi (hi)</option>
+                    <option value="bn">Bengalí (bn)</option>
+                    <option value="ca">Catalán (ca)</option>
+                    <option value="gl">Gallego (gl)</option>
+                    <option value="eu">Vasco (eu)</option>
+                    <option value="nl">Neerlandés (nl)</option>
+                    <option value="pl">Polaco (pl)</option>
+                    <option value="tr">Turco (tr)</option>
+                    <option value="sv">Sueco (sv)</option>
+                    <option value="no">Noruego (no)</option>
+                    <option value="fi">Finés (fi)</option>
+                    <option value="da">Danés (da)</option>
+                    <option value="cs">Checo (cs)</option>
+                    <option value="el">Griego (el)</option>
+                    <option value="he">Hebreo (he)</option>
+                    <option value="id">Indonesio (id)</option>
+                    <option value="ms">Malayo (ms)</option>
+                    <option value="th">Tailandés (th)</option>
+                    <option value="vi">Vietnamita (vi)</option>
+                    <option value="uk">Ucraniano (uk)</option>
+                    <option value="ro">Rumano (ro)</option>
+                    <option value="hu">Húngaro (hu)</option>
+                    <option value="sk">Eslovaco (sk)</option>
+                    <option value="bg">Búlgaro (bg)</option>
+                    <option value="hr">Croata (hr)</option>
+                    <option value="sr">Serbio (sr)</option>
+                    <option value="lt">Lituano (lt)</option>
+                    <option value="lv">Letón (lv)</option>
+                    <option value="et">Estonio (et)</option>
+                    <option value="sl">Esloveno (sl)</option>
+                    <option value="is">Islandés (is)</option>
+                    <option value="fa">Persa (fa)</option>
+                    <option value="ur">Urdu (ur)</option>
+                    <option value="sw">Suajili (sw)</option>
+                    <option value="tl">Tagalo (tl)</option>
+                    <option value="af">Afrikáans (af)</option>
+                    <option value="sq">Albanés (sq)</option>
+                    <option value="hy">Armenio (hy)</option>
+                    <option value="az">Azerbaiyano (az)</option>
+                    <option value="ka">Georgiano (ka)</option>
+                </select>
+            </div>
+            <div id="chat" class="flex-1 overflow-y-auto my-3 p-2"></div>
+            <div class="controls flex gap-2 pt-2 border-t border-white/60">
+                <button id="micBtn" onclick="toggleMic()" disabled class="bg-white/80 hover:bg-white text-slate-800 p-3 rounded-full shadow-sm border border-white transition-all flex items-center justify-center flex-1">
+                    <i data-lucide="mic" class="w-4 h-4"></i>
+                </button>
+                <input type="text" id="textInput" placeholder="Escribe un mensaje..." onkeypress="handleKey(event)" disabled class="bg-white/60 border border-white/80 focus:bg-white rounded-full px-4 text-xs outline-none flex-[2]">
+                <button id="sendBtn" onclick="sendText()" disabled class="bg-slate-900 text-white p-3 rounded-full shadow-sm hover:bg-slate-800 transition-all flex items-center justify-center">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </aside>
+    </main>
+    <!-- Modal Configuración -->
+    <div id="apiModal" class="modal">
+        <div class="modal-content">
+            <h3>Configuración</h3>
+            <p class="modal-desc">Introduce tu API Key de Google Gemini e instruye la personalidad de tu asistente.</p>
+                         
+            <label style="font-size: 11px; font-weight: 600; color: var(--text-dim); font-family: monospace;">GOOGLE API KEY:</label>
+            <input type="password" id="apiKey" placeholder="Pega tu Google API Key aquí..." class="w-full bg-slate-100 p-3 rounded-xl text-xs border border-slate-200 outline-none mb-4">
+                         
+            <label style="font-size: 11px; font-weight: 600; color: var(--text-dim); font-family: monospace; margin-top: 10px;">PERSONALIDAD DEL ASISTENTE:</label>
+            <select id="personalityPreset" onchange="cambiarPresetPersonalidad()" style="padding: 8px; border: 1px solid var(--border); background: var(--bg); border-radius: var(--radius-sm); font-size: 13px; font-family: inherit; outline: none; width: 100%;">
+                <option value="default">Por defecto (VOZ SILENOS - Arquitecto Web)</option>
+                <option value="concise">Técnico y Conciso (Solo código y respuestas directas)</option>
+                <option value="creative">Colector Creativo (Narrador y Diseñador entusiasta)</option>
+                <option value="custom">Personalizado (Escribir instrucciones abajo...)</option>
+            </select>
+                         
+            <textarea id="personalityInstruction" placeholder="Describe cómo debe comportarse el asistente..." style="height: 100px; font-size: 12px; margin-top: 5px;" class="w-full bg-slate-100 p-3 rounded-xl border border-slate-200 outline-none mb-4"></textarea>
+                         
+            <div class="flex gap-2 modal-buttons">
+                <button onclick="guardarApiKey()" class="bg-slate-900 text-white flex-1 py-2 rounded-xl text-xs font-semibold">GUARDAR</button>
+                <button onclick="cerrarModalConfig()" class="bg-slate-200 text-slate-700 flex-1 py-2 rounded-xl text-xs font-semibold">CERRAR</button>
+            </div>
+        </div>
+    </div>
+    <div id="customContextMenu" class="custom-menu" style="display: none; position: absolute; z-index: 10000;">
+        <div onclick="ejecutarPrevisualizarDesdeMenu()">PREVISUALIZAR</div>
+    </div>
+    <div id="previewModal" onclick="manejarClickFueraModal(event)">
+        <div id="previewMediaContainer"></div>
+    </div>
+    <!-- Scripts del Sistema --> 
+    <script src="ddgSearch.js"></script>
+    <script src="webModal.js"></script>
+    <script src="inlineBlobProcessor.js"></script>
+    <script src="ide.js"></script>
+    <script src="main.js"></script>
+    <script src="ui.js"></script>
+    <script src="reproductorAudio.js"></script>
+    <script src="fsCore.js"></script>
+    <script src="uiArchivos.js"></script>
+    <script src="freeSearchEngine.js"></script>
+    <script src="apiServices.js"></script>
+    <script src="toolsArchivos.js"></script>
+    <script src="conexionWebSocket.js"></script>
+    <script src="gestorMicrofono.js"></script>
+    <script src="comandosModal.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) lucide.createIcons();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Esencia Silen - Papel Japonés</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --paper-color: #fcfaf2; /* Color Washi */
+            --shadow-light: #ffffff;
+            --shadow-dark: #d1d1bc;
+            --accent-red: #bc002d; /* Rojo Cinnabar */
+            --ink-black: #1a1a1b;
+        }
+
+        body {
+            background-color: var(--paper-color);
+            background-image: url('https://www.transparenttextures.com/patterns/paper-fibers.png');
+            color: var(--ink-black);
+            font-family: 'Noto Sans JP', sans-serif;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .neo-card {
+            background: var(--paper-color);
+            border-radius: 20px;
+            box-shadow: 10px 10px 20px var(--shadow-dark), 
+                        -10px -10px 20px var(--shadow-light);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--shadow-dark);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone.drag-over {
+            border-color: var(--accent-red);
+            background: rgba(188, 0, 45, 0.05);
+            transform: scale(1.02);
+        }
+
+        .neo-input {
+            background: var(--paper-color);
+            border: none;
+            border-radius: 10px;
+            box-shadow: inset 5px 5px 10px var(--shadow-dark), 
+                        inset -5px -5px 10px var(--shadow-light);
+            padding: 0.8rem 1.2rem;
+            width: 100%;
+            outline: none;
+            margin-top: 0.5rem;
+        }
+
+        .neo-button {
+            background: var(--paper-color);
+            border-radius: 12px;
+            box-shadow: 6px 6px 12px var(--shadow-dark), 
+                        -6px -6px 12px var(--shadow-light);
+            padding: 0.8rem 1.5rem;
+            font-weight: bold;
+            color: var(--ink-black);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .neo-button:active {
+            box-shadow: inset 4px 4px 8px var(--shadow-dark), 
+                        inset -4px -4px 8px var(--shadow-light);
+            transform: scale(0.98);
+        }
+
+        .neo-button.primary {
+            color: var(--accent-red);
+            border: 1px solid rgba(188, 0, 45, 0.1);
+        }
+
+        .field-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #777;
+            font-weight: 600;
+        }
+
+        .code-area {
+            font-family: 'Fira Code', monospace;
+            min-height: 400px;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .header-title {
+            writing-mode: horizontal-tb;
+            border-left: 5px solid var(--accent-red);
+            padding-left: 1rem;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="max-w-5xl mx-auto">
+        <header class="header-title">
+            <h1 class="text-3xl font-bold tracking-tighter">靜寂 - EDITOR DE MATERIA (M)</h1>
+            <p class="text-sm italic opacity-70">Interfaz de Confluencia Modular Silen</p>
+        </header>
+
+        <!-- Zona de Carga (S / Y) -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="md:col-span-3">
+                <div id="drop-zone" class="drop-zone" onclick="document.getElementById('fileInput').click()">
+                    <div class="flex flex-col items-center justify-center gap-2">
+                        <span class="text-2xl">📥</span>
+                        <p class="text-sm font-medium">ARRASTRA TU MATERIA JSON AQUÍ</p>
+                        <p class="text-xs opacity-50">O haz clic para explorar tus archivos</p>
+                    </div>
+                </div>
+                <input type="file" id="fileInput" class="hidden" accept=".json" onchange="handleFileSelect(event)">
+            </div>
+            <div class="md:col-span-1 flex items-center justify-center">
+                <button onclick="exportJSON()" class="neo-button primary w-full h-full justify-center">
+                    <span>💾</span> EXPORTAR
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Panel Lateral: Propiedades Globales (F) -->
+            <div class="md:col-span-1">
+                <div class="neo-card">
+                    <h2 class="text-lg font-bold mb-4 border-b pb-2">FORMA (F)</h2>
+                    
+                    <div class="mb-4">
+                        <label class="field-label">ID del Programa</label>
+                        <input type="text" id="prog-id" class="neo-input" placeholder="id-unico">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="field-label">Título Visual</label>
+                        <input type="text" id="prog-title" class="neo-input" placeholder="Nombre del programa">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="field-label">Color Icono (Tailwind)</label>
+                        <input type="text" id="prog-color" class="neo-input" placeholder="text-green-500">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="field-label">ID del Padre</label>
+                        <input type="text" id="prog-parent" class="neo-input" placeholder="folder-id">
+                    </div>
+                </div>
+
+                <div class="neo-card">
+                    <h2 class="text-lg font-bold mb-4 border-b pb-2">NODOS (N)</h2>
+                    <div id="nodes-list" class="text-sm opacity-80">
+                        No hay nodos cargados.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Principal: Código (T) -->
+            <div class="md:col-span-2">
+                <div class="neo-card h-full">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold">TRAMOS DE CÓDIGO (T)</h2>
+                        <span class="text-xs bg-gray-200 px-2 py-1 rounded">JS / SILEN ENGINE</span>
+                    </div>
+                    <textarea id="prog-code" class="neo-input code-area h-[600px]" placeholder="// El código modular aparecerá aquí..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentJSON = null;
+        const dropZone = document.getElementById('drop-zone');
+
+        // --- GESTIÓN DE ARRASTRE (S) ---
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-over'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-over'), false);
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }, false);
+
+        function handleFileSelect(event) {
+            handleFiles(event.target.files);
+        }
+
+        function handleFiles(files) {
+            const file = files[0];
+            if (!file || file.type !== "application/json") {
+                alert("La Materia (M) debe ser un archivo .json válido.");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    currentJSON = JSON.parse(e.target.result);
+                    mapJsonToUI();
+                } catch (err) {
+                    alert("Error en la Materia (M): Fallo de coherencia rítmica en el JSON.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function mapJsonToUI() {
+            if (!currentJSON) return;
+
+            document.getElementById('prog-id').value = currentJSON.id || '';
+            document.getElementById('prog-title').value = currentJSON.title || '';
+            document.getElementById('prog-color').value = currentJSON.color || '';
+            document.getElementById('prog-parent').value = currentJSON.parentId || '';
+
+            if (currentJSON.content && currentJSON.content.embeddedModules && currentJSON.content.embeddedModules.length > 0) {
+                document.getElementById('prog-code').value = currentJSON.content.embeddedModules[0].code || '';
+            }
+
+            const nodesList = document.getElementById('nodes-list');
+            nodesList.innerHTML = '';
+            if (currentJSON.content && currentJSON.content.nodes) {
+                currentJSON.content.nodes.forEach(node => {
+                    const div = document.createElement('div');
+                    div.className = 'mb-2 p-2 border-l-2 border-gray-300';
+                    div.innerHTML = `<strong>${node.id}</strong><br><span class='text-xs'>Tipo: ${node.type}</span>`;
+                    nodesList.appendChild(div);
+                });
+            }
+        }
+
+        function exportJSON() {
+            if (!currentJSON) {
+                alert("No hay Materia (M) cargada.");
+                return;
+            }
+
+            currentJSON.id = document.getElementById('prog-id').value;
+            currentJSON.title = document.getElementById('prog-title').value;
+            currentJSON.color = document.getElementById('prog-color').value;
+            currentJSON.parentId = document.getElementById('prog-parent').value;
+
+            if (currentJSON.content && currentJSON.content.embeddedModules && currentJSON.content.embeddedModules.length > 0) {
+                currentJSON.content.embeddedModules[0].code = document.getElementById('prog-code').value;
+                currentJSON.content.embeddedModules[0].title = currentJSON.title;
+            }
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentJSON, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", `silen_mod_${currentJSON.id}.json`);
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+    </script>
+</body>
+</html>

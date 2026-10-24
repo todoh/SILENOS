@@ -1,0 +1,104 @@
+[
+  {
+    "name": "Música",
+    "slug": "musica",
+    "count": 39,
+    "url": "https://www.silenos.es/biblioteca/?collection=M%C3%BAsica"
+  },
+  {
+    "name": "Culturas del Mundo",
+    "slug": "culturas-del-mundo",
+    "count": 129,
+    "url": "https://www.silenos.es/biblioteca/?collection=Culturas%20del%20Mundo"
+  },
+  {
+    "name": "Egipto",
+    "slug": "egipto",
+    "count": 100,
+    "url": "https://www.silenos.es/biblioteca/?collection=Egipto"
+  },
+  {
+    "name": "Mitología Griega",
+    "slug": "mitologia-griega",
+    "count": 102,
+    "url": "https://www.silenos.es/biblioteca/?collection=Mitolog%C3%ADa%20Griega"
+  },
+  {
+    "name": "Hermetismo",
+    "slug": "hermetismo",
+    "count": 6,
+    "url": "https://www.silenos.es/biblioteca/?collection=Hermetismo"
+  },
+  {
+    "name": "Illuminati",
+    "slug": "illuminati",
+    "count": 101,
+    "url": "https://www.silenos.es/biblioteca/?collection=Illuminati"
+  },
+  {
+    "name": "Cultura Inca",
+    "slug": "cultura-inca",
+    "count": 7,
+    "url": "https://www.silenos.es/biblioteca/?collection=Cultura%20Inca"
+  },
+  {
+    "name": "Mitologia Indu",
+    "slug": "mitologia-indu",
+    "count": 11,
+    "url": "https://www.silenos.es/biblioteca/?collection=Mitologia%20Indu"
+  },
+  {
+    "name": "Kabbalah",
+    "slug": "kabbalah",
+    "count": 32,
+    "url": "https://www.silenos.es/biblioteca/?collection=Kabbalah"
+  },
+  {
+    "name": "Cultura Maya",
+    "slug": "cultura-maya",
+    "count": 3,
+    "url": "https://www.silenos.es/biblioteca/?collection=Cultura%20Maya"
+  },
+  {
+    "name": "Roma",
+    "slug": "roma",
+    "count": 33,
+    "url": "https://www.silenos.es/biblioteca/?collection=Roma"
+  },
+  {
+    "name": "Librojuegos",
+    "slug": "librojuegos",
+    "count": 23,
+    "url": "https://www.silenos.es/biblioteca/?collection=Librojuegos"
+  },
+  {
+    "name": "Mesopotamia",
+    "slug": "mesopotamia",
+    "count": 30,
+    "url": "https://www.silenos.es/biblioteca/?collection=Mesopotamia"
+  },
+  {
+    "name": "Arandela Colocada",
+    "slug": "arandela-colocada",
+    "count": 9,
+    "url": "https://www.silenos.es/biblioteca/?collection=Arandela%20Colocada"
+  },
+  {
+    "name": "Ciencia Ficción",
+    "slug": "ciencia-ficcion",
+    "count": 8,
+    "url": "https://www.silenos.es/biblioteca/?collection=Ciencia%20Ficci%C3%B3n"
+  },
+  {
+    "name": "Crónica Presente",
+    "slug": "cronica-presente",
+    "count": 3,
+    "url": "https://www.silenos.es/biblioteca/?collection=Cr%C3%B3nica%20Presente"
+  },
+  {
+    "name": "Fantasía",
+    "slug": "fantasia",
+    "count": 1,
+    "url": "https://www.silenos.es/biblioteca/?collection=Fantas%C3%ADa"
+  }
+]

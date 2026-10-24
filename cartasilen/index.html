@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full overflow-hidden">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cartas SILEN</title>
+         
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+         
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Space Grotesk', 'Outfit', 'sans-serif'],
+                        mono: ['Space Grotesk', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body class="h-full w-full flex flex-col justify-between overflow-hidden font-sans antialiased bg-white text-black selection:bg-black selection:text-white select-none">
+    <!-- Canvas de Efectos -->
+    <canvas id="fx-canvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
+    
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-3 right-3 z-50 bg-black text-white px-4 py-2.5 flex items-center gap-2 transition-all transform translate-y-[-150%] opacity-0 font-mono text-xs uppercase tracking-wider shadow-lg">
+        <span id="toast-icon">ℹ️</span>
+        <span id="toast-msg" class="font-bold">Notificación</span>
+    </div>
+
+    <!-- BANNER DE MODO SELECCIÓN DE OBJETIVO -->
+    <div id="targeting-banner" class="hidden fixed top-2 left-1/2 transform -translate-x-1/2 z-40 bg-amber-400 text-black px-4 py-2 font-mono text-xs font-black uppercase tracking-wider shadow-2xl flex items-center gap-3 border-2 border-black">
+        <span id="targeting-banner-text">MODO SELECCIÓN DE OBJETIVO</span>
+        <button onclick="cancelTargeting()" class="bg-black text-white px-2 py-0.5 text-[10px] uppercase font-bold hover:bg-neutral-800">
+            Cancelar
+        </button>
+    </div>
+
+    <!-- =================================================================== -->
+    <!--                       SCREEN 1: HOME SCREEN                         -->
+    <!-- =================================================================== -->
+    <section id="screen-home" class="relative z-10 h-full min-h-screen flex flex-col justify-between p-4 sm:p-8 max-w-6xl mx-auto w-full overflow-y-auto">
+        <!-- Header Superior -->
+        <header class="flex items-center justify-between w-full py-3 bg-neutral-100 px-5">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-black text-white flex items-center justify-center font-mono font-bold text-base">
+                    CS
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-sm sm:text-base tracking-widest uppercase font-mono">Cartas SILEN</h1>
+                    <p class="text-[9px] sm:text-[10px] text-neutral-500 font-mono uppercase tracking-wider">SILENOS MINIMALIST EDITION • v1.0.0</p>
+                </div>
+            </div>
+            <div class="px-3 py-1 bg-white text-xs font-mono font-bold text-black flex items-center gap-2 border border-neutral-200">
+                <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                <span class="uppercase tracking-wider">SISTEMA LISTO</span>
+            </div>
+        </header>
+
+        <!-- Hero Principal -->
+        <main class="my-auto py-6 flex flex-col lg:flex-row items-stretch justify-between gap-6 lg:gap-12">
+            <!-- Columna Izquierda -->
+            <div class="flex-1 space-y-5 text-left flex flex-col justify-center">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-neutral-100 w-fit text-xs font-mono font-bold uppercase tracking-wider">
+                    <span>ESTRATEGIA ELEMENTAL POR TURNOS</span>
+                </div>
+                <h2 class="text-3xl sm:text-6xl font-black tracking-tighter text-black uppercase leading-none">
+                    GEOMETRÍA Y <br/>
+                    <span class="bg-black text-white px-2">FUERZA ELEMENTAL</span>
+                </h2>
+                <p class="text-xs sm:text-base text-neutral-600 font-normal leading-relaxed max-w-xl">
+                    Construye tu mazo estratégico combinando los 64 elementos primordiales y entidades en el campo. Desafía a la IA táctica o enfréntate a otros jugadores en tiempo real.
+                </p>
+                                 
+                <!-- Dificultad -->
+                <div class="pt-1">
+                    <label class="block text-[10px] sm:text-xs font-mono uppercase tracking-widest mb-1.5 font-bold text-neutral-400">Dificultad de IA</label>
+                    <div class="inline-flex p-1 bg-neutral-100 gap-1">
+                        <button id="diff-easy" onclick="setDifficulty('easy')" class="px-3 py-1.5 text-xs font-mono font-bold uppercase tracking-wider text-black">Fácil</button>
+                        <button id="diff-normal" onclick="setDifficulty('normal')" class="px-3 py-1.5 text-xs font-mono font-bold uppercase tracking-wider bg-black text-white">Normal</button>
+                        <button id="diff-hard" onclick="setDifficulty('hard')" class="px-3 py-1.5 text-xs font-mono font-bold uppercase tracking-wider text-black">Difícil</button>
+                    </div>
+                </div>
+
+                <!-- Botones CTA -->
+                <div class="flex flex-col space-y-2 pt-2 sm:max-w-md">
+                    <div class="flex flex-col sm:flex-row items-center justify-start gap-3">
+                        <button onclick="startBattleFromHome()" class="w-full sm:w-auto px-8 py-3.5 btn-brutalist text-xs font-bold flex items-center justify-center gap-3">
+                            <span>INICIAR BATALLA</span>
+                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                        </button>
+                        <button onclick="showScreen('deck')" class="w-full sm:w-auto px-7 py-3.5 btn-brutalist-outline text-xs font-bold flex items-center justify-center gap-2">
+                            <span>GESTOR DE BARAJA</span>
+                            <span id="home-deck-count-badge" class="px-2 py-0.5 bg-black text-white font-mono text-xs">10/20</span>
+                        </button>
+                    </div>
+
+                    <!-- BOTÓN DE SALA MULTIJUGADOR -->
+                    <button onclick="handleMultiplayerLobbyClick()" class="w-full px-8 py-3.5 btn-brutalist bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center justify-center gap-3">
+                        <span>IR A SALA MULTIJUGADOR</span>
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3.005 3.005 0 013.75-2.906z"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Vista Previa Mazo Activo -->
+            <div class="w-full lg:w-96 swiss-panel p-5 space-y-4">
+                <div class="flex items-center justify-between pb-2 bg-neutral-200 p-2.5">
+                    <div>
+                        <h3 class="font-extrabold text-xs uppercase tracking-widest font-mono text-black">MAZO ACTIVO</h3>
+                        <span id="home-active-deck-name" class="text-[10px] font-mono font-bold text-neutral-600 uppercase block mt-0.5"></span>
+                    </div>
+                    <button onclick="showScreen('deck')" class="text-xs font-mono font-bold uppercase underline hover:bg-black hover:text-white px-1">Editar</button>
+                </div>
+
+                <div class="bg-white p-2 border border-neutral-200">
+                    <label class="block text-[9px] font-mono font-bold text-neutral-400 uppercase tracking-wider mb-1">Seleccionar Baraja Activa</label>
+                    <select id="home-deck-select" onchange="handleHomeSelectDeck(this.value)" class="w-full bg-neutral-100 border border-neutral-300 p-1.5 text-xs font-bold font-mono text-black focus:outline-none">
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+                    <div class="p-2.5 bg-white">
+                        <span class="text-neutral-400 block text-[9px] uppercase tracking-wider">TOTAL CARTAS</span>
+                        <span id="home-stat-cards" class="text-base font-black text-black">10</span>
+                    </div>
+                    <div class="p-2.5 bg-white">
+                        <span class="text-neutral-400 block text-[9px] uppercase tracking-wider">COSTE MEDIO</span>
+                        <span id="home-stat-cost" class="text-base font-black text-black">2.5</span>
+                    </div>
+                </div>
+
+                <div>
+                    <span class="text-[9px] font-mono font-bold text-neutral-400 block uppercase tracking-wider mb-1.5">Composición Elemental</span>
+                    <div id="home-element-pills" class="flex flex-wrap gap-1"></div>
+                </div>
+
+                <div class="pt-1">
+                    <span class="text-[9px] font-mono font-bold text-neutral-400 block uppercase tracking-wider mb-1.5">Muestra de Cartas</span>
+                    <div id="home-deck-preview-grid" class="grid grid-cols-4 gap-1.5"></div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="text-center py-3 text-[9px] font-mono text-neutral-400 uppercase tracking-widest">
+            Cartas SILEN • 2026 • SILENOS MINIMALIST EDITION • v1.0.0
+        </footer>
+    </section>
+
+    <!-- =================================================================== -->
+    <!--                     SCREEN MULTIPLAYER LOBBY                        -->
+    <!-- =================================================================== -->
+    <section id="screen-lobby" class="hidden relative z-10 h-full min-h-screen flex flex-col p-4 sm:p-6 max-w-5xl mx-auto w-full space-y-4 overflow-y-auto">
+        <header class="flex items-center justify-between swiss-panel p-4 border border-neutral-200">
+            <div class="flex items-center gap-3">
+                <button onclick="closeLobbyScreen()" class="btn-brutalist p-2 text-white flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                <div>
+                    <h2 class="font-extrabold text-sm sm:text-base uppercase font-mono">SALA MULTIJUGADOR ONLINE</h2>
+                    <p class="text-[10px] text-neutral-500 font-mono">Conectado como: <span id="lobby-my-name" class="font-bold text-black"></span></p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="openPlayerNameModal()" class="btn-brutalist-outline px-3 py-1.5 text-xs font-mono font-bold">
+                    Cambiar Nombre
+                </button>
+                <div id="lobby-online-count" class="px-3 py-1.5 text-xs font-mono font-bold bg-black text-white">
+                    0 Conectados
+                </div>
+            </div>
+        </header>
+
+        <div class="swiss-panel p-4 flex-1 flex flex-col space-y-3 min-h-0 border border-neutral-200">
+            <div class="flex items-center justify-between border-b border-neutral-200 pb-2">
+                <h3 class="font-extrabold text-xs font-mono uppercase text-black tracking-wider">JUGADORES DISPONIBLES EN LÍNEA</h3>
+                <span class="text-[10px] font-mono text-neutral-500 uppercase">Actualización en tiempo real</span>
+            </div>
+            
+            <div id="lobby-players-list" class="space-y-2 overflow-y-auto flex-1 min-h-[300px]">
+            </div>
+        </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!--                     SCREEN 2: DECK MANAGER                          -->
+    <!-- =================================================================== -->
+    <section id="screen-deck" class="hidden relative z-10 h-full min-h-screen flex flex-col p-4 sm:p-6 max-w-6xl mx-auto w-full space-y-4 overflow-y-auto">
+        <header class="flex items-center justify-between swiss-panel p-3">
+            <div class="flex items-center gap-3">
+                <button onclick="showScreen('home')" class="btn-brutalist p-2 text-white flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                <div>
+                    <h2 class="font-extrabold text-sm sm:text-base uppercase font-mono">Gestor de Baraja (64 Tipos Disponibles)</h2>
+                    <p class="text-[10px] text-neutral-500 font-mono">Selecciona entre 10 y 20 cartas clasificadas en las 8 familias elementales</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="px-3 py-1.5 text-xs font-mono font-bold bg-white border border-neutral-200">
+                    <span id="deck-counter" class="text-black">10</span> / <span class="text-neutral-400">20</span>
+                </div>
+                <button onclick="saveAndReturnHome()" class="btn-brutalist px-4 py-2 text-xs">
+                    Guardar
+                </button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
+            <div class="lg:col-span-2 space-y-3 flex flex-col min-h-0">
+                <div class="flex flex-col gap-2 swiss-panel p-2.5">
+                    <div id="element-filters" class="w-full"></div>
+                    <div class="text-[10px] font-mono text-neutral-500 text-right pt-1 border-t border-neutral-200">
+                        <span id="gallery-count">64</span> CARTAS DISPONIBLES
+                    </div>
+                </div>
+                <div id="deck-gallery-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto pr-1 flex-1 min-h-0"></div>
+            </div>
+
+            <div class="swiss-panel p-4 flex flex-col justify-between space-y-3 min-h-0">
+                <div class="flex flex-col min-h-0 flex-1">
+                    <div id="deck-management-bar" class="mb-3 p-2 bg-white border border-neutral-200"></div>
+                    <div class="flex items-center justify-between pb-2 mb-2 bg-neutral-200 p-2">
+                        <h3 class="font-extrabold text-xs font-mono uppercase tracking-wider text-black">TU BARAJA ACTIVA</h3>
+                        <button onclick="clearDeck()" class="text-[10px] font-mono text-black hover:bg-black hover:text-white px-1 uppercase font-bold underline">Vaciar</button>
+                    </div>
+                    <p id="deck-status-msg" class="text-[10px] text-neutral-500 font-mono mb-2">Haz clic para añadir/quitar cartas.</p>
+                    <div id="active-deck-list" class="space-y-1.5 overflow-y-auto pr-1 flex-1 min-h-0"></div>
+                </div>
+                <div class="pt-2 space-y-1.5 border-t border-neutral-200">
+                    <span class="text-[9px] font-mono font-bold text-neutral-400 block uppercase">Preajustes Rápidos</span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="loadPreset('balanced')" class="btn-brutalist-outline py-1.5 text-xs">Equilibrado</button>
+                        <button onclick="loadPreset('aggressive')" class="btn-brutalist-outline py-1.5 text-xs">Ofensivo</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!--                     SCREEN 3: BATTLE ARENA                          -->
+    <!-- =================================================================== -->
+    <section id="screen-battle" class="hidden fixed inset-0 z-10 h-full w-full flex flex-col justify-between p-2 sm:p-4 max-w-6xl mx-auto overflow-hidden bg-white text-black">
+        <!-- HEADER -->
+        <header class="w-full flex items-center justify-between bg-neutral-100 p-2.5 shrink-0">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-black text-white flex items-center justify-center font-mono font-bold text-xs">
+                    DE
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xs sm:text-sm tracking-wider uppercase font-mono leading-none">DUELO ELEMENTAL</h1>
+                    <p id="battle-diff-tag" class="text-[9px] text-neutral-500 font-mono uppercase tracking-wider leading-none mt-0.5">
+                        NORMAL
+                    </p>
+                </div>
+            </div>
+
+            <div id="turn-badge" class="px-3 py-1 flex items-center gap-2 text-xs font-mono font-bold bg-white border border-neutral-200">
+                <span id="turn-dot-p1" class="w-2 h-2 bg-black"></span>
+                <span id="turn-text" class="text-black uppercase text-[10px] sm:text-xs">TU TURNO</span>
+                <span id="turn-dot-p2" class="w-2 h-2 bg-neutral-300"></span>
+            </div>
+
+            <button onclick="togglePauseModal()" class="btn-brutalist-outline px-3 py-1 text-xs font-bold">
+                PAUSA
+            </button>
+        </header>
+
+        <!-- MAIN ARENA AREA -->
+        <main class="w-full flex-1 flex flex-col justify-between items-stretch py-2 gap-2 min-h-0 overflow-hidden">
+            <!-- CPU / OPPONENT BOARD -->
+            <div id="p2-board" class="w-full flex-1 swiss-panel p-3 sm:p-4 flex flex-col justify-between min-h-0 transition-all overflow-y-auto">
+                <div id="p2-avatar-box" class="flex items-center justify-between p-1">
+                    <div class="flex items-center gap-3">
+                        <div id="p2-avatar" class="w-9 h-9 bg-white flex items-center justify-center text-xl border border-neutral-200 shrink-0">🤖</div>
+                        <div>
+                            <h2 id="p2-name" class="font-extrabold text-xs sm:text-sm uppercase font-mono leading-none">IA RIVAL</h2>
+                            <span id="p2-role-badge" class="text-[8px] sm:text-[9px] text-neutral-500 font-mono uppercase font-bold">Oponente IA</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between text-[10px] font-mono pt-1">
+                        <div id="p2-energy-dots" class="flex items-center gap-1"></div>
+                        <div id="p2-buffs" class="flex flex-wrap gap-1"></div>
+                    </div>
+                    <div class="flex flex-col items-end gap-1 min-w-[130px] sm:min-w-[200px]">
+                        <div class="flex items-baseline gap-2">
+                            <span id="p2-shield-text" class="text-[10px] sm:text-xs font-mono font-bold text-black hidden">🛡️ 0</span>
+                            <span id="p2-hp-text" class="text-[10px] sm:text-xs font-mono font-extrabold text-black">100 / 100</span>
+                        </div>
+                        <div class="w-full h-3 bg-neutral-200 p-0.5">
+                            <div id="p2-hp-bar" class="h-full bg-black transition-all duration-500" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+                                 
+                <!-- ENTIDADES CPU / OPPONENT EN CAMPO -->
+                <div class="mt-2 pt-1 border-t border-neutral-300/60">
+                    <div id="p2-entities" class="flex items-center justify-center gap-2.5 min-h-[65px] overflow-x-auto pb-0.5"></div>
+                </div>
+            </div>
+
+            <!-- COMBAT LOG CENTRAL -->
+            <div class="w-full flex items-center justify-center shrink-0 my-0.5">
+                <div id="combat-log" class="w-full bg-black text-white px-4 py-2 text-xs sm:text-sm font-mono font-bold text-center uppercase tracking-wider truncate">
+                    ⚔️ ¡QUE COMIENCE EL DUELO! SELECCIONA UNA CARTA.
+                </div>
+            </div>
+
+            <!-- PLAYER BOARD -->
+            <div id="p1-board" class="w-full swiss-panel p-3 sm:p-4 flex flex-col justify-between transition-all overflow-y-auto">
+                <!-- ENTIDADES JUGADOR EN CAMPO -->
+                <div class="mb-2 pb-1 border-b border-neutral-300/60">
+                    <div id="p1-entities" class="flex items-center justify-start gap-2.5 min-h-[140px] overflow-x-auto pb-0.5"></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- CARDS HAND DOCK -->
+        <footer class="w-full shrink-0 pt-2 pb-2 px-3 bg-neutral-100 mt-1 border-t border-neutral-200">
+            <div id="hand-container" class="flex items-center justify-center gap-3 sm:gap-4 w-full overflow-x-auto py-2 px-1 min-h-[240px]"></div>
+                         
+            <div class="flex items-center justify-between text-[10px] font-mono pt-1">
+                <div id="p1-energy-dots" class="flex items-center gap-1"></div>
+                <div id="p1-buffs" class="flex flex-wrap gap-1"></div>
+            </div>
+
+            <div id="p1-avatar-box" class="flex items-center justify-between p-1">
+                <div class="flex items-center gap-3">
+                    <div id="p1-avatar" class="w-9 h-9 bg-black text-white flex items-center justify-center text-xl shrink-0">👤</div>
+                    <div>
+                        <h2 id="p1-name" class="font-extrabold text-xs sm:text-sm uppercase font-mono leading-none">TÚ</h2>
+                        <span id="p1-role-badge" class="text-[8px] sm:text-[9px] text-neutral-500 font-mono uppercase font-bold">Invocador Elemental</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="deck-remaining-tag" class="text-[10px] sm:text-xs font-mono font-bold text-neutral-500 uppercase">Mazo: 10 rest.</span>
+                    <button id="btn-end-turn" onclick="endTurn()" class="btn-brutalist px-5 py-2 text-xs sm:text-sm font-bold">
+                        FINALIZAR TURNO
+                    </button>
+                </div>
+                <div class="flex flex-col items-end gap-1 min-w-[130px] sm:min-w-[200px]">
+                    <div class="flex items-baseline gap-2">
+                        <span id="p1-shield-text" class="text-[10px] sm:text-xs font-mono font-bold text-black hidden">🛡️ 0</span>
+                        <span id="p1-hp-text" class="text-[10px] sm:text-xs font-mono font-extrabold text-black">100 / 100</span>
+                    </div>
+                    <div class="w-full h-3 bg-neutral-200 p-0.5">
+                        <div id="p1-hp-bar" class="h-full bg-black transition-all duration-500" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </section>
+
+    <!-- MODAL REGISTRO DE NOMBRE JUGADOR -->
+    <div id="modal-player-name" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div class="max-w-xs w-full bg-white p-6 space-y-4 shadow-2xl border border-neutral-300">
+            <div class="flex items-center justify-between border-b border-neutral-200 pb-2">
+                <h3 class="text-xs font-bold font-mono uppercase text-black">INGRESA TU NOMBRE</h3>
+                <button onclick="closePlayerNameModal()" class="text-xs font-mono font-bold hover:bg-black hover:text-white px-1">✕</button>
+            </div>
+            <div>
+                <label class="block text-[9px] font-mono font-bold text-neutral-400 uppercase tracking-wider mb-1">Nombre del Invocador</label>
+                <input 
+                    type="text" 
+                    id="player-name-input" 
+                    onkeydown="if(event.key==='Enter') confirmPlayerNameModal(); else if(event.key==='Escape') closePlayerNameModal();"
+                    class="w-full bg-neutral-100 border border-neutral-300 p-2 text-xs font-mono font-bold text-black focus:outline-none focus:border-black" 
+                    placeholder="Ej: InvocadorX" 
+                    maxlength="15"
+                />
+            </div>
+            <div class="flex items-center gap-2 pt-1">
+                <button onclick="closePlayerNameModal()" class="btn-brutalist-outline flex-1 py-2 text-xs">CANCELAR</button>
+                <button onclick="confirmPlayerNameModal()" class="btn-brutalist flex-1 py-2 text-xs">ENTRAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL NOTIFICACIÓN DE INVITACIÓN MULTIJUGADOR -->
+    <div id="modal-invitation" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="max-w-sm w-full bg-white p-6 text-center space-y-4 shadow-2xl border-2 border-black">
+            <div class="text-3xl">⚔️</div>
+            <div>
+                <h3 class="text-base font-black font-mono uppercase text-black">DESAFÍO MULTIJUGADOR</h3>
+                <p id="invitation-modal-text" class="text-xs font-mono text-neutral-600 mt-2 leading-relaxed">Un jugador te ha invitado a una batalla.</p>
+            </div>
+            <div class="grid grid-cols-3 gap-2 pt-2">
+                <button onclick="respondInvitation(true)" class="btn-brutalist bg-emerald-600 hover:bg-emerald-700 py-2.5 text-xs">ACEPTAR</button>
+                <button onclick="respondInvitation(false)" class="btn-brutalist bg-rose-600 hover:bg-rose-700 py-2.5 text-xs">RECHAZAR</button>
+                <button onclick="ignoreInvitation()" class="btn-brutalist-outline py-2.5 text-xs">IGNORAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PARA CREAR / RENOMBRAR BARAJA -->
+    <div id="modal-deck-name" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+        <div class="max-w-xs w-full bg-white p-5 space-y-4 shadow-2xl border border-neutral-300">
+            <div class="flex items-center justify-between border-b border-neutral-200 pb-2">
+                <h3 id="modal-deck-title" class="text-xs font-bold font-mono uppercase text-black">NUEVA BARAJA</h3>
+                <button onclick="closeDeckNameModal()" class="text-xs font-mono font-bold hover:bg-black hover:text-white px-1">✕</button>
+            </div>
+            <div>
+                <label class="block text-[9px] font-mono font-bold text-neutral-400 uppercase tracking-wider mb-1">Nombre de la Baraja</label>
+                <input 
+                    type="text" 
+                    id="deck-name-input" 
+                    onkeydown="if(event.key==='Enter') confirmDeckNameModal(); else if(event.key==='Escape') closeDeckNameModal();"
+                    class="w-full bg-neutral-100 border border-neutral-300 p-2 text-xs font-mono font-bold text-black focus:outline-none focus:border-black" 
+                    placeholder="Ej: Baraja Táctica" 
+                />
+            </div>
+            <div class="flex items-center gap-2 pt-1">
+                <button onclick="closeDeckNameModal()" class="btn-brutalist-outline flex-1 py-2 text-xs">CANCELAR</button>
+                <button onclick="confirmDeckNameModal()" class="btn-brutalist flex-1 py-2 text-xs">GUARDAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DETALLE DE CARTA / ENTIDAD -->
+    <div id="modal-card-info" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+        <div class="max-w-xs w-full bg-white p-5 text-center space-y-3 shadow-2xl border border-neutral-300">
+            <div class="flex items-center justify-between border-b border-neutral-200 pb-2">
+                <span id="info-card-elem" class="text-[10px] font-mono font-bold px-2 py-0.5 bg-black text-white uppercase">ELEMENTO</span>
+                <span id="info-card-cost" class="text-[10px] font-mono font-bold px-2 py-0.5 bg-neutral-100 border border-neutral-300 text-black">COSTE</span>
+            </div>
+            <div class="w-24 h-24 aspect-square mx-auto bg-neutral-100 overflow-hidden relative border border-neutral-200">
+                <img id="info-card-img" src="" alt="Carta" class="w-full h-full object-cover">
+            </div>
+            <div>
+                <h3 id="info-card-title" class="text-sm font-black font-mono uppercase text-black">NOMBRE DE CARTA</h3>
+                <p id="info-card-type" class="text-[10px] font-mono font-bold text-neutral-400 uppercase mt-0.5"></p>
+            </div>
+            <p id="info-card-desc" class="text-xs font-mono text-neutral-600 bg-neutral-50 p-2 border border-neutral-200/60 leading-relaxed"></p>
+            <button onclick="closeCardInfoModal()" class="w-full btn-brutalist py-2 text-xs font-mono font-bold mt-2">
+                ENTENDIDO
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL GAME OVER -->
+    <div id="modal-gameover" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div class="max-w-sm w-full bg-white p-6 text-center space-y-4 shadow-xl border border-neutral-300">
+            <div id="gameover-icon" class="text-4xl">🏆</div>
+            <div>
+                <h3 id="gameover-title" class="text-xl font-black font-mono uppercase text-black">VICTORIA</h3>
+                <p id="gameover-subtitle" class="text-xs font-mono text-neutral-500 mt-1">Has demostrado tu maestría sobre los elementos.</p>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-left bg-neutral-100 p-3 text-xs font-mono">
+                <div>
+                    <span class="text-neutral-400 block text-[9px] uppercase">TURNO FINAL</span>
+                    <span id="stat-final-turn" class="font-bold text-black">Turno 6</span>
+                </div>
+                <div>
+                    <span class="text-neutral-400 block text-[9px] uppercase">HP RESTANTE</span>
+                    <span id="stat-final-hp" class="font-bold text-black">45 HP</span>
+                </div>
+            </div>
+            <div class="space-y-2 pt-1">
+                <button onclick="restartMatch()" class="w-full btn-brutalist py-2.5 text-xs">JUGAR DE NUEVO</button>
+                <button onclick="if(state.isMultiplayer) leaveMultiplayerMatch(); else showScreen('home');" class="w-full btn-brutalist-outline py-2.5 text-xs">MENÚ PRINCIPAL</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PAUSA -->
+    <div id="modal-pause" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div class="max-w-xs w-full bg-white p-6 text-center space-y-3 shadow-xl border border-neutral-300">
+            <h3 class="text-sm font-black font-mono uppercase">Partida en Pausa</h3>
+            <div class="space-y-2 pt-2">
+                <button onclick="togglePauseModal()" class="w-full btn-brutalist py-2 text-xs">REANUDAR</button>
+                <button onclick="restartMatch(); togglePauseModal();" class="w-full btn-brutalist-outline py-2 text-xs">REINICIAR BATALLA</button>
+                <button onclick="if(state.isMultiplayer) leaveMultiplayerMatch(); else showScreen('home'); togglePauseModal();" class="w-full btn-brutalist-outline py-2 text-xs text-rose-600 hover:bg-rose-600 hover:text-white">SALIR AL MENÚ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Modules -->
+    <script src="tipos.js"></script>
+    <script src="cartas_psiquicos.js"></script>
+    <script src="cartas_sensoriales.js"></script>
+    <script src="cartas_fisicos.js"></script>
+    <script src="cartas_biologicos.js"></script>
+    <script src="cartas_energeticos.js"></script>
+    <script src="cartas_cosmicos.js"></script>
+    <script src="cartas_misticos.js"></script>
+    <script src="cartas_sinteticos.js"></script>
+    <script src="cartas.js"></script>
+    <script src="estados.js"></script>
+    <script src="sinergias.js"></script>
+    <script src="logic.js"></script>
+    <script src="ai.js"></script>
+    <script src="ui.js"></script>
+
+    <!-- Nuevos Módulos Multijugador -->
+    <script src="multiplayer_config.js"></script>
+    <script src="multiplayer_lobby.js"></script>
+    <script src="multiplayer_game.js"></script>
+
+    <script src="main.js"></script>
+</body>
+</html>

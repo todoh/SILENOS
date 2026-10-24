@@ -1,0 +1,244 @@
+/* ---------------------------------------------------------
+   STYLES.CSS
+   High-end web design interface, Nordic Minimalist Style
+   v5.2 - Silenos Clean Edition (Right Floating Header)
+--------------------------------------------------------- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400&display=swap');
+
+:root {
+    /* Paleta Nórdica */
+    --bg-app: #f9fafb;        /* Fondo general muy claro */
+    --bg-window: #ffffff;     /* Fondo de ventanas blanco puro */
+    --text-primary: #1a1a1a;  /* Negro suave */
+    --text-secondary: #737373;/* Gris medio */
+    --border-light: #e5e5e5;  /* Líneas divisorias sutiles */
+    --border-active: #d4d4d4; /* Borde un poco más oscuro para focus */
+    
+    /* Sombras Suaves (Elevation) */
+    --shadow-window: 0 4px 20px -5px rgba(0, 0, 0, 0.08), 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+    --shadow-active: 0 10px 30px -5px rgba(0, 0, 0, 0.12), 0 5px 15px -3px rgba(0, 0, 0, 0.05);
+    
+    /* Tipografía */
+    --font-ui: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-app);
+    color: var(--text-primary);
+    font-family: var(--font-ui);
+    margin: 0;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    font-weight: 300;
+}
+
+/* --- TIPOGRAFÍA --- */
+.typo-grotesk {
+    font-family: var(--font-ui);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+}
+
+.typo-mono {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+}
+
+/* --- LAYOUT GRID --- */
+#app-interface {
+    display: grid;
+    grid-template-columns: 1fr; 
+    grid-template-rows: 1fr; 
+    height: 100%;
+    width: 100%;
+    gap: 0;
+    background-color: var(--bg-app);
+}
+
+.cell {
+    background-color: transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+/* --- SISTEMA DE VENTANAS (NORDIC FLOAT) --- */
+.silenos-window {
+    position: absolute;
+    background-color: var(--bg-window);
+    border: 1px solid var(--border-light);
+    border-radius: 6px; 
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: var(--shadow-window) !important;
+    min-width: 200px;
+    min-height: 100px;
+    z-index: 100;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.silenos-window.active {
+    border-color: var(--border-active);
+    box-shadow: var(--shadow-active) !important;
+    z-index: 101; 
+}
+
+/* CABECERA FLOTANTE A LA DERECHA */
+.window-header {
+    position: absolute;
+    top: 0;
+    right: 0; /* Cambiado a la derecha */
+    left: auto;
+    z-index: 50;
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(4px);
+    border-bottom: 1px solid var(--border-light);
+    border-left: 1px solid var(--border-light); /* Borde a la izquierda */
+    border-right: none;
+    border-bottom-left-radius: 8px; /* Redondeo a la izquierda */
+    border-bottom-right-radius: 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+    cursor: grab;
+    user-select: none;
+    box-shadow: -2px 2px 10px rgba(0,0,0,0.05); /* Sombra invertida */
+}
+
+.window-header:active {
+    cursor: grabbing;
+}
+
+.window-title {
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    pointer-events: none; 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+}
+
+.window-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.win-btn {
+    background: transparent;
+    border: none;
+    color: var(--border-active);
+    font-family: var(--font-ui);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    transition: color 0.2s;
+}
+
+.win-btn:hover {
+    color: var(--text-primary); 
+}
+
+.window-content {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background-color: var(--bg-window);
+}
+
+.window-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.5); 
+    z-index: 10;
+    display: none; 
+}
+
+/* --- RESIZE HANDLES --- */
+.resize-handle { position: absolute; z-index: 20; }
+.res-n { top: 0; left: 0; right: 0; height: 6px; cursor: n-resize; }
+.res-s { bottom: 0; left: 0; right: 0; height: 6px; cursor: s-resize; }
+.res-e { top: 0; bottom: 0; right: 0; width: 6px; cursor: e-resize; }
+.res-w { top: 0; bottom: 0; left: 0; width: 6px; cursor: w-resize; }
+.res-ne { top: 0; right: 0; width: 12px; height: 12px; cursor: ne-resize; z-index: 21; }
+.res-nw { top: 0; left: 0; width: 12px; height: 12px; cursor: nw-resize; z-index: 21; }
+.res-se { bottom: 0; right: 0; width: 12px; height: 12px; cursor: se-resize; z-index: 21; }
+.res-sw { bottom: 0; left: 0; width: 12px; height: 12px; cursor: sw-resize; z-index: 21; }
+
+/* TOAST */
+.toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--text-primary);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    box-shadow: var(--shadow-active);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 9999;
+}
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+}
+
+/* --- NORDIC TASKBAR --- */
+.taskbar-item {
+    pointer-events: auto;
+    background: var(--bg-window);
+    border: 0px solid var(--border-light);
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    font-family: var(--font-ui);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    max-width: 160px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05); 
+    border-radius: 4px; 
+    margin-right: 8px; 
+    margin-bottom: 0;
+}
+
+.taskbar-item:hover {
+    border-color: var(--border-active);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+
+.taskbar-item.active {
+    background: var(--text-primary); 
+    color: white;
+    border-color: var(--text-primary);
+    box-shadow: 0 4px 10px -2px rgba(0,0,0,0.2);
+    transform: translateY(-1px);
+}

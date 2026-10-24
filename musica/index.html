@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pollinations Audio Hub - ACE-Step 1.5 Turbo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700&family=JetBrains+Mono:wght=400;500&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #080a10;
+        }
+        .code-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d111c;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f293d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b82f6;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col overflow-hidden text-slate-100">
+
+    <header class="h-16 border-b border-slate-800 bg-[#0c111d] flex items-center justify-between px-6 shrink-0 z-30 shadow-md">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <i class="fa-solid fa-music text-white text-sm"></i>
+            </div>
+            <div>
+                <h1 class="text-sm font-bold tracking-wider text-white uppercase font-mono">ACE-Step Audio Generator</h1>
+                <p class="text-[10px] text-slate-400 font-mono">POLLINATIONS AI INTEGRATION</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button id="btn-auth-status" class="bg-slate-900 border border-slate-700 hover:border-blue-500 text-xs text-slate-300 px-4 py-2 rounded-xl transition-all flex items-center gap-2 font-mono font-semibold cursor-pointer">
+                <i class="fa-solid fa-user-astronaut text-blue-400"></i> <span id="auth-status-text">Conectar Cuenta</span>
+            </button>
+            <div class="bg-blue-950/80 border border-blue-800/60 text-blue-400 text-[10px] px-3 py-1 rounded-full font-semibold tracking-wider flex items-center gap-1.5 uppercase font-mono">
+                <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span> ACE-STEP 1.5 TURBO
+            </div>
+        </div>
+    </header>
+
+    <div class="flex-1 flex overflow-hidden w-full relative z-10">
+        
+        <aside class="w-96 border-r border-slate-800 bg-[#090d16] p-6 flex flex-col justify-between shrink-0 relative z-20 overflow-y-auto">
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 font-mono">
+                        <i class="fa-solid fa-key mr-1.5"></i>API Key de Pollinations
+                    </label>
+                    <input type="password" id="api-key" placeholder="pk_... o sk_... (Automático con Login)" class="w-full bg-[#121826] border border-slate-700 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-blue-500 transition-all font-mono">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 font-mono">
+                        <i class="fa-solid fa-sliders mr-1.5"></i>Modelo de Audio
+                    </label>
+                    <select id="model-select" class="w-full bg-[#121826] border border-slate-700 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-blue-500 transition-all font-mono cursor-pointer">
+                        <option value="acestep">ACE-Step 1.5 Turbo (acestep)</option>
+                        <option value="stable-audio-3-medium">Stable Audio 3 Medium</option>
+                        <option value="elevenmusic">ElevenLabs Music (elevenmusic)</option>
+                    </select>
+                </div>
+
+                <div class="space-y-4 border-t border-slate-800/80 pt-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono mb-1.5">Estilo / Tags (Solo ACE-Step):</label>
+                        <input type="text" id="audio-style" value="electronic, synthwave, 120 bpm" placeholder="Ej: jazz, upbeat, acoustic" class="font-mono text-xs bg-[#121826] border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-2.5 text-white outline-none w-full transition-all">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono mb-1.5">Duración (Segundos):</label>
+                        <input type="number" id="audio-duration" value="15" min="3" max="300" class="font-mono text-xs bg-[#121826] border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-2.5 text-white outline-none w-full transition-all">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono mb-1.5">Semilla (Seed):</label>
+                        <input type="number" id="audio-seed" value="-1" placeholder="-1 para Aleatoria" class="font-mono text-xs bg-[#121826] border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-2.5 text-white outline-none w-full transition-all">
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-800/80 pt-4 mt-4">
+                <div class="bg-blue-950/20 border border-blue-900/40 rounded-xl p-4 text-[11px] text-slate-400 leading-relaxed font-mono space-y-2">
+                    <p><i class="fa-solid fa-info-circle mr-1 text-blue-400"></i> Generación directa a través de la pasarela de audio en tiempo real de Pollinations.</p>
+                    <div id="pollen-balance-container" class="hidden text-[10px] text-yellow-400 font-bold border-t border-blue-900/40 pt-1.5 flex items-center justify-between">
+                        <span>BALANCE DE POLLEN:</span>
+                        <span id="pollen-balance-value">0.00 🪙</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col bg-[#07090e] overflow-hidden relative p-6 justify-between">
+            
+            <div class="flex-1 flex flex-col items-center justify-center relative">
+                <div class="w-full max-w-2xl bg-[#0c111d] border border-slate-800 rounded-2xl p-6 flex flex-col items-center gap-6 shadow-xl">
+                    <span class="text-[10px] font-bold text-blue-400 font-mono uppercase tracking-widest"><i class="fa-solid fa-wave-square mr-1"></i> Espectro de Frecuencia</span>
+                    
+                    <div class="w-full bg-[#04060a] rounded-xl border border-slate-900 overflow-hidden flex items-center justify-center">
+                        <canvas id="canvas-procesado" class="w-full h-48 block"></canvas>
+                    </div>
+
+                    <div class="w-full">
+                        <audio id="audio-player" controls class="w-full rounded-lg bg-[#121826] text-white outline-none"></audio>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-[#090d16] border border-slate-800 rounded-2xl p-6 shrink-0 max-w-4xl w-full mx-auto shadow-md">
+                <div class="space-y-3">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest font-mono">
+                        <i class="fa-solid fa-pen-nib mr-1.5"></i>Descripción del Audio (Prompt)
+                    </label>
+                    <div class="flex gap-3 items-end">
+                        <textarea id="prompt-input" rows="2" class="flex-1 bg-[#121826] border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500 transition-all resize-none leading-relaxed" placeholder="Describe la música que deseas generar... Ej: 'upbeat retro wave instrumental track with synthesizers'"></textarea>
+                        
+                        <button id="btn-generate" class="h-12 px-6 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl tracking-wider transition-all flex items-center justify-center gap-2 uppercase shrink-0 shadow-lg shadow-blue-500/20 cursor-pointer">
+                            <span>Generar</span> <i class="fa-solid fa-play"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modal-auth" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all">
+        <div class="bg-[#0c111d] border border-slate-800 w-full max-w-md rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+            <div class="border-b border-slate-800 bg-[#090d16] px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-shield-halved text-blue-500 text-sm"></i>
+                    <h3 class="font-mono text-xs font-bold uppercase tracking-wider text-white">Autenticación Pollinations</h3>
+                </div>
+                <button id="btn-close-modal" class="text-slate-400 hover:text-white transition-all text-sm cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <div id="auth-modal-user-info" class="hidden bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex items-center gap-3">
+                    <img id="auth-user-avatar" src="" class="w-10 h-10 rounded-full border border-blue-500/30 bg-slate-800">
+                    <div class="flex-1 min-w-0">
+                        <p id="auth-user-name" class="text-xs font-bold text-white truncate">@usuario</p>
+                        <p class="text-[10px] text-slate-400 font-mono">Conectado mediante GitHub</p>
+                    </div>
+                    <button id="btn-logout" class="text-[10px] font-mono bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-900/40 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer uppercase">
+                        Salir
+                    </button>
+                </div>
+
+                <div class="space-y-2">
+                    <span class="block text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Método Recomendado</span>
+                    <button id="btn-login-byop" class="w-full bg-slate-100 hover:bg-white text-slate-900 font-bold text-xs py-3 px-4 rounded-xl tracking-wider transition-all flex items-center justify-center gap-2 uppercase shadow-lg font-mono cursor-pointer">
+                        <i class="fa-brands fa-github text-sm"></i> Conectar con Pollinations
+                    </button>
+                    <p class="text-[10px] text-slate-400 leading-relaxed font-mono pt-1">
+                        Utiliza el flujo oficial <strong>Bring Your Own Pollen (BYOP)</strong>. Autoriza de manera segura el consumo controlado de tus créditos sin exponer claves.
+                    </p>
+                </div>
+
+                <div class="relative flex py-2 items-center">
+                    <div class="flex-grow border-t border-slate-800"></div>
+                    <span class="flex-shrink mx-4 text-[10px] font-mono text-slate-500 font-bold uppercase">O BIEN</span>
+                    <div class="flex-grow border-t border-slate-800"></div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">Configurar Clave Manual</label>
+                    <div class="flex gap-2">
+                        <input type="password" id="modal-api-key-input" placeholder="pk_... o sk_..." class="flex-1 bg-[#121826] border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-blue-500 transition-all font-mono">
+                        <button id="btn-save-manual-key" class="bg-blue-600 hover:bg-blue-500 text-white px-4 text-xs font-mono font-bold rounded-xl uppercase tracking-wider transition-all cursor-pointer">
+                            Guardar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        let audioCtx = null;
+        let analyser = null;
+        let sourceNode = null;
+        let animationFrameId = null;
+
+        const canvas = document.getElementById('canvas-procesado');
+        const audioPlayer = document.getElementById('audio-player');
+        const btnGenerate = document.getElementById('btn-generate');
+        const promptInput = document.getElementById('prompt-input');
+        const apiKeyInput = document.getElementById('api-key');
+        const modelSelect = document.getElementById('model-select');
+        const styleInput = document.getElementById('audio-style');
+        const durationInput = document.getElementById('audio-duration');
+        const seedInput = document.getElementById('audio-seed');
+
+        // Elementos del Modal de Autenticación
+        const btnAuthStatus = document.getElementById('btn-auth-status');
+        const authStatusText = document.getElementById('auth-status-text');
+        const modalAuth = document.getElementById('modal-auth');
+        const btnCloseModal = document.getElementById('btn-close-modal');
+        const btnLoginByop = document.getElementById('btn-login-byop');
+        const modalApiKeyInput = document.getElementById('modal-api-key-input');
+        const btnSaveManualKey = document.getElementById('btn-save-manual-key');
+        const authModalUserInfo = document.getElementById('auth-modal-user-info');
+        const authUserAvatar = document.getElementById('auth-user-avatar');
+        const authUserName = document.getElementById('auth-user-name');
+        const btnLogout = document.getElementById('btn-logout');
+        const pollenBalanceContainer = document.getElementById('pollen-balance-container');
+        const pollenBalanceValue = document.getElementById('pollen-balance-value');
+
+        // Configuración de Identidad de la Aplicación (Client ID para BYOP)
+        // CAMBIA ESTO POR TU PROPIA PK_ GENERADA EN ENTER.POLLINATIONS.AI
+        const APP_CLIENT_ID = 'pk_2QHVS0cuUGvD2XNW';
+
+        // Persistir configuración en localStorage e interceptar URL por fragmentos OAuth
+        window.addEventListener('load', () => {
+            procesarRetornoOAuth();
+            
+            const savedKey = localStorage.getItem('pollinations_audio_key') || '';
+            apiKeyInput.value = savedKey;
+            modalApiKeyInput.value = savedKey;
+
+            abrirCanvas(); // Llamada obligatoria e inicializadora de la interfaz gráfica del canvas
+            verificarEstadoYBalance();
+        });
+
+        // --- SISTEMA DE CANVAS [SOLICITUD LITERAL EXPLICITA] ---
+        function abrirCanvas() {
+            const ctx = canvas.getContext('2d');
+            
+            // Establecer resolución interna del lienzo
+            canvas.width = 1024;
+            canvas.height = 300;
+            
+            ctx.fillStyle = "#04060a";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Dibujar patrón de rejilla inicial en reposo
+            ctx.strokeStyle = "rgba(59, 130, 246, 0.15)";
+            ctx.lineWidth = 1;
+            for (let i = 0; i < canvas.width; i += 40) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, canvas.height);
+                ctx.stroke();
+            }
+            for (let j = 0; j < canvas.height; j += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, j);
+                ctx.lineTo(canvas.width, j);
+                ctx.stroke();
+            }
+
+            // Mensaje indicador de reposo
+            ctx.fillStyle = "#3b82f6";
+            ctx.font = "12px 'JetBrains Mono', monospace";
+            ctx.textAlign = "center";
+            ctx.fillText("ESPECTRÓMETRO LISTO - REPRODUCE AUDIO PARA INICIAR", canvas.width / 2, canvas.height / 2);
+        }
+
+        // Conectar el elemento de audio al Web Audio API para visualización
+        function conectarAnalizadorDeAudio() {
+            if (audioCtx) return; // Evitar reconexiones duplicadas
+
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 256;
+
+            sourceNode = audioCtx.createMediaElementSource(audioPlayer);
+            sourceNode.connect(analyser);
+            analyser.connect(audioCtx.destination);
+
+            renderEspectrometroActivo();
+        }
+
+        // Bucle de renderizado dinámico en el canvas en base al analizador de audio
+        function renderEspectrometroActivo() {
+            const ctx = canvas.getContext('2d');
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            const draw = () => {
+                animationFrameId = requestAnimationFrame(draw);
+                analyser.getByteFrequencyData(dataArray);
+
+                ctx.fillStyle = "#04060a";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Dibujar rejilla de fondo dinámica
+                ctx.strokeStyle = "rgba(59, 130, 246, 0.05)";
+                for (let i = 0; i < canvas.width; i += 40) {
+                    ctx.beginPath();
+                    ctx.moveTo(i, 0);
+                    ctx.lineTo(i, canvas.height);
+                    ctx.stroke();
+                }
+
+                const barWidth = (canvas.width / bufferLength) * 1.5;
+                let barHeight;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    barHeight = dataArray[i] * 1.0;
+
+                    // Crear gradiente de color para las barras de frecuencia
+                    const gradient = ctx.createLinearGradient(0, canvas.height, 0, canvas.height - barHeight);
+                    gradient.addColorStop(0, '#1e3a8a');  // Azul oscuro
+                    gradient.addColorStop(0.5, '#3b82f6'); // Azul brillante
+                    gradient.addColorStop(1, '#60a5fa');   // Celeste neón
+
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
+
+                    x += barWidth;
+                }
+            };
+
+            draw();
+        }
+
+        // Lanzar conexión del analizador en el primer evento de interacción con el reproductor
+        audioPlayer.addEventListener('play', () => {
+            conectarAnalizadorDeAudio();
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        });
+
+        // --- GESTIÓN DE AUTENTICACIÓN Y FLUJO BYOP (OAUTH FRAGMENT) ---
+        
+        // Abrir y cerrar modal
+        btnAuthStatus.addEventListener('click', () => modalAuth.classList.remove('hidden'));
+        btnCloseModal.addEventListener('click', () => modalAuth.classList.add('hidden'));
+        window.addEventListener('click', (e) => { if (e.target === modalAuth) modalAuth.classList.add('hidden'); });
+
+        // Iniciar Redirección de Flujo Fragment Oficial de Pollinations
+        btnLoginByop.addEventListener('click', () => {
+            const callbackUrl = window.location.origin + window.location.pathname;
+            const params = new URLSearchParams({
+                redirect_uri: callbackUrl,
+                client_id: APP_CLIENT_ID,
+                scope: 'profile usage keys'
+            });
+            window.location.href = `https://enter.pollinations.ai/authorize?${params.toString()}`;
+        });
+
+        // Guardar Key Manual
+        btnSaveManualKey.addEventListener('click', () => {
+            const key = modalApiKeyInput.value.trim();
+            actualizarCredenciales(key);
+            modalAuth.classList.add('hidden');
+        });
+
+        // Cierre de sesión
+        btnLogout.addEventListener('click', () => {
+            actualizarCredenciales('');
+            authModalUserInfo.classList.add('hidden');
+            pollenBalanceContainer.classList.add('hidden');
+            window.location.hash = '';
+        });
+
+        // Intercepta e inyecta el token recibido desde el Hash URL
+        function procesarRetornoOAuth() {
+            if (window.location.hash) {
+                const params = new URLSearchParams(window.location.hash.slice(1));
+                const token = params.get('api_key');
+                if (token) {
+                    actualizarCredenciales(token);
+                    // Limpiar el hash de la barra de navegación por seguridad
+                    history.replaceState(null, document.title, window.location.pathname + window.location.search);
+                }
+            }
+        }
+
+        // Centralizador de actualización de estados de clave
+        function actualizarCredenciales(key) {
+            if (key) {
+                localStorage.setItem('pollinations_audio_key', key);
+            } else {
+                localStorage.removeItem('pollinations_audio_key');
+            }
+            apiKeyInput.value = key;
+            modalApiKeyInput.value = key;
+            verificarEstadoYBalance();
+        }
+
+        // Consulta reactiva a la API de balance y perfil del usuario autenticado
+        async function verificarEstadoYBalance() {
+            const key = apiKeyInput.value.trim();
+            if (!key) {
+                authStatusText.innerText = "Conectar Cuenta";
+                authModalUserInfo.classList.add('hidden');
+                pollenBalanceContainer.classList.add('hidden');
+                return;
+            }
+
+            try {
+                // Consultar información del usuario (Soporta perfiles OAuth y keys directas sk_)
+                const resProfile = await fetch('https://enter.pollinations.ai/api/device/userinfo', {
+                    headers: { 'Authorization': `Bearer ${key}` }
+                });
+
+                if (resProfile.ok) {
+                    const profile = await resProfile.json();
+                    authStatusText.innerText = profile.preferred_username || "Conectado";
+                    authUserName.innerText = `@${profile.preferred_username || 'usuario'}`;
+                    authUserAvatar.src = profile.picture || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=80&auto=format&fit=crop';
+                    authModalUserInfo.classList.remove('hidden');
+                } else {
+                    authStatusText.innerText = key.substring(0, 8) + "...";
+                    authModalUserInfo.classList.add('hidden');
+                }
+
+                // Consultar balance actual de Pollen
+                const resBalance = await fetch('https://gen.pollinations.ai/account/balance', {
+                    headers: { 'Authorization': `Bearer ${key}` }
+                });
+
+                if (resBalance.ok) {
+                    const balanceData = await resBalance.json();
+                    const totalPollen = balanceData.balance !== undefined ? balanceData.balance : balanceData;
+                    pollenBalanceValue.innerText = `${parseFloat(totalPollen).toFixed(2)} 🪙`;
+                    pollenBalanceContainer.classList.remove('hidden');
+                }
+
+            } catch (err) {
+                console.warn("No se pudo sincronizar el estado completo de la cuenta:", err);
+            }
+        }
+
+        // --- PIPELINE DE LLAMADA A LA API DE POLLINATIONS ---
+        async function generarAudio() {
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                alert("Por favor, introduce una descripción de prompt válida.");
+                return;
+            }
+
+            btnGenerate.disabled = true;
+            btnGenerate.innerHTML = `<span>Procesando...</span> <i class="fa-solid fa-spinner animate-spin"></i>`;
+
+            const model = modelSelect.value;
+            const style = styleInput.value.trim();
+            const duration = durationInput.value.trim();
+            const seed = parseInt(seedInput.value);
+            const apiKey = apiKeyInput.value.trim();
+
+            if (apiKey) {
+                localStorage.setItem('pollinations_audio_key', apiKey);
+            }
+
+            // Construcción paramétrica de la URL del endpoint GET para la generación de audio
+            const baseUrl = `https://gen.pollinations.ai/audio/${encodeURIComponent(prompt)}`;
+            const params = new URLSearchParams({
+                model: model,
+                duration: duration,
+                seconds: duration, // Mapeo cruzado de parámetros según el motor de audio
+                style: style,
+                instrumental: "true"
+            });
+
+            if (seed !== -1) {
+                params.append('seed', seed);
+            }
+            if (apiKey) {
+                params.append('key', apiKey);
+            }
+
+            const finalUrl = `${baseUrl}?${params.toString()}`;
+
+            try {
+                // Hacer una petición de verificación previa alimentando las cabeceras Bearer reglamentarias
+                const response = await fetch(finalUrl, {
+                    method: 'GET',
+                    headers: apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {}
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error en la llamada al API (Status: ${response.status})`);
+                }
+
+                // Obtener los datos como un Blob e insertarlo directamente en el reproductor para evitar problemas de CORS
+                const audioBlob = await response.blob();
+                const blobUrl = URL.createObjectURL(audioBlob);
+
+                audioPlayer.src = blobUrl;
+                audioPlayer.load();
+                audioPlayer.play();
+                
+                // Refrescar balance residual después de una invocación exitosa
+                setTimeout(verificarEstadoYBalance, 2000);
+
+            } catch (err) {
+                alert(`Error en la generación de audio: ${err.message}`);
+                console.error(err);
+            } finally {
+                btnGenerate.disabled = false;
+                btnGenerate.innerHTML = `<span>Generar</span> <i class="fa-solid fa-play"></i>`;
+            }
+        }
+
+        btnGenerate.addEventListener('click', generarAudio);
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                generarAudio();
+            }
+        });
+    </script>
+</body>
+</html>
