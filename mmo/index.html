@@ -1838,6 +1838,18 @@ canvas#world {
 .atlas-controls button[aria-pressed="true"] { border-color: #d4b77d; color: #f5dda5; background: #c7ad6c18; }
 .atlas-scale { color: #d0bf93; font-size: 12px; }
 .expedition-list button { display: block; width: 100%; text-align: left; margin: 4px 0; padding: 8px; }
+/* Atlas de pantalla completa */
+.overlay:has(.expedition-dialog) { padding: 0; }
+.expedition-dialog { width: 100vw; max-width: none; height: 100dvh; max-height: none; border-radius: 0; display: flex; flex-direction: column; padding: 18px 24px; box-sizing: border-box; overflow: hidden; }
+.expedition-dialog h2 { margin: 2px 0; }
+.expedition-dialog > p:first-of-type { margin: 4px 0; }
+.expedition-dialog .expedition-map { flex: 1 1 auto; min-height: 150px; width: 100%; height: 100%; max-width: none; cursor: grab; touch-action: none; }
+.expedition-dialog .expedition-map:active { cursor: grabbing; }
+.expedition-dialog .atlas-nav, .expedition-dialog .atlas-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.expedition-dialog .atlas-nav span { opacity: .75; font-size: 12px; }
+.expedition-dialog .atlas-scale, .expedition-dialog .expedition-legend { margin: 5px 0; font-size: 12px; }
+.expedition-dialog .expedition-list { flex: 0 1 auto; max-height: 90px; overflow: auto; }
+@media (max-width: 600px) { .expedition-dialog { padding: 12px; } .expedition-dialog > p:first-of-type, .expedition-dialog .expedition-legend { display: none; } }
 
 </style>
 </head>
@@ -1867,6 +1879,7 @@ canvas#world {
         <span>💬</span> <span class="btn-label">Paneles</span>
       </button>
       <button class="topbar-btn" id="mapButton">🗺 Mapa</button>
+      
       <button class="topbar-btn" id="skillsButton">✦ Habilidades</button>
       <button class="help-button" id="helpButton" aria-label="Cómo jugar">
         ? <span class="btn-label">Ayuda</span>
@@ -1962,8 +1975,8 @@ canvas#world {
     <h2 id="helpTitle">Bienvenido a Silenos<span>.</span></h2>
     <div class="help-steps">
       <div><b>1</b><p><strong>Muévete con libertad</strong><br>Usa <b>WASD</b>, las flechas o haz <b>Clic Derecho</b> hacia donde quieras caminar. Haz <b>doble clic derecho</b> para correr.</p></div>
-      <div><b>2</b><p><strong>Continentes, ríos y poblados</strong><br>Abre <b>🗺 Mapa</b> para consultar el atlas. Visita Valleclaro en <b>36, 20</b> o Meret, el poblado egipcio, en <b>320, -160</b>. Acércate a sus habitantes y pulsa <b>F</b> para conversar. Los ríos, lagos y mares profundos impiden el paso. También puedes recoger recursos con F y abrir tu <b>Inventario (I)</b>.</p></div>
-      <div><b>3</b><p><strong>Explora y diseña</strong><br>Abre el botón <b>🎨 Elementos ASCII</b> para diseñar tus propios sprites o colocarlos con un clic.</p></div>
+      <div><b>2</b><p><strong>Tu continente y sus lugares</strong><br>Abre <b>🗺 Mapa</b> para consultar el continente de 800 × 531 km y sus lugares originales. La partida utiliza el diseño compartido. Los ríos, lagos y mares profundos impiden el paso. Recoge recursos con <b>F</b> y abre tu <b>Inventario (I)</b>.</p></div>
+      <div><b>3</b><p><strong>Pinta y construye tu mundo</strong><br>En <b>Editor del mundo</b> puedes pintar materiales y relieve, y colocar o borrar elementos desde un catálogo con pestañas. <b>Aplicar a la partida</b> comparte el diseño. El catálogo <b>🎨 Elementos ASCII</b> permite además diseñar sprites propios.</p></div>
       <div><b>4</b><p><strong>Busca la luz al anochecer</strong><br>De la niebla surgen lobos, gólems y duendes, más a menudo de noche. Las hogueras iluminan, impiden apariciones y ahuyentan enemigos en un radio de 6,5 metros. Construye una ruta de refugios para explorar.</p></div>
       <div><b>5</b><p><strong>Combate en acción</strong><br>Clic izquierdo para atacar hacia el cursor. <b>Q</b>: fuego, <b>E</b>: curación, <b>1</b>: escudo y ataque. Ranuras <b>2</b> y <b>3</b> configurables. Mantén <b>R</b> para bloquear y pulsa <b>Espacio</b> para esquivar. Configura tus hechizos en <b>Habilidades</b>.</p></div>
     </div>
