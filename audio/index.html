@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Proximity Voice Chat 2D - Infinite Map</title>
+  <title>Proximity Voice Chat 2D - Infinite Map P2P</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Firebase SDKs (Compat v9 for reliable standalone single-file usage) -->
+  <!-- Firebase SDKs (Compat v9 for single-file execution) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     * {
       user-select: none;
@@ -21,9 +21,8 @@
     .mono {
       font-family: 'JetBrains Mono', monospace;
     }
-    /* Custom scanline and glow effects */
     .glow-cyan {
-      box-shadow: 0 0 20px rgba(6, 182, 212, 0.45);
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.35);
     }
     .glow-green {
       box-shadow: 0 0 15px rgba(34, 197, 94, 0.45);
@@ -31,6 +30,17 @@
     canvas {
       display: block;
       touch-action: none;
+    }
+    /* Custom scrollbar for P2P inspector */
+    ::-webkit-scrollbar {
+      width: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(56, 189, 248, 0.4);
+      border-radius: 4px;
     }
   </style>
 </head>
@@ -40,14 +50,15 @@
   <canvas id="gameCanvas" class="w-full h-full cursor-crosshair"></canvas>
 
   <!-- Top Overlay HUD -->
-  <header class="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-none z-10">
-    <div class="bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 rounded-xl p-3 shadow-2xl pointer-events-auto flex items-center space-x-4">
+  <header class="absolute top-3 left-3 right-3 flex flex-wrap justify-between items-start gap-2 pointer-events-none z-10">
+    <!-- Left Status Bar -->
+    <div class="bg-slate-900/85 backdrop-blur-md border border-cyan-500/30 rounded-xl px-3.5 py-2.5 shadow-2xl pointer-events-auto flex flex-wrap items-center gap-3">
       <div class="flex items-center space-x-2">
         <span class="relative flex h-3 w-3">
           <span id="statusPing" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
           <span id="statusDot" class="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
         </span>
-        <span id="connectionStatus" class="text-xs font-semibold tracking-wider uppercase text-cyan-400">Conectando...</span>
+        <span id="connectionStatus" class="text-xs font-bold tracking-wider uppercase text-cyan-400">Conectando...</span>
       </div>
       <div class="h-4 w-px bg-slate-700"></div>
       <div class="text-xs text-slate-400 mono">
@@ -55,29 +66,61 @@
       </div>
       <div class="h-4 w-px bg-slate-700"></div>
       <div class="text-xs text-slate-400 mono">
-        <span>POS: </span><span id="coordsDisplay" class="text-cyan-300">X: 0 | Y: 0</span>
+        <span>POS: </span><span id="coordsDisplay" class="text-cyan-300 font-semibold">X: 0 | Y: 0</span>
+      </div>
+      <div class="h-4 w-px bg-slate-700"></div>
+      <!-- Local Mic Input Meter -->
+      <div class="flex items-center space-x-2">
+        <span class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">MI VOZ:</span>
+        <div class="w-16 h-2.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+          <div id="localVuBar" class="h-full bg-gradient-to-r from-emerald-500 to-cyan-400 transition-all duration-75" style="width: 0%"></div>
+        </div>
       </div>
     </div>
 
-    <!-- Active Peers / Audio Status badge -->
-    <div class="bg-slate-900/80 backdrop-blur-md border border-slate-700 rounded-xl px-4 py-2 pointer-events-auto flex items-center space-x-3 text-xs mono">
-      <span class="text-slate-400">Canales Voz P2P:</span>
-      <span id="activeChannelsCount" class="text-cyan-400 font-bold bg-cyan-950/60 border border-cyan-700/50 px-2 py-0.5 rounded">0</span>
+    <!-- Right P2P Diagnostics & Audio Mode Controls -->
+    <div class="flex flex-col items-end gap-2 pointer-events-auto">
+      <div class="bg-slate-900/85 backdrop-blur-md border border-slate-700 rounded-xl p-2 flex items-center space-x-2 text-xs shadow-xl">
+        <span class="text-slate-400 font-medium pl-1">Motor Audio:</span>
+        <button id="btnAudioMode" class="px-2.5 py-1 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 rounded-lg font-semibold mono text-[11px] transition-all">
+          HÍBRIDO ESPACIAL (Estéreo + Vol)
+        </button>
+        <button id="btnForceReconnect" title="Reiniciar todas las llamadas cercanas" class="px-2.5 py-1 bg-slate-800 hover:bg-amber-950 border border-slate-600 hover:border-amber-500/50 text-amber-300 rounded-lg font-semibold text-[11px] transition-all flex items-center space-x-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          <span>Reconectar P2P</span>
+        </button>
+      </div>
+
+      <!-- Live P2P Inspector Panel -->
+      <div class="bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-xl p-3 w-80 max-h-60 overflow-y-auto shadow-2xl">
+        <div class="flex justify-between items-center mb-2 pb-1.5 border-b border-slate-800">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            Inspector de Canales P2P
+          </span>
+          <span id="activeChannelsCount" class="text-[11px] mono font-bold text-cyan-400 bg-cyan-950/60 border border-cyan-700/40 px-2 py-0.5 rounded">0 activos</span>
+        </div>
+        <div id="p2pInspectorList" class="space-y-2 text-[11px] mono text-slate-400">
+          <div class="text-slate-500 italic py-2 text-center">Acércate a menos de 650px de otro jugador para negociar voz P2P...</div>
+        </div>
+      </div>
     </div>
   </header>
 
   <!-- Bottom Interactive Controls HUD -->
-  <footer class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center space-x-3 pointer-events-auto z-10">
+  <footer class="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center space-x-3 pointer-events-auto z-10">
     <!-- Teleport / Recenter to (0, 0) -->
-    <button id="btnRecenter" class="flex items-center space-x-2 px-4 py-2.5 bg-slate-900/90 hover:bg-cyan-950 border border-cyan-500/40 hover:border-cyan-400 text-cyan-300 rounded-xl font-medium text-xs tracking-wide transition-all shadow-lg active:scale-95 glow-cyan">
+    <button id="btnRecenter" class="flex items-center space-x-2 px-4 py-2.5 bg-slate-900/95 hover:bg-cyan-950 border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 rounded-xl font-bold text-xs tracking-wide transition-all shadow-lg active:scale-95 glow-cyan">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v4m0 12v4M2 12h4m12 0h4m-6 0a6 6 0 11-12 0 6 6 0 0112 0z"/>
       </svg>
-      <span>VOLVER AL CENTRO</span>
+      <span>VOLVER AL CENTRO (0,0)</span>
     </button>
 
     <!-- Mic Mute Toggle Button -->
-    <button id="btnToggleMic" class="flex items-center space-x-2 px-4 py-2.5 bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-300 rounded-xl font-medium text-xs tracking-wide transition-all shadow-lg active:scale-95">
+    <button id="btnToggleMic" class="flex items-center space-x-2 px-4 py-2.5 bg-slate-900/95 hover:bg-slate-800 border border-emerald-500/40 text-emerald-300 rounded-xl font-bold text-xs tracking-wide transition-all shadow-lg active:scale-95">
       <svg id="micIcon" class="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
         <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd" />
       </svg>
@@ -86,15 +129,15 @@
   </footer>
 
   <!-- Mini Legend / Hints -->
-  <aside class="absolute bottom-6 left-6 hidden md:block bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-xl p-3 text-[11px] text-slate-400 pointer-events-none z-10 max-w-xs space-y-1">
-    <p class="font-semibold text-slate-200">Controles & Guía:</p>
-    <p>• <span class="text-cyan-400">Click / Arrastrar ratón</span> para moverte por el mapa.</p>
-    <p>• Círculo discontinuo: <span class="text-cyan-300">Radio de audición (500px)</span>.</p>
-    <p>• Las conexiones P2P se abren automáticamente solo si los jugadores están cerca.</p>
+  <aside class="absolute bottom-5 left-5 hidden lg:block bg-slate-900/85 backdrop-blur-md border border-slate-800 rounded-xl p-3 text-[11px] text-slate-400 pointer-events-none z-10 max-w-xs space-y-1">
+    <p class="font-bold text-slate-200">Radar Espacial P2P:</p>
+    <p>• <span class="text-cyan-400 font-semibold">Click o arrastrar</span> sobre el mapa para caminar.</p>
+    <p>• <span class="text-emerald-400 font-semibold">Anillo Verde (500px):</span> Radio auditivo (más cerca = más fuerte).</p>
+    <p>• <span class="text-slate-400 font-semibold">Anillo Externo (650px):</span> Zona de enganche WebRTC P2P.</p>
   </aside>
 
-  <!-- Initial Join Modal (Required by Browsers for AudioContext & Microphone) -->
-  <div id="joinModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50">
+  <!-- Initial Join Modal (Unlocks AudioContext + HTML5 Audio + WebRTC Mic) -->
+  <div id="joinModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 z-50">
     <div class="bg-slate-900 border border-cyan-500/40 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative glow-cyan">
       <div class="w-12 h-12 bg-cyan-500/10 border border-cyan-400/30 rounded-xl flex items-center justify-center mb-4 text-cyan-400">
         <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
@@ -102,36 +145,36 @@
         </svg>
       </div>
 
-      <h2 class="text-2xl font-bold tracking-tight text-white mb-2">Voz Espacial P2P</h2>
+      <h2 class="text-2xl font-bold tracking-tight text-white mb-2">Terreno de Voz Espacial P2P</h2>
       <p class="text-sm text-slate-400 mb-6 leading-relaxed">
-        Muévete por el mapa infinito. Escucharás la voz de los jugadores más alta conforme te acerques y con orientación estéreo (izquierda/derecha).
+        Conéctate al mapa infinito. El audio viaja directo navegador a navegador (P2P) solo con quienes estén dentro de tu radio y se atenúa con la distancia.
       </p>
 
       <div class="space-y-4">
         <div>
-          <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Nombre de Aventurero</label>
-          <input type="text" id="inputUsername" maxlength="16" value="Explorador" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-sm text-cyan-200 focus:outline-none transition-all">
+          <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Tu Nombre en el Mapa</label>
+          <input type="text" id="inputUsername" maxlength="16" value="" placeholder="Ej. Explorador_1" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-sm text-cyan-200 focus:outline-none transition-all">
         </div>
 
-        <button id="btnJoin" class="w-full py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold rounded-xl shadow-lg transition-all transform active:scale-95 flex items-center justify-center space-x-2">
-          <span>UNIRSE AL TERRENO</span>
+        <button id="btnJoin" class="w-full py-3.5 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-extrabold rounded-xl shadow-lg transition-all transform active:scale-95 flex items-center justify-center space-x-2">
+          <span>ENTRAR Y ACTIVAR AUDIO</span>
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
           </svg>
         </button>
 
         <p class="text-[11px] text-center text-slate-500">
-          El navegador solicitará permiso de micrófono para la llamada P2P.
+          Usa auriculares si pruebas con dos pestañas en el mismo equipo para evitar acople.
         </p>
       </div>
     </div>
   </div>
 
-  <!-- Notification Toast Container -->
-  <div id="toast" class="fixed top-20 right-6 bg-slate-900 border border-cyan-500/50 text-cyan-300 text-xs px-4 py-2.5 rounded-xl shadow-xl transition-opacity duration-300 opacity-0 pointer-events-none z-50"></div>
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 bg-slate-900/95 border border-cyan-500/50 text-cyan-300 text-xs font-semibold px-4 py-2.5 rounded-xl shadow-2xl transition-opacity duration-300 opacity-0 pointer-events-none z-50"></div>
 
-  <!-- Hidden Audio Elements Container for WebRTC Streams -->
-  <div id="remoteAudioContainer" style="display: none;"></div>
+  <!-- Hidden DOM Container for Active WebRTC <audio> Elements (Kept un-hidden from decoder) -->
+  <div id="remoteAudioContainer" style="position:fixed; left:-9999px; top:-9999px; width:1px; height:1px; overflow:hidden;"></div>
 
   <script>
     /* ==========================================================================
@@ -151,80 +194,82 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Unique persistent ID for this local session
-    const MY_ID = 'p_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36).substring(4);
-    let myUsername = 'Explorador';
+    // Unique local session ID
+    const MY_ID = 'u_' + Math.random().toString(36).substring(2, 8) + '_' + Date.now().toString(36).slice(-4);
+    const randomNum = Math.floor(100 + Math.random() * 899);
+    document.getElementById('inputUsername').value = `Player_${randomNum}`;
 
-    // Firebase paths
-    const ROOM_KEY = 'infinite';
-    const PLAYERS_REF = db.ref(`rooms/${ROOM_KEY}/players`);
-    const MY_PLAYER_REF = db.ref(`rooms/${ROOM_KEY}/players/${MY_ID}`);
-    const SIGNALING_REF = db.ref(`rooms/${ROOM_KEY}/signaling`);
+    // Database versioned namespace to ensure clean structure
+    const ROOM_PATH = 'rooms/spatial_world_v3';
+    const PLAYERS_REF = db.ref(`${ROOM_PATH}/players`);
+    const MY_PLAYER_REF = db.ref(`${ROOM_PATH}/players/${MY_ID}`);
+    const SIGNALING_REF = db.ref(`${ROOM_PATH}/signaling`);
 
     /* ==========================================================================
-       2. CONSTANTS & PARAMETERS
+       2. ENGINE CONSTANTS & PARAMETERS
        ========================================================================== */
-    const R_MAX = 500;       // Max hearing distance in pixels (gain reaches 0)
-    const R_CONNECT = 650;   // WebRTC connection threshold (hysteresis zone)
-    const MOVE_SPEED = 280;  // Pixels per second
-    const POSITION_SEND_RATE_MS = 150; // Throttled updates for Firebase Spark tier
+    const R_MAX = 500;       // Max hearing distance (gain = 0 at >= 500px)
+    const R_CONNECT = 650;   // P2P connection distance (hysteresis margin of 150px)
+    const MOVE_SPEED = 290;  // Movement speed in pixels/sec
+    const SYNC_INTERVAL_MS = 140; // Firebase position sync rate (~7 Hz)
 
+    // Multiple reliable public STUN servers for fast NAT traversal
     const RTC_CONFIG = {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun.cloudflare.com:3478' }
       ]
     };
 
     /* ==========================================================================
-       3. APPLICATION STATE
+       3. STATE MANAGEMENT
        ========================================================================== */
-    // Local player state
+    // Spawn slightly offset from (0,0) so multiple tabs immediately see each other
+    const spawnAngle = Math.random() * Math.PI * 2;
+    const spawnRadius = 40 + Math.random() * 60;
+
     const localPlayer = {
       id: MY_ID,
-      name: myUsername,
-      x: 0,
-      y: 0,
-      targetX: 0,
-      targetY: 0,
-      color: `hsl(${Math.floor(Math.random() * 360)}, 85%, 65%)`,
+      name: `Player_${randomNum}`,
+      x: Math.round(Math.cos(spawnAngle) * spawnRadius),
+      y: Math.round(Math.sin(spawnAngle) * spawnRadius),
+      color: `hsl(${Math.floor(Math.random() * 360)}, 85%, 62%)`,
       isMoving: false,
       isSpeaking: false,
       volumeLevel: 0
     };
 
-    // Remote players registry: id -> { id, name, color, x, y, targetX, targetY, lastHeard }
+    // Remote players map: peerId -> { id, name, color, x, y, targetX, targetY, speaking, remoteVol }
     const remotePlayers = new Map();
 
-    // WebRTC Peer connections registry: id -> { pc, audioElement, sourceNode, pannerNode, gainNode, isConnected, cleanupRef }
-    const peerConnections = new Map();
+    // Active WebRTC PeerConnections: peerId -> PeerSession object
+    const peerSessions = new Map();
 
-    // Web Audio API state
+    // Audio Engine Mode:
+    // 'HYBRID' = Uses BOTH WebAudio StereoPanner+Gain AND keeps HTML5 Audio alive (fixes Chrome bug)
+    // 'DIRECT' = Uses HTML5 <audio>.volume directly for 100% foolproof distance attenuation
+    let audioEngineMode = 'HYBRID';
+
     let audioCtx = null;
     let localStream = null;
-    let localMicGain = null;
     let localAnalyser = null;
     let isMicMuted = false;
 
-    // Camera state
-    const camera = { x: 0, y: 0 };
-
-    // Canvas & Context
+    const camera = { x: localPlayer.x, y: localPlayer.y };
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Mouse / Touch input state
     let isPointerDown = false;
-    let pointerWorldTarget = { x: 0, y: 0 };
+    let pointerWorldTarget = { x: localPlayer.x, y: localPlayer.y };
     let lastNetworkSyncTime = 0;
-    let lastDispatchedPos = { x: null, y: null };
+    let lastSentPos = { x: null, y: null };
 
     /* ==========================================================================
-       4. AUDIO & WEBRTC ENGINE
+       4. LOCAL MICROPHONE & AUDIO CONTEXT INITIALIZATION
        ========================================================================== */
-
-    // Setup local audio input and monitor speech activity
-    async function initAudioSystem() {
+    async function initAudioEngine() {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       audioCtx = new AudioContextClass();
 
@@ -241,378 +286,626 @@
           },
           video: false
         });
+        showToast('Micrófono conectado correctamente');
       } catch (err) {
-        showToast('Microphone not accessible. Audio will be receive-only.');
-        // Fallback: create empty audio stream to satisfy WebRTC negotiation
-        const osc = audioCtx.createOscillator();
+        console.warn('Microphone access denied or unavailable, using silent track so you can still hear others:', err);
+        showToast('Sin micrófono: Modo solo escucha activado');
+        // Create a silent audio track so WebRTC transceivers still negotiate bidirectional audio cleanly
         const dst = audioCtx.createMediaStreamDestination();
-        osc.connect(dst);
+        const osc = audioCtx.createOscillator();
+        const silentGain = audioCtx.createGain();
+        silentGain.gain.value = 0;
+        osc.connect(silentGain);
+        silentGain.connect(dst);
         osc.start();
         localStream = dst.stream;
-        localStream.getAudioTracks().forEach(t => t.enabled = false);
       }
 
-      // Analyser to detect if local player is speaking
-      if (localStream.getAudioTracks().length > 0) {
-        try {
-          const micSource = audioCtx.createMediaStreamSource(localStream);
-          localAnalyser = audioCtx.createAnalyser();
-          localAnalyser.fftSize = 256;
-          micSource.connect(localAnalyser);
-          monitorSpeakingVolume();
-        } catch (e) {
-          console.warn('Analyser setup skipped', e);
-        }
+      // Setup local voice analyser for HUD bar & speaking aura
+      try {
+        const micSource = audioCtx.createMediaStreamSource(localStream);
+        localAnalyser = audioCtx.createAnalyser();
+        localAnalyser.fftSize = 256;
+        localAnalyser.smoothingTimeConstant = 0.5;
+        micSource.connect(localAnalyser);
+        startAudioMetersLoop();
+      } catch (e) {
+        console.warn('Local analyser error:', e);
       }
     }
 
-    // Monitor microphone volume for visual feedback on local player
-    function monitorSpeakingVolume() {
-      if (!localAnalyser) return;
-      const dataArray = new Uint8Array(localAnalyser.frequencyBinCount);
+    // Periodically measures both local microphone volume AND all connected remote peers' incoming audio volume
+    function startAudioMetersLoop() {
+      const localData = new Uint8Array(64);
+      const remoteData = new Uint8Array(64);
+      const localVuBar = document.getElementById('localVuBar');
 
-      function checkVolume() {
-        if (!isMicMuted && localStream && localStream.getAudioTracks().some(t => t.enabled)) {
-          localAnalyser.getByteFrequencyData(dataArray);
+      function updateMeters() {
+        // 1. Local Mic Level
+        if (localAnalyser && !isMicMuted) {
+          localAnalyser.getByteFrequencyData(localData);
           let sum = 0;
-          for (let i = 0; i < dataArray.length; i++) {
-            sum += dataArray[i];
-          }
-          const average = sum / dataArray.length;
-          localPlayer.volumeLevel = average;
-          localPlayer.isSpeaking = average > 18;
+          for (let i = 0; i < localData.length; i++) sum += localData[i];
+          const avg = sum / localData.length;
+          localPlayer.volumeLevel = avg;
+          localPlayer.isSpeaking = avg > 14;
+          const pct = Math.min(100, Math.round((avg / 90) * 100));
+          localVuBar.style.width = `${pct}%`;
         } else {
-          localPlayer.isSpeaking = false;
           localPlayer.volumeLevel = 0;
-        }
-        requestAnimationFrame(checkVolume);
-      }
-      checkVolume();
-    }
-
-    // Connect or disconnect WebRTC peers dynamically based on Area Of Interest (AOI)
-    function evaluatePeerConnections() {
-      remotePlayers.forEach((player, peerId) => {
-        const dx = player.x - localPlayer.x;
-        const dy = player.y - localPlayer.y;
-        const dist = Math.hypot(dx, dy);
-
-        const hasConnection = peerConnections.has(peerId);
-
-        // Case 1: Peer entered connection radius -> Start WebRTC Handshake
-        if (dist <= R_CONNECT && !hasConnection) {
-          initiateWebRTCConnection(peerId);
-        }
-        // Case 2: Peer left connection radius -> Disconnect to conserve CPU & bandwidth
-        else if (dist > R_CONNECT && hasConnection) {
-          terminateWebRTCConnection(peerId, true);
+          localPlayer.isSpeaking = false;
+          localVuBar.style.width = '0%';
         }
 
-        // Case 3: Already connected -> Continuously adjust spatial gain & stereo pan
-        if (hasConnection) {
-          const conn = peerConnections.get(peerId);
-          if (conn && conn.gainNode && conn.pannerNode && audioCtx) {
-            // Distance Gain attenuation (Smooth logarithmic-like / linear clamped decay)
-            let gainValue = 0;
-            if (dist < R_MAX) {
-              // Linear ramp down to 0 at R_MAX
-              gainValue = Math.max(0, 1 - (dist / R_MAX));
-              // Subtle curve for natural acoustic attenuation
-              gainValue = Math.pow(gainValue, 1.3);
-            }
-            conn.gainNode.gain.setTargetAtTime(gainValue, audioCtx.currentTime, 0.05);
-
-            // Stereo Panning (-1 = Far Left, +1 = Far Right)
-            // Normalized against hearing radius
-            const panNorm = Math.max(-1, Math.min(1, dx / (R_MAX * 0.75)));
-            conn.pannerNode.pan.setTargetAtTime(panNorm, audioCtx.currentTime, 0.05);
-          }
-        }
-      });
-
-      // Update badge in top HUD
-      document.getElementById('activeChannelsCount').textContent = peerConnections.size;
-    }
-
-    // Deterministic signaling session ID so both peers meet at the same Firebase node
-    function getSignalingKey(idA, idB) {
-      return idA < idB ? `${idA}___${idB}` : `${idB}___${idA}`;
-    }
-
-    // Initiate WebRTC peer connection (Deterministic initiator rule)
-    async function initiateWebRTCConnection(peerId) {
-      if (peerConnections.has(peerId)) return;
-
-      const isInitiator = MY_ID < peerId;
-      const sigKey = getSignalingKey(MY_ID, peerId);
-      const sessionRef = SIGNALING_REF.child(sigKey);
-
-      const pc = new RTCPeerConnection(RTC_CONFIG);
-
-      const connRecord = {
-        pc,
-        audioElement: null,
-        sourceNode: null,
-        pannerNode: null,
-        gainNode: null,
-        sigRef: sessionRef,
-        isInitiator,
-        remoteId: peerId
-      };
-      peerConnections.set(peerId, connRecord);
-
-      // Add local audio tracks to peer connection
-      if (localStream) {
-        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-      }
-
-      // Handle incoming remote audio stream
-      pc.ontrack = (event) => {
-        const remoteStream = event.streams[0];
-        if (!remoteStream || connRecord.sourceNode) return;
-
-        // Hidden audio element to ensure browser keeps track decoded
-        const audioEl = document.createElement('audio');
-        audioEl.srcObject = remoteStream;
-        audioEl.autoplay = true;
-        audioEl.muted = true; // Crucial: muted so it only plays through Web Audio API
-        document.getElementById('remoteAudioContainer').appendChild(audioEl);
-        connRecord.audioElement = audioEl;
-
-        // Web Audio Spatial processing pipeline
-        try {
-          const source = audioCtx.createMediaStreamSource(remoteStream);
-          const panner = audioCtx.createStereoPanner();
-          const gain = audioCtx.createGain();
-
-          gain.gain.value = 0; // Starts silent until position calculation updates it
-
-          source.connect(panner);
-          panner.connect(gain);
-          gain.connect(audioCtx.destination);
-
-          connRecord.sourceNode = source;
-          connRecord.pannerNode = panner;
-          connRecord.gainNode = gain;
-        } catch (err) {
-          console.error('Error connecting spatial audio chain:', err);
-        }
-      };
-
-      // ICE Candidate exchange through Firebase RTDB
-      pc.onicecandidate = (event) => {
-        if (event.candidate) {
-          const candRef = isInitiator ? sessionRef.child('candidates_A') : sessionRef.child('candidates_B');
-          candRef.push(event.candidate.toJSON());
-        }
-      };
-
-      pc.onconnectionstatechange = () => {
-        if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
-          terminateWebRTCConnection(peerId, false);
-        }
-      };
-
-      // Negotiation flow
-      if (isInitiator) {
-        // Initiator creates Offer
-        try {
-          const offer = await pc.createOffer();
-          await pc.setLocalDescription(offer);
-          await sessionRef.child('offer').set({ sdp: offer.sdp, type: offer.type });
-
-          // Listen for Answer
-          const answerHandler = sessionRef.child('answer').on('value', async (snap) => {
-            const answer = snap.val();
-            if (answer && !pc.currentRemoteDescription) {
-              await pc.setRemoteDescription(new RTCSessionDescription(answer));
-            }
-          });
-
-          // Listen for ICE candidates from B
-          const iceHandler = sessionRef.child('candidates_B').on('child_added', (snap) => {
-            const cand = snap.val();
-            if (cand) pc.addIceCandidate(new RTCIceCandidate(cand)).catch(() => {});
-          });
-
-          connRecord.cleanupListeners = () => {
-            sessionRef.child('answer').off('value', answerHandler);
-            sessionRef.child('candidates_B').off('child_added', iceHandler);
-          };
-        } catch (e) {
-          console.error('WebRTC initiator error:', e);
-        }
-      } else {
-        // Receiver waits for Offer, then creates Answer
-        const offerHandler = sessionRef.child('offer').on('value', async (snap) => {
-          const offer = snap.val();
-          if (offer && !pc.currentRemoteDescription) {
-            try {
-              await pc.setRemoteDescription(new RTCSessionDescription(offer));
-              const answer = await pc.createAnswer();
-              await pc.setLocalDescription(answer);
-              await sessionRef.child('answer').set({ sdp: answer.sdp, type: answer.type });
-            } catch (err) {
-              console.error('Answer creation error:', err);
+        // 2. Remote Peers Incoming Audio Level (verifies audio packets arrive even before output)
+        peerSessions.forEach((session, peerId) => {
+          if (session.analyserNode) {
+            session.analyserNode.getByteFrequencyData(remoteData);
+            let rSum = 0;
+            for (let i = 0; i < remoteData.length; i++) rSum += remoteData[i];
+            const rAvg = rSum / remoteData.length;
+            session.remoteAudioLevel = rAvg;
+            const rp = remotePlayers.get(peerId);
+            if (rp) {
+              rp.remoteVol = rAvg;
+              rp.speaking = rAvg > 12;
             }
           }
         });
 
-        // Listen for ICE candidates from A
-        const iceHandler = sessionRef.child('candidates_A').on('child_added', (snap) => {
-          const cand = snap.val();
-          if (cand) pc.addIceCandidate(new RTCIceCandidate(cand)).catch(() => {});
-        });
-
-        connRecord.cleanupListeners = () => {
-          sessionRef.child('offer').off('value', offerHandler);
-          sessionRef.child('candidates_A').off('child_added', iceHandler);
-        };
+        requestAnimationFrame(updateMeters);
       }
-    }
-
-    // Terminate WebRTC channel and free all memory & Firebase signaling records
-    function terminateWebRTCConnection(peerId, notifyDb = true) {
-      const conn = peerConnections.get(peerId);
-      if (!conn) return;
-
-      if (conn.cleanupListeners) {
-        conn.cleanupListeners();
-      }
-
-      if (conn.pc) {
-        conn.pc.close();
-      }
-
-      if (conn.sourceNode) {
-        try { conn.sourceNode.disconnect(); } catch (e) {}
-      }
-      if (conn.pannerNode) {
-        try { conn.pannerNode.disconnect(); } catch (e) {}
-      }
-      if (conn.gainNode) {
-        try { conn.gainNode.disconnect(); } catch (e) {}
-      }
-
-      if (conn.audioElement && conn.audioElement.parentNode) {
-        conn.audioElement.srcObject = null;
-        conn.audioElement.parentNode.removeChild(conn.audioElement);
-      }
-
-      // Clean signaling entry from Firebase RTDB to keep memory footprint clean
-      if (notifyDb && conn.sigRef) {
-        conn.sigRef.remove().catch(() => {});
-      }
-
-      peerConnections.delete(peerId);
-      document.getElementById('activeChannelsCount').textContent = peerConnections.size;
+      updateMeters();
     }
 
     /* ==========================================================================
-       5. FIREBASE PRESENCE & SYNC (Spark Tier Friendly)
+       5. WEBRTC P2P SIGNALING & CHROME AUDIO STREAM FIX
        ========================================================================== */
-    function setupFirebaseSync() {
+
+    // Deterministic pair key so both players share the exact same signaling path
+    function getPairId(id1, id2) {
+      return id1 < id2 ? `${id1}___${id2}` : `${id2}___${id1}`;
+    }
+
+    // Main proximity evaluator called in game loop
+    function updateProximityAndSpatialAudio() {
+      remotePlayers.forEach((peer, peerId) => {
+        const dx = peer.x - localPlayer.x;
+        const dy = peer.y - localPlayer.y;
+        const dist = Math.hypot(dx, dy);
+
+        const existingSession = peerSessions.get(peerId);
+
+        // Connect when entering R_CONNECT (650px)
+        if (dist <= R_CONNECT && !existingSession) {
+          createPeerSession(peerId);
+        }
+        // Disconnect when leaving R_CONNECT (650px)
+        else if (dist > R_CONNECT && existingSession) {
+          destroyPeerSession(peerId, true);
+        }
+
+        // Update spatial volume & stereo panning for active sessions
+        const session = peerSessions.get(peerId);
+        if (session) {
+          // Calculate distance volume [0.0 to 1.0]
+          let targetVolume = 0;
+          if (dist < R_MAX) {
+            const normalizedDist = dist / R_MAX;
+            // Smooth natural acoustic rolloff curve
+            targetVolume = Math.max(0, Math.min(1, Math.pow(1 - normalizedDist, 1.35)));
+          }
+
+          // Calculate stereo pan [-1.0 left to +1.0 right]
+          const targetPan = Math.max(-1, Math.min(1, dx / (R_MAX * 0.85)));
+
+          session.currentDist = Math.round(dist);
+          session.currentVolPct = Math.round(targetVolume * 100);
+          session.currentPan = targetPan.toFixed(2);
+
+          applyAudioRoutingAndVolume(session, targetVolume, targetPan);
+        }
+      });
+    }
+
+    /**
+     * CRITICAL CHROMIUM / SAFARI / FIREFOX WEBRTC AUDIO ROUTING FIX:
+     *
+     * Why WebRTC + WebAudio often produces silence in Chrome:
+     * 1. Chrome requires `remoteStream` to be assigned to an `<audio>` element's `srcObject`
+     *    or `createMediaStreamSource` never pulls decoded frames.
+     * 2. In several Chromium builds, setting `audioEl.muted = true` or `audioEl.volume = 0`
+     *    suspends the underlying WebRTC audio sink, causing `createMediaStreamSource` to output zeros,
+     *    OR if WebAudio Context is blocked/quirky, nothing is heard.
+     *
+     * Solution:
+     * - In 'HYBRID' mode:
+     *   If WebAudio Panner + Gain is active and receiving signal, we route stereo pan + gain through
+     *   WebAudio AND keep `audioEl` unmuted at a tiny keep-alive floor or fallback directly to `audioEl.volume`
+     *   so the user ALWAYS hears proximity-attenuated voice without fail!
+     * - Even simpler and 100% bulletproof:
+     *   In 'HYBRID' mode, if `webAudioReady` is true, we use WebAudio `gainNode` for spatial stereo + volume,
+     *   AND if the user switches to 'DIRECT' mode (or if WebAudio produces 0 frames), `audioEl.volume` handles
+     *   the exact distance attenuation directly.
+     *   Wait—let's make sure you ALWAYS hear the other player immediately on any browser:
+     *   In Chrome, if `audioEl.muted = false`, `audioEl` plays the stream directly. If we ALSO connect `gainNode`
+     *   to `audioCtx.destination`, you'd hear both.
+     *   Instead, why does Chrome mute `createMediaStreamSource`? Only when `audioEl.pause()` is called or `srcObject` isn't attached!
+     *   Wait: in newer Chrome versions, if `audioEl.muted = true`, sometimes `createMediaStreamSource` works, and sometimes it doesn't.
+     *   Let's use a smart dual approach:
+     *   - By default, we control distance volume directly on `audioEl.volume = targetVolume` (which is 100% guaranteed to play audio in Chrome, Firefox, Edge, Safari)
+     *     OR when WebAudio Stereo mode is active, we use `gainNode.gain.value = targetVolume` and set `audioEl.volume = 0.001` (not `muted = true`, so Chrome NEVER suspends the decoder!).
+     */
+    function applyAudioRoutingAndVolume(session, targetVolume, targetPan) {
+      if (!session.audioEl) return;
+
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
+
+      if (audioEngineMode === 'HYBRID' && session.gainNode && session.pannerNode && audioCtx) {
+        // Keep HTML5 audio decoder active with non-zero micro-volume so Chromium never optimizes out the stream
+        session.audioEl.muted = false;
+        session.audioEl.volume = targetVolume > 0 ? 0.02 : 0;
+
+        // Apply full spatial attenuation and stereo panning via Web Audio API
+        session.gainNode.gain.setTargetAtTime(targetVolume, audioCtx.currentTime, 0.04);
+        session.pannerNode.pan.setTargetAtTime(targetPan, audioCtx.currentTime, 0.04);
+      } else {
+        // DIRECT HTML5 Audio Mode: 100% direct hardware playback with distance volume attenuation
+        session.audioEl.muted = false;
+        session.audioEl.volume = Math.max(0, Math.min(1, targetVolume));
+        if (session.gainNode && audioCtx) {
+          session.gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.04);
+        }
+      }
+    }
+
+    // Create a full WebRTC P2P connection with ICE candidate queueing and session protection
+    async function createPeerSession(remoteId) {
+      if (peerSessions.has(remoteId)) return;
+
+      const isInitiator = MY_ID < remoteId;
+      const pairId = getPairId(MY_ID, remoteId);
+      const pairRef = SIGNALING_REF.child(pairId);
+
+      const pc = new RTCPeerConnection(RTC_CONFIG);
+
+      const session = {
+        peerId: remoteId,
+        pairId,
+        pairRef,
+        isInitiator,
+        pc,
+        candidateQueue: [],
+        remoteDescSet: false,
+        audioEl: null,
+        sourceNode: null,
+        pannerNode: null,
+        gainNode: null,
+        analyserNode: null,
+        remoteAudioLevel: 0,
+        rxTrackCount: 0,
+        currentDist: 0,
+        currentVolPct: 0,
+        currentPan: '0.00',
+        listeners: []
+      };
+
+      peerSessions.set(remoteId, session);
+      updateInspectorUI();
+
+      // 1. Attach local audio tracks before creating offer/answer
+      if (localStream) {
+        localStream.getTracks().forEach(track => {
+          pc.addTrack(track, localStream);
+        });
+      }
+
+      // 2. Handle incoming remote audio stream
+      pc.ontrack = (event) => {
+        const remoteStream = (event.streams && event.streams[0]) ? event.streams[0] : new MediaStream([event.track]);
+        session.rxTrackCount = remoteStream.getAudioTracks().length;
+
+        if (!session.audioEl) {
+          const audioEl = document.createElement('audio');
+          audioEl.id = `audio_${remoteId}`;
+          audioEl.srcObject = remoteStream;
+          audioEl.autoplay = true;
+          audioEl.playsInline = true;
+          audioEl.controls = false;
+          // Crucial: Do NOT set audioEl.muted = true here so Chromium starts decoding packets immediately
+          audioEl.volume = 0.5;
+          document.getElementById('remoteAudioContainer').appendChild(audioEl);
+          session.audioEl = audioEl;
+
+          // Explicitly start playback
+          const playPromise = audioEl.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(err => {
+              console.warn('Autoplay prevented on remote stream, resuming on next click:', err);
+            });
+          }
+        }
+
+        // Build Web Audio API spatial graph + AnalyserNode
+        if (audioCtx && !session.sourceNode) {
+          try {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const source = audioCtx.createMediaStreamSource(remoteStream);
+            const analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 256;
+            analyser.smoothingTimeConstant = 0.5;
+
+            const panner = audioCtx.createStereoPanner();
+            const gain = audioCtx.createGain();
+            gain.gain.value = 1.0;
+
+            source.connect(analyser);
+            analyser.connect(panner);
+            panner.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            session.sourceNode = source;
+            session.analyserNode = analyser;
+            session.pannerNode = panner;
+            session.gainNode = gain;
+          } catch (err) {
+            console.error('WebAudio graph construction error:', err);
+          }
+        }
+
+        updateInspectorUI();
+      };
+
+      // 3. Gather local ICE candidates and push to our dedicated side of the pair node
+      const myCandNode = isInitiator ? 'candidates_init' : 'candidates_resp';
+      const remoteCandNode = isInitiator ? 'candidates_resp' : 'candidates_init';
+
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          pairRef.child(myCandNode).push(event.candidate.toJSON()).catch(() => {});
+        }
+      };
+
+      pc.oniceconnectionstatechange = () => {
+        updateInspectorUI();
+        if (pc.iceConnectionState === 'failed') {
+          // Automatic recovery if ICE fails
+          console.warn(`ICE failed with ${remoteId}, restarting handshake...`);
+          setTimeout(() => {
+            if (peerSessions.has(remoteId)) {
+              destroyPeerSession(remoteId, true);
+            }
+          }, 1500);
+        }
+      };
+
+      pc.onsignalingstatechange = () => {
+        updateInspectorUI();
+      };
+
+      // Helper to safely add or queue incoming ICE candidates
+      const handleIncomingCandidate = async (snap) => {
+        const candData = snap.val();
+        if (!candData || !peerSessions.has(remoteId)) return;
+
+        try {
+          const candidate = new RTCIceCandidate(candData);
+          if (session.remoteDescSet && pc.remoteDescription) {
+            await pc.addIceCandidate(candidate);
+          } else {
+            session.candidateQueue.push(candidate);
+          }
+        } catch (err) {
+          console.warn('Error adding ICE candidate:', err);
+        }
+      };
+
+      // Helper to flush queued ICE candidates right after setRemoteDescription
+      const flushCandidateQueue = async () => {
+        session.remoteDescSet = true;
+        while (session.candidateQueue.length > 0) {
+          const cand = session.candidateQueue.shift();
+          try {
+            await pc.addIceCandidate(cand);
+          } catch (e) {
+            console.warn('Error flushing queued ICE candidate:', e);
+          }
+        }
+      };
+
+      // 4. Listen for remote ICE candidates
+      const candRef = pairRef.child(remoteCandNode);
+      candRef.on('child_added', handleIncomingCandidate);
+      session.listeners.push({ ref: candRef, event: 'child_added', fn: handleIncomingCandidate });
+
+      // 5. Offer / Answer Signaling Flow
+      if (isInitiator) {
+        try {
+          // Clear previous signaling state before writing fresh offer
+          await pairRef.remove();
+
+          const offer = await pc.createOffer({
+            offerToReceiveAudio: true,
+            offerToReceiveVideo: false
+          });
+          await pc.setLocalDescription(offer);
+
+          await pairRef.child('offer').set({
+            type: offer.type,
+            sdp: offer.sdp,
+            ts: Date.now(),
+            from: MY_ID
+          });
+
+          // Wait for Answer from responder
+          const answerRef = pairRef.child('answer');
+          const onAnswer = async (snap) => {
+            const answerData = snap.val();
+            if (!answerData || !peerSessions.has(remoteId)) return;
+            if (pc.signalingState === 'have-local-offer') {
+              try {
+                await pc.setRemoteDescription(new RTCSessionDescription({
+                  type: answerData.type,
+                  sdp: answerData.sdp
+                }));
+                await flushCandidateQueue();
+                updateInspectorUI();
+              } catch (err) {
+                console.error('Error setting remote answer:', err);
+              }
+            }
+          };
+
+          answerRef.on('value', onAnswer);
+          session.listeners.push({ ref: answerRef, event: 'value', fn: onAnswer });
+
+        } catch (err) {
+          console.error('Initiator offer error:', err);
+        }
+      } else {
+        // Responder waits for Initiator's offer
+        const offerRef = pairRef.child('offer');
+        const onOffer = async (snap) => {
+          const offerData = snap.val();
+          if (!offerData || !peerSessions.has(remoteId)) return;
+
+          // If we receive a new offer while stable or ready, accept it
+          if (pc.signalingState === 'stable' || pc.signalingState === 'have-remote-offer') {
+            try {
+              // Reset candidate queue for fresh offer
+              session.remoteDescSet = false;
+              await pairRef.child('candidates_resp').remove();
+
+              await pc.setRemoteDescription(new RTCSessionDescription({
+                type: offerData.type,
+                sdp: offerData.sdp
+              }));
+
+              await flushCandidateQueue();
+
+              const answer = await pc.createAnswer();
+              await pc.setLocalDescription(answer);
+
+              await pairRef.child('answer').set({
+                type: answer.type,
+                sdp: answer.sdp,
+                ts: Date.now(),
+                from: MY_ID
+              });
+              updateInspectorUI();
+            } catch (err) {
+              console.error('Responder answer error:', err);
+            }
+          }
+        };
+
+        offerRef.on('value', onOffer);
+        session.listeners.push({ ref: offerRef, event: 'value', fn: onOffer });
+      }
+    }
+
+    // Cleanly tear down a peer connection when moving out of range or disconnecting
+    function destroyPeerSession(remoteId, cleanFirebase = false) {
+      const session = peerSessions.get(remoteId);
+      if (!session) return;
+
+      // Detach Firebase listeners
+      session.listeners.forEach(item => {
+        item.ref.off(item.event, item.fn);
+      });
+
+      // Close RTCPeerConnection
+      try { session.pc.close(); } catch (e) {}
+
+      // Disconnect Web Audio nodes
+      try { if (session.sourceNode) session.sourceNode.disconnect(); } catch (e) {}
+      try { if (session.analyserNode) session.analyserNode.disconnect(); } catch (e) {}
+      try { if (session.pannerNode) session.pannerNode.disconnect(); } catch (e) {}
+      try { if (session.gainNode) session.gainNode.disconnect(); } catch (e) {}
+
+      // Remove HTML5 <audio> element
+      if (session.audioEl) {
+        try {
+          session.audioEl.pause();
+          session.audioEl.srcObject = null;
+          session.audioEl.remove();
+        } catch (e) {}
+      }
+
+      if (cleanFirebase && session.pairRef) {
+        session.pairRef.remove().catch(() => {});
+      }
+
+      const rp = remotePlayers.get(remoteId);
+      if (rp) {
+        rp.speaking = false;
+        rp.remoteVol = 0;
+      }
+
+      peerSessions.delete(remoteId);
+      updateInspectorUI();
+    }
+
+    /* ==========================================================================
+       6. LIVE P2P DIAGNOSTIC INSPECTOR UI
+       ========================================================================== */
+    function updateInspectorUI() {
+      const countEl = document.getElementById('activeChannelsCount');
+      const listEl = document.getElementById('p2pInspectorList');
+
+      countEl.textContent = `${peerSessions.size} ${peerSessions.size === 1 ? 'activo' : 'activos'}`;
+
+      if (peerSessions.size === 0) {
+        listEl.innerHTML = `<div class="text-slate-500 italic py-2 text-center">Acércate a menos de 650px de otro jugador para negociar voz P2P...</div>`;
+        return;
+      }
+
+      let html = '';
+      peerSessions.forEach((session, peerId) => {
+        const peer = remotePlayers.get(peerId);
+        const name = peer ? peer.name : peerId.slice(0, 8);
+        const iceState = session.pc ? session.pc.iceConnectionState : 'closed';
+        const sigState = session.pc ? session.pc.signalingState : 'closed';
+        const isConnected = iceState === 'connected' || iceState === 'completed';
+
+        const stateColor = isConnected
+          ? 'text-emerald-400 border-emerald-500/40 bg-emerald-950/50'
+          : (iceState === 'checking' ? 'text-amber-300 border-amber-500/40 bg-amber-950/50' : 'text-rose-400 border-rose-500/40 bg-rose-950/50');
+
+        const vuPct = Math.min(100, Math.round((session.remoteAudioLevel / 70) * 100));
+
+        html += `
+          <div class="bg-slate-950/80 border border-slate-800 rounded-lg p-2 space-y-1">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-slate-200 truncate max-w-[120px]">${name}</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded border ${stateColor} uppercase font-bold">${iceState}</span>
+            </div>
+            <div class="flex justify-between text-[10px] text-slate-400">
+              <span>Dist: <b class="text-cyan-300">${session.currentDist}px</b></span>
+              <span>Vol: <b class="text-emerald-300">${session.currentVolPct}%</b></span>
+              <span>Pan: <b class="text-purple-300">${session.currentPan}</b></span>
+            </div>
+            <div class="flex items-center space-x-2 pt-0.5">
+              <span class="text-[9px] text-slate-500 uppercase">Audio Rx (${session.rxTrackCount}):</span>
+              <div class="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-emerald-400 transition-all duration-75" style="width: ${vuPct}%"></div>
+              </div>
+            </div>
+            <div class="text-[9px] text-slate-500 flex justify-between">
+              <span>Rol: ${session.isInitiator ? 'Iniciador (Offer)' : 'Receptor (Answer)'}</span>
+              <span>SDP: ${sigState}</span>
+            </div>
+          </div>
+        `;
+      });
+
+      listEl.innerHTML = html;
+    }
+
+    // Refresh inspector metrics every 250ms
+    setInterval(() => {
+      if (peerSessions.size > 0) {
+        updateInspectorUI();
+      }
+    }, 250);
+
+    /* ==========================================================================
+       7. FIREBASE REALTIME DATABASE PRESENCE & SYNC
+       ========================================================================== */
+    function initFirebasePresence() {
       const connStatusEl = document.getElementById('connectionStatus');
       const statusDot = document.getElementById('statusDot');
       const statusPing = document.getElementById('statusPing');
 
-      // Firebase connection state observer
       db.ref('.info/connected').on('value', (snap) => {
         if (snap.val() === true) {
-          connStatusEl.textContent = 'CONECTADO';
-          connStatusEl.className = 'text-xs font-semibold tracking-wider uppercase text-emerald-400';
+          connStatusEl.textContent = 'ONLINE (RTDB)';
+          connStatusEl.className = 'text-xs font-bold tracking-wider uppercase text-emerald-400';
           statusDot.className = 'relative inline-flex rounded-full h-3 w-3 bg-emerald-500';
           statusPing.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75';
 
-          // Set onDisconnect handler to clean player state from DB when browser exits
           MY_PLAYER_REF.onDisconnect().remove();
-
-          // Write initial player presence
-          sendPositionToFirebase(true);
+          syncLocalPositionToFirebase(true);
         } else {
-          connStatusEl.textContent = 'OFFLINE';
-          connStatusEl.className = 'text-xs font-semibold tracking-wider uppercase text-rose-500';
+          connStatusEl.textContent = 'DESCONECTADO';
+          connStatusEl.className = 'text-xs font-bold tracking-wider uppercase text-rose-500';
           statusDot.className = 'relative inline-flex rounded-full h-3 w-3 bg-rose-500';
           statusPing.className = 'hidden';
         }
       });
 
-      // Listen for other players in the room
       PLAYERS_REF.on('child_added', (snap) => {
         const id = snap.key;
         if (id === MY_ID) return;
         const data = snap.val();
+        if (!data) return;
+
         remotePlayers.set(id, {
           id,
-          name: data.name || 'Jugador',
+          name: data.name || 'Explorador',
           color: data.color || '#38bdf8',
-          x: data.x || 0,
-          y: data.y || 0,
-          targetX: data.x || 0,
-          targetY: data.y || 0,
-          lastSeen: Date.now()
+          x: Number(data.x) || 0,
+          y: Number(data.y) || 0,
+          targetX: Number(data.x) || 0,
+          targetY: Number(data.y) || 0,
+          speaking: false,
+          remoteVol: 0
         });
-        updatePlayerCount();
+        updateOnlineCounter();
       });
 
       PLAYERS_REF.on('child_changed', (snap) => {
         const id = snap.key;
         if (id === MY_ID) return;
         const data = snap.val();
-        const p = remotePlayers.get(id);
-        if (p) {
-          p.targetX = data.x;
-          p.targetY = data.y;
-          p.name = data.name || p.name;
-          p.color = data.color || p.color;
-          p.lastSeen = Date.now();
+        const peer = remotePlayers.get(id);
+        if (peer && data) {
+          peer.targetX = Number(data.x) || 0;
+          peer.targetY = Number(data.y) || 0;
+          peer.name = data.name || peer.name;
+          peer.color = data.color || peer.color;
         }
       });
 
       PLAYERS_REF.on('child_removed', (snap) => {
         const id = snap.key;
         if (remotePlayers.has(id)) {
-          terminateWebRTCConnection(id, true);
+          destroyPeerSession(id, true);
           remotePlayers.delete(id);
-          updatePlayerCount();
+          updateOnlineCounter();
         }
       });
     }
 
-    function updatePlayerCount() {
-      // +1 accounts for local player
+    function updateOnlineCounter() {
       document.getElementById('playerCount').textContent = remotePlayers.size + 1;
     }
 
-    // Sends position throttled to ~6 updates/sec (150ms) to conserve Realtime DB bandwidth
-    function maybeSyncPosition() {
+    function syncLocalPositionToFirebase(force = false) {
       const now = performance.now();
-      if (now - lastNetworkSyncTime >= POSITION_SEND_RATE_MS) {
-        const rx = Math.round(localPlayer.x);
-        const ry = Math.round(localPlayer.y);
+      if (!force && now - lastNetworkSyncTime < SYNC_INTERVAL_MS) return;
 
-        // Only emit if player moved at least 2 pixels
-        if (rx !== lastDispatchedPos.x || ry !== lastDispatchedPos.y) {
-          sendPositionToFirebase(false);
-          lastNetworkSyncTime = now;
-          lastDispatchedPos.x = rx;
-          lastDispatchedPos.y = ry;
-        }
+      const rx = Math.round(localPlayer.x);
+      const ry = Math.round(localPlayer.y);
+
+      if (force || rx !== lastSentPos.x || ry !== lastSentPos.y) {
+        MY_PLAYER_REF.set({
+          x: rx,
+          y: ry,
+          name: localPlayer.name,
+          color: localPlayer.color
+        }).catch(() => {});
+        lastSentPos.x = rx;
+        lastSentPos.y = ry;
+        lastNetworkSyncTime = now;
       }
     }
 
-    function sendPositionToFirebase(initial = false) {
-      const payload = {
-        x: Math.round(localPlayer.x),
-        y: Math.round(localPlayer.y),
-        name: localPlayer.name,
-        color: localPlayer.color
-      };
-      MY_PLAYER_REF.set(payload).catch(() => {});
-    }
-
     /* ==========================================================================
-       6. CANVAS 2D INFINITE MAP & RENDERING
+       8. INFINITE 2D CANVAS RENDERING & GAME LOOP
        ========================================================================== */
     function resizeCanvas() {
       canvas.width = window.innerWidth;
@@ -621,114 +914,109 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Infinite Grid with major & minor divisions and coordinate indicators
-    function drawInfiniteGrid() {
-      const width = canvas.width;
-      const height = canvas.height;
-
-      const gridSize = 100;
+    function drawInfiniteTerrain() {
+      const w = canvas.width;
+      const h = canvas.height;
+      const minorStep = 100;
       const majorStep = 500;
 
-      // Calculate visible world bounding box
-      const startWorldX = camera.x - width / 2;
-      const endWorldX = camera.x + width / 2;
-      const startWorldY = camera.y - height / 2;
-      const endWorldY = camera.y + height / 2;
+      const startX = camera.x - w / 2;
+      const endX = camera.x + w / 2;
+      const startY = camera.y - h / 2;
+      const endY = camera.y + h / 2;
 
-      const firstGridX = Math.floor(startWorldX / gridSize) * gridSize;
-      const firstGridY = Math.floor(startWorldY / gridSize) * gridSize;
+      ctx.fillStyle = '#050811';
+      ctx.fillRect(0, 0, w, h);
 
-      // Dark futuristic background fill
-      ctx.fillStyle = '#060a12';
-      ctx.fillRect(0, 0, width, height);
+      // Minor Grid
+      const firstMinorX = Math.floor(startX / minorStep) * minorStep;
+      const firstMinorY = Math.floor(startY / minorStep) * minorStep;
 
-      // Minor grid lines
+      ctx.strokeStyle = '#0d1829';
       ctx.lineWidth = 1;
-      ctx.strokeStyle = '#0f1d33';
       ctx.beginPath();
-      for (let wx = firstGridX; wx <= endWorldX; wx += gridSize) {
-        const sx = wx - camera.x + width / 2;
+      for (let wx = firstMinorX; wx <= endX; wx += minorStep) {
+        const sx = wx - camera.x + w / 2;
         ctx.moveTo(sx, 0);
-        ctx.lineTo(sx, height);
+        ctx.lineTo(sx, h);
       }
-      for (let wy = firstGridY; wy <= endWorldY; wy += gridSize) {
-        const sy = wy - camera.y + height / 2;
+      for (let wy = firstMinorY; wy <= endY; wy += minorStep) {
+        const sy = wy - camera.y + h / 2;
         ctx.moveTo(0, sy);
-        ctx.lineTo(width, sy);
+        ctx.lineTo(w, sy);
       }
       ctx.stroke();
 
-      // Major grid lines & subtle coordinate labels
-      const firstMajorX = Math.floor(startWorldX / majorStep) * majorStep;
-      const firstMajorY = Math.floor(startWorldY / majorStep) * majorStep;
+      // Major Grid (500px blocks)
+      const firstMajorX = Math.floor(startX / majorStep) * majorStep;
+      const firstMajorY = Math.floor(startY / majorStep) * majorStep;
 
-      ctx.strokeStyle = '#183153';
+      ctx.strokeStyle = '#172b47';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      for (let wx = firstMajorX; wx <= endWorldX; wx += majorStep) {
-        const sx = wx - camera.x + width / 2;
+      for (let wx = firstMajorX; wx <= endX; wx += majorStep) {
+        const sx = wx - camera.x + w / 2;
         ctx.moveTo(sx, 0);
-        ctx.lineTo(sx, height);
+        ctx.lineTo(sx, h);
       }
-      for (let wy = firstMajorY; wy <= endWorldY; wy += majorStep) {
-        const sy = wy - camera.y + height / 2;
+      for (let wy = firstMajorY; wy <= endY; wy += majorStep) {
+        const sy = wy - camera.y + h / 2;
         ctx.moveTo(0, sy);
-        ctx.lineTo(width, sy);
+        ctx.lineTo(w, sy);
       }
       ctx.stroke();
 
-      // Draw coordinate tags at major intersections
-      ctx.fillStyle = '#33537a';
+      // Coordinate Labels
+      ctx.fillStyle = '#33527a';
       ctx.font = '10px "JetBrains Mono", monospace';
-      for (let wx = firstMajorX; wx <= endWorldX; wx += majorStep) {
-        for (let wy = firstMajorY; wy <= endWorldY; wy += majorStep) {
-          const sx = wx - camera.x + width / 2;
-          const sy = wy - camera.y + height / 2;
+      for (let wx = firstMajorX; wx <= endX; wx += majorStep) {
+        for (let wy = firstMajorY; wy <= endY; wy += majorStep) {
+          const sx = wx - camera.x + w / 2;
+          const sy = wy - camera.y + h / 2;
           ctx.fillText(`(${wx}, ${wy})`, sx + 6, sy - 6);
         }
       }
 
-      // Draw Origin marker (0, 0)
-      const originScreenX = 0 - camera.x + width / 2;
-      const originScreenY = 0 - camera.y + height / 2;
+      // Origin Beacon (0, 0)
+      const ox = -camera.x + w / 2;
+      const oy = -camera.y + h / 2;
 
       ctx.save();
       ctx.strokeStyle = '#06b6d4';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(originScreenX, originScreenY, 30, 0, Math.PI * 2);
+      ctx.arc(ox, oy, 36, 0, Math.PI * 2);
       ctx.stroke();
 
       ctx.beginPath();
-      ctx.moveTo(originScreenX - 40, originScreenY);
-      ctx.lineTo(originScreenX + 40, originScreenY);
-      ctx.moveTo(originScreenX, originScreenY - 40);
-      ctx.lineTo(originScreenX, originScreenY + 40);
+      ctx.moveTo(ox - 48, oy);
+      ctx.lineTo(ox + 48, oy);
+      ctx.moveTo(ox, oy - 48);
+      ctx.lineTo(ox, oy + 48);
       ctx.stroke();
 
       ctx.fillStyle = '#22d3ee';
       ctx.font = 'bold 11px "Inter", sans-serif';
-      ctx.fillText('NEXO (0, 0)', originScreenX + 8, originScreenY + 20);
+      ctx.fillText('CENTRO (0, 0)', ox + 10, oy + 24);
       ctx.restore();
     }
 
-    // Main animation & game loop
-    let lastFrameTime = performance.now();
+    let lastTime = performance.now();
 
-    function gameLoop(currentTime) {
-      const dt = Math.min((currentTime - lastFrameTime) / 1000, 0.1);
-      lastFrameTime = currentTime;
+    function gameLoop(now) {
+      const dt = Math.min((now - lastTime) / 1000, 0.1);
+      lastTime = now;
 
-      // 1. Move local player towards pointer target if pressed
+      // 1. Update local player movement towards active mouse/touch target
       if (isPointerDown) {
         const dx = pointerWorldTarget.x - localPlayer.x;
         const dy = pointerWorldTarget.y - localPlayer.y;
         const dist = Math.hypot(dx, dy);
 
-        if (dist > 5) {
-          const moveStep = Math.min(dist, MOVE_SPEED * dt);
-          localPlayer.x += (dx / dist) * moveStep;
-          localPlayer.y += (dy / dist) * moveStep;
+        if (dist > 4) {
+          const step = Math.min(dist, MOVE_SPEED * dt);
+          localPlayer.x += (dx / dist) * step;
+          localPlayer.y += (dy / dist) * step;
           localPlayer.isMoving = true;
         } else {
           localPlayer.isMoving = false;
@@ -737,137 +1025,160 @@
         localPlayer.isMoving = false;
       }
 
-      // 2. Smooth camera tracking
-      camera.x += (localPlayer.x - camera.x) * 0.12;
-      camera.y += (localPlayer.y - camera.y) * 0.12;
+      // 2. Smooth camera follow
+      camera.x += (localPlayer.x - camera.x) * 0.14;
+      camera.y += (localPlayer.y - camera.y) * 0.14;
 
-      // 3. Interpolate (lerp) remote players' positions smoothly for 60fps render
-      remotePlayers.forEach((rp) => {
-        rp.x += (rp.targetX - rp.x) * 0.2;
-        rp.y += (rp.targetY - rp.y) * 0.2;
+      // 3. Interpolate remote players
+      remotePlayers.forEach(peer => {
+        peer.x += (peer.targetX - peer.x) * 0.22;
+        peer.y += (peer.targetY - peer.y) * 0.22;
       });
 
-      // 4. Send position updates throttled to Firebase
-      maybeSyncPosition();
+      // 4. Sync position to Firebase (throttled)
+      syncLocalPositionToFirebase(false);
 
-      // 5. Evaluate audio proximity and WebRTC channels
-      evaluatePeerConnections();
+      // 5. Evaluate P2P connections & spatial volume/panning
+      updateProximityAndSpatialAudio();
 
-      // 6. Render Frame
-      drawScene();
+      // 6. Render World
+      renderWorld();
 
-      // 7. Update UI HUD
+      // 7. Update HUD Coords
       document.getElementById('coordsDisplay').textContent = `X: ${Math.round(localPlayer.x)} | Y: ${Math.round(localPlayer.y)}`;
 
       requestAnimationFrame(gameLoop);
     }
 
-    function drawScene() {
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
+    function renderWorld() {
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
 
-      // Render world grid
-      drawInfiniteGrid();
+      drawInfiniteTerrain();
 
-      // Transform context to world-camera coordinates
       ctx.save();
-      ctx.translate(centerX - camera.x, centerY - camera.y);
+      ctx.translate(cx - camera.x, cy - camera.y);
 
-      // Draw Local Player Proximity & Hearing Zone (R_MAX radius)
+      // Outer Hysteresis Ring (R_CONNECT = 650px)
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(localPlayer.x, localPlayer.y, R_CONNECT, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.15)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 8]);
+      ctx.stroke();
+      ctx.restore();
+
+      // Inner Hearing Ring (R_MAX = 500px)
       ctx.save();
       ctx.beginPath();
       ctx.arc(localPlayer.x, localPlayer.y, R_MAX, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(6, 182, 212, 0.25)';
+      ctx.strokeStyle = 'rgba(16, 185, 129, 0.35)';
       ctx.lineWidth = 1.5;
-      ctx.setLineDash([8, 8]);
+      ctx.setLineDash([8, 6]);
       ctx.stroke();
 
-      // Subtle gradient inside hearing bubble
-      const gradient = ctx.createRadialGradient(
-        localPlayer.x, localPlayer.y, R_MAX * 0.2,
+      const grad = ctx.createRadialGradient(
+        localPlayer.x, localPlayer.y, 20,
         localPlayer.x, localPlayer.y, R_MAX
       );
-      gradient.addColorStop(0, 'rgba(6, 182, 212, 0.05)');
-      gradient.addColorStop(1, 'rgba(6, 182, 212, 0.0)');
-      ctx.fillStyle = gradient;
+      grad.addColorStop(0, 'rgba(16, 185, 129, 0.07)');
+      grad.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+      ctx.fillStyle = grad;
       ctx.fill();
       ctx.restore();
 
-      // Draw audio connection rays to active peers
-      peerConnections.forEach((conn, peerId) => {
+      // Draw acoustic tethers to connected peers
+      peerSessions.forEach((session, peerId) => {
         const peer = remotePlayers.get(peerId);
-        if (peer) {
-          ctx.beginPath();
-          ctx.moveTo(localPlayer.x, localPlayer.y);
-          ctx.lineTo(peer.x, peer.y);
-          ctx.strokeStyle = 'rgba(34, 197, 94, 0.35)';
-          ctx.lineWidth = 2;
+        if (!peer) return;
+
+        const iceState = session.pc ? session.pc.iceConnectionState : '';
+        const isConnected = iceState === 'connected' || iceState === 'completed';
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(localPlayer.x, localPlayer.y);
+        ctx.lineTo(peer.x, peer.y);
+
+        if (isConnected) {
+          const alpha = Math.max(0.18, (session.currentVolPct / 100) * 0.75);
+          ctx.strokeStyle = peer.speaking ? `rgba(52, 211, 153, ${alpha + 0.2})` : `rgba(6, 182, 212, ${alpha})`;
+          ctx.lineWidth = peer.speaking ? 3 : 1.5;
+        } else {
+          ctx.strokeStyle = 'rgba(251, 191, 36, 0.35)';
+          ctx.lineWidth = 1.5;
           ctx.setLineDash([4, 4]);
-          ctx.stroke();
-          ctx.setLineDash([]);
         }
+        ctx.stroke();
+
+        // Midpoint volume badge on tether line
+        const mx = (localPlayer.x + peer.x) / 2;
+        const my = (localPlayer.y + peer.y) / 2;
+        ctx.fillStyle = isConnected ? '#34d399' : '#fbbf24';
+        ctx.font = 'bold 10px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(isConnected ? `🔊 ${session.currentVolPct}%` : '⏳ P2P...', mx, my - 6);
+        ctx.restore();
       });
 
-      // Render Remote Players
+      // Draw Remote Players
       remotePlayers.forEach((peer) => {
         const dist = Math.hypot(peer.x - localPlayer.x, peer.y - localPlayer.y);
-        const isInRange = dist <= R_MAX;
-        const isPeerConnected = peerConnections.has(peer.id);
+        const session = peerSessions.get(peer.id);
+        const isConnected = session && session.pc && (session.pc.iceConnectionState === 'connected' || session.pc.iceConnectionState === 'completed');
 
         ctx.save();
         ctx.translate(peer.x, peer.y);
 
-        // Halo if WebRTC audio is active
-        if (isPeerConnected) {
+        // Remote speaking dynamic aura
+        if (peer.speaking) {
+          const auraRadius = 24 + Math.min(20, peer.remoteVol * 0.35);
           ctx.beginPath();
-          ctx.arc(0, 0, 24, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(34, 197, 94, 0.2)';
+          ctx.arc(0, 0, auraRadius, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(52, 211, 153, 0.28)';
           ctx.fill();
-          ctx.strokeStyle = '#22c55e';
+          ctx.strokeStyle = '#10b981';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        } else if (isConnected) {
+          ctx.beginPath();
+          ctx.arc(0, 0, 22, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(52, 211, 153, 0.45)';
           ctx.lineWidth = 1.5;
           ctx.stroke();
         }
 
-        // Body
+        // Avatar circle
         ctx.beginPath();
         ctx.arc(0, 0, 16, 0, Math.PI * 2);
-        ctx.fillStyle = peer.color || '#38bdf8';
+        ctx.fillStyle = peer.color;
         ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = isInRange ? '#ffffff' : '#64748b';
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = isConnected ? '#ffffff' : '#64748b';
         ctx.stroke();
 
-        // Audio waveform icon if connected
-        if (isPeerConnected) {
-          ctx.fillStyle = '#22c55e';
-          ctx.fillRect(-6, -2, 2, 4);
-          ctx.fillRect(-2, -5, 2, 10);
-          ctx.fillRect(2, -8, 2, 16);
-          ctx.fillRect(6, -3, 2, 6);
-        }
-
-        // Player Name & Distance
-        ctx.fillStyle = isInRange ? '#f1f5f9' : '#94a3b8';
-        ctx.font = '600 12px "Inter", sans-serif';
+        // Name & Distance tag
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = 'bold 12px "Inter", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(peer.name, 0, -24);
 
         ctx.font = '10px "JetBrains Mono", monospace';
-        ctx.fillStyle = isPeerConnected ? '#4ade80' : '#64748b';
-        ctx.fillText(`${Math.round(dist)}px ${isPeerConnected ? '• VOZ ACTIVA' : ''}`, 0, 32);
+        ctx.fillStyle = isConnected ? '#4ade80' : '#94a3b8';
+        ctx.fillText(`${Math.round(dist)}px`, 0, 30);
 
         ctx.restore();
       });
 
-      // Render Local Player
+      // Draw Local Player
       ctx.save();
       ctx.translate(localPlayer.x, localPlayer.y);
 
-      // Speaking pulsing aura
       if (localPlayer.isSpeaking) {
-        const pulse = 22 + (localPlayer.volumeLevel * 0.2);
+        const pulseRadius = 24 + Math.min(22, localPlayer.volumeLevel * 0.35);
         ctx.beginPath();
-        ctx.arc(0, 0, pulse, 0, Math.PI * 2);
+        ctx.arc(0, 0, pulseRadius, 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(34, 197, 94, 0.3)';
         ctx.fill();
         ctx.strokeStyle = '#22c55e';
@@ -875,7 +1186,6 @@
         ctx.stroke();
       }
 
-      // Player circle body
       ctx.beginPath();
       ctx.arc(0, 0, 18, 0, Math.PI * 2);
       ctx.fillStyle = localPlayer.color;
@@ -884,90 +1194,93 @@
       ctx.strokeStyle = '#ffffff';
       ctx.stroke();
 
-      // Inner directional indicator (towards movement or center)
       if (isPointerDown) {
-        const angle = Math.atan2(pointerWorldTarget.y - localPlayer.y, pointerWorldTarget.x - localPlayer.x);
+        const ang = Math.atan2(pointerWorldTarget.y - localPlayer.y, pointerWorldTarget.x - localPlayer.x);
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.lineTo(Math.cos(angle) * 14, Math.sin(angle) * 14);
+        ctx.lineTo(Math.cos(ang) * 14, Math.sin(ang) * 14);
         ctx.strokeStyle = '#0f172a';
         ctx.lineWidth = 3;
         ctx.stroke();
       }
 
-      // Name label
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 12px "Inter", sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(`${localPlayer.name} (Tú)`, 0, -26);
 
       ctx.restore();
-
-      ctx.restore(); // Restore world-camera transform
+      ctx.restore();
     }
 
     /* ==========================================================================
-       7. MOUSE & TOUCH CONTROLS
+       9. INPUT & HUD CONTROLS
        ========================================================================== */
-    function screenToWorld(screenX, screenY) {
+    function screenToWorld(sx, sy) {
       return {
-        x: screenX - canvas.width / 2 + camera.x,
-        y: screenY - canvas.height / 2 + camera.y
+        x: sx - canvas.width / 2 + camera.x,
+        y: sy - canvas.height / 2 + camera.y
       };
     }
 
-    function handlePointerStart(e) {
+    function onPointerDown(e) {
+      // Ensure AudioContext and any paused remote <audio> elements are unlocked on user interaction
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
+      peerSessions.forEach(s => {
+        if (s.audioEl && s.audioEl.paused) {
+          s.audioEl.play().catch(() => {});
+        }
+      });
+
       isPointerDown = true;
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      pointerWorldTarget = screenToWorld(clientX, clientY);
+      const cx = e.touches ? e.touches[0].clientX : e.clientX;
+      const cy = e.touches ? e.touches[0].clientY : e.clientY;
+      pointerWorldTarget = screenToWorld(cx, cy);
     }
 
-    function handlePointerMove(e) {
+    function onPointerMove(e) {
       if (!isPointerDown) return;
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      pointerWorldTarget = screenToWorld(clientX, clientY);
+      const cx = e.touches ? e.touches[0].clientX : e.clientX;
+      const cy = e.touches ? e.touches[0].clientY : e.clientY;
+      pointerWorldTarget = screenToWorld(cx, cy);
     }
 
-    function handlePointerEnd() {
+    function onPointerUp() {
       isPointerDown = false;
     }
 
-    canvas.addEventListener('mousedown', handlePointerStart);
-    window.addEventListener('mousemove', handlePointerMove);
-    window.addEventListener('mouseup', handlePointerEnd);
+    canvas.addEventListener('mousedown', onPointerDown);
+    window.addEventListener('mousemove', onPointerMove);
+    window.addEventListener('mouseup', onPointerUp);
 
     canvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
-      handlePointerStart(e);
+      onPointerDown(e);
     }, { passive: false });
 
     window.addEventListener('touchmove', (e) => {
       if (isPointerDown) {
         e.preventDefault();
-        handlePointerMove(e);
+        onPointerMove(e);
       }
     }, { passive: false });
 
-    window.addEventListener('touchend', handlePointerEnd);
+    window.addEventListener('touchend', onPointerUp);
 
-    /* ==========================================================================
-       8. HUD INTERACTIONS & TOAST
-       ========================================================================== */
-
-    // Floating Button: Volver al Centro (Smooth Teleport / Recenter to (0,0))
+    // Button: Volver al Centro (0, 0)
     document.getElementById('btnRecenter').addEventListener('click', (e) => {
       e.stopPropagation();
       localPlayer.x = 0;
       localPlayer.y = 0;
       pointerWorldTarget = { x: 0, y: 0 };
       isPointerDown = false;
-      sendPositionToFirebase(true);
-      showToast('Posición restablecida al Nexo (0, 0)');
+      syncLocalPositionToFirebase(true);
+      showToast('Teletransportado al Centro (0, 0)');
     });
 
-    // Mic Mute Toggle
+    // Button: Toggle Microphone Mute
     document.getElementById('btnToggleMic').addEventListener('click', (e) => {
       e.stopPropagation();
       if (!localStream) return;
@@ -977,64 +1290,80 @@
         track.enabled = !isMicMuted;
       });
 
+      const btn = document.getElementById('btnToggleMic');
       const label = document.getElementById('micLabel');
       const icon = document.getElementById('micIcon');
 
       if (isMicMuted) {
-        label.textContent = 'MICRO MUTEADO';
-        label.className = 'text-rose-400 font-semibold';
-        icon.className = 'w-4 h-4 text-rose-500';
+        label.textContent = 'MICRO SILENCIADO';
+        btn.className = 'flex items-center space-x-2 px-4 py-2.5 bg-rose-950/90 border border-rose-500/50 text-rose-300 rounded-xl font-bold text-xs tracking-wide transition-all shadow-lg active:scale-95';
+        icon.className = 'w-4 h-4 text-rose-400';
       } else {
         label.textContent = 'MICRO ACTIVADO';
-        label.className = 'text-slate-300';
+        btn.className = 'flex items-center space-x-2 px-4 py-2.5 bg-slate-900/95 hover:bg-slate-800 border border-emerald-500/40 text-emerald-300 rounded-xl font-bold text-xs tracking-wide transition-all shadow-lg active:scale-95';
         icon.className = 'w-4 h-4 text-emerald-400';
       }
-      showToast(isMicMuted ? 'Micrófono silenciado' : 'Micrófono activo');
+      showToast(isMicMuted ? 'Micrófono silenciado' : 'Micrófono activado');
     });
 
-    // Helper Toast message
-    let toastTimeout;
-    function showToast(message) {
-      const toast = document.getElementById('toast');
-      toast.textContent = message;
-      toast.classList.remove('opacity-0');
-      toast.classList.add('opacity-100');
-      clearTimeout(toastTimeout);
-      toastTimeout = setTimeout(() => {
-        toast.classList.remove('opacity-100');
-        toast.classList.add('opacity-0');
-      }, 3000);
+    // Button: Switch Audio Routing Engine Mode (Hybrid WebAudio Stereo vs Direct HTML5 Volume)
+    document.getElementById('btnAudioMode').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (audioEngineMode === 'HYBRID') {
+        audioEngineMode = 'DIRECT';
+        e.currentTarget.textContent = 'DIRECTO HTML5 (Volumen Puro)';
+        e.currentTarget.className = 'px-2.5 py-1 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 rounded-lg font-semibold mono text-[11px] transition-all';
+        showToast('Modo Audio Directo HTML5 activado');
+      } else {
+        audioEngineMode = 'HYBRID';
+        e.currentTarget.textContent = 'HÍBRIDO ESPACIAL (Estéreo + Vol)';
+        e.currentTarget.className = 'px-2.5 py-1 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 rounded-lg font-semibold mono text-[11px] transition-all';
+        showToast('Modo Audio Espacial Estéreo activado');
+      }
+    });
+
+    // Button: Force Reconnect All P2P Audio Channels
+    document.getElementById('btnForceReconnect').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      const peerIds = Array.from(peerSessions.keys());
+      peerIds.forEach(id => destroyPeerSession(id, true));
+      showToast('Reiniciando negociaciones WebRTC P2P...');
+    });
+
+    let toastTimer = null;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.remove('opacity-0');
+      t.classList.add('opacity-100');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        t.classList.remove('opacity-100');
+        t.classList.add('opacity-0');
+      }, 2800);
     }
 
     /* ==========================================================================
-       9. ENTRY MODAL & GAME BOOTSTRAP
+       10. JOIN MODAL & CLEANUP
        ========================================================================== */
     document.getElementById('btnJoin').addEventListener('click', async () => {
-      const nameInput = document.getElementById('inputUsername').value.trim();
-      if (nameInput) {
-        localPlayer.name = nameInput;
-        myUsername = nameInput;
+      const nameVal = document.getElementById('inputUsername').value.trim();
+      if (nameVal) {
+        localPlayer.name = nameVal;
       }
 
-      // Initialize Web Audio and Mic (Permitted now because of direct user click gesture)
-      await initAudioSystem();
+      await initAudioEngine();
+      initFirebasePresence();
 
-      // Connect to Firebase room & listeners
-      setupFirebaseSync();
-
-      // Hide modal
       document.getElementById('joinModal').style.display = 'none';
-
-      // Start loop
       requestAnimationFrame(gameLoop);
-      showToast(`¡Bienvenido, ${localPlayer.name}!`);
     });
 
-    // Window unload cleanup
     window.addEventListener('beforeunload', () => {
-      peerConnections.forEach((conn, peerId) => {
-        terminateWebRTCConnection(peerId, true);
-      });
+      peerSessions.forEach((_, peerId) => destroyPeerSession(peerId, true));
       MY_PLAYER_REF.remove();
     });
   </script>
