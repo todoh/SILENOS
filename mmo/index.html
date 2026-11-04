@@ -1916,6 +1916,24 @@ canvas#world {
 .skin-choice .skin-preview{display:block;width:100%;height:180px;border-radius:4px;background:radial-gradient(ellipse at 50% 80%,#71836d,#344438 75%);pointer-events:none}.skin-preview-large{position:absolute;right:25px;top:90px;width:230px;height:330px;z-index:3;padding:10px;pointer-events:none;border:1px solid #a8cc86;border-radius:10px;background:linear-gradient(145deg,#314034,#162119);box-shadow:0 15px 45px #000b}.skin-preview-large[hidden]{display:none}.skin-preview-large canvas{display:block;width:100%;height:100%}@media(max-width:450px){.skin-choice .skin-preview{height:145px}.skin-preview-large{right:14px;top:80px;width:165px;height:235px}}
 .skin-preview-large{position:fixed;right:auto}
 
+/* Ajustes visuales y contador de rendimiento */
+.fps-counter { position: absolute; top: 116px; left: 18px; z-index: 3; padding: 5px 9px; border: 1px solid var(--line); border-radius: 6px; background: rgba(8,8,8,.9); color: var(--text); font: 11px var(--mono); pointer-events: none; }
+.fps-counter[hidden] { display: none; }
+.performance-settings { width: min(540px, calc(100vw - 32px)); max-height: min(85vh, 700px); overflow: auto; padding: 28px; border: 1px solid var(--line); border-radius: 14px; background: #141714; color: var(--text); }
+.performance-settings::backdrop { background: rgba(0,0,0,.72); }
+.performance-settings h2 { margin: 8px 0; }
+.performance-settings p, .performance-options small { color: var(--muted); line-height: 1.5; }
+.performance-options { display: grid; gap: 4px; margin: 20px 0; }
+.performance-options label { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.performance-options label span { display: grid; gap: 3px; }
+.performance-options select { max-width: 45%; padding: 7px; color: var(--text); background: #242a24; border: 1px solid var(--line); border-radius: 6px; }
+.performance-options input { width: 18px; height: 18px; accent-color: #9bc982; }
+@media (max-width: 1000px) { .fps-counter { top: 162px; } }
+@media (max-width: 768px) { .fps-counter { top: 152px; left: 12px; } }
+.building-panel{position:fixed;z-index:130;top:82px;left:20px;width:320px;max-width:calc(100vw - 40px);max-height:calc(100dvh - 185px);overflow:auto;padding:18px;border:1px solid #626e53;border-radius:12px;background:#10130ff5;box-shadow:0 15px 60px #0007;color:#e0e5d8;font:13px 'DM Sans',sans-serif;backdrop-filter:blur(12px)}
+.building-panel[hidden],.building-panel [hidden]{display:none!important}.building-heading{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}.building-heading h2{font-size:21px;letter-spacing:-.6px;margin:3px 0}.building-heading .kicker{font-size:9px;letter-spacing:1.7px;color:#b1c399}.building-heading button{border:0;background:none;font-size:25px;color:#e0e5d8;cursor:pointer}.building-panel label{display:flex;flex-direction:column;gap:5px;color:#abb6a0;font-size:11px}.building-panel select,.building-panel input{width:100%;min-width:0;padding:9px;border:1px solid #41473b;border-radius:5px;background:#20241c;color:#e0e5d8;font:12px 'DM Sans',sans-serif}.building-tools{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:14px 0}.building-tools button{padding:10px 4px;background:#20251c;color:#cbd4c0;border:1px solid #3e4736;border-radius:6px;font-size:11px;cursor:pointer}.building-tools button[aria-pressed=true]{background:#b4cd8b;color:#172114;border-color:#d2e9ae;font-weight:700}.building-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}.building-fields [data-roof-field],.building-fields [data-angle-field],.building-fields [data-floor-field]{grid-column:1/-1}.building-instructions{font-size:12px;line-height:1.6;color:#bdc6b2;margin:14px 0 10px}.building-metrics{font:12px 'DM Mono',monospace;color:#e0c993;min-height:18px}.building-cost{white-space:pre-line;font-size:12px;line-height:1.7;padding:10px;background:#1c2118;border-radius:5px;margin-top:8px;color:#bdc6b2}.building-cost[data-valid=false]{color:#f0a498;background:#32211c}.building-cost[data-valid=true]{color:#c3e3a1}.building-status{font-size:10px;color:#a7b998;margin:12px 0 6px}.building-note{font-size:10px;color:#888f7e;line-height:1.5;border-top:1px solid #343b2f;padding-top:10px;margin-bottom:0}
+@media(max-width:700px){.building-panel{top:110px;left:12px;width:290px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 210px);padding:14px}.building-tools button{padding:9px 3px}#buildingButton{font-size:11px;padding:7px}}
+
 </style>
 </head>
 <body>
@@ -1946,6 +1964,7 @@ canvas#world {
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-1 3-3 1-2 3 2 2-1 3 2 3 3-1 2 3h3l1-3 3-1 2-3-2-2 1-3-2-3-3 1-2-3Z"/><circle cx="11.5" cy="11.5" r="3"/></svg>
         </button>
       </div>
+      <button class="topbar-btn icon-only" id="performanceSettingsButton" title="Ajustes de rendimiento" aria-label="Ajustes de rendimiento" aria-haspopup="dialog" aria-controls="performanceSettings">⚙</button>
       <button class="topbar-btn" id="togglePanels" title="Mostrar/Ocultar paneles laterales">
         <span>💬</span> <span class="btn-label">Paneles</span>
       </button>
@@ -1968,6 +1987,7 @@ canvas#world {
         <div class="weather-pill" id="weatherStatus" title="Un día dura 24 minutos. La niebla aumenta de noche; las hogueras iluminan y despejan sus alrededores.">
           <span id="worldClock">08:00 · Día</span><span class="weather-divider">/</span><span id="fogStatus">Niebla tenue</span>
         </div>
+        <div id="fpsCounter" class="fps-counter" hidden aria-label="Fotogramas por segundo">-- FPS</div>
         <div class="game-controls">
           <button class="interact" id="interact" disabled>
             <span>F</span> Interactuar
@@ -2037,6 +2057,21 @@ canvas#world {
     </aside>
   </main>
 </div>
+
+<dialog id="performanceSettings" class="performance-settings" aria-labelledby="performanceSettingsTitle">
+  <button type="button" id="closePerformanceSettings" class="close" aria-label="Cerrar ajustes">×</button>
+  <span class="kicker">PERSONALIZA TU EXPERIENCIA</span>
+  <h2 id="performanceSettingsTitle">Ajustes</h2>
+  <p>Reduce la calidad visual para mejorar el rendimiento en equipos más lentos. Los cambios se aplican al instante y se guardan en este navegador.</p>
+  <div class="performance-options">
+    <label><span><strong>Resolución del juego</strong><small>Una resolución menor dibuja menos píxeles.</small></span><select id="settingResolution"><option value="auto">Automática</option><option value="1">Normal</option><option value="0.75">Reducida</option><option value="0.5">Muy reducida</option></select></label>
+    <label><span><strong>Terreno</strong><small>Los colores simples evitan componer las texturas del suelo.</small></span><select id="settingTerrain"><option value="textured">Con texturas</option><option value="simple">Colores simples</option></select></label>
+    <label><span><strong>Atmósfera</strong><small>La opción simple reduce los efectos de niebla e iluminación.</small></span><select id="settingAtmosphere"><option value="full">Completa</option><option value="simple">Simple</option></select></label>
+    <label><span><strong>Límite de FPS</strong><small>Limitar el dibujo puede reducir el consumo del equipo.</small></span><select id="settingFpsLimit"><option value="0">Sin límite</option><option value="60">60 FPS</option><option value="30">30 FPS</option></select></label>
+    <label><span><strong>Mostrar FPS</strong><small>Contador bajo la hora y el tiempo.</small></span><input id="settingShowFps" type="checkbox"></label>
+  </div>
+  <button type="button" id="resetPerformanceSettings" class="topbar-btn">Restablecer valores</button>
+</dialog>
 
 <dialog id="skinPicker" class="skin-picker" aria-labelledby="skinPickerTitle" aria-describedby="skinPickerStatus">
   <button type="button" id="closeSkinPicker" class="close" aria-label="Cerrar selector de skins">×</button>
