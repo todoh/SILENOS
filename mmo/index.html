@@ -1935,6 +1935,7 @@ canvas#world {
 .building-panel{position:fixed;z-index:130;top:82px;left:20px;width:320px;max-width:calc(100vw - 40px);max-height:calc(100dvh - 185px);overflow:auto;padding:18px;border:1px solid #626e53;border-radius:12px;background:#10130ff5;box-shadow:0 15px 60px #0007;color:#e0e5d8;font:13px 'DM Sans',sans-serif;backdrop-filter:blur(12px)}
 .building-panel[hidden],.building-panel [hidden]{display:none!important}.building-heading{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}.building-heading h2{font-size:21px;letter-spacing:-.6px;margin:3px 0}.building-heading .kicker{font-size:9px;letter-spacing:1.7px;color:#b1c399}.building-heading button{border:0;background:none;font-size:25px;color:#e0e5d8;cursor:pointer}.building-panel label{display:flex;flex-direction:column;gap:5px;color:#abb6a0;font-size:11px}.building-panel select,.building-panel input{width:100%;min-width:0;padding:9px;border:1px solid #41473b;border-radius:5px;background:#20241c;color:#e0e5d8;font:12px 'DM Sans',sans-serif}.building-tools{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:14px 0}.building-tools button{padding:10px 4px;background:#20251c;color:#cbd4c0;border:1px solid #3e4736;border-radius:6px;font-size:11px;cursor:pointer}.building-tools button[aria-pressed=true]{background:#b4cd8b;color:#172114;border-color:#d2e9ae;font-weight:700}.building-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}.building-fields [data-roof-field],.building-fields [data-angle-field],.building-fields [data-floor-field]{grid-column:1/-1}.building-instructions{font-size:12px;line-height:1.6;color:#bdc6b2;margin:14px 0 10px}.building-metrics{font:12px 'DM Mono',monospace;color:#e0c993;min-height:18px}.building-cost{white-space:pre-line;font-size:12px;line-height:1.7;padding:10px;background:#1c2118;border-radius:5px;margin-top:8px;color:#bdc6b2}.building-cost[data-valid=false]{color:#f0a498;background:#32211c}.building-cost[data-valid=true]{color:#c3e3a1}.building-status{font-size:10px;color:#a7b998;margin:12px 0 6px}.building-note{font-size:10px;color:#888f7e;line-height:1.5;border-top:1px solid #343b2f;padding-top:10px;margin-bottom:0}
 @media(max-width:700px){.building-panel{top:110px;left:12px;width:290px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 210px);padding:14px}.building-tools button{padding:9px 3px}#buildingButton{font-size:11px;padding:7px}}
+@media(max-width:360px){.topbar-actions{gap:3px}.topbar-actions>button{padding:6px}.topbar-left{min-width:0}.online{min-width:0}#population{white-space:nowrap;font-size:9px}}
 
 </style>
 </head>
@@ -2118,6 +2119,7 @@ canvas#world {
 <script>window.__silenosParts = [];</script>
 <script src="silenos-datos-01.js"></script>
 <script src="silenos-datos-02.js"></script>
+<script src="silenos-datos-03.js"></script>
 <script type="module">
 const AsyncFunction = Object.getPrototypeOf(async function() {}).constructor;
 await new AsyncFunction(window.__silenosParts.join(""))();
