@@ -1872,6 +1872,9 @@ canvas#world {
 .npc-choices button:hover, .expedition-list button:hover { background: var(--surface-hover); border-color: #c7ad6c; }
 .atlas-controls button { padding: 8px 12px; }
 .atlas-controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.weather-map-legend { display:flex; flex-wrap:wrap; gap:4px 14px; padding:6px 9px; border-radius:6px; background:#10251fd9; color:#e4f1e5; font-size:12px; }
+.weather-map-legend[hidden] { display:none; }
+.weather-map-legend [data-weather-detail] { flex-basis:100%; color:#c7dfcb; }
 .atlas-controls button[aria-pressed="true"] { border-color: #d4b77d; color: #f5dda5; background: #c7ad6c18; }
 .atlas-scale { color: #d0bf93; font-size: 12px; }
 .expedition-list button { display: block; width: 100%; text-align: left; margin: 4px 0; padding: 8px; }
