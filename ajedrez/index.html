@@ -1,0 +1,1961 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ajedrez P2P Pro — WebRTC & Firebase Signaling</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Chess.js Engine v0.10.3 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <!-- Firebase App & Realtime Database Compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <style>
+    :root {
+      --board-light: #ebecd0;
+      --board-dark: #739552;
+      --board-highlight-light: #f5f682;
+      --board-highlight-dark: #b9ca43;
+      --board-check: radial-gradient(circle, rgba(239,68,68,0.9) 0%, rgba(220,38,38,0.6) 60%, transparent 100%);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+      overflow-x: hidden;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Chessboard Responsive Container */
+    .chessboard-wrapper {
+      width: 100%;
+      max-width: min(74vh, 620px);
+      aspect-ratio: 1 / 1;
+      position: relative;
+      user-select: none;
+      -webkit-user-select: none;
+      box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.75);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 4px solid #1e293b;
+    }
+
+    .chessboard-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(8, 1fr);
+      width: 100%;
+      height: 100%;
+    }
+
+    .square {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.12s ease;
+    }
+
+    .square.light {
+      background-color: var(--board-light);
+      color: var(--board-dark);
+    }
+
+    .square.dark {
+      background-color: var(--board-dark);
+      color: var(--board-light);
+    }
+
+    .square.light.last-move {
+      background-color: var(--board-highlight-light);
+    }
+
+    .square.dark.last-move {
+      background-color: var(--board-highlight-dark);
+    }
+
+    .square.selected {
+      background-color: rgba(250, 204, 21, 0.75) !important;
+    }
+
+    .square.in-check::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--board-check);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Legal Move Indicators */
+    .move-dot {
+      width: 28%;
+      height: 28%;
+      border-radius: 9999px;
+      background-color: rgba(15, 23, 42, 0.28);
+      pointer-events: none;
+      z-index: 3;
+      transition: transform 0.15s ease;
+    }
+
+    .square:hover .move-dot {
+      transform: scale(1.2);
+      background-color: rgba(15, 23, 42, 0.42);
+    }
+
+    .capture-ring {
+      position: absolute;
+      inset: 6%;
+      border-radius: 9999px;
+      border: 5px solid rgba(15, 23, 42, 0.32);
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    /* Coordinates inside board */
+    .coord-rank {
+      position: absolute;
+      top: 3px;
+      left: 5px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      line-height: 1;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .coord-file {
+      position: absolute;
+      bottom: 3px;
+      right: 5px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      line-height: 1;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* Chess piece SVG styling */
+    .chess-piece {
+      width: 84%;
+      height: 84%;
+      z-index: 2;
+      filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.35));
+      transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1);
+      pointer-events: none;
+    }
+
+    .square:active .chess-piece {
+      transform: scale(1.08);
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    @keyframes pulse-fast {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .animate-pulse-fast {
+      animation: pulse-fast 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-950 text-slate-100">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <!-- Brand -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-900/40">
+          <i class="fa-solid fa-chess-knight text-white text-xl"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-extrabold text-lg tracking-tight text-white">CHESS <span class="text-emerald-400">P2P</span></h1>
+            <span class="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">WebRTC + Firebase</span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Ajedrez multijugador en tiempo real con RTCDataChannel y señalización en la nube</p>
+        </div>
+      </div>
+
+      <!-- Status Indicators & Controls -->
+      <div class="flex items-center gap-2.5 flex-wrap">
+        <!-- Signaling DB Status -->
+        <div id="firebaseStatusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/90 border border-slate-700 text-xs font-medium">
+          <span id="firebaseDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="firebaseStatusText" class="text-slate-300">Señalización: Conectando...</span>
+        </div>
+
+        <!-- P2P WebRTC Status -->
+        <div id="p2pStatusBadge" class="hidden items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/90 border border-slate-700 text-xs font-medium">
+          <span id="p2pDot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+          <span id="p2pStatusText" class="text-slate-300">P2P: En espera</span>
+          <span id="pingBadge" class="hidden mono text-[11px] px-1.5 py-0.5 rounded bg-slate-900 text-emerald-400 border border-slate-700">-- ms</span>
+        </div>
+
+        <!-- Sound Toggle -->
+        <button id="btnToggleSound" onclick="toggleSound()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition" title="Activar/Desactivar sonido">
+          <i id="soundIcon" class="fa-solid fa-volume-high"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6 flex flex-col justify-center">
+
+    <!-- ==================== VIEW 1: LOBBY & ROOMS ==================== -->
+    <section id="lobbyView" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- Left Column: Create or Join by Code -->
+      <div class="lg:col-span-5 space-y-6">
+        <!-- Player Profile Card -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+            <i class="fa-solid fa-user-astronaut text-emerald-400 mr-1.5"></i>Tu Nombre de Jugador
+          </label>
+          <div class="flex gap-2">
+            <input id="playerNameInput" type="text" maxlength="20" placeholder="Ej. Magnus_P2P"
+              class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700/80 text-white font-medium focus:outline-none focus:border-emerald-500 transition" />
+            <button onclick="randomizeName()" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition" title="Nombre aleatorio">
+              <i class="fa-solid fa-dice"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Create Room Card -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+          <div class="absolute -right-10 -top-10 w-36 h-36 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
+          <h2 class="text-lg font-bold text-white flex items-center gap-2 mb-1">
+            <i class="fa-solid fa-plus-circle text-emerald-400"></i> Crear Nueva Sala P2P
+          </h2>
+          <p class="text-xs text-slate-400 mb-5">Serás el Anfitrión (Blancas) y generarás la oferta WebRTC en el servidor de señalización.</p>
+
+          <div class="space-y-4">
+            <!-- Time Control Selection -->
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Control de Tiempo</label>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <button type="button" onclick="selectTimeControl(180, '3 min Blitz', this)" class="time-btn px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-950 hover:bg-slate-800 text-xs font-semibold text-slate-300 transition flex flex-col items-center gap-1">
+                  <i class="fa-solid fa-bolt text-amber-400"></i>
+                  <span>3 min</span>
+                </button>
+                <button type="button" onclick="selectTimeControl(300, '5 min Blitz', this)" class="time-btn active-time px-3 py-2.5 rounded-xl border border-emerald-500 bg-emerald-500/15 text-xs font-semibold text-emerald-300 transition flex flex-col items-center gap-1">
+                  <i class="fa-solid fa-fire text-emerald-400"></i>
+                  <span>5 min</span>
+                </button>
+                <button type="button" onclick="selectTimeControl(600, '10 min Rápida', this)" class="time-btn px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-950 hover:bg-slate-800 text-xs font-semibold text-slate-300 transition flex flex-col items-center gap-1">
+                  <i class="fa-solid fa-clock text-sky-400"></i>
+                  <span>10 min</span>
+                </button>
+                <button type="button" onclick="selectTimeControl(0, 'Sin Reloj', this)" class="time-btn px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-950 hover:bg-slate-800 text-xs font-semibold text-slate-300 transition flex flex-col items-center gap-1">
+                  <i class="fa-solid fa-infinity text-purple-400"></i>
+                  <span>Sin Reloj</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Custom Room Code & Visibility -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Código de Sala (Opcional)</label>
+                <input id="customRoomCodeInput" type="text" maxlength="12" placeholder="Auto (ej. SALA-42)"
+                  class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm mono uppercase text-white focus:outline-none focus:border-emerald-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Visibilidad</label>
+                <select id="roomPrivacySelect" class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-500">
+                  <option value="public">Pública (En el Lobby)</option>
+                  <option value="private">Privada (Solo con código)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Create Button -->
+            <button id="btnCreateRoom" onclick="createRoom()" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-sm shadow-lg shadow-emerald-950/60 transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-satellite-dish"></i>
+              <span>Crear Sala e Iniciar Señalización P2P</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Join by Room Code Card -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl">
+          <h2 class="text-base font-bold text-white flex items-center gap-2 mb-3">
+            <i class="fa-solid fa-key text-amber-400"></i> Unirse con Código de Sala
+          </h2>
+          <div class="flex gap-2">
+            <input id="joinRoomCodeInput" type="text" maxlength="15" placeholder="Introduce el código (ej. K9X2P)"
+              class="flex-1 px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 mono uppercase text-white font-semibold focus:outline-none focus:border-amber-400" />
+            <button onclick="joinRoomByInput()" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm transition flex items-center gap-2 shrink-0">
+              <i class="fa-solid fa-right-to-bracket"></i>
+              <span>Unirse</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Public Rooms List & WebRTC Architecture Info -->
+      <div class="lg:col-span-7 space-y-6">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col min-h-[420px]">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-800">
+            <div>
+              <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-globe text-sky-400"></i> Salas Públicas Disponibles
+              </h2>
+              <p class="text-xs text-slate-400">Sincronizadas en tiempo real con Firebase Realtime Database (<code class="text-emerald-400">silenos-fc5e5</code>)</p>
+            </div>
+            <span id="roomsCountBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
+              0 salas abiertas
+            </span>
+          </div>
+
+          <!-- Rooms List Container -->
+          <div id="publicRoomsList" class="flex-1 py-4 space-y-3 overflow-y-auto max-h-[340px]">
+            <div class="flex flex-col items-center justify-center h-56 text-center text-slate-500">
+              <i class="fa-solid fa-chess-board text-4xl mb-3 text-slate-700"></i>
+              <p class="text-sm font-medium text-slate-400">Buscando salas abiertas en el servidor de señalización...</p>
+              <p class="text-xs text-slate-500 mt-1">Crea una sala nueva a la izquierda o comparte tu código con un amigo.</p>
+            </div>
+          </div>
+
+          <!-- Technical P2P Architecture Footer -->
+          <div class="mt-auto pt-4 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-400">
+            <div class="flex items-start gap-2.5 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+              <i class="fa-solid fa-fire-flame-curved text-amber-400 mt-0.5"></i>
+              <div>
+                <div class="font-semibold text-slate-200">1. Señalización SDP/ICE</div>
+                <p class="text-[11px] text-slate-400">Intercambio de Oferta, Respuesta y Candidatos ICE vía Firebase RTDB.</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-2.5 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+              <i class="fa-solid fa-network-wired text-emerald-400 mt-0.5"></i>
+              <div>
+                <div class="font-semibold text-slate-200">2. Canal P2P Directo</div>
+                <p class="text-[11px] text-slate-400">Jugadas, relojes y chat viajan de navegador a navegador por <code class="text-emerald-300">RTCDataChannel</code>.</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-2.5 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+              <i class="fa-solid fa-shield-halved text-sky-400 mt-0.5"></i>
+              <div>
+                <div class="font-semibold text-slate-200">3. Respaldo Anti-NAT</div>
+                <p class="text-[11px] text-slate-400">Si un firewall estricto bloquea UDP, sincroniza jugadas sin cortes.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 2: GAME ROOM (BOARD + SIDEBAR) ==================== -->
+    <section id="gameView" class="hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- Left / Center Column: Board + Player Bars -->
+        <div class="lg:col-span-7 xl:col-span-8 flex flex-col items-center">
+          
+          <!-- Waiting / Signaling Banner (Shown until opponent connects) -->
+          <div id="waitingOpponentBanner" class="w-full max-w-[620px] mb-4 p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-slate-900 to-slate-900 border border-amber-500/40 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300">
+                <i class="fa-solid fa-satellite-dish animate-spin"></i>
+              </div>
+              <div>
+                <div class="text-sm font-bold text-white flex items-center gap-2">
+                  <span>Esperando oponente en la sala</span>
+                  <span id="bannerRoomCode" class="mono px-2 py-0.5 rounded bg-amber-400 text-slate-950 font-extrabold text-xs">----</span>
+                </div>
+                <p id="signalingStepText" class="text-xs text-slate-300">Oferta WebRTC publicada. Comparte el código para conectar P2P...</p>
+              </div>
+            </div>
+            <button onclick="copyRoomCode()" class="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs transition flex items-center gap-1.5 shadow">
+              <i class="fa-regular fa-copy"></i>
+              <span id="copyBtnLabel">Copiar Código</span>
+            </button>
+          </div>
+
+          <!-- TOP BAR: OPPONENT INFO & CLOCK -->
+          <div class="w-full max-w-[620px] mb-2.5 bg-slate-900/95 border border-slate-800 rounded-xl p-3 flex items-center justify-between gap-3 shadow">
+            <div class="flex items-center gap-3 min-w-0">
+              <div id="topPlayerAvatar" class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-lg font-bold shrink-0">
+                <i class="fa-solid fa-chess-king text-slate-300"></i>
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <span id="topPlayerName" class="font-bold text-sm text-white truncate">Esperando rival...</span>
+                  <span id="topPlayerColorBadge" class="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">Negras</span>
+                </div>
+                <!-- Captured Pieces by Top Player -->
+                <div class="flex items-center gap-1 min-h-[20px] mt-0.5">
+                  <div id="topCapturedPieces" class="flex items-center -space-x-1 text-sm"></div>
+                  <span id="topMaterialDiff" class="text-[11px] font-bold text-emerald-400 ml-1"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Top Player Clock -->
+            <div id="topClockBox" class="px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 mono font-bold text-lg tracking-wider text-slate-400 flex items-center gap-2 shrink-0">
+              <i class="fa-regular fa-clock text-xs"></i>
+              <span id="topClockText">05:00</span>
+            </div>
+          </div>
+
+          <!-- CHESSBOARD WRAPPER -->
+          <div class="chessboard-wrapper">
+            <div id="chessboard" class="chessboard-grid"></div>
+
+            <!-- PAWN PROMOTION MODAL OVERLAY (Inside Board) -->
+            <div id="promotionModal" class="hidden absolute inset-0 bg-slate-950/85 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-6">
+              <h3 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-crown text-amber-400"></i> Elige pieza para coronar el peón
+              </h3>
+              <div id="promotionChoices" class="grid grid-cols-4 gap-3 max-w-xs w-full">
+                <!-- Populated dynamically with correct color SVG -->
+              </div>
+            </div>
+
+            <!-- GAME OVER OVERLAY (Inside Board) -->
+            <div id="gameOverModal" class="hidden absolute inset-0 bg-slate-950/85 backdrop-blur-md z-20 flex flex-col items-center justify-center p-6 text-center">
+              <div id="gameOverIcon" class="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-3xl text-emerald-400 mb-3 shadow-lg">
+                <i class="fa-solid fa-trophy"></i>
+              </div>
+              <h3 id="gameOverTitle" class="text-2xl font-extrabold text-white mb-1">¡Jaque Mate!</h3>
+              <p id="gameOverSubtitle" class="text-sm text-slate-300 mb-6 max-w-xs">Las Blancas ganan la partida</p>
+              <div class="flex flex-wrap items-center justify-center gap-3">
+                <button onclick="requestRematch()" class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition flex items-center gap-2 shadow-lg">
+                  <i class="fa-solid fa-rotate-right"></i>
+                  <span>Solicitar Revancha</span>
+                </button>
+                <button onclick="closeGameOverModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm border border-slate-700 transition">
+                  Ver Tablero
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- BOTTOM BAR: LOCAL PLAYER INFO & CLOCK -->
+          <div class="w-full max-w-[620px] mt-2.5 bg-slate-900/95 border border-slate-800 rounded-xl p-3 flex items-center justify-between gap-3 shadow">
+            <div class="flex items-center gap-3 min-w-0">
+              <div id="bottomPlayerAvatar" class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-lg font-bold shrink-0">
+                <i class="fa-solid fa-chess-king text-emerald-400"></i>
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <span id="bottomPlayerName" class="font-bold text-sm text-white truncate">Tú</span>
+                  <span id="bottomPlayerColorBadge" class="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-slate-100 text-slate-900">Blancas</span>
+                  <span id="turnIndicatorBadge" class="hidden text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Tu turno</span>
+                </div>
+                <!-- Captured Pieces by Bottom Player -->
+                <div class="flex items-center gap-1 min-h-[20px] mt-0.5">
+                  <div id="bottomCapturedPieces" class="flex items-center -space-x-1 text-sm"></div>
+                  <span id="bottomMaterialDiff" class="text-[11px] font-bold text-emerald-400 ml-1"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Player Clock -->
+            <div id="bottomClockBox" class="px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 mono font-bold text-lg tracking-wider text-white flex items-center gap-2 shrink-0">
+              <i class="fa-regular fa-clock text-xs text-emerald-400"></i>
+              <span id="bottomClockText">05:00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Room Controls, Move History (PGN), P2P Chat & Signaling Log -->
+        <div class="lg:col-span-5 xl:col-span-4 flex flex-col gap-4 w-full">
+
+          <!-- Room Info & Game Controls Card -->
+          <div class="bg-slate-900/95 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Sala:</span>
+                <span id="sidebarRoomCode" class="mono font-bold text-sm px-2.5 py-0.5 rounded-lg bg-slate-950 text-emerald-400 border border-slate-800">----</span>
+                <button onclick="copyRoomCode()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition" title="Copiar código de sala">
+                  <i class="fa-regular fa-copy"></i>
+                </button>
+              </div>
+              <div id="gameStateStatusBadge" class="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                Esperando rival
+              </div>
+            </div>
+
+            <!-- Incoming Offer Notification Banner (Draw / Rematch) -->
+            <div id="incomingOfferBanner" class="hidden p-3 rounded-xl bg-sky-500/15 border border-sky-500/40 flex items-center justify-between gap-2">
+              <span id="incomingOfferText" class="text-xs font-semibold text-sky-200">Tu oponente ofrece tablas</span>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button onclick="acceptIncomingOffer()" class="px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs">Aceptar</button>
+                <button onclick="declineIncomingOffer()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs">Rechazar</button>
+              </div>
+            </div>
+
+            <!-- Action Buttons Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <button onclick="flipBoardManual()" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex flex-col items-center gap-1 transition">
+                <i class="fa-solid fa-retweet text-sky-400"></i>
+                <span>Girar</span>
+              </button>
+              <button id="btnOfferDraw" onclick="offerDraw()" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 flex flex-col items-center gap-1 transition">
+                <i class="fa-solid fa-handshake text-amber-400"></i>
+                <span>Tablas</span>
+              </button>
+              <button id="btnResign" onclick="resignGame()" class="p-2.5 rounded-xl bg-slate-800 hover:bg-rose-950/60 border border-slate-700 hover:border-rose-500/40 text-xs font-semibold text-slate-200 flex flex-col items-center gap-1 transition">
+                <i class="fa-regular fa-flag text-rose-400"></i>
+                <span>Rendirse</span>
+              </button>
+              <button onclick="leaveRoom()" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 flex flex-col items-center gap-1 transition">
+                <i class="fa-solid fa-door-open text-slate-400"></i>
+                <span>Salir</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Move History (Algebraic Notation) -->
+          <div class="bg-slate-900/95 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col h-48">
+            <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                <i class="fa-solid fa-list-ol text-emerald-400"></i> Historial de Jugadas (PGN)
+              </h3>
+              <button onclick="copyPGN()" class="text-[11px] font-semibold text-slate-400 hover:text-emerald-400 transition flex items-center gap-1">
+                <i class="fa-regular fa-clipboard"></i> Copiar PGN
+              </button>
+            </div>
+            <div id="moveHistoryContainer" class="flex-1 overflow-y-auto pr-1 space-y-1 text-xs mono">
+              <p class="text-slate-500 text-center py-8 font-sans">Aún no se han realizado movimientos.</p>
+            </div>
+          </div>
+
+          <!-- P2P Real-time Chat & Signaling Log Tabs -->
+          <div class="bg-slate-900/95 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col h-72">
+            <!-- Tabs Header -->
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+              <div class="flex gap-2">
+                <button id="tabChatBtn" onclick="switchSideTab('chat')" class="px-3 py-1 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 transition">
+                  <i class="fa-regular fa-comments mr-1"></i> Chat P2P
+                </button>
+                <button id="tabWebRTCBtn" onclick="switchSideTab('webrtc')" class="px-3 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition">
+                  <i class="fa-solid fa-terminal mr-1"></i> Log Señalización
+                </button>
+              </div>
+              <span id="transportModeTag" class="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-400">Canal: --</span>
+            </div>
+
+            <!-- Chat Content -->
+            <div id="chatTabPanel" class="flex-1 flex flex-col min-h-0">
+              <div id="chatMessagesList" class="flex-1 overflow-y-auto space-y-2 pr-1 text-xs mb-2">
+                <div class="text-slate-500 text-center py-6">
+                  Los mensajes se envían directamente por el canal de datos P2P.
+                </div>
+              </div>
+              <form onsubmit="sendChatMessage(event)" class="flex gap-2 mt-auto">
+                <input id="chatInput" type="text" maxlength="160" placeholder="Escribe un mensaje al rival..."
+                  class="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500" />
+                <button type="submit" class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition">
+                  <i class="fa-solid fa-paper-plane"></i>
+                </button>
+              </form>
+            </div>
+
+            <!-- WebRTC Diagnostic Log Content -->
+            <div id="webrtcTabPanel" class="hidden flex-1 overflow-y-auto bg-slate-950 rounded-xl p-2.5 border border-slate-800 mono text-[11px] space-y-1 text-slate-300">
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- NON-INTRUSIVE TOAST NOTIFICATION -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+  <!-- APPLICATION SCRIPT -->
+  <script>
+    /*************************************************************************
+     * 1. CONFIGURACIÓN DE FIREBASE REALTIME DATABASE (SERVIDOR DE SEÑALIZACIÓN)
+     *************************************************************************/
+    const firebaseConfig = {
+      apiKey: "AIzaSyBxlmzjYjOEAwc_DVtFpt9DnN7XnuRkbKw",
+      authDomain: "silenos-fc5e5.firebaseapp.com",
+      databaseURL: "https://silenos-fc5e5-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "silenos-fc5e5",
+      storageBucket: "silenos-fc5e5.firebasestorage.app",
+      messagingSenderId: "314671855826",
+      appId: "1:314671855826:web:ea0af5cd962baa1fd6150b",
+      measurementId: "G-V636CRYZ8X"
+    };
+
+    // Inicializar Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Configuración de servidores ICE/STUN públicos para negociación WebRTC P2P
+    const rtcConfiguration = {
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun2.l.google.com:19302" },
+        { urls: "stun:stun3.l.google.com:19302" },
+        { urls: "stun:stun.cloudflare.com:3478" }
+      ],
+      iceCandidatePoolSize: 10
+    };
+
+    /*************************************************************************
+     * 2. PIEZAS DE AJEDREZ EN SVG DE ALTA DEFINICIÓN (SIN DEPENDENCIAS EXTERNAS)
+     *************************************************************************/
+    const PIECE_SVGS = {
+      wP: `<svg viewBox="0 0 45 45" class="chess-piece"><path d="M22.5 9c-2.21 0-4 1.79-4 4 0 .89.29 1.71.78 2.38C17.33 16.5 16 18.59 16 21c0 2.03.94 3.84 2.41 5.03-3 1.06-7.41 5.55-7.41 13.47h23c0-7.92-4.41-12.41-7.41-13.47 1.47-1.19 2.41-3 2.41-5.03 0-2.41-1.33-4.5-3.28-5.62.49-.67.78-1.49.78-2.38 0-2.21-1.79-4-4-4z" fill="#fff" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+      wR: `<svg viewBox="0 0 45 45" class="chess-piece"><g fill="#fff" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 39h27v-3H9v3zM12 36v-4h21v4H12zM11 14V9h4v2h5V9h5v2h5V9h4v5"/><path d="M34 14l-3 3H14l-3-3"/><path d="M31 17v12.5H14V17"/><path d="M31 29.5l1.5 2.5h-20l1.5-2.5"/><path d="M11 14h23"/></g></svg>`,
+      wN: `<svg viewBox="0 0 45 45" class="chess-piece"><g fill="none" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10c10.5 1 16.5 8 16 29H15c0-9 10-6.5 8-21" fill="#fff"/><path d="M24 18c.38 2.91-5.55 7.37-8 9-3 2-2.82 4.34-5 4-1.042-.94 1.41-3.04 0-3-1 0 .19 1.23-1 2-1 0-4.003 1-4-4 0-2 6-12 6-12s1.89-1.9 2-3.5c-.73-.994-.5-2-.5-3 1-1 3 2.5 3 2.5h2s.78-1.992 2.5-3c1 0 1 3 1 3" fill="#fff"/><circle cx="15.5" cy="15.5" r="1" fill="#1e293b"/></g></svg>`,
+      wB: `<svg viewBox="0 0 45 45" class="chess-piece"><g fill="#fff" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 36c3.39-.97 10.11.43 13.5-2 3.39 2.43 10.11 1.03 13.5 2 0 0 1.65.54 3 2-.68.97-1.65.99-3 .5-3.39-.97-10.11.46-13.5-1-3.39 1.46-10.11.03-13.5 1-1.35.49-2.32.47-3-.5 1.35-1.46 3-2 3-2z"/><path d="M15 32c2.5 2.5 12.5 2.5 15 0 .5-1.5 0-2 0-2 0-2.5-2.5-4-2.5-4 5.5-1.5 6-11.5-5-15.5-11 4-10.5 14-5 15.5 0 0-2.5 1.5-2.5 4 0 0-.5.5 0 2z"/><circle cx="22.5" cy="8" r="2.2"/><path d="M17.5 26h10M15 30h15m-7.5-14.5v5M20 18h5"/></g></svg>`,
+      wQ: `<svg viewBox="0 0 45 45" class="chess-piece"><g fill="#fff" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM24.5 7.5a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM41 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM16 8.5a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM33 9a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/><path d="M9 26c8.5-1.5 21-1.5 27 0l2-12-7 11V11l-5.5 13.5-3-15-3 15-5.5-14V25L7 14l2 12z"/><path d="M9 26c0 2 1.5 2 2.5 4 1 1.5 1 1 .5 3.5-1.5 1-1.5 2.5-1.5 2.5-1.5 1.5.5 2.5.5 2.5 6.5 1 16.5 1 23 0 0 0 1.5-1 0-2.5 0 0 .5-1.5-1-2.5-.5-2.5-.5-2 .5-3.5 1-2 2.5-2 2.5-4-8.5-1.5-18.5-1.5-27 0z"/><path d="M11.5 30c3.5-1 18.5-1 22 0M12 33.5c6-1 15-1 21 0"/></g></svg>`,
+      wK: `<svg viewBox="0 0 45 45" class="chess-piece"><g fill="#fff" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22.5 11.63V6M20 8h5"/><path d="M22.5 25s4.5-7.5 3-10.5c0 0-1-2.5-3-2.5s-3 2.5-3 2.5c-1.5 3 3 10.5 3 10.5"/><path d="M11.5 37c5.5 3.5 15.5 3.5 21 0v-7s9-4.5 6-10.5c-4-6.5-13.5-3.5-16 4V27v-3.5c-3.5-7.5-13-10.5-16-4-3 6 5 10 5 10V37z"/><path d="M11.5 30c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0"/></g></svg>`,
+      bP: `<svg viewBox="0 0 45 45" class="chess-piece"><path d="M22.5 9c-2.21 0-4 1.79-4 4 0 .89.29 1.71.78 2.38C17.33 16.5 16 18.59 16 21c0 2.03.94 3.84 2.41 5.03-3 1.06-7.41 5.55-7.41 13.47h23c0-7.92-4.41-12.41-7.41-13.47 1.47-1.19 2.41-3 2.41-5.03 0-2.41-1.33-4.5-3.28-5.62.49-.67.78-1.49.78-2.38 0-2.21-1.79-4-4-4z" fill="#1e293b" stroke="#f8fafc" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+      bR: `<svg viewBox="0 0 45 45" class="chess-piece"><g fill="#1e293b" stroke="#f8fafc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 39h27v-3H9v3zM12.5 32l1.5-2.5h17l1.5 2.5h-20zM12 36v-4h21v4H12z"/><path d="M14 29.5v-13h17v13H14z"/><path d="M14 16.5L11 14h23l-3 2.5H14zM11 14V9h4v2h5V9h5v2h5V9h4v5H11z"/></g></svg>`,
+      bN: `<svg viewBox="0 0 45 45" class="chess-piece"><g fill="#1e293b" stroke="#f8fafc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10c10.5 1 16.5 8 16 29H15c0-9 10-6.5 8-21"/><path d="M24 18c.38 2.91-5.55 7.37-8 9-3 2-2.82 4.34-5 4-1.042-.94 1.41-3.04 0-3-1 0 .19 1.23-1 2-1 0-4.003 1-4-4 0-2 6-12 6-12s1.89-1.9 2-3.5c-.73-.994-.5-2-.5-3 1-1 3 2.5 3 2.5h2s.78-1.992 2.5-3c1 0 1 3 1 3"/><circle cx="15.5" cy="15.5" r="1" fill="#f8fafc"/></g></svg>`,
+      bB: `<svg viewBox="0 0 45 45" class="chess-piece"><g fill="#1e293b" stroke="#f8fafc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 36c3.39-.97 10.11.43 13.5-2 3.39 2.43 10.11 1.03 13.5 2 0 0 1.65.54 3 2-.68.97-1.65.99-3 .5-3.39-.97-10.11.46-13.5-1-3.39 1.46-10.11.03-13.5 1-1.35.49-2.32.47-3-.5 1.35-1.46 3-2 3-2z"/><path d="M15 32c2.5 2.5 12.5 2.5 15 0 .5-1.5 0-2 0-2 0-2.5-2.5-4-2.5-4 5.5-1.5 6-11.5-5-15.5-11 4-10.5 14-5 15.5 0 0-2.5 1.5-2.5 4 0 0-.5.5 0 2z"/><circle cx="22.5" cy="8" r="2.2"/><path d="M17.5 26h10M15 30h15m-7.5-14.5v5M20 18h5"/></g></svg>`,
+      bQ: `<svg viewBox="0 0 45 45" class="chess-piece"><g fill="#1e293b" stroke="#f8fafc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM24.5 7.5a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM41 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM16 8.5a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM33 9a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/><path d="M9 26c8.5-1.5 21-1.5 27 0l2-12-7 11V11l-5.5 13.5-3-15-3 15-5.5-14V25L7 14l2 12z"/><path d="M9 26c0 2 1.5 2 2.5 4 1 1.5 1 1 .5 3.5-1.5 1-1.5 2.5-1.5 2.5-1.5 1.5.5 2.5.5 2.5 6.5 1 16.5 1 23 0 0 0 1.5-1 0-2.5 0 0 .5-1.5-1-2.5-.5-2.5-.5-2 .5-3.5 1-2 2.5-2 2.5-4-8.5-1.5-18.5-1.5-27 0z"/><path d="M11.5 30c3.5-1 18.5-1 22 0M12 33.5c6-1 15-1 21 0"/></g></svg>`,
+      bK: `<svg viewBox="0 0 45 45" class="chess-piece"><g fill="#1e293b" stroke="#f8fafc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22.5 11.63V6M20 8h5"/><path d="M22.5 25s4.5-7.5 3-10.5c0 0-1-2.5-3-2.5s-3 2.5-3 2.5c-1.5 3 3 10.5 3 10.5"/><path d="M11.5 37c5.5 3.5 15.5 3.5 21 0v-7s9-4.5 6-10.5c-4-6.5-13.5-3.5-16 4V27v-3.5c-3.5-7.5-13-10.5-16-4-3 6 5 10 5 10V37z"/><path d="M11.5 30c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0"/></g></svg>`
+    };
+
+    const UNICODE_PIECES = {
+      wP: '♙', wN: '♘', wB: '♗', wR: '♖', wQ: '♕',
+      bP: '♟', bN: '♞', bB: '♝', bR: '♜', bQ: '♛'
+    };
+
+    /*************************************************************************
+     * 3. ESTADO GLOBAL DE LA PARTIDA Y CONEXIÓN P2P
+     *************************************************************************/
+    let chess = new Chess();
+    let roomId = null;
+    let roomRef = null;
+    let playerRole = null; // 'host' (w) o 'guest' (b)
+    let myColor = 'w';
+    let isBoardFlipped = false;
+
+    let myName = '';
+    let opponentName = 'Esperando rival...';
+    let selectedTimeSeconds = 300; // 5 min por defecto
+    let selectedTimeLabel = '5 min Blitz';
+
+    // Estado del Tablero Interactivo
+    let selectedSquare = null;
+    let legalMovesForSelected = [];
+    let lastMoveSquares = null; // { from, to }
+    let pendingPromotionMove = null; // { from, to }
+
+    // Relojes
+    let whiteTimeLeft = 300;
+    let blackTimeLeft = 300;
+    let clockInterval = null;
+    let isGameActive = false;
+    let pendingIncomingOffer = null; // 'draw' | 'rematch'
+
+    // WebRTC & Fallback
+    let peerConnection = null;
+    let dataChannel = null;
+    let isP2PConnected = false;
+    let pingInterval = null;
+    let lastPingSentAt = 0;
+    let processedSyncPacketIds = new Set();
+
+    // Sonido con Web Audio API
+    let soundEnabled = true;
+    let audioCtx = null;
+
+    /*************************************************************************
+     * 4. SINTETIZADOR DE SONIDO (WEB AUDIO API)
+     *************************************************************************/
+    function playSound(type) {
+      if (!soundEnabled) return;
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'move') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(280, now);
+          osc.frequency.exponentialRampToValueAtTime(140, now + 0.065);
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
+          osc.start(now);
+          osc.stop(now + 0.07);
+        } else if (type === 'capture') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(190, now);
+          osc.frequency.exponentialRampToValueAtTime(85, now + 0.09);
+          gain.gain.setValueAtTime(0.28, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+          osc.start(now);
+          osc.stop(now + 0.095);
+        } else if (type === 'check') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.setValueAtTime(680, now + 0.07);
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+          osc.start(now);
+          osc.stop(now + 0.23);
+        } else if (type === 'start') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(330, now);
+          osc.frequency.setValueAtTime(440, now + 0.09);
+          gain.gain.setValueAtTime(0.16, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+          osc.start(now);
+          osc.stop(now + 0.26);
+        } else if (type === 'gameover') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.setValueAtTime(330, now + 0.14);
+          osc.frequency.setValueAtTime(220, now + 0.28);
+          gain.gain.setValueAtTime(0.22, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
+          osc.start(now);
+          osc.stop(now + 0.5);
+        }
+      } catch (e) {
+        // Ignorar errores de autoplay del navegador
+      }
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      const icon = document.getElementById('soundIcon');
+      icon.className = soundEnabled ? 'fa-solid fa-volume-high text-emerald-400' : 'fa-solid fa-volume-xmark text-slate-500';
+      showToast(soundEnabled ? 'Sonido activado' : 'Sonido silenciado', 'info');
+    }
+
+    /*************************************************************************
+     * 5. INICIALIZACIÓN Y MONITOREO DEL LOBBY EN FIREBASE
+     *************************************************************************/
+    window.addEventListener('DOMContentLoaded', () => {
+      randomizeName();
+      renderBoard();
+      initFirebaseConnectionMonitor();
+      listenToPublicRooms();
+    });
+
+    function randomizeName() {
+      const prefixes = ['GranMaestro', 'AlfilVeloz', 'TorreReal', 'Gambito', 'CaballoNegro', 'ReyP2P', 'EnroquePro', 'Kasparov'];
+      const num = Math.floor(100 + Math.random() * 900);
+      const name = `${prefixes[Math.floor(Math.random() * prefixes.length)]}_${num}`;
+      document.getElementById('playerNameInput').value = name;
+      myName = name;
+    }
+
+    function getPlayerName() {
+      const val = document.getElementById('playerNameInput').value.trim();
+      if (!val) {
+        randomizeName();
+        return document.getElementById('playerNameInput').value.trim();
+      }
+      myName = val;
+      return val;
+    }
+
+    function selectTimeControl(seconds, label, btnEl) {
+      selectedTimeSeconds = seconds;
+      selectedTimeLabel = label;
+      document.querySelectorAll('.time-btn').forEach(b => {
+        b.className = 'time-btn px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-950 hover:bg-slate-800 text-xs font-semibold text-slate-300 transition flex flex-col items-center gap-1';
+      });
+      btnEl.className = 'time-btn active-time px-3 py-2.5 rounded-xl border border-emerald-500 bg-emerald-500/15 text-xs font-semibold text-emerald-300 transition flex flex-col items-center gap-1';
+    }
+
+    function initFirebaseConnectionMonitor() {
+      const connectedRef = db.ref('.info/connected');
+      connectedRef.on('value', (snap) => {
+        const dot = document.getElementById('firebaseDot');
+        const txt = document.getElementById('firebaseStatusText');
+        if (snap.val() === true) {
+          dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+          txt.textContent = 'Señalización Firebase: Online';
+        } else {
+          dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+          txt.textContent = 'Señalización: Reconectando...';
+        }
+      });
+    }
+
+    // Escuchar lista de salas públicas en tiempo real
+    function listenToPublicRooms() {
+      const roomsRef = db.ref('rooms');
+      roomsRef.orderByChild('createdAt').limitToLast(25).on('value', (snapshot) => {
+        const listEl = document.getElementById('publicRoomsList');
+        const countBadge = document.getElementById('roomsCountBadge');
+        const data = snapshot.val() || {};
+        const now = Date.now();
+
+        // Filtrar salas públicas en estado 'waiting' creadas en la última hora
+        const openRooms = Object.entries(data)
+          .map(([id, room]) => ({ id, ...room }))
+          .filter(r => r && r.visibility === 'public' && r.status === 'waiting' && (!r.createdAt || (now - r.createdAt < 3600000)))
+          .reverse();
+
+        countBadge.textContent = `${openRooms.length} ${openRooms.length === 1 ? 'sala abierta' : 'salas abiertas'}`;
+
+        if (openRooms.length === 0) {
+          listEl.innerHTML = `
+            <div class="flex flex-col items-center justify-center h-52 text-center text-slate-500">
+              <i class="fa-solid fa-chess-board text-4xl mb-3 text-slate-700"></i>
+              <p class="text-sm font-medium text-slate-400">No hay salas públicas esperando rival en este instante</p>
+              <p class="text-xs text-slate-500 mt-1">¡Crea una sala a la izquierda y aparecerá aquí al instante!</p>
+            </div>
+          `;
+          return;
+        }
+
+        listEl.innerHTML = openRooms.map(room => `
+          <div class="p-3.5 rounded-xl bg-slate-950/90 hover:bg-slate-950 border border-slate-800 hover:border-emerald-500/40 transition flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold mono text-xs">
+                ${escapeHtml(room.id)}
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-sm text-white">${escapeHtml(room.hostName || 'Anfitrión')}</span>
+                  <span class="text-[11px] px-2 py-0.5 rounded-md bg-slate-800 text-amber-300 font-semibold border border-slate-700">
+                    <i class="fa-regular fa-clock mr-1"></i>${escapeHtml(room.timeControlLabel || '5 min')}
+                  </span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5">Oferta SDP lista • Esperando conexión P2P</p>
+              </div>
+            </div>
+            <button onclick="joinRoom('${escapeHtml(room.id)}')" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition flex items-center gap-1.5 shadow">
+              <i class="fa-solid fa-bolt"></i>
+              <span>Unirse P2P</span>
+            </button>
+          </div>
+        `).join('');
+      });
+    }
+
+    /*************************************************************************
+     * 6. SEÑALIZACIÓN WEBRTC + CREACIÓN Y UNIÓN DE SALAS (HOST & GUEST)
+     *************************************************************************/
+    function generateRoomCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let result = '';
+      for (let i = 0; i < 6; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
+    }
+
+    function logSignaling(msg, level = 'info') {
+      const panel = document.getElementById('webrtcTabPanel');
+      if (!panel) return;
+      const time = new Date().toLocaleTimeString();
+      const color = level === 'success' ? 'text-emerald-400' : level === 'warn' ? 'text-amber-400' : 'text-sky-300';
+      const entry = document.createElement('div');
+      entry.innerHTML = `<span class="text-slate-500">[${time}]</span> <span class="${color}">${escapeHtml(msg)}</span>`;
+      panel.appendChild(entry);
+      panel.scrollTop = panel.scrollHeight;
+    }
+
+    // CREAR SALA (HOST / BLANCAS)
+    async function createRoom() {
+      const hostName = getPlayerName();
+      let customCode = document.getElementById('customRoomCodeInput').value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+      const visibility = document.getElementById('roomPrivacySelect').value;
+
+      roomId = customCode.length >= 3 ? customCode : generateRoomCode();
+      playerRole = 'host';
+      myColor = 'w';
+      isBoardFlipped = false;
+      opponentName = 'Esperando rival...';
+
+      // Preparar UI de Sala
+      enterGameViewUI();
+      logSignaling(`Iniciando sala ${roomId} como Host (Blancas)...`);
+
+      roomRef = db.ref(`rooms/${roomId}`);
+
+      // Limpiar sala previa con el mismo código y configurar desconexión
+      await roomRef.set({
+        hostName: hostName,
+        status: 'waiting',
+        visibility: visibility,
+        timeControl: selectedTimeSeconds,
+        timeControlLabel: selectedTimeLabel,
+        createdAt: firebase.database.ServerValue.TIMESTAMP
+      });
+      roomRef.onDisconnect().remove();
+
+      // Inicializar WebRTC PeerConnection
+      setupPeerConnection();
+
+      // El Host crea el RTCDataChannel para movimientos, reloj y chat
+      dataChannel = peerConnection.createDataChannel('chess-p2p-channel', { ordered: true });
+      setupDataChannelEvents(dataChannel);
+      logSignaling('RTCDataChannel "chess-p2p-channel" creado.');
+
+      // Crear Oferta SDP y subirla a Firebase
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      await roomRef.child('offer').set({
+        type: offer.type,
+        sdp: offer.sdp
+      });
+      logSignaling('Oferta WebRTC (SDP) guardada en Firebase RTDB.', 'success');
+
+      // Escuchar cuando el Invitado se una y suba su Respuesta (Answer SDP)
+      roomRef.child('guestName').on('value', (snap) => {
+        if (snap.exists() && snap.val()) {
+          opponentName = snap.val();
+          updatePlayerBarsUI();
+        }
+      });
+
+      roomRef.child('answer').on('value', async (snapshot) => {
+        const answerData = snapshot.val();
+        if (answerData && peerConnection && !peerConnection.currentRemoteDescription) {
+          logSignaling('Respuesta SDP recibida del Invitado. Estableciendo RemoteDescription...', 'info');
+          const rtcSessionDesc = new RTCSessionDescription(answerData);
+          await peerConnection.setRemoteDescription(rtcSessionDesc);
+        }
+      });
+
+      // Escuchar candidatos ICE del Invitado (calleeCandidates)
+      roomRef.child('calleeCandidates').on('child_added', async (snapshot) => {
+        const candidateData = snapshot.val();
+        if (candidateData && peerConnection) {
+          try {
+            await peerConnection.addIceCandidate(new RTCIceCandidate(candidateData));
+            logSignaling('Candidato ICE remoto (Invitado) añadido.');
+          } catch (err) {
+            console.warn('Error añadiendo ICE candidate:', err);
+          }
+        }
+      });
+
+      // Escuchar canal de respaldo en Firebase RTDB por si la red bloquea UDP
+      setupFirebaseFallbackListener();
+
+      showToast(`Sala ${roomId} creada. Comparte el código con tu amigo.`, 'success');
+    }
+
+    function joinRoomByInput() {
+      const code = document.getElementById('joinRoomCodeInput').value.trim().toUpperCase();
+      if (!code) {
+        showToast('Introduce un código de sala válido.', 'warn');
+        return;
+      }
+      joinRoom(code);
+    }
+
+    // UNIRSE A SALA (GUEST / NEGRAS)
+    async function joinRoom(targetRoomId) {
+      const guestName = getPlayerName();
+      const targetRef = db.ref(`rooms/${targetRoomId}`);
+      const snapshot = await targetRef.once('value');
+
+      if (!snapshot.exists()) {
+        showToast(`La sala "${targetRoomId}" no existe o ya se cerró.`, 'error');
+        return;
+      }
+
+      const roomData = snapshot.val();
+      if (!roomData.offer) {
+        showToast('La sala aún no tiene una oferta WebRTC válida.', 'error');
+        return;
+      }
+
+      roomId = targetRoomId;
+      roomRef = targetRef;
+      playerRole = 'guest';
+      myColor = 'b';
+      isBoardFlipped = true; // Negras abajo para el invitado
+      opponentName = roomData.hostName || 'Anfitrión';
+      selectedTimeSeconds = typeof roomData.timeControl === 'number' ? roomData.timeControl : 300;
+      selectedTimeLabel = roomData.timeControlLabel || '5 min';
+
+      enterGameViewUI();
+      logSignaling(`Uniéndose a la sala ${roomId} como Invitado (Negras)...`);
+
+      // Actualizar estado de la sala en Firebase
+      await roomRef.update({
+        guestName: guestName,
+        status: 'playing'
+      });
+
+      setupPeerConnection();
+
+      // El Invitado recibe el RTCDataChannel a través del evento ondatachannel
+      peerConnection.ondatachannel = (event) => {
+        logSignaling('RTCDataChannel recibido del Anfitrión.', 'success');
+        dataChannel = event.channel;
+        setupDataChannelEvents(dataChannel);
+      };
+
+      // Leer Oferta SDP del Host y generar Respuesta SDP (Answer)
+      logSignaling('Leyendo Oferta SDP del Host desde Firebase...');
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(roomData.offer));
+
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+
+      await roomRef.child('answer').set({
+        type: answer.type,
+        sdp: answer.sdp
+      });
+      logSignaling('Respuesta WebRTC (Answer SDP) enviada a Firebase.', 'success');
+
+      // Escuchar candidatos ICE del Anfitrión (callerCandidates)
+      roomRef.child('callerCandidates').on('child_added', async (snap) => {
+        const data = snap.val();
+        if (data && peerConnection) {
+          try {
+            await peerConnection.addIceCandidate(new RTCIceCandidate(data));
+            logSignaling('Candidato ICE remoto (Host) añadido.');
+          } catch (err) {
+            console.warn('Error añadiendo ICE candidate:', err);
+          }
+        }
+      });
+
+      // Configurar canal de respaldo sincronizado por Firebase por si NAT simétrico bloquea P2P
+      setupFirebaseFallbackListener();
+
+      // Si en 4.5 segundos el NAT bloquea P2P directo, activar partida con sincronización híbrida sin esperas
+      setTimeout(() => {
+        if (!isGameActive && roomId) {
+          logSignaling('Activando sincronización híbrida instantánea mientras continúa ICE...', 'warn');
+          startMatchNow();
+          sendSyncPacket({ type: 'match_ready', guestName: myName });
+        }
+      }, 4500);
+    }
+
+    // CONFIGURACIÓN COMÚN DE RTCPeerConnection
+    function setupPeerConnection() {
+      if (peerConnection) {
+        try { peerConnection.close(); } catch (e) {}
+      }
+
+      peerConnection = new RTCPeerConnection(rtcConfiguration);
+      updateP2PStatusUI('connecting');
+
+      const candidatesCollectionName = playerRole === 'host' ? 'callerCandidates' : 'calleeCandidates';
+
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate && roomRef) {
+          roomRef.child(candidatesCollectionName).push(event.candidate.toJSON());
+        }
+      };
+
+      peerConnection.onconnectionstatechange = () => {
+        if (!peerConnection) return;
+        const state = peerConnection.connectionState;
+        logSignaling(`Estado RTCPeerConnection: ${state}`);
+        if (state === 'connected') {
+          updateP2PStatusUI('connected');
+        } else if (state === 'disconnected' || state === 'failed') {
+          isP2PConnected = false;
+          updateP2PStatusUI('fallback');
+        }
+      };
+    }
+
+    // EVENTOS DEL CANAL DE DATOS P2P (RTCDataChannel)
+    function setupDataChannelEvents(channel) {
+      channel.onopen = () => {
+        isP2PConnected = true;
+        logSignaling('¡Canal P2P RTCDataChannel ABIERTO! Latencia ultrabaja activa.', 'success');
+        updateP2PStatusUI('connected');
+        startMatchNow();
+
+        // Iniciar medición de latencia Ping/Pong cada 3 segundos
+        if (pingInterval) clearInterval(pingInterval);
+        pingInterval = setInterval(() => {
+          if (dataChannel && dataChannel.readyState === 'open') {
+            lastPingSentAt = performance.now();
+            dataChannel.send(JSON.stringify({ type: 'ping', id: 'ping_' + Date.now() }));
+          }
+        }, 3000);
+      };
+
+      channel.onclose = () => {
+        isP2PConnected = false;
+        logSignaling('RTCDataChannel cerrado. Usando respaldo en tiempo real.', 'warn');
+        updateP2PStatusUI('fallback');
+      };
+
+      channel.onmessage = (event) => {
+        try {
+          const packet = JSON.parse(event.data);
+          handleIncomingPacket(packet, 'P2P');
+        } catch (err) {
+          console.error('Error procesando paquete P2P:', err);
+        }
+      };
+    }
+
+    // ENVÍO DE PAQUETES (PRIORIDAD P2P + RESPALDO GARANTIZADO EN FIREBASE)
+    function sendSyncPacket(payload) {
+      const packet = {
+        ...payload,
+        id: `${playerRole}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        sender: playerRole,
+        timestamp: Date.now()
+      };
+      processedSyncPacketIds.add(packet.id);
+
+      // 1. Enviar por RTCDataChannel si está abierto
+      if (dataChannel && dataChannel.readyState === 'open') {
+        try {
+          dataChannel.send(JSON.stringify(packet));
+        } catch (e) {
+          console.warn('Fallo envío P2P, usando respaldo:', e);
+        }
+      }
+
+      // 2. Guardar último evento en Firebase RTDB como respaldo instantáneo anti-NAT
+      if (roomRef && packet.type !== 'ping' && packet.type !== 'pong') {
+        roomRef.child('syncEvents').push(packet);
+      }
+    }
+
+    function setupFirebaseFallbackListener() {
+      if (!roomRef) return;
+      roomRef.child('syncEvents').on('child_added', (snapshot) => {
+        const packet = snapshot.val();
+        if (!packet || !packet.id) return;
+        if (packet.sender === playerRole) return;
+        if (processedSyncPacketIds.has(packet.id)) return;
+        handleIncomingPacket(packet, 'RTDB-Sync');
+      });
+    }
+
+    // PROCESADOR CENTRAL DE PAQUETES ENTRANTES (P2P / RTDB)
+    function handleIncomingPacket(packet, source) {
+      if (!packet) return;
+
+      if (packet.type === 'ping') {
+        if (dataChannel && dataChannel.readyState === 'open') {
+          dataChannel.send(JSON.stringify({ type: 'pong', id: 'pong_' + Date.now() }));
+        }
+        return;
+      }
+
+      if (packet.type === 'pong') {
+        const rtt = Math.max(1, Math.round(performance.now() - lastPingSentAt));
+        const pingEl = document.getElementById('pingBadge');
+        pingEl.textContent = `${rtt} ms`;
+        pingEl.classList.remove('hidden');
+        return;
+      }
+
+      if (packet.id) {
+        if (processedSyncPacketIds.has(packet.id)) return;
+        processedSyncPacketIds.add(packet.id);
+      }
+
+      switch (packet.type) {
+        case 'match_ready':
+          if (packet.guestName) opponentName = packet.guestName;
+          startMatchNow();
+          break;
+
+        case 'move':
+          applyRemoteMove(packet);
+          break;
+
+        case 'chat':
+          appendChatMessage(opponentName, packet.text, false);
+          break;
+
+        case 'offer_draw':
+          showIncomingOffer('draw', `${opponentName} te ofrece Tablas.`);
+          break;
+
+        case 'accept_draw':
+          endGame('Tablas Acordadas', 'Ambos jugadores han acordado tablas de mutuo acuerdo.', 'draw');
+          break;
+
+        case 'decline_offer':
+          showToast(`${opponentName} ha rechazado la solicitud.`, 'info');
+          break;
+
+        case 'resign':
+          const winnerColorName = myColor === 'w' ? 'Blancas' : 'Negras';
+          endGame('¡Victoria por Rendición!', `${opponentName} se ha rendido. Ganan las ${winnerColorName}.`, 'win');
+          break;
+
+        case 'request_rematch':
+          showIncomingOffer('rematch', `${opponentName} solicita una Revancha (colores invertidos).`);
+          break;
+
+        case 'accept_rematch':
+          executeRematchSwap();
+          break;
+
+        case 'timeout':
+          const winByTimeText = packet.loserColor === 'w'
+            ? 'Las Blancas agotaron su tiempo. ¡Ganan las Negras!'
+            : 'Las Negras agotaron su tiempo. ¡Ganan las Blancas!';
+          endGame('¡Tiempo Agotado!', winByTimeText, packet.loserColor !== myColor ? 'win' : 'loss');
+          break;
+
+        case 'player_left':
+          showToast(`${opponentName} ha abandonado la sala.`, 'warn');
+          if (isGameActive) {
+            endGame('Oponente Desconectado', `${opponentName} salió de la sala.`, 'win');
+          }
+          break;
+      }
+    }
+
+    /*************************************************************************
+     * 7. MOTOR DE AJEDREZ, RENDERIZADO DEL TABLERO Y MOVIMIENTOS LEGALES
+     *************************************************************************/
+    function startMatchNow() {
+      if (isGameActive) return;
+      isGameActive = true;
+
+      document.getElementById('waitingOpponentBanner').classList.add('hidden');
+      document.getElementById('gameStateStatusBadge').textContent = 'En Juego';
+      document.getElementById('gameStateStatusBadge').className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+
+      resetGameEngineAndClocks();
+      playSound('start');
+      showToast(`¡Partida iniciada contra ${opponentName}!`, 'success');
+    }
+
+    function resetGameEngineAndClocks() {
+      chess.reset();
+      selectedSquare = null;
+      legalMovesForSelected = [];
+      lastMoveSquares = null;
+      pendingPromotionMove = null;
+      pendingIncomingOffer = null;
+
+      document.getElementById('incomingOfferBanner').classList.add('hidden');
+      document.getElementById('gameOverModal').classList.add('hidden');
+      document.getElementById('promotionModal').classList.add('hidden');
+
+      whiteTimeLeft = selectedTimeSeconds;
+      blackTimeLeft = selectedTimeSeconds;
+
+      updatePlayerBarsUI();
+      updateClocksUI();
+      renderBoard();
+      renderMoveHistory();
+      renderCapturedPieces();
+      startChessClockLoop();
+    }
+
+    function renderBoard() {
+      const boardEl = document.getElementById('chessboard');
+      boardEl.innerHTML = '';
+
+      const boardState = chess.board();
+      const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+      const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+
+      const displayRowIndices = isBoardFlipped ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
+      const displayColIndices = isBoardFlipped ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
+
+      const inCheckTurn = chess.in_check() ? chess.turn() : null;
+
+      displayRowIndices.forEach((rIdx, visualRow) => {
+        displayColIndices.forEach((cIdx, visualCol) => {
+          const squareName = `${files[cIdx]}${ranks[rIdx]}`;
+          const isLight = (rIdx + cIdx) % 2 === 0;
+          const piece = boardState[rIdx][cIdx];
+
+          const sqDiv = document.createElement('div');
+          sqDiv.className = `square ${isLight ? 'light' : 'dark'}`;
+          sqDiv.dataset.square = squareName;
+
+          // Resaltar último movimiento
+          if (lastMoveSquares && (lastMoveSquares.from === squareName || lastMoveSquares.to === squareName)) {
+            sqDiv.classList.add('last-move');
+          }
+
+          // Resaltar casilla seleccionada
+          if (selectedSquare === squareName) {
+            sqDiv.classList.add('selected');
+          }
+
+          // Resaltar Rey en Jaque
+          if (piece && piece.type === 'k' && piece.color === inCheckTurn) {
+            sqDiv.classList.add('in-check');
+          }
+
+          // Coordenadas en los bordes del tablero
+          if (visualCol === 0) {
+            const rankSpan = document.createElement('span');
+            rankSpan.className = 'coord-rank';
+            rankSpan.textContent = ranks[rIdx];
+            sqDiv.appendChild(rankSpan);
+          }
+          if (visualRow === 7) {
+            const fileSpan = document.createElement('span');
+            fileSpan.className = 'coord-file';
+            fileSpan.textContent = files[cIdx];
+            sqDiv.appendChild(fileSpan);
+          }
+
+          // Dibujar pieza SVG si existe
+          if (piece) {
+            const key = `${piece.color}${piece.type.toUpperCase()}`;
+            sqDiv.insertAdjacentHTML('beforeend', PIECE_SVGS[key] || '');
+          }
+
+          // Indicador de movimiento legal desde la casilla seleccionada
+          const legalMove = legalMovesForSelected.find(m => m.to === squareName);
+          if (legalMove) {
+            if (piece || legalMove.flags.includes('e')) {
+              const ring = document.createElement('div');
+              ring.className = 'capture-ring';
+              sqDiv.appendChild(ring);
+            } else {
+              const dot = document.createElement('div');
+              dot.className = 'move-dot';
+              sqDiv.appendChild(dot);
+            }
+          }
+
+          sqDiv.addEventListener('click', () => onSquareClicked(squareName));
+          boardEl.appendChild(sqDiv);
+        });
+      });
+
+      updateTurnIndicators();
+    }
+
+    function onSquareClicked(squareName) {
+      if (!isGameActive || chess.game_over()) return;
+
+      // Solo permitir mover en el turno propio
+      if (chess.turn() !== myColor) return;
+
+      // Verificar si el clic es un destino legal de la pieza actualmente seleccionada
+      const moveCandidate = legalMovesForSelected.find(m => m.to === squareName);
+      if (selectedSquare && moveCandidate) {
+        // ¿Es coronación de peón?
+        if (moveCandidate.flags.includes('p')) {
+          pendingPromotionMove = { from: selectedSquare, to: squareName };
+          openPromotionSelector(myColor);
+          return;
+        }
+        executeLocalMove(selectedSquare, squareName, 'q');
+        return;
+      }
+
+      // Seleccionar pieza propia
+      const pieceOnSquare = chess.get(squareName);
+      if (pieceOnSquare && pieceOnSquare.color === myColor) {
+        selectedSquare = squareName;
+        legalMovesForSelected = chess.moves({ square: squareName, verbose: true });
+        renderBoard();
+      } else {
+        selectedSquare = null;
+        legalMovesForSelected = [];
+        renderBoard();
+      }
+    }
+
+    function openPromotionSelector(color) {
+      const modal = document.getElementById('promotionModal');
+      const container = document.getElementById('promotionChoices');
+      const pieces = [
+        { code: 'q', name: 'Dama' },
+        { code: 'r', name: 'Torre' },
+        { code: 'b', name: 'Alfil' },
+        { code: 'n', name: 'Caballo' }
+      ];
+
+      container.innerHTML = pieces.map(p => {
+        const svgKey = `${color}${p.code.toUpperCase()}`;
+        return `
+          <button onclick="confirmPromotion('${p.code}')" class="p-3 rounded-2xl bg-slate-800 hover:bg-emerald-500/20 border border-slate-700 hover:border-emerald-400 transition flex flex-col items-center gap-1.5">
+            <div class="w-14 h-14 flex items-center justify-center">${PIECE_SVGS[svgKey]}</div>
+            <span class="text-xs font-bold text-slate-200">${p.name}</span>
+          </button>
+        `;
+      }).join('');
+
+      modal.classList.remove('hidden');
+    }
+
+    function confirmPromotion(promotionPiece) {
+      document.getElementById('promotionModal').classList.add('hidden');
+      if (!pendingPromotionMove) return;
+      const { from, to } = pendingPromotionMove;
+      pendingPromotionMove = null;
+      executeLocalMove(from, to, promotionPiece);
+    }
+
+    function executeLocalMove(from, to, promotion = 'q') {
+      const moveResult = chess.move({ from, to, promotion });
+      if (!moveResult) return;
+
+      selectedSquare = null;
+      legalMovesForSelected = [];
+      lastMoveSquares = { from, to };
+
+      handlePostMoveAudioAndUI(moveResult);
+
+      // Enviar movimiento + sincronización de relojes por P2P DataChannel (y respaldo)
+      sendSyncPacket({
+        type: 'move',
+        from,
+        to,
+        promotion,
+        fen: chess.fen(),
+        whiteTimeLeft,
+        blackTimeLeft
+      });
+
+      checkGameEndConditions();
+    }
+
+    function applyRemoteMove(packet) {
+      const moveResult = chess.move({
+        from: packet.from,
+        to: packet.to,
+        promotion: packet.promotion || 'q'
+      });
+
+      if (!moveResult) return;
+
+      if (typeof packet.whiteTimeLeft === 'number') whiteTimeLeft = packet.whiteTimeLeft;
+      if (typeof packet.blackTimeLeft === 'number') blackTimeLeft = packet.blackTimeLeft;
+
+      selectedSquare = null;
+      legalMovesForSelected = [];
+      lastMoveSquares = { from: packet.from, to: packet.to };
+
+      handlePostMoveAudioAndUI(moveResult);
+      checkGameEndConditions();
+    }
+
+    function handlePostMoveAudioAndUI(moveObj) {
+      if (chess.in_checkmate() || chess.in_draw()) {
+        playSound('gameover');
+      } else if (chess.in_check()) {
+        playSound('check');
+      } else if (moveObj.captured) {
+        playSound('capture');
+      } else {
+        playSound('move');
+      }
+
+      renderBoard();
+      renderMoveHistory();
+      renderCapturedPieces();
+      updateClocksUI();
+    }
+
+    function checkGameEndConditions() {
+      if (!chess.game_over()) return;
+
+      if (chess.in_checkmate()) {
+        const winnerColor = chess.turn() === 'w' ? 'b' : 'w';
+        const winnerName = winnerColor === 'w' ? 'Blancas' : 'Negras';
+        const didIWin = winnerColor === myColor;
+        endGame('¡Jaque Mate!', `Las ${winnerName} ganan la partida por Jaque Mate.`, didIWin ? 'win' : 'loss');
+      } else if (chess.in_stalemate()) {
+        endGame('¡Tablas por Rey Ahogado!', 'El jugador en turno no tiene movimientos legales y no está en jaque.', 'draw');
+      } else if (chess.in_threefold_repetition()) {
+        endGame('¡Tablas por Triple Repetición!', 'La misma posición se ha repetido tres veces.', 'draw');
+      } else if (chess.insufficient_material()) {
+        endGame('¡Tablas por Material Insuficiente!', 'Ningún jugador tiene material suficiente para dar jaque mate.', 'draw');
+      } else if (chess.in_draw()) {
+        endGame('¡Partida en Tablas!', 'Se ha alcanzado la regla de los 50 movimientos o posición de tablas.', 'draw');
+      }
+    }
+
+    function endGame(title, subtitle, outcome) {
+      isGameActive = false;
+      if (clockInterval) clearInterval(clockInterval);
+
+      const modal = document.getElementById('gameOverModal');
+      const iconBox = document.getElementById('gameOverIcon');
+      document.getElementById('gameOverTitle').textContent = title;
+      document.getElementById('gameOverSubtitle').textContent = subtitle;
+
+      if (outcome === 'win') {
+        iconBox.className = 'w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-3xl text-emerald-400 mb-3 shadow-lg';
+        iconBox.innerHTML = '<i class="fa-solid fa-trophy"></i>';
+      } else if (outcome === 'loss') {
+        iconBox.className = 'w-16 h-16 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-3xl text-rose-400 mb-3 shadow-lg';
+        iconBox.innerHTML = '<i class="fa-solid fa-chess-king"></i>';
+      } else {
+        iconBox.className = 'w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-3xl text-amber-400 mb-3 shadow-lg';
+        iconBox.innerHTML = '<i class="fa-solid fa-handshake"></i>';
+      }
+
+      document.getElementById('gameStateStatusBadge').textContent = 'Finalizada';
+      document.getElementById('gameStateStatusBadge').className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700';
+
+      modal.classList.remove('hidden');
+      playSound('gameover');
+    }
+
+    function closeGameOverModal() {
+      document.getElementById('gameOverModal').classList.add('hidden');
+    }
+
+    /*************************************************************************
+     * 8. RELOJES SINCRONIZADOS, HISTORIAL PGN Y VENTAJA MATERIAL
+     *************************************************************************/
+    function startChessClockLoop() {
+      if (clockInterval) clearInterval(clockInterval);
+      if (selectedTimeSeconds <= 0) {
+        updateClocksUI();
+        return;
+      }
+
+      clockInterval = setInterval(() => {
+        if (!isGameActive || chess.game_over()) return;
+        const activeTurn = chess.turn();
+        if (activeTurn === 'w') {
+          whiteTimeLeft = Math.max(0, whiteTimeLeft - 1);
+          if (whiteTimeLeft === 0) handleClockTimeout('w');
+        } else {
+          blackTimeLeft = Math.max(0, blackTimeLeft - 1);
+          if (blackTimeLeft === 0) handleClockTimeout('b');
+        }
+        updateClocksUI();
+      }, 1000);
+    }
+
+    function handleClockTimeout(loserColor) {
+      sendSyncPacket({ type: 'timeout', loserColor });
+      const msg = loserColor === 'w'
+        ? 'Las Blancas agotaron su tiempo. ¡Ganan las Negras!'
+        : 'Las Negras agotaron su tiempo. ¡Ganan las Blancas!';
+      endGame('¡Tiempo Agotado!', msg, loserColor !== myColor ? 'win' : 'loss');
+    }
+
+    function formatSeconds(sec) {
+      if (selectedTimeSeconds <= 0) return '∞';
+      const mins = Math.floor(sec / 60);
+      const rem = sec % 60;
+      return `${String(mins).padStart(2, '0')}:${String(rem).padStart(2, '0')}`;
+    }
+
+    function updateClocksUI() {
+      const topIsWhite = isBoardFlipped;
+      const topTime = topIsWhite ? whiteTimeLeft : blackTimeLeft;
+      const bottomTime = topIsWhite ? blackTimeLeft : whiteTimeLeft;
+
+      document.getElementById('topClockText').textContent = formatSeconds(topTime);
+      document.getElementById('bottomClockText').textContent = formatSeconds(bottomTime);
+
+      const currentTurn = chess.turn();
+      const topActive = isGameActive && ((topIsWhite && currentTurn === 'w') || (!topIsWhite && currentTurn === 'b'));
+      const bottomActive = isGameActive && ((!topIsWhite && currentTurn === 'w') || (topIsWhite && currentTurn === 'b'));
+
+      const topBox = document.getElementById('topClockBox');
+      const bottomBox = document.getElementById('bottomClockBox');
+
+      topBox.className = topActive
+        ? 'px-3.5 py-2 rounded-xl bg-emerald-500/20 border border-emerald-500/50 mono font-bold text-lg tracking-wider text-emerald-300 flex items-center gap-2 shrink-0 shadow'
+        : 'px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 mono font-bold text-lg tracking-wider text-slate-400 flex items-center gap-2 shrink-0';
+
+      bottomBox.className = bottomActive
+        ? 'px-3.5 py-2 rounded-xl bg-emerald-500/20 border border-emerald-500/50 mono font-bold text-lg tracking-wider text-emerald-300 flex items-center gap-2 shrink-0 shadow'
+        : 'px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 mono font-bold text-lg tracking-wider text-slate-400 flex items-center gap-2 shrink-0';
+    }
+
+    function renderMoveHistory() {
+      const container = document.getElementById('moveHistoryContainer');
+      const history = chess.history();
+
+      if (history.length === 0) {
+        container.innerHTML = `<p class="text-slate-500 text-center py-8 font-sans">Aún no se han realizado movimientos.</p>`;
+        return;
+      }
+
+      let rowsHtml = '';
+      for (let i = 0; i < history.length; i += 2) {
+        const moveNumber = Math.floor(i / 2) + 1;
+        const whiteMove = history[i] || '';
+        const blackMove = history[i + 1] || '';
+        rowsHtml += `
+          <div class="grid grid-cols-7 items-center px-2.5 py-1 rounded-lg ${moveNumber % 2 === 0 ? 'bg-slate-950/60' : ''}">
+            <span class="col-span-1 text-slate-500">${moveNumber}.</span>
+            <span class="col-span-3 font-semibold text-slate-200">${whiteMove}</span>
+            <span class="col-span-3 font-semibold text-slate-300">${blackMove}</span>
+          </div>
+        `;
+      }
+      container.innerHTML = rowsHtml;
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function renderCapturedPieces() {
+      const history = chess.history({ verbose: true });
+      const capturedByWhite = []; // Piezas negras capturadas por Blancas
+      const capturedByBlack = []; // Piezas blancas capturadas por Negras
+
+      history.forEach(m => {
+        if (m.captured) {
+          if (m.color === 'w') capturedByWhite.push('b' + m.captured.toUpperCase());
+          else capturedByBlack.push('w' + m.captured.toUpperCase());
+        }
+      });
+
+      // Calcular ventaja material
+      const values = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+      let whiteScore = 0;
+      let blackScore = 0;
+      chess.board().forEach(row => {
+        row.forEach(p => {
+          if (p) {
+            if (p.color === 'w') whiteScore += values[p.type];
+            else blackScore += values[p.type];
+          }
+        });
+      });
+
+      const diff = whiteScore - blackScore;
+      const topIsWhite = isBoardFlipped;
+
+      const topCaps = topIsWhite ? capturedByWhite : capturedByBlack;
+      const bottomCaps = topIsWhite ? capturedByBlack : capturedByWhite;
+
+      document.getElementById('topCapturedPieces').innerHTML = topCaps.map(k => `<span>${UNICODE_PIECES[k] || ''}</span>`).join('');
+      document.getElementById('bottomCapturedPieces').innerHTML = bottomCaps.map(k => `<span>${UNICODE_PIECES[k] || ''}</span>`).join('');
+
+      const topDiffEl = document.getElementById('topMaterialDiff');
+      const bottomDiffEl = document.getElementById('bottomMaterialDiff');
+      topDiffEl.textContent = '';
+      bottomDiffEl.textContent = '';
+
+      if (diff > 0) {
+        if (topIsWhite) topDiffEl.textContent = `+${diff}`;
+        else bottomDiffEl.textContent = `+${diff}`;
+      } else if (diff < 0) {
+        if (!topIsWhite) topDiffEl.textContent = `+${Math.abs(diff)}`;
+        else bottomDiffEl.textContent = `+${Math.abs(diff)}`;
+      }
+    }
+
+    /*************************************************************************
+     * 9. CONTROLES MULTIJUGADOR: CHAT, REVANCHA, TABLAS, RENDIRSE Y ROTACIÓN
+     *************************************************************************/
+    function sendChatMessage(e) {
+      e.preventDefault();
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendChatMessage(myName, text, true);
+      sendSyncPacket({ type: 'chat', text });
+      input.value = '';
+    }
+
+    function appendChatMessage(sender, text, isMe) {
+      const list = document.getElementById('chatMessagesList');
+      if (list.querySelector('.text-center')) {
+        list.innerHTML = '';
+      }
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'}`;
+      msgDiv.innerHTML = `
+        <span class="text-[10px] text-slate-400 mb-0.5 px-1">${escapeHtml(sender)}</span>
+        <div class="px-3 py-1.5 rounded-xl max-w-[85%] break-words ${isMe ? 'bg-emerald-500 text-slate-950 font-medium' : 'bg-slate-800 text-slate-100 border border-slate-700'}">
+          ${escapeHtml(text)}
+        </div>
+      `;
+      list.appendChild(msgDiv);
+      list.scrollTop = list.scrollHeight;
+    }
+
+    function offerDraw() {
+      if (!isGameActive || chess.game_over()) return;
+      sendSyncPacket({ type: 'offer_draw' });
+      showToast('Solicitud de tablas enviada a tu oponente.', 'info');
+    }
+
+    function resignGame() {
+      if (!isGameActive || chess.game_over()) return;
+      sendSyncPacket({ type: 'resign' });
+      const winnerColorName = myColor === 'w' ? 'Negras' : 'Blancas';
+      endGame('Te has rendido', `Has abandonado la partida. Ganan las ${winnerColorName}.`, 'loss');
+    }
+
+    function requestRematch() {
+      sendSyncPacket({ type: 'request_rematch' });
+      showToast('Solicitud de revancha enviada al oponente.', 'info');
+    }
+
+    function showIncomingOffer(type, text) {
+      pendingIncomingOffer = type;
+      document.getElementById('incomingOfferText').textContent = text;
+      document.getElementById('incomingOfferBanner').classList.remove('hidden');
+      playSound('check');
+    }
+
+    function acceptIncomingOffer() {
+      document.getElementById('incomingOfferBanner').classList.add('hidden');
+      if (pendingIncomingOffer === 'draw') {
+        sendSyncPacket({ type: 'accept_draw' });
+        endGame('Tablas Acordadas', 'Ambos jugadores han acordado tablas de mutuo acuerdo.', 'draw');
+      } else if (pendingIncomingOffer === 'rematch') {
+        sendSyncPacket({ type: 'accept_rematch' });
+        executeRematchSwap();
+      }
+      pendingIncomingOffer = null;
+    }
+
+    function declineIncomingOffer() {
+      document.getElementById('incomingOfferBanner').classList.add('hidden');
+      sendSyncPacket({ type: 'decline_offer' });
+      pendingIncomingOffer = null;
+    }
+
+    function executeRematchSwap() {
+      myColor = myColor === 'w' ? 'b' : 'w';
+      isBoardFlipped = myColor === 'b';
+      isGameActive = true;
+      resetGameEngineAndClocks();
+      playSound('start');
+      showToast('¡Revancha iniciada con colores invertidos!', 'success');
+    }
+
+    function flipBoardManual() {
+      isBoardFlipped = !isBoardFlipped;
+      updatePlayerBarsUI();
+      renderBoard();
+      renderCapturedPieces();
+      updateClocksUI();
+    }
+
+    function leaveRoom() {
+      sendSyncPacket({ type: 'player_left' });
+
+      if (pingInterval) clearInterval(pingInterval);
+      if (clockInterval) clearInterval(clockInterval);
+
+      if (dataChannel) {
+        try { dataChannel.close(); } catch (e) {}
+        dataChannel = null;
+      }
+      if (peerConnection) {
+        try { peerConnection.close(); } catch (e) {}
+        peerConnection = null;
+      }
+      if (roomRef) {
+        roomRef.off();
+        if (playerRole === 'host') {
+          roomRef.remove();
+        }
+        roomRef = null;
+      }
+
+      roomId = null;
+      isGameActive = false;
+      isP2PConnected = false;
+
+      document.getElementById('p2pStatusBadge').classList.add('hidden');
+      document.getElementById('gameView').classList.add('hidden');
+      document.getElementById('lobbyView').classList.remove('hidden');
+      showToast('Has salido de la sala.', 'info');
+    }
+
+    /*************************************************************************
+     * 10. FUNCIONES AUXILIARES DE INTERFAZ Y PORTAPAPELES
+     *************************************************************************/
+    function enterGameViewUI() {
+      document.getElementById('lobbyView').classList.add('hidden');
+      document.getElementById('gameView').classList.remove('hidden');
+
+      document.getElementById('bannerRoomCode').textContent = roomId;
+      document.getElementById('sidebarRoomCode').textContent = roomId;
+
+      if (playerRole === 'host') {
+        document.getElementById('waitingOpponentBanner').classList.remove('hidden');
+      } else {
+        document.getElementById('waitingOpponentBanner').classList.add('hidden');
+      }
+
+      document.getElementById('webrtcTabPanel').innerHTML = '';
+      document.getElementById('chatMessagesList').innerHTML = `
+        <div class="text-slate-500 text-center py-6">
+          Los mensajes se envían directamente por el canal de datos P2P.
+        </div>
+      `;
+
+      resetGameEngineAndClocks();
+    }
+
+    function updatePlayerBarsUI() {
+      const topIsWhite = isBoardFlipped;
+      const myColorLabel = myColor === 'w' ? 'Blancas' : 'Negras';
+      const oppColorLabel = myColor === 'w' ? 'Negras' : 'Blancas';
+
+      const isMeBottom = (myColor === 'w' && !isBoardFlipped) || (myColor === 'b' && isBoardFlipped);
+
+      if (isMeBottom) {
+        document.getElementById('bottomPlayerName').textContent = `${myName} (Tú)`;
+        document.getElementById('bottomPlayerColorBadge').textContent = myColorLabel;
+        document.getElementById('topPlayerName').textContent = opponentName;
+        document.getElementById('topPlayerColorBadge').textContent = oppColorLabel;
+      } else {
+        document.getElementById('topPlayerName').textContent = `${myName} (Tú)`;
+        document.getElementById('topPlayerColorBadge').textContent = myColorLabel;
+        document.getElementById('bottomPlayerName').textContent = opponentName;
+        document.getElementById('bottomPlayerColorBadge').textContent = oppColorLabel;
+      }
+    }
+
+    function updateTurnIndicators() {
+      const turnBadge = document.getElementById('turnIndicatorBadge');
+      if (isGameActive && !chess.game_over() && chess.turn() === myColor) {
+        turnBadge.classList.remove('hidden');
+      } else {
+        turnBadge.classList.add('hidden');
+      }
+    }
+
+    function updateP2PStatusUI(status) {
+      const badge = document.getElementById('p2pStatusBadge');
+      const dot = document.getElementById('p2pDot');
+      const txt = document.getElementById('p2pStatusText');
+      const modeTag = document.getElementById('transportModeTag');
+      badge.classList.remove('hidden');
+      badge.classList.add('flex');
+
+      if (status === 'connected') {
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        txt.textContent = 'P2P Directo Conectado';
+        modeTag.textContent = 'Canal: WebRTC DataChannel';
+        modeTag.className = 'text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300';
+      } else if (status === 'connecting') {
+        dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+        txt.textContent = 'Negociando ICE P2P...';
+        modeTag.textContent = 'Canal: Señalizando...';
+      } else {
+        dot.className = 'w-2 h-2 rounded-full bg-sky-400';
+        txt.textContent = 'Sincronización Activa';
+        modeTag.textContent = 'Canal: Híbrido RTDB';
+        modeTag.className = 'text-[10px] font-semibold px-2 py-0.5 rounded bg-sky-500/20 text-sky-300';
+      }
+    }
+
+    function switchSideTab(tab) {
+      const chatPanel = document.getElementById('chatTabPanel');
+      const webrtcPanel = document.getElementById('webrtcTabPanel');
+      const chatBtn = document.getElementById('tabChatBtn');
+      const webrtcBtn = document.getElementById('tabWebRTCBtn');
+
+      if (tab === 'chat') {
+        chatPanel.classList.remove('hidden');
+        webrtcPanel.classList.add('hidden');
+        chatBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 transition';
+        webrtcBtn.className = 'px-3 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition';
+      } else {
+        chatPanel.classList.add('hidden');
+        webrtcPanel.classList.remove('hidden');
+        webrtcBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 transition';
+        chatBtn.className = 'px-3 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition';
+      }
+    }
+
+    function copyTextToClipboard(text, successMsg) {
+      const tempInput = document.createElement('textarea');
+      tempInput.value = text;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      try {
+        document.execCommand('copy');
+        showToast(successMsg, 'success');
+      } catch (e) {
+        showToast('No se pudo copiar automáticamente.', 'warn');
+      }
+      document.body.removeChild(tempInput);
+    }
+
+    function copyRoomCode() {
+      if (!roomId) return;
+      copyTextToClipboard(roomId, `Código de sala "${roomId}" copiado al portapapeles.`);
+    }
+
+    function copyPGN() {
+      const pgn = chess.pgn();
+      if (!pgn) {
+        showToast('Aún no hay jugadas para exportar en PGN.', 'info');
+        return;
+      }
+      copyTextToClipboard(pgn, 'Notación PGN copiada al portapapeles.');
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const colorClasses = type === 'success'
+        ? 'border-emerald-500/50 bg-slate-900/95 text-emerald-300'
+        : type === 'error'
+        ? 'border-rose-500/50 bg-slate-900/95 text-rose-300'
+        : type === 'warn'
+        ? 'border-amber-500/50 bg-slate-900/95 text-amber-300'
+        : 'border-slate-700 bg-slate-900/95 text-slate-200';
+
+      toast.className = `px-4 py-3 rounded-xl border shadow-xl text-xs font-semibold flex items-center gap-2.5 backdrop-blur-md transition-all duration-300 ${colorClasses}`;
+      toast.innerHTML = `
+        <i class="fa-solid ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info'}"></i>
+        <span>${escapeHtml(message)}</span>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
