@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#000000">
+  <title>SILENOS</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="#">SILENOS</a><button class="button button-top" id="refresh">Actualizar</button></header>
+  <main>
+    <section class="library" aria-labelledby="library-title">
+      <div id="notice" class="notice" role="status"></div>
+      <div class="toolbar"><span class="count" id="count">Cargando…</span></div>
+      <div id="files" class="file-list" aria-live="polite"></div>
+      <div id="empty" class="empty" hidden><span class="empty-mark">⌁</span><strong>No hay HTML en esta carpeta</strong><span>Comprueba la carpeta pública y vuelve a actualizar.</span></div>
+    </section>
+    <section class="saved-section"><div class="section-head"><h2>Guardados <span class="saved-count" id="saved-count">0</span></h2><div class="saved-actions"><label class="text-button import-button" for="import-html">Importar HTML</label><input id="import-html" type="file" accept=".html,.htm,text/html" multiple hidden><button class="text-button" id="clear-cache">Vaciar</button></div></div><div id="saved" class="saved-list"></div></section>
+  </main>
+  <dialog id="preview"><div class="dialog-head"><h2 id="preview-title">Documento</h2><button class="icon-button" id="close-preview" aria-label="Cerrar">×</button></div><iframe id="preview-frame" sandbox="allow-scripts allow-forms allow-modals" title="Vista previa del HTML guardado"></iframe></dialog>
+  <script src="library.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
