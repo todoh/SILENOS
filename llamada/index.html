@@ -568,6 +568,29 @@
     </footer>
   </div>
 
+  <!-- Invitación abierta desde un enlace de sala -->
+  <div id="invite-modal" class="hidden fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="invite-title" aria-describedby="invite-description">
+    <div class="w-full max-w-md bg-white rounded-card shadow-ambientLg p-6 sm:p-8 animate-soft-in">
+      <div class="w-12 h-12 rounded-2xl bg-softBlueTint text-softBlue flex items-center justify-center mb-5" aria-hidden="true">
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg>
+      </div>
+      <h2 id="invite-title" class="text-xl font-semibold tracking-tight text-slateInk">Te han invitado a una llamada</h2>
+      <p id="invite-description" class="text-sm text-slateMuted mt-2 leading-relaxed">Comprueba tu nombre y entra en la sala cuando estés listo.</p>
+      <div class="mt-5 px-4 py-3 rounded-2xl bg-mist flex items-center justify-between gap-3">
+        <span class="text-xs font-medium text-slateMuted">Código de la sala</span>
+        <span id="invite-room-code" class="text-sm font-semibold text-slateInk break-all"></span>
+      </div>
+      <form id="invite-form" class="mt-5 flex flex-col gap-4">
+        <div class="flex flex-col gap-1.5">
+          <label for="invite-name" class="text-xs font-medium text-slateMuted pl-1">Tu nombre</label>
+          <input id="invite-name" type="text" maxlength="32" autocomplete="name" placeholder="Ej. Elena García" class="w-full px-4 py-3 rounded-2xl bg-mist text-sm text-slateInk" />
+        </div>
+        <button id="invite-join-btn" type="submit" class="w-full py-3.5 px-5 rounded-full bg-softBlue hover:bg-softBlueHover text-white text-sm font-semibold transition-colors disabled:opacity-60">Entrar en la sala</button>
+        <button id="invite-dismiss-btn" type="button" class="w-full py-2 text-sm font-medium text-slateMuted hover:text-slateInk">Volver al inicio</button>
+      </form>
+    </div>
+  </div>
+
   <!-- =======================================================================
        MODAL FLOTANTE DE AJUSTES COMPLETO (BLANCO SUAVE SIN BORDES)
        ======================================================================= -->
@@ -1078,12 +1101,15 @@
           });
           state.camOn = false;
         } catch (__) {
-          // Modo espectador sin hardware multimedia (no bloquea la entrada a salas)
-          stream = new MediaStream();
-          state.micOn = false;
-          state.camOn = false;
-          if (!isReinit) {
-            showToast('Modo espectador activo (sin cámara ni micrófono detectados)', 'info');
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraint, audio: false });
+            state.micOn = false;
+            showToast('Cámara activa; no se pudo acceder al micrófono', 'info');
+          } catch (___) {
+            stream = new MediaStream();
+            state.micOn = false;
+            state.camOn = false;
+            if (!isReinit) showToast('Modo espectador activo (sin cámara ni micrófono detectados)', 'info');
           }
         }
       }
@@ -1497,10 +1523,11 @@
         state.screenStream = displayStream;
         state.screenSharing = true;
         screenTrack.contentHint = state.screenMode === 'detail' ? 'detail' : 'motion';
+        screenTrack.onended = () => { stopScreenShare(); };
         try {
           await screenTrack.applyConstraints({ width: { max: 1280 }, height: { max: 720 }, frameRate: { max: 30 } });
         } catch (_) { /* Se mantienen las preferencias de captura si no admite límites. */ }
-        screenTrack.onended = () => { stopScreenShare(); };
+        if (!state.screenSharing || screenTrack.readyState === 'ended') return;
         const sharedAudio = displayStream.getAudioTracks()[0];
         if (sharedAudio) {
           sharedAudio.onended = () => { refreshScreenAudioMixer(); updateLocalMediaUI(); };
@@ -1762,6 +1789,7 @@
 
       window.history.replaceState({}, '', buildInviteUrl(cleanRoomId));
 
+      document.getElementById('invite-modal').classList.add('hidden');
       dom.lobbyView.classList.add('hidden');
       dom.roomView.classList.remove('hidden');
       dom.activeRoomTitleLabel.textContent = resolvedTitle;
@@ -2437,6 +2465,7 @@
       if (state.captionsEnabled) { stopCaptions(); return; }
       const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!Recognition) { showToast('Tu navegador no admite subtítulos de voz', 'error'); return; }
+      if (!window.confirm('Los subtítulos usan el reconocimiento de voz del navegador, que puede enviar tu voz a su proveedor. El texto se comparte con los participantes. ¿Activar?')) return;
       const recognition = new Recognition();
       recognition.lang = 'es-ES'; recognition.continuous = true; recognition.interimResults = false;
       state.recognition = recognition; state.captionsEnabled = true;
@@ -2751,12 +2780,49 @@
         renderPublicRoomsDirectory();
       });
 
-      // Detección automática de parámetro ?room=CODIGO en la URL
-      const params = new URLSearchParams(window.location.search);
-      const urlRoom = params.get('room');
-      if (urlRoom) {
-        dom.roomCodeInput.value = sanitizeRoomCode(urlRoom);
+      // Un enlace de invitación abre un acceso directo y visible a la sala.
+      const inviteModal = document.getElementById('invite-modal');
+      const inviteName = document.getElementById('invite-name');
+      const inviteJoinButton = document.getElementById('invite-join-btn');
+      const inviteDismissButton = document.getElementById('invite-dismiss-btn');
+      const urlRoom = new URLSearchParams(window.location.search).get('room');
+      const inviteRoom = urlRoom ? sanitizeRoomCode(urlRoom) : '';
+      const closeInvite = () => {
+        inviteModal.classList.add('hidden');
+        dom.roomCodeInput.focus();
+      };
+      if (inviteRoom) {
+        dom.roomCodeInput.value = inviteRoom;
+        document.getElementById('invite-room-code').textContent = inviteRoom;
+        inviteName.value = dom.nameInput.value;
+        inviteModal.classList.remove('hidden');
+        inviteName.focus();
       }
+      inviteDismissButton.addEventListener('click', closeInvite);
+      inviteModal.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') { closeInvite(); return; }
+        if (event.key !== 'Tab') return;
+        const first = inviteName;
+        const last = inviteDismissButton;
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      });
+      document.getElementById('invite-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!inviteRoom || inviteJoinButton.disabled) return;
+        dom.nameInput.value = inviteName.value;
+        dom.nameInput.dispatchEvent(new Event('input'));
+        inviteJoinButton.disabled = true;
+        inviteJoinButton.textContent = 'Entrando…';
+        try {
+          await joinRoom(inviteRoom, { isCreating: false });
+        } catch (_) {
+          showToast('No se pudo entrar en la sala. Inténtalo de nuevo.', 'error');
+        } finally {
+          inviteJoinButton.disabled = false;
+          inviteJoinButton.textContent = 'Entrar en la sala';
+        }
+      });
 
       dom.lobbyToggleMic.addEventListener('click', toggleMicrophone);
       dom.lobbyToggleCam.addEventListener('click', toggleCamera);
