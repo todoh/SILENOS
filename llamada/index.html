@@ -570,7 +570,7 @@
 
   <!-- Invitación abierta desde un enlace de sala -->
   <div id="invite-modal" class="hidden fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="invite-title" aria-describedby="invite-description">
-    <div class="w-full max-w-md bg-white rounded-card shadow-ambientLg p-6 sm:p-8 animate-soft-in">
+    <div class="w-full max-w-lg max-h-[94dvh] overflow-y-auto bg-white rounded-card shadow-ambientLg p-5 sm:p-7 animate-soft-in">
       <div class="w-12 h-12 rounded-2xl bg-softBlueTint text-softBlue flex items-center justify-center mb-5" aria-hidden="true">
         <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg>
       </div>
@@ -580,7 +580,20 @@
         <span class="text-xs font-medium text-slateMuted">Código de la sala</span>
         <span id="invite-room-code" class="text-sm font-semibold text-slateInk break-all"></span>
       </div>
-      <form id="invite-form" class="mt-5 flex flex-col gap-4">
+      <div class="relative mt-4 h-40 sm:h-48 rounded-2xl bg-mist overflow-hidden flex items-center justify-center">
+        <video id="invite-preview-video" autoplay muted playsinline class="hidden w-full h-full object-cover mirror-video"></video>
+        <div id="invite-preview-placeholder" class="text-center text-sm text-slateMuted px-4">Preparando cámara…</div>
+        <span id="invite-mic-status" class="absolute top-3 left-3 px-3 py-1.5 rounded-full bg-white/95 text-xs font-medium text-slateInk shadow-ambientSm" aria-live="polite">Preparando micrófono…</span>
+        <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full bg-white/95 p-1.5 shadow-dock">
+          <button id="invite-toggle-mic" type="button" aria-label="Silenciar micrófono" aria-pressed="true" class="w-10 h-10 rounded-full flex items-center justify-center cursor-pointer"></button>
+          <button id="invite-toggle-cam" type="button" aria-label="Apagar cámara" aria-pressed="true" class="w-10 h-10 rounded-full flex items-center justify-center cursor-pointer"></button>
+        </div>
+      </div>
+      <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="flex flex-col gap-1"><label for="invite-video-input" class="text-xs font-medium text-slateMuted pl-1">Cámara</label><select id="invite-video-input" class="w-full px-3 py-2.5 rounded-xl bg-mist text-xs text-slateInk"><option value="">Buscando cámaras…</option></select></div>
+        <div class="flex flex-col gap-1"><label for="invite-audio-input" class="text-xs font-medium text-slateMuted pl-1">Micrófono</label><select id="invite-audio-input" class="w-full px-3 py-2.5 rounded-xl bg-mist text-xs text-slateInk"><option value="">Buscando micrófonos…</option></select></div>
+      </div>
+      <form id="invite-form" class="mt-4 flex flex-col gap-3">
         <div class="flex flex-col gap-1.5">
           <label for="invite-name" class="text-xs font-medium text-slateMuted pl-1">Tu nombre</label>
           <input id="invite-name" type="text" maxlength="32" autocomplete="name" placeholder="Ej. Elena García" class="w-full px-4 py-3 rounded-2xl bg-mist text-sm text-slateInk" />
@@ -1182,6 +1195,10 @@
 
         populateSelect(dom.selectVideoInput, videoInputs, 'Cámara predeterminada', state.settings.videoDeviceId);
         populateSelect(dom.selectAudioInput, audioInputs, 'Micrófono predeterminado', state.settings.audioDeviceId);
+        populateSelect(document.getElementById('invite-video-input'), videoInputs, 'Sin cámaras disponibles', state.settings.videoDeviceId);
+        populateSelect(document.getElementById('invite-audio-input'), audioInputs, 'Sin micrófonos disponibles', state.settings.audioDeviceId);
+        document.getElementById('invite-video-input').disabled = videoInputs.length === 0;
+        document.getElementById('invite-audio-input').disabled = audioInputs.length === 0;
 
         const supportsSinkId = typeof HTMLMediaElement !== 'undefined' && 'setSinkId' in HTMLMediaElement.prototype;
         if (supportsSinkId && audioOutputs.length > 0) {
@@ -1276,6 +1293,11 @@
         state.lastSpeakerAt = Date.now();
         if (state.activeSpeakerId !== peerId) { state.activeSpeakerId = peerId; refreshLayoutGrid(); }
       }
+      if (peerId === 'local') {
+        const indicator = document.getElementById('invite-mic-status');
+        indicator.classList.toggle('text-softEmerald', isSpeaking && state.micOn);
+        if (state.micOn && state.localStream?.getAudioTracks().length) indicator.textContent = isSpeaking ? 'Micrófono activo · detecta voz' : 'Micrófono activo';
+      }
       const tile = document.getElementById(`tile-${peerId}`);
       if (tile) {
         tile.classList.toggle('shadow-speaking', isSpeaking);
@@ -1306,6 +1328,31 @@
       updateControlButtonState(dom.lobbyToggleCam, state.camOn && hasVideoTrack, ICONS.camOn, ICONS.camOff);
       updateControlButtonState(dom.ctrlMicBtn, state.micOn, ICONS.micOn, ICONS.micOff);
       updateControlButtonState(dom.ctrlCamBtn, state.camOn && hasVideoTrack, ICONS.camOn, ICONS.camOff);
+
+      const inviteVideo = document.getElementById('invite-preview-video');
+      const invitePlaceholder = document.getElementById('invite-preview-placeholder');
+      const inviteMic = document.getElementById('invite-toggle-mic');
+      const inviteCam = document.getElementById('invite-toggle-cam');
+      const hasMicrophone = Boolean(state.localStream?.getAudioTracks().length);
+      if (showVideo) {
+        if (inviteVideo.srcObject !== state.localStream) inviteVideo.srcObject = state.localStream;
+        inviteVideo.classList.remove('hidden');
+        inviteVideo.classList.toggle('mirror-video', state.settings.mirrorLocal);
+        invitePlaceholder.classList.add('hidden');
+      } else {
+        inviteVideo.classList.add('hidden');
+        invitePlaceholder.classList.remove('hidden');
+        invitePlaceholder.textContent = hasVideoTrack ? 'Cámara desactivada' : 'No se ha detectado ninguna cámara';
+      }
+      updateControlButtonState(inviteMic, state.micOn && hasMicrophone, ICONS.micOn, ICONS.micOff);
+      updateControlButtonState(inviteCam, Boolean(showVideo), ICONS.camOn, ICONS.camOff);
+      inviteMic.setAttribute('aria-pressed', String(state.micOn && hasMicrophone));
+      inviteMic.setAttribute('aria-label', state.micOn && hasMicrophone ? 'Silenciar micrófono' : 'Activar micrófono');
+      inviteCam.setAttribute('aria-pressed', String(Boolean(showVideo)));
+      inviteCam.setAttribute('aria-label', showVideo ? 'Apagar cámara' : 'Activar cámara');
+      const micStatus = document.getElementById('invite-mic-status');
+      micStatus.classList.remove('text-softEmerald');
+      micStatus.textContent = !hasMicrophone ? 'Sin micrófono detectado' : state.micOn ? 'Micrófono activo' : 'Micrófono silenciado';
 
       if (state.screenSharing) {
         dom.ctrlScreenBtn.classList.remove('bg-mist', 'text-slateInk', 'hover:bg-mistHover');
@@ -2799,11 +2846,25 @@
         inviteName.focus();
       }
       inviteDismissButton.addEventListener('click', closeInvite);
+      document.getElementById('invite-toggle-mic').addEventListener('click', toggleMicrophone);
+      document.getElementById('invite-toggle-cam').addEventListener('click', toggleCamera);
+      const changeInviteDevice = async (kind, value) => {
+        inviteJoinButton.disabled = true;
+        const videoSelect = document.getElementById('invite-video-input');
+        const audioSelect = document.getElementById('invite-audio-input');
+        videoSelect.disabled = true;
+        audioSelect.disabled = true;
+        try { await changeInputDevice(kind, value); }
+        finally { inviteJoinButton.disabled = false; }
+      };
+      document.getElementById('invite-video-input').addEventListener('change', event => changeInviteDevice('video', event.target.value));
+      document.getElementById('invite-audio-input').addEventListener('change', event => changeInviteDevice('audio', event.target.value));
       inviteModal.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') { closeInvite(); return; }
         if (event.key !== 'Tab') return;
-        const first = inviteName;
-        const last = inviteDismissButton;
+        const focusable = Array.from(inviteModal.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled)'));
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
         if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
       });
