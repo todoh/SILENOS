@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Silenos Meet — Videollamadas P2P</title>
 
-  <!-- Tipografía Inter limpia y moderna -->
+  <!-- Tipografía Inter limpia -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -17,14 +17,14 @@
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
           },
           colors: {
             alabaster: '#F5F7FA',
             mist: '#F0F3F8',
-            mistHover: '#E6EBF3',
-            slateInk: '#181C24',
-            slateMuted: '#647084',
+            mistHover: '#E6EBF2',
+            slateInk: '#111827',
+            slateMuted: '#6B7280',
             softBlue: '#2563EB',
             softBlueHover: '#1D4ED8',
             softBlueTint: '#EFF6FF',
@@ -34,14 +34,14 @@
             softCoralTint: '#FEF2F2',
           },
           boxShadow: {
-            ambient: '0 12px 36px -8px rgba(15, 23, 42, 0.06), 0 4px 12px -2px rgba(15, 23, 42, 0.03)',
-            ambientLg: '0 24px 54px -10px rgba(15, 23, 42, 0.08), 0 8px 20px -4px rgba(15, 23, 42, 0.04)',
+            ambient: '0 10px 30px -5px rgba(15, 23, 42, 0.05), 0 4px 12px -2px rgba(15, 23, 42, 0.03)',
+            ambientLg: '0 22px 48px -10px rgba(15, 23, 42, 0.08), 0 8px 20px -4px rgba(15, 23, 42, 0.04)',
             ambientSm: '0 4px 14px rgba(15, 23, 42, 0.04)',
             dock: '0 16px 40px -8px rgba(15, 23, 42, 0.08), 0 4px 14px rgba(15, 23, 42, 0.04)',
             speaking: '0 0 0 3px rgba(37, 99, 235, 0.28), 0 16px 40px -6px rgba(37, 99, 235, 0.14)',
           },
           borderRadius: {
-            card: '26px',
+            card: '24px',
           }
         }
       }
@@ -50,8 +50,8 @@
 
   <style>
     /* =========================================================================
-       REGLA ESTÉTICA FUNDAMENTAL: CERO BORDES EN TODA LA INTERFAZ
-       La jerarquía se construye únicamente con capas de blanco suave y sombras.
+       ESTÉTICA ULTRA MINIMALISTA BLANCA SUAVE SIN BORDES
+       Toda la jerarquía visual se construye con blancos suaves y sombras difusas.
        ========================================================================= */
     *, *::before, *::after {
       border: none !important;
@@ -64,24 +64,24 @@
       margin: 0;
       padding: 0;
       background-color: #F5F7FA;
-      color: #181C24;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: #111827;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
 
-    /* Enfoque accesible sin bordes mediante halo sombreado suave */
+    /* Enfoque accesible sin bordes mediante halo suave */
     input:focus, select:focus, button:focus-visible {
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16) !important;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16) !important;
     }
 
-    /* Efecto espejo opcional en vídeo local */
+    /* Modo espejo para cámara local */
     .mirror-video {
       transform: scaleX(-1);
     }
 
-    /* Scrollbar ultra minimalista sin bordes */
+    /* Barra de desplazamiento minimalista */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -90,14 +90,14 @@
       background: transparent;
     }
     ::-webkit-scrollbar-thumb {
-      background: rgba(100, 116, 139, 0.22);
-      border-radius: 999px;
+      background: rgba(107, 114, 128, 0.22);
+      border-radius: 9999px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: rgba(100, 116, 139, 0.38);
+      background: rgba(107, 114, 128, 0.38);
     }
 
-    /* Animaciones suaves de entrada y actividad de voz */
+    /* Animaciones suaves */
     @keyframes fadeSlideUp {
       from {
         opacity: 0;
@@ -110,7 +110,7 @@
     }
 
     .animate-soft-in {
-      animation: fadeSlideUp 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation: fadeSlideUp 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
     @keyframes wavePulse {
@@ -126,29 +126,29 @@
     .is-speaking .voice-bar:nth-child(2) { animation: wavePulse 0.65s infinite ease-in-out 0.18s; }
     .is-speaking .voice-bar:nth-child(3) { animation: wavePulse 0.65s infinite ease-in-out 0.34s; }
 
-    /* Select nativo limpio sin flecha brusca */
+    /* Select limpio sin bordes */
     select {
       appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 14px center;
       background-size: 16px;
       padding-right: 38px !important;
     }
 
-    /* Interruptor suave tipo píldora sin bordes */
+    /* Interruptor tipo píldora sin bordes */
     .soft-switch {
       position: relative;
       width: 46px;
       height: 26px;
-      border-radius: 999px;
+      border-radius: 9999px;
       background-color: #E2E8F0;
       transition: background-color 0.24s ease;
       cursor: pointer;
       flex-shrink: 0;
     }
     .soft-switch[aria-checked="true"] {
-      background-color: #3B82F6;
+      background-color: #2563EB;
     }
     .soft-switch-thumb {
       position: absolute;
@@ -156,7 +156,7 @@
       left: 3px;
       width: 20px;
       height: 20px;
-      border-radius: 999px;
+      border-radius: 9999px;
       background-color: #FFFFFF;
       box-shadow: 0 2px 6px rgba(15, 23, 42, 0.16);
       transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
@@ -192,16 +192,14 @@
 </head>
 <body class="bg-alabaster text-slateInk min-h-screen flex flex-col selection:bg-softBlueTint selection:text-softBlue">
 
-  <!-- =======================================================================
-       NOTIFICACIÓN FLOTANTE SUAVE (TOAST) - REEMPLAZA CUALQUIER ALERT()
-       ======================================================================= -->
+  <!-- Contenedor de notificaciones Toast suaves -->
   <div id="toast-container" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 pointer-events-none px-4 w-full max-w-md"></div>
 
   <!-- =======================================================================
-       VISTA 1: LOBBY / SALA DE ESPERA ULTRA MINIMALISTA
+       VISTA 1: LOBBY / MENÚ PRINCIPAL ULTRA MINIMALISTA
        ======================================================================= -->
   <main id="lobby-view" class="flex-1 flex flex-col justify-between px-4 py-6 sm:px-8 sm:py-8 max-w-7xl w-full mx-auto">
-    <!-- Cabecera minimalista del Lobby -->
+    <!-- Cabecera del Lobby -->
     <header class="flex items-center justify-between gap-4">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-full bg-white shadow-ambientSm flex items-center justify-center text-softBlue">
@@ -225,16 +223,15 @@
       </button>
     </header>
 
-    <!-- Cuerpo Central del Lobby en Dos Columnas Equilibradas -->
+    <!-- Cuerpo Principal en Dos Columnas -->
     <section class="my-auto py-6 sm:py-8 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-      <!-- COLUMNA IZQUIERDA: Vista Previa Local + Creación / Acceso a Sala -->
+      <!-- COLUMNA IZQUIERDA: Vista Previa Local + Crear / Unirse a Sala -->
       <div class="lg:col-span-7 flex flex-col gap-6">
         <!-- Tarjeta de Vista Previa Local -->
         <div id="lobby-preview-card" class="relative w-full aspect-video bg-white rounded-card shadow-ambient overflow-hidden flex items-center justify-center transition-shadow duration-300">
-          <!-- Vídeo de vista previa -->
           <video id="lobby-video" autoplay muted playsinline class="w-full h-full object-cover mirror-video hidden"></video>
 
-          <!-- Estado Avatar cuando la cámara está apagada o no hay webcam -->
+          <!-- Fallback Avatar Circular cuando la cámara está apagada o no hay hardware -->
           <div id="lobby-avatar-fallback" class="flex flex-col items-center justify-center p-6 text-center select-none">
             <div id="lobby-avatar-circle" class="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-mist text-softBlue font-semibold text-3xl sm:text-4xl flex items-center justify-center shadow-ambientSm mb-3 transition-transform duration-300">
               TÚ
@@ -242,9 +239,9 @@
             <p id="lobby-camera-status-text" class="text-sm font-medium text-slateMuted">Cámara desactivada</p>
           </div>
 
-          <!-- Píldora superior de estado de dispositivos -->
+          <!-- Píldora superior de estado de audio y actividad de voz -->
           <div class="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
-            <div id="lobby-voice-pill" class="px-3.5 py-1.5 rounded-full bg-white/92 backdrop-blur-md shadow-ambientSm flex items-center gap-2 text-xs font-medium text-slateInk">
+            <div id="lobby-voice-pill" class="px-3.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md shadow-ambientSm flex items-center gap-2 text-xs font-medium text-slateInk">
               <span id="lobby-mic-dot" class="w-2 h-2 rounded-full bg-softEmerald"></span>
               <span id="lobby-device-label">Listo para conectar</span>
               <div class="flex items-end gap-0.5 h-3 ml-1">
@@ -255,11 +252,11 @@
             </div>
           </div>
 
-          <!-- Controles flotantes inferiores de vista previa (Micrófono, Cámara y Ajustes rápidos) -->
-          <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2.5 p-1.5 rounded-full bg-white/94 backdrop-blur-md shadow-dock">
+          <!-- Controles flotantes inferiores de vista previa -->
+          <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2.5 p-1.5 rounded-full bg-white/95 backdrop-blur-md shadow-dock">
             <button id="lobby-toggle-mic" type="button" title="Silenciar / Activar micrófono" class="w-11 h-11 rounded-full bg-mist hover:bg-mistHover text-slateInk flex items-center justify-center transition-all cursor-pointer"></button>
             <button id="lobby-toggle-cam" type="button" title="Apagar / Encender cámara" class="w-11 h-11 rounded-full bg-mist hover:bg-mistHover text-slateInk flex items-center justify-center transition-all cursor-pointer"></button>
-            <button id="lobby-quick-settings-btn" type="button" title="Ajustes rápidos" class="w-11 h-11 rounded-full bg-mist hover:bg-mistHover text-slateInk flex items-center justify-center transition-all cursor-pointer">
+            <button id="lobby-quick-settings-btn" type="button" title="Seleccionar dispositivos" class="w-11 h-11 rounded-full bg-mist hover:bg-mistHover text-slateInk flex items-center justify-center transition-all cursor-pointer">
               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
                 <circle cx="12" cy="12" r="3"/>
@@ -268,9 +265,9 @@
           </div>
         </div>
 
-        <!-- Tarjeta de Configuración de Usuario, Crear Sala (Pública / Privada) y Unirse con Código -->
+        <!-- Tarjeta de Configuración de Sala y Acceso -->
         <div class="bg-white rounded-card shadow-ambient p-6 sm:p-7 flex flex-col gap-5">
-          <!-- Fila 1: Tu nombre + Selector Segmentado Pública / Privada -->
+          <!-- Nombre del Participante y Selector Pública / Privada -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
             <div class="flex flex-col gap-1.5">
               <label for="participant-name-input" class="text-xs font-medium text-slateMuted pl-2">Tu nombre</label>
@@ -314,36 +311,36 @@
             </div>
           </div>
 
-          <!-- Campo Condicional: Nombre de la sala (solo cuando está seleccionada Pública) -->
+          <!-- Input Condicional para Nombre Personalizado de Sala Pública -->
           <div id="public-title-wrapper" class="flex flex-col gap-1.5 animate-soft-in">
-            <label for="room-title-input" class="text-xs font-medium text-slateMuted pl-2">Nombre de la sala (opcional)</label>
+            <label for="room-title-input" class="text-xs font-medium text-slateMuted pl-2">Nombre personalizado de sala pública (opcional)</label>
             <input
               id="room-title-input"
               type="text"
               maxlength="48"
-              placeholder="Ej. Charla abierta, Sala de trabajo..."
+              placeholder="Ej. Charla abierta, Diseño de producto..."
               class="w-full px-4 py-3 rounded-full bg-mist text-slateInk placeholder-slateMuted/60 text-sm font-medium transition-shadow"
             />
           </div>
 
-          <!-- Acción Primaria: Crear Sala + Bloque Unirse con Código -->
+          <!-- Botón Crear Nueva Sala + Unirse mediante Código o Enlace -->
           <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-1 items-center">
             <button
               id="create-room-btn"
               type="button"
-              class="sm:col-span-5 py-3.5 px-5 rounded-full bg-slateInk hover:bg-slate-800 text-white text-sm font-semibold shadow-ambientSm transition-all flex items-center justify-center gap-2 cursor-pointer"
+              class="sm:col-span-5 py-3.5 px-5 rounded-full bg-softBlue hover:bg-softBlueHover text-white text-sm font-semibold shadow-ambientSm transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 5v14"/><path d="M5 12h14"/>
               </svg>
-              <span>Crear sala</span>
+              <span>Crear nueva sala</span>
             </button>
 
             <div class="sm:col-span-7 flex items-center gap-2">
               <input
                 id="room-code-input"
                 type="text"
-                maxlength="120"
+                maxlength="140"
                 placeholder="Código o enlace de sala"
                 class="flex-1 min-w-0 px-4 py-3.5 rounded-full bg-mist text-slateInk placeholder-slateMuted/60 text-sm font-medium transition-shadow"
               />
@@ -359,10 +356,9 @@
         </div>
       </div>
 
-      <!-- COLUMNA DERECHA: Panel en Tiempo Real de Salas Públicas Activas -->
+      <!-- COLUMNA DERECHA: Directorio en Tiempo Real de Salas Públicas Activas -->
       <div class="lg:col-span-5 flex flex-col">
-        <div class="bg-white rounded-card shadow-ambient p-6 sm:p-7 flex flex-col gap-4 min-h-[380px] lg:min-h-[540px] max-h-[680px]">
-          <!-- Cabecera del Directorio Público -->
+        <div class="bg-white rounded-card shadow-ambient p-6 sm:p-7 flex flex-col gap-4 min-h-[390px] lg:min-h-[545px] max-h-[680px]">
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-2.5">
               <span class="w-2.5 h-2.5 rounded-full bg-softEmerald animate-pulse shrink-0"></span>
@@ -373,22 +369,21 @@
             </span>
           </div>
 
-          <!-- Buscador rápido minimalista -->
-          <div id="public-rooms-search-wrap" class="relative">
+          <!-- Buscador Instantáneo -->
+          <div class="relative">
             <svg class="w-4 h-4 text-slateMuted absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
             </svg>
             <input
               id="public-rooms-search"
               type="text"
-              placeholder="Buscar sala o anfitrión..."
+              placeholder="Buscar sala, código o anfitrión..."
               class="w-full pl-10 pr-4 py-2.5 rounded-full bg-mist text-xs sm:text-sm text-slateInk placeholder-slateMuted/65 transition-shadow"
             />
           </div>
 
-          <!-- Listado Desplazable de Salas Públicas -->
+          <!-- Listado Desplazable -->
           <div id="public-rooms-list" class="flex-1 overflow-y-auto flex flex-col gap-3 pr-0.5">
-            <!-- Estado Vacío Minimalista -->
             <div id="public-rooms-empty" class="my-auto py-10 px-4 text-center flex flex-col items-center justify-center">
               <div class="w-14 h-14 rounded-full bg-mist text-slateMuted flex items-center justify-center mb-3.5 shadow-ambientSm">
                 <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -396,8 +391,8 @@
                 </svg>
               </div>
               <p class="text-sm font-semibold text-slateInk">No hay salas públicas ahora mismo</p>
-              <p class="text-xs text-slateMuted mt-1 max-w-[250px] leading-relaxed">
-                Crea una sala en modo <span class="font-medium text-slateInk">Pública</span> y aparecerá aquí al instante para que cualquiera pueda entrar.
+              <p class="text-xs text-slateMuted mt-1 max-w-[260px] leading-relaxed">
+                Crea una sala en modo <span class="font-medium text-slateInk">Pública</span> y aparecerá aquí al instante para que otros puedan entrar.
               </p>
             </div>
           </div>
@@ -405,78 +400,80 @@
       </div>
     </section>
 
-    <!-- Pie de página discreto -->
     <footer class="text-center text-xs text-slateMuted/80 py-2">
       WebRTC Multi-Peer Mesh · Señalización en tiempo real
     </footer>
   </main>
 
   <!-- =======================================================================
-       VISTA 2: SALA ACTIVA (VIDEOLLAMADA, COMPARTIR PANTALLA Y CHAT)
+       VISTA 2: SALA ACTIVA (VIDEOLLAMADA P2P, COMPARTIR PANTALLA Y CHAT)
        ======================================================================= -->
   <div id="room-view" class="hidden fixed inset-0 bg-alabaster flex flex-col overflow-hidden">
     <!-- Barra Superior Flotante Minimalista -->
     <header class="w-full px-4 sm:px-6 pt-4 pb-2 flex items-center justify-between gap-2.5 z-20 shrink-0">
-      <div class="flex items-center gap-2 bg-white px-3.5 sm:px-4 py-2 rounded-full shadow-ambientSm max-w-[68%] sm:max-w-xl">
+      <div class="flex items-center gap-2 bg-white px-3.5 sm:px-4 py-2 rounded-full shadow-ambientSm max-w-[66%] sm:max-w-xl">
         <span class="w-2.5 h-2.5 rounded-full bg-softEmerald shrink-0"></span>
         <span id="active-room-title-label" class="text-xs sm:text-sm font-semibold text-slateInk truncate">Sala</span>
         <span class="text-slateMuted/35 hidden sm:inline">•</span>
-        <button id="room-code-pill-btn" type="button" title="Copiar enlace de invitación" class="hidden sm:flex text-xs font-medium text-slateMuted hover:text-softBlue transition-colors cursor-pointer items-center gap-1 shrink-0">
+        <button id="room-code-pill-btn" type="button" title="Copiar enlace de invitación" class="flex text-xs font-medium text-slateMuted hover:text-softBlue transition-colors cursor-pointer items-center gap-1 shrink-0">
           <span id="active-room-code-label">#abc-defg-hij</span>
           <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
           </svg>
         </button>
-        <span class="text-slateMuted/35">•</span>
-        <span id="call-duration-timer" class="text-xs font-medium text-slateMuted tabular-nums shrink-0">00:00</span>
+        <span class="text-slateMuted/35 hidden md:inline">•</span>
+        <span id="call-duration-timer" class="hidden md:inline text-xs font-medium text-slateMuted tabular-nums shrink-0">00:00</span>
       </div>
 
       <div class="flex items-center gap-2 shrink-0">
-        <!-- Píldora Interactiva de Visibilidad (Pública / Privada) -->
+        <!-- Píldora Interactiva para Cambiar Visibilidad Pública / Privada en Vivo -->
         <button
           id="room-visibility-pill-btn"
           type="button"
-          title="Haz clic para cambiar entre sala Pública y Privada"
+          title="Cambiar entre sala Pública y Privada"
           class="bg-white hover:bg-mist px-3 sm:px-3.5 py-2 rounded-full shadow-ambientSm flex items-center gap-1.5 text-xs font-semibold text-slateInk transition-colors cursor-pointer"
         >
           <span id="room-visibility-icon"></span>
           <span id="room-visibility-text">Pública</span>
         </button>
 
-        <div id="spotlight-hint-pill" class="hidden xl:flex items-center gap-1.5 bg-white px-3.5 py-2 rounded-full shadow-ambientSm text-xs text-slateMuted">
-          <span>Clic en un vídeo para fijar</span>
-        </div>
-
+        <!-- Contador de Conectados -->
         <div class="bg-white px-3 sm:px-3.5 py-2 rounded-full shadow-ambientSm flex items-center gap-1.5 text-xs font-semibold text-slateInk">
           <svg class="w-4 h-4 text-softBlue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
           </svg>
           <span id="participant-count-badge">1</span>
         </div>
+
+        <!-- Botón Ajustes Superior -->
+        <button id="top-settings-btn" type="button" title="Ajustes de sala y dispositivos" class="w-9 h-9 rounded-full bg-white hover:bg-mist text-slateMuted hover:text-slateInk shadow-ambientSm flex items-center justify-center transition-colors cursor-pointer">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
       </div>
     </header>
 
     <!-- Área Principal: Cuadrícula de Vídeos + Panel Lateral de Chat -->
     <div class="flex-1 flex min-h-0 px-4 sm:px-6 py-2 gap-4 relative overflow-hidden">
-      <!-- Contenedor Dinámico de Participantes -->
       <div id="video-stage" class="flex-1 min-w-0 h-full flex flex-col gap-3 overflow-hidden">
-        <!-- Modo Spotlight (oculto por defecto hasta que el usuario fija un participante) -->
+        <!-- Modo Spotlight / Fijar -->
         <div id="spotlight-main-slot" class="hidden flex-1 min-h-0 w-full"></div>
         <div id="spotlight-strip-slot" class="hidden h-28 sm:h-36 shrink-0 flex gap-3 overflow-x-auto pb-1"></div>
 
-        <!-- Modo Cuadrícula Adaptativa -->
+        <!-- Cuadrícula Adaptativa -->
         <div id="video-grid" class="flex-1 min-h-0 w-full grid video-grid-1 gap-3 sm:gap-4 auto-rows-fr"></div>
       </div>
 
-      <!-- Panel Lateral Deslizante de Chat (Blanco Suave Sin Bordes) -->
+      <!-- Panel Lateral Flotante de Chat -->
       <aside
         id="chat-drawer"
         class="hidden fixed inset-y-4 right-4 left-4 sm:left-auto sm:static sm:inset-auto sm:w-80 md:w-96 bg-white rounded-card shadow-ambientLg sm:shadow-ambient flex flex-col overflow-hidden z-30 animate-soft-in shrink-0"
       >
-        <!-- Cabecera del Chat -->
         <div class="px-5 py-4 flex items-center justify-between bg-white shrink-0">
           <div class="flex items-center gap-2">
-            <h3 class="text-sm font-semibold text-slateInk">Mensajes de la sala</h3>
+            <h3 class="text-sm font-semibold text-slateInk">Chat de sala</h3>
             <span class="px-2 py-0.5 rounded-full bg-mist text-[11px] font-medium text-slateMuted">P2P + Nube</span>
           </div>
           <button id="close-chat-btn" type="button" title="Cerrar chat" class="w-8 h-8 rounded-full bg-mist hover:bg-mistHover text-slateMuted flex items-center justify-center transition-colors cursor-pointer">
@@ -486,7 +483,6 @@
           </button>
         </div>
 
-        <!-- Lista de Mensajes -->
         <div id="chat-messages-list" class="flex-1 overflow-y-auto px-4 py-2 flex flex-col gap-3">
           <div id="chat-empty-state" class="my-auto text-center px-4 py-8">
             <div class="w-11 h-11 rounded-full bg-mist text-slateMuted mx-auto mb-2.5 flex items-center justify-center">
@@ -495,11 +491,10 @@
               </svg>
             </div>
             <p class="text-xs font-medium text-slateInk">Aún no hay mensajes</p>
-            <p class="text-[11px] text-slateMuted mt-1">Los mensajes se envían al instante a todos los participantes.</p>
+            <p class="text-[11px] text-slateMuted mt-1">Escribe un mensaje para conversar con toda la sala.</p>
           </div>
         </div>
 
-        <!-- Formulario de Envío de Mensaje -->
         <form id="chat-form" class="p-3 bg-white flex items-center gap-2 shrink-0">
           <input
             id="chat-input"
@@ -521,23 +516,18 @@
       </aside>
     </div>
 
-    <!-- Barra de Controles Flotante Inferior (Píldora Blanca con Sombra Difusa) -->
+    <!-- Barra de Controles Flotante Inferior -->
     <footer class="w-full px-3 pb-4 pt-2 flex justify-center z-20 shrink-0">
       <div class="bg-white/95 backdrop-blur-md rounded-full shadow-dock px-3 sm:px-4 py-2.5 flex items-center gap-2 sm:gap-3 max-w-full overflow-x-auto">
-        <!-- 1. Silenciar / Activar Micrófono -->
         <button id="ctrl-mic-btn" type="button" title="Silenciar / Activar micrófono" class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-mist hover:bg-mistHover text-slateInk flex items-center justify-center shrink-0 transition-all cursor-pointer"></button>
+        <button id="ctrl-cam-btn" type="button" title="Activar / Apagar cámara" class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-mist hover:bg-mistHover text-slateInk flex items-center justify-center shrink-0 transition-all cursor-pointer"></button>
 
-        <!-- 2. Encender / Apagar Cámara -->
-        <button id="ctrl-cam-btn" type="button" title="Encender / Apagar cámara" class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-mist hover:bg-mistHover text-slateInk flex items-center justify-center shrink-0 transition-all cursor-pointer"></button>
-
-        <!-- 3. Compartir Pantalla -->
         <button id="ctrl-screen-btn" type="button" title="Compartir pantalla" class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-mist hover:bg-mistHover text-slateInk flex items-center justify-center shrink-0 transition-all cursor-pointer">
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/><path d="m9 10 3-3 3 3"/><path d="M12 7v6"/>
           </svg>
         </button>
 
-        <!-- 4. Chat Lateral con Contador de No Leídos -->
         <button id="ctrl-chat-btn" type="button" title="Abrir / Cerrar chat" class="relative w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-mist hover:bg-mistHover text-slateInk flex items-center justify-center shrink-0 transition-all cursor-pointer">
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -547,42 +537,33 @@
           </span>
         </button>
 
-        <!-- 5. Ajustes -->
-        <button id="ctrl-settings-btn" type="button" title="Ajustes de audio, vídeo y red" class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-mist hover:bg-mistHover text-slateInk flex items-center justify-center shrink-0 transition-all cursor-pointer">
+        <button id="ctrl-settings-btn" type="button" title="Ajustes" class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-mist hover:bg-mistHover text-slateInk flex items-center justify-center shrink-0 transition-all cursor-pointer">
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
             <circle cx="12" cy="12" r="3"/>
           </svg>
         </button>
 
-        <!-- 6. Copiar Enlace de Invitación -->
-        <button id="ctrl-invite-btn" type="button" title="Copiar enlace de invitación" class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-mist hover:bg-mistHover text-slateInk flex items-center justify-center shrink-0 transition-all cursor-pointer">
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/>
-          </svg>
-        </button>
-
-        <!-- 7. Colgar / Salir de la Sala -->
-        <button id="ctrl-hangup-btn" type="button" title="Salir de la llamada" class="h-11 sm:h-12 px-5 rounded-full bg-softCoral hover:bg-red-600 text-white font-semibold text-sm flex items-center justify-center gap-2 shrink-0 shadow-ambientSm transition-all cursor-pointer">
+        <button id="ctrl-hangup-btn" type="button" title="Colgar y salir" class="h-11 sm:h-12 px-5 rounded-full bg-softCoral hover:bg-red-600 text-white font-semibold text-sm flex items-center justify-center gap-2 shrink-0 shadow-ambientSm transition-all cursor-pointer">
           <svg class="w-5 h-5 rotate-[135deg]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
           </svg>
-          <span class="hidden sm:inline">Salir</span>
+          <span class="hidden sm:inline">Colgar</span>
         </button>
       </div>
     </footer>
   </div>
 
   <!-- =======================================================================
-       MODAL FLOTANTE DE AJUSTES (BLANCO SUAVE, CERO BORDES, SOMBREADO DIFUSO)
+       MODAL FLOTANTE DE AJUSTES COMPLETO (BLANCO SUAVE SIN BORDES)
        ======================================================================= -->
   <div id="settings-modal" class="hidden fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-card shadow-ambientLg w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden animate-soft-in">
       <!-- Cabecera Modal -->
       <div class="px-6 py-5 flex items-center justify-between shrink-0">
         <div>
-          <h3 class="text-lg font-semibold text-slateInk">Ajustes de llamada</h3>
-          <p class="text-xs text-slateMuted mt-0.5">Dispositivos multimedia, procesamiento de audio y estado P2P</p>
+          <h3 class="text-lg font-semibold text-slateInk">Ajustes de llamada y sala</h3>
+          <p class="text-xs text-slateMuted mt-0.5">Privacidad de sala, dispositivos, calidad y monitor WebRTC P2P</p>
         </div>
         <button id="close-settings-btn" type="button" class="w-9 h-9 rounded-full bg-mist hover:bg-mistHover text-slateMuted flex items-center justify-center transition-colors cursor-pointer">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -591,11 +572,46 @@
         </button>
       </div>
 
-      <!-- Contenido Desplazable de Ajustes -->
+      <!-- Contenido Desplazable -->
       <div class="px-6 pb-6 overflow-y-auto flex flex-col gap-6">
-        <!-- Sección Dispositivos -->
+        <!-- Configuración de Sala (Privacidad y Título) -->
+        <div class="flex flex-col gap-3">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slateMuted">Configuración de sala</span>
+
+          <div class="p-3.5 rounded-2xl bg-mist/70 flex items-center justify-between gap-4">
+            <div>
+              <p class="text-sm font-medium text-slateInk">Sala pública en el menú</p>
+              <p class="text-xs text-slateMuted">Visible en el directorio para entrar en un clic</p>
+            </div>
+            <button id="toggle-room-visibility" type="button" role="switch" aria-checked="true" class="soft-switch">
+              <span class="soft-switch-thumb"></span>
+            </button>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label for="settings-room-title-input" class="text-xs font-medium text-slateInk pl-1">Título de la sala</label>
+            <div class="flex items-center gap-2">
+              <input
+                id="settings-room-title-input"
+                type="text"
+                maxlength="48"
+                placeholder="Nombre de la sala"
+                class="flex-1 min-w-0 px-4 py-2.5 rounded-full bg-mist text-sm text-slateInk font-medium"
+              />
+              <button
+                id="save-room-title-btn"
+                type="button"
+                class="px-4 py-2.5 rounded-full bg-softBlue hover:bg-softBlueHover text-white text-xs font-semibold transition-colors shrink-0 cursor-pointer"
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dispositivos de Entrada y Salida -->
         <div class="flex flex-col gap-3.5">
-          <span class="text-xs font-semibold uppercase tracking-wider text-slateMuted">Dispositivos de entrada y salida</span>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slateMuted">Dispositivos multimedia</span>
 
           <div class="flex flex-col gap-1.5">
             <label for="select-video-input" class="text-xs font-medium text-slateInk pl-1">Cámara</label>
@@ -614,34 +630,24 @@
           </div>
         </div>
 
-        <!-- Sección Calidad de Vídeo -->
+        <!-- Resolución / Calidad de Vídeo -->
         <div class="flex flex-col gap-2">
-          <label for="select-video-quality" class="text-xs font-semibold uppercase tracking-wider text-slateMuted">Calidad de vídeo saliente</label>
+          <label for="select-video-quality" class="text-xs font-semibold uppercase tracking-wider text-slateMuted">Resolución de vídeo saliente</label>
           <select id="select-video-quality" class="w-full px-4 py-3 rounded-2xl bg-mist text-sm text-slateInk font-medium cursor-pointer">
-            <option value="360p">360p — Bajo consumo (640×360)</option>
+            <option value="360p">360p — Ahorro de datos (640×360)</option>
             <option value="720p" selected>720p — HD equilibrado (1280×720)</option>
             <option value="1080p">1080p — Full HD (1920×1080)</option>
           </select>
         </div>
 
-        <!-- Sección Interruptores Suaves (Toggles) -->
+        <!-- Procesamiento de Audio y Vista -->
         <div class="flex flex-col gap-3">
-          <span class="text-xs font-semibold uppercase tracking-wider text-slateMuted">Procesamiento de audio, vista y sala</span>
-
-          <div class="p-3.5 rounded-2xl bg-mist/70 flex items-center justify-between gap-4">
-            <div>
-              <p class="text-sm font-medium text-slateInk">Sala pública en el menú</p>
-              <p class="text-xs text-slateMuted">Permite que otros entren desde el listado principal</p>
-            </div>
-            <button id="toggle-room-visibility" type="button" role="switch" aria-checked="true" class="soft-switch">
-              <span class="soft-switch-thumb"></span>
-            </button>
-          </div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slateMuted">Procesamiento de audio y vista</span>
 
           <div class="p-3.5 rounded-2xl bg-mist/70 flex items-center justify-between gap-4">
             <div>
               <p class="text-sm font-medium text-slateInk">Cancelación de eco</p>
-              <p class="text-xs text-slateMuted">Evita el retorno de audio de los altavoces</p>
+              <p class="text-xs text-slateMuted">Evita el retorno acústico de los altavoces</p>
             </div>
             <button id="toggle-echo" type="button" role="switch" aria-checked="true" class="soft-switch">
               <span class="soft-switch-thumb"></span>
@@ -651,9 +657,19 @@
           <div class="p-3.5 rounded-2xl bg-mist/70 flex items-center justify-between gap-4">
             <div>
               <p class="text-sm font-medium text-slateInk">Supresión de ruido</p>
-              <p class="text-xs text-slateMuted">Filtra sonidos ambientales y de teclado</p>
+              <p class="text-xs text-slateMuted">Filtra ruido de fondo y teclado</p>
             </div>
             <button id="toggle-noise" type="button" role="switch" aria-checked="true" class="soft-switch">
+              <span class="soft-switch-thumb"></span>
+            </button>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-mist/70 flex items-center justify-between gap-4">
+            <div>
+              <p class="text-sm font-medium text-slateInk">Control automático de ganancia</p>
+              <p class="text-xs text-slateMuted">Equilibra el volumen de tu voz automáticamente</p>
+            </div>
+            <button id="toggle-gain" type="button" role="switch" aria-checked="true" class="soft-switch">
               <span class="soft-switch-thumb"></span>
             </button>
           </div>
@@ -669,10 +685,10 @@
           </div>
         </div>
 
-        <!-- Monitor de Estado P2P en Vivo -->
+        <!-- Monitor Técnico en Tiempo Real WebRTC P2P -->
         <div class="flex flex-col gap-2.5">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold uppercase tracking-wider text-slateMuted">Monitor de conexiones WebRTC P2P</span>
+            <span class="text-xs font-semibold uppercase tracking-wider text-slateMuted">Monitor WebRTC P2P (ICE)</span>
             <span id="p2p-peer-summary" class="text-xs font-medium text-softBlue">0 conectados</span>
           </div>
           <div id="p2p-monitor-list" class="rounded-2xl bg-mist/70 p-3.5 flex flex-col gap-2 text-xs text-slateMuted">
@@ -684,18 +700,18 @@
   </div>
 
   <!-- =======================================================================
-       LÓGICA DE APLICACIÓN: WEBRTC MULTI-PEER MESH + FIREBASE REALTIME DB
+       ÚNICO BLOQUE DE SCRIPT MODULAR: FIREBASE RTDB + WEBRTC MULTI-PEER MESH
        ======================================================================= -->
   <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
     import {
       getDatabase,
       ref,
       set,
       get,
-      push,
       update,
       remove,
+      push,
       onValue,
       onChildAdded,
       onChildChanged,
@@ -705,7 +721,7 @@
     } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
     /* =========================================================================
-       1. CONFIGURACIÓN EXACTA DE FIREBASE REALTIME DATABASE
+       1. CONFIGURACIÓN E INICIALIZACIÓN IDEMPOTENTE DE FIREBASE
        ========================================================================= */
     const firebaseConfig = {
       apiKey: "AIzaSyBxlmzjYjOEAwc_DVtFpt9DnN7XnuRkbKw",
@@ -718,10 +734,10 @@
       measurementId: "G-V636CRYZ8X"
     };
 
-    const firebaseApp = initializeApp(firebaseConfig);
+    const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
     const db = getDatabase(firebaseApp);
 
-    /* Servidores STUN públicos de Google para travesía NAT */
+    /* Servidores STUN públicos de Google para negociación ICE */
     const ICE_SERVERS = {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
@@ -730,7 +746,7 @@
       iceCandidatePoolSize: 8
     };
 
-    /* Resoluciones de calidad de vídeo */
+    /* Resoluciones de vídeo soportadas */
     const QUALITY_CONSTRAINTS = {
       '360p': { width: { ideal: 640 }, height: { ideal: 360 }, frameRate: { ideal: 24 } },
       '720p': { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
@@ -748,8 +764,8 @@
       roomTitle: '',
       roomHostName: '',
       roomCreatedAt: 0,
-      roomVisibility: 'public', // 'public' | 'private'
-      selectedVisibility: 'public', // selección en el lobby antes de crear
+      roomVisibility: 'public',
+      selectedVisibility: 'public',
       localName: localStorage.getItem('silenos_meet_name') || '',
       micOn: true,
       camOn: true,
@@ -758,7 +774,7 @@
       unreadCount: 0,
       pinnedPeerId: null,
 
-      // Salas públicas activas escuchadas en tiempo real
+      // Listado en tiempo real de salas públicas activas
       publicRooms: [],
       publicRoomsFilter: '',
 
@@ -766,7 +782,7 @@
       localStream: null,
       screenStream: null,
 
-      // Ajustes de dispositivos y calidad
+      // Ajustes multimedia
       settings: {
         videoDeviceId: '',
         audioDeviceId: '',
@@ -781,11 +797,11 @@
       // Mapa de pares remotos: peerId -> PeerEntry
       peers: new Map(),
 
-      // Mensajes de chat deduplicados por id
+      // Historial de chat deduplicado por ID
       messages: [],
       seenMessageIds: new Set(),
 
-      // Temporizadores y listeners de Firebase
+      // Temporizadores, suscripciones Firebase y analizadores Web Audio
       callStartTime: null,
       timerInterval: null,
       firebaseUnsubscribers: [],
@@ -793,7 +809,7 @@
     };
 
     /* =========================================================================
-       3. REFERENCIAS AL DOM E ICONOS SVG
+       3. REFERENCIAS AL DOM E ICONOS SVG MINIMALISTAS
        ========================================================================= */
     const dom = {
       toastContainer: document.getElementById('toast-container'),
@@ -837,8 +853,7 @@
       roomVisibilityText: document.getElementById('room-visibility-text'),
       callDurationTimer: document.getElementById('call-duration-timer'),
       participantCountBadge: document.getElementById('participant-count-badge'),
-      spotlightHintPill: document.getElementById('spotlight-hint-pill'),
-      videoStage: document.getElementById('video-stage'),
+      topSettingsBtn: document.getElementById('top-settings-btn'),
       spotlightMainSlot: document.getElementById('spotlight-main-slot'),
       spotlightStripSlot: document.getElementById('spotlight-strip-slot'),
       videoGrid: document.getElementById('video-grid'),
@@ -852,165 +867,20 @@
       chatInput: document.getElementById('chat-input'),
       unreadChatBadge: document.getElementById('unread-chat-badge'),
 
-      // Controles Inferiores
+      // Barra Inferior
       ctrlMicBtn: document.getElementById('ctrl-mic-btn'),
       ctrlCamBtn: document.getElementById('ctrl-cam-btn'),
       ctrlScreenBtn: document.getElementById('ctrl-screen-btn'),
       ctrlChatBtn: document.getElementById('ctrl-chat-btn'),
       ctrlSettingsBtn: document.getElementById('ctrl-settings-btn'),
-      ctrlInviteBtn: document.getElementById('ctrl-invite-btn'),
       ctrlHangupBtn: document.getElementById('ctrl-hangup-btn'),
 
       // Modal Ajustes
       settingsModal: document.getElementById('settings-modal'),
       closeSettingsBtn: document.getElementById('close-settings-btn'),
-      selectVideoInput: document.getElementById('select-video-input'),
-      selectAudioInput: document.getElementById('select-audio-input'),
-      selectAudioOutput: document.getElementById('select-audio-output'),
-      audioOutputNote: document.getElementById('audio-output-note'),
-      selectVideoQuality: document.getElementById('select-video-quality'),
       toggleRoomVisibility: document.getElementById('toggle-room-visibility'),
-      toggleEcho: document.getElementById('toggle-echo'),
-      toggleNoise: document.getElementById('toggle-noise'),
-      toggleMirror: document.getElementById('toggle-mirror'),
-      p2pPeerSummary: document.getElementById('p2p-peer-summary'),
-      p2pMonitorList: document.getElementById('p2p-monitor-list')
-    };
-
-    const ICONS = {
-      micOn: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>`,
-      micOff: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" x2="22" y1="2" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12"/><line x1="12" x2="12" y1="19" y2="22"/></svg>`,
-      camOn: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="3"/></svg>`,
-      camOff: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.66 6H14a2 2 0 0 1 2 2v2.5l5.248-3.062A.5.5 0 0 1 22 7.87v8.196"/><path d="M16 16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2"/><line x1="2" x2="22" y1="2" y2="22"/></svg>`,
-      micMutedBadge: `<svg class="w-3.5 h-3.5 text-softCoral shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" x2="22" y1="2" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12"/></svg>`,
-      screenBadge: `<svg class="w-3.5 h-3.5 text-softBlue shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>`,
-      globeSmall: `<svg class="w-3.5 h-3.5 text-softEmerald shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>`,
-      lockSmall: `<svg class="w-3.5 h-3.5 text-slateMuted shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`
-    };
-
-    const firebaseApp = initializeApp(firebaseConfig);
-    const db = getDatabase(firebaseApp);
-
-    /* Servidores STUN públicos de Google para travesía NAT */
-    const ICE_SERVERS = {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
-      ],
-      iceCandidatePoolSize: 8
-    };
-
-    /* Resoluciones de calidad de vídeo */
-    const QUALITY_CONSTRAINTS = {
-      '360p': { width: { ideal: 640 }, height: { ideal: 360 }, frameRate: { ideal: 24 } },
-      '720p': { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
-      '1080p': { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } }
-    };
-
-    /* =========================================================================
-       2. ESTADO CENTRAL DE LA APLICACIÓN
-       ========================================================================= */
-    const localPeerId = `peer_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 7)}`;
-
-    const state = {
-      inRoom: false,
-      roomId: '',
-      localName: localStorage.getItem('silenos_meet_name') || '',
-      micOn: true,
-      camOn: true,
-      screenSharing: false,
-      chatOpen: false,
-      unreadCount: 0,
-      pinnedPeerId: null, // null = cuadrícula adaptativa, peerId = modo spotlight
-
-      // Flujos multimedia locales
-      localStream: null,       // MediaStream de cámara + micrófono
-      screenStream: null,      // MediaStream de pantalla compartida
-
-      // Ajustes de dispositivos y calidad
-      settings: {
-        videoDeviceId: '',
-        audioDeviceId: '',
-        audioOutputId: '',
-        videoQuality: '720p',
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-        mirrorLocal: true
-      },
-
-      // Mapa de pares remotos: peerId -> PeerEntry
-      peers: new Map(),
-
-      // Mensajes de chat deduplicados por id
-      messages: [],
-      seenMessageIds: new Set(),
-
-      // Temporizadores y listeners de Firebase
-      callStartTime: null,
-      timerInterval: null,
-      firebaseUnsubscribers: [],
-      audioAnalyzers: new Map() // peerId -> { ctx, interval }
-    };
-
-    /* =========================================================================
-       3. REFERENCIAS AL DOM E ICONOS SVG
-       ========================================================================= */
-    const dom = {
-      toastContainer: document.getElementById('toast-container'),
-      lobbyView: document.getElementById('lobby-view'),
-      roomView: document.getElementById('room-view'),
-
-      // Lobby
-      lobbyPreviewCard: document.getElementById('lobby-preview-card'),
-      lobbyVideo: document.getElementById('lobby-video'),
-      lobbyAvatarFallback: document.getElementById('lobby-avatar-fallback'),
-      lobbyAvatarCircle: document.getElementById('lobby-avatar-circle'),
-      lobbyCameraStatusText: document.getElementById('lobby-camera-status-text'),
-      lobbyVoicePill: document.getElementById('lobby-voice-pill'),
-      lobbyMicDot: document.getElementById('lobby-mic-dot'),
-      lobbyDeviceLabel: document.getElementById('lobby-device-label'),
-      lobbyToggleMic: document.getElementById('lobby-toggle-mic'),
-      lobbyToggleCam: document.getElementById('lobby-toggle-cam'),
-      lobbySettingsBtn: document.getElementById('lobby-settings-btn'),
-      nameInput: document.getElementById('participant-name-input'),
-      roomCodeInput: document.getElementById('room-code-input'),
-      lobbyCopyLinkBtn: document.getElementById('lobby-copy-link-btn'),
-      joinRoomBtn: document.getElementById('join-room-btn'),
-      createRoomBtn: document.getElementById('create-room-btn'),
-
-      // Sala Activa
-      activeRoomCodeLabel: document.getElementById('active-room-code-label'),
-      roomCodePillBtn: document.getElementById('room-code-pill-btn'),
-      callDurationTimer: document.getElementById('call-duration-timer'),
-      participantCountBadge: document.getElementById('participant-count-badge'),
-      spotlightHintPill: document.getElementById('spotlight-hint-pill'),
-      videoStage: document.getElementById('video-stage'),
-      spotlightMainSlot: document.getElementById('spotlight-main-slot'),
-      spotlightStripSlot: document.getElementById('spotlight-strip-slot'),
-      videoGrid: document.getElementById('video-grid'),
-
-      // Chat
-      chatDrawer: document.getElementById('chat-drawer'),
-      closeChatBtn: document.getElementById('close-chat-btn'),
-      chatMessagesList: document.getElementById('chat-messages-list'),
-      chatEmptyState: document.getElementById('chat-empty-state'),
-      chatForm: document.getElementById('chat-form'),
-      chatInput: document.getElementById('chat-input'),
-      unreadChatBadge: document.getElementById('unread-chat-badge'),
-
-      // Controles Inferiores
-      ctrlMicBtn: document.getElementById('ctrl-mic-btn'),
-      ctrlCamBtn: document.getElementById('ctrl-cam-btn'),
-      ctrlScreenBtn: document.getElementById('ctrl-screen-btn'),
-      ctrlChatBtn: document.getElementById('ctrl-chat-btn'),
-      ctrlSettingsBtn: document.getElementById('ctrl-settings-btn'),
-      ctrlInviteBtn: document.getElementById('ctrl-invite-btn'),
-      ctrlHangupBtn: document.getElementById('ctrl-hangup-btn'),
-
-      // Modal Ajustes
-      settingsModal: document.getElementById('settings-modal'),
-      closeSettingsBtn: document.getElementById('close-settings-btn'),
+      settingsRoomTitleInput: document.getElementById('settings-room-title-input'),
+      saveRoomTitleBtn: document.getElementById('save-room-title-btn'),
       selectVideoInput: document.getElementById('select-video-input'),
       selectAudioInput: document.getElementById('select-audio-input'),
       selectAudioOutput: document.getElementById('select-audio-output'),
@@ -1030,7 +900,9 @@
       camOn: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="3"/></svg>`,
       camOff: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.66 6H14a2 2 0 0 1 2 2v2.5l5.248-3.062A.5.5 0 0 1 22 7.87v8.196"/><path d="M16 16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2"/><line x1="2" x2="22" y1="2" y2="22"/></svg>`,
       micMutedBadge: `<svg class="w-3.5 h-3.5 text-softCoral shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" x2="22" y1="2" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12"/></svg>`,
-      screenBadge: `<svg class="w-3.5 h-3.5 text-softBlue shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>`
+      screenBadge: `<svg class="w-3.5 h-3.5 text-softBlue shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>`,
+      globeSmall: `<svg class="w-3.5 h-3.5 text-softEmerald shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>`,
+      lockSmall: `<svg class="w-3.5 h-3.5 text-slateMuted shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`
     };
 
     /* =========================================================================
@@ -1038,7 +910,7 @@
        ========================================================================= */
     function showToast(message, type = 'info') {
       const toast = document.createElement('div');
-      const dotColor = type === 'error' ? 'bg-softCoral' : type === 'success' ? 'bg-emerald-500' : 'bg-softBlue';
+      const dotColor = type === 'error' ? 'bg-softCoral' : type === 'success' ? 'bg-softEmerald' : 'bg-softBlue';
       toast.className = 'px-4 py-2.5 rounded-full bg-white shadow-ambientLg text-xs sm:text-sm font-medium text-slateInk flex items-center gap-2.5 animate-soft-in pointer-events-auto';
       toast.innerHTML = `<span class="w-2 h-2 rounded-full ${dotColor} shrink-0"></span><span>${escapeHtml(message)}</span>`;
       dom.toastContainer.appendChild(toast);
@@ -1080,28 +952,27 @@
       return `${segment(3)}-${segment(4)}-${segment(3)}`;
     }
 
-    function extractRoomCodeFromInput(raw) {
-      const trimmed = (raw || '').trim();
-      if (!trimmed) return '';
-      // Si el usuario pegó una URL completa con ?room=...
-      if (trimmed.includes('://') || trimmed.includes('room=')) {
-        try {
-          const parsedUrl = new URL(trimmed.startsWith('http') ? trimmed : `https://dummy.local/?${trimmed.replace(/^\?/, '')}`);
-          const roomParam = parsedUrl.searchParams.get('room');
-          if (roomParam) return sanitizeRoomCode(roomParam);
-        } catch (_) {}
-      }
-      return sanitizeRoomCode(trimmed);
-    }
-
     function sanitizeRoomCode(raw) {
-      return raw
+      return (raw || '')
         .trim()
         .toLowerCase()
         .replace(/^#/, '')
         .replace(/[^a-z0-9-_]/g, '-')
         .replace(/-+/g, '-')
         .replace(/^-|-$/g, '');
+    }
+
+    function extractRoomCodeFromInput(raw) {
+      const trimmed = (raw || '').trim();
+      if (!trimmed) return '';
+      if (trimmed.includes('://') || trimmed.includes('room=')) {
+        try {
+          const parsedUrl = new URL(trimmed.startsWith('http') ? trimmed : `https://silenos.local/?${trimmed.replace(/^\?/, '')}`);
+          const roomParam = parsedUrl.searchParams.get('room');
+          if (roomParam) return sanitizeRoomCode(roomParam);
+        } catch (_) {}
+      }
+      return sanitizeRoomCode(trimmed);
     }
 
     function buildInviteUrl(roomCode) {
@@ -1124,15 +995,379 @@
       try {
         document.execCommand('copy');
         showToast(successMsg, 'success');
-      } catch (err) {
-        showToast('No se pudo copiar automáticamente', 'error');
+      } catch (_) {
+        showToast('No se pudo copiar el enlace', 'error');
       } finally {
         document.body.removeChild(textarea);
       }
     }
 
     /* =========================================================================
-       7. DIRECTORIO EN TIEMPO REAL DE SALAS PÚBLICAS Y LIMPIEZA ANTI-FANTASMAS
+       5. CAPTURA MULTIMEDIA LOCAL, DISPOSITIVOS Y DETECTOR DE VOZ (WEB AUDIO API)
+       ========================================================================= */
+    async function initLocalMedia(isReinit = false) {
+      if (isReinit && state.localStream) {
+        state.localStream.getTracks().forEach((track) => track.stop());
+      }
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        state.localStream = new MediaStream();
+        updateLocalMediaUI();
+        return;
+      }
+
+      const quality = QUALITY_CONSTRAINTS[state.settings.videoQuality] || QUALITY_CONSTRAINTS['720p'];
+      const videoConstraint = state.settings.videoDeviceId
+        ? { deviceId: { exact: state.settings.videoDeviceId }, ...quality }
+        : { facingMode: 'user', ...quality };
+
+      const audioConstraint = {
+        ...(state.settings.audioDeviceId ? { deviceId: { exact: state.settings.audioDeviceId } } : {}),
+        echoCancellation: state.settings.echoCancellation,
+        noiseSuppression: state.settings.noiseSuppression,
+        autoGainControl: state.settings.autoGainControl
+      };
+
+      let stream = null;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: videoConstraint,
+          audio: audioConstraint
+        });
+      } catch (_) {
+        // Fallback: intentar solo audio si no hay cámara disponible o está ocupada
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: false,
+            audio: audioConstraint
+          });
+          state.camOn = false;
+        } catch (__) {
+          // Modo espectador sin hardware multimedia (no bloquea la entrada a salas)
+          stream = new MediaStream();
+          state.micOn = false;
+          state.camOn = false;
+          if (!isReinit) {
+            showToast('Modo espectador activo (sin cámara ni micrófono detectados)', 'info');
+          }
+        }
+      }
+
+      state.localStream = stream;
+
+      // Sincronizar estado activo de pistas
+      state.localStream.getAudioTracks().forEach((t) => (t.enabled = state.micOn));
+      state.localStream.getVideoTracks().forEach((t) => (t.enabled = state.camOn));
+
+      // Guardar deviceIds activos reales
+      const activeVideoTrack = state.localStream.getVideoTracks()[0];
+      const activeAudioTrack = state.localStream.getAudioTracks()[0];
+      if (activeVideoTrack && activeVideoTrack.getSettings().deviceId) {
+        state.settings.videoDeviceId = activeVideoTrack.getSettings().deviceId;
+      }
+      if (activeAudioTrack && activeAudioTrack.getSettings().deviceId) {
+        state.settings.audioDeviceId = activeAudioTrack.getSettings().deviceId;
+      }
+
+      setupVoiceActivityDetector('local', state.localStream);
+
+      if (state.inRoom) {
+        await replaceTracksInAllPeers();
+      }
+
+      await refreshDeviceLists();
+      updateLocalMediaUI();
+    }
+
+    async function refreshDeviceLists() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoInputs = devices.filter((d) => d.kind === 'videoinput');
+        const audioInputs = devices.filter((d) => d.kind === 'audioinput');
+        const audioOutputs = devices.filter((d) => d.kind === 'audiooutput');
+
+        populateSelect(dom.selectVideoInput, videoInputs, 'Cámara predeterminada', state.settings.videoDeviceId);
+        populateSelect(dom.selectAudioInput, audioInputs, 'Micrófono predeterminado', state.settings.audioDeviceId);
+
+        const supportsSinkId = typeof HTMLMediaElement !== 'undefined' && 'setSinkId' in HTMLMediaElement.prototype;
+        if (supportsSinkId && audioOutputs.length > 0) {
+          dom.selectAudioOutput.disabled = false;
+          dom.audioOutputNote.classList.add('hidden');
+          populateSelect(dom.selectAudioOutput, audioOutputs, 'Altavoces predeterminados', state.settings.audioOutputId);
+        } else {
+          dom.selectAudioOutput.innerHTML = '<option value="">Altavoces del sistema</option>';
+          dom.selectAudioOutput.disabled = true;
+          dom.audioOutputNote.classList.remove('hidden');
+        }
+      } catch (_) {}
+    }
+
+    function populateSelect(selectEl, devices, fallbackLabel, currentValue) {
+      selectEl.innerHTML = '';
+      if (devices.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = fallbackLabel;
+        selectEl.appendChild(opt);
+        return;
+      }
+      devices.forEach((dev, index) => {
+        const opt = document.createElement('option');
+        opt.value = dev.deviceId;
+        opt.textContent = dev.label || `${fallbackLabel} ${index + 1}`;
+        if (dev.deviceId === currentValue) {
+          opt.selected = true;
+        }
+        selectEl.appendChild(opt);
+      });
+    }
+
+    function setupVoiceActivityDetector(peerId, stream) {
+      const existing = state.audioAnalyzers.get(peerId);
+      if (existing) {
+        clearInterval(existing.interval);
+        existing.ctx.close().catch(() => {});
+        state.audioAnalyzers.delete(peerId);
+      }
+
+      if (!stream || stream.getAudioTracks().length === 0) return;
+
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioCtx();
+        const source = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.smoothingTimeConstant = 0.65;
+        source.connect(analyser);
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        const interval = setInterval(() => {
+          if (ctx.state === 'suspended') {
+            ctx.resume().catch(() => {});
+          }
+
+          if (peerId === 'local' && !state.micOn) {
+            setSpeakingVisual('local', false);
+            return;
+          }
+
+          const remotePeer = state.peers.get(peerId);
+          if (peerId !== 'local' && remotePeer && !remotePeer.micOn) {
+            setSpeakingVisual(peerId, false);
+            return;
+          }
+
+          analyser.getByteFrequencyData(dataArray);
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i];
+          }
+          const avg = sum / dataArray.length;
+          setSpeakingVisual(peerId, avg > 16);
+        }, 120);
+
+        state.audioAnalyzers.set(peerId, { ctx, interval });
+      } catch (_) {}
+    }
+
+    function setSpeakingVisual(peerId, isSpeaking) {
+      if (peerId === 'local') {
+        dom.lobbyPreviewCard.classList.toggle('shadow-speaking', isSpeaking);
+        dom.lobbyVoicePill.classList.toggle('is-speaking', isSpeaking);
+      }
+
+      const tile = document.getElementById(`tile-${peerId}`);
+      if (tile) {
+        tile.classList.toggle('shadow-speaking', isSpeaking);
+        tile.classList.toggle('is-speaking', isSpeaking);
+      }
+    }
+
+    function updateLocalMediaUI() {
+      const displayName = dom.nameInput.value.trim() || state.localName || 'Tú';
+      const initials = getInitials(displayName);
+      dom.lobbyAvatarCircle.textContent = initials;
+
+      const hasVideoTrack = state.localStream && state.localStream.getVideoTracks().length > 0;
+      const showVideo = (state.camOn && hasVideoTrack) || state.screenSharing;
+
+      if (state.localStream && hasVideoTrack && state.camOn) {
+        dom.lobbyVideo.srcObject = state.localStream;
+        dom.lobbyVideo.classList.remove('hidden');
+        dom.lobbyVideo.classList.toggle('mirror-video', state.settings.mirrorLocal);
+        dom.lobbyAvatarFallback.classList.add('hidden');
+      } else {
+        dom.lobbyVideo.classList.add('hidden');
+        dom.lobbyAvatarFallback.classList.remove('hidden');
+        dom.lobbyCameraStatusText.textContent = hasVideoTrack ? 'Cámara desactivada' : 'Sin cámara detectada';
+      }
+
+      updateControlButtonState(dom.lobbyToggleMic, state.micOn, ICONS.micOn, ICONS.micOff);
+      updateControlButtonState(dom.lobbyToggleCam, state.camOn && hasVideoTrack, ICONS.camOn, ICONS.camOff);
+      updateControlButtonState(dom.ctrlMicBtn, state.micOn, ICONS.micOn, ICONS.micOff);
+      updateControlButtonState(dom.ctrlCamBtn, state.camOn && hasVideoTrack, ICONS.camOn, ICONS.camOff);
+
+      if (state.screenSharing) {
+        dom.ctrlScreenBtn.classList.remove('bg-mist', 'text-slateInk', 'hover:bg-mistHover');
+        dom.ctrlScreenBtn.classList.add('bg-softBlue', 'text-white', 'shadow-ambientSm');
+      } else {
+        dom.ctrlScreenBtn.classList.add('bg-mist', 'text-slateInk', 'hover:bg-mistHover');
+        dom.ctrlScreenBtn.classList.remove('bg-softBlue', 'text-white', 'shadow-ambientSm');
+      }
+
+      const hasAudioTrack = state.localStream && state.localStream.getAudioTracks().length > 0;
+      if (!hasAudioTrack && !hasVideoTrack) {
+        dom.lobbyMicDot.className = 'w-2 h-2 rounded-full bg-amber-400';
+        dom.lobbyDeviceLabel.textContent = 'Modo espectador (sin dispositivos)';
+      } else if (state.micOn) {
+        dom.lobbyMicDot.className = 'w-2 h-2 rounded-full bg-softEmerald';
+        dom.lobbyDeviceLabel.textContent = 'Micrófono activo';
+      } else {
+        dom.lobbyMicDot.className = 'w-2 h-2 rounded-full bg-softCoral';
+        dom.lobbyDeviceLabel.textContent = 'Micrófono silenciado';
+      }
+
+      if (state.inRoom) {
+        updateParticipantTile('local', {
+          name: `${displayName} (Tú)`,
+          initials,
+          micOn: state.micOn,
+          camOn: showVideo,
+          screenSharing: state.screenSharing,
+          stream: state.screenSharing ? state.screenStream : state.localStream,
+          isLocal: true
+        });
+        syncPresenceToFirebase();
+      }
+    }
+
+    function updateControlButtonState(btn, isActive, activeIcon, inactiveIcon) {
+      if (isActive) {
+        btn.innerHTML = activeIcon;
+        btn.classList.remove('bg-softCoralTint', 'text-softCoral');
+        btn.classList.add('bg-mist', 'hover:bg-mistHover', 'text-slateInk');
+      } else {
+        btn.innerHTML = inactiveIcon;
+        btn.classList.remove('bg-mist', 'hover:bg-mistHover', 'text-slateInk');
+        btn.classList.add('bg-softCoralTint', 'text-softCoral');
+      }
+    }
+
+    /* =========================================================================
+       6. ACCIONES DE MICRÓFONO, CÁMARA Y COMPARTIR PANTALLA
+       ========================================================================= */
+    function toggleMicrophone() {
+      const audioTracks = state.localStream ? state.localStream.getAudioTracks() : [];
+      if (audioTracks.length === 0) {
+        showToast('No se detectó ningún micrófono disponible', 'error');
+        return;
+      }
+      state.micOn = !state.micOn;
+      audioTracks.forEach((track) => (track.enabled = state.micOn));
+      updateLocalMediaUI();
+    }
+
+    function toggleCamera() {
+      const videoTracks = state.localStream ? state.localStream.getVideoTracks() : [];
+      if (videoTracks.length === 0) {
+        showToast('No se detectó ninguna cámara disponible', 'error');
+        return;
+      }
+      state.camOn = !state.camOn;
+      videoTracks.forEach((track) => (track.enabled = state.camOn));
+      updateLocalMediaUI();
+    }
+
+    async function toggleScreenShare() {
+      if (state.screenSharing) {
+        await stopScreenShare();
+        return;
+      }
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+        showToast('Tu navegador no soporta compartir pantalla', 'error');
+        return;
+      }
+
+      try {
+        const displayStream = await navigator.mediaDevices.getDisplayMedia({
+          video: { cursor: 'always' },
+          audio: true
+        });
+
+        const screenTrack = displayStream.getVideoTracks()[0];
+        if (!screenTrack) return;
+
+        state.screenStream = displayStream;
+        state.screenSharing = true;
+
+        await replaceVideoTrackInAllPeers(screenTrack);
+
+        screenTrack.onended = () => {
+          stopScreenShare();
+        };
+
+        updateLocalMediaUI();
+        showToast('Compartiendo tu pantalla con la sala', 'success');
+      } catch (err) {
+        if (err.name !== 'AbortError' && err.name !== 'NotAllowedError') {
+          showToast('No se pudo compartir la pantalla', 'error');
+        }
+      }
+    }
+
+    async function stopScreenShare() {
+      if (!state.screenSharing) return;
+
+      if (state.screenStream) {
+        state.screenStream.getTracks().forEach((t) => t.stop());
+        state.screenStream = null;
+      }
+      state.screenSharing = false;
+
+      const camTrack = state.localStream ? state.localStream.getVideoTracks()[0] || null : null;
+      if (camTrack) {
+        camTrack.enabled = state.camOn;
+      }
+      await replaceVideoTrackInAllPeers(camTrack);
+
+      updateLocalMediaUI();
+      showToast('Has dejado de compartir pantalla', 'info');
+    }
+
+    async function replaceVideoTrackInAllPeers(newVideoTrack) {
+      for (const [, peerEntry] of state.peers.entries()) {
+        if (peerEntry.videoSender) {
+          try {
+            await peerEntry.videoSender.replaceTrack(newVideoTrack);
+          } catch (_) {}
+        }
+      }
+    }
+
+    async function replaceTracksInAllPeers() {
+      const audioTrack = state.localStream ? state.localStream.getAudioTracks()[0] || null : null;
+      const activeVideoTrack = state.screenSharing && state.screenStream
+        ? state.screenStream.getVideoTracks()[0] || null
+        : (state.localStream ? state.localStream.getVideoTracks()[0] || null : null);
+
+      for (const [, peerEntry] of state.peers.entries()) {
+        try {
+          if (peerEntry.audioSender) {
+            await peerEntry.audioSender.replaceTrack(audioTrack);
+          }
+          if (peerEntry.videoSender) {
+            await peerEntry.videoSender.replaceTrack(activeVideoTrack);
+          }
+        } catch (_) {}
+      }
+    }
+
+    /* =========================================================================
+       7. DIRECTORIO DE SALAS PÚBLICAS Y LIMPIEZA ANTI-FANTASMAS
        ========================================================================= */
     function setLobbyVisibilitySelection(visibility) {
       state.selectedVisibility = visibility === 'private' ? 'private' : 'public';
@@ -1169,7 +1404,7 @@
             : {};
           const participantEntries = Object.entries(participantsMap);
 
-          // Limpieza automática anti-salas fantasma si no queda ningún participante activo
+          // Limpieza automática de salas vacías para evitar salas fantasma
           if (participantEntries.length === 0) {
             remove(ref(db, `publicRooms/${roomId}`)).catch(() => {});
             return;
@@ -1188,7 +1423,6 @@
           });
         });
 
-        // Ordenar por más recientes primero
         activeRooms.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         state.publicRooms = activeRooms;
         renderPublicRoomsDirectory();
@@ -1208,7 +1442,6 @@
       const totalCount = state.publicRooms.length;
       dom.publicRoomsCountBadge.textContent = `${totalCount} ${totalCount === 1 ? 'activa' : 'activas'}`;
 
-      // Eliminar tarjetas anteriores
       Array.from(dom.publicRoomsList.querySelectorAll('.public-room-card')).forEach((el) => el.remove());
 
       if (filtered.length === 0) {
@@ -1248,13 +1481,13 @@
             </div>
             <div class="flex items-center gap-2.5 mt-2.5">
               <div class="flex items-center">${avatarsHtml}${extraBadge}</div>
-              <span class="text-xs font-medium text-slateMuted">${count} ${count === 1 ? 'persona conectada' : 'personas conectadas'}</span>
+              <span class="text-xs font-medium text-slateMuted">${count} ${count === 1 ? 'conectado' : 'conectados'}</span>
             </div>
           </div>
 
           <button
             type="button"
-            class="enter-public-room-btn py-2.5 px-4 rounded-full bg-white hover:bg-slateInk text-slateInk hover:text-white text-xs sm:text-sm font-semibold shadow-ambientSm transition-all shrink-0 cursor-pointer"
+            class="enter-public-room-btn py-2.5 px-4 rounded-full bg-white hover:bg-softBlue text-slateInk hover:text-white text-xs sm:text-sm font-semibold shadow-ambientSm transition-all shrink-0 cursor-pointer"
           >
             Entrar
           </button>
@@ -1273,7 +1506,7 @@
     }
 
     /* =========================================================================
-       8. SEÑALIZACIÓN MULTI-PEER MESH EN FIREBASE REALTIME DATABASE + WEBRTC
+       8. ENTRADA A SALA, METADATOS Y SEÑALIZACIÓN MULTI-PEER EN FIREBASE RTDB
        ========================================================================= */
     async function joinRoom(rawRoomId, options = {}) {
       const cleanRoomId = extractRoomCodeFromInput(rawRoomId);
@@ -1287,7 +1520,6 @@
       state.localName = name;
       localStorage.setItem('silenos_meet_name', name);
 
-      // Consultar metadatos existentes en Firebase para respetar si la sala ya es pública o privada
       const metaRef = ref(db, `rooms/${cleanRoomId}/meta`);
       let existingMeta = null;
       try {
@@ -1326,7 +1558,6 @@
       state.seenMessageIds.clear();
       renderChatMessages();
 
-      // Escribir metadatos de la sala si es nueva o no existían
       if (!existingMeta || isCreating) {
         await set(metaRef, {
           id: cleanRoomId,
@@ -1337,22 +1568,19 @@
         });
       }
 
-      // Actualizar URL sin recargar la página
       window.history.replaceState({}, '', buildInviteUrl(cleanRoomId));
 
-      // Cambiar vista a Sala Activa
       dom.lobbyView.classList.add('hidden');
       dom.roomView.classList.remove('hidden');
       dom.activeRoomTitleLabel.textContent = resolvedTitle;
       dom.activeRoomCodeLabel.textContent = `#${cleanRoomId}`;
+      dom.settingsRoomTitleInput.value = resolvedTitle;
       updateRoomVisibilityUI();
 
-      // Iniciar temporizador de duración
       state.callStartTime = Date.now();
       updateCallTimer();
       state.timerInterval = setInterval(updateCallTimer, 1000);
 
-      // Renderizar tarjeta local en la cuadrícula
       const hasVideoTrack = state.localStream && state.localStream.getVideoTracks().length > 0;
       renderParticipantTile('local', {
         name: `${state.localName} (Tú)`,
@@ -1365,7 +1593,7 @@
       });
       refreshLayoutGrid();
 
-      // 1. Registrar presencia en rooms/{roomId}/participants/{localPeerId} con onDisconnect().remove()
+      // 1. Registrar presencia en rooms/{roomId}/participants/{localPeerId}
       const myParticipantRef = ref(db, `rooms/${cleanRoomId}/participants/${localPeerId}`);
       await onDisconnect(myParticipantRef).remove();
       await set(myParticipantRef, {
@@ -1376,12 +1604,12 @@
         joinedAt: serverTimestamp()
       });
 
-      // Si la sala es pública, registrar también en publicRooms/{roomId}
+      // Registrar en publicRooms si es pública
       if (chosenVisibility === 'public') {
         await registerInPublicRooms(cleanRoomId, resolvedTitle, resolvedHost, resolvedCreatedAt);
       }
 
-      // 2. Escuchar cambios en metadatos de la sala (por si cambia visibilidad Pública <-> Privada)
+      // 2. Escuchar cambios en metadatos de sala (título y visibilidad)
       const unsubMeta = onValue(metaRef, async (snapshot) => {
         const meta = snapshot.val();
         if (!meta || !state.inRoom) return;
@@ -1390,6 +1618,7 @@
         state.roomHostName = meta.hostName || state.roomHostName;
         state.roomVisibility = meta.visibility === 'private' ? 'private' : 'public';
         dom.activeRoomTitleLabel.textContent = state.roomTitle;
+        dom.settingsRoomTitleInput.value = state.roomTitle;
         updateRoomVisibilityUI();
 
         if (state.roomVisibility === 'public' && prevVis !== 'public') {
@@ -1397,7 +1626,7 @@
         }
       });
 
-      // 3. Escuchar participantes de la sala
+      // 3. Escuchar participantes remotos en rooms/{roomId}/participants
       const participantsRef = ref(db, `rooms/${cleanRoomId}/participants`);
 
       const unsubPeerAdded = onChildAdded(participantsRef, (snapshot) => {
@@ -1420,16 +1649,16 @@
         handleRemotePeerLeft(remotePeerId);
       });
 
-      // 4. Escuchar historial y nuevos mensajes de chat en rooms/{roomId}/chat
-      const chatRef = ref(db, `rooms/${cleanRoomId}/chat`);
-      const unsubChat = onChildAdded(chatRef, (snapshot) => {
+      // 4. Escuchar historial y mensajes nuevos en rooms/{roomId}/messages
+      const messagesRef = ref(db, `rooms/${cleanRoomId}/messages`);
+      const unsubMessages = onChildAdded(messagesRef, (snapshot) => {
         const msg = snapshot.val();
         if (msg && msg.id) {
           receiveChatMessage(msg);
         }
       });
 
-      state.firebaseUnsubscribers.push(unsubMeta, unsubPeerAdded, unsubPeerChanged, unsubPeerRemoved, unsubChat);
+      state.firebaseUnsubscribers.push(unsubMeta, unsubPeerAdded, unsubPeerChanged, unsubPeerRemoved, unsubMessages);
       updateP2PMonitor();
     }
 
@@ -1455,13 +1684,11 @@
       state.roomVisibility = nextVisibility;
       updateRoomVisibilityUI();
 
-      // Actualizar metadatos de la sala
       await update(ref(db, `rooms/${state.roomId}/meta`), {
         visibility: nextVisibility
       }).catch(() => {});
 
       if (nextVisibility === 'public') {
-        // Publicar sala en publicRooms con todos los participantes actuales
         const participantsPayload = {
           [localPeerId]: { name: state.localName, joinedAt: Date.now() }
         };
@@ -1478,10 +1705,31 @@
         await onDisconnect(ref(db, `publicRooms/${state.roomId}/participants/${localPeerId}`)).remove().catch(() => {});
         showToast('Sala ahora es Pública y visible en el menú', 'success');
       } else {
-        // Retirar sala del listado público
         await remove(ref(db, `publicRooms/${state.roomId}`)).catch(() => {});
         showToast('Sala ahora es Privada (solo por código o enlace)', 'info');
       }
+    }
+
+    async function updateRoomTitle(newTitleRaw) {
+      const cleanTitle = (newTitleRaw || '').trim();
+      if (!cleanTitle) {
+        showToast('Escribe un nombre válido para la sala', 'error');
+        return;
+      }
+
+      if (!state.inRoom) {
+        dom.roomTitleInput.value = cleanTitle;
+        showToast('Nombre de sala preparado', 'success');
+        return;
+      }
+
+      state.roomTitle = cleanTitle;
+      dom.activeRoomTitleLabel.textContent = cleanTitle;
+      await update(ref(db, `rooms/${state.roomId}/meta`), { title: cleanTitle }).catch(() => {});
+      if (state.roomVisibility === 'public') {
+        await update(ref(db, `publicRooms/${state.roomId}`), { title: cleanTitle }).catch(() => {});
+      }
+      showToast('Título de la sala actualizado', 'success');
     }
 
     function updateRoomVisibilityUI() {
@@ -1494,8 +1742,7 @@
     function syncPresenceToFirebase() {
       if (!state.inRoom || !state.roomId) return;
       const hasVideoTrack = state.localStream && state.localStream.getVideoTracks().length > 0;
-      const myParticipantRef = ref(db, `rooms/${state.roomId}/participants/${localPeerId}`);
-      update(myParticipantRef, {
+      update(ref(db, `rooms/${state.roomId}/participants/${localPeerId}`), {
         name: state.localName,
         micOn: state.micOn,
         camOn: (state.camOn && hasVideoTrack) || state.screenSharing,
@@ -1509,403 +1756,8 @@
       }
     }
 
-    function populateSelect(selectEl, devices, fallbackLabel, currentValue) {
-      selectEl.innerHTML = '';
-      if (devices.length === 0) {
-        const opt = document.createElement('option');
-        opt.value = '';
-        opt.textContent = fallbackLabel;
-        selectEl.appendChild(opt);
-        return;
-      }
-      devices.forEach((dev, index) => {
-        const opt = document.createElement('option');
-        opt.value = dev.deviceId;
-        opt.textContent = dev.label || `${fallbackLabel} ${index + 1}`;
-        if (dev.deviceId === currentValue) {
-          opt.selected = true;
-        }
-        selectEl.appendChild(opt);
-      });
-    }
-
-    function setupVoiceActivityDetector(peerId, stream) {
-      // Limpiar analizador previo para este peer
-      const existing = state.audioAnalyzers.get(peerId);
-      if (existing) {
-        clearInterval(existing.interval);
-        existing.ctx.close().catch(() => {});
-        state.audioAnalyzers.delete(peerId);
-      }
-
-      if (!stream || stream.getAudioTracks().length === 0) return;
-
-      try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        const ctx = new AudioCtx();
-        const source = ctx.createMediaStreamSource(stream);
-        const analyser = ctx.createAnalyser();
-        analyser.fftSize = 256;
-        analyser.smoothingTimeConstant = 0.65;
-        source.connect(analyser);
-
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-        const interval = setInterval(() => {
-          if (ctx.state === 'suspended') {
-            ctx.resume().catch(() => {});
-          }
-
-          // Si es local y el mic está silenciado, no marcar como hablando
-          if (peerId === 'local' && !state.micOn) {
-            setSpeakingVisual('local', false);
-            return;
-          }
-
-          const remotePeer = state.peers.get(peerId);
-          if (peerId !== 'local' && remotePeer && !remotePeer.micOn) {
-            setSpeakingVisual(peerId, false);
-            return;
-          }
-
-          analyser.getByteFrequencyData(dataArray);
-          let sum = 0;
-          for (let i = 0; i < dataArray.length; i++) {
-            sum += dataArray[i];
-          }
-          const avg = sum / dataArray.length;
-          const isSpeaking = avg > 16;
-          setSpeakingVisual(peerId, isSpeaking);
-        }, 120);
-
-        state.audioAnalyzers.set(peerId, { ctx, interval });
-      } catch (e) {
-        console.warn('Web Audio API no disponible para análisis de voz:', e);
-      }
-    }
-
-    function setSpeakingVisual(peerId, isSpeaking) {
-      if (peerId === 'local') {
-        if (isSpeaking) {
-          dom.lobbyPreviewCard.classList.add('shadow-speaking');
-          dom.lobbyVoicePill.classList.add('is-speaking');
-        } else {
-          dom.lobbyPreviewCard.classList.remove('shadow-speaking');
-          dom.lobbyVoicePill.classList.remove('is-speaking');
-        }
-      }
-
-      const tile = document.getElementById(`tile-${peerId}`);
-      if (tile) {
-        if (isSpeaking) {
-          tile.classList.add('shadow-speaking', 'is-speaking');
-        } else {
-          tile.classList.remove('shadow-speaking', 'is-speaking');
-        }
-      }
-    }
-
-    function updateLocalMediaUI() {
-      const displayName = dom.nameInput.value.trim() || state.localName || 'Tú';
-      const initials = getInitials(displayName);
-      dom.lobbyAvatarCircle.textContent = initials;
-
-      const hasVideoTrack = state.localStream && state.localStream.getVideoTracks().length > 0;
-      const showVideo = (state.camOn && hasVideoTrack) || state.screenSharing;
-
-      // Actualizar vídeo del lobby
-      if (state.localStream && hasVideoTrack && state.camOn) {
-        dom.lobbyVideo.srcObject = state.localStream;
-        dom.lobbyVideo.classList.remove('hidden');
-        dom.lobbyVideo.classList.toggle('mirror-video', state.settings.mirrorLocal);
-        dom.lobbyAvatarFallback.classList.add('hidden');
-      } else {
-        dom.lobbyVideo.classList.add('hidden');
-        dom.lobbyAvatarFallback.classList.remove('hidden');
-        dom.lobbyCameraStatusText.textContent = hasVideoTrack ? 'Cámara desactivada' : 'Sin cámara detectada';
-      }
-
-      // Actualizar botones del lobby y barra inferior
-      updateControlButtonState(dom.lobbyToggleMic, state.micOn, ICONS.micOn, ICONS.micOff);
-      updateControlButtonState(dom.lobbyToggleCam, state.camOn && hasVideoTrack, ICONS.camOn, ICONS.camOff);
-      updateControlButtonState(dom.ctrlMicBtn, state.micOn, ICONS.micOn, ICONS.micOff);
-      updateControlButtonState(dom.ctrlCamBtn, state.camOn && hasVideoTrack, ICONS.camOn, ICONS.camOff);
-
-      // Estado botón compartir pantalla
-      if (state.screenSharing) {
-        dom.ctrlScreenBtn.classList.remove('bg-mist', 'text-slateInk', 'hover:bg-mistHover');
-        dom.ctrlScreenBtn.classList.add('bg-softBlue', 'text-white', 'shadow-ambientSm');
-      } else {
-        dom.ctrlScreenBtn.classList.add('bg-mist', 'text-slateInk', 'hover:bg-mistHover');
-        dom.ctrlScreenBtn.classList.remove('bg-softBlue', 'text-white', 'shadow-ambientSm');
-      }
-
-      // Etiqueta de estado en lobby
-      const hasAudioTrack = state.localStream && state.localStream.getAudioTracks().length > 0;
-      if (!hasAudioTrack && !hasVideoTrack) {
-        dom.lobbyMicDot.className = 'w-2 h-2 rounded-full bg-amber-400';
-        dom.lobbyDeviceLabel.textContent = 'Modo espectador (sin dispositivos)';
-      } else if (state.micOn) {
-        dom.lobbyMicDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
-        dom.lobbyDeviceLabel.textContent = 'Micrófono activo';
-      } else {
-        dom.lobbyMicDot.className = 'w-2 h-2 rounded-full bg-softCoral';
-        dom.lobbyDeviceLabel.textContent = 'Micrófono silenciado';
-      }
-
-      // Actualizar tarjeta local dentro de la sala si está activa
-      if (state.inRoom) {
-        updateParticipantTile('local', {
-          name: `${displayName} (Tú)`,
-          initials,
-          micOn: state.micOn,
-          camOn: showVideo,
-          screenSharing: state.screenSharing,
-          stream: state.screenSharing ? state.screenStream : state.localStream,
-          isLocal: true
-        });
-        syncPresenceToFirebase();
-      }
-    }
-
-    function updateControlButtonState(btn, isActive, activeIcon, inactiveIcon) {
-      if (isActive) {
-        btn.innerHTML = activeIcon;
-        btn.classList.remove('bg-softCoralTint', 'text-softCoral');
-        btn.classList.add('bg-mist', 'hover:bg-mistHover', 'text-slateInk');
-      } else {
-        btn.innerHTML = inactiveIcon;
-        btn.classList.remove('bg-mist', 'hover:bg-mistHover', 'text-slateInk');
-        btn.classList.add('bg-softCoralTint', 'text-softCoral');
-      }
-    }
-
     /* =========================================================================
-       6. ACCIONES DE MICRÓFONO, CÁMARA Y COMPARTIR PANTALLA
-       ========================================================================= */
-    async function toggleMicrophone() {
-      const audioTracks = state.localStream ? state.localStream.getAudioTracks() : [];
-      if (audioTracks.length === 0) {
-        showToast('No se detectó ningún micrófono disponible', 'error');
-        return;
-      }
-      state.micOn = !state.micOn;
-      audioTracks.forEach((track) => (track.enabled = state.micOn));
-      updateLocalMediaUI();
-    }
-
-    async function toggleCamera() {
-      const videoTracks = state.localStream ? state.localStream.getVideoTracks() : [];
-      if (videoTracks.length === 0) {
-        showToast('No se detectó ninguna cámara disponible', 'error');
-        return;
-      }
-      state.camOn = !state.camOn;
-      videoTracks.forEach((track) => (track.enabled = state.camOn));
-      updateLocalMediaUI();
-    }
-
-    async function toggleScreenShare() {
-      if (state.screenSharing) {
-        await stopScreenShare();
-        return;
-      }
-
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-        showToast('Tu navegador no soporta compartir pantalla', 'error');
-        return;
-      }
-
-      try {
-        const displayStream = await navigator.mediaDevices.getDisplayMedia({
-          video: { cursor: 'always' },
-          audio: true
-        });
-
-        const screenTrack = displayStream.getVideoTracks()[0];
-        if (!screenTrack) return;
-
-        state.screenStream = displayStream;
-        state.screenSharing = true;
-
-        // Reemplazar dinámicamente la pista de vídeo en todos los peers sin cortar la llamada
-        await replaceVideoTrackInAllPeers(screenTrack);
-
-        // Detectar cuando el usuario detiene desde la barra nativa del navegador
-        screenTrack.onended = () => {
-          stopScreenShare();
-        };
-
-        updateLocalMediaUI();
-        showToast('Compartiendo tu pantalla con la sala', 'success');
-      } catch (err) {
-        if (err.name !== 'AbortError' && err.name !== 'NotAllowedError') {
-          showToast('No se pudo iniciar la compartición de pantalla', 'error');
-        }
-      }
-    }
-
-    async function stopScreenShare() {
-      if (!state.screenSharing) return;
-
-      if (state.screenStream) {
-        state.screenStream.getTracks().forEach((t) => t.stop());
-        state.screenStream = null;
-      }
-      state.screenSharing = false;
-
-      // Restaurar pista de cámara (o null si la cámara estaba apagada/ausente)
-      const camTrack = state.localStream ? state.localStream.getVideoTracks()[0] || null : null;
-      if (camTrack) {
-        camTrack.enabled = state.camOn;
-      }
-      await replaceVideoTrackInAllPeers(camTrack);
-
-      updateLocalMediaUI();
-      showToast('Has dejado de compartir pantalla', 'info');
-    }
-
-    async function replaceVideoTrackInAllPeers(newVideoTrack) {
-      for (const [, peerEntry] of state.peers.entries()) {
-        if (peerEntry.videoSender) {
-          try {
-            await peerEntry.videoSender.replaceTrack(newVideoTrack);
-          } catch (err) {
-            console.warn('Error reemplazando pista de vídeo en peer:', err);
-          }
-        }
-      }
-    }
-
-    async function replaceTracksInAllPeers() {
-      const audioTrack = state.localStream ? state.localStream.getAudioTracks()[0] || null : null;
-      const activeVideoTrack = state.screenSharing && state.screenStream
-        ? state.screenStream.getVideoTracks()[0] || null
-        : (state.localStream ? state.localStream.getVideoTracks()[0] || null : null);
-
-      for (const [, peerEntry] of state.peers.entries()) {
-        try {
-          if (peerEntry.audioSender) {
-            await peerEntry.audioSender.replaceTrack(audioTrack);
-          }
-          if (peerEntry.videoSender) {
-            await peerEntry.videoSender.replaceTrack(activeVideoTrack);
-          }
-        } catch (err) {
-          console.warn('Error actualizando pistas en peer:', err);
-        }
-      }
-    }
-
-    /* =========================================================================
-       7. SEÑALIZACIÓN MULTI-PEER MESH EN FIREBASE REALTIME DATABASE + WEBRTC
-       ========================================================================= */
-    async function joinRoom(rawRoomId) {
-      const cleanRoomId = sanitizeRoomCode(rawRoomId);
-      if (!cleanRoomId) {
-        showToast('Introduce un código de sala válido', 'error');
-        dom.roomCodeInput.focus();
-        return;
-      }
-
-      const name = dom.nameInput.value.trim() || 'Participante';
-      state.localName = name;
-      localStorage.setItem('silenos_meet_name', name);
-
-      state.roomId = cleanRoomId;
-      state.inRoom = true;
-      state.pinnedPeerId = null;
-      state.messages = [];
-      state.seenMessageIds.clear();
-      renderChatMessages();
-
-      // Actualizar URL sin recargar la página
-      window.history.replaceState({}, '', buildInviteUrl(cleanRoomId));
-
-      // Cambiar vista a Sala Activa
-      dom.lobbyView.classList.add('hidden');
-      dom.roomView.classList.remove('hidden');
-      dom.activeRoomCodeLabel.textContent = cleanRoomId;
-
-      // Iniciar temporizador de duración
-      state.callStartTime = Date.now();
-      updateCallTimer();
-      state.timerInterval = setInterval(updateCallTimer, 1000);
-
-      // Renderizar tarjeta local en la cuadrícula
-      const hasVideoTrack = state.localStream && state.localStream.getVideoTracks().length > 0;
-      renderParticipantTile('local', {
-        name: `${state.localName} (Tú)`,
-        initials: getInitials(state.localName),
-        micOn: state.micOn,
-        camOn: state.camOn && hasVideoTrack,
-        screenSharing: state.screenSharing,
-        stream: state.localStream,
-        isLocal: true
-      });
-      refreshLayoutGrid();
-
-      // 1. Registrar presencia en Firebase con onDisconnect().remove()
-      const myPeerRef = ref(db, `rooms/${cleanRoomId}/peers/${localPeerId}`);
-      await onDisconnect(myPeerRef).remove();
-      await set(myPeerRef, {
-        name: state.localName,
-        micOn: state.micOn,
-        camOn: state.camOn && hasVideoTrack,
-        screenSharing: state.screenSharing,
-        joinedAt: serverTimestamp()
-      });
-
-      // 2. Escuchar participantes de la sala
-      const peersRef = ref(db, `rooms/${cleanRoomId}/peers`);
-
-      const unsubPeerAdded = onChildAdded(peersRef, (snapshot) => {
-        const remotePeerId = snapshot.key;
-        if (!remotePeerId || remotePeerId === localPeerId) return;
-        const data = snapshot.val() || {};
-        handleRemotePeerJoined(remotePeerId, data);
-      });
-
-      const unsubPeerChanged = onChildChanged(peersRef, (snapshot) => {
-        const remotePeerId = snapshot.key;
-        if (!remotePeerId || remotePeerId === localPeerId) return;
-        const data = snapshot.val() || {};
-        handleRemotePeerUpdated(remotePeerId, data);
-      });
-
-      const unsubPeerRemoved = onChildRemoved(peersRef, (snapshot) => {
-        const remotePeerId = snapshot.key;
-        if (!remotePeerId || remotePeerId === localPeerId) return;
-        handleRemotePeerLeft(remotePeerId);
-      });
-
-      // 3. Escuchar mensajes de chat en Firebase Realtime Database
-      const messagesRef = ref(db, `rooms/${cleanRoomId}/messages`);
-      const unsubMessages = onChildAdded(messagesRef, (snapshot) => {
-        const msg = snapshot.val();
-        if (msg && msg.id) {
-          receiveChatMessage(msg);
-        }
-      });
-
-      state.firebaseUnsubscribers.push(unsubPeerAdded, unsubPeerChanged, unsubPeerRemoved, unsubMessages);
-      updateP2PMonitor();
-    }
-
-    function syncPresenceToFirebase() {
-      if (!state.inRoom || !state.roomId) return;
-      const hasVideoTrack = state.localStream && state.localStream.getVideoTracks().length > 0;
-      const myPeerRef = ref(db, `rooms/${state.roomId}/peers/${localPeerId}`);
-      update(myPeerRef, {
-        name: state.localName,
-        micOn: state.micOn,
-        camOn: (state.camOn && hasVideoTrack) || state.screenSharing,
-        screenSharing: state.screenSharing
-      }).catch(() => {});
-    }
-
-    /* =========================================================================
-       8. CONEXIONES PEER-TO-PEER (EMPAREJAMIENTO DETERMINISTA peerA < peerB)
+       9. CONEXIONES WEBRTC PEER-TO-PEER (EMPAREJAMIENTO DETERMINISTA localId < remoteId)
        ========================================================================= */
     async function handleRemotePeerJoined(remotePeerId, peerData) {
       if (state.peers.has(remotePeerId)) return;
@@ -1915,7 +1767,6 @@
       const signalBasePath = `rooms/${state.roomId}/signals/${pairKey}`;
       const signalRef = ref(db, signalBasePath);
 
-      // Limpiar señales automáticamente si cualquiera se desconecta
       onDisconnect(signalRef).remove().catch(() => {});
 
       const pc = new RTCPeerConnection(ICE_SERVERS);
@@ -1941,7 +1792,6 @@
 
       state.peers.set(remotePeerId, peerEntry);
 
-      // Añadir transceivers / pistas locales para garantizar envío y recepción bidireccional
       const localAudioTrack = state.localStream ? state.localStream.getAudioTracks()[0] || null : null;
       const localVideoTrack = state.screenSharing && state.screenStream
         ? state.screenStream.getVideoTracks()[0] || null
@@ -1959,7 +1809,6 @@
       });
       peerEntry.videoSender = videoTransceiver.sender;
 
-      // Recibir pistas remotas de audio y vídeo
       pc.ontrack = (event) => {
         if (event.streams && event.streams[0]) {
           event.streams[0].getTracks().forEach((track) => {
@@ -1973,7 +1822,6 @@
           }
         }
 
-        // Configurar detector de voz para este participante remoto
         if (remoteStream.getAudioTracks().length > 0) {
           setupVoiceActivityDetector(remotePeerId, remoteStream);
         }
@@ -1989,7 +1837,6 @@
         });
       };
 
-      // Recolectar y enviar candidatos ICE a Firebase
       const myCandidatesRef = ref(db, `${signalBasePath}/candidates/${localPeerId}`);
       pc.onicecandidate = (event) => {
         if (event.candidate) {
@@ -1997,15 +1844,9 @@
         }
       };
 
-      // Monitorear estado de conexión ICE
-      pc.oniceconnectionstatechange = () => {
-        updateP2PMonitor();
-      };
-      pc.onconnectionstatechange = () => {
-        updateP2PMonitor();
-      };
+      pc.oniceconnectionstatechange = () => updateP2PMonitor();
+      pc.onconnectionstatechange = () => updateP2PMonitor();
 
-      // Configurar WebRTC DataChannel para chat instantáneo P2P
       if (isOfferer) {
         const dc = pc.createDataChannel('chat', { ordered: true });
         setupDataChannel(peerEntry, dc);
@@ -2015,7 +1856,6 @@
         };
       }
 
-      // Renderizar tarjeta del participante remoto inmediatamente
       renderParticipantTile(remotePeerId, {
         name: peerEntry.name,
         initials: getInitials(peerEntry.name),
@@ -2028,7 +1868,7 @@
       refreshLayoutGrid();
       updateP2PMonitor();
 
-      // Escuchar candidatos ICE del par remoto
+      // Cola de candidatos ICE antes de remoteDescription
       const remoteCandidatesRef = ref(db, `${signalBasePath}/candidates/${remotePeerId}`);
       const unsubCandidates = onChildAdded(remoteCandidatesRef, async (snapshot) => {
         const candidateData = snapshot.val();
@@ -2037,21 +1877,17 @@
         if (peerEntry.remoteDescriptionSet) {
           try {
             await pc.addIceCandidate(candidate);
-          } catch (e) {
-            console.warn('Error añadiendo candidato ICE:', e);
-          }
+          } catch (_) {}
         } else {
           peerEntry.pendingIceCandidates.push(candidate);
         }
       });
       peerEntry.unsubscribers.push(unsubCandidates);
 
-      // Intercambio determinista Oferta / Respuesta SDP
       const offerRef = ref(db, `${signalBasePath}/offer`);
       const answerRef = ref(db, `${signalBasePath}/answer`);
 
       if (isOfferer) {
-        // El peer menor crea la oferta SDP
         try {
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
@@ -2060,11 +1896,8 @@
             sdp: offer.sdp,
             from: localPeerId
           });
-        } catch (err) {
-          console.error('Error creando oferta SDP:', err);
-        }
+        } catch (_) {}
 
-        // Escuchar la respuesta SDP del peer mayor
         const unsubAnswer = onValue(answerRef, async (snapshot) => {
           const answerData = snapshot.val();
           if (!answerData || peerEntry.remoteDescriptionSet) return;
@@ -2074,14 +1907,11 @@
               peerEntry.remoteDescriptionSet = true;
               await flushPendingIceCandidates(peerEntry);
               updateP2PMonitor();
-            } catch (err) {
-              console.warn('Error aplicando respuesta SDP:', err);
-            }
+            } catch (_) {}
           }
         });
         peerEntry.unsubscribers.push(unsubAnswer);
       } else {
-        // El peer mayor espera la oferta SDP y responde
         const unsubOffer = onValue(offerRef, async (snapshot) => {
           const offerData = snapshot.val();
           if (!offerData || peerEntry.remoteDescriptionSet) return;
@@ -2099,9 +1929,7 @@
                 from: localPeerId
               });
               updateP2PMonitor();
-            } catch (err) {
-              console.warn('Error procesando oferta SDP:', err);
-            }
+            } catch (_) {}
           }
         });
         peerEntry.unsubscribers.push(unsubOffer);
@@ -2113,9 +1941,7 @@
         const candidate = peerEntry.pendingIceCandidates.shift();
         try {
           await peerEntry.pc.addIceCandidate(candidate);
-        } catch (err) {
-          console.warn('Error aplicando candidato ICE en cola:', err);
-        }
+        } catch (_) {}
       }
     }
 
@@ -2129,9 +1955,7 @@
           if (payload && payload.type === 'chat' && payload.message) {
             receiveChatMessage(payload.message);
           }
-        } catch (e) {
-          // Ignorar paquetes no JSON
-        }
+        } catch (_) {}
       };
     }
 
@@ -2160,16 +1984,13 @@
       const peerEntry = state.peers.get(remotePeerId);
       if (!peerEntry) return;
 
-      // Limpiar listeners de señalización y cerrar RTCPeerConnection
       peerEntry.unsubscribers.forEach((unsub) => {
         try { unsub(); } catch (_) {}
       });
       try { peerEntry.pc.close(); } catch (_) {}
 
-      // Limpiar nodo de señalización
       remove(ref(db, `rooms/${state.roomId}/signals/${peerEntry.pairKey}`)).catch(() => {});
 
-      // Limpiar analizador de audio
       const analyzer = state.audioAnalyzers.get(remotePeerId);
       if (analyzer) {
         clearInterval(analyzer.interval);
@@ -2179,7 +2000,6 @@
 
       state.peers.delete(remotePeerId);
 
-      // Eliminar tarjeta de vídeo del DOM
       const tile = document.getElementById(`tile-${remotePeerId}`);
       if (tile) tile.remove();
 
@@ -2193,7 +2013,7 @@
     }
 
     /* =========================================================================
-       9. RENDERIZADO DE CUADRÍCULA DE VÍDEO Y MODO SPOTLIGHT (FIJAR)
+       10. CUADRÍCULA ADAPTATIVA DE VÍDEO Y MODO SPOTLIGHT / FIJAR
        ========================================================================= */
     function renderParticipantTile(peerId, info) {
       let tile = document.getElementById(`tile-${peerId}`);
@@ -2208,14 +2028,12 @@
             <div class="tile-initials w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-mist text-softBlue font-semibold text-2xl sm:text-3xl flex items-center justify-center shadow-ambientSm mb-2.5 transition-transform duration-300 group-hover:scale-105"></div>
           </div>
 
-          <!-- Botón sutil de fijar en esquina superior derecha -->
-          <div class="tile-pin-badge opacity-0 group-hover:opacity-100 transition-opacity absolute top-3.5 right-3.5 px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-md shadow-ambientSm text-[11px] font-medium text-slateInk">
+          <div class="tile-pin-badge opacity-0 group-hover:opacity-100 transition-opacity absolute top-3.5 right-3.5 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-md shadow-ambientSm text-[11px] font-medium text-slateInk">
             Fijar
           </div>
 
-          <!-- Etiqueta flotante inferior minimalista -->
           <div class="absolute bottom-3.5 left-3.5 right-3.5 flex items-center justify-between gap-2 pointer-events-none">
-            <div class="px-3.5 py-1.5 rounded-full bg-white/92 backdrop-blur-md shadow-ambientSm flex items-center gap-2 max-w-full">
+            <div class="px-3.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md shadow-ambientSm flex items-center gap-2 max-w-full">
               <span class="tile-mic-icon hidden">${ICONS.micMutedBadge}</span>
               <span class="tile-name text-xs sm:text-sm font-medium text-slateInk truncate"></span>
               <div class="flex items-end gap-0.5 h-3 ml-0.5">
@@ -2227,18 +2045,13 @@
 
             <div class="tile-screen-pill hidden px-3 py-1.5 rounded-full bg-softBlueTint/95 backdrop-blur-md shadow-ambientSm flex items-center gap-1.5 text-[11px] font-semibold text-softBlue shrink-0">
               ${ICONS.screenBadge}
-              <span class="hidden sm:inline">Compartiendo pantalla</span>
+              <span class="hidden sm:inline">Pantalla compartida</span>
             </div>
           </div>
         `;
 
-        // Clic para alternar modo Spotlight / Fijar
         tile.addEventListener('click', () => {
-          if (state.pinnedPeerId === peerId) {
-            state.pinnedPeerId = null;
-          } else {
-            state.pinnedPeerId = peerId;
-          }
+          state.pinnedPeerId = state.pinnedPeerId === peerId ? null : peerId;
           refreshLayoutGrid();
         });
 
@@ -2262,19 +2075,9 @@
       initialsEl.textContent = info.initials;
       nameEl.textContent = info.name;
 
-      if (info.micOn) {
-        micIconEl.classList.add('hidden');
-      } else {
-        micIconEl.classList.remove('hidden');
-      }
+      micIconEl.classList.toggle('hidden', Boolean(info.micOn));
+      screenPillEl.classList.toggle('hidden', !info.screenSharing);
 
-      if (info.screenSharing) {
-        screenPillEl.classList.remove('hidden');
-      } else {
-        screenPillEl.classList.add('hidden');
-      }
-
-      // Asignar flujo de vídeo
       if (info.isLocal) {
         videoEl.muted = true;
       } else {
@@ -2292,14 +2095,12 @@
         videoEl.classList.remove('hidden');
         avatarEl.classList.add('hidden');
 
-        // Espejo solo para cámara local cuando NO está compartiendo pantalla
+        // Sin espejo cuando se comparte pantalla localmente
         const shouldMirror = info.isLocal && state.settings.mirrorLocal && !info.screenSharing;
         videoEl.classList.toggle('mirror-video', shouldMirror);
-        // Contener pantalla compartida completa sin recortar bordes
         videoEl.classList.toggle('object-contain', Boolean(info.screenSharing));
         videoEl.classList.toggle('object-cover', !info.screenSharing);
       } else {
-        // Mantener srcObject activo si hay audio remoto para que el sonido siga reproduciéndose
         if (!info.isLocal && info.stream && info.stream.getAudioTracks().length > 0) {
           if (videoEl.srcObject !== info.stream) {
             videoEl.srcObject = info.stream;
@@ -2320,21 +2121,15 @@
       const totalCount = allTiles.length;
       dom.participantCountBadge.textContent = String(totalCount);
 
-      // Mostrar sugerencia de fijar cuando hay 2 o más participantes
-      if (totalCount >= 2) {
-        dom.spotlightHintPill.classList.remove('md:hidden');
-      } else {
-        dom.spotlightHintPill.classList.add('md:hidden');
+      if (totalCount < 2) {
         state.pinnedPeerId = null;
       }
 
-      // Verificar que el peer fijado siga existiendo
       if (state.pinnedPeerId && !document.getElementById(`tile-${state.pinnedPeerId}`)) {
         state.pinnedPeerId = null;
       }
 
       if (state.pinnedPeerId && totalCount >= 2) {
-        // MODO SPOTLIGHT
         dom.videoGrid.classList.add('hidden');
         dom.spotlightMainSlot.classList.remove('hidden');
         dom.spotlightStripSlot.classList.remove('hidden');
@@ -2355,7 +2150,6 @@
           }
         });
       } else {
-        // MODO CUADRÍCULA ADAPTATIVA
         dom.spotlightMainSlot.classList.add('hidden');
         dom.spotlightStripSlot.classList.add('hidden');
         dom.videoGrid.classList.remove('hidden');
@@ -2382,7 +2176,7 @@
     }
 
     /* =========================================================================
-       10. CHAT EN TIEMPO REAL (WEBRTC DATACHANNEL + FIREBASE REALTIME DB)
+       11. CHAT DUAL EN TIEMPO REAL (RTCDATACHANNEL + FIREBASE RTDB)
        ========================================================================= */
     function sendChatMessage(rawText) {
       const text = rawText.trim();
@@ -2396,10 +2190,10 @@
         timestamp: Date.now()
       };
 
-      // 1. Mostrar localmente al instante
+      // 1. Renderizar localmente al instante
       receiveChatMessage(msgObj);
 
-      // 2. Enviar por WebRTC DataChannel a todos los peers conectados
+      // 2. Enviar por RTCDataChannel con latencia cero
       const dcPayload = JSON.stringify({ type: 'chat', message: msgObj });
       for (const [, peerEntry] of state.peers.entries()) {
         if (peerEntry.dataChannel && peerEntry.dataChannel.readyState === 'open') {
@@ -2409,9 +2203,9 @@
         }
       }
 
-      // 3. Persistir en Firebase Realtime Database para historial y entrega garantizada
-      const roomChatRef = ref(db, `rooms/${state.roomId}/chat/${msgObj.id}`);
-      set(roomChatRef, msgObj).catch(() => {});
+      // 3. Sincronizar en rooms/{roomId}/messages de Firebase RTDB
+      const roomMessagesRef = ref(db, `rooms/${state.roomId}/messages/${msgObj.id}`);
+      set(roomMessagesRef, msgObj).catch(() => {});
     }
 
     function receiveChatMessage(msgObj) {
@@ -2429,15 +2223,14 @@
     }
 
     function renderChatMessages() {
+      Array.from(dom.chatMessagesList.querySelectorAll('.chat-bubble-row')).forEach((el) => el.remove());
+
       if (state.messages.length === 0) {
         dom.chatEmptyState.classList.remove('hidden');
-        // Eliminar burbujas previas si las hubiera
-        Array.from(dom.chatMessagesList.querySelectorAll('.chat-bubble-row')).forEach((el) => el.remove());
         return;
       }
 
       dom.chatEmptyState.classList.add('hidden');
-      Array.from(dom.chatMessagesList.querySelectorAll('.chat-bubble-row')).forEach((el) => el.remove());
 
       state.messages.forEach((msg) => {
         const isOwn = msg.senderId === localPeerId;
@@ -2493,7 +2286,7 @@
     }
 
     /* =========================================================================
-       11. AJUSTES EN VIVO, SALIDA DE AUDIO Y MONITOR P2P
+       12. SALIDA DE AUDIO, INTERRUPTORES DE AJUSTES Y MONITOR WEBRTC P2P
        ========================================================================= */
     function applyAudioOutputSink(mediaEl) {
       if (!mediaEl || typeof mediaEl.setSinkId !== 'function') return;
@@ -2519,6 +2312,7 @@
       dom.p2pMonitorList.innerHTML = '';
       for (const [, peerEntry] of state.peers.entries()) {
         const iceState = peerEntry.pc.iceConnectionState || 'new';
+        const connState = peerEntry.pc.connectionState || 'new';
         const dcState = peerEntry.dataChannel ? peerEntry.dataChannel.readyState : 'connecting';
         const isGood = iceState === 'connected' || iceState === 'completed';
 
@@ -2526,13 +2320,14 @@
         row.className = 'flex items-center justify-between gap-2 bg-white px-3.5 py-2.5 rounded-xl shadow-ambientSm';
         row.innerHTML = `
           <div class="flex items-center gap-2 min-w-0">
-            <span class="w-2 h-2 rounded-full ${isGood ? 'bg-emerald-500' : 'bg-amber-400'} shrink-0"></span>
+            <span class="w-2 h-2 rounded-full ${isGood ? 'bg-softEmerald' : 'bg-amber-400'} shrink-0"></span>
             <span class="font-medium text-slateInk truncate">${escapeHtml(peerEntry.name)}</span>
             <span class="text-[11px] text-slateMuted">(${peerEntry.isOfferer ? 'Oferente' : 'Receptor'})</span>
           </div>
-          <div class="flex items-center gap-2 shrink-0 text-[11px]">
+          <div class="flex items-center gap-1.5 shrink-0 text-[11px]">
             <span class="px-2 py-0.5 rounded-full bg-mist text-slateInk font-medium">ICE: ${escapeHtml(iceState)}</span>
-            <span class="px-2 py-0.5 rounded-full bg-mist text-slateMuted">Chat: ${escapeHtml(dcState)}</span>
+            <span class="px-2 py-0.5 rounded-full bg-mist text-slateMuted">P2P: ${escapeHtml(connState)}</span>
+            <span class="px-2 py-0.5 rounded-full bg-mist text-slateMuted">DC: ${escapeHtml(dcState)}</span>
           </div>
         `;
         dom.p2pMonitorList.appendChild(row);
@@ -2560,13 +2355,13 @@
           updateLocalMediaUI();
         } else if (reinitMedia) {
           await initLocalMedia(true);
-          showToast('Ajustes de audio aplicados', 'success');
+          showToast('Procesamiento de audio actualizado', 'success');
         }
       });
     }
 
     /* =========================================================================
-       12. SALIR DE LA SALA Y LIMPIEZA COMPLETA (INCLUYENDO SALAS VACÍAS)
+       13. SALIR DE LA SALA Y LIMPIEZA DE RECURSOS
        ========================================================================= */
     async function leaveRoom() {
       if (!state.inRoom) return;
@@ -2574,26 +2369,22 @@
       const roomToLeave = state.roomId;
       state.inRoom = false;
 
-      // Detener temporizador
       if (state.timerInterval) {
         clearInterval(state.timerInterval);
         state.timerInterval = null;
       }
 
-      // Detener compartición de pantalla si estaba activa
       if (state.screenStream) {
         state.screenStream.getTracks().forEach((t) => t.stop());
         state.screenStream = null;
         state.screenSharing = false;
       }
 
-      // Cancelar listeners globales de la sala
       state.firebaseUnsubscribers.forEach((unsub) => {
         try { unsub(); } catch (_) {}
       });
       state.firebaseUnsubscribers = [];
 
-      // Cerrar todas las conexiones P2P y limpiar señales
       for (const [remotePeerId, peerEntry] of state.peers.entries()) {
         peerEntry.unsubscribers.forEach((unsub) => {
           try { unsub(); } catch (_) {}
@@ -2610,12 +2401,10 @@
       }
       state.peers.clear();
 
-      // Eliminar presencia propia en rooms y en publicRooms
       if (roomToLeave) {
         await remove(ref(db, `rooms/${roomToLeave}/participants/${localPeerId}`)).catch(() => {});
         await remove(ref(db, `publicRooms/${roomToLeave}/participants/${localPeerId}`)).catch(() => {});
 
-        // Si ya no quedan participantes en la sala, eliminar publicRooms/{roomId} y rooms/{roomId}
         try {
           const remainingSnap = await get(ref(db, `rooms/${roomToLeave}/participants`));
           if (!remainingSnap.exists() || !remainingSnap.val()) {
@@ -2625,17 +2414,14 @@
         } catch (_) {}
       }
 
-      // Limpiar URL si tenía ?room=
       window.history.replaceState({}, '', buildInviteUrl(''));
 
-      // Limpiar cuadrícula de vídeo y chat
       dom.videoGrid.innerHTML = '';
       dom.spotlightMainSlot.innerHTML = '';
       dom.spotlightStripSlot.innerHTML = '';
       state.pinnedPeerId = null;
       toggleChatDrawer(false);
 
-      // Volver a la vista de Lobby
       dom.roomView.classList.add('hidden');
       dom.lobbyView.classList.remove('hidden');
       setLobbyVisibilitySelection(state.selectedVisibility);
@@ -2653,10 +2439,9 @@
     }
 
     /* =========================================================================
-       13. INICIALIZACIÓN Y EVENTOS DE INTERFAZ
+       14. INICIALIZACIÓN Y VINCULACIÓN DE EVENTOS
        ========================================================================= */
     function bindEvents() {
-      // Nombre en Lobby
       dom.nameInput.value = state.localName;
       dom.nameInput.addEventListener('input', () => {
         state.localName = dom.nameInput.value.trim();
@@ -2664,24 +2449,21 @@
         updateLocalMediaUI();
       });
 
-      // Selector de visibilidad Pública / Privada en Lobby
       dom.visPublicBtn.addEventListener('click', () => setLobbyVisibilitySelection('public'));
       dom.visPrivateBtn.addEventListener('click', () => setLobbyVisibilitySelection('private'));
 
-      // Buscador en directorio de salas públicas
       dom.publicRoomsSearch.addEventListener('input', (e) => {
         state.publicRoomsFilter = e.target.value || '';
         renderPublicRoomsDirectory();
       });
 
-      // Detectar parámetro ?room=... en la URL
+      // Detección automática de parámetro ?room=CODIGO en la URL
       const params = new URLSearchParams(window.location.search);
       const urlRoom = params.get('room');
       if (urlRoom) {
         dom.roomCodeInput.value = sanitizeRoomCode(urlRoom);
       }
 
-      // Controles de Lobby
       dom.lobbyToggleMic.addEventListener('click', toggleMicrophone);
       dom.lobbyToggleCam.addEventListener('click', toggleCamera);
 
@@ -2698,7 +2480,7 @@
       dom.joinRoomBtn.addEventListener('click', () => {
         const extracted = extractRoomCodeFromInput(dom.roomCodeInput.value);
         if (!extracted) {
-          showToast('Pega un código o enlace de sala para unirte', 'error');
+          showToast('Introduce un código o enlace de sala para unirte', 'error');
           dom.roomCodeInput.focus();
           return;
         }
@@ -2713,7 +2495,7 @@
         }
       });
 
-      // Controles de Sala Activa
+      // Controles en Sala Activa
       dom.ctrlMicBtn.addEventListener('click', toggleMicrophone);
       dom.ctrlCamBtn.addEventListener('click', toggleCamera);
       dom.ctrlScreenBtn.addEventListener('click', toggleScreenShare);
@@ -2722,11 +2504,10 @@
       dom.ctrlHangupBtn.addEventListener('click', leaveRoom);
       dom.roomVisibilityPillBtn.addEventListener('click', toggleRoomVisibility);
 
-      const copyRoomInvite = () => copyTextToClipboard(buildInviteUrl(state.roomId), 'Enlace copiado');
-      dom.ctrlInviteBtn.addEventListener('click', copyRoomInvite);
-      dom.roomCodePillBtn.addEventListener('click', copyRoomInvite);
+      dom.roomCodePillBtn.addEventListener('click', () => {
+        copyTextToClipboard(buildInviteUrl(state.roomId), 'Enlace de invitación copiado');
+      });
 
-      // Formulario Chat
       dom.chatForm.addEventListener('submit', (e) => {
         e.preventDefault();
         sendChatMessage(dom.chatInput.value);
@@ -2735,6 +2516,7 @@
 
       // Modal de Ajustes
       const openSettings = () => {
+        dom.settingsRoomTitleInput.value = state.inRoom ? state.roomTitle : dom.roomTitleInput.value;
         refreshDeviceLists();
         updateP2PMonitor();
         dom.settingsModal.classList.remove('hidden');
@@ -2743,13 +2525,24 @@
 
       dom.lobbySettingsBtn.addEventListener('click', openSettings);
       dom.lobbyQuickSettingsBtn.addEventListener('click', openSettings);
+      dom.topSettingsBtn.addEventListener('click', openSettings);
       dom.ctrlSettingsBtn.addEventListener('click', openSettings);
       dom.closeSettingsBtn.addEventListener('click', closeSettings);
       dom.settingsModal.addEventListener('click', (e) => {
         if (e.target === dom.settingsModal) closeSettings();
       });
 
-      // Selectores de Dispositivos y Calidad
+      dom.saveRoomTitleBtn.addEventListener('click', () => {
+        updateRoomTitle(dom.settingsRoomTitleInput.value);
+      });
+
+      dom.settingsRoomTitleInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          updateRoomTitle(dom.settingsRoomTitleInput.value);
+        }
+      });
+
       dom.selectVideoInput.addEventListener('change', async (e) => {
         state.settings.videoDeviceId = e.target.value;
         await initLocalMedia(true);
@@ -2765,7 +2558,7 @@
       dom.selectAudioOutput.addEventListener('change', (e) => {
         state.settings.audioOutputId = e.target.value;
         document.querySelectorAll('#room-view video').forEach((v) => applyAudioOutputSink(v));
-        showToast('Salida de audio actualizada', 'success');
+        showToast('Altavoces actualizados', 'success');
       });
 
       dom.selectVideoQuality.addEventListener('change', async (e) => {
@@ -2774,25 +2567,23 @@
         if (videoTrack) {
           try {
             await videoTrack.applyConstraints(QUALITY_CONSTRAINTS[state.settings.videoQuality]);
-            showToast(`Calidad ajustada a ${state.settings.videoQuality}`, 'success');
+            showToast(`Resolución ajustada a ${state.settings.videoQuality}`, 'success');
           } catch (_) {
             await initLocalMedia(true);
           }
         }
       });
 
-      // Interruptores Suaves (Toggles)
       bindSoftSwitch(dom.toggleRoomVisibility, 'roomVisibility', false);
       bindSoftSwitch(dom.toggleEcho, 'echoCancellation', true);
       bindSoftSwitch(dom.toggleNoise, 'noiseSuppression', true);
+      bindSoftSwitch(dom.toggleGain, 'autoGainControl', true);
       bindSoftSwitch(dom.toggleMirror, 'mirrorLocal', false);
 
-      // Escuchar cambios físicos en dispositivos conectados (USB/Bluetooth)
       if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
         navigator.mediaDevices.addEventListener('devicechange', refreshDeviceLists);
       }
 
-      // Limpieza al cerrar pestaña
       window.addEventListener('beforeunload', () => {
         if (state.inRoom && state.roomId) {
           remove(ref(db, `rooms/${state.roomId}/participants/${localPeerId}`)).catch(() => {});
@@ -2801,7 +2592,6 @@
       });
     }
 
-    // Arranque de la aplicación
     window.addEventListener('DOMContentLoaded', async () => {
       bindEvents();
       setLobbyVisibilitySelection('public');
