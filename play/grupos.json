@@ -1,0 +1,66 @@
+[
+  {
+    "name": "Cine Noir",
+    "type": "serie"
+  },
+  {
+    "name": "Arandela en el Estudio",
+    "type": "serie"
+  },
+  {
+    "name": "Miercoles de Ruta",
+    "type": "serie"
+  },
+  {
+    "name": "ROCKSTEADY Clásico Vol. 1",
+    "type": "musica"
+  },
+  {
+    "name": "Cool BnB Británico - Vol. 1",
+    "type": "musica"
+  },
+  {
+    "name": "Frecuencias",
+    "type": "musica"
+  },
+  {
+    "name": "Type Beats",
+    "type": "musica"
+  },
+  {
+    "name": "MINIMAL TECHNO",
+    "type": "musica"
+  },
+  {
+    "name": "Bandas Sonoras",
+    "type": "musica"
+  },
+  {
+    "name": "Arandela Cine",
+    "type": "serie"
+  },
+  {
+    "name": "El Vlog de Arandela",
+    "type": "serie"
+  },
+  {
+    "name": "Electrónica",
+    "type": "musica"
+  },
+  {
+    "name": "Vintage",
+    "type": "musica"
+  },
+  {
+    "name": "Arandela Colocada Serie",
+    "type": "serie"
+  },
+  {
+    "name": "LEDT",
+    "type": "serie"
+  },
+  {
+    "name": "Imhotep",
+    "type": "serie"
+  }
+]
