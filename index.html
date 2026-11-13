@@ -115,6 +115,10 @@
         }
     </style>
     <script type="text/javascript" data-cmp-ab="1" src="https://cdn.consentmanager.net/delivery/autoblocking/420cc2acd22a4.js" data-cmp-host="b.delivery.consentmanager.net" data-cmp-cdn="cdn.consentmanager.net" data-cmp-codesrc="0"></script>
+<style>
+.play-carousel{margin-top:2.75rem}.play-carousel-track{display:grid;grid-template-columns:minmax(0,.16fr) minmax(0,1fr) minmax(0,.16fr);gap:1rem;align-items:center}.play-slide{padding:0;border:0;border-radius:.55rem;overflow:hidden;background:#111;cursor:pointer;opacity:.48;transition:opacity .25s,transform .25s;line-height:0}.play-slide:hover,.play-slide:focus-visible{opacity:.8}.play-slide[aria-current="true"]{opacity:1;box-shadow:0 16px 40px #0002}.play-slide img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}.play-carousel-controls{display:flex;align-items:center;justify-content:center;gap:1.2rem;margin-top:1.25rem}.play-carousel-controls>button{font-size:1.15rem;color:inherit;opacity:.55;line-height:1;padding:.35rem}.play-carousel-controls>button:hover{opacity:1}.play-carousel-dots{display:flex;align-items:center;gap:.6rem}.play-carousel-dots button{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.25;transition:opacity .2s,transform .2s}.play-carousel-dots button[aria-current="true"]{opacity:.9;transform:scale(1.3)}.play-carousel button:focus-visible{outline:2px solid #a82832;outline-offset:4px}@media(max-width:600px){.play-carousel-track{grid-template-columns:minmax(0,.08fr) minmax(0,1fr) minmax(0,.08fr);gap:.5rem}.play-slide{border-radius:.35rem}}
+.play-lightbox{width:min(95vw,1600px);max-width:none;max-height:95vh;padding:0;border:0;border-radius:.5rem;background:transparent;overflow:visible}.play-lightbox::backdrop{background:rgba(0,0,0,.88)}.play-lightbox button{display:block;width:100%;padding:0;border:0;background:transparent;cursor:zoom-out}.play-lightbox img{display:block;width:100%;max-height:92vh;object-fit:contain;border-radius:.5rem}.play-slide[aria-current="true"]{cursor:zoom-in}
+</style>
 </head>
 
 <body class="bg-silenos-white text-silenos-black dark:bg-silenos-black dark:text-silenos-white font-sans selection:bg-silenos-black selection:text-silenos-white dark:selection:bg-silenos-white dark:selection:text-silenos-black antialiased min-h-screen flex flex-col justify-between overflow-x-hidden">
@@ -130,9 +134,7 @@
                 <a href="#proyecto" class="hover:text-silenos-gray transition-colors">Proyecto</a>
                 <a href="#autores" class="hover:text-silenos-gray transition-colors">Autores</a>
                 <a href="#biblioteca" class="hover:text-silenos-gray transition-colors">Biblioteca</a>
-                <a href="#leer" class="hover:text-silenos-gray transition-colors">Leer Online</a>
-                <a href="#seriesypeliculas" class="hover:text-silenos-gray transition-colors">Series</a>
-                <a href="#cartas" class="hover:text-silenos-gray transition-colors">Cartas</a>
+                <a href="#silenos-play" class="hover:text-silenos-gray transition-colors">Play</a>
             </nav>
 
             <div class="flex items-center space-x-6">
@@ -152,9 +154,7 @@
         <a href="#proyecto" class="mobile-link hover:text-silenos-gray transition-colors">El Proyecto</a>
         <a href="#autores" class="mobile-link hover:text-silenos-gray transition-colors">Los Autores</a>
         <a href="#biblioteca" class="mobile-link hover:text-silenos-gray transition-colors">Biblioteca</a>
-        <a href="#leer" class="mobile-link hover:text-silenos-gray transition-colors">Leer Online</a>
-        <a href="#seriesypeliculas" class="mobile-link hover:text-silenos-gray transition-colors">Series & Películas</a>
-        <a href="#cartas" class="mobile-link hover:text-silenos-gray transition-colors">Cartas</a>
+        <a href="#silenos-play" class="mobile-link hover:text-silenos-gray transition-colors">Play</a>
     </div>
 
     <main class="flex-grow pt-24">
@@ -171,37 +171,102 @@
                     Un espacio donde los libros dialogan con el desarrollo digital. Sin artificios ni simulaciones superfluas. El valor desnudo del contenido, las mentes creadoras y la precisión técnica de nuestras arquitecturas lógicas.
                 </p>
                 
-                <div class="flex flex-wrap gap-10 pt-4 text-[11px] uppercase tracking-[0.25em] font-light">
-                    <a href="https://www.silenos.es/biblioteca/" target="_blank" rel="noopener noreferrer" class="hover:text-silenos-gray transition-colors">
-                        Explorar Biblioteca →
-                    </a>
-                    <a href="https://www.silenos.es/librosylibrojuegos" target="_blank" class="hover:text-silenos-gray transition-colors">
-                        Leer Online →
-                    </a>
-                </div>
-            </div>
-        </section>
-
-        <section id="proyecto" class="py-24 px-8 md:px-16 max-w-6xl mx-auto">
-            <div class="glass-panel p-10 md:p-16 rounded-3xl grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24">
-                <div class="lg:col-span-4">
+                <div id="proyecto" class="scroll-mt-32 pt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+                    <div class="lg:col-span-4">
                     <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block mb-4">01 / ENFOQUE</span>
                     <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">El Proyecto Silenos</h2>
-                </div>
-                <div class="lg:col-span-6 space-y-8 text-silenos-gray dark:text-neutral-400 font-light leading-relaxed text-sm md:text-base tracking-wide">
+                                    </div>
+                    <div class="lg:col-span-8 space-y-6 text-silenos-gray dark:text-neutral-400 font-light leading-relaxed text-sm md:text-base tracking-wide">
                     <p>
                         Silenos es un manifiesto de resistencia contra la saturación digital y el adorno innecesario. Creemos en la pureza del diseño, en la relevancia de las palabras impresas y en la eficiencia silenciosa del código estructurado. No creamos interfaces cargadas de adornos; proyectamos herramientas y libros pensados para perdurar.
                     </p>
                     <p>
                         Este nodo central unifica dos dimensiones aparentemente distantes pero íntimamente ligadas: el rigor estético de la biblioteca de libros impresos y la precisión aséptica de nuestros motores lógicos de análisis de datos y procesamiento de voz. Sin adornos interactivos absurdos, proporcionamos el acceso directo a los espacios de ejecución óptimos de cada una de nuestras divisiones.
                     </p>
+                                    </div>
+                </div>
+                <div class="flex flex-wrap gap-10 pt-4 text-[11px] uppercase tracking-[0.25em] font-light">
+                    <a href="https://www.silenos.es/biblioteca/" target="_blank" rel="noopener noreferrer" class="hover:text-silenos-gray transition-colors">
+                        Explorar Biblioteca →
+                    </a>
                 </div>
             </div>
         </section>
 
+        <section id="biblioteca" class="py-24 px-8 md:px-16 max-w-6xl mx-auto">
+            <div class="glass-panel p-10 md:p-16 rounded-3xl">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 space-y-6 md:space-y-0">
+                    <div class="space-y-4">
+                        <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">02 / PUBLICACIONES</span>
+                        <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Biblioteca</h2>
+                    </div>
+                    <a href="https://www.silenos.es/biblioteca/" target="_blank" rel="noopener noreferrer" class="group text-[11px] uppercase tracking-[0.25em] font-light hover:text-silenos-gray transition-colors">
+                        Ir a silenos.es/biblioteca <span class="inline-block transform group-hover:translate-x-1 transition-transform">→</span>
+                    </a>
+                </div>
+
+                <p class="text-silenos-gray dark:text-neutral-400 font-light tracking-wide leading-relaxed">
+                    La biblioteca de Silenos constituye la materialización física de un universo literario coordinado por Cristina Lobo y Manuel Rodsua bajo el sello de La Tejedora de Mundos. Editados con una rigurosa pureza formal y concebidos para convivir de forma orgánica con nuestro ecosistema computacional, estos volúmenes abarcan desde la ciencia ficción experimental y la investigación histórica hasta narrativas interactivas y arquitecturas de diseño procedural. Cada obra funciona como un registro tangible e independiente en papel, un punto de convergencia donde la palabra desnudada y la documentación estructural se consolidan en distribución global.
+                </p>
+
+                <div class="grid grid-flow-col auto-cols-[minmax(8.5rem,1fr)] md:grid-flow-row md:grid-cols-4 md:auto-cols-auto gap-5 md:gap-7 mt-12 overflow-x-auto no-scrollbar pb-2" aria-label="Libros destacados de la biblioteca">
+                    <a href="https://www.silenos.es/biblioteca/" target="_blank" rel="noopener noreferrer" class="group block" aria-label="Abrir Soberanía Kushita en la Biblioteca">
+                        <img src="book-book-c7027c03.jpg" alt="Portada de Soberanía Kushita" loading="lazy" decoding="async" class="w-full aspect-[2/3] object-contain bg-black rounded-lg shadow-lg transition-transform duration-300 group-hover:-translate-y-1">
+                    </a>
+                    <a href="https://www.silenos.es/biblioteca/" target="_blank" rel="noopener noreferrer" class="group block" aria-label="Abrir Fauno en la Biblioteca">
+                        <img src="book-book-d03d55a5.jpg" alt="Portada de Fauno" loading="lazy" decoding="async" class="w-full aspect-[2/3] object-contain bg-black rounded-lg shadow-lg transition-transform duration-300 group-hover:-translate-y-1">
+                    </a>
+                    <a href="https://www.silenos.es/biblioteca/" target="_blank" rel="noopener noreferrer" class="group block" aria-label="Abrir Arandela Colocada en la Biblioteca">
+                        <img src="book-book-76753f33.jpg" alt="Portada de Arandela Colocada" loading="lazy" decoding="async" class="w-full aspect-[2/3] object-contain bg-black rounded-lg shadow-lg transition-transform duration-300 group-hover:-translate-y-1">
+                    </a>
+                    <a href="https://www.silenos.es/biblioteca/" target="_blank" rel="noopener noreferrer" class="group block" aria-label="Abrir Criptografía y lenguaje oculto en la Biblioteca">
+                        <img src="book-book-807ef6f0.jpg" alt="Portada de Criptografía y lenguaje oculto" loading="lazy" decoding="async" class="w-full aspect-[2/3] object-contain bg-black rounded-lg shadow-lg transition-transform duration-300 group-hover:-translate-y-1">
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section id="silenos-play" class="py-24 px-8 md:px-16 max-w-6xl mx-auto">
+            <div class="glass-panel p-10 md:p-16 rounded-3xl">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 space-y-6 md:space-y-0">
+                    <div class="space-y-4">
+                        <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">03 / AUDIOVISUAL</span>
+                        <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Play</h2>
+                    </div>
+                    <a href="https://www.silenos.es/play" target="_blank" class="group text-[11px] uppercase tracking-[0.25em] font-light hover:text-silenos-gray transition-colors">
+                        Ir a silenos.es/play <span class="inline-block transform group-hover:translate-x-1 transition-transform">→</span>
+                    </a>
+                </div>
+
+                <p class="text-silenos-gray dark:text-neutral-400 font-light tracking-wide leading-relaxed">
+                    Descubre las películas, series y álbumes creados por las compañeras y compañeros del proyecto Silenos. Un espacio para disfrutar de nuestras historias, imágenes y música.
+                </p>
+                <div class="play-carousel" aria-label="Imágenes de Play" role="region" aria-roledescription="carrusel">
+                    <div class="play-carousel-track">
+                        <button type="button" class="play-slide" data-play-slide="0" aria-label="Ver portada de Play"><img src="silenos-play-portada.jpeg" alt="Portada de Play" loading="lazy" decoding="async"></button>
+                        <button type="button" class="play-slide" data-play-slide="1" aria-label="Ver catálogo de series"><img src="silenos-play-series.jpeg" alt="Catálogo de series en Play" loading="lazy" decoding="async"></button>
+                        <button type="button" class="play-slide" data-play-slide="2" aria-label="Ver reproductor de capítulos"><img src="silenos-play-reproductor.jpeg" alt="Reproductor de capítulos de Play" loading="lazy" decoding="async"></button>
+                    </div>
+                    <div class="play-carousel-controls">
+                        <div class="play-carousel-dots" aria-label="Elegir imagen">
+                            <button type="button" data-play-dot="0" aria-label="Mostrar portada"></button>
+                            <button type="button" data-play-dot="1" aria-label="Mostrar catálogo de series"></button>
+                            <button type="button" data-play-dot="2" aria-label="Mostrar reproductor"></button>
+                        </div>
+                    </div>
+                    <span class="sr-only" data-play-status aria-live="polite"></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección Cartas -->
+
+        <!-- Sección Herramientas (Pública y accesible) -->
+
+
         <section id="autores" class="py-24 px-8 md:px-16 max-w-6xl mx-auto">
             <div class="space-y-4 mb-16">
-                <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">02 / LOS CREADORES</span>
+                <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">04 / LOS CREADORES</span>
                 <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Autores de la Casa</h2>
             </div>
 
@@ -235,191 +300,6 @@
                 </div>
             </div>
         </section>
-
-        <section id="biblioteca" class="py-24 px-8 md:px-16 max-w-6xl mx-auto">
-            <div class="glass-panel p-10 md:p-16 rounded-3xl">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 space-y-6 md:space-y-0">
-                    <div class="space-y-4">
-                        <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">03 / PUBLICACIONES</span>
-                        <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Biblioteca</h2>
-                    </div>
-                    <a href="https://www.silenos.es/biblioteca/" target="_blank" rel="noopener noreferrer" class="group text-[11px] uppercase tracking-[0.25em] font-light hover:text-silenos-gray transition-colors">
-                        Ir a silenos.es/biblioteca <span class="inline-block transform group-hover:translate-x-1 transition-transform">→</span>
-                    </a>
-                </div>
-
-                <p class="text-silenos-gray dark:text-neutral-400 font-light tracking-wide leading-relaxed">
-                    La biblioteca de Silenos constituye la materialización física de un universo literario coordinado por Cristina Lobo y Manuel Rodsua bajo el sello de La Tejedora de Mundos. Editados con una rigurosa pureza formal y concebidos para convivir de forma orgánica con nuestro ecosistema computacional, estos volúmenes abarcan desde la ciencia ficción experimental y la investigación histórica hasta narrativas interactivas y arquitecturas de diseño procedural. Cada obra funciona como un registro tangible e independiente en papel, un punto de convergencia donde la palabra desnudada y la documentación estructural se consolidan en distribución global.
-                </p>
-
-                <div class="grid grid-flow-col auto-cols-[minmax(8.5rem,1fr)] md:grid-flow-row md:grid-cols-4 md:auto-cols-auto gap-5 md:gap-7 mt-12 overflow-x-auto no-scrollbar pb-2" aria-label="Libros destacados de la biblioteca">
-                    <a href="https://www.silenos.es/biblioteca/" target="_blank" rel="noopener noreferrer" class="group block" aria-label="Abrir Soberanía Kushita en la Biblioteca">
-                        <img src="book-book-c7027c03.jpg" alt="Portada de Soberanía Kushita" loading="lazy" decoding="async" class="w-full aspect-[2/3] object-contain bg-black rounded-lg shadow-lg transition-transform duration-300 group-hover:-translate-y-1">
-                    </a>
-                    <a href="https://www.silenos.es/biblioteca/" target="_blank" rel="noopener noreferrer" class="group block" aria-label="Abrir Fauno en la Biblioteca">
-                        <img src="book-book-d03d55a5.jpg" alt="Portada de Fauno" loading="lazy" decoding="async" class="w-full aspect-[2/3] object-contain bg-black rounded-lg shadow-lg transition-transform duration-300 group-hover:-translate-y-1">
-                    </a>
-                    <a href="https://www.silenos.es/biblioteca/" target="_blank" rel="noopener noreferrer" class="group block" aria-label="Abrir Arandela Colocada en la Biblioteca">
-                        <img src="book-book-76753f33.jpg" alt="Portada de Arandela Colocada" loading="lazy" decoding="async" class="w-full aspect-[2/3] object-contain bg-black rounded-lg shadow-lg transition-transform duration-300 group-hover:-translate-y-1">
-                    </a>
-                    <a href="https://www.silenos.es/biblioteca/" target="_blank" rel="noopener noreferrer" class="group block" aria-label="Abrir Criptografía y lenguaje oculto en la Biblioteca">
-                        <img src="book-book-807ef6f0.jpg" alt="Portada de Criptografía y lenguaje oculto" loading="lazy" decoding="async" class="w-full aspect-[2/3] object-contain bg-black rounded-lg shadow-lg transition-transform duration-300 group-hover:-translate-y-1">
-                    </a>
-                </div>
-            </div>
-        </section>
-
-        <section id="leer" class="py-24 px-8 md:px-16 max-w-6xl mx-auto">
-            <div class="glass-panel p-10 md:p-16 rounded-3xl">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 space-y-6 md:space-y-0">
-                    <div class="space-y-4">
-                        <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">04 / LEER ONLINE</span>
-                        <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Lectura Online</h2>
-                    </div>
-                    <a href="https://www.silenos.es/librosylibrojuegos" target="_blank" class="group text-[11px] uppercase tracking-[0.25em] font-light hover:text-silenos-gray transition-colors">
-                        Ir a silenos.es/librosylibrojuegos <span class="inline-block transform group-hover:translate-x-1 transition-transform">→</span>
-                    </a>
-                </div>
-
-                <p class="text-silenos-gray dark:text-neutral-400 font-light tracking-wide leading-relaxed">
-                    En Libros & Librojuegos puedes leer libros complejos y jugar historias con múltiples finales. Desde mitología clásica a ciencia ficción moderna pasando por el Español, Ruso, Árabe, Chino, Inglés, Francés y Japonés.
-                </p>
-            </div>
-        </section>
-
-        <section id="seriesypeliculas" class="py-24 px-8 md:px-16 max-w-6xl mx-auto">
-            <div class="glass-panel p-10 md:p-16 rounded-3xl">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 space-y-6 md:space-y-0">
-                    <div class="space-y-4">
-                        <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">05 / AUDIOVISUAL</span>
-                        <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Series & Películas</h2>
-                    </div>
-                    <a href="https://www.silenos.es/seriesypeliculas" target="_blank" class="group text-[11px] uppercase tracking-[0.25em] font-light hover:text-silenos-gray transition-colors">
-                        Ir a silenos.es/seriesypeliculas <span class="inline-block transform group-hover:translate-x-1 transition-transform">→</span>
-                    </a>
-                </div>
-
-                <p class="text-silenos-gray dark:text-neutral-400 font-light tracking-wide leading-relaxed">
-                    Explora las producciones cinemáticas, series y piezas Audiovisuales de Silenos. Proyecciones que conectan nuestros universos narrativos con la generación de medios avanzados y el desarrollo de scripts cinemáticos.
-                </p>
-            </div>
-        </section>
-
-        <!-- Sección Cartas -->
-        <section id="cartas" class="py-24 px-8 md:px-16 max-w-6xl mx-auto">
-            <div class="glass-panel p-10 md:p-16 rounded-3xl">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 space-y-6 md:space-y-0">
-                    <div class="space-y-4">
-                        <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">06 / CARTAS SILEN</span>
-                        <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Cartas SILEN</h2>
-                    </div>
-                    <a href="https://www.silenos.es/cartasilen/" target="_blank" class="group text-[11px] uppercase tracking-[0.25em] font-light hover:text-silenos-gray transition-colors">
-                        Ir a silenos.es/cartasilen <span class="inline-block transform group-hover:translate-x-1 transition-transform">→</span>
-                    </a>
-                </div>
-
-                <p class="text-silenos-gray dark:text-neutral-400 font-light tracking-wide leading-relaxed">
-                    Explora la experiencia de Cartas Silen. Un espacio interactivo donde la simbología, el diseño sintético y la narrativa visual se combinan para ofrecer dinámicas únicas de juego y coleccionismo temático.
-                    Juega con los personajes de los libros y las series de SILENOS!!
-                </p>
-            </div>
-        </section>
-
-        <!-- Sección Herramientas (Pública y accesible) -->
-        <section id="herramientas" class="py-24 px-8 md:px-16 max-w-6xl mx-auto">
-            <div class="glass-panel p-10 md:p-16 rounded-3xl space-y-12">
-                <div class="max-w-3xl space-y-4">
-                    <span class="text-[10px] uppercase tracking-[0.4em] text-silenos-gray font-light block">07 / ECOSISTEMA TÉCNICO</span>
-                    <h2 class="font-serif text-3xl md:text-4xl font-light tracking-tight">Nuestras Herramientas</h2>
-                    <p class="text-xs md:text-sm text-silenos-gray dark:text-neutral-400 font-light tracking-wide leading-relaxed">
-                        Módulos lógicos y entornos de optimización libres de simulaciones o adornos pesados. Rutas físicas directas de cómputo ejecutable.
-                    </p>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="glass-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
-                        <div>
-                            <span class="text-[10px] font-mono text-silenos-gray block">/03</span>
-                            <h3 class="font-serif text-2xl font-light tracking-wide mt-1">Silenos v3</h3>
-                            <p class="text-xs text-silenos-gray dark:text-neutral-400 font-light tracking-wide mt-2">Análisis estructurado y depuración ontológica.</p>
-                        </div>
-                        <a href="https://www.silenos.es/3" target="_blank" class="text-[10px] font-mono text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white uppercase tracking-widest pt-2">Ejecutar →</a>
-                    </div>
-
-                    <div class="glass-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
-                        <div>
-                            <span class="text-[10px] font-mono text-silenos-gray block">/04</span>
-                            <h3 class="font-serif text-2xl font-light tracking-wide mt-1">Silenos v4</h3>
-                            <p class="text-xs text-silenos-gray dark:text-neutral-400 font-light tracking-wide mt-2">Motor semántico distribuido.</p>
-                        </div>
-                        <a href="https://www.silenos.es/4" target="_blank" class="text-[10px] font-mono text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white uppercase tracking-widest pt-2">Ejecutar →</a>
-                    </div>
-
-                    <div class="glass-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
-                        <div>
-                            <span class="text-[10px] font-mono text-silenos-gray block">/MK2</span>
-                            <h3 class="font-serif text-2xl font-light tracking-wide mt-1">Merkados</h3>
-                            <p class="text-xs text-silenos-gray dark:text-neutral-400 font-light tracking-wide mt-2">Visualización de flujos narrativos paralelos y librojuegos.</p>
-                        </div>
-                        <a href="https://www.silenos.es/merkados" target="_blank" class="text-[10px] font-mono text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white uppercase tracking-widest pt-2">Ejecutar →</a>
-                    </div>
-
-                    <div class="glass-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
-                        <div>
-                            <span class="text-[10px] font-mono text-silenos-gray block">/SG</span>
-                            <h3 class="font-serif text-2xl font-light tracking-wide mt-1">Saga</h3>
-                            <p class="text-xs text-silenos-gray dark:text-neutral-400 font-light tracking-wide mt-2">Asiste avanzado para sagas narrativas completas. Base de datos y generación literaria.</p>
-                        </div>
-                        <a href="https://www.silenos.es/saga" target="_blank" class="text-[10px] font-mono text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white uppercase tracking-widest pt-2">Ejecutar →</a>
-                    </div>
-
-                    <div class="glass-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
-                        <div>
-                            <span class="text-[10px] font-mono text-silenos-gray block">/VZ</span>
-                            <h3 class="font-serif text-2xl font-light tracking-wide mt-1">Voz</h3>
-                            <p class="text-xs text-silenos-gray dark:text-neutral-400 font-light tracking-wide mt-2">Asiste avanzado de voz impulsado por inteligencia artificial.</p>
-                        </div>
-                        <a href="https://www.silenos.es/voz" target="_blank" class="text-[10px] font-mono text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white uppercase tracking-widest pt-2">Ejecutar →</a>
-                    </div>
-
-                    <div class="glass-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
-                        <div>
-                            <span class="text-[10px] font-mono text-silenos-gray block">/ST</span>
-                            <h3 class="font-serif text-2xl font-light tracking-wide mt-1">Escaleta</h3>
-                            <p class="text-xs text-silenos-gray dark:text-neutral-400 font-light tracking-wide mt-2">Asiste avanzado de video, imagen y voz, impulsado por inteligencia artificial.</p>
-                        </div>
-                        <a href="https://www.silenos.es/escaleta" target="_blank" class="text-[10px] font-mono text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white uppercase tracking-widest pt-2">Ejecutar →</a>
-                    </div>
-
-                    <div class="glass-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
-                        <div>
-                            <span class="text-[10px] font-mono text-silenos-gray block">/CT</span>
-                            <h3 class="font-serif text-2xl font-light tracking-wide mt-1">Chat</h3>
-                            <p class="text-xs text-silenos-gray dark:text-neutral-400 font-light tracking-wide mt-2">Soporte de Chat y Agentes avanzado para OLLAMA y GEMINI. Memoria Local persistente.</p>
-                        </div>
-                        <a href="https://www.silenos.es/chat" target="_blank" class="text-[10px] font-mono text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white uppercase tracking-widest pt-2">Ejecutar →</a>
-                    </div>
-
-                    <div class="glass-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
-                        <div>
-                            <span class="text-[10px] font-mono text-silenos-gray block">/CV</span>
-                            <h3 class="font-serif text-2xl font-light tracking-wide mt-1">Canvas</h3>
-                            <p class="text-xs text-silenos-gray dark:text-neutral-400 font-light tracking-wide mt-2">Canvas para gestionar Datos compatibles con el resto de Silenos. Agentes avanzados para COMFYUI y GEMINI.</p>
-                        </div>
-                        <a href="https://www.silenos.es/canvas" target="_blank" class="text-[10px] font-mono text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white uppercase tracking-widest pt-2">Ejecutar →</a>
-                    </div>
-
-                    <div class="glass-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
-                        <div>
-                            <span class="text-[10px] font-mono text-silenos-gray block">/MR</span>
-                            <h3 class="font-serif text-2xl font-light tracking-wide mt-1">Maker</h3>
-                            <p class="text-xs text-silenos-gray dark:text-neutral-400 font-light tracking-wide mt-2">Marketplace para comprar y vender soluciones basadas en Silenos. Agentes avanzados para COMFYUI y GEMINI.</p>
-                        </div>
-                        <a href="https://www.silenos.es/maker" target="_blank" class="text-[10px] font-mono text-silenos-gray hover:text-silenos-black dark:hover:text-silenos-white uppercase tracking-widest pt-2">Ejecutar →</a>
-                    </div>
-                </div>
-            </div>
-        </section>
     </main>
 
     <footer class="py-24 px-8 md:px-16 bg-silenos-white dark:bg-silenos-black border-t border-black/5 dark:border-white/5">
@@ -436,7 +316,7 @@
                 <span class="text-[9px] uppercase tracking-widest text-silenos-black dark:text-silenos-white font-sans block">Sistemas</span>
                 <div class="grid grid-cols-2 gap-y-2 gap-x-4">
                     <a href="https://www.silenos.es/biblioteca/" target="_blank" rel="noopener noreferrer" class="hover:text-silenos-black dark:hover:text-silenos-white">/biblioteca</a>
-                    <a href="https://www.silenos.es/seriesypeliculas" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/seriesypeliculas</a>
+                    <a href="https://www.silenos.es/play" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/play</a>
                     <a href="https://www.silenos.es/cartasilen/" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/cartasilen</a>
                     <a href="https://www.silenos.es/3" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/3</a>
                     <a href="https://www.silenos.es/maker" target="_blank" class="hover:text-silenos-black dark:hover:text-silenos-white">/maker</a>
@@ -544,5 +424,9 @@
             }, 2500);
         };
     </script>
+<dialog class="play-lightbox" aria-label="Imagen ampliada de Play"><button type="button" aria-label="Cerrar imagen ampliada"><img alt=""></button></dialog>
+<script>
+(()=>{const carousel=document.querySelector('.play-carousel');if(!carousel)return;const slides=[...carousel.querySelectorAll('[data-play-slide]')],dots=[...carousel.querySelectorAll('[data-play-dot]')],status=carousel.querySelector('[data-play-status]');let current=1;function show(index){current=(index+slides.length)%slides.length;slides.forEach((slide,i)=>{slide.style.order=String((i-current+slides.length+1)%slides.length);slide.setAttribute('aria-current',String(i===current))});dots.forEach((dot,i)=>dot.setAttribute('aria-current',String(i===current)));status.textContent=`Imagen ${current+1} de ${slides.length}: ${slides[current].querySelector('img').alt}`;}const lightbox=document.querySelector('.play-lightbox'),largeImage=lightbox.querySelector('img');lightbox.querySelector('button').addEventListener('click',()=>lightbox.close());lightbox.addEventListener('click',event=>{if(event.target===lightbox)lightbox.close()});slides.forEach((slide,i)=>slide.addEventListener('click',()=>{if(i!==current){show(i);return}const image=slide.querySelector('img');largeImage.src=image.src;largeImage.alt=image.alt;lightbox.showModal()}));dots.forEach((dot,i)=>dot.addEventListener('click',()=>show(i)));show(current)})();
+</script>
 </body>
 </html>
