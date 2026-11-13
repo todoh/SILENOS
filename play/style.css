@@ -132,3 +132,7 @@ footer{border-color:#ffffff10;color:#6d686b;padding:28px 0}footer span{color:#e5
 
 .sidebar .brand { font-family: Arial, sans-serif; font-size: 26px; font-weight: 400; letter-spacing: 2px; line-height: 1; }
 .sidebar .brand small { margin-top: 6px; font-size: 9px; font-weight: 700; letter-spacing: 3px; }
+
+/* Amplía el centro de las miniaturas verticales de YouTube para llenar la portada. */
+.thumb.short-thumbnail{background-size:240% auto;background-repeat:no-repeat;background-position:center}
+.home-feature img.short-thumbnail-image{transform:scale(2.4)}

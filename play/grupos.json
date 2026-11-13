@@ -52,7 +52,7 @@
     "type": "musica"
   },
   {
-    "name": "Arandela Colocada Serie",
+    "name": "ARANDELA COLOCADA",
     "type": "serie"
   },
   {
@@ -60,7 +60,37 @@
     "type": "serie"
   },
   {
-    "name": "Imhotep",
+    "name": "El Legado de Imhotep",
     "type": "serie"
+  },
+  {
+    "name": "El Conde de Saint Germain",
+    "type": "serie",
+    "verticalThumbnail": true
+  },
+  {
+    "name": "El Ángulo 33",
+    "type": "serie",
+    "verticalThumbnail": true
+  },
+  {
+    "name": "Nuestra Señora de Banús",
+    "type": "serie",
+    "verticalThumbnail": true
+  },
+  {
+    "name": "La Colmena",
+    "type": "serie",
+    "verticalThumbnail": true
+  },
+  {
+    "name": "Karma Creativo T11",
+    "type": "serie",
+    "verticalThumbnail": true
+  },
+  {
+    "name": "Time Does Not Obey",
+    "type": "serie",
+    "verticalThumbnail": true
   }
 ]
