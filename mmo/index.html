@@ -1820,6 +1820,39 @@ canvas#world {
 .equipment-slot { width: 44px; height: 44px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); color: #c4c4c4; font-size: 24px; cursor: pointer; }
 .equipment-slot img { width: 100%; height: 100%; object-fit: contain; }
 .equipment-hint { max-width: 120px; font-size: 11px; color: #c4c4c4; }
+.equipment-menu-trigger { border:1px solid var(--line-strong); border-radius:6px; padding:10px; background:var(--surface); color:var(--text); font:inherit; cursor:pointer; }
+.equipment-menu-trigger[aria-expanded=true] { border-color:#b9d78d; color:#d5edb7; }
+.equipment-hud .equipment-hint { display:none; }
+.equipment-panel { position:fixed; z-index:70; left:18px; bottom:90px; width:390px; max-width:calc(100vw - 36px); max-height:calc(100dvh - 115px); overflow:auto; padding:18px; background:#111715; color:#e9efe5; border:1px solid #53624d; border-radius:12px; box-shadow:0 16px 55px #000b; }
+.equipment-panel[hidden] { display:none; }
+.equipment-panel-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.equipment-panel-header small { color:#a4b696; font-size:10px; letter-spacing:2px; }
+.equipment-panel h2 { font:600 20px system-ui; margin:5px 0 0; }
+.equipment-panel button { cursor:pointer; font-family:inherit; }
+.equipment-panel-header button { color:#e9efe5; font-size:24px; border:1px solid #485241; background:#242d25; border-radius:6px; width:36px; height:36px; }
+.equipment-instructions { color:#b6c2ae; font-size:12px; line-height:1.5; margin:10px 0 14px; }
+.equipment-body-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-rows:repeat(5,auto); gap:8px; padding:8px 0; background:radial-gradient(ellipse at center,#33432b66,transparent 65%); }
+.equipment-body-slot { min-width:0; min-height:82px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:8px 3px; color:#d3deca; background:#1d261f; border:1px dashed #53604a; border-radius:8px; }
+.equipment-body-slot:hover,.equipment-body-slot:focus-visible,.equipment-body-slot.drop-target { outline:2px solid #badf8e; outline-offset:1px; background:#303f2a; }
+.equipment-body-slot.occupied { border-style:solid; border-color:#99b679; background:#2a3525; }
+.equipment-body-icon { display:flex; align-items:center; justify-content:center; width:32px; height:32px; font-size:25px; color:#8b9d7e; }
+.equipment-body-icon img { width:100%; height:100%; object-fit:contain; }
+.equipment-body-label { font-size:11px; font-weight:650; text-align:center; }
+.equipment-body-name { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10px; color:#a4b497; }
+.equipment-body-slot[data-equipment-slot=head] { grid-area:1/2; }
+.equipment-body-slot[data-equipment-slot=neck] { grid-area:2/2; }
+.equipment-body-slot[data-equipment-slot=torso] { grid-area:3/2; }
+.equipment-body-slot[data-equipment-slot=wristL] { grid-area:3/1; }
+.equipment-body-slot[data-equipment-slot=wristR] { grid-area:3/3; }
+.equipment-body-slot[data-equipment-slot=handL] { grid-area:4/1; }
+.equipment-body-slot[data-equipment-slot=handR] { grid-area:4/3; }
+.equipment-body-slot[data-equipment-slot=legs] { grid-area:4/2; }
+.equipment-body-slot[data-equipment-slot=feet] { grid-area:5/2; }
+.equipment-feedback { min-height:17px; margin:9px 0; color:#d0e8b5; font-size:12px; line-height:1.4; }
+.equipment-panel-footer { display:flex; align-items:center; justify-content:space-between; gap:10px; border-top:1px solid #3d4937; padding-top:12px; }
+.equipment-panel-footer span { color:#a9b69f; font-size:11px; line-height:1.4; }
+.equipment-panel-footer button { flex-shrink:0; border:1px solid #829c68; background:#35442b; color:#e4f0d8; border-radius:6px; padding:9px; }
+@media(max-width:700px) { .equipment-panel { left:10px; bottom:10px; width:370px; max-width:calc(100vw - 20px); max-height:calc(100dvh - 75px); } .equipment-body-slot { min-height:70px; } .equipment-panel h2 { font-size:18px; } .equipment-hud { gap:5px; padding:6px; } .equipment-menu-trigger { padding:9px 7px; font-size:11px; } }
 .game-controls { bottom: 85px; }
 @media (max-width: 768px) {
   .equipment-hint, .equipment-label { display: none; }
@@ -2070,7 +2103,7 @@ canvas#world {
   <h2 id="performanceSettingsTitle">Ajustes</h2>
   <p>Reduce la calidad visual para mejorar el rendimiento en equipos más lentos. Los cambios se aplican al instante y se guardan en este navegador.</p>
   <div class="performance-options">
-    <label><span><strong>Resolución del juego</strong><small>Una resolución menor dibuja menos píxeles.</small></span><select id="settingResolution"><option value="auto">Automática</option><option value="1">Normal</option><option value="0.75">Reducida</option><option value="0.5">Muy reducida</option></select></label>
+    <label><span><strong>Resolución del juego</strong><small>Automática adapta el detalle para mantener la fluidez.</small></span><select id="settingResolution"><option value="auto">Automática</option><option value="1">Normal</option><option value="0.75">Reducida</option><option value="0.5">Muy reducida</option></select></label>
     <label><span><strong>Terreno</strong><small>Los colores simples evitan componer las texturas del suelo.</small></span><select id="settingTerrain"><option value="textured">Con texturas</option><option value="simple">Colores simples</option></select></label>
     <label><span><strong>Atmósfera</strong><small>La opción simple reduce los efectos de niebla e iluminación.</small></span><select id="settingAtmosphere"><option value="full">Completa</option><option value="simple">Simple</option></select></label>
     <label><span><strong>Límite de FPS</strong><small>Limitar el dibujo puede reducir el consumo del equipo.</small></span><select id="settingFpsLimit"><option value="0">Sin límite</option><option value="60">60 FPS</option><option value="30">30 FPS</option></select></label>
@@ -2122,7 +2155,6 @@ canvas#world {
 <script>window.__silenosParts = [];</script>
 <script src="silenos-datos-01.js"></script>
 <script src="silenos-datos-02.js"></script>
-<script src="silenos-datos-03.js"></script>
 <script type="module">
 const AsyncFunction = Object.getPrototypeOf(async function() {}).constructor;
 await new AsyncFunction(window.__silenosParts.join(""))();
