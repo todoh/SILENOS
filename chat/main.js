@@ -1,39 +1,30 @@
 // main.js
 // Controlador General de Eventos e Interacciones del Panel CORE-AI
-import { queryPollinations } from './pollinations.js';
 import { queryGemini } from './gemini.js';
 import { queryOllama, fetchOllamaModels } from './ollama.js';
-import { fetchDynamicPollinationsTextModels, MODELOS_POLLINATIONS, MODELOS_GEMINI } from './modelos.js';
-import { fetchDynamicPollinationsImageModels, MODELOS_IMAGEN, queryImageGeneration } from './imagenes.js';
-import { iniciarSesionPollinations, procesarRetornoAutenticacion } from './login.js';
+import { MODELOS_GEMINI } from './modelos.js';
+import { fetchDynamicImageModels, MODELOS_IMAGEN, queryImageGeneration } from './imagenes.js';
 import { runAgentPipeline, requestAgentPause } from './agente.js';
-import { filterLibraryWithFlashLite } from './agent_helpers.js';
-import { 
-    activeConversationId, currentBufferAttachments, favoritosText, favoritosImage, conversations,
-    saveConversations, createNewConversation, getChatPayload, setFavoritosText, setFavoritosImage,
-    saveFavorites, directoryHandle, saveSettingsToFolder 
+import {
+     activeConversationId, currentBufferAttachments, favoritosText, favoritosImage, conversations,
+     saveConversations, createNewConversation, getChatPayload, setFavoritosText, setFavoritosImage,
+     saveFavorites, directoryHandle, saveSettingsToFolder 
 } from './conversations.js';
 import { 
-    renderAgentToolsListUI, renderConversationSidebarUI, renderActiveConversationUI,
-    renderAttachmentPreviewsUI, buildModelDropdownUI, appendChatMessageToDOMUI,
-    appendWaitingMessageUI, formatModelOutput 
+     renderAgentToolsListUI, renderConversationSidebarUI, renderActiveConversationUI,
+     renderAttachmentPreviewsUI, buildModelDropdownUI, appendChatMessageToDOMUI,
+     appendWaitingMessageUI, formatModelOutput 
 } from './ui.js';
 import { injectReferencedLibraryFunctions } from './mode_html.js';
 import { 
-    state, setAppMode, setWithFunctionsMode, setListadoModelosTexto,
-    setActiveModelIndex, setActiveImageModelIndex, getCombinedFunctionLibrary 
+     state, setAppMode, setWithFunctionsMode, setListadoModelosTexto,
+     setActiveModelIndex, setActiveImageModelIndex, getCombinedFunctionLibrary 
 } from './app_state.js';
 import { 
-    syncWorkspaceFolder, checkAndDisplayCheckpointBanner, initToolsModalHandlers,
-    initFunctionsModalHandlers, initGalleryModalHandlers, initStatsModalHandlers 
+     syncWorkspaceFolder, checkAndDisplayCheckpointBanner, initToolsModalHandlers,
+     initFunctionsModalHandlers, initGalleryModalHandlers, initStatsModalHandlers 
 } from './app_modals.js';
-
 import { runModoFXAgent } from './mode_fx_agent.js';
-import { classifyTaskMode } from './mode_classifier.js';
-import { runModoEscritura } from './mode_escritura.js';
-import { runModoHTML } from './mode_html.js';
-import { runModoInvestigacion } from './mode_investigacion.js';
-import { runModoLibre } from './mode_libre.js';
 
 function initCanvasSystem() {
     const canvas = document.getElementById('canvas-procesado');
@@ -78,8 +69,6 @@ const btnOpenGallery = document.getElementById('btn-open-gallery');
 const modalGallery = document.getElementById('modal-gallery');
 const btnCloseGallery = document.getElementById('btn-close-gallery');
 const galleryGrid = document.getElementById('gallery-grid');
-const apiKeyPollinationsInput = document.getElementById('api-key-pollinations');
-const btnLoginPollinations = document.getElementById('btn-login-pollinations');
 const apiKeyGeminiInput = document.getElementById('api-key-gemini');
 const endpointOllamaInput = document.getElementById('endpoint-ollama');
 const modalTools = document.getElementById('modal-tools');
@@ -104,7 +93,7 @@ const statsContainer = document.getElementById('stats-container');
 function triggerWorkspaceSync() {
     syncWorkspaceFolder(
         {
-            folderBtnLabel, modalFolderRequired, apiKeyPollinationsInput, 
+            folderBtnLabel, modalFolderRequired, 
             apiKeyGeminiInput, endpointOllamaInput, toolsListContainer, 
             functionsListContainer, chatHistory
         },
@@ -116,14 +105,7 @@ function triggerWorkspaceSync() {
 
 window.addEventListener('load', async () => {
     initCanvasSystem();
-    
-    const tokenAutenticado = procesarRetornoAutenticacion();
-    if (tokenAutenticado) {
-        console.log("Sesión de Pollinations BYOP iniciada de forma exitosa.");
-    }
-    
-    await fetchDynamicPollinationsTextModels();
-    await fetchDynamicPollinationsImageModels();
+    await fetchDynamicImageModels();
     
     initModeHandlers();
     initAspectLabelsHandler();
@@ -167,10 +149,6 @@ async function buildUnifiedTextModels() {
         if (!m.isImageModel) {
             listado.push({ ...m, provider: 'gemini' });
         }
-    });
-    
-    MODELOS_POLLINATIONS.forEach(m => {
-        listado.push({ ...m, provider: 'pollinations' });
     });
     
     try {
@@ -262,20 +240,13 @@ btnOpenSettings.addEventListener('click', () => modalSettings.classList.remove('
 function hideModal() { modalSettings.classList.add('hidden'); }
 btnCloseModal.addEventListener('click', hideModal);
 
-btnLoginPollinations.addEventListener('click', () => {
-    const customClientId = apiKeyPollinationsInput.value.trim();
-    iniciarSesionPollinations(customClientId);
-});
-
 btnSaveSettings.addEventListener('click', async () => {
     await saveSettingsToFolder(
-        apiKeyPollinationsInput.value.trim(),
         apiKeyGeminiInput.value.trim(),
         endpointOllamaInput.value.trim()
     );
     hideModal();
-    await fetchDynamicPollinationsTextModels();
-    await fetchDynamicPollinationsImageModels();
+    await fetchDynamicImageModels();
     await buildUnifiedTextModels();
 });
 
@@ -404,7 +375,7 @@ async function handleSend(isResumingFromCheckpoint = false) {
                 currentChat.messages.push({
                     role: 'usuario',
                     content: promptText || "[Archivos Adjuntos]",
-                    modelName: 'TÚ'
+                    modelName: 'Tú'
                 });
                 currentChat.status = 'processing';
                 if (currentChat.title === "Nueva Conversación") {
@@ -419,20 +390,18 @@ async function handleSend(isResumingFromCheckpoint = false) {
             const startTime = performance.now();
             
             if (state.appMode === 'image') {
-                const pollinationsKey = apiKeyPollinationsInput.value.trim();
                 const geminiKey = apiKeyGeminiInput.value.trim();
                 const selectedAspectInput = document.querySelector('input[name="aspect-ratio"]:checked');
                 const aspectValue = selectedAspectInput ? selectedAspectInput.value : '1:1';
                 
                 generatedImageUrl = await queryImageGeneration(
-                    promptText, activeModel.tag, pollinationsKey, thisTurnAttachments, aspectValue, geminiKey
+                    promptText, activeModel.tag, geminiKey, thisTurnAttachments, aspectValue
                 );
                 responseText = `He generado con éxito la imagen utilizando el modelo **${activeModel.name}** con el prompt:\n\n*"${promptText}"*`;
             } 
             else if (state.appMode === 'agent') {
                 const configKeys = {
                     gemini: apiKeyGeminiInput.value.trim(),
-                    pollinations: apiKeyPollinationsInput.value.trim(),
                     ollamaEndpoint: endpointOllamaInput.value.trim()
                 };
                 const agentLimits = {
@@ -465,7 +434,6 @@ async function handleSend(isResumingFromCheckpoint = false) {
                 let historyPayload = getChatPayload(targetConversationId);
                 const configKeys = {
                     gemini: apiKeyGeminiInput.value.trim(),
-                    pollinations: apiKeyPollinationsInput.value.trim(),
                     ollamaEndpoint: endpointOllamaInput.value.trim()
                 };
                 const fastModel = state.listadoModelosTexto.find(m => m.tag.includes('flash-lite')) || activeModel;
@@ -480,9 +448,7 @@ async function handleSend(isResumingFromCheckpoint = false) {
                     );
                 } 
                 else {
-                    if (activeModel.provider === 'pollinations') {
-                        responseText = await queryPollinations(historyPayload, activeModel.tag, apiKeyPollinationsInput.value.trim(), thisTurnAttachments);
-                    } else if (activeModel.provider === 'gemini') {
+                    if (activeModel.provider === 'gemini') {
                         responseText = await queryGemini(historyPayload, activeModel.tag, apiKeyGeminiInput.value.trim(), thisTurnAttachments);
                     } else if (activeModel.provider === 'ollama') {
                         const waitingNode = document.getElementById(waitingNodeId);
@@ -524,7 +490,6 @@ async function handleSend(isResumingFromCheckpoint = false) {
                 }
             }
             
-            // Cálculo genérico de respaldo para métricas si el proveedor API no lo generó nativamente
             if (!responseMetrics && responseText) {
                 const totalTimeSec = (performance.now() - startTime) / 1000;
                 const tokenCount = Math.ceil(responseText.length / 4);

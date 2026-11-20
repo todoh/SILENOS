@@ -11,6 +11,7 @@ import {
     renderActiveConversationUI 
 } from './ui.js';
 import { UNIFIED_FUNCTION_LIBRARY } from './fn_library_index.js';
+import { renderStatsUI } from './estadisticas.js';
 
 export async function syncWorkspaceFolder(elements, callbacks) {
     const dir = await selectWorkspaceDirectory();
@@ -18,7 +19,7 @@ export async function syncWorkspaceFolder(elements, callbacks) {
         if (elements.folderBtnLabel) elements.folderBtnLabel.textContent = dir.name;
         if (elements.modalFolderRequired) elements.modalFolderRequired.classList.add('hidden');
         
-        await loadSavedSettings(elements.apiKeyPollinationsInput, elements.apiKeyGeminiInput, elements.endpointOllamaInput);
+        await loadSavedSettings(elements.apiKeyGeminiInput, elements.endpointOllamaInput);
         await loadConversations(callbacks.renderSidebar, callbacks.renderActive);
         await loadFavorites();
         await loadAgentTools(() => renderAgentToolsListUI(elements.toolsListContainer));
@@ -78,6 +79,7 @@ export async function checkAndDisplayCheckpointBanner(chatHistory, handleSendCal
 }
 
 export function initToolsModalHandlers(btnOpenTools, btnCloseTools, modalTools, btnAddTool, toolNewName, toolNewDesc, toolsListContainer) {
+    if (!btnOpenTools) return;
     btnOpenTools.addEventListener('click', () => modalTools.classList.remove('hidden'));
     btnCloseTools.addEventListener('click', () => modalTools.classList.add('hidden'));
     modalTools.addEventListener('click', (e) => { if (e.target === modalTools) modalTools.classList.add('hidden'); });
@@ -183,21 +185,16 @@ export async function renderGalleryGrid(galleryGrid) {
         galleryGrid.appendChild(card);
     }
 }
-// Añadir en app_modals.js
-import { renderStatsUI } from './estadisticas.js';
 
 export function initStatsModalHandlers(btnOpenStats, btnCloseStats, modalStats, statsContainer) {
     if (!btnOpenStats || !modalStats) return;
-
     btnOpenStats.addEventListener('click', () => {
         modalStats.classList.remove('hidden');
         renderStatsUI(statsContainer, 'todos', 'modelos');
     });
-
     if (btnCloseStats) {
         btnCloseStats.addEventListener('click', () => modalStats.classList.add('hidden'));
     }
-
     modalStats.addEventListener('click', (e) => {
         if (e.target === modalStats) modalStats.classList.add('hidden');
     });

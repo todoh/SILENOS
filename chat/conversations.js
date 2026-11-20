@@ -21,9 +21,7 @@ export function setFunctionLibrary(val) { functionLibrary = val; }
 
 export async function selectWorkspaceDirectory() {
     try {
-        directoryHandle = await window.showDirectoryPicker({
-            mode: 'readwrite'
-        });
+        directoryHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
         return directoryHandle;
     } catch (err) {
         console.warn("Selección de carpeta cancelada o no soportada:", err);
@@ -125,22 +123,19 @@ export async function getGalleryFilesFromDirectory() {
     return files;
 }
 
-export async function loadSavedSettings(apiKeyPollinationsInput, apiKeyGeminiInput, endpointOllamaInput) {
+export async function loadSavedSettings(apiKeyGeminiInput, endpointOllamaInput) {
     const settings = await readJSONFromDirectory('settings.json');
     if (settings) {
-        apiKeyPollinationsInput.value = settings.pollinations || '';
-        apiKeyGeminiInput.value = settings.gemini || '';
-        endpointOllamaInput.value = settings.ollama || 'http://127.0.0.1:11434';
+        if (apiKeyGeminiInput) apiKeyGeminiInput.value = settings.gemini || '';
+        if (endpointOllamaInput) endpointOllamaInput.value = settings.ollama || 'http://127.0.0.1:11434';
     } else {
-        apiKeyPollinationsInput.value = '';
-        apiKeyGeminiInput.value = '';
-        endpointOllamaInput.value = 'http://127.0.0.1:11434';
+        if (apiKeyGeminiInput) apiKeyGeminiInput.value = '';
+        if (endpointOllamaInput) endpointOllamaInput.value = 'http://127.0.0.1:11434';
     }
 }
 
-export async function saveSettingsToFolder(pollinations, gemini, ollama) {
+export async function saveSettingsToFolder(gemini, ollama) {
     await writeJSONToDirectory('settings.json', {
-        pollinations,
         gemini,
         ollama
     });
