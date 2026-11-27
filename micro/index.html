@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LFM 2.5 local</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#111715;color:#e9f1ec;font:15px system-ui}button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:default}.layout{display:grid;grid-template-columns:250px minmax(0,1fr);height:100dvh}aside{background:#19211e;border-right:1px solid #334039;padding:20px;overflow:auto}h1{font-size:19px;margin:0 0 6px}h2{font-size:14px;margin:24px 0 10px;color:#b1c0b6}.sub,#status,.stats{font-size:13px;color:#a9b9af}.primary{background:#b8e3c6;color:#102019;border:0;border-radius:9px;padding:11px 16px;font-weight:650}.new{width:100%;margin:22px 0 6px}.conversations{display:grid;gap:5px}.conversation{background:transparent;color:#cad8cf;border:0;text-align:left;border-radius:8px;padding:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.conversation.active{background:#304138;color:#fff}.workspace{display:flex;flex-direction:column;min-width:0;max-width:1000px;width:100%;margin:auto;height:100dvh;padding:24px 32px}.top{display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:1px solid #334039;padding-bottom:16px}.top h1{margin:0}.actions{display:flex;gap:8px}.secondary{background:#27352e;color:#dae8df;border:1px solid #405449;border-radius:8px;padding:8px 12px}.chat{flex:1;overflow:auto;padding:24px 0;display:flex;flex-direction:column;gap:16px}.message{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55;background:#26332c;padding:13px 17px;border-radius:14px;max-width:85%;align-self:flex-start}.message.user{align-self:flex-end;background:#385647}.stats{margin-top:6px;font-size:12px}.composer{display:flex;gap:10px;padding-top:12px;border-top:1px solid #334039}textarea,input{background:#202d26;color:#edf5ef;border:1px solid #415448;border-radius:8px;padding:10px}textarea{resize:vertical;min-height:50px;max-height:180px;flex:1}.panel{display:none;border:1px solid #405449;border-radius:10px;padding:16px;margin-top:14px;background:#1b2720}.panel.open{display:block}.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}.fields label{display:grid;gap:5px;font-size:13px;color:#bdccc2}.fields input{width:100%}.system{width:100%;margin-top:12px;min-height:60px}.hint{font-size:12px;color:#a9b9af;margin:8px 0 0}@media(max-width:650px){.layout{grid-template-columns:1fr;height:auto}aside{border-right:0;border-bottom:1px solid #334039;padding:12px}.new{margin:8px 0}.conversations{display:flex;overflow:auto}.conversation{flex:none;max-width:180px}.workspace{height:calc(100dvh - 150px);padding:16px}.top{flex-wrap:wrap}.message{max-width:95%}}
+</style>
+</head>
+<body><div class="layout"><aside><h1>LFM 2.5</h1><div class="sub">Chat local · Q4</div><button class="primary new" id="new">+ Nueva conversación</button><h2>Conversaciones</h2><div class="conversations" id="conversations"></div></aside><main class="workspace"><header class="top"><div><h1 id="title">Nueva conversación</h1><div id="status">Preparando el modelo…</div></div><div class="actions"><button class="secondary" id="settingsButton" aria-expanded="false">Configuración</button><button class="secondary" id="delete">Eliminar</button></div></header><section class="panel" id="settings"><div class="fields"><label>Máximo de tokens<input id="maxTokens" type="number" min="1" max="2048" step="1" value="256"></label><label>Temperatura<input id="temperature" type="number" min="0" max="2" step="0.1" value="0.1"></label><label>Top-p<input id="topP" type="number" min="0.01" max="1" step="0.01" value="1"></label><label>Top-k<input id="topK" type="number" min="0" max="200" step="1" value="50"></label><label>Penalización de repetición<input id="repetition" type="number" min="0.5" max="2" step="0.05" value="1.05"></label></div><label for="system">Instrucción de sistema</label><textarea id="system" class="system" placeholder="Opcional"></textarea><p class="hint">Los ajustes se guardan en este navegador.</p></section><div class="chat" id="chat" aria-live="polite"></div><form class="composer" id="form"><textarea id="prompt" placeholder="Escribe tu mensaje" rows="2" disabled></textarea><button class="primary" id="send" disabled>Enviar</button></form></main></div>
+<script type="module">
+import { pipeline, env, TextStreamer } from './lib/transformers.min.js?v=2';
+env.allowRemoteModels=false; env.allowLocalModels=true; env.localModelPath='./';
+env.backends.onnx.wasm.wasmPaths=new URL('./lib/',location.href).href;
+env.backends.onnx.wasm.numThreads=1;
+const $=id=>document.getElementById(id);
+const requiredModelFiles = ['model_q4.onnx', 'model_q4.onnx_data'];
+const readModelMetadata = fetch.bind(window);
+async function loadModelFiles() {
+  const status = document.getElementById('status');
+  let database;
+  try {
+    database = await new Promise((resolve, reject) => {
+      const request = indexedDB.open('lfm-portatil-q4', 1);
+      request.onupgradeneeded = () => request.result.createObjectStore('model');
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (error) {
+    console.warn('El navegador no permite guardar el modelo.', error);
+  }
+  function modelFetch(files) {
+    return async resource => {
+      const url = new URL(resource instanceof Request ? resource.url : resource, 'https://lfm-portatil.invalid/');
+      if (url.origin !== 'https://lfm-portatil.invalid') return new Response(null, { status: 404 });
+      const path = decodeURIComponent(url.pathname.slice(1));
+      if (!path.startsWith('modelo/onnx/')) return readModelMetadata(resource);
+    const file = files.get(path.slice('modelo/onnx/'.length));
+      return file
+        ? new Response(file.stream(), { headers: { 'Content-Length': String(file.size), 'Content-Type': file.type || 'application/octet-stream' } })
+        : new Response(null, { status: 404 });
+    };
+  }
+  if (database) {
+    try {
+      const saved = await new Promise((resolve, reject) => {
+        const request = database.transaction('model').objectStore('model').get('q4');
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      if (saved && requiredModelFiles.every(path => saved.get(path)?.size)) {
+        database.close();
+        status.textContent = 'Cargando el modelo guardado…';
+        return modelFetch(saved);
+      }
+    } catch (error) {
+      console.warn('No se pudo leer el modelo guardado.', error);
+    }
+  }
+  const modelSource = 'https://huggingface.co/LiquidAI/LFM2.5-230M-ONNX/resolve/main/onnx/';
+  const files = new Map();
+  try {
+    for (const name of requiredModelFiles) {
+      status.textContent = 'Descargando ' + name + (name.endsWith('_data') ? ' (211 MB)…' : '…');
+      const response = await fetch(modelSource + name, { credentials: 'omit' }).catch(() => {
+        throw new Error('No se pudo conectar con Hugging Face para descargar ' + name + '. Comprueba la conexión y recarga la página.');
+      });
+      if (!response.ok) throw new Error('Hugging Face devolvió HTTP ' + response.status + ' al descargar ' + name + '.');
+      const file = await response.blob();
+      if (!file.size) throw new Error('Hugging Face devolvió un archivo vacío: ' + name + '.');
+      files.set(name, file);
+    }
+    if (database) {
+      status.textContent = 'Guardando el modelo en el navegador…';
+      try {
+        await new Promise((resolve, reject) => {
+          const transaction = database.transaction('model', 'readwrite');
+          transaction.oncomplete = resolve;
+          transaction.onabort = () => reject(transaction.error);
+          transaction.objectStore('model').put(files, 'q4');
+        });
+        return modelFetch(files);
+      } catch (error) {
+        console.warn('No se pudo guardar el modelo.', error);
+      }
+    }
+    const notice = document.createElement('div');
+    notice.textContent = 'El navegador no pudo guardar el modelo. Se descargará de nuevo al volver a abrir el chat.';
+    status.after(notice);
+    return modelFetch(files);
+  } finally {
+    database?.close();
+  }
+}
+const storageKey='lfm-local-conversations-v1', settingsKey='lfm-local-settings-v1';
+const defaults={maxTokens:256,temperature:0.1,topP:1,topK:50,repetition:1.05,system:'Responde en español de forma clara y natural.'};
+function load(key, fallback){try{return JSON.parse(localStorage.getItem(key)) ?? fallback}catch{return fallback}}
+function storeSetting(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); }
+  catch (error) { console.warn('No se pudo guardar la configuración.', error); }
+}
+async function openHistory() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('lfm-local-history', 1);
+    request.onupgradeneeded = () => request.result.createObjectStore('history');
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+let historyDatabase;
+let cachedHistory;
+try {
+  historyDatabase = await openHistory();
+  cachedHistory = await new Promise((resolve, reject) => {
+    const request = historyDatabase.transaction('history').objectStore('history').get(storageKey);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+} catch (error) {
+  historyDatabase?.close();
+  historyDatabase = undefined;
+  console.warn('No se pudo abrir el historial del navegador.', error);
+}
+const legacyHistory = cachedHistory === undefined ? load(storageKey, null) : null;
+let conversations = cachedHistory ?? legacyHistory ?? [];
+const savedSettings=load(settingsKey,{});
+if(!load('lfm-settings-recommended-v1', false)){
+  const previousDefaults={temperature:0.7,topP:0.9,topK:40,repetition:1.1,system:''};
+  for(const key of Object.keys(previousDefaults)){
+    if(savedSettings[key]===previousDefaults[key]) savedSettings[key]=defaults[key];
+  }
+  storeSetting(settingsKey, savedSettings);
+  storeSetting('lfm-settings-recommended-v1', 1);
+}
+let settings={...defaults,...savedSettings};
+if(!Array.isArray(conversations)) conversations=[];
+function extractReply(value){
+  for(let depth=0;depth<8;depth++){
+    if(typeof value==='string'){
+      const trimmed=value.trim();
+      if(!trimmed.startsWith('[')) return value;
+      try{value=JSON.parse(trimmed)}catch{return value}
+    } else if(Array.isArray(value)){
+      const reply=[...value].reverse().find(entry=>entry && entry.role==='assistant' && typeof entry.content==='string');
+      if(!reply)return JSON.stringify(value);
+      value=reply.content;
+    } else return String(value ?? '');
+  }
+  return typeof value==='string'?value:JSON.stringify(value);
+}
+for(const conversation of conversations){
+  for(const message of conversation.messages || []){
+    if(message.role==='assistant')message.content=extractReply(message.content);
+  }
+}
+let currentId=conversations[0]?.id, generator, busy=false;
+const historyNotice = document.createElement('div');
+historyNotice.setAttribute('role', 'status');
+$('status').after(historyNotice);
+function reportHistoryFailure(error) {
+  historyNotice.textContent = 'No se pudo guardar el historial. Los mensajes nuevos pueden perderse al cerrar el chat.';
+  console.warn('No se pudo guardar el historial.', error);
+}
+function save() {
+  try {
+    if (historyDatabase) {
+      const transaction = historyDatabase.transaction('history', 'readwrite');
+      transaction.onabort = () => reportHistoryFailure(transaction.error);
+      transaction.oncomplete = () => { historyNotice.textContent = ''; };
+      transaction.objectStore('history').put(conversations, storageKey);
+    } else {
+      localStorage.setItem(storageKey, JSON.stringify(conversations));
+      historyNotice.textContent = '';
+    }
+  } catch (error) {
+    reportHistoryFailure(error);
+  }
+}
+function current(){return conversations.find(item=>item.id===currentId)}
+function createConversation(){const item={id:crypto.randomUUID(),title:'Nueva conversación',messages:[]}; conversations.unshift(item); currentId=item.id; save(); render()}
+function render(){
+ const item=current(); $('title').textContent=item?.title || 'Nueva conversación';
+ $('conversations').replaceChildren();
+ for(const conversation of conversations){const button=document.createElement('button');button.className='conversation'+(conversation.id===currentId?' active':'');button.textContent=conversation.title;button.disabled=busy;button.onclick=()=>{currentId=conversation.id;render()};$('conversations').append(button)}
+ $('chat').replaceChildren();
+ for(const message of item?.messages || []) addMessage(message.content,message.role,message.speed);
+ $('delete').disabled=busy || !item; $('new').disabled=busy;
+}
+function addMessage(content,role,speed){const wrapper=document.createElement('div');wrapper.className='message '+role;const text=document.createElement('div');text.textContent=content;wrapper.append(text);if(speed){const stats=document.createElement('div');stats.className='stats';stats.textContent=speed;wrapper.append(stats)}$('chat').append(wrapper);$('chat').scrollTop=$('chat').scrollHeight;return text}
+if(!current()) createConversation(); else {
+  if (legacyHistory && historyDatabase) save();
+  render();
+}
+for(const key of Object.keys(defaults)){const input=$(key);input.value=settings[key];input.addEventListener('change',()=>{settings[key]=key==='system'?input.value:Number(input.value);storeSetting(settingsKey, settings)})}
+$('settingsButton').onclick=()=>{const open=$('settings').classList.toggle('open');$('settingsButton').setAttribute('aria-expanded',String(open))};
+$('new').onclick=createConversation;
+$('delete').onclick=()=>{if(!confirm('¿Eliminar esta conversación?'))return;conversations=conversations.filter(item=>item.id!==currentId);currentId=conversations[0]?.id;if(!current())createConversation();else{save();render()}};
+try{
+ if(!navigator.gpu)throw new Error('WebGPU no está disponible en este navegador.');
+ env.fetch = await loadModelFiles();
+ generator=await pipeline('text-generation','modelo',{device:'webgpu',dtype:'q4',progress_callback:p=>{if(p.status==='progress')$('status').textContent=`Cargando ${p.file || 'modelo'} · ${Math.round(p.progress || 0)} %`}});
+ $('status').textContent='Modelo listo · Q4 · WebGPU';$('prompt').disabled=false;$('send').disabled=false;
+}catch(error){$('status').textContent='No se pudo cargar el modelo: '+error.message;console.error(error)}
+$('prompt').addEventListener('keydown', event=>{
+ if(event.key==='Enter' && !event.shiftKey && !event.isComposing){
+  event.preventDefault();
+  $('form').requestSubmit();
+ }
+});
+$('form').addEventListener('submit',async event=>{
+ event.preventDefault();const text=$('prompt').value.trim();if(!text||!generator||busy)return;
+ for(const key of Object.keys(defaults)) $(key).dispatchEvent(new Event('change'));
+ if ($('settings').querySelector(':invalid')) { $('settings').classList.add('open'); $('settings').querySelector(':invalid').reportValidity(); return; }
+ const item=current();busy=true;$('prompt').value='';$('prompt').disabled=true;$('send').disabled=true;
+ item.messages.push({role:'user',content:text});if(item.title==='Nueva conversación')item.title=text.slice(0,45);save();render();
+ const answer=addMessage('','assistant');let tokenCount=0;const started=performance.now();
+ try{
+  const streamer=new TextStreamer(generator.tokenizer,{skip_prompt:true,skip_special_tokens:true,callback_function:part=>{answer.textContent+=part;$('chat').scrollTop=$('chat').scrollHeight},token_callback_function:tokens=>{tokenCount+=tokens.length}});
+  const messages=[...(settings.system.trim()?[{role:'system',content:settings.system.trim()}]:[]),...item.messages.map(({role,content})=>({role,content}))];
+  const result=await generator(messages,{max_new_tokens:settings.maxTokens,do_sample:settings.temperature>0,temperature:settings.temperature || 1,top_p:settings.topP,top_k:settings.topK,repetition_penalty:settings.repetition,return_full_text:false,streamer});
+  const output=result[0].generated_text;const content=extractReply(output) || answer.textContent;
+  const seconds=(performance.now()-started)/1000;const speed=`${tokenCount} tokens · ${(tokenCount/seconds).toFixed(1)} tokens/s`;
+  item.messages.push({role:'assistant',content,speed});save();
+ }catch(error){$('status').textContent='Error al generar: '+error.message;console.error(error)}
+ finally{busy=false;$('prompt').disabled=false;$('send').disabled=false;render();$('prompt').focus()}
+});
+</script></body></html>
+
+
+
+
