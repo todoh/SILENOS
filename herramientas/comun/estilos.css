@@ -89,8 +89,9 @@ p, .parent { color: var(--muted); }
 .tool-frame { display: block; width: 100%; min-height: 55rem; border: 0; background: var(--page); }
 @media (min-width: 90rem) {
   .page-frame { grid-template-columns: 10rem minmax(0, 1fr) 10rem; padding: 2rem 1rem; align-items: start; }
-  .page-frame main { padding-top: 0; }
-  .ad-left { display: block; }
+  .page-frame main { grid-column: 2; grid-row: 1; padding-top: 0; }
+  .ad-left { display: block; grid-column: 1; grid-row: 1; }
+  .ad-right { grid-column: 3; grid-row: 1; }
   .ad-slot { position: sticky; top: 1rem; min-height: 30rem; margin: 0; }
 }
 #publicidad { min-width: 0; }
