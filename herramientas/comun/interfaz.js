@@ -146,7 +146,6 @@ function prepararAnuncios(principal) {
   let lateralIzquierdo;
   let inferior;
   let autorizado = false;
-  let cargador;
   const estado = document.documentElement.dataset;
 
   function insertarBloque(destino, clase, id) {
@@ -160,16 +159,6 @@ function prepararAnuncios(principal) {
     bloque.dataset.fullWidthResponsive = "true";
     espacio.append(bloque);
     destino.append(espacio);
-    if (!cargador) {
-      cargador = elemento("script");
-      cargador.async = true;
-      cargador.crossOrigin = "anonymous";
-      cargador.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" + editor;
-      estado.adsScript = "solicitado";
-      cargador.addEventListener("load", () => { estado.adsScript = "cargado"; });
-      cargador.addEventListener("error", () => { estado.adsScript = "error"; });
-      document.head.append(cargador);
-    }
     (window.adsbygoogle = window.adsbygoogle || []).push({});
     return espacio;
   }
@@ -199,7 +188,7 @@ function prepararAnuncios(principal) {
       datos.purpose?.consents?.[1] === true &&
       datos.vendor?.consents?.[755] === true
     );
-    if (autorizado && !permiso && cargador) {
+    if (autorizado && !permiso && (inferior || lateralIzquierdo)) {
       window.location.reload();
       return;
     }
