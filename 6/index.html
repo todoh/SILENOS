@@ -68,15 +68,15 @@ body{overflow:hidden}.desktop{height:100dvh;padding:36px 40px 90px;background:#f
 <header class="window-bar"><strong id="windowTitle"></strong><button class="secondary" id="windowMinimize" aria-label="Minimizar" title="Minimizar">−</button><button class="secondary" id="windowMaximize" aria-label="Maximizar" title="Maximizar" aria-pressed="false">□</button><button class="secondary" id="windowClose" aria-label="Cerrar ventana" title="Cerrar ventana">×</button></header>
 <div class="window-content" id="windowContent"></div></section><nav class="dock" id="dock" aria-label="Barra de aplicaciones"></nav><div class="layout" id="chatWindow" hidden><aside><div class="sub">Chat local · Q4</div><button class="primary new" id="new">+ Nueva conversación</button><h2>Conversaciones</h2><div class="conversations" id="conversations"></div></aside><main class="workspace"><header class="top"><div><h1 id="title">Nueva conversación</h1><div id="status" role="status"></div></div><div class="actions"><button class="secondary" id="settingsButton" aria-expanded="false">Configuración</button></div></header><div class="chat" id="chat" aria-live="polite"></div><form class="composer" id="form"><textarea id="prompt" placeholder="Escribe tu mensaje" rows="2" disabled></textarea><button class="primary" id="send" disabled>Enviar</button></form></main></div>
 <script type="module">
-import { pipeline, env, TextStreamer } from './lib/transformers.min.js?v=2';
+import { pipeline, env, TextStreamer } from './transformers.min.js?v=2';
 env.allowRemoteModels=false; env.allowLocalModels=true; env.localModelPath='./';
 env.backends.onnx.wasm.wasmPaths = undefined;
-const wasmParts = await Promise.all(Array.from({length:3}, (_, i) => fetch('./lib/runtime.wasm.part' + (i + 1)).then(r => { if (!r.ok) throw new Error('No se pudo descargar una parte del motor WebAssembly'); return r.arrayBuffer(); })));
+const wasmParts = await Promise.all(Array.from({length:3}, (_, i) => fetch('./runtime.wasm.part' + (i + 1)).then(r => { if (!r.ok) throw new Error('No se pudo descargar una parte del motor WebAssembly'); return r.arrayBuffer(); })));
 env.backends.onnx.wasm.wasmBinary = await new Blob(wasmParts).arrayBuffer();
 env.backends.onnx.wasm.numThreads=1;
 const $=id=>document.getElementById(id);
 const requiredModelFiles = ['model_q4.onnx', 'model_q4.onnx_data'];
-const readModelMetadata = fetch.bind(window);
+const readModelMetadata = resource => { const name = decodeURIComponent(new URL(resource, 'https://lfm-portatil.invalid/').pathname.split('/').pop()); return fetch(new URL('./' + encodeURIComponent(name), location.href)); };
 async function loadModelFiles() {
   const status = document.getElementById('status');
   let database;
