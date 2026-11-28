@@ -83,16 +83,16 @@ p, .parent { color: var(--muted); }
 .eyedropper-swatch { width: 3rem; height: 3rem; border: 1px solid var(--line); border-radius: .4rem; }
 .page-frame { max-width: 110rem; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
 .page-frame main { width: 100%; min-width: 0; }
-.ad-slot { color: var(--muted); font-size: .75rem; text-align: center; border: 1px dashed var(--line); padding: .5rem; min-height: 5rem; }
-.ad-left { display: none; }
-.ad-right { margin: 0 1rem 1rem; }
+.ad-slot { min-width: 0; }
+.ad-slot:has(.adsbygoogle[data-ad-status="unfilled"]) { display: none; }
+.ad-left, .ad-right { display: none; }
+.ad-bottom { margin-top: 2rem; }
 .tool-frame { display: block; width: 100%; min-height: 55rem; border: 0; background: var(--page); }
 @media (min-width: 90rem) {
   .page-frame { grid-template-columns: 10rem minmax(0, 1fr) 10rem; padding: 2rem 1rem; align-items: start; }
   .page-frame main { grid-column: 2; grid-row: 1; padding-top: 0; }
   .ad-left { display: block; grid-column: 1; grid-row: 1; }
-  .ad-right { grid-column: 3; grid-row: 1; }
-  .ad-slot { position: sticky; top: 1rem; min-height: 30rem; margin: 0; }
+  .ad-right { display: block; grid-column: 3; grid-row: 1; }
 }
 #publicidad { min-width: 0; }
 @media (min-width: 64rem) {
