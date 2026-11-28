@@ -147,6 +147,7 @@ function prepararAnuncios(principal) {
   let inferior;
   let autorizado = false;
   let cargador;
+  const estado = document.documentElement.dataset;
 
   function insertarBloque(destino, clase, id) {
     const espacio = elemento("aside", "", "ad-slot " + clase);
@@ -164,6 +165,9 @@ function prepararAnuncios(principal) {
       cargador.async = true;
       cargador.crossOrigin = "anonymous";
       cargador.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" + editor;
+      estado.adsScript = "solicitado";
+      cargador.addEventListener("load", () => { estado.adsScript = "cargado"; });
+      cargador.addEventListener("error", () => { estado.adsScript = "error"; });
       document.head.append(cargador);
     }
     (window.adsbygoogle = window.adsbygoogle || []).push({});
@@ -183,10 +187,12 @@ function prepararAnuncios(principal) {
   }
 
   escritorio.addListener(actualizarBloques);
-  // El código de consentmanager debe instalar su API TCF antes de este script.
-  if (typeof window.__tcfapi !== "function") return;
-  window.__tcfapi("addEventListener", 2, (datos, correcto) => {
-    if (!correcto || datos.cmpStatus !== "loaded") return;
+  function recibirConsentimiento(datos, correcto) {
+    if (!correcto || !datos) {
+      estado.adsConsent = "error-tcf";
+      return;
+    }
+    if (datos.cmpStatus !== "loaded") return;
     if (datos.eventStatus !== "tcloaded" && datos.eventStatus !== "useractioncomplete") return;
     const permiso = datos.gdprApplies === false || (
       datos.gdprApplies === true &&
@@ -198,8 +204,23 @@ function prepararAnuncios(principal) {
       return;
     }
     autorizado = permiso;
+    estado.adsConsent = permiso ? "autorizado" : "sin-permiso";
     actualizarBloques();
-  });
+  }
+
+  const limite = Date.now() + 15000;
+  function conectarConsentimiento() {
+    if (typeof window.__tcfapi === "function") {
+      estado.adsConsent = "esperando-consentimiento";
+      window.__tcfapi("addEventListener", 2, recibirConsentimiento);
+    } else if (Date.now() < limite) {
+      window.setTimeout(conectarConsentimiento, 250);
+    } else {
+      estado.adsConsent = "tcf-no-disponible";
+    }
+  }
+  estado.adsConsent = "esperando-tcf";
+  conectarConsentimiento();
 }
 
 const principal = document.querySelector("main");
