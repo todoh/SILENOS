@@ -139,13 +139,68 @@ if (listado && entradas.length) {
   listado.replaceChildren(cuadricula);
 }
 
-const principal = document.querySelector("main");
-if (principal) {
+function prepararAnuncios(principal) {
+  const editor = "ca-pub-7136138379132657";
+  const escritorio = window.matchMedia("(min-width: 90rem)");
   const marco = elemento("div", "", "page-frame");
-  const publicidadIzquierda = elemento("aside", "Publicidad", "ad-slot ad-left");
-  const publicidadDerecha = elemento("aside", "Publicidad", "ad-slot ad-right");
-  publicidadIzquierda.setAttribute("aria-label", "Espacio publicitario izquierdo");
-  publicidadDerecha.setAttribute("aria-label", "Espacio publicitario derecho");
-  principal.before(marco);
-  marco.append(publicidadIzquierda, principal, publicidadDerecha);
+  let lateralIzquierdo;
+  let inferior;
+  let autorizado = false;
+  let cargador;
+
+  function insertarBloque(destino, clase, id) {
+    const espacio = elemento("aside", "", "ad-slot " + clase);
+    espacio.setAttribute("aria-label", "Publicidad");
+    const bloque = elemento("ins", "", "adsbygoogle");
+    bloque.style.display = "block";
+    bloque.dataset.adClient = editor;
+    bloque.dataset.adSlot = id;
+    bloque.dataset.adFormat = "auto";
+    bloque.dataset.fullWidthResponsive = "true";
+    espacio.append(bloque);
+    destino.append(espacio);
+    if (!cargador) {
+      cargador = elemento("script");
+      cargador.async = true;
+      cargador.crossOrigin = "anonymous";
+      cargador.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" + editor;
+      document.head.append(cargador);
+    }
+    (window.adsbygoogle = window.adsbygoogle || []).push({});
+    return espacio;
+  }
+
+  function actualizarBloques() {
+    if (!autorizado) return;
+    if (herramientaActual) {
+      if (!inferior) inferior = insertarBloque(principal, "ad-bottom", "2288886753");
+    } else if (escritorio.matches && !lateralIzquierdo) {
+      principal.before(marco);
+      marco.append(principal);
+      lateralIzquierdo = insertarBloque(marco, "ad-left", "6346009270");
+      insertarBloque(marco, "ad-right", "2406764265");
+    }
+  }
+
+  escritorio.addListener(actualizarBloques);
+  // El código de consentmanager debe instalar su API TCF antes de este script.
+  if (typeof window.__tcfapi !== "function") return;
+  window.__tcfapi("addEventListener", 2, (datos, correcto) => {
+    if (!correcto || datos.cmpStatus !== "loaded") return;
+    if (datos.eventStatus !== "tcloaded" && datos.eventStatus !== "useractioncomplete") return;
+    const permiso = datos.gdprApplies === false || (
+      datos.gdprApplies === true &&
+      datos.purpose?.consents?.[1] === true &&
+      datos.vendor?.consents?.[755] === true
+    );
+    if (autorizado && !permiso && cargador) {
+      window.location.reload();
+      return;
+    }
+    autorizado = permiso;
+    actualizarBloques();
+  });
 }
+
+const principal = document.querySelector("main");
+if (principal) prepararAnuncios(principal);
