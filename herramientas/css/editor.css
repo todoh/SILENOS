@@ -1,0 +1,16 @@
+.css-workbench { min-width: 0; }
+.css-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: .85rem; align-items: start; }
+.css-controls label { display: grid; gap: .35rem; }
+.css-controls label:has(textarea) { grid-column: 1 / -1; }
+.css-controls label:has([type=checkbox]) { display: flex; flex-direction: row-reverse; justify-content: flex-end; align-items: center; }
+.css-workbench :is(input, select, textarea, button) { max-width: 100%; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--line); padding: .6rem; border-radius: .45rem; }
+.css-workbench input[type=color] { width: 4rem; min-height: 2.55rem; padding: .2rem; }
+.css-workbench textarea { width: 100%; font-family: ui-monospace, monospace; resize: vertical; }
+.css-preview { overflow: auto; border: 1px solid var(--line); border-radius: .6rem; background: var(--hover); }
+.css-preview iframe { display: block; border: 0; background: white; }
+.css-actions { display: flex; gap: .7rem; flex-wrap: wrap; margin-block: 1rem .6rem; }
+.css-workbench [role=status]:empty { display: none; }
+.css-preview { margin-top: 1rem; }
+.css-polygon { grid-column: 1 / -1; position: relative; width: min(90%, 320px); height: 160px; margin: 1rem; touch-action: none; outline: 1px dashed var(--line); }
+.css-polygon-fill { position: absolute; inset: 0; background: #7a68cf; pointer-events: none; }
+.css-polygon button { position: absolute; transform: translate(-50%, -50%); padding: .1rem .45rem; }
