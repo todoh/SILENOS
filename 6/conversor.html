@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Conversor de imágenes · SILENOS</title><style>
+:root{font:15px/1.5 system-ui,sans-serif;color:#262a25;background:#f7f7f4}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0}
+main{max-width:660px;margin:auto;padding:32px 20px}
+header,.toolbar,.actions,.dimensions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+header{justify-content:space-between;margin-bottom:20px}
+h1{font-size:22px;margin:0}
+button,input,select{font:inherit}
+button,select,input[type=number]{background:#fff;color:inherit;border:1px solid #d6dad2;border-radius:8px;padding:8px 12px}
+button,summary,select{cursor:pointer}
+button:disabled{opacity:.45;cursor:default}
+button:hover:not(:disabled){background:#e9ede5}
+.primary{background:#262e24;color:white;border-color:#262e24;font-weight:600}
+.primary:hover:not(:disabled){background:#414e3d}
+.back,.note,.meta,.privacy{color:#596357;font-size:13px}
+.drop{border:1px dashed #aeb9aa;border-radius:12px;padding:26px 14px;text-align:center}
+.drop.over{background:#e7efe3;border-color:#566b51}
+.drop p,.privacy{margin:8px 0 0}
+.toolbar{margin:18px 0 12px;justify-content:space-between}
+.toolbar label{display:flex;align-items:center;gap:8px}
+details{border-bottom:1px solid #dce0d8;padding:6px 0 12px}
+summary{width:fit-content;font-size:14px;color:#414b3f}
+.options{display:grid;gap:12px;margin-top:12px}
+.options label{display:grid;gap:5px;font-size:13px}
+.dimensions>*{flex:1 1 135px}
+.dimensions input{min-width:0;width:100%}
+.note{margin:0}
+.list{margin-top:12px}
+.item{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #dce0d8}
+.thumb{width:48px;height:48px;object-fit:contain;border-radius:6px;background:#ecefe9}
+.name{font-weight:600;overflow-wrap:anywhere}
+.item-actions{display:flex;gap:6px;flex-wrap:wrap}
+.status{font-size:13px;color:#4a5847}
+.status:empty{display:none}
+@media(max-width:440px){main{padding:20px 14px}.item{grid-template-columns:48px minmax(0,1fr)}.item-actions{grid-column:2}}
+</style></head><body><main>
+<header id="pageHeading"><h1>Conversor de imágenes</h1><a class="back" href="index.html">← Escritorio</a></header>
+<div class="drop" id="drop">
+ <button id="choose">Añadir imágenes</button>
+ <input id="files" type="file" accept="image/*,.heic,.heif,.tif,.tiff,.bmp,.ico,.avif,.svg" multiple hidden>
+ <p class="note">También puedes arrastrarlas aquí.</p>
+</div>
+<p class="privacy">Procesamiento local y sin guardado permanente.</p>
+<div class="toolbar">
+ <label>Convertir a <select id="format"></select></label>
+ <div class="actions"><button id="clear" hidden>Limpiar</button><button id="convert" class="primary" disabled>Convertir</button><button id="downloadAll" hidden>Descargar ZIP</button></div>
+</div>
+<details>
+ <summary>Opciones avanzadas</summary>
+ <div class="options">
+  <label id="qualityField" hidden>Calidad <span id="qualityValue">90 %</span><input type="range" id="quality" min="1" max="100" value="90"></label>
+  <div class="dimensions"><label>Ancho máximo (px)<input type="number" id="width" min="1" max="16384" placeholder="Original"></label><label>Alto máximo (px)<input type="number" id="height" min="1" max="16384" placeholder="Original"></label></div>
+  <p class="note">El tamaño se reduce manteniendo la proporción.</p>
+  <label id="backgroundField" hidden>Fondo para JPEG<input type="color" id="background" value="#ffffff"></label>
+  <p class="note">Los formatos compatibles dependen del navegador. Las imágenes animadas se exportan como un solo fotograma y pueden perderse metadatos.</p>
+ </div>
+</details>
+<p class="status" id="status" role="status"></p>
+<div class="list" id="list" aria-label="Imágenes añadidas"></div>
+</main><script>
+if (window.parent !== window) document.getElementById('pageHeading').hidden = true;
+const $=id=>document.getElementById(id), items=[]; let busy=false;
+const formats=[['image/png','PNG'],['image/jpeg','JPEG'],['image/webp','WebP'],['image/avif','AVIF']]; const probe=document.createElement('canvas'); for(const [mime,label] of formats){if(probe.toDataURL(mime).startsWith('data:'+mime)){const o=document.createElement('option');o.value=mime;o.textContent=label;$('format').append(o)}}
+function updateFormatOptions(){
+ const format=$('format').value;
+ $('qualityField').hidden=!['image/jpeg','image/webp','image/avif'].includes(format);
+ $('backgroundField').hidden=format!=='image/jpeg';
+}
+$('format').addEventListener('change',updateFormatOptions);
+updateFormatOptions();
+const size=n=>n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(2)+' MB';
+function revoke(item){if(item.url)URL.revokeObjectURL(item.url);if(item.outUrl)URL.revokeObjectURL(item.outUrl)}
+function render(){const list=$('list');list.replaceChildren();$('clear').hidden=!items.length;$('downloadAll').hidden=!items.some(i=>i.blob);$('clear').disabled=busy||!items.length;$('convert').disabled=busy||!items.length;$('downloadAll').disabled=busy||!items.some(i=>i.blob);$('choose').disabled=busy; for(const item of items){const row=document.createElement('div');row.className='item';const img=document.createElement('img');img.className='thumb';img.src=item.outUrl||item.url;img.alt='Vista previa de '+item.file.name;const info=document.createElement('div'),name=document.createElement('div'),meta=document.createElement('div');name.className='name';name.textContent=item.file.name;meta.className='meta';meta.textContent=item.error|| (size(item.file.size)+(item.dim?' · '+item.dim:'')+(item.blob?' → '+size(item.blob.size)+' · '+item.outDim:''));info.append(name,meta);const actions=document.createElement('div');actions.className='item-actions';if(item.blob){const b=document.createElement('button');b.textContent='Descargar';b.onclick=()=>download(item.blob,item.outName);actions.append(b)}const del=document.createElement('button');del.textContent='✕';del.title='Quitar imagen';del.disabled=busy;del.onclick=()=>{revoke(item);items.splice(items.indexOf(item),1);render()};actions.append(del);row.append(img,info,actions);list.append(row)}}
+function add(files){for(const file of files)items.push({file,url:URL.createObjectURL(file)});$('status').textContent='';render()}
+$('choose').onclick=()=>$('files').click();$('files').onchange=e=>{add(e.target.files);e.target.value=''};for(const type of ['dragenter','dragover'])$('drop').addEventListener(type,e=>{e.preventDefault();$('drop').classList.add('over')});for(const type of ['dragleave','drop'])$('drop').addEventListener(type,e=>{e.preventDefault();$('drop').classList.remove('over');if(type==='drop'&&!busy)add(e.dataTransfer.files)});$('quality').oninput=()=>$('qualityValue').textContent=$('quality').value+' %';$('clear').onclick=()=>{items.forEach(revoke);items.length=0;$('status').textContent='';render()};
+function image(url){return new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>reject(new Error('El navegador no puede abrir este formato.'));i.src=url})} function download(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),60000)}
+$('convert').onclick=async()=>{const w=Number($('width').value),h=Number($('height').value);if(($('width').value&&(!Number.isInteger(w)||w<1||w>16384))||($('height').value&&(!Number.isInteger(h)||h<1||h>16384))){$('status').textContent='Introduce dimensiones enteras entre 1 y 16384 píxeles.';return}busy=true;render();$('status').textContent='Convirtiendo…';const mime=$('format').value,quality=Number($('quality').value)/100,bg=$('background').value;for(const item of items){try{item.error='';if(item.outUrl)URL.revokeObjectURL(item.outUrl);item.outUrl=null;item.blob=null;const img=await image(item.url);item.dim=img.naturalWidth+' × '+img.naturalHeight;const scale=Math.min(1,w?w/img.naturalWidth:1,h?h/img.naturalHeight:1),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));const ctx=canvas.getContext('2d');if(!ctx)throw Error('No se pudo preparar la imagen.');if(mime==='image/jpeg'){ctx.fillStyle=bg;ctx.fillRect(0,0,canvas.width,canvas.height)}ctx.drawImage(img,0,0,canvas.width,canvas.height);const blob=await new Promise(resolve=>canvas.toBlob(resolve,mime,quality));if(!blob||blob.type!==mime)throw Error('El navegador no puede generar este formato.');item.blob=blob;item.outUrl=URL.createObjectURL(blob);item.outDim=canvas.width+' × '+canvas.height;item.outName=(item.file.name.replace(/\.[^.]+$/,'')||'imagen')+'.'+({'image/jpeg':'jpg','image/png':'png','image/webp':'webp','image/avif':'avif'}[mime]);}catch(e){item.error=e.message||'No se pudo convertir la imagen.'}render()}busy=false;$('status').textContent=items.some(i=>i.error)?'Algunas imágenes no se pudieron convertir. Revisa los mensajes de cada archivo.':'Conversión completada.';render()};
+// ZIP sin compresión: mantiene la descarga múltiple completamente local.
+const crcTable=Array.from({length:256},(_,n)=>{for(let k=0;k<8;k++)n=n&1?0xedb88320^(n>>>1):n>>>1;return n>>>0});function crc32(data){let c=0xffffffff;for(const b of data)c=crcTable[(c^b)&255]^(c>>>8);return(c^0xffffffff)>>>0}function header(length){const a=new Uint8Array(length);return [a,new DataView(a.buffer)]}function u16(v,p,n){v.setUint16(p,n,true)}function u32(v,p,n){v.setUint32(p,n,true)}
+$('downloadAll').onclick=async()=>{busy=true;render();$('status').textContent='Preparando ZIP…';try{const local=[],central=[],used=new Set();let offset=0;for(const item of items.filter(i=>i.blob)){let name=item.outName,n=2;while(used.has(name.toLowerCase()))name=item.outName.replace(/(\.[^.]+)$/,` (${n++})$1`);used.add(name.toLowerCase());const filename=new TextEncoder().encode(name),data=new Uint8Array(await item.blob.arrayBuffer()),crc=crc32(data),[lh,lv]=header(30);u32(lv,0,0x04034b50);u16(lv,4,20);u16(lv,6,0x800);u32(lv,14,crc);u32(lv,18,data.length);u32(lv,22,data.length);u16(lv,26,filename.length);local.push(lh,filename,data);const [ch,cv]=header(46);u32(cv,0,0x02014b50);u16(cv,4,20);u16(cv,6,20);u16(cv,8,0x800);u32(cv,16,crc);u32(cv,20,data.length);u32(cv,24,data.length);u16(cv,28,filename.length);u32(cv,42,offset);central.push(ch,filename);offset+=lh.length+filename.length+data.length}const centralSize=central.reduce((a,b)=>a+b.length,0),[end,ev]=header(22),count=central.length/2;u32(ev,0,0x06054b50);u16(ev,8,count);u16(ev,10,count);u32(ev,12,centralSize);u32(ev,16,offset);download(new Blob([...local,...central,end],{type:'application/zip'}),'imagenes-convertidas.zip');$('status').textContent='ZIP preparado.'}catch(e){$('status').textContent='No se pudo crear el ZIP: '+e.message}finally{busy=false;render()}};
+</script></body></html>
