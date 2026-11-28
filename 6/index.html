@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SILENOS MICRO</title>
+<style>
+:root{color-scheme:light;--bg:#f7f7f4;--side:#efefeb;--line:#dedfda;--text:#20211f;--muted:#757b75;--accent:#20211f}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.4;cursor:default}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.layout{display:grid;grid-template-columns:240px minmax(0,1fr);height:100dvh}aside{background:var(--side);border-right:1px solid var(--line);padding:28px 18px;overflow:auto}aside h1{font-size:18px;letter-spacing:-.05em;margin:0 8px}.brand{color:#111;font-weight:800}.brand span{color:#d52e2e}.brand small{font-size:.65em;letter-spacing:.06em;font-weight:700}.sub{margin:1px 8px;color:var(--muted);font-size:12px}h2{margin:30px 8px 10px;color:var(--muted);font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600}.primary{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:11px 16px;font-weight:650}.primary:hover:not(:disabled){background:#3a3c39}.new{width:100%;margin:28px 0 0;text-align:left}.conversations{display:grid;gap:3px}.conversation-row{display:flex;align-items:center;border-radius:8px;min-width:0}.conversation-row:hover,.conversation-row:focus-within,.conversation-row.active{background:#e1e3dd}.conversation{flex:1;min-width:0;background:transparent;color:#606660;border:0;text-align:left;border-radius:8px;padding:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.conversation:hover,.conversation.active{color:#20211f}.conversation-delete{visibility:hidden;border:0;background:transparent;color:#757b75;font-size:20px;line-height:1;padding:6px 9px;border-radius:6px}.conversation-row:hover .conversation-delete,.conversation-row:focus-within .conversation-delete{visibility:visible}.conversation-delete:hover{color:#c33131;background:#f4deda}@media(hover:none){.conversation-delete{visibility:visible}}.workspace{display:flex;flex-direction:column;min-width:0;width:100%;height:100dvh;padding:0 40px}.top{display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:1px solid var(--line);padding:24px 0}.top h1{font-size:15px;font-weight:600;letter-spacing:-.01em;margin:0}.sub,#status,.stats{color:var(--muted);font-size:12px}#status{margin-top:3px}.actions{display:flex;gap:8px}.secondary{background:transparent;color:#5e645e;border:1px solid var(--line);border-radius:9px;padding:8px 12px}.secondary:hover{background:#e9eae5;color:#20211f}.chat{flex:1;overflow:auto;padding:38px max(0px,calc((100% - 760px)/2));display:flex;flex-direction:column;gap:22px}.message{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;padding:4px 0;max-width:90%;align-self:flex-start}.message.user{align-self:flex-end;background:#e9ebe5;padding:12px 17px;border-radius:16px 16px 3px 16px}.stats{margin-top:8px;font-size:11px}.composer{width:min(100%,760px);align-self:center;display:flex;gap:10px;align-items:flex-end;margin:0 0 28px;padding:9px;border:1px solid #d7d9d2;border-radius:16px;background:#fff}.composer textarea{border:0;background:transparent;min-height:45px;padding:11px;resize:none}.composer .primary{min-height:44px}textarea,input{background:#fff;color:var(--text);border:1px solid #d5d8d1;border-radius:8px;padding:10px}textarea{resize:vertical;min-height:50px;max-height:180px;flex:1}.panel{display:none;border:1px solid var(--line);border-radius:12px;padding:20px;margin-top:14px;background:#f0f1ed}.panel.open{display:block}.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:18px}.fields label,.panel>label{display:grid;gap:6px;font-size:12px;color:#626962}.fields input{width:100%}.system{width:100%;margin-top:8px;min-height:60px}.hint{font-size:12px;color:var(--muted);margin:8px 0 0}@media(max-width:650px){.layout{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}aside{border-right:0;border-bottom:1px solid var(--line);padding:12px 16px}aside h1{display:inline-block}.sub{display:inline-block}.new{width:auto;margin:0 0 0 10px;padding:8px 12px}h2{display:none}.conversations{display:flex;overflow:auto;margin-top:8px}.conversation-row{flex:none;max-width:190px}.conversation{max-width:150px;padding:7px 10px}.workspace{height:auto;min-height:0;padding:0 16px}.top{padding:14px 0}.actions{gap:5px}.secondary{padding:7px 9px;font-size:12px}.chat{padding:24px 0}.message{max-width:95%}.composer{margin-bottom:14px}.fields{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{max-height:45vh;overflow:auto}}
+.delete-popover{position:fixed;z-index:20;width:205px;padding:14px;background:#fff;border:1px solid #dedfda;border-radius:12px;box-shadow:0 8px 28px #0002;color:#20211f;font-size:13px}.delete-popover p{margin:0 0 12px;font-weight:600}.delete-popover-actions{display:flex;justify-content:flex-end;gap:7px}.delete-popover button{border:0;border-radius:7px;padding:7px 10px;font-size:12px;font-weight:600}.delete-cancel{background:#efefeb;color:#444}.delete-confirm{background:#c73535;color:#fff}.delete-confirm:hover{background:#a92929}
+
+body{overflow:hidden}.desktop{height:100dvh;padding:36px 40px 90px;background:#f4f4ef}.desktop-header h1{font-size:24px;letter-spacing:-.05em;margin:0}.desktop-header p{color:var(--muted);margin:4px 0}.desktop-apps{display:flex;gap:14px;margin-top:40px}.desktop-app{display:grid;justify-items:center;gap:8px;width:100px;padding:16px 8px;border:0;border-radius:14px;background:transparent;color:var(--text)}.desktop-app:hover{background:#e6e8e1}.desktop-app span{font-size:34px}.layout{position:fixed;inset:18px 18px 76px;height:auto;background:var(--bg);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 18px 60px #0002}.layout[hidden],.explorer[hidden]{display:none}.workspace{height:100%;min-height:0}.dock{position:fixed;z-index:12;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:5px;max-width:calc(100vw - 24px);overflow:auto;padding:7px;background:#fffffff2;border:1px solid #dedfda;border-radius:16px;box-shadow:0 6px 25px #0002}.dock button{position:relative;flex:none;border:0;background:transparent;border-radius:10px;min-width:43px;height:43px;font-size:22px}.dock button:hover,.dock button.active{background:#e9ebe5}.dock button.active:after{content:'';position:absolute;width:5px;height:5px;border-radius:50%;background:#d52e2e;bottom:2px;left:calc(50% - 2px)}.dock-chat{position:relative;flex:none}.dock-close{position:absolute!important;right:-2px;top:-2px;min-width:16px!important;width:16px;height:16px!important;line-height:16px;padding:0;font-size:12px!important;background:#dedfda!important;visibility:hidden}.dock-chat:hover .dock-close,.dock-chat:focus-within .dock-close{visibility:visible}@media(hover:none){.dock-close{visibility:visible}}.dock-separator{width:1px;background:#dedfda;margin:5px}.explorer{position:fixed;z-index:5;inset:35px 7% 85px;background:#fafaf8;border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 60px #0002;display:flex;flex-direction:column;overflow:hidden}.explorer-bar{display:flex;align-items:center;gap:8px;padding:15px 18px;border-bottom:1px solid var(--line)}.explorer-bar strong{margin-right:auto}.explorer button{font:inherit;cursor:pointer}.explorer-bar button,.pane-tools button,.file-actions button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 10px;color:#333}.explorer-panes{display:flex;flex:1;min-height:0}.folder-pane{flex:1;min-width:0;overflow:auto;padding:16px}.folder-pane+.folder-pane{border-left:1px solid var(--line)}.pane-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.pane-path{font-size:13px;color:#666;overflow-wrap:anywhere}.file-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));align-content:start;gap:8px;margin-top:18px;min-height:100px}.file-item{border:1px solid transparent;background:transparent;border-radius:10px;padding:13px 8px;text-align:center;min-width:0}.file-item:hover,.file-item.drag-over{background:#eceee8;border-color:#d1d5cb}.file-open{border:0;background:transparent;width:100%;color:var(--text);overflow-wrap:anywhere}.file-icon{display:block;font-size:30px;margin-bottom:7px}.file-name{display:block;font-size:12px;overflow:hidden;text-overflow:ellipsis}.file-actions{margin-top:7px}.file-actions button{font-size:11px;padding:4px 7px}.empty-folder{color:var(--muted);font-size:13px;grid-column:1/-1}.drop-target{outline:2px dashed #aab2a5;outline-offset:-4px}@media(max-width:650px){.desktop{padding:25px 20px 90px}.layout{inset:6px 6px 74px}.explorer{inset:6px 6px 74px}.explorer-panes{overflow:auto}.folder-pane{min-width:230px}.explorer-bar{flex-wrap:wrap}.dock{bottom:8px}}
+
+/* El chat ocupa toda la ventana, sin lista lateral ni controles adicionales. */
+.layout{grid-template-columns:minmax(0,1fr)}.layout aside{display:none}.top{border:0;padding:18px 0 0}.top .actions{display:none}.top h1{display:none}#status{font-size:11px;color:#9a9f99}.workspace{max-width:1000px;margin:auto}.chat{padding-top:24px}
+
+.model-settings{position:fixed;z-index:6;top:50%;left:50%;transform:translate(-50%,-50%);width:min(680px,calc(100vw - 32px));max-height:calc(100dvh - 110px);overflow:auto;background:#fafaf8;border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 60px #0002;padding:24px}.model-settings[hidden]{display:none}.model-settings header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}.model-settings h2{margin:0;color:var(--text);font-size:17px;letter-spacing:0;text-transform:none}.model-settings header button{border:0;background:#efefeb;border-radius:8px;padding:7px 10px}.model-settings>label{display:block;font-size:12px;color:#626962}
+.context-menu{position:fixed;z-index:30;width:190px;padding:6px;background:#fff;border:1px solid var(--line);border-radius:11px;box-shadow:0 8px 28px #0002}.context-menu button{display:block;width:100%;border:0;border-radius:7px;background:transparent;padding:9px 10px;text-align:left;font:inherit;font-size:13px;color:#252725}.context-menu button:hover{background:#f0f1ed}.context-menu .danger{color:#b52f2f}.context-menu p{font-size:13px;margin:6px 5px 10px}.context-menu input{width:100%;margin-bottom:8px}.context-menu .context-actions{display:flex;gap:5px}.context-menu .context-actions button{text-align:center;background:#efefeb}.context-menu .context-actions .danger{background:#bd3333;color:white}
+
+.calculator{position:fixed;z-index:6;top:50%;left:50%;transform:translate(-50%,-50%);width:min(390px,calc(100vw - 30px));max-height:calc(100dvh - 100px);overflow:auto;background:#fafaf8;border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 60px #0002;padding:20px}.calculator[hidden]{display:none}.calculator header{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}.calculator header strong{font-size:16px}.calculator header button{border:0;border-radius:8px;background:#efefeb;padding:7px 10px}.calc-display{width:100%;height:58px;text-align:right;font-size:22px;background:#fff}.calc-result{min-height:28px;text-align:right;color:#747a74;font-size:13px;padding:5px 2px}.calc-keys{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}.calc-keys button{min-height:43px;border:0;border-radius:9px;background:#eceee8;color:#252725}.calc-keys button:hover{background:#dfe2da}.calc-keys .calc-number{background:#fff;border:1px solid #e2e4de}.calc-keys .calc-equal{background:#20211f;color:white}.calc-keys .calc-mode{color:#b52f2f;font-weight:700}
+ .file-item.selected{background:#dce9d8;border-color:#83a37c}.selection-count{font-size:12px;color:#626962}.pane-tools .delete-selected{color:#a52c2c}
+.app-window{position:fixed;z-index:6;inset:18px 7% 76px;display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 18px 60px #0002}
+.app-window[hidden]{display:none}.app-window.maximized{inset:0 0 72px;border-radius:0}
+.window-bar{display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--side);border-bottom:1px solid var(--line)}
+.window-bar strong{flex:1}.window-content{flex:1;min-height:0;position:relative;overflow:auto}
+.window-content>.window-panel{position:static;inset:auto;transform:none;width:100%;height:100%;max-height:none;border:0;border-radius:0;box-shadow:none}
+.window-panel>header:has(#closeSettings),.window-panel>header:has(#closeCalculator),#closeFiles,.explorer-bar strong{display:none}
+.window-panel.calculator{max-width:430px;margin:auto;height:auto}.window-panel.model-settings{max-width:780px;margin:auto;height:auto}
+.window-panel iframe{display:block;width:100%;height:100%;border:0}
+@media(max-width:650px){.app-window{inset:6px 6px 72px}.window-bar .secondary{min-width:36px}}
+.file-list{user-select:none}.folder-pane:has(.selection-box){cursor:crosshair}
+.selection-box{position:fixed;z-index:20;pointer-events:none;border:1px solid #65845d;background:#83a37c38}
+/* Ventanas de herramientas: comparten el marco y se ajustan al contenido. */
+.app-window{border-color:#d5dad3;box-shadow:0 24px 70px #202b2229}
+.window-bar{padding:9px 14px;background:#e9ede7}
+.window-bar .secondary{min-width:36px;background:#f8faf7}
+.window-bar .secondary:hover:not(:disabled){background:#dbe3d8}
+#windowClose:hover:not(:disabled){background:#f6dfdb;color:#982d27}
+.app-window[data-size="small"]:not(.maximized),
+.app-window[data-size="medium"]:not(.maximized){
+ inset:50% auto auto 50%;
+ transform:translate(-50%,-50%);
+ width:min(var(--window-width),calc(100vw - 24px));
+ max-height:calc(100dvh - 96px);
+}
+.app-window[data-size="small"]{--window-width:420px}
+.app-window[data-size="medium"]{--window-width:650px}
+.window-content>.calculator,.window-content>.model-settings{background:var(--bg);padding:22px}
+.app-window.maximized .window-content>.calculator,
+.app-window.maximized .window-content>.model-settings{margin:24px auto}
+.calc-display{height:68px;font-size:28px;font-variant-numeric:tabular-nums}
+.calc-keys button{min-height:46px}
+.model-settings .fields{
+ grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));
+ gap:14px;
+ padding-bottom:18px;
+ border-bottom:1px solid var(--line);
+}
+.model-settings .fields label{align-content:space-between;font-size:13px;color:#424a42}
+.model-settings .fields input{font-size:15px}
+.model-settings>label{font-size:13px;color:#424a42}
+.model-settings .system{min-height:92px}
+@media(max-width:420px){
+ .window-content>.calculator,.window-content>.model-settings{padding:14px}
+ .model-settings .fields{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+}
+</style>
+</head>
+<body><section class="desktop" id="desktop"><div class="desktop-apps"><button class="desktop-app" id="openChat"><span>💬</span>Chat</button><button class="desktop-app" id="openFiles"><span>📁</span>Archivos</button><button class="desktop-app" id="openConverter"><span>🖼️</span>Conversor</button><button class="desktop-app" id="openCalculator"><span>🧮</span>Calculadora</button><button class="desktop-app" id="openSettings"><span>⚙️</span>Ajustes</button></div></section><section class="explorer" id="explorer" hidden aria-label="Explorador de archivos"><header class="explorer-bar"><strong>📁 Archivos</strong><button id="newFolder">+ Carpeta</button><button id="splitFolders" aria-pressed="false">Dividir vista</button><button id="closeFiles" aria-label="Cerrar archivos">✕</button></header><div class="explorer-panes" id="explorerPanes"></div></section><section class="model-settings" id="settings" hidden aria-label="Ajustes del modelo"><header><h2>Ajustes del modelo</h2><button id="closeSettings" aria-label="Cerrar ajustes">✕</button></header><div class="fields"><label>Máximo de tokens<input id="maxTokens" type="number" min="1" max="2048" step="1" value="2048"></label><label>Temperatura<input id="temperature" type="number" min="0" max="2" step="0.1" value="0.1"></label><label>Top-p<input id="topP" type="number" min="0.01" max="1" step="0.01" value="1"></label><label>Top-k<input id="topK" type="number" min="0" max="200" step="1" value="50"></label><label>Penalización de repetición<input id="repetition" type="number" min="0.5" max="2" step="0.05" value="1.05"></label></div><label for="system">Instrucción de sistema</label><textarea id="system" class="system" placeholder="Opcional"></textarea><p class="hint">Los ajustes se guardan en este navegador.</p></section><section class="calculator" id="calculator" hidden aria-label="Calculadora científica"><header><strong>Calculadora</strong><button id="closeCalculator" aria-label="Cerrar calculadora">✕</button></header><input id="calcDisplay" class="calc-display" aria-label="Expresión" placeholder="0" autocomplete="off" spellcheck="false"><div class="calc-result" id="calcResult" aria-live="polite"></div><div class="calc-keys" id="calcKeys"></div></section><section class="app-window" id="appWindow" aria-labelledby="windowTitle" hidden>
+<header class="window-bar"><strong id="windowTitle"></strong><button class="secondary" id="windowMinimize" aria-label="Minimizar" title="Minimizar">−</button><button class="secondary" id="windowMaximize" aria-label="Maximizar" title="Maximizar" aria-pressed="false">□</button><button class="secondary" id="windowClose" aria-label="Cerrar ventana" title="Cerrar ventana">×</button></header>
+<div class="window-content" id="windowContent"></div></section><nav class="dock" id="dock" aria-label="Barra de aplicaciones"></nav><div class="layout" id="chatWindow" hidden><aside><div class="sub">Chat local · Q4</div><button class="primary new" id="new">+ Nueva conversación</button><h2>Conversaciones</h2><div class="conversations" id="conversations"></div></aside><main class="workspace"><header class="top"><div><h1 id="title">Nueva conversación</h1><div id="status" role="status"></div></div><div class="actions"><button class="secondary" id="settingsButton" aria-expanded="false">Configuración</button></div></header><div class="chat" id="chat" aria-live="polite"></div><form class="composer" id="form"><textarea id="prompt" placeholder="Escribe tu mensaje" rows="2" disabled></textarea><button class="primary" id="send" disabled>Enviar</button></form></main></div>
+<script type="module">
+import { pipeline, env, TextStreamer } from './lib/transformers.min.js?v=2';
+env.allowRemoteModels=false; env.allowLocalModels=true; env.localModelPath='./';
+env.backends.onnx.wasm.wasmPaths = undefined;
+const wasmParts = await Promise.all(Array.from({length:3}, (_, i) => fetch('./lib/runtime.wasm.part' + (i + 1)).then(r => { if (!r.ok) throw new Error('No se pudo descargar una parte del motor WebAssembly'); return r.arrayBuffer(); })));
+env.backends.onnx.wasm.wasmBinary = await new Blob(wasmParts).arrayBuffer();
+env.backends.onnx.wasm.numThreads=1;
+const $=id=>document.getElementById(id);
+const requiredModelFiles = ['model_q4.onnx', 'model_q4.onnx_data'];
+const readModelMetadata = fetch.bind(window);
+async function loadModelFiles() {
+  const status = document.getElementById('status');
+  let database;
+  try {
+    database = await new Promise((resolve, reject) => {
+      const request = indexedDB.open('lfm-portatil-q4', 1);
+      request.onupgradeneeded = () => request.result.createObjectStore('model');
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (error) {
+    console.warn('El navegador no permite guardar el modelo.', error);
+  }
+  function modelFetch(files) {
+    return async resource => {
+      const url = new URL(resource instanceof Request ? resource.url : resource, 'https://lfm-portatil.invalid/');
+      if (url.origin !== 'https://lfm-portatil.invalid') return new Response(null, { status: 404 });
+      const path = decodeURIComponent(url.pathname.slice(1));
+      if (!path.startsWith('modelo/onnx/')) return readModelMetadata(resource);
+    const file = files.get(path.slice('modelo/onnx/'.length));
+      return file
+        ? new Response(file.stream(), { headers: { 'Content-Length': String(file.size), 'Content-Type': file.type || 'application/octet-stream' } })
+        : new Response(null, { status: 404 });
+    };
+  }
+  if (database) {
+    try {
+      const saved = await new Promise((resolve, reject) => {
+        const request = database.transaction('model').objectStore('model').get('q4');
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      if (saved && requiredModelFiles.every(path => saved.get(path)?.size)) {
+        database.close();
+        return modelFetch(saved);
+      }
+    } catch (error) {
+      console.warn('No se pudo leer el modelo guardado.', error);
+    }
+  }
+  const modelSource = 'https://huggingface.co/LiquidAI/LFM2.5-230M-ONNX/resolve/main/onnx/';
+  const files = new Map();
+  try {
+    for (const name of requiredModelFiles) {
+      const response = await fetch(modelSource + name, { credentials: 'omit' }).catch(() => {
+        throw new Error('No se pudo conectar con Hugging Face para descargar ' + name + '. Comprueba la conexión y recarga la página.');
+      });
+      if (!response.ok) throw new Error('Hugging Face devolvió HTTP ' + response.status + ' al descargar ' + name + '.');
+      const file = await response.blob();
+      if (!file.size) throw new Error('Hugging Face devolvió un archivo vacío: ' + name + '.');
+      files.set(name, file);
+    }
+    if (database) {
+      try {
+        await new Promise((resolve, reject) => {
+          const transaction = database.transaction('model', 'readwrite');
+          transaction.oncomplete = resolve;
+          transaction.onabort = () => reject(transaction.error);
+          transaction.objectStore('model').put(files, 'q4');
+        });
+        return modelFetch(files);
+      } catch (error) {
+        console.warn('No se pudo guardar el modelo.', error);
+      }
+    }
+    console.warn('El navegador no pudo guardar el modelo; se volverá a descargar al iniciar.');
+    return modelFetch(files);
+  } finally {
+    database?.close();
+  }
+}
+const storageKey='lfm-local-conversations-v1', settingsKey='lfm-local-settings-v1';
+const defaults={maxTokens:2048,temperature:0.1,topP:1,topK:50,repetition:1.05,system:'Responde en español de forma clara y natural.'};
+function load(key, fallback){try{return JSON.parse(localStorage.getItem(key)) ?? fallback}catch{return fallback}}
+function storeSetting(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); }
+  catch (error) { console.warn('No se pudo guardar la configuración.', error); }
+}
+async function openHistory() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('lfm-local-history', 1);
+    request.onupgradeneeded = () => request.result.createObjectStore('history');
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+let historyDatabase;
+let cachedHistory;
+try {
+  historyDatabase = await openHistory();
+  cachedHistory = await new Promise((resolve, reject) => {
+    const request = historyDatabase.transaction('history').objectStore('history').get(storageKey);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+} catch (error) {
+  historyDatabase?.close();
+  historyDatabase = undefined;
+  console.warn('No se pudo abrir el historial del navegador.', error);
+}
+const legacyHistory = cachedHistory === undefined ? load(storageKey, null) : null;
+let conversations = cachedHistory ?? legacyHistory ?? [];
+const savedSettings=load(settingsKey,{});
+if(!load('lfm-settings-recommended-v1', false)){
+  const previousDefaults={temperature:0.7,topP:0.9,topK:40,repetition:1.1,system:''};
+  for(const key of Object.keys(previousDefaults)){
+    if(savedSettings[key]===previousDefaults[key]) savedSettings[key]=defaults[key];
+  }
+  storeSetting(settingsKey, savedSettings);
+  storeSetting('lfm-settings-recommended-v1', 1);
+}
+if(!load('lfm-max-tokens-default-v2', false)){
+  if(savedSettings.maxTokens===256) savedSettings.maxTokens=defaults.maxTokens;
+  storeSetting(settingsKey, savedSettings);
+  storeSetting('lfm-max-tokens-default-v2', 1);
+}
+let settings={...defaults,...savedSettings};
+if(!Array.isArray(conversations)) conversations=[];
+conversations=conversations.filter(item=>Array.isArray(item.messages)&&item.messages.some(message=>typeof message.content==='string'&&message.content.trim()));
+function extractReply(value){
+  for(let depth=0;depth<8;depth++){
+    if(typeof value==='string'){
+      const trimmed=value.trim();
+      if(!trimmed.startsWith('[')) return value;
+      try{value=JSON.parse(trimmed)}catch{return value}
+    } else if(Array.isArray(value)){
+      const reply=[...value].reverse().find(entry=>entry && entry.role==='assistant' && typeof entry.content==='string');
+      if(!reply)return JSON.stringify(value);
+      value=reply.content;
+    } else return String(value ?? '');
+  }
+  return typeof value==='string'?value:JSON.stringify(value);
+}
+for(const conversation of conversations){
+  for(const message of conversation.messages || []){
+    if(message.role==='assistant')message.content=extractReply(message.content);
+  }
+}
+let currentId=conversations[0]?.id, generator, busy=false;
+let openChats=[], openUtilities=new Set(), activeView='desktop', folders=load('silenos-folders-v1',[]), panePaths=[null], focusedPane=0;
+if(!Array.isArray(folders))folders=[];
+const historyNotice = document.createElement('div');
+historyNotice.setAttribute('role', 'status');
+$('status').after(historyNotice);
+function reportHistoryFailure(error) {
+  historyNotice.textContent = 'No se pudo guardar el historial. Los mensajes nuevos pueden perderse al cerrar el chat.';
+  console.warn('No se pudo guardar el historial.', error);
+}
+function save() {
+  const savedConversations=conversations.filter(item=>item.messages?.some(message=>typeof message.content==='string'&&message.content.trim()));
+  try {
+    if (historyDatabase) {
+      const transaction = historyDatabase.transaction('history', 'readwrite');
+      transaction.onabort = () => reportHistoryFailure(transaction.error);
+      transaction.oncomplete = () => { historyNotice.textContent = ''; };
+      transaction.objectStore('history').put(savedConversations, storageKey);
+    } else {
+      localStorage.setItem(storageKey, JSON.stringify(savedConversations));
+      historyNotice.textContent = '';
+    }
+  } catch (error) {
+    reportHistoryFailure(error);
+  }
+}
+function current(){return conversations.find(item=>item.id===currentId)}
+function createConversation(){if(busy)return;const item={id:crypto.randomUUID(),title:'Nueva conversación',messages:[],folderId:null}; conversations.unshift(item); currentId=item.id; openChat(item.id); save(); render()}
+function render(){
+ const item=current(); $('title').textContent=item?.title || 'Nueva conversación';
+ $('conversations').replaceChildren();
+ for(const conversation of conversations){
+  const row=document.createElement('div');
+  row.className='conversation-row'+(conversation.id===currentId?' active':'');
+  const button=document.createElement('button');
+  button.className='conversation'+(conversation.id===currentId?' active':'');
+  button.textContent=conversation.title;button.disabled=busy;
+  button.onclick=()=>openChat(conversation.id);
+  const remove=document.createElement('button');
+  remove.className='conversation-delete';remove.type='button';remove.textContent='×';
+  remove.setAttribute('aria-label','Eliminar conversación: '+conversation.title);
+  remove.title='Eliminar conversación';remove.disabled=busy;
+  remove.onclick=()=>showDeleteConfirmation(conversation.id,remove);
+  row.append(button,remove);$('conversations').append(row);
+ }
+ $('chat').replaceChildren();
+ for(const message of item?.messages || []) addMessage(message.content,message.role,message.speed);
+ $('new').disabled=busy;
+ renderDesktop();
+}
+
+function saveFolders(){storeSetting('silenos-folders-v1',folders)}
+function openChat(id){if(busy && id!==currentId)return; if(!conversations.some(c=>c.id===id))return;currentId=id;if(!openChats.includes(id))openChats.push(id);activeView='chat';render()}
+// Registra cada aplicación con un panel existente o una URL.
+const applications = new Map();
+function registerApplication(id, config) {
+ const panel = config.panel ? $(config.panel) : document.createElement('section');
+ panel.classList.add('window-panel');
+ panel.hidden = true;
+ $('windowContent').append(panel);
+ applications.set(id, {...config, panel, maximized:false});
+ if (config.launcher) $(config.launcher).onclick = () => showView(id);
+}
+registerApplication('chat', {title:'Chat', icon:'💬', panel:'chatWindow'});
+registerApplication('files', {title:'Archivos', icon:'📁', panel:'explorer', launcher:'openFiles'});
+registerApplication('calculator', {title:'Calculadora', icon:'🧮', panel:'calculator', size:'small', launcher:'openCalculator'});
+registerApplication('settings', {title:'Ajustes del modelo', icon:'⚙️', panel:'settings', size:'medium', launcher:'openSettings'});
+registerApplication('converter', {title:'Conversor de imágenes', icon:'🖼️', url:'conversor.html', launcher:'openConverter'});
+
+function showView(view) {
+ if (busy && view !== 'chat') return;
+ const app = applications.get(view);
+ if (view !== 'desktop' && !app) return;
+ if (app && view !== 'chat') openUtilities.add(view);
+ if (app?.url && !app.panel.firstChild) {
+  const frame = document.createElement('iframe');
+  frame.title = app.title;
+  const embedded = document.querySelector('script[data-window-app="'+view+'"]');
+  if (embedded) frame.srcdoc = decodeURIComponent(atob(embedded.textContent));
+  else frame.src = app.url + '?ventana=1';
+  app.panel.append(frame);
+ }
+ activeView = view;
+ renderDesktop();
+}
+function closeChatWindow(id) {
+ const chat = conversations.find(c => c.id === id);
+ if (chat && !chat.messages?.some(message => typeof message.content === 'string' && message.content.trim())) {
+  conversations = conversations.filter(c => c.id !== id);
+ }
+ openChats = openChats.filter(chatId => chatId !== id);
+ if (currentId === id) currentId = openChats.at(-1) || conversations[0]?.id;
+ if (activeView === 'chat' && !openChats.length) activeView = 'desktop';
+ render();
+}
+$('windowMinimize').onclick = () => showView('desktop');
+$('windowMaximize').onclick = () => {
+ const app = applications.get(activeView);
+ if (app) {app.maximized = !app.maximized; renderWindow();}
+};
+$('windowClose').onclick = () => {
+ if (busy) return;
+ const app = applications.get(activeView);
+ if (!app) return;
+ app.maximized = false;
+ if (activeView === 'chat') {closeChatWindow(currentId);return;}
+ if (app.url) app.panel.replaceChildren();
+ openUtilities.delete(activeView);
+ showView('desktop');
+};
+function renderWindow() {
+ const app = applications.get(activeView);
+ for (const candidate of applications.values()) candidate.panel.hidden = candidate !== app;
+ $('appWindow').hidden = !app;
+ $('appWindow').dataset.size = app?.size ?? 'wide';
+ $('appWindow').classList.toggle('maximized', Boolean(app?.maximized));
+ $('windowTitle').textContent = app ? app.icon+' '+app.title : '';
+ const label = app?.maximized ? 'Restaurar tamaño' : 'Maximizar';
+ $('windowMaximize').title = label;
+ $('windowMaximize').setAttribute('aria-label', label);
+ $('windowMaximize').setAttribute('aria-pressed', String(Boolean(app?.maximized)));
+ $('windowMaximize').textContent = app?.maximized ? '❐' : '□';
+ $('windowClose').disabled = $('windowMinimize').disabled = busy;
+}
+function renderDesktop(){
+ renderWindow();
+ const dock=$('dock');dock.replaceChildren();
+ function dockButton(icon,label,active,action){const b=document.createElement('button');b.textContent=icon;b.title=label;b.setAttribute('aria-label',label);b.className=active?'active':'';b.disabled=busy&& !active;b.onclick=action;dock.append(b)}
+ dockButton('▦','Escritorio',activeView==='desktop',()=>showView('desktop'));
+ dockButton('📁','Archivos',activeView==='files',()=>showView('files'));
+ for (const [id, app] of applications) {
+  if (id !== 'files' && openUtilities.has(id)) dockButton(app.icon, app.title, activeView===id, ()=>showView(id));
+ }
+ if(openChats.length){const sep=document.createElement('span');sep.className='dock-separator';dock.append(sep)}
+ for(const id of openChats){const chat=conversations.find(c=>c.id===id);if(!chat)continue;const group=document.createElement('span');group.className='dock-chat';const b=document.createElement('button');b.textContent='💬';b.title='Chat · '+chat.title;b.setAttribute('aria-label',b.title);b.className=activeView==='chat'&&id===currentId?'active':'';b.disabled=busy&&id!==currentId;b.onclick=()=>openChat(id);const close=document.createElement('button');close.className='dock-close';close.textContent='×';close.title='Cerrar '+chat.title;close.setAttribute('aria-label',close.title);close.disabled=busy;close.onclick=()=>closeChatWindow(id);group.append(b,close);dock.append(group)}
+ if(activeView==='files')renderExplorer();
+}
+function folderName(id){return folders.find(f=>f.id===id)?.name || 'Archivos'}
+function moveEntry(kind,id,target){
+ if(kind==='folder'){
+  const folder=folders.find(f=>f.id===id);if(!folder || id===target)return;
+  for(let parent=target;parent;parent=folders.find(f=>f.id===parent)?.parentId){if(parent===id)return}
+  folder.parentId=target;saveFolders();
+ }else{const chat=conversations.find(c=>c.id===id);if(!chat)return;chat.folderId=target;save()}
+ renderExplorer();
+}
+let selectedEntries=new Map(), selectionPane=null;
+function entryKey(entry){return entry.kind+':'+entry.id}
+function clearSelection(){selectedEntries.clear();selectionPane=null}
+function toggleSelection(entry,index){if(selectionPane!==index){clearSelection();selectionPane=index}const key=entryKey(entry);if(selectedEntries.has(key))selectedEntries.delete(key);else selectedEntries.set(key,entry);if(!selectedEntries.size)selectionPane=null;renderExplorer()}
+function dragData(event,kind,id,index){const key=kind+':'+id;if(selectionPane!==index||!selectedEntries.has(key)){clearSelection();selectionPane=index;selectedEntries.set(key,{kind,id})}event.dataTransfer.setData('application/x-silenos-entry',JSON.stringify([...selectedEntries.values()]));event.dataTransfer.effectAllowed='move'}
+function dropInto(element,target){
+ element.addEventListener('dragover',event=>{if([...event.dataTransfer.types].includes('application/x-silenos-entry')){event.preventDefault();event.stopPropagation();element.classList.add('drop-target')}});
+ element.addEventListener('dragleave',()=>element.classList.remove('drop-target'));
+ element.addEventListener('drop',event=>{event.preventDefault();event.stopPropagation();element.classList.remove('drop-target');try{const data=JSON.parse(event.dataTransfer.getData('application/x-silenos-entry'));(Array.isArray(data)?data:[data]).forEach(entry=>moveEntry(entry.kind,entry.id,target));clearSelection();renderExplorer()}catch{}});
+}
+function chooseDestination(kind,id){
+ const options=[{id:null,name:'Archivos'},...folders.map(f=>({id:f.id,name:folderPath(f.id)}))];
+ const choice=prompt('Mover a carpeta. Escribe el número:\n'+options.map((f,i)=>`${i+1}. ${f.name}`).join('\n'));
+ if(choice===null)return;const n=Number(choice);if(Number.isInteger(n)&&n>=1&&n<=options.length)moveEntry(kind,id,options[n-1].id);
+}
+function folderPath(id){const names=[];const seen=new Set();while(id&&!seen.has(id)){seen.add(id);const f=folders.find(x=>x.id===id);if(!f)break;names.unshift(f.name);id=f.parentId}return 'Archivos / '+names.join(' / ')}
+let entryMenu;
+function closeEntryMenu(restoreFocus=false){if(!entryMenu)return;const {element,anchor}=entryMenu;element.remove();entryMenu=undefined;if(restoreFocus&&anchor.isConnected)(anchor.querySelector('.file-open')||anchor).focus()}
+function placeEntryMenu(box,anchor,x,y){document.body.append(box);const rect=anchor.getBoundingClientRect();const left=x??rect.right+6, top=y??rect.top;box.style.left=Math.max(8,Math.min(left,innerWidth-box.offsetWidth-8))+'px';box.style.top=Math.max(8,Math.min(top,innerHeight-box.offsetHeight-8))+'px';entryMenu={element:box,anchor}}
+function showEntryMenu(entry,anchor,x,y,index=focusedPane){
+ closeEntryMenu();const box=document.createElement('div');box.className='context-menu';box.setAttribute('role','menu');
+ const rename=document.createElement('button');rename.textContent='Cambiar nombre';rename.setAttribute('role','menuitem');rename.onclick=()=>showEntryRename(entry,anchor);
+ const remove=document.createElement('button');remove.className='danger';remove.textContent='Eliminar';remove.disabled=busy;remove.setAttribute('role','menuitem');remove.onclick=()=>showEntryDelete(entry,anchor);
+ const select=document.createElement('button');select.textContent=selectedEntries.has(entryKey(entry))&&selectionPane===index?'Quitar de la selección':'Seleccionar';select.setAttribute('role','menuitem');select.onclick=()=>{closeEntryMenu();toggleSelection(entry,index)};box.append(select,rename,remove);if(selectedEntries.size&&selectionPane===index){const bulk=document.createElement('button');bulk.className='danger';bulk.textContent='Eliminar selección ('+selectedEntries.size+')';bulk.onclick=()=>{closeEntryMenu();deleteSelected()};box.append(bulk)}placeEntryMenu(box,anchor,x,y);select.focus();
+}
+function showEntryRename(entry,anchor){
+ closeEntryMenu();const box=document.createElement('form');box.className='context-menu';box.setAttribute('aria-label','Cambiar nombre');
+ const label=document.createElement('p');label.textContent='Cambiar nombre';const input=document.createElement('input');input.value=entry.name;input.maxLength=120;input.required=true;input.setAttribute('aria-label','Nuevo nombre');
+ const actions=document.createElement('div');actions.className='context-actions';const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancelar';cancel.onclick=()=>closeEntryMenu(true);const saveButton=document.createElement('button');saveButton.type='submit';saveButton.textContent='Guardar';actions.append(cancel,saveButton);box.append(label,input,actions);
+ box.onsubmit=event=>{event.preventDefault();const name=input.value.trim();if(!name)return;if(entry.kind==='folder'){const folder=folders.find(f=>f.id===entry.id);if(folder){folder.name=name;saveFolders()}}else{const chat=conversations.find(c=>c.id===entry.id);if(chat){chat.title=name;save()}}closeEntryMenu();render()};
+ placeEntryMenu(box,anchor);input.focus();input.select();
+}
+function showEntryDelete(entry,anchor){
+ closeEntryMenu();const box=document.createElement('div');box.className='context-menu';box.setAttribute('role','dialog');box.setAttribute('aria-label','Confirmar eliminación');const question=document.createElement('p');
+ const occupied=entry.kind==='folder'&&(folders.some(f=>f.parentId===entry.id)||conversations.some(c=>c.folderId===entry.id));
+ question.textContent=occupied?'Mueve primero el contenido de esta carpeta.':entry.kind==='folder'?'¿Eliminar esta carpeta?':'¿Eliminar este chat?';
+ const actions=document.createElement('div');actions.className='context-actions';const cancel=document.createElement('button');cancel.textContent=occupied?'Cerrar':'Cancelar';cancel.onclick=()=>closeEntryMenu(true);actions.append(cancel);
+ if(!occupied){const remove=document.createElement('button');remove.textContent='Eliminar';remove.className='danger';remove.onclick=()=>{closeEntryMenu();if(entry.kind==='chat')deleteConversation(entry.id);else{folders=folders.filter(f=>f.id!==entry.id);panePaths=panePaths.map(path=>path===entry.id?null:path);saveFolders();renderExplorer()}};actions.append(remove)}
+ box.append(question,actions);placeEntryMenu(box,anchor);cancel.focus();
+}
+function deleteSelected(){
+ if(!selectedEntries.size||busy)return;
+ const entries=[...selectedEntries.values()];
+ const occupied=entries.filter(e=>e.kind==='folder'&&(folders.some(f=>f.parentId===e.id)||conversations.some(c=>c.folderId===e.id)));
+ if(occupied.length){alert('No se pueden eliminar carpetas con contenido. Mueve o elimina primero su contenido.');return}
+ if(!confirm('¿Eliminar '+entries.length+' elemento(s) seleccionado(s)?'))return;
+ const chatIds=new Set(entries.filter(e=>e.kind==='chat').map(e=>e.id));const folderIds=new Set(entries.filter(e=>e.kind==='folder').map(e=>e.id));
+ conversations=conversations.filter(c=>!chatIds.has(c.id));openChats=openChats.filter(id=>!chatIds.has(id));folders=folders.filter(f=>!folderIds.has(f.id));panePaths=panePaths.map(path=>folderIds.has(path)?null:path);
+ if(chatIds.has(currentId))currentId=openChats[openChats.length-1]||conversations[0]?.id;
+ clearSelection();saveFolders();save();render();
+}
+document.addEventListener('keydown',event=>{if(event.key==='Delete'&&activeView==='files'&&selectedEntries.size&&!entryMenu&&!/^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName)){event.preventDefault();deleteSelected()}});
+document.addEventListener('contextmenu',event=>event.preventDefault());
+document.addEventListener('pointerdown',event=>{if(entryMenu&&!entryMenu.element.contains(event.target))closeEntryMenu()});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&entryMenu){event.preventDefault();closeEntryMenu(true)}});
+window.addEventListener('resize',()=>closeEntryMenu());
+document.addEventListener('scroll',()=>closeEntryMenu(),true);
+function enableBoxSelection(pane, list, index) {
+ pane.addEventListener('pointerdown', start => {
+  if (start.button !== 0 || start.pointerType !== 'mouse' || start.target.closest('.file-item, .pane-tools')) return;
+
+  const initial = (start.ctrlKey || start.metaKey) && selectionPane === index
+   ? new Map(selectedEntries) : new Map();
+  const original = new Map(selectedEntries);
+  const originalPane = selectionPane;
+  const box = document.createElement('div');
+  box.className = 'selection-box';
+  let drawing = false;
+  const clip = (value, min, max) => Math.max(min, Math.min(value, max));
+
+  function draw(event) {
+   if (event.pointerId !== start.pointerId) return;
+   if (!drawing && Math.hypot(event.clientX-start.clientX, event.clientY-start.clientY) < 5) return;
+   if (!drawing) {
+    drawing = true;
+    pane.append(box);
+    const previous = $('explorerPanes').children[originalPane];
+    if (previous && previous !== pane) {
+     previous.querySelectorAll('.file-item.selected').forEach(tile => tile.classList.remove('selected'));
+    }
+   }
+   const bounds = pane.getBoundingClientRect();
+   const x = clip(event.clientX, bounds.left, bounds.right);
+   const y = clip(event.clientY, bounds.top, bounds.bottom);
+   const left = Math.min(start.clientX, x), right = Math.max(start.clientX, x);
+   const top = Math.min(start.clientY, y), bottom = Math.max(start.clientY, y);
+   Object.assign(box.style, {left:left+'px', top:top+'px', width:right-left+'px', height:bottom-top+'px'});
+
+   selectedEntries = new Map(initial);
+   selectionPane = index;
+   for (const tile of list.querySelectorAll('.file-item')) {
+    const rect = tile.getBoundingClientRect();
+    const entry = tile.explorerEntry;
+    const key = entryKey(entry);
+    if (rect.left < right && rect.right > left && rect.top < bottom && rect.bottom > top) {
+     selectedEntries.set(key, entry);
+    }
+    tile.classList.toggle('selected', selectedEntries.has(key));
+   }
+  }
+
+  function finish(event) {
+   if (event.pointerId !== start.pointerId) return;
+   pane.removeEventListener('pointermove', draw);
+   pane.removeEventListener('pointerup', finish);
+   pane.removeEventListener('lostpointercapture', finish);
+   box.remove();
+   if (!drawing) return;
+   if (event.type === 'lostpointercapture') {
+    selectedEntries = original;
+    selectionPane = originalPane;
+   }
+   if (!selectedEntries.size) selectionPane = null;
+   focusedPane = index;
+   renderExplorer();
+  }
+
+  pane.setPointerCapture(start.pointerId);
+  pane.addEventListener('pointermove', draw);
+  pane.addEventListener('pointerup', finish);
+  pane.addEventListener('lostpointercapture', finish);
+ });
+}
+
+function renderExplorer(){
+ const container=$('explorerPanes');container.replaceChildren();
+ panePaths.forEach((path,index)=>{
+  const pane=document.createElement('section');pane.className='folder-pane';pane.setAttribute('aria-label','Carpeta '+folderName(path));pane.onclick=()=>{focusedPane=index};dropInto(pane,path);
+  const tools=document.createElement('div');tools.className='pane-tools';
+  const back=document.createElement('button');back.textContent='←';back.title='Carpeta superior';back.disabled=path===null;back.onclick=()=>{clearSelection();panePaths[index]=folders.find(f=>f.id===path)?.parentId ?? null;focusedPane=index;renderExplorer()};
+  const label=document.createElement('span');label.className='pane-path';label.textContent=path?folderPath(path):'Archivos';tools.append(back,label);if(selectionPane===index&&selectedEntries.size){const count=document.createElement('span');count.className='selection-count';count.textContent=selectedEntries.size+' seleccionado(s)';const removeSelected=document.createElement('button');removeSelected.className='delete-selected';removeSelected.textContent='Eliminar selección';removeSelected.disabled=busy;removeSelected.onclick=deleteSelected;tools.append(count,removeSelected)}pane.append(tools);
+  const list=document.createElement('div');list.className='file-list';
+  const entries=[...folders.filter(f=>(f.parentId??null)===path).map(f=>({kind:'folder',id:f.id,name:f.name})),...conversations.filter(c=>(c.folderId??null)===path&&c.messages?.some(message=>typeof message.content==='string'&&message.content.trim())).map(c=>({kind:'chat',id:c.id,name:c.title}))];
+  if(!entries.length){const empty=document.createElement('p');empty.className='empty-folder';empty.textContent='Esta carpeta está vacía. Arrastra aquí carpetas o chats.';list.append(empty)}
+  for(const entry of entries){
+   const tile=document.createElement('div');tile.className='file-item'+(selectionPane===index&&selectedEntries.has(entryKey(entry))?' selected':'');tile.explorerEntry=entry;tile.draggable=true;tile.addEventListener('dragstart',e=>dragData(e,entry.kind,entry.id,index));
+   if(entry.kind==='folder')dropInto(tile,entry.id);
+   const open=document.createElement('button');open.className='file-open';open.title=entry.kind==='chat'?'Abrir chat':'Abrir carpeta';
+   const icon=document.createElement('span');icon.className='file-icon';icon.textContent=entry.kind==='chat'?'💬':'📁';
+   const name=document.createElement('span');name.className='file-name';name.textContent=entry.name+(entry.kind==='chat'?'.chat':'');open.append(icon,name);
+   open.onclick=event=>{focusedPane=index;if(event.ctrlKey||event.metaKey){toggleSelection(entry,index);return}clearSelection();if(entry.kind==='chat')openChat(entry.id);else{panePaths[index]=entry.id;renderExplorer()}};
+   const actions=document.createElement('div');actions.className='file-actions';
+   const menuButton=document.createElement('button');menuButton.textContent='⋯';menuButton.setAttribute('aria-label','Opciones de '+entry.name);menuButton.onclick=()=>{focusedPane=index;showEntryMenu(entry,tile,undefined,undefined,index)};actions.append(menuButton);
+   tile.addEventListener('contextmenu',event=>{event.preventDefault();focusedPane=index;showEntryMenu(entry,tile,event.clientX,event.clientY,index)});
+   tile.append(open,actions);list.append(tile);
+  }
+  pane.append(list);enableBoxSelection(pane,list,index);container.append(pane);
+ });
+}
+$('openChat').onclick=()=>createConversation();
+let calcDegrees=true;
+const calcButtons=[['DEG','mode'],['sin','sin('],['cos','cos('],['tan','tan('],['⌫','back'],['π','pi'],['e','e'],['(', '('],[')',')'],['C','clear'],['x²','^2'],['xʸ','^'],['√','sqrt('],['ln','ln('],['log','log('],['7','7'],['8','8'],['9','9'],['÷','/'],['%','/100'],['4','4'],['5','5'],['6','6'],['×','*'],['1/x','inverse'],['1','1'],['2','2'],['3','3'],['−','-'],['+','+'],['0','0'],['.','.'],['EXP','E'],['±','negate'],['=','equals']];
+for(const [label,value] of calcButtons){const button=document.createElement('button');button.type='button';button.textContent=label;if(/^\d$/.test(label)||label==='.')button.className='calc-number';if(value==='equals')button.className='calc-equal';if(value==='mode'){button.className='calc-mode';button.id='calcMode'}button.onclick=()=>calcAction(value);$('calcKeys').append(button)}
+function evaluateCalculation(source){
+ const text=source.replace(/\s+/g,'');let pos=0;
+ function expression(){let n=term();while(text[pos]==='+'||text[pos]==='-'){const op=text[pos++],v=term();n=op==='+'?n+v:n-v}return n}
+ function term(){let n=unary();while(text[pos]==='*'||text[pos]==='/'){const op=text[pos++],v=unary();n=op==='*'?n*v:n/v}return n}
+ function unary(){if(text[pos]==='+'){pos++;return unary()}if(text[pos]==='-'){pos++;return -unary()}return power()}
+ function power(){let n=primary();if(text[pos]==='^'){pos++;n=Math.pow(n,unary())}return n}
+ function primary(){if(text[pos]==='('){pos++;const n=expression();if(text[pos++]!==')')throw Error('Falta cerrar paréntesis');return n}const rest=text.slice(pos);const number=rest.match(/^(?:\d+\.?\d*|\.\d+)(?:[Ee][+-]?\d+)?/);if(number){pos+=number[0].length;return Number(number[0])}const word=rest.match(/^[a-z]+/i);if(!word)throw Error('Expresión incompleta');pos+=word[0].length;const name=word[0].toLowerCase();if(name==='pi')return Math.PI;if(name==='e')return Math.E;if(text[pos++]!=='(')throw Error('Falta abrir paréntesis');const n=expression();if(text[pos++]!==')')throw Error('Falta cerrar paréntesis');const angle=calcDegrees?n*Math.PI/180:n;const funcs={sin:()=>Math.sin(angle),cos:()=>Math.cos(angle),tan:()=>Math.tan(angle),sqrt:()=>Math.sqrt(n),ln:()=>Math.log(n),log:()=>Math.log10(n)};if(!funcs[name])throw Error('Función desconocida');return funcs[name]()}
+ if(!text)throw Error('Escribe una operación');const result=expression();if(pos!==text.length)throw Error('Expresión no válida');if(!Number.isFinite(result))throw Error('Resultado no definido');return Number(result.toPrecision(12));
+}
+function calcAction(action){const input=$('calcDisplay'),result=$('calcResult');if(action==='mode'){calcDegrees=!calcDegrees;$('calcMode').textContent=calcDegrees?'DEG':'RAD';return}if(action==='clear'){input.value='';result.textContent='';input.focus();return}if(action==='equals'){try{const value=evaluateCalculation(input.value);result.textContent='= '+value;input.value=String(value)}catch(error){result.textContent=error.message}return}if(action==='back'){const start=input.selectionStart,end=input.selectionEnd;if(start===end&&start>0)input.setRangeText('',start-1,end,'end');else input.setRangeText('',start,end,'end')}else if(action==='inverse'){input.value='1/('+input.value+')'}else if(action==='negate'){input.value='-('+input.value+')'}else input.setRangeText(action,input.selectionStart,input.selectionEnd,'end');result.textContent='';input.focus()}
+$('calcDisplay').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();calcAction('equals')}else if(event.key==='Escape'){calcAction('clear')}});
+$('desktop').addEventListener('click',event=>{if(event.target.closest('.desktop-app'))return;if(activeView!=='desktop')showView('desktop')});
+$('newFolder').onclick=()=>{
+ closeEntryMenu();const anchor=$('newFolder'),parentId=panePaths[focusedPane]??null;
+ const box=document.createElement('form');box.className='context-menu';box.setAttribute('role','dialog');box.setAttribute('aria-label','Nueva carpeta');
+ const label=document.createElement('p');label.textContent='Nombre de la carpeta';
+ const input=document.createElement('input');input.required=true;input.maxLength=120;input.placeholder='Nueva carpeta';input.setAttribute('aria-label','Nombre de la carpeta');
+ const actions=document.createElement('div');actions.className='context-actions';
+ const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancelar';cancel.onclick=()=>closeEntryMenu(true);
+ const create=document.createElement('button');create.type='submit';create.textContent='Crear';actions.append(cancel,create);box.append(label,input,actions);
+ box.onsubmit=event=>{event.preventDefault();const name=input.value.trim();if(!name){input.focus();return}folders.push({id:crypto.randomUUID(),name,parentId});saveFolders();closeEntryMenu();renderExplorer()};
+ placeEntryMenu(box,anchor);input.focus();
+};
+$('splitFolders').onclick=()=>{if(panePaths.length===1)panePaths.push(panePaths[0]);else{panePaths.pop();focusedPane=0}$('splitFolders').setAttribute('aria-pressed',String(panePaths.length===2));$('splitFolders').textContent=panePaths.length===2?'Una vista':'Dividir vista';renderExplorer()};
+
+function addMessage(content,role,speed){const wrapper=document.createElement('div');wrapper.className='message '+role;const text=document.createElement('div');text.textContent=content;wrapper.append(text);if(speed){const stats=document.createElement('div');stats.className='stats';stats.textContent=speed;wrapper.append(stats)}$('chat').append(wrapper);$('chat').scrollTop=$('chat').scrollHeight;return text}
+save();
+render();
+for(const key of Object.keys(defaults)){const input=$(key);input.value=settings[key];input.addEventListener('change',()=>{settings[key]=key==='system'?input.value:Number(input.value);storeSetting(settingsKey, settings)})}
+$('new').onclick=createConversation;
+let deletePopover;
+function closeDeleteConfirmation(restoreFocus=false){
+ if(!deletePopover)return;
+ const trigger=deletePopover.trigger;
+ deletePopover.element.remove();deletePopover=undefined;
+ if(restoreFocus && trigger.isConnected)trigger.focus();
+}
+function showDeleteConfirmation(id,trigger){
+ closeDeleteConfirmation();
+ const box=document.createElement('div');box.className='delete-popover';box.setAttribute('role','dialog');box.setAttribute('aria-label','Confirmar eliminación');
+ const question=document.createElement('p');question.textContent='¿Eliminar esta conversación?';
+ const actions=document.createElement('div');actions.className='delete-popover-actions';
+ const cancel=document.createElement('button');cancel.type='button';cancel.className='delete-cancel';cancel.textContent='Cancelar';
+ const confirmButton=document.createElement('button');confirmButton.type='button';confirmButton.className='delete-confirm';confirmButton.textContent='Eliminar';
+ cancel.onclick=()=>closeDeleteConfirmation(true);
+ confirmButton.onclick=()=>{closeDeleteConfirmation();deleteConversation(id)};
+ actions.append(cancel,confirmButton);box.append(question,actions);document.body.append(box);
+ const rect=trigger.getBoundingClientRect(), width=box.offsetWidth, height=box.offsetHeight;
+ const left=rect.right+8+width<=innerWidth-8?rect.right+8:Math.max(8,rect.left-width-8);
+ box.style.left=Math.min(left,innerWidth-width-8)+'px';box.style.top=Math.max(8,Math.min(rect.top,innerHeight-height-8))+'px';
+ deletePopover={element:box,trigger};cancel.focus();
+}
+document.addEventListener('pointerdown',event=>{if(deletePopover && !deletePopover.element.contains(event.target) && !deletePopover.trigger.contains(event.target))closeDeleteConfirmation()});
+document.addEventListener('keydown',event=>{if(event.key==='Escape' && deletePopover){event.preventDefault();closeDeleteConfirmation(true)}});
+window.addEventListener('resize',()=>closeDeleteConfirmation());
+document.addEventListener('scroll',()=>closeDeleteConfirmation(),true);
+function deleteConversation(id){conversations=conversations.filter(item=>item.id!==id);openChats=openChats.filter(chatId=>chatId!==id);if(currentId===id)currentId=openChats[openChats.length-1]||conversations[0]?.id;if(!openChats.length && activeView==='chat')activeView='desktop';save();render()}
+try{
+ if(!navigator.gpu)throw new Error('WebGPU no está disponible en este navegador.');
+ env.fetch = await loadModelFiles();
+ generator=await pipeline('text-generation','modelo',{device:'webgpu',dtype:'q4'});
+ $('status').textContent='';$('prompt').disabled=false;$('send').disabled=false;
+}catch(error){$('status').textContent='No se pudo cargar el modelo: '+error.message;console.error(error)}
+$('prompt').addEventListener('keydown', event=>{
+ if(event.key==='Enter' && !event.shiftKey && !event.isComposing){
+  event.preventDefault();
+  $('form').requestSubmit();
+ }
+});
+$('form').addEventListener('submit',async event=>{
+ event.preventDefault();const text=$('prompt').value.trim();if(!text||!generator||busy)return;
+ for(const key of Object.keys(defaults)) $(key).dispatchEvent(new Event('change'));
+ if ($('settings').querySelector(':invalid')) { showView('settings'); $('settings').querySelector(':invalid').reportValidity(); return; }
+ const item=current();busy=true;$('prompt').value='';$('prompt').disabled=true;$('send').disabled=true;
+ item.messages.push({role:'user',content:text});if(item.title==='Nueva conversación')item.title=text.slice(0,45);save();render();
+ const answer=addMessage('','assistant');let tokenCount=0;const started=performance.now();
+ try{
+  const streamer=new TextStreamer(generator.tokenizer,{skip_prompt:true,skip_special_tokens:true,callback_function:part=>{answer.textContent+=part;$('chat').scrollTop=$('chat').scrollHeight},token_callback_function:tokens=>{tokenCount+=tokens.length}});
+  const messages=[...(settings.system.trim()?[{role:'system',content:settings.system.trim()}]:[]),...item.messages.map(({role,content})=>({role,content}))];
+  const result=await generator(messages,{max_new_tokens:settings.maxTokens,do_sample:settings.temperature>0,temperature:settings.temperature || 1,top_p:settings.topP,top_k:settings.topK,repetition_penalty:settings.repetition,return_full_text:false,streamer});
+  const output=result[0].generated_text;const content=extractReply(output) || answer.textContent;
+  const seconds=(performance.now()-started)/1000;const speed=`${tokenCount} tokens · ${(tokenCount/seconds).toFixed(1)} tokens/s`;
+  item.messages.push({role:'assistant',content,speed});save();
+ }catch(error){$('status').textContent='Error al generar: '+error.message;console.error(error)}
+ finally{busy=false;$('prompt').disabled=false;$('send').disabled=false;render();$('prompt').focus()}
+});
+</script></body></html>
+
+
+
+
+
